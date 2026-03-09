@@ -1,0 +1,65 @@
+defmodule Mix.Tasks.Spec.Verify do
+  use Mix.Task
+
+  @shortdoc "Validates authored specs and writes .spec/state.json"
+
+  @impl true
+  def run(args) do
+    Mix.Task.run("app.start")
+
+    {opts, _rest, _invalid} =
+      OptionParser.parse(
+        args,
+        switches: [
+          root: :string,
+          output: :string,
+          strict: :boolean,
+          debug: :boolean,
+          run_commands: :boolean,
+          spec_dir: :string
+        ],
+        aliases: [r: :root, o: :output, s: :strict, d: :debug]
+      )
+
+    root = opts[:root] || File.cwd!()
+    spec_dir = opts[:spec_dir] || SpecLedEx.detect_spec_dir(root)
+    authored_dir = SpecLedEx.detect_authored_dir(root, spec_dir)
+    output = opts[:output] || "#{spec_dir}/state.json"
+    strict? = opts[:strict] || false
+    debug? = opts[:debug] || false
+    run_commands? = opts[:run_commands] || false
+
+    index = SpecLedEx.build_index(root, spec_dir: spec_dir, authored_dir: authored_dir)
+
+    report =
+      SpecLedEx.verify(index, root, strict: strict?, debug: debug?, run_commands: run_commands?)
+
+    path = SpecLedEx.write_state(index, report, root, output)
+
+    Mix.shell().info("spec.verify wrote #{path}")
+
+    summary = report["summary"]
+
+    Mix.shell().info(
+      "status=#{report["status"]} errors=#{summary["errors"]} warnings=#{summary["warnings"]}"
+    )
+
+    if debug? do
+      checks = report["checks"] || []
+      Mix.shell().info("debug_checks=#{length(checks)}")
+
+      Enum.each(checks, fn check ->
+        status = String.upcase(check["status"] || "pass")
+        subject_id = check["subject_id"] || "global"
+        file = check["file"] || "-"
+        code = check["code"] || "check"
+        message = check["message"] || ""
+        Mix.shell().info("[#{status}] #{subject_id} #{code} #{file} :: #{message}")
+      end)
+    end
+
+    if report["status"] == "fail" do
+      Mix.raise("Spec verification failed")
+    end
+  end
+end

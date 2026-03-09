@@ -1,0 +1,28 @@
+# SpecLedEx
+
+Local helper package for Spec Led Development repositories.
+
+It provides canonical `mix spec.*` tasks:
+
+- `mix spec.init`
+  - scaffolds `.spec/` with starter files
+- `mix spec.plan`
+  - reads `.spec/specs/*.spec.md` and updates `.spec/state.json` with index data
+- `mix spec.verify`
+  - validates authored specs and updates `.spec/state.json` with verification findings
+- `mix spec.check`
+  - runs `plan` plus strict `verify`
+
+## Local Usage
+
+Add as a path dependency in another project:
+
+```elixir
+{:spec_led_ex, path: "../spec_led_ex", only: [:dev, :test], runtime: false}
+```
+
+Then run:
+
+```bash
+mix spec.check
+```
