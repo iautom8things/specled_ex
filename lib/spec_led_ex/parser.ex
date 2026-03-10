@@ -8,8 +8,8 @@ defmodule SpecLedEx.Parser do
 
     @block_pattern
     |> Regex.scan(content)
-    |> Enum.reduce(base_spec(path, root, content), fn [_, tag, raw_json], spec ->
-      decode_block(spec, tag, raw_json)
+    |> Enum.reduce(base_spec(path, root, content), fn [_, tag, raw], spec ->
+      decode_block(spec, tag, raw)
     end)
   end
 
@@ -33,27 +33,27 @@ defmodule SpecLedEx.Parser do
     end
   end
 
-  defp decode_block(spec, "spec-meta", raw_json) do
-    case Jason.decode(raw_json) do
+  defp decode_block(spec, "spec-meta", raw) do
+    case decode_yaml(raw) do
       {:ok, meta} when is_map(meta) ->
         if is_nil(spec["meta"]) do
-          Map.put(spec, "meta", meta)
+          case SpecLedEx.Schema.validate_block("spec-meta", meta) do
+            {:ok, validated} -> Map.put(spec, "meta", validated)
+            {:error, message} -> push_parse_error(Map.put(spec, "meta", meta), message)
+          end
         else
           push_parse_error(spec, "spec-meta may only appear once per file")
         end
 
       {:ok, _invalid_shape} ->
-        push_parse_error(spec, "spec-meta must decode to a JSON object")
+        push_parse_error(spec, "spec-meta must decode to a mapping")
 
-      {:error, %Jason.DecodeError{} = err} ->
-        push_parse_error(spec, "spec-meta JSON decode failed: #{Exception.message(err)}")
-
-      _ ->
-        push_parse_error(spec, "spec-meta JSON decode failed")
+      {:error, message} ->
+        push_parse_error(spec, "spec-meta decode failed: #{message}")
     end
   end
 
-  defp decode_block(spec, tag, raw_json) do
+  defp decode_block(spec, tag, raw) do
     key =
       case tag do
         "spec-requirements" -> "requirements"
@@ -62,19 +62,33 @@ defmodule SpecLedEx.Parser do
         "spec-exceptions" -> "exceptions"
       end
 
-    case Jason.decode(raw_json) do
-      {:ok, items} when is_list(items) ->
-        Map.update!(spec, key, &(&1 ++ items))
+    if spec[key] != [] do
+      push_parse_error(spec, "#{tag} may only appear once per file")
+    else
+      case decode_yaml(raw) do
+        {:ok, items} when is_list(items) ->
+          case SpecLedEx.Schema.validate_block(tag, items) do
+            {:ok, validated} -> Map.put(spec, key, validated)
+            {:error, message} -> push_parse_error(Map.put(spec, key, items), message)
+          end
 
-      {:ok, _invalid_shape} ->
-        push_parse_error(spec, "#{tag} must decode to a JSON array")
+        {:ok, _invalid_shape} ->
+          push_parse_error(spec, "#{tag} must decode to a list")
 
-      {:error, %Jason.DecodeError{} = err} ->
-        push_parse_error(spec, "#{tag} JSON decode failed: #{Exception.message(err)}")
-
-      _ ->
-        push_parse_error(spec, "#{tag} JSON decode failed")
+        {:error, message} ->
+          push_parse_error(spec, "#{tag} decode failed: #{message}")
+      end
     end
+  end
+
+  defp decode_yaml(raw) do
+    case YamlElixir.read_from_string(raw) do
+      {:ok, result} -> {:ok, result}
+      {:error, %YamlElixir.ParsingError{message: message}} -> {:error, message}
+      {:error, reason} -> {:error, inspect(reason)}
+    end
+  rescue
+    e -> {:error, Exception.message(e)}
   end
 
   defp push_parse_error(spec, message) do

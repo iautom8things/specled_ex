@@ -1,7 +1,8 @@
 defmodule SpecLedEx.Verifier do
   @moduledoc false
 
-  @file_kinds ~w(file source_file test_file guide_file readme_file workflow_file)
+  @file_kinds ~w(file source_file test_file guide_file readme_file workflow_file test doc workflow contract)
+  @id_pattern ~r/^[a-z0-9][a-z0-9._-]*$/
 
   def verify(index, root, opts \\ []) do
     strict? = Keyword.get(opts, :strict, false)
@@ -14,6 +15,9 @@ defmodule SpecLedEx.Verifier do
       |> Enum.flat_map(&verify_subject(&1, root, run_commands?))
       |> then(&(&1 ++ duplicate_subject_id_findings(subjects)))
       |> then(&(&1 ++ duplicate_requirement_id_findings(subjects)))
+      |> then(&(&1 ++ duplicate_scenario_id_findings(subjects)))
+      |> then(&(&1 ++ duplicate_exception_id_findings(subjects)))
+      |> then(&(&1 ++ invalid_id_format_findings(subjects)))
 
     checks =
       if debug? do
@@ -54,6 +58,7 @@ defmodule SpecLedEx.Verifier do
     reqs = subject["requirements"] || []
     scenarios = subject["scenarios"] || []
     verifications = subject["verification"] || []
+    exceptions = subject["exceptions"] || []
     parse_errors = subject["parse_errors"] || []
     requirement_ids = reqs |> Enum.map(&id_of(&1, "id")) |> Enum.reject(&is_nil/1)
     scenario_ids = scenarios |> Enum.map(&id_of(&1, "id")) |> Enum.reject(&is_nil/1)
@@ -65,8 +70,9 @@ defmodule SpecLedEx.Verifier do
     |> add_missing_requirement_id_findings(reqs, subject_id, file)
     |> add_missing_scenario_id_findings(scenarios, subject_id, file)
     |> add_scenario_cover_findings(scenarios, MapSet.new(requirement_ids), subject_id, file)
+    |> add_scenario_structure_findings(scenarios, subject_id, file)
     |> add_verification_findings(verifications, claim_ids, root, subject_id, file, run_commands?)
-    |> add_requirement_coverage_findings(requirement_ids, verifications, subject_id, file)
+    |> add_requirement_coverage_findings(requirement_ids, verifications, exceptions, subject_id, file)
   end
 
   defp add_meta_findings(findings, meta, subject_id, file) do
@@ -152,6 +158,31 @@ defmodule SpecLedEx.Verifier do
             )
             | cover_acc
           ]
+        end
+      end)
+    end)
+  end
+
+  defp add_scenario_structure_findings(findings, scenarios, subject_id, file) do
+    Enum.reduce(scenarios, findings, fn scenario, acc ->
+      scenario_id = scenario["id"] || "<unknown>"
+
+      Enum.reduce(["given", "when", "then"], acc, fn key, inner_acc ->
+        case scenario[key] do
+          list when is_list(list) and list != [] ->
+            inner_acc
+
+          _ ->
+            [
+              finding(
+                "warning",
+                "scenario_missing_#{key}",
+                "Scenario #{scenario_id} is missing or has empty #{key}",
+                subject_id,
+                file
+              )
+              | inner_acc
+            ]
         end
       end)
     end)
@@ -290,11 +321,12 @@ defmodule SpecLedEx.Verifier do
          findings,
          requirement_ids,
          verifications,
+         exceptions,
          subject_id,
          file
        ) do
     covered_ids =
-      verifications
+      (verifications ++ exceptions)
       |> Enum.flat_map(&(&1["covers"] || []))
       |> MapSet.new()
 
@@ -336,6 +368,7 @@ defmodule SpecLedEx.Verifier do
     requirements = subject["requirements"] || []
     scenarios = subject["scenarios"] || []
     verifications = subject["verification"] || []
+    exceptions = subject["exceptions"] || []
     parse_errors = subject["parse_errors"] || []
     requirement_ids = requirements |> Enum.map(&id_of(&1, "id")) |> Enum.reject(&is_nil/1)
     scenario_ids = scenarios |> Enum.map(&id_of(&1, "id")) |> Enum.reject(&is_nil/1)
@@ -355,7 +388,7 @@ defmodule SpecLedEx.Verifier do
       file,
       run_commands?
     )
-    |> add_requirement_coverage_debug_checks(requirement_ids, verifications, subject_id, file)
+    |> add_requirement_coverage_debug_checks(requirement_ids, verifications, exceptions, subject_id, file)
   end
 
   defp add_meta_debug_checks(checks, meta, subject_id, file) do
@@ -649,11 +682,12 @@ defmodule SpecLedEx.Verifier do
          checks,
          requirement_ids,
          verifications,
+         exceptions,
          subject_id,
          file
        ) do
     covered_ids =
-      verifications
+      (verifications ++ exceptions)
       |> Enum.flat_map(&(&1["covers"] || []))
       |> MapSet.new()
 
@@ -743,6 +777,60 @@ defmodule SpecLedEx.Verifier do
       finding("error", "duplicate_requirement_id", "Duplicate requirement id: #{id}", nil, nil)
     end)
   end
+
+  defp duplicate_scenario_id_findings(subjects) do
+    subjects
+    |> Enum.flat_map(fn subject -> subject["scenarios"] || [] end)
+    |> Enum.map(&id_of(&1, "id"))
+    |> Enum.reject(&is_nil/1)
+    |> duplicates()
+    |> Enum.map(fn id ->
+      finding("error", "duplicate_scenario_id", "Duplicate scenario id: #{id}", nil, nil)
+    end)
+  end
+
+  defp duplicate_exception_id_findings(subjects) do
+    subjects
+    |> Enum.flat_map(fn subject -> subject["exceptions"] || [] end)
+    |> Enum.map(&id_of(&1, "id"))
+    |> Enum.reject(&is_nil/1)
+    |> duplicates()
+    |> Enum.map(fn id ->
+      finding("error", "duplicate_exception_id", "Duplicate exception id: #{id}", nil, nil)
+    end)
+  end
+
+  defp invalid_id_format_findings(subjects) do
+    Enum.flat_map(subjects, fn subject ->
+      subject_id = (subject["meta"] || %{})["id"]
+      file = subject["file"]
+
+      all_ids =
+        [{subject_id, "subject"}] ++
+          ids_from(subject["requirements"], "requirement") ++
+          ids_from(subject["scenarios"], "scenario") ++
+          ids_from(subject["exceptions"], "exception")
+
+      all_ids
+      |> Enum.reject(fn {id, _kind} -> is_nil(id) end)
+      |> Enum.reject(fn {id, _kind} -> Regex.match?(@id_pattern, id) end)
+      |> Enum.map(fn {id, kind} ->
+        finding(
+          "error",
+          "invalid_id_format",
+          "Invalid #{kind} id format: #{id} (must match #{inspect(Regex.source(@id_pattern))})",
+          subject_id,
+          file
+        )
+      end)
+    end)
+  end
+
+  defp ids_from(items, kind) when is_list(items) do
+    Enum.map(items, fn item -> {id_of(item, "id"), kind} end)
+  end
+
+  defp ids_from(_, _kind), do: []
 
   defp duplicates(values) do
     values

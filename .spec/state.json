@@ -1,0 +1,409 @@
+{
+  "findings": [],
+  "generated_at": "2026-03-10T15:11:31Z",
+  "index": {
+    "exceptions": [],
+    "requirements": [
+      {
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "id": "specled.tasks.init_scaffold",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "mix spec.init shall create the canonical .spec/ workspace with README.md, spec_system.spec.md, and package.spec.md.",
+        "subject_id": "specled.mix_tasks"
+      },
+      {
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "id": "specled.tasks.plan_writes_state",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "mix spec.plan shall build the authored index and write .spec/state.json.",
+        "subject_id": "specled.mix_tasks"
+      },
+      {
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "id": "specled.tasks.verify_findings",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "mix spec.verify shall validate specs, derive findings, and write .spec/state.json with a verification report.",
+        "subject_id": "specled.mix_tasks"
+      },
+      {
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "id": "specled.tasks.check_strict_gate",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "mix spec.check shall run planning and strict verification, failing on any errors or warnings.",
+        "subject_id": "specled.mix_tasks"
+      },
+      {
+        "file": ".spec/specs/package.spec.md",
+        "id": "specled.package.mix_tasks",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "The package shall provide mix spec.init, mix spec.plan, mix spec.verify, and mix spec.check as user-facing commands.",
+        "subject_id": "specled.package"
+      },
+      {
+        "file": ".spec/specs/package.spec.md",
+        "id": "specled.package.index_and_state",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "The package shall index authored spec files and write derived state to .spec/state.json.",
+        "subject_id": "specled.package"
+      },
+      {
+        "file": ".spec/specs/parser.spec.md",
+        "id": "specled.parser.standard_blocks",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "The parser shall extract spec-meta, spec-requirements, spec-scenarios, spec-verification, and spec-exceptions fenced blocks from a spec file.",
+        "subject_id": "specled.parser"
+      },
+      {
+        "file": ".spec/specs/parser.spec.md",
+        "id": "specled.parser.title_extraction",
+        "priority": "should",
+        "stability": "stable",
+        "statement": "The parser shall record the first Markdown H1 heading as the subject title.",
+        "subject_id": "specled.parser"
+      },
+      {
+        "file": ".spec/specs/parser.spec.md",
+        "id": "specled.parser.resilient_errors",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "The parser shall continue parsing and collect parse errors when a block cannot be decoded or when spec-meta appears more than once.",
+        "subject_id": "specled.parser"
+      },
+      {
+        "file": ".spec/specs/spec_system.spec.md",
+        "id": "spec.workspace.readme_present",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "The repository shall include a .spec/README.md that explains purpose, layout, and workflow.",
+        "subject_id": "spec.system"
+      },
+      {
+        "file": ".spec/specs/spec_system.spec.md",
+        "id": "spec.workspace.state_generated",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "When planning and verification run, the workspace shall generate .spec/state.json containing index and verification state.",
+        "subject_id": "spec.system"
+      },
+      {
+        "file": ".spec/specs/verification.spec.md",
+        "id": "specled.verify.meta_required",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "Verification shall emit errors when a subject is missing spec-meta id, kind, or status.",
+        "subject_id": "specled.verification"
+      },
+      {
+        "file": ".spec/specs/verification.spec.md",
+        "id": "specled.verify.reference_checks",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "Verification shall detect duplicate subject ids, duplicate requirement ids, unresolved scenario covers, and unresolved verification covers.",
+        "subject_id": "specled.verification"
+      },
+      {
+        "file": ".spec/specs/verification.spec.md",
+        "id": "specled.verify.coverage_warnings",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "Verification shall warn when a requirement has no covering verification entry.",
+        "subject_id": "specled.verification"
+      },
+      {
+        "file": ".spec/specs/verification.spec.md",
+        "id": "specled.verify.target_existence",
+        "priority": "should",
+        "stability": "stable",
+        "statement": "Verification shall warn when a file-based verification target does not exist on disk.",
+        "subject_id": "specled.verification"
+      }
+    ],
+    "scenarios": [
+      {
+        "covers": [
+          "specled.parser.resilient_errors"
+        ],
+        "file": ".spec/specs/parser.spec.md",
+        "given": [
+          "a spec file with invalid JSON in a spec-meta block"
+        ],
+        "id": "specled.parser.malformed_json",
+        "subject_id": "specled.parser",
+        "then": [
+          "the result includes a parse error",
+          "the parser does not crash"
+        ],
+        "when": [
+          "the parser processes the file"
+        ]
+      },
+      {
+        "covers": [
+          "specled.verify.coverage_warnings"
+        ],
+        "file": ".spec/specs/verification.spec.md",
+        "given": [
+          "a spec with a requirement that has no covering verification"
+        ],
+        "id": "specled.verify.uncovered_requirement",
+        "subject_id": "specled.verification",
+        "then": [
+          "a warning finding is produced for the uncovered requirement"
+        ],
+        "when": [
+          "verification runs"
+        ]
+      },
+      {
+        "covers": [
+          "specled.verify.target_existence"
+        ],
+        "file": ".spec/specs/verification.spec.md",
+        "given": [
+          "a spec with a source_file verification pointing to a path that does not exist"
+        ],
+        "id": "specled.verify.missing_target",
+        "subject_id": "specled.verification",
+        "then": [
+          "a warning finding is produced for the missing target"
+        ],
+        "when": [
+          "verification runs"
+        ]
+      }
+    ],
+    "subjects": [
+      {
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "id": "specled.mix_tasks",
+        "meta": {
+          "id": "specled.mix_tasks",
+          "kind": "workflow",
+          "status": "active",
+          "summary": "Mix tasks for scaffolding, planning, verifying, and checking specs.",
+          "surface": [
+            "lib/mix/tasks/spec.init.ex",
+            "lib/mix/tasks/spec.plan.ex",
+            "lib/mix/tasks/spec.verify.ex",
+            "lib/mix/tasks/spec.check.ex"
+          ]
+        },
+        "title": "Mix Tasks"
+      },
+      {
+        "file": ".spec/specs/package.spec.md",
+        "id": "specled.package",
+        "meta": {
+          "id": "specled.package",
+          "kind": "package",
+          "status": "active",
+          "summary": "Elixir package for Spec Led Development. Provides Mix tasks to scaffold, index, verify, and check authored specs.",
+          "surface": [
+            "mix.exs",
+            "lib/spec_led_ex.ex"
+          ]
+        },
+        "title": "specled_ex"
+      },
+      {
+        "file": ".spec/specs/parser.spec.md",
+        "id": "specled.parser",
+        "meta": {
+          "id": "specled.parser",
+          "kind": "module",
+          "status": "active",
+          "summary": "Extracts structured spec blocks from authored Markdown files.",
+          "surface": [
+            "lib/spec_led_ex/parser.ex"
+          ]
+        },
+        "title": "Parser"
+      },
+      {
+        "file": ".spec/specs/spec_system.spec.md",
+        "id": "spec.system",
+        "meta": {
+          "id": "spec.system",
+          "kind": "policy",
+          "status": "active",
+          "summary": "Canonical workspace contract for authored specs and generated Spec Led state.",
+          "surface": [
+            ".spec/README.md",
+            ".spec/specs/*.spec.md",
+            ".spec/state.json"
+          ]
+        },
+        "title": "Spec System"
+      },
+      {
+        "file": ".spec/specs/verification.spec.md",
+        "id": "specled.verification",
+        "meta": {
+          "id": "specled.verification",
+          "kind": "workflow",
+          "status": "active",
+          "summary": "Validates authored specs, checks references, derives findings, and writes state.",
+          "surface": [
+            "lib/spec_led_ex/verifier.ex",
+            "lib/spec_led_ex/index.ex",
+            "lib/spec_led_ex.ex"
+          ]
+        },
+        "title": "Verification"
+      }
+    ],
+    "verifications": [
+      {
+        "covers": [
+          "specled.tasks.init_scaffold"
+        ],
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "source_file",
+        "subject_id": "specled.mix_tasks",
+        "target": "lib/mix/tasks/spec.init.ex"
+      },
+      {
+        "covers": [
+          "specled.tasks.plan_writes_state"
+        ],
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "source_file",
+        "subject_id": "specled.mix_tasks",
+        "target": "lib/mix/tasks/spec.plan.ex"
+      },
+      {
+        "covers": [
+          "specled.tasks.verify_findings"
+        ],
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "source_file",
+        "subject_id": "specled.mix_tasks",
+        "target": "lib/mix/tasks/spec.verify.ex"
+      },
+      {
+        "covers": [
+          "specled.tasks.check_strict_gate"
+        ],
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "source_file",
+        "subject_id": "specled.mix_tasks",
+        "target": "lib/mix/tasks/spec.check.ex"
+      },
+      {
+        "covers": [
+          "specled.package.index_and_state"
+        ],
+        "file": ".spec/specs/package.spec.md",
+        "kind": "source_file",
+        "subject_id": "specled.package",
+        "target": "lib/spec_led_ex.ex"
+      },
+      {
+        "covers": [
+          "specled.package.mix_tasks"
+        ],
+        "file": ".spec/specs/package.spec.md",
+        "kind": "source_file",
+        "subject_id": "specled.package",
+        "target": "lib/mix/tasks/spec.init.ex"
+      },
+      {
+        "covers": [
+          "specled.package.mix_tasks"
+        ],
+        "file": ".spec/specs/package.spec.md",
+        "kind": "source_file",
+        "subject_id": "specled.package",
+        "target": "lib/mix/tasks/spec.verify.ex"
+      },
+      {
+        "covers": [
+          "specled.parser.standard_blocks",
+          "specled.parser.title_extraction",
+          "specled.parser.resilient_errors"
+        ],
+        "file": ".spec/specs/parser.spec.md",
+        "kind": "source_file",
+        "subject_id": "specled.parser",
+        "target": "lib/spec_led_ex/parser.ex"
+      },
+      {
+        "covers": [
+          "specled.parser.standard_blocks"
+        ],
+        "file": ".spec/specs/parser.spec.md",
+        "kind": "test_file",
+        "subject_id": "specled.parser",
+        "target": "test/spec_led_ex_test.exs"
+      },
+      {
+        "covers": [
+          "spec.workspace.readme_present"
+        ],
+        "file": ".spec/specs/spec_system.spec.md",
+        "kind": "source_file",
+        "subject_id": "spec.system",
+        "target": ".spec/README.md"
+      },
+      {
+        "covers": [
+          "spec.workspace.state_generated"
+        ],
+        "file": ".spec/specs/spec_system.spec.md",
+        "kind": "command",
+        "subject_id": "spec.system",
+        "target": "mix spec.plan"
+      },
+      {
+        "covers": [
+          "spec.workspace.state_generated"
+        ],
+        "file": ".spec/specs/spec_system.spec.md",
+        "kind": "command",
+        "subject_id": "spec.system",
+        "target": "mix spec.verify"
+      },
+      {
+        "covers": [
+          "specled.verify.meta_required",
+          "specled.verify.reference_checks",
+          "specled.verify.coverage_warnings",
+          "specled.verify.target_existence"
+        ],
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "source_file",
+        "subject_id": "specled.verification",
+        "target": "lib/spec_led_ex/verifier.ex"
+      },
+      {
+        "covers": [
+          "specled.verify.reference_checks"
+        ],
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "source_file",
+        "subject_id": "specled.verification",
+        "target": "lib/spec_led_ex/index.ex"
+      }
+    ]
+  },
+  "specification_version": "1.0",
+  "summary": {
+    "exceptions": 0,
+    "findings": 0,
+    "requirements": 15,
+    "scenarios": 3,
+    "subjects": 5,
+    "verifications": 14
+  },
+  "workspace": {
+    "root": "/Users/mhostetler/Source/SpecLedDev/specled_ex",
+    "spec_count": 5
+  }
+}

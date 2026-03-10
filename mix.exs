@@ -21,7 +21,9 @@ defmodule SpecLedEx.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:jason, "~> 1.4"}
+      {:jason, "~> 1.4"},
+      {:yaml_elixir, "~> 2.11"},
+      {:zoi, "~> 0.17"}
     ]
   end
 end

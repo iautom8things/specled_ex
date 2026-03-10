@@ -29,64 +29,47 @@ defmodule Mix.Tasks.Spec.Init do
   This subject defines the contract for the `.spec` workspace itself.
 
   ```spec-meta
-  {
-    "id": "spec.system",
-    "kind": "policy",
-    "status": "active",
-    "summary": "Canonical workspace contract for authored specs and generated Spec Led state.",
-    "surface": [
-      ".spec/README.md",
-      ".spec/specs/*.spec.md",
-      ".spec/state.json"
-    ]
-  }
+  id: spec.system
+  kind: policy
+  status: active
+  summary: Canonical workspace contract for authored specs and generated Spec Led state.
+  surface:
+    - .spec/README.md
+    - .spec/specs/*.spec.md
+    - .spec/state.json
   ```
 
   ## Requirements
 
   ```spec-requirements
-  [
-    {
-      "id": "spec.workspace.readme_present",
-      "statement": "The repository shall include a .spec/README.md that explains purpose, layout, and workflow.",
-      "priority": "must",
-      "stability": "stable"
-    },
-    {
-      "id": "spec.workspace.state_generated",
-      "statement": "When planning and verification run, the workspace shall generate .spec/state.json containing index and verification state.",
-      "priority": "must",
-      "stability": "stable"
-    }
-  ]
+  - id: spec.workspace.readme_present
+    statement: The repository shall include a .spec/README.md that explains purpose, layout, and workflow.
+    priority: must
+    stability: stable
+
+  - id: spec.workspace.state_generated
+    statement: When planning and verification run, the workspace shall generate .spec/state.json containing index and verification state.
+    priority: must
+    stability: stable
   ```
 
   ## Verification
 
   ```spec-verification
-  [
-    {
-      "kind": "source_file",
-      "target": ".spec/README.md",
-      "covers": [
-        "spec.workspace.readme_present"
-      ]
-    },
-    {
-      "kind": "command",
-      "target": "mix spec.plan",
-      "covers": [
-        "spec.workspace.state_generated"
-      ]
-    },
-    {
-      "kind": "command",
-      "target": "mix spec.verify",
-      "covers": [
-        "spec.workspace.state_generated"
-      ]
-    }
-  ]
+  - kind: source_file
+    target: .spec/README.md
+    covers:
+      - spec.workspace.readme_present
+
+  - kind: command
+    target: mix spec.plan
+    covers:
+      - spec.workspace.state_generated
+
+  - kind: command
+    target: mix spec.verify
+    covers:
+      - spec.workspace.state_generated
   ```
   """
 
@@ -96,26 +79,20 @@ defmodule Mix.Tasks.Spec.Init do
   High-level package contract.
 
   ```spec-meta
-  {
-    "id": "package.todo",
-    "kind": "package",
-    "status": "active",
-    "summary": "Package-level specification.",
-    "surface": []
-  }
+  id: package.todo
+  kind: package
+  status: active
+  summary: Package-level specification.
+  surface: []
   ```
 
   ## Requirements
 
   ```spec-requirements
-  [
-    {
-      "id": "package.todo.requirement",
-      "statement": "Define package behavior requirements here.",
-      "priority": "must",
-      "stability": "evolving"
-    }
-  ]
+  - id: package.todo.requirement
+    statement: Define package behavior requirements here.
+    priority: must
+    stability: evolving
   ```
   """
 

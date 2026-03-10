@@ -59,7 +59,14 @@ defmodule Mix.Tasks.Spec.Verify do
     end
 
     if report["status"] == "fail" do
-      Mix.raise("Spec verification failed")
+      Enum.each(report["findings"] || [], fn finding ->
+        severity = String.upcase(finding["severity"] || "warning")
+        subject_id = finding["subject_id"] || "global"
+        file = finding["file"] || "-"
+        code = finding["code"] || "finding"
+        message = finding["message"] || ""
+        Mix.shell().info("[#{severity}] #{subject_id} #{code} #{file} :: #{message}")
+      end)
     end
   end
 end
