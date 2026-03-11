@@ -14,10 +14,11 @@ defmodule SpecLedEx.Verifier do
     run_commands? = Keyword.get(opts, :run_commands, false)
     subjects = index["subjects"] || []
     command_results = build_command_results(subjects, root, run_commands?)
+    global_claim_ids = build_global_claim_ids(subjects)
 
     findings =
       subjects
-      |> Enum.flat_map(&verify_subject(&1, root, command_results))
+      |> Enum.flat_map(&verify_subject(&1, root, command_results, global_claim_ids))
       |> then(&(&1 ++ duplicate_subject_id_findings(subjects)))
       |> then(&(&1 ++ duplicate_requirement_id_findings(subjects)))
       |> then(&(&1 ++ duplicate_scenario_id_findings(subjects)))
@@ -26,7 +27,7 @@ defmodule SpecLedEx.Verifier do
 
     checks =
       if debug? do
-        build_debug_checks(subjects, root, run_commands?, command_results)
+        build_debug_checks(subjects, root, run_commands?, command_results, global_claim_ids)
       else
         []
       end
@@ -56,7 +57,7 @@ defmodule SpecLedEx.Verifier do
     end
   end
 
-  defp verify_subject(subject, root, command_results) do
+  defp verify_subject(subject, root, command_results, global_claim_ids) do
     file = string_field(subject, "file")
     meta = subject_meta(subject)
     subject_id = id_of(meta, "id") || file
@@ -67,7 +68,8 @@ defmodule SpecLedEx.Verifier do
     parse_errors = list_field(subject, "parse_errors")
     requirement_ids = reqs |> Enum.map(&id_of(&1, "id")) |> Enum.reject(&is_nil/1)
     scenario_ids = scenarios |> Enum.map(&id_of(&1, "id")) |> Enum.reject(&is_nil/1)
-    claim_ids = MapSet.new(requirement_ids ++ scenario_ids)
+    local_claim_ids = MapSet.new(requirement_ids ++ scenario_ids)
+    surface = list_field(meta, "surface")
 
     []
     |> add_meta_findings(meta, subject_id, file)
@@ -76,7 +78,7 @@ defmodule SpecLedEx.Verifier do
     |> add_missing_scenario_id_findings(scenarios, subject_id, file)
     |> add_scenario_cover_findings(scenarios, MapSet.new(requirement_ids), subject_id, file)
     |> add_scenario_structure_findings(scenarios, subject_id, file)
-    |> add_verification_findings(verifications, claim_ids, root, subject_id, file)
+    |> add_verification_findings(verifications, local_claim_ids, global_claim_ids, root, subject_id, file)
     |> add_requirement_coverage_findings(
       requirement_ids,
       verifications,
@@ -84,6 +86,7 @@ defmodule SpecLedEx.Verifier do
       subject_id,
       file
     )
+    |> add_surface_findings(surface, root, subject_id, file)
   end
 
   defp add_meta_findings(findings, meta, subject_id, file) do
@@ -203,7 +206,8 @@ defmodule SpecLedEx.Verifier do
   defp add_verification_findings(
          findings,
          verifications,
-         claim_ids,
+         local_claim_ids,
+         global_claim_ids,
          root,
          subject_id,
          file
@@ -214,7 +218,8 @@ defmodule SpecLedEx.Verifier do
       acc
       |> add_verification_kind_findings(verification, subject_id, file)
       |> add_verification_target_findings(verification, root, subject_id, file)
-      |> add_verification_cover_findings(verification, claim_ids, subject_id, file)
+      |> add_verification_cover_findings(verification, local_claim_ids, global_claim_ids, subject_id, file)
+      |> add_verification_target_content_findings(verification, root, subject_id, file)
       |> add_verification_command_runtime_findings(verification, entry.command_result, subject_id, file)
     end)
   end
@@ -322,25 +327,94 @@ defmodule SpecLedEx.Verifier do
     end
   end
 
-  defp add_verification_cover_findings(findings, verification, claim_ids, subject_id, file) do
+  defp add_verification_cover_findings(findings, verification, local_claim_ids, global_claim_ids, subject_id, file) do
     covers = list_field(verification, "covers")
 
     Enum.reduce(covers, findings, fn cover_id, acc ->
-      if MapSet.member?(claim_ids, cover_id) do
-        acc
-      else
+      cond do
+        MapSet.member?(local_claim_ids, cover_id) ->
+          acc
+
+        MapSet.member?(global_claim_ids, cover_id) ->
+          acc
+
+        true ->
+          [
+            finding(
+              "warning",
+              "verification_unknown_cover",
+              "Verification references unknown claim id: #{cover_id}",
+              subject_id,
+              file
+            )
+            | acc
+          ]
+      end
+    end)
+  end
+
+  defp add_verification_target_content_findings(findings, verification, root, subject_id, file) do
+    kind = string_field(verification, "kind")
+    target = string_field(verification, "target")
+    covers = list_field(verification, "covers")
+
+    if kind in @file_kinds and target != "" and covers != [] do
+      full_path = Path.expand(target, root)
+
+      case File.read(full_path) do
+        {:ok, content} ->
+          Enum.reduce(covers, findings, fn cover_id, acc ->
+            if String.contains?(content, cover_id) do
+              acc
+            else
+              [
+                finding(
+                  "info",
+                  "verification_target_missing_reference",
+                  "Verification target #{target} does not reference covered requirement: #{cover_id}",
+                  subject_id,
+                  file
+                )
+                | acc
+              ]
+            end
+          end)
+
+        {:error, _} ->
+          findings
+      end
+    else
+      findings
+    end
+  end
+
+  defp add_surface_findings(findings, surface, root, subject_id, file) do
+    Enum.reduce(surface, findings, fn surface_entry, acc ->
+      if path_like?(surface_entry) and not File.exists?(Path.expand(surface_entry, root)) do
         [
           finding(
             "warning",
-            "verification_unknown_cover",
-            "Verification references unknown claim id: #{cover_id}",
+            "surface_target_missing",
+            "Surface entry does not exist: #{surface_entry}",
             subject_id,
             file
           )
           | acc
         ]
+      else
+        acc
       end
     end)
+  end
+
+  defp path_like?(entry) do
+    not String.contains?(entry, " ") and
+      not glob_pattern?(entry) and
+      (String.contains?(entry, "/") or String.contains?(entry, "."))
+  end
+
+  defp glob_pattern?(entry) do
+    String.contains?(entry, "*") or String.contains?(entry, "?") or String.contains?(entry, "[")
   end
 
   defp add_requirement_coverage_findings(
@@ -374,10 +448,31 @@ defmodule SpecLedEx.Verifier do
     end)
   end
 
-  defp build_debug_checks(subjects, root, run_commands?, command_results) do
+  defp build_global_claim_ids(subjects) do
+    subjects
+    |> Enum.flat_map(fn subject ->
+      requirement_ids =
+        subject
+        |> field("requirements")
+        |> map_items()
+        |> Enum.map(&id_of(&1, "id"))
+
+      scenario_ids =
+        subject
+        |> field("scenarios")
+        |> map_items()
+        |> Enum.map(&id_of(&1, "id"))
+
+      requirement_ids ++ scenario_ids
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> MapSet.new()
+  end
+
+  defp build_debug_checks(subjects, root, run_commands?, command_results, global_claim_ids) do
     subject_checks =
       subjects
-      |> Enum.flat_map(&build_subject_debug_checks(&1, root, run_commands?, command_results))
+      |> Enum.flat_map(&build_subject_debug_checks(&1, root, run_commands?, command_results, global_claim_ids))
 
     global_checks =
       []
@@ -387,7 +482,7 @@ defmodule SpecLedEx.Verifier do
     subject_checks ++ global_checks
   end
 
-  defp build_subject_debug_checks(subject, root, run_commands?, command_results) do
+  defp build_subject_debug_checks(subject, root, run_commands?, command_results, global_claim_ids) do
     file = string_field(subject, "file")
     meta = subject_meta(subject)
     subject_id = id_of(meta, "id") || file
@@ -398,7 +493,8 @@ defmodule SpecLedEx.Verifier do
     parse_errors = list_field(subject, "parse_errors")
     requirement_ids = requirements |> Enum.map(&id_of(&1, "id")) |> Enum.reject(&is_nil/1)
     scenario_ids = scenarios |> Enum.map(&id_of(&1, "id")) |> Enum.reject(&is_nil/1)
-    claim_ids = MapSet.new(requirement_ids ++ scenario_ids)
+    local_claim_ids = MapSet.new(requirement_ids ++ scenario_ids)
+    surface = list_field(meta, "surface")
 
     []
     |> add_meta_debug_checks(meta, subject_id, file)
@@ -408,7 +504,8 @@ defmodule SpecLedEx.Verifier do
     |> add_scenario_cover_debug_checks(scenarios, MapSet.new(requirement_ids), subject_id, file)
     |> add_verification_debug_checks(
       verifications,
-      claim_ids,
+      local_claim_ids,
+      global_claim_ids,
       root,
       subject_id,
       file,
@@ -421,6 +518,7 @@ defmodule SpecLedEx.Verifier do
       subject_id,
       file
     )
+    |> add_surface_debug_checks(surface, root, subject_id, file)
   end
 
   defp add_meta_debug_checks(checks, meta, subject_id, file) do
@@ -550,7 +648,8 @@ defmodule SpecLedEx.Verifier do
   defp add_verification_debug_checks(
          checks,
          verifications,
-         claim_ids,
+         local_claim_ids,
+         global_claim_ids,
          root,
          subject_id,
          file,
@@ -696,28 +795,42 @@ defmodule SpecLedEx.Verifier do
         end
 
       Enum.reduce(covers, acc, fn cover_id, cover_acc ->
-        if MapSet.member?(claim_ids, cover_id) do
-          [
-            check(
-              "pass",
-              "verification_cover_valid",
-              "Verification covers known claim: #{cover_id}",
-              subject_id,
-              file
-            )
-            | cover_acc
-          ]
-        else
-          [
-            check(
-              "warning",
-              "verification_cover_unknown",
-              "Verification covers unknown claim: #{cover_id}",
-              subject_id,
-              file
-            )
-            | cover_acc
-          ]
+        cond do
+          MapSet.member?(local_claim_ids, cover_id) ->
+            [
+              check(
+                "pass",
+                "verification_cover_valid",
+                "Verification covers known claim: #{cover_id}",
+                subject_id,
+                file
+              )
+              | cover_acc
+            ]
+
+          MapSet.member?(global_claim_ids, cover_id) ->
+            [
+              check(
+                "pass",
+                "verification_cover_valid",
+                "Verification covers known claim (cross-subject): #{cover_id}",
+                subject_id,
+                file
+              )
+              | cover_acc
+            ]
+
+          true ->
+            [
+              check(
+                "warning",
+                "verification_cover_unknown",
+                "Verification covers unknown claim: #{cover_id}",
+                subject_id,
+                file
+              )
+              | cover_acc
+            ]
         end
       end)
     end)
@@ -754,6 +867,47 @@ defmodule SpecLedEx.Verifier do
             "warning",
             "requirement_missing_verification",
             "Requirement missing verification coverage: #{req_id}",
+            subject_id,
+            file
+          )
+          | acc
+        ]
+      end
+    end)
+  end
+
+  defp add_surface_debug_checks(checks, surface, root, subject_id, file) do
+    Enum.reduce(surface, checks, fn surface_entry, acc ->
+      if path_like?(surface_entry) do
+        if File.exists?(Path.expand(surface_entry, root)) do
+          [
+            check(
+              "pass",
+              "surface_target_exists",
+              "Surface entry exists: #{surface_entry}",
+              subject_id,
+              file
+            )
+            | acc
+          ]
+        else
+          [
+            check(
+              "warning",
+              "surface_target_missing",
+              "Surface entry does not exist: #{surface_entry}",
+              subject_id,
+              file
+            )
+            | acc
+          ]
+        end
+      else
+        [
+          check(
+            "pass",
+            "surface_target_skipped",
+            "Surface entry is not path-like, skipped: #{surface_entry}",
             subject_id,
             file
           )

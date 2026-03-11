@@ -8,6 +8,8 @@ defmodule Mix.Tasks.Spec.Init do
 
   This folder is the package-local Spec Led layer.
 
+  <!-- spec.workspace.readme_present -->
+
   ## Canonical Layout
 
   - `README.md` (authored)
@@ -36,7 +38,6 @@ defmodule Mix.Tasks.Spec.Init do
   surface:
     - .spec/README.md
     - .spec/specs/*.spec.md
-    - .spec/state.json
   ```
 
   ## Requirements

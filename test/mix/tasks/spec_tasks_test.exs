@@ -157,7 +157,7 @@ defmodule Mix.Tasks.SpecTasksTest do
   end
 
   test "spec.verify emits debug output on passing runs", %{root: root} do
-    write_files(root, %{"README.md" => "readme"})
+    write_files(root, %{"README.md" => "readme\n# passing.requirement"})
 
     write_subject_spec(
       root,
@@ -179,7 +179,7 @@ defmodule Mix.Tasks.SpecTasksTest do
   end
 
   test "spec.check succeeds for covered specs", %{root: root} do
-    write_files(root, %{"README.md" => "readme"})
+    write_files(root, %{"README.md" => "readme\n# covered.requirement"})
 
     write_subject_spec(
       root,

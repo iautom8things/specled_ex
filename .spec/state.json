@@ -1,6 +1,224 @@
 {
-  "findings": [],
-  "generated_at": "2026-03-11T05:24:59Z",
+  "findings": [
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.mix_tasks",
+      "file": ".spec/specs/mix_tasks.spec.md",
+      "level": "info",
+      "message": "Verification target test/mix/tasks/spec_tasks_test.exs does not reference covered requirement: specled.tasks.check_strict_gate"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.mix_tasks",
+      "file": ".spec/specs/mix_tasks.spec.md",
+      "level": "info",
+      "message": "Verification target test/mix/tasks/spec_tasks_test.exs does not reference covered requirement: specled.tasks.verify_exit_status"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.mix_tasks",
+      "file": ".spec/specs/mix_tasks.spec.md",
+      "level": "info",
+      "message": "Verification target test/mix/tasks/spec_tasks_test.exs does not reference covered requirement: specled.tasks.verify_findings"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.mix_tasks",
+      "file": ".spec/specs/mix_tasks.spec.md",
+      "level": "info",
+      "message": "Verification target test/mix/tasks/spec_tasks_test.exs does not reference covered requirement: specled.tasks.plan_writes_state"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.mix_tasks",
+      "file": ".spec/specs/mix_tasks.spec.md",
+      "level": "info",
+      "message": "Verification target test/mix/tasks/spec_tasks_test.exs does not reference covered requirement: specled.tasks.init_scaffold"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.mix_tasks",
+      "file": ".spec/specs/mix_tasks.spec.md",
+      "level": "info",
+      "message": "Verification target lib/mix/tasks/spec.check.ex does not reference covered requirement: specled.tasks.check_strict_gate"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.mix_tasks",
+      "file": ".spec/specs/mix_tasks.spec.md",
+      "level": "info",
+      "message": "Verification target lib/mix/tasks/spec.verify.ex does not reference covered requirement: specled.tasks.verify_exit_status"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.mix_tasks",
+      "file": ".spec/specs/mix_tasks.spec.md",
+      "level": "info",
+      "message": "Verification target lib/mix/tasks/spec.verify.ex does not reference covered requirement: specled.tasks.verify_findings"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.mix_tasks",
+      "file": ".spec/specs/mix_tasks.spec.md",
+      "level": "info",
+      "message": "Verification target lib/mix/tasks/spec.plan.ex does not reference covered requirement: specled.tasks.plan_writes_state"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.mix_tasks",
+      "file": ".spec/specs/mix_tasks.spec.md",
+      "level": "info",
+      "message": "Verification target lib/mix/tasks/spec.init.ex does not reference covered requirement: specled.tasks.init_scaffold"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.package",
+      "file": ".spec/specs/package.spec.md",
+      "level": "info",
+      "message": "Verification target lib/mix/tasks/spec.verify.ex does not reference covered requirement: specled.package.mix_tasks"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.package",
+      "file": ".spec/specs/package.spec.md",
+      "level": "info",
+      "message": "Verification target lib/mix/tasks/spec.init.ex does not reference covered requirement: specled.package.mix_tasks"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.package",
+      "file": ".spec/specs/package.spec.md",
+      "level": "info",
+      "message": "Verification target lib/specled_ex.ex does not reference covered requirement: specled.package.index_and_state"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.parser",
+      "file": ".spec/specs/parser.spec.md",
+      "level": "info",
+      "message": "Verification target test/specled_ex/parser_test.exs does not reference covered requirement: specled.parser.resilient_errors"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.parser",
+      "file": ".spec/specs/parser.spec.md",
+      "level": "info",
+      "message": "Verification target test/specled_ex/parser_test.exs does not reference covered requirement: specled.parser.title_extraction"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.parser",
+      "file": ".spec/specs/parser.spec.md",
+      "level": "info",
+      "message": "Verification target test/specled_ex/parser_test.exs does not reference covered requirement: specled.parser.standard_blocks"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.parser",
+      "file": ".spec/specs/parser.spec.md",
+      "level": "info",
+      "message": "Verification target lib/specled_ex/parser.ex does not reference covered requirement: specled.parser.resilient_errors"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.parser",
+      "file": ".spec/specs/parser.spec.md",
+      "level": "info",
+      "message": "Verification target lib/specled_ex/parser.ex does not reference covered requirement: specled.parser.title_extraction"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.parser",
+      "file": ".spec/specs/parser.spec.md",
+      "level": "info",
+      "message": "Verification target lib/specled_ex/parser.ex does not reference covered requirement: specled.parser.standard_blocks"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "spec.system",
+      "file": ".spec/specs/spec_system.spec.md",
+      "level": "info",
+      "message": "Verification target .spec/README.md does not reference covered requirement: spec.workspace.readme_present"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.verification",
+      "file": ".spec/specs/verification.spec.md",
+      "level": "info",
+      "message": "Verification target test/specled_ex/verifier_test.exs does not reference covered requirement: specled.verify.malformed_entries_nonfatal"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.verification",
+      "file": ".spec/specs/verification.spec.md",
+      "level": "info",
+      "message": "Verification target test/specled_ex/verifier_test.exs does not reference covered requirement: specled.verify.target_existence"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.verification",
+      "file": ".spec/specs/verification.spec.md",
+      "level": "info",
+      "message": "Verification target test/specled_ex/verifier_test.exs does not reference covered requirement: specled.verify.coverage_warnings"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.verification",
+      "file": ".spec/specs/verification.spec.md",
+      "level": "info",
+      "message": "Verification target test/specled_ex/verifier_test.exs does not reference covered requirement: specled.verify.reference_checks"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.verification",
+      "file": ".spec/specs/verification.spec.md",
+      "level": "info",
+      "message": "Verification target test/specled_ex/verifier_test.exs does not reference covered requirement: specled.verify.meta_required"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.verification",
+      "file": ".spec/specs/verification.spec.md",
+      "level": "info",
+      "message": "Verification target lib/specled_ex/index.ex does not reference covered requirement: specled.verify.reference_checks"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.verification",
+      "file": ".spec/specs/verification.spec.md",
+      "level": "info",
+      "message": "Verification target lib/specled_ex/verifier.ex does not reference covered requirement: specled.verify.malformed_entries_nonfatal"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.verification",
+      "file": ".spec/specs/verification.spec.md",
+      "level": "info",
+      "message": "Verification target lib/specled_ex/verifier.ex does not reference covered requirement: specled.verify.target_existence"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.verification",
+      "file": ".spec/specs/verification.spec.md",
+      "level": "info",
+      "message": "Verification target lib/specled_ex/verifier.ex does not reference covered requirement: specled.verify.coverage_warnings"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.verification",
+      "file": ".spec/specs/verification.spec.md",
+      "level": "info",
+      "message": "Verification target lib/specled_ex/verifier.ex does not reference covered requirement: specled.verify.reference_checks"
+    },
+    {
+      "code": "verification_target_missing_reference",
+      "entity_id": "specled.verification",
+      "file": ".spec/specs/verification.spec.md",
+      "level": "info",
+      "message": "Verification target lib/specled_ex/verifier.ex does not reference covered requirement: specled.verify.meta_required"
+    }
+  ],
+  "generated_at": "2026-03-11T12:14:38Z",
   "index": {
     "exceptions": [],
     "requirements": [
@@ -494,7 +712,7 @@
   "specification_version": "1.0",
   "summary": {
     "exceptions": 0,
-    "findings": 0,
+    "findings": 31,
     "requirements": 17,
     "scenarios": 5,
     "subjects": 5,

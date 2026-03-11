@@ -239,7 +239,8 @@ defmodule SpecLedEx.VerifierTest do
                "verification_target_missing",
                "verification_command_failed",
                "verification_missing_command",
-               "verification_unknown_cover"
+               "verification_unknown_cover",
+               "verification_target_missing_reference"
              ])
 
     assert Enum.any?(
@@ -391,6 +392,357 @@ defmodule SpecLedEx.VerifierTest do
                "duplicate_subject_id",
                "duplicate_requirement_id"
              ])
+  end
+
+  test "verify resolves cross-subject covers references without warnings", %{root: root} do
+    subject_a =
+      base_subject(%{
+        "file" => ".spec/specs/a.spec.md",
+        "meta" => %{"id" => "subject.a", "kind" => "module", "status" => "active"},
+        "requirements" => [%{"id" => "req.from_a", "statement" => "Defined in A"}]
+      })
+
+    subject_b =
+      base_subject(%{
+        "file" => ".spec/specs/b.spec.md",
+        "meta" => %{"id" => "subject.b", "kind" => "module", "status" => "active"},
+        "requirements" => [%{"id" => "req.from_b", "statement" => "Defined in B"}],
+        "verification" => [
+          %{"kind" => "command", "target" => "mix test", "covers" => ["req.from_b", "req.from_a"]}
+        ]
+      })
+
+    report = Verifier.verify(%{"subjects" => [subject_a, subject_b]}, root)
+
+    refute Enum.any?(report["findings"], &(&1["code"] == "verification_unknown_cover"))
+  end
+
+  test "verify warns on truly unknown cross-subject covers references", %{root: root} do
+    subject_a =
+      base_subject(%{
+        "file" => ".spec/specs/a.spec.md",
+        "meta" => %{"id" => "subject.a", "kind" => "module", "status" => "active"},
+        "requirements" => [%{"id" => "req.exists", "statement" => "Exists"}],
+        "verification" => [
+          %{
+            "kind" => "command",
+            "target" => "mix test",
+            "covers" => ["req.exists", "req.nowhere"]
+          }
+        ]
+      })
+
+    report = Verifier.verify(%{"subjects" => [subject_a]}, root)
+
+    unknown_covers =
+      Enum.filter(report["findings"], &(&1["code"] == "verification_unknown_cover"))
+
+    assert length(unknown_covers) == 1
+    assert hd(unknown_covers)["message"] =~ "req.nowhere"
+  end
+
+  test "verify cross-subject covers works in debug mode", %{root: root} do
+    subject_a =
+      base_subject(%{
+        "file" => ".spec/specs/a.spec.md",
+        "meta" => %{"id" => "subject.a", "kind" => "module", "status" => "active"},
+        "requirements" => [%{"id" => "req.from_a", "statement" => "From A"}]
+      })
+
+    subject_b =
+      base_subject(%{
+        "file" => ".spec/specs/b.spec.md",
+        "meta" => %{"id" => "subject.b", "kind" => "module", "status" => "active"},
+        "verification" => [
+          %{"kind" => "command", "target" => "mix test", "covers" => ["req.from_a"]}
+        ]
+      })
+
+    report = Verifier.verify(%{"subjects" => [subject_a, subject_b]}, root, debug: true)
+
+    cross_subject_checks =
+      Enum.filter(report["checks"], fn c ->
+        c["code"] == "verification_cover_valid" and c["message"] =~ "cross-subject"
+      end)
+
+    assert length(cross_subject_checks) == 1
+    assert hd(cross_subject_checks)["message"] =~ "req.from_a"
+  end
+
+  test "verify warns when surface paths do not exist", %{root: root} do
+    write_files(root, %{"lib/real.ex" => "defmodule Real do end"})
+
+    report =
+      Verifier.verify(
+        %{
+          "subjects" => [
+            base_subject(%{
+              "meta" => %{
+                "id" => "surface.test",
+                "kind" => "module",
+                "status" => "active",
+                "surface" => ["lib/real.ex", "lib/missing.ex"]
+              }
+            })
+          ]
+        },
+        root
+      )
+
+    surface_findings =
+      Enum.filter(report["findings"], &(&1["code"] == "surface_target_missing"))
+
+    assert length(surface_findings) == 1
+    assert hd(surface_findings)["message"] =~ "lib/missing.ex"
+  end
+
+  test "verify does not warn for non-path surface entries", %{root: root} do
+    report =
+      Verifier.verify(
+        %{
+          "subjects" => [
+            base_subject(%{
+              "meta" => %{
+                "id" => "surface.nonpath",
+                "kind" => "endpoint",
+                "status" => "active",
+                "surface" => ["GET /api/greeting"]
+              }
+            })
+          ]
+        },
+        root
+      )
+
+    refute Enum.any?(report["findings"], &(&1["code"] == "surface_target_missing"))
+  end
+
+  test "verify surface checks work in debug mode", %{root: root} do
+    write_files(root, %{"lib/exists.ex" => "defmodule Exists do end"})
+
+    report =
+      Verifier.verify(
+        %{
+          "subjects" => [
+            base_subject(%{
+              "meta" => %{
+                "id" => "surface.debug",
+                "kind" => "module",
+                "status" => "active",
+                "surface" => ["lib/exists.ex", "lib/gone.ex", "GET /api/health"]
+              }
+            })
+          ]
+        },
+        root,
+        debug: true
+      )
+
+    assert Enum.any?(
+             report["checks"],
+             &(&1["code"] == "surface_target_exists" and &1["message"] =~ "lib/exists.ex")
+           )
+
+    assert Enum.any?(
+             report["checks"],
+             &(&1["code"] == "surface_target_missing" and &1["message"] =~ "lib/gone.ex")
+           )
+
+    assert Enum.any?(
+             report["checks"],
+             &(&1["code"] == "surface_target_skipped" and &1["message"] =~ "GET /api/health")
+           )
+  end
+
+  test "verify emits info finding when target file does not reference covered requirement", %{
+    root: root
+  } do
+    write_files(root, %{
+      "test/my_test.exs" => """
+      defmodule MyTest do
+        use ExUnit.Case
+        test "it works" do
+          assert true
+        end
+      end
+      """
+    })
+
+    report =
+      Verifier.verify(
+        %{
+          "subjects" => [
+            base_subject(%{
+              "requirements" => [%{"id" => "req.greeting", "statement" => "Must greet"}],
+              "verification" => [
+                %{
+                  "kind" => "test_file",
+                  "target" => "test/my_test.exs",
+                  "covers" => ["req.greeting"]
+                }
+              ]
+            })
+          ]
+        },
+        root
+      )
+
+    content_findings =
+      Enum.filter(report["findings"], &(&1["code"] == "verification_target_missing_reference"))
+
+    assert length(content_findings) == 1
+    assert hd(content_findings)["severity"] == "info"
+    assert hd(content_findings)["message"] =~ "req.greeting"
+    assert hd(content_findings)["message"] =~ "test/my_test.exs"
+  end
+
+  test "verify does not emit content finding when target file references requirement id", %{
+    root: root
+  } do
+    write_files(root, %{
+      "test/greeting_test.exs" => """
+      defmodule GreetingTest do
+        use ExUnit.Case
+        # covers: req.greeting
+        test "it greets" do
+          assert Greeting.hello("Ada") == "Hello, Ada"
+        end
+      end
+      """
+    })
+
+    report =
+      Verifier.verify(
+        %{
+          "subjects" => [
+            base_subject(%{
+              "requirements" => [%{"id" => "req.greeting", "statement" => "Must greet"}],
+              "verification" => [
+                %{
+                  "kind" => "test_file",
+                  "target" => "test/greeting_test.exs",
+                  "covers" => ["req.greeting"]
+                }
+              ]
+            })
+          ]
+        },
+        root
+      )
+
+    refute Enum.any?(
+             report["findings"],
+             &(&1["code"] == "verification_target_missing_reference")
+           )
+  end
+
+  test "verify skips content probe when target file does not exist", %{root: root} do
+    report =
+      Verifier.verify(
+        %{
+          "subjects" => [
+            base_subject(%{
+              "requirements" => [%{"id" => "req.gone", "statement" => "Missing file"}],
+              "verification" => [
+                %{
+                  "kind" => "source_file",
+                  "target" => "lib/gone.ex",
+                  "covers" => ["req.gone"]
+                }
+              ]
+            })
+          ]
+        },
+        root
+      )
+
+    refute Enum.any?(
+             report["findings"],
+             &(&1["code"] == "verification_target_missing_reference")
+           )
+
+    assert Enum.any?(
+             report["findings"],
+             &(&1["code"] == "verification_target_missing")
+           )
+  end
+
+  test "verify skips content probe for command verification kind", %{root: root} do
+    report =
+      Verifier.verify(
+        %{
+          "subjects" => [
+            base_subject(%{
+              "requirements" => [%{"id" => "req.cmd", "statement" => "Run command"}],
+              "verification" => [
+                %{"kind" => "command", "target" => "mix test", "covers" => ["req.cmd"]}
+              ]
+            })
+          ]
+        },
+        root
+      )
+
+    refute Enum.any?(
+             report["findings"],
+             &(&1["code"] == "verification_target_missing_reference")
+           )
+  end
+
+  test "verify content probe does not affect pass/fail status", %{root: root} do
+    write_files(root, %{"lib/code.ex" => "defmodule Code do end"})
+
+    report =
+      Verifier.verify(
+        %{
+          "subjects" => [
+            base_subject(%{
+              "requirements" => [%{"id" => "req.info", "statement" => "Covered"}],
+              "verification" => [
+                %{
+                  "kind" => "source_file",
+                  "target" => "lib/code.ex",
+                  "covers" => ["req.info"]
+                }
+              ]
+            })
+          ]
+        },
+        root
+      )
+
+    assert report["status"] == "pass"
+
+    assert Enum.any?(
+             report["findings"],
+             &(&1["code"] == "verification_target_missing_reference")
+           )
+  end
+
+  test "verify content probe info findings do not cause failure in strict mode", %{root: root} do
+    write_files(root, %{"lib/code.ex" => "defmodule Code do end"})
+
+    report =
+      Verifier.verify(
+        %{
+          "subjects" => [
+            base_subject(%{
+              "requirements" => [%{"id" => "req.strict", "statement" => "Covered"}],
+              "verification" => [
+                %{
+                  "kind" => "source_file",
+                  "target" => "lib/code.ex",
+                  "covers" => ["req.strict"]
+                }
+              ]
+            })
+          ]
+        },
+        root,
+        strict: true
+      )
+
+    assert report["status"] == "pass"
   end
 
   defp base_subject(overrides) do
