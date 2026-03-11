@@ -15,7 +15,7 @@ defmodule SpecLedEx.Case do
 
     root =
       System.tmp_dir!()
-      |> Path.join("specled_ex_#{System.unique_integer([:positive])}")
+      |> Path.join("specled_ex_#{unique_temp_suffix()}")
 
     File.rm_rf(root)
     File.mkdir_p!(root)
@@ -167,5 +167,14 @@ defmodule SpecLedEx.Case do
     |> String.replace(~r/[-_]+/, " ")
     |> String.split()
     |> Enum.map_join(" ", &String.capitalize/1)
+  end
+
+  defp unique_temp_suffix do
+    [
+      System.system_time(:nanosecond),
+      System.unique_integer([:positive, :monotonic]),
+      Base.encode16(:crypto.strong_rand_bytes(4), case: :lower)
+    ]
+    |> Enum.join("_")
   end
 end
