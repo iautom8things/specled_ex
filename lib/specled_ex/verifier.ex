@@ -15,8 +15,12 @@ defmodule SpecLedEx.Verifier do
     run_commands? = Keyword.get(opts, :run_commands, false)
     cli_minimum_strength = normalize_minimum_strength!(Keyword.get(opts, :min_strength))
     subjects = index["subjects"] || []
+    decisions = index["decisions"] || []
+    subject_ids = build_subject_ids(subjects)
+    decision_ids = build_decision_ids(decisions)
     command_results = build_command_results(subjects, root, run_commands?)
     global_claim_ids = build_global_claim_ids(subjects)
+
     verification_claims =
       build_verification_claims(
         subjects,
@@ -28,18 +32,36 @@ defmodule SpecLedEx.Verifier do
 
     findings =
       subjects
-      |> Enum.flat_map(&verify_subject(&1, root, command_results, global_claim_ids))
+      |> Enum.flat_map(&verify_subject(&1, root, command_results, global_claim_ids, decision_ids))
+      |> then(fn subject_findings ->
+        decision_findings =
+          Enum.flat_map(decisions, fn decision ->
+            verify_decision(decision, subject_ids, decision_ids)
+          end)
+
+        subject_findings ++ decision_findings
+      end)
       |> then(&(&1 ++ duplicate_subject_id_findings(subjects)))
       |> then(&(&1 ++ duplicate_requirement_id_findings(subjects)))
       |> then(&(&1 ++ duplicate_scenario_id_findings(subjects)))
       |> then(&(&1 ++ duplicate_exception_id_findings(subjects)))
-      |> then(&(&1 ++ invalid_id_format_findings(subjects)))
+      |> then(&(&1 ++ duplicate_decision_id_findings(decisions)))
+      |> then(&(&1 ++ invalid_id_format_findings(subjects, decisions)))
       |> then(&(&1 ++ verification_strength_findings(verification_claims)))
       |> sort_findings()
 
     checks =
       if debug? do
-        build_debug_checks(subjects, root, run_commands?, command_results, global_claim_ids)
+        build_debug_checks(
+          subjects,
+          decisions,
+          root,
+          run_commands?,
+          command_results,
+          global_claim_ids,
+          subject_ids,
+          decision_ids
+        )
         |> sort_checks()
       else
         []
@@ -56,6 +78,7 @@ defmodule SpecLedEx.Verifier do
       "status" => if(fail?, do: "fail", else: "pass"),
       "summary" => %{
         "subjects" => length(subjects),
+        "decisions" => length(decisions),
         "errors" => errors,
         "warnings" => warnings,
         "findings" => length(findings)
@@ -71,7 +94,7 @@ defmodule SpecLedEx.Verifier do
     end
   end
 
-  defp verify_subject(subject, root, command_results, global_claim_ids) do
+  defp verify_subject(subject, root, command_results, global_claim_ids, decision_ids) do
     file = string_field(subject, "file")
     meta = subject_meta(subject)
     subject_id = id_of(meta, "id") || file
@@ -88,6 +111,7 @@ defmodule SpecLedEx.Verifier do
     []
     |> add_meta_findings(meta, subject_id, file)
     |> add_parse_error_findings(parse_errors, subject_id, file)
+    |> add_decision_reference_findings(meta, decision_ids, subject_id, file)
     |> add_missing_requirement_id_findings(reqs, subject_id, file)
     |> add_missing_scenario_id_findings(scenarios, subject_id, file)
     |> add_scenario_cover_findings(scenarios, MapSet.new(requirement_ids), subject_id, file)
@@ -127,6 +151,27 @@ defmodule SpecLedEx.Verifier do
   defp add_parse_error_findings(findings, parse_errors, subject_id, file) do
     Enum.reduce(parse_errors, findings, fn message, acc ->
       [finding("error", "parse_error", message, subject_id, file) | acc]
+    end)
+  end
+
+  defp add_decision_reference_findings(findings, meta, decision_ids, subject_id, file) do
+    meta
+    |> list_field("decisions")
+    |> Enum.reduce(findings, fn decision_id, acc ->
+      if MapSet.member?(decision_ids, decision_id) do
+        acc
+      else
+        [
+          finding(
+            "warning",
+            "subject_unknown_decision_reference",
+            "Subject references unknown decision id: #{decision_id}",
+            subject_id,
+            file
+          )
+          | acc
+        ]
+      end
     end)
   end
 
@@ -483,20 +528,50 @@ defmodule SpecLedEx.Verifier do
     |> MapSet.new()
   end
 
-  defp build_debug_checks(subjects, root, run_commands?, command_results, global_claim_ids) do
+  defp build_debug_checks(
+         subjects,
+         decisions,
+         root,
+         run_commands?,
+         command_results,
+         global_claim_ids,
+         subject_ids,
+         decision_ids
+       ) do
     subject_checks =
       subjects
-      |> Enum.flat_map(&build_subject_debug_checks(&1, root, run_commands?, command_results, global_claim_ids))
+      |> Enum.flat_map(
+        &build_subject_debug_checks(
+          &1,
+          root,
+          run_commands?,
+          command_results,
+          global_claim_ids,
+          decision_ids
+        )
+      )
+
+    decision_checks =
+      decisions
+      |> Enum.flat_map(&build_decision_debug_checks(&1, subject_ids, decision_ids))
 
     global_checks =
       []
       |> add_duplicate_subject_debug_checks(subjects)
       |> add_duplicate_requirement_debug_checks(subjects)
+      |> add_duplicate_decision_debug_checks(decisions)
 
-    subject_checks ++ global_checks
+    subject_checks ++ decision_checks ++ global_checks
   end
 
-  defp build_subject_debug_checks(subject, root, run_commands?, command_results, global_claim_ids) do
+  defp build_subject_debug_checks(
+         subject,
+         root,
+         run_commands?,
+         command_results,
+         global_claim_ids,
+         decision_ids
+       ) do
     file = string_field(subject, "file")
     meta = subject_meta(subject)
     subject_id = id_of(meta, "id") || file
@@ -513,6 +588,7 @@ defmodule SpecLedEx.Verifier do
     []
     |> add_meta_debug_checks(meta, subject_id, file)
     |> add_parse_debug_checks(parse_errors, subject_id, file)
+    |> add_decision_reference_debug_checks(meta, decision_ids, subject_id, file)
     |> add_requirement_id_debug_checks(requirements, subject_id, file)
     |> add_scenario_id_debug_checks(scenarios, subject_id, file)
     |> add_scenario_cover_debug_checks(scenarios, MapSet.new(requirement_ids), subject_id, file)
@@ -576,6 +652,36 @@ defmodule SpecLedEx.Verifier do
         [check("error", "parse_blocks", message, subject_id, file) | acc]
       end)
     end
+  end
+
+  defp add_decision_reference_debug_checks(checks, meta, decision_ids, subject_id, file) do
+    meta
+    |> list_field("decisions")
+    |> Enum.reduce(checks, fn decision_id, acc ->
+      if MapSet.member?(decision_ids, decision_id) do
+        [
+          check(
+            "pass",
+            "decision_reference_valid",
+            "Subject references known decision: #{decision_id}",
+            subject_id,
+            file
+          )
+          | acc
+        ]
+      else
+        [
+          check(
+            "warning",
+            "decision_reference_unknown",
+            "Subject references unknown decision: #{decision_id}",
+            subject_id,
+            file
+          )
+          | acc
+        ]
+      end
+    end)
   end
 
   defp add_requirement_id_debug_checks(checks, requirements, subject_id, file) do
@@ -970,6 +1076,357 @@ defmodule SpecLedEx.Verifier do
     end
   end
 
+  defp build_decision_debug_checks(decision, subject_ids, decision_ids) do
+    file = string_field(decision, "file")
+    meta = decision_meta(decision)
+    decision_id = id_of(meta, "id") || file
+
+    []
+    |> add_decision_meta_debug_checks(meta, decision_id, file)
+    |> add_decision_parse_debug_checks(list_field(decision, "parse_errors"), decision_id, file)
+    |> add_decision_section_debug_checks(list_field(decision, "sections"), decision_id, file)
+    |> add_decision_affects_debug_checks(meta, subject_ids, decision_id, file)
+    |> add_decision_supersession_debug_checks(meta, decision_ids, decision_id, file)
+  end
+
+  defp add_decision_meta_debug_checks(checks, meta, decision_id, file) do
+    required = ["id", "status", "date", "affects"]
+
+    checks =
+      Enum.reduce(required, checks, fn key, acc ->
+        present? =
+          case key do
+            "affects" -> list_field(meta, key) != []
+            _ -> present_string?(meta, key)
+          end
+
+        if present? do
+          [
+            check(
+              "pass",
+              "decision_meta_field_present",
+              "Decision field present: #{key}",
+              decision_id,
+              file
+            )
+            | acc
+          ]
+        else
+          [
+            check(
+              "error",
+              "decision_meta_field_missing",
+              "Decision field missing: #{key}",
+              decision_id,
+              file
+            )
+            | acc
+          ]
+        end
+      end)
+
+    checks
+    |> add_decision_status_debug_check(meta, decision_id, file)
+    |> add_decision_date_debug_check(meta, decision_id, file)
+  end
+
+  defp add_decision_status_debug_check(checks, meta, decision_id, file) do
+    status = string_field(meta, "status")
+
+    if status in ~w(accepted superseded) do
+      [check("pass", "decision_status_valid", "Decision status valid: #{status}", decision_id, file) | checks]
+    else
+      [
+        check(
+          "error",
+          "decision_status_invalid",
+          "Decision status invalid: #{display_kind(status)}",
+          decision_id,
+          file
+        )
+        | checks
+      ]
+    end
+  end
+
+  defp add_decision_date_debug_check(checks, meta, decision_id, file) do
+    date = string_field(meta, "date")
+
+    if valid_iso_date?(date) do
+      [check("pass", "decision_date_valid", "Decision date valid: #{date}", decision_id, file) | checks]
+    else
+      [
+        check(
+          "error",
+          "decision_date_invalid",
+          "Decision date is not ISO-8601: #{display_kind(date)}",
+          decision_id,
+          file
+        )
+        | checks
+      ]
+    end
+  end
+
+  defp add_decision_parse_debug_checks(checks, parse_errors, decision_id, file) do
+    if parse_errors == [] do
+      [check("pass", "decision_parse", "Decision parsed successfully", decision_id, file) | checks]
+    else
+      Enum.reduce(parse_errors, checks, fn message, acc ->
+        [check("error", "decision_parse", message, decision_id, file) | acc]
+      end)
+    end
+  end
+
+  defp add_decision_section_debug_checks(checks, sections, decision_id, file) do
+    Enum.reduce(SpecLedEx.DecisionParser.required_sections(), checks, fn section, acc ->
+      if section in sections do
+        [
+          check("pass", "decision_section_present", "Decision section present: #{section}", decision_id, file)
+          | acc
+        ]
+      else
+        [
+          check("error", "decision_section_missing", "Decision section missing: #{section}", decision_id, file)
+          | acc
+        ]
+      end
+    end)
+  end
+
+  defp add_decision_affects_debug_checks(checks, meta, subject_ids, decision_id, file) do
+    Enum.reduce(list_field(meta, "affects"), checks, fn affect, acc ->
+      if valid_decision_affect?(affect, subject_ids) do
+        [check("pass", "decision_affect_valid", "Decision affect valid: #{affect}", decision_id, file) | acc]
+      else
+        [check("error", "decision_affect_invalid", "Decision affect invalid: #{affect}", decision_id, file) | acc]
+      end
+    end)
+  end
+
+  defp add_decision_supersession_debug_checks(checks, meta, decision_ids, decision_id, file) do
+    status = string_field(meta, "status")
+    superseded_by = string_field(meta, "superseded_by")
+
+    cond do
+      status == "superseded" and superseded_by == "" ->
+        [
+          check(
+            "error",
+            "decision_superseded_by_missing",
+            "Superseded decision missing superseded_by",
+            decision_id,
+            file
+          )
+          | checks
+        ]
+
+      superseded_by != "" and MapSet.member?(decision_ids, superseded_by) ->
+        [
+          check(
+            "pass",
+            "decision_superseded_by_valid",
+            "Decision replacement exists: #{superseded_by}",
+            decision_id,
+            file
+          )
+          | checks
+        ]
+
+      superseded_by != "" ->
+        [
+          check(
+            "error",
+            "decision_superseded_by_unknown",
+            "Decision replacement not found: #{superseded_by}",
+            decision_id,
+            file
+          )
+          | checks
+        ]
+
+      true ->
+        checks
+    end
+  end
+
+  defp add_duplicate_decision_debug_checks(checks, decisions) do
+    duplicates =
+      decisions
+      |> Enum.map(fn decision -> decision |> decision_meta() |> id_of("id") end)
+      |> Enum.reject(&is_nil/1)
+      |> duplicates()
+
+    if duplicates == [] do
+      [check("pass", "duplicate_decision_id", "No duplicate decision ids", nil, nil) | checks]
+    else
+      Enum.reduce(duplicates, checks, fn id, acc ->
+        [check("error", "duplicate_decision_id", "Duplicate decision id: #{id}", id, nil) | acc]
+      end)
+    end
+  end
+
+  defp verify_decision(decision, subject_ids, decision_ids) do
+    file = string_field(decision, "file")
+    meta = decision_meta(decision)
+    decision_id = id_of(meta, "id") || file
+
+    []
+    |> add_decision_meta_findings(meta, decision_id, file)
+    |> add_decision_parse_error_findings(list_field(decision, "parse_errors"), decision_id, file)
+    |> add_decision_section_findings(list_field(decision, "sections"), decision_id, file)
+    |> add_decision_affects_findings(meta, subject_ids, decision_id, file)
+    |> add_decision_supersession_findings(meta, decision_ids, decision_id, file)
+  end
+
+  defp add_decision_meta_findings(findings, meta, decision_id, file) do
+    required = ["id", "status", "date", "affects"]
+
+    findings =
+      Enum.reduce(required, findings, fn key, acc ->
+        present? =
+          case key do
+            "affects" -> list_field(meta, key) != []
+            _ -> present_string?(meta, key)
+          end
+
+        if present? do
+          acc
+        else
+          [
+            finding(
+              "error",
+              "decision_missing_meta_field",
+              "Decision frontmatter missing required field: #{key}",
+              decision_id,
+              file
+            )
+            | acc
+          ]
+        end
+      end)
+
+    findings
+    |> add_decision_status_findings(meta, decision_id, file)
+    |> add_decision_date_findings(meta, decision_id, file)
+  end
+
+  defp add_decision_status_findings(findings, meta, decision_id, file) do
+    status = string_field(meta, "status")
+
+    if status == "" or status in ~w(accepted superseded) do
+      findings
+    else
+      [
+        finding(
+          "error",
+          "decision_invalid_status",
+          "Decision status must be accepted or superseded: #{status}",
+          decision_id,
+          file
+        )
+        | findings
+      ]
+    end
+  end
+
+  defp add_decision_date_findings(findings, meta, decision_id, file) do
+    date = string_field(meta, "date")
+
+    if date == "" or valid_iso_date?(date) do
+      findings
+    else
+      [
+        finding(
+          "error",
+          "decision_invalid_date",
+          "Decision date must be ISO-8601 (YYYY-MM-DD): #{date}",
+          decision_id,
+          file
+        )
+        | findings
+      ]
+    end
+  end
+
+  defp add_decision_parse_error_findings(findings, parse_errors, decision_id, file) do
+    Enum.reduce(parse_errors, findings, fn message, acc ->
+      [finding("error", "decision_parse_error", message, decision_id, file) | acc]
+    end)
+  end
+
+  defp add_decision_section_findings(findings, sections, decision_id, file) do
+    Enum.reduce(SpecLedEx.DecisionParser.required_sections(), findings, fn section, acc ->
+      if section in sections do
+        acc
+      else
+        [
+          finding(
+            "error",
+            "decision_missing_section",
+            "Decision is missing required section: #{section}",
+            decision_id,
+            file
+          )
+          | acc
+        ]
+      end
+    end)
+  end
+
+  defp add_decision_affects_findings(findings, meta, subject_ids, decision_id, file) do
+    Enum.reduce(list_field(meta, "affects"), findings, fn affect, acc ->
+      if valid_decision_affect?(affect, subject_ids) do
+        acc
+      else
+        [
+          finding(
+            "error",
+            "decision_unknown_affect",
+            "Decision affect must reference a subject id or repo.* identifier: #{affect}",
+            decision_id,
+            file
+          )
+          | acc
+        ]
+      end
+    end)
+  end
+
+  defp add_decision_supersession_findings(findings, meta, decision_ids, decision_id, file) do
+    status = string_field(meta, "status")
+    superseded_by = string_field(meta, "superseded_by")
+
+    cond do
+      status == "superseded" and superseded_by == "" ->
+        [
+          finding(
+            "error",
+            "decision_missing_superseded_by",
+            "Superseded decision must set superseded_by",
+            decision_id,
+            file
+          )
+          | findings
+        ]
+
+      superseded_by != "" and not MapSet.member?(decision_ids, superseded_by) ->
+        [
+          finding(
+            "error",
+            "decision_unknown_superseded_by",
+            "Decision superseded_by references unknown decision id: #{superseded_by}",
+            decision_id,
+            file
+          )
+          | findings
+        ]
+
+      true ->
+        findings
+    end
+  end
+
   defp duplicate_subject_id_findings(subjects) do
     subjects
     |> Enum.map(fn subject -> subject |> subject_meta() |> id_of("id") end)
@@ -1013,31 +1470,89 @@ defmodule SpecLedEx.Verifier do
     end)
   end
 
-  defp invalid_id_format_findings(subjects) do
-    Enum.flat_map(subjects, fn subject ->
-      meta = subject_meta(subject)
-      subject_id = id_of(meta, "id")
-      file = string_field(subject, "file")
-
-      all_ids =
-        [{subject_id, "subject"}] ++
-          ids_from(field(subject, "requirements"), "requirement") ++
-          ids_from(field(subject, "scenarios"), "scenario") ++
-          ids_from(field(subject, "exceptions"), "exception")
-
-      all_ids
-      |> Enum.reject(fn {id, _kind} -> is_nil(id) end)
-      |> Enum.reject(fn {id, _kind} -> Regex.match?(@id_pattern, id) end)
-      |> Enum.map(fn {id, kind} ->
-        finding(
-          "error",
-          "invalid_id_format",
-          "Invalid #{kind} id format: #{id} (must match #{inspect(Regex.source(@id_pattern))})",
-          subject_id,
-          file
-        )
-      end)
+  defp duplicate_decision_id_findings(decisions) do
+    decisions
+    |> Enum.map(fn decision -> decision |> decision_meta() |> id_of("id") end)
+    |> Enum.reject(&is_nil/1)
+    |> duplicates()
+    |> Enum.map(fn id ->
+      finding("error", "duplicate_decision_id", "Duplicate decision id: #{id}", id, nil)
     end)
+  end
+
+  defp invalid_id_format_findings(subjects, decisions) do
+    subject_findings =
+      Enum.flat_map(subjects, fn subject ->
+        meta = subject_meta(subject)
+        subject_id = id_of(meta, "id")
+        file = string_field(subject, "file")
+
+        all_ids =
+          [{subject_id, "subject"}] ++
+            ids_from(field(subject, "requirements"), "requirement") ++
+            ids_from(field(subject, "scenarios"), "scenario") ++
+            ids_from(field(subject, "exceptions"), "exception")
+
+        all_ids
+        |> Enum.reject(fn {id, _kind} -> is_nil(id) end)
+        |> Enum.reject(fn {id, _kind} -> Regex.match?(@id_pattern, id) end)
+        |> Enum.map(fn {id, kind} ->
+          finding(
+            "error",
+            "invalid_id_format",
+            "Invalid #{kind} id format: #{id} (must match #{inspect(Regex.source(@id_pattern))})",
+            subject_id,
+            file
+          )
+        end)
+      end)
+
+    decision_findings =
+      Enum.flat_map(decisions, fn decision ->
+        meta = decision_meta(decision)
+        decision_id = id_of(meta, "id")
+        file = string_field(decision, "file")
+
+        [decision_id]
+        |> Enum.reject(&is_nil/1)
+        |> Enum.reject(&Regex.match?(@id_pattern, &1))
+        |> Enum.map(fn id ->
+          finding(
+            "error",
+            "invalid_id_format",
+            "Invalid decision id format: #{id} (must match #{inspect(Regex.source(@id_pattern))})",
+            decision_id,
+            file
+          )
+        end)
+      end)
+
+    subject_findings ++ decision_findings
+  end
+
+  defp build_subject_ids(subjects) do
+    subjects
+    |> Enum.map(fn subject -> subject |> subject_meta() |> id_of("id") end)
+    |> Enum.reject(&is_nil/1)
+    |> MapSet.new()
+  end
+
+  defp build_decision_ids(decisions) do
+    decisions
+    |> Enum.map(fn decision -> decision |> decision_meta() |> id_of("id") end)
+    |> Enum.reject(&is_nil/1)
+    |> MapSet.new()
+  end
+
+  defp valid_iso_date?(date) do
+    match?({:ok, _date}, Date.from_iso8601(date))
+  rescue
+    _ -> false
+  end
+
+  defp valid_decision_affect?(affect, subject_ids) do
+    is_binary(affect) and affect != "" and
+      (MapSet.member?(subject_ids, affect) or String.starts_with?(affect, "repo."))
   end
 
   defp ids_from(items, kind) when is_list(items) do
@@ -1349,6 +1864,15 @@ defmodule SpecLedEx.Verifier do
   end
 
   defp subject_meta(_subject), do: %{}
+
+  defp decision_meta(decision) when is_map(decision) do
+    case field(decision, "meta") do
+      meta when is_map(meta) -> meta
+      _ -> %{}
+    end
+  end
+
+  defp decision_meta(_decision), do: %{}
 
   defp duplicates(values) do
     values

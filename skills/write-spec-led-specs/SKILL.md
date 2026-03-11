@@ -1,6 +1,6 @@
 ---
 name: write-spec-led-specs
-description: Draft, revise, and validate authored Spec Led Development subject specs for repositories that use `.spec/specs/*.spec.md` files and `mix spec.*` tasks. Use when Codex needs to create a new subject spec, update `spec-meta`, `spec-requirements`, `spec-scenarios`, `spec-verification`, or `spec-exceptions` blocks, repair `mix spec.verify` or `mix spec.check` findings, or align `.spec` files with implementation, tests, and docs changes.
+description: Draft, revise, and validate authored Spec Led Development subject specs for repositories that use `.spec/specs/*.spec.md` files and `mix spec.*` tasks. Use when Codex needs to create a new subject spec, update `spec-meta`, `spec-requirements`, `spec-scenarios`, `spec-verification`, or `spec-exceptions` blocks, connect a subject to durable ADRs, repair `mix spec.verify` or `mix spec.check` findings, or align `.spec` files with implementation, tests, and docs changes.
 ---
 
 # Write Spec Led Specs
@@ -13,7 +13,7 @@ Author `.spec/specs/*.spec.md` files that match this package's parser and verifi
 
 1. Confirm the workspace.
    - Run `mix spec.init` if `.spec/` is missing.
-   - Read `.spec/README.md` and neighboring subject specs before drafting a new file.
+   - Read `.spec/README.md`, `.spec/decisions/README.md` when present, and neighboring subject specs before drafting a new file.
 2. Gather evidence.
    - Read the code, tests, docs, and Mix tasks that define the behavior.
    - Reuse the repository's naming patterns for subject ids and requirement ids.
@@ -29,10 +29,12 @@ Author `.spec/specs/*.spec.md` files that match this package's parser and verifi
    - Add `spec-verification` entries for the evidence that covers each requirement or scenario.
    - Prefer command verifications for behavioral proof when the target file does not already carry stable `covers:` markers for the ids it names.
    - Add `spec-exceptions` only when a requirement is intentionally not verified yet and the reason should suppress the uncovered-requirement warning.
+   - Add `spec-meta.decisions` only when the subject depends on a durable cross-cutting ADR in `.spec/decisions/*.md`.
 5. Validate and tighten.
    - Run `mix spec.verify --debug` after edits.
    - Fix warnings as well as errors; `mix spec.check` runs strict verification and fails on both.
    - Run `mix spec.check` once the subject is complete.
+   - Run `mix spec.diffcheck` when the work also changed code, docs, or tests.
 
 ## Authoring Rules
 
@@ -44,6 +46,7 @@ Author `.spec/specs/*.spec.md` files that match this package's parser and verifi
 - Make each verification `covers` list point at requirement ids and any scenario ids it demonstrates.
 - Use repository-root-relative paths in verification `target`.
 - Prefer canonical verification kinds such as `source_file`, `test_file`, `guide_file`, `readme_file`, `workflow_file`, or `command`.
+- Use `.spec/decisions/*.md` only for durable cross-cutting policy. Keep `.spec` declarative and use Git history for the timeline of change.
 - Keep `summary`, `surface`, and prose aligned with files that actually exist.
 
 ## Reference

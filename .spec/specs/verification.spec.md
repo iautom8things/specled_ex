@@ -17,6 +17,11 @@ surface:
   - lib/specled_ex/verifier.ex
   - lib/specled_ex/index.ex
   - lib/specled_ex.ex
+  - lib/specled_ex/decision_parser.ex
+  - lib/specled_ex/schema/decision.ex
+decisions:
+  - specled.decision.declarative_current_truth
+  - specled.decision.file_backed_linked_strength
 ```
 
 ## Requirements
@@ -42,6 +47,10 @@ surface:
   statement: Verification shall ignore malformed non-map parsed block entries, rely on recorded parse errors, and continue producing a report.
   priority: must
   stability: stable
+- id: specled.verify.decision_governance
+  statement: Verification shall validate ADR frontmatter, required ADR sections, ADR affects references, supersession links, and subject decision references.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -89,4 +98,5 @@ surface:
     - specled.verify.coverage_warnings
     - specled.verify.target_existence
     - specled.verify.malformed_entries_nonfatal
+    - specled.verify.decision_governance
 ```

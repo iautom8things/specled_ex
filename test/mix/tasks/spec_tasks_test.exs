@@ -10,13 +10,16 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     readme = Path.join(root, ".spec/README.md")
     agents = Path.join(root, ".spec/AGENTS.md")
+    decisions_readme = Path.join(root, ".spec/decisions/README.md")
     package_spec = Path.join(root, ".spec/specs/package.spec.md")
 
     assert File.exists?(readme)
     assert File.exists?(agents)
+    assert File.exists?(decisions_readme)
     assert File.exists?(package_spec)
     assert File.read!(readme) == render_spec_init_template("README.md.eex")
     assert File.read!(agents) == render_spec_init_template("AGENTS.md.eex")
+    assert File.read!(decisions_readme) == render_spec_init_template("decisions/README.md.eex")
 
     File.write!(agents, "# Custom Spec Agents\n")
     File.write!(package_spec, "# Custom Package Spec\n")
@@ -156,6 +159,22 @@ defmodule Mix.Tasks.SpecTasksTest do
     end
   end
 
+  test "spec.adr.new scaffolds a decision ADR", %{root: root} do
+    answer_shell_yes(false)
+    Mix.Tasks.Spec.Init.run(["--root", root])
+    reenable_tasks()
+
+    Mix.Tasks.Spec.Adr.New.run(["--root", root, "--title", "Governance Policy", "repo.governance.policy"])
+
+    path = Path.join(root, ".spec/decisions/repo.governance.policy.md")
+    messages = drain_shell_messages()
+
+    assert File.exists?(path)
+    assert File.read!(path) =~ "id: repo.governance.policy"
+    assert File.read!(path) =~ "# Governance Policy"
+    assert message_contains?(messages, "spec.adr.new wrote")
+  end
+
   test "spec.verify does not execute malformed command verifications", %{root: root} do
     write_spec(
       root,
@@ -228,6 +247,72 @@ defmodule Mix.Tasks.SpecTasksTest do
     assert read_state(root)["summary"]["findings"] == 0
   end
 
+  test "spec.report emits human and json summaries", %{root: root} do
+    write_files(root, %{
+      "lib/example.ex" => "# report.requirement\n",
+      "test/example_test.exs" => "# report.requirement\n"
+    })
+
+    write_subject_spec(
+      root,
+      "reporting",
+      meta: %{
+        "id" => "reporting.subject",
+        "kind" => "module",
+        "status" => "active",
+        "surface" => ["lib/example.ex"]
+      },
+      requirements: [%{"id" => "report.requirement", "statement" => "Covered requirement"}],
+      verification: [
+        %{"kind" => "test_file", "target" => "test/example_test.exs", "covers" => ["report.requirement"]}
+      ]
+    )
+
+    write_decision(
+      root,
+      "policy",
+      """
+      ---
+      id: repo.reporting.policy
+      status: accepted
+      date: 2026-03-11
+      affects:
+        - repo.governance
+        - reporting.subject
+      ---
+
+      # Reporting Policy
+
+      ## Context
+
+      Context.
+
+      ## Decision
+
+      Decision.
+
+      ## Consequences
+
+      Consequences.
+      """
+    )
+
+    Mix.Tasks.Spec.Report.run(["--root", root])
+    human_messages = drain_shell_messages()
+
+    assert message_contains?(human_messages, "Spec Led Development Report")
+    assert message_contains?(human_messages, "source covered=1/1")
+
+    reenable_tasks(["spec.report"])
+    Mix.Tasks.Spec.Report.run(["--root", root, "--json"])
+    [json_output] = drain_shell_messages()
+    report = Jason.decode!(json_output)
+
+    assert report["summary"]["subjects"] == 1
+    assert report["decisions"]["count"] == 1
+    assert report["coverage"]["source"]["covered"] == 1
+  end
+
   test "spec.check succeeds for covered specs", %{root: root} do
     write_files(root, %{"README.md" => "readme\n# covered.requirement"})
 
@@ -243,6 +328,106 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     Mix.Tasks.Spec.Check.run(["--root", root])
     assert read_state(root)["summary"]["findings"] == 0
+  end
+
+  test "spec.diffcheck fails when code changes do not update the impacted subject spec", %{
+    root: root
+  } do
+    init_git_repo(root)
+
+    write_files(root, %{"lib/example.ex" => "defmodule Example do\nend\n"})
+
+    write_subject_spec(
+      root,
+      "example",
+      meta: %{
+        "id" => "example.subject",
+        "kind" => "module",
+        "status" => "active",
+        "surface" => ["lib/example.ex"]
+      }
+    )
+
+    commit_all(root, "initial")
+
+    write_files(root, %{"lib/example.ex" => "defmodule Example do\n  def run, do: :ok\nend\n"})
+
+    assert_raise Mix.Error, ~r/Spec diffcheck failed: 1 finding/, fn ->
+      Mix.Tasks.Spec.Diffcheck.run(["--root", root, "--base", "HEAD"])
+    end
+
+    messages = drain_shell_messages()
+
+    assert message_contains?(messages, "diffcheck_missing_spec_update")
+  end
+
+  test "spec.diffcheck requires a decision update for cross-cutting changes", %{root: root} do
+    init_git_repo(root)
+
+    write_files(root, %{
+      "lib/a.ex" => "defmodule A do\nend\n",
+      "lib/b.ex" => "defmodule B do\nend\n"
+    })
+
+    write_subject_spec(
+      root,
+      "a",
+      meta: %{"id" => "a.subject", "kind" => "module", "status" => "active", "surface" => ["lib/a.ex"]}
+    )
+
+    write_subject_spec(
+      root,
+      "b",
+      meta: %{"id" => "b.subject", "kind" => "module", "status" => "active", "surface" => ["lib/b.ex"]}
+    )
+
+    write_decision(
+      root,
+      "policy",
+      """
+      ---
+      id: repo.policy
+      status: accepted
+      date: 2026-03-11
+      affects:
+        - repo.governance
+        - a.subject
+        - b.subject
+      ---
+
+      # Repo Policy
+
+      ## Context
+
+      Context.
+
+      ## Decision
+
+      Decision.
+
+      ## Consequences
+
+      Consequences.
+      """
+    )
+
+    commit_all(root, "initial")
+
+    write_files(root, %{
+      "lib/a.ex" => "defmodule A do\n  def run, do: :ok\nend\n",
+      "lib/b.ex" => "defmodule B do\n  def run, do: :ok\nend\n"
+    })
+
+    File.write!(Path.join(root, ".spec/specs/a.spec.md"), File.read!(Path.join(root, ".spec/specs/a.spec.md")) <> "\n")
+    File.write!(Path.join(root, ".spec/specs/b.spec.md"), File.read!(Path.join(root, ".spec/specs/b.spec.md")) <> "\n")
+
+    assert_raise Mix.Error, ~r/Spec diffcheck failed: 1 finding/, fn ->
+      Mix.Tasks.Spec.Diffcheck.run(["--root", root, "--base", "HEAD"])
+    end
+
+    messages = drain_shell_messages()
+
+    assert message_contains?(messages, "diffcheck_missing_decision_update")
   end
 
   test "spec.check fails for strict findings", %{root: root} do

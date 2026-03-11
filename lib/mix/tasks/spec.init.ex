@@ -5,6 +5,7 @@ defmodule Mix.Tasks.Spec.Init do
   @templates [
     {"README.md.eex", "README.md"},
     {"AGENTS.md.eex", "AGENTS.md"},
+    {"decisions/README.md.eex", "decisions/README.md"},
     {"specs/spec_system.spec.md.eex", "specs/spec_system.spec.md"},
     {"specs/package.spec.md.eex", "specs/package.spec.md"}
   ]

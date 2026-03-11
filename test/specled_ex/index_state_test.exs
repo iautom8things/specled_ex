@@ -64,6 +64,8 @@ defmodule SpecLedEx.IndexStateTest do
     index = SpecLedEx.build_index(root)
 
     assert index["summary"] == %{
+             "decisions" => 0,
+             "decision_parse_errors" => 0,
              "subjects" => 2,
              "requirements" => 1,
              "scenarios" => 1,
@@ -253,6 +255,63 @@ defmodule SpecLedEx.IndexStateTest do
     assert Enum.map(state["verification"]["claims"], & &1["cover_id"]) == [
              "alpha.requirement",
              "zeta.requirement"
+           ]
+  end
+
+  test "build_index and write_state include indexed decisions", %{root: root} do
+    write_subject_spec(
+      root,
+      "subject",
+      meta: %{"id" => "package.subject", "kind" => "module", "status" => "active"}
+    )
+
+    write_decision(
+      root,
+      "governance",
+      """
+      ---
+      id: repo.governance.policy
+      status: accepted
+      date: 2026-03-11
+      affects:
+        - repo.governance
+        - package.subject
+      ---
+
+      # Governance Policy
+
+      ## Context
+
+      Context.
+
+      ## Decision
+
+      Decision.
+
+      ## Consequences
+
+      Consequences.
+      """
+    )
+
+    index = SpecLedEx.build_index(root)
+
+    assert index["summary"]["decisions"] == 1
+
+    SpecLedEx.write_state(index, %{"findings" => []}, root)
+    state = read_state(root)
+
+    assert state["workspace"]["decision_count"] == 1
+
+    assert state["decisions"]["items"] == [
+             %{
+               "affects" => ["repo.governance", "package.subject"],
+               "date" => "2026-03-11",
+               "file" => ".spec/decisions/governance.md",
+               "id" => "repo.governance.policy",
+               "status" => "accepted",
+               "title" => "Governance Policy"
+             }
            ]
   end
 

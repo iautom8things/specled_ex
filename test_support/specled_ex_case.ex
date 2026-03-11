@@ -41,6 +41,12 @@ defmodule SpecLedEx.Case do
     Path.join(root, relative_path)
   end
 
+  def write_decision(root, name, content) do
+    relative_path = ".spec/decisions/#{name}.md"
+    write_files(root, %{relative_path => content})
+    Path.join(root, relative_path)
+  end
+
   def write_subject_spec(root, name, opts \\ []) do
     title = Keyword.get(opts, :title, default_spec_title(name))
 
@@ -85,8 +91,31 @@ defmodule SpecLedEx.Case do
     end)
   end
 
-  def reenable_tasks(tasks \\ ~w(spec.init spec.plan spec.verify spec.check)) do
+  def reenable_tasks(
+        tasks \\ ~w(spec.init spec.plan spec.verify spec.check spec.adr.new spec.report spec.diffcheck)
+      ) do
     Enum.each(tasks, &Mix.Task.reenable/1)
+  end
+
+  def init_git_repo(root) do
+    git!(root, ["init", "-b", "main"])
+    git!(root, ["config", "user.name", "Spec Led Test"])
+    git!(root, ["config", "user.email", "specled@example.com"])
+  end
+
+  def commit_all(root, message) do
+    git!(root, ["add", "."])
+    git!(root, ["commit", "-m", message])
+  end
+
+  def git!(root, args) do
+    {output, exit_code} = System.cmd("git", ["-C", root | args], stderr_to_stdout: true)
+
+    if exit_code == 0 do
+      output
+    else
+      raise "git #{Enum.join(args, " ")} failed: #{String.trim(output)}"
+    end
   end
 
   def message_contains?(messages, expected) do

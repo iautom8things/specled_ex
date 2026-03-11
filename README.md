@@ -5,16 +5,24 @@ Local helper package for Spec Led Development repositories.
 It provides canonical `mix spec.*` tasks:
 
 - `mix spec.init`
-  - scaffolds `.spec/` with starter files, including `README.md` and `AGENTS.md`
+  - scaffolds `.spec/` with starter files, including `README.md`, `AGENTS.md`, and `decisions/README.md`
   - in interactive runs, can also scaffold a local Skill for Spec Led Development
+  - keeps `.spec` declarative and current-state only
 - `mix spec.plan`
-  - reads `.spec/specs/*.spec.md` and updates `.spec/state.json` with index data
+  - reads `.spec/specs/*.spec.md` and `.spec/decisions/*.md`
+  - updates `.spec/state.json` with subject and ADR index data
 - `mix spec.verify`
   - validates authored specs, updates `.spec/state.json`, and exits non-zero when the verification report fails
   - keeps `kind: command` verification execution off by default for fast local runs
 - `mix spec.check`
   - runs `plan` plus strict `verify`
   - enables `kind: command` execution by default; use `--no-run-commands` to opt out
+- `mix spec.adr.new`
+  - scaffolds a durable ADR under `.spec/decisions/`
+- `mix spec.report`
+  - summarizes source, guide, and test coverage, verification strength, weak spots, and ADR usage
+- `mix spec.diffcheck`
+  - inspects the current Git diff and fails when code, docs, or tests moved ahead of current-truth subject or ADR updates
 
 ## Local Usage
 
@@ -30,10 +38,23 @@ Then run:
 mix spec.check
 ```
 
+When a cross-cutting policy needs to stay durable:
+
+```bash
+mix spec.adr.new repo.policy --title "Repository Policy"
+```
+
 For a fast local structural pass:
 
 ```bash
 mix spec.verify
+```
+
+For coverage and diff-aware governance checks:
+
+```bash
+mix spec.report
+mix spec.diffcheck
 ```
 
 For stronger local or CI proof requirements:
@@ -68,9 +89,13 @@ If a claim is below its effective minimum, `spec.verify` emits
 `.spec/state.json` is written as a canonical artifact to keep diffs small:
 
 - object keys are sorted recursively
-- findings, claims, subjects, and flattened index entries are written in stable order
+- findings, claims, subjects, flattened index entries, and indexed ADRs are written in stable order
 - volatile fields such as timestamps and absolute workspace roots are not persisted
 - the file is only rewritten when the canonical bytes change
+
+## ADRs And Git History
+
+Use `.spec/decisions/*.md` only for durable cross-cutting ADRs. Do not add in-flight proposal folders under `.spec/`. Use Git branches, commits, and pull requests as the time dimension for how changes evolved.
 
 ## CI
 

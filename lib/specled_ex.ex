@@ -3,7 +3,7 @@ defmodule SpecLedEx do
   Local tooling for Spec Led Development repositories.
   """
 
-  alias SpecLedEx.{Index, Json, VerificationStrength, Verifier}
+  alias SpecLedEx.{Diffcheck, Index, Json, Report, VerificationStrength, Verifier}
 
   @default_state ".spec/state.json"
 
@@ -15,6 +15,14 @@ defmodule SpecLedEx do
     Verifier.verify(index, root, opts)
   end
 
+  def report(index, verification_report, root \\ File.cwd!()) do
+    Report.build(index, verification_report, root)
+  end
+
+  def diffcheck(index, root \\ File.cwd!(), opts \\ []) do
+    Diffcheck.run(index, root, opts)
+  end
+
   def read_state(root \\ File.cwd!(), output_path \\ @default_state) do
     path = Path.expand(output_path, root)
     Json.read(path)
@@ -23,6 +31,7 @@ defmodule SpecLedEx do
   def write_state(index, report, root \\ File.cwd!(), output_path \\ @default_state) do
     path = Path.expand(output_path, root)
     subjects = index["subjects"] || []
+    decisions = index["decisions"] || []
     findings = if report, do: report["findings"] || [], else: []
 
     summary =
@@ -37,9 +46,11 @@ defmodule SpecLedEx do
     state = %{
       "specification_version" => "1.0",
       "workspace" => %{
-        "spec_count" => length(subjects)
+        "spec_count" => length(subjects),
+        "decision_count" => length(decisions)
       },
       "index" => normalize_index(subjects),
+      "decisions" => normalize_decisions(decisions),
       "findings" => normalize_findings(findings),
       "summary" => summary
     }
@@ -55,6 +66,10 @@ defmodule SpecLedEx do
 
   def detect_authored_dir(root \\ File.cwd!(), spec_dir \\ nil) do
     Index.detect_authored_dir(root, spec_dir || detect_spec_dir(root))
+  end
+
+  def detect_decision_dir(root \\ File.cwd!(), spec_dir \\ nil) do
+    Index.detect_decision_dir(root, spec_dir || detect_spec_dir(root))
   end
 
   defp normalize_index(subjects) do
@@ -144,6 +159,40 @@ defmodule SpecLedEx do
         index
       }
     end)
+  end
+
+  defp normalize_decisions(decisions) do
+    %{
+      "items" =>
+        decisions
+        |> Enum.flat_map(fn
+          decision when is_map(decision) ->
+            meta = string_key_map(value_for(decision, "meta"))
+
+            [
+              %{
+                "id" => value_for(meta, "id"),
+                "file" => value_for(decision, "file"),
+                "title" => value_for(decision, "title"),
+                "status" => value_for(meta, "status"),
+                "date" => value_for(meta, "date"),
+                "affects" => value_for(meta, "affects") || [],
+                "superseded_by" => value_for(meta, "superseded_by")
+              }
+              |> drop_nil_values()
+            ]
+
+          _ ->
+            []
+        end)
+        |> stable_sort(fn decision, index ->
+          {
+            value_for(decision, "file") || "",
+            value_for(decision, "id") || "",
+            index
+          }
+        end)
+    }
   end
 
   defp normalize_verification(nil), do: nil

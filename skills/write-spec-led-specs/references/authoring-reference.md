@@ -18,6 +18,8 @@ status: active
 summary: Short summary of the contract.
 surface:
   - lib/path/to/file.ex
+decisions:
+  - repo.policy
 ```
 
 ## Requirements
@@ -67,13 +69,14 @@ surface:
 
 - Use the first Markdown H1 as the subject title.
 - Use each fenced block tag at most once per file. A second `spec-meta`, `spec-requirements`, `spec-scenarios`, `spec-verification`, or `spec-exceptions` block becomes a parse error.
-- Make `spec-meta` a mapping with at least `id`, `kind`, and `status`. Additional keys such as `summary` and `surface` are preserved.
+- Make `spec-meta` a mapping with at least `id`, `kind`, and `status`. Additional keys such as `summary`, `surface`, and `decisions` are preserved.
 - Make `spec-requirements`, `spec-scenarios`, `spec-verification`, and `spec-exceptions` decode to lists.
 - Prefer YAML. JSON also parses because the implementation uses `YamlElixir`, but YAML matches the repository examples.
 
 ## Field Rules
 
 - Use ids that match `^[a-z0-9][a-z0-9._-]*$`.
+- Use `spec-meta.decisions` only for ADR ids that exist in `.spec/decisions/*.md`.
 - Make requirement entries include `id` and `statement`.
 - Make scenario entries include `id`, `covers`, `given`, `when`, and `then`. Keep `given`, `when`, and `then` non-empty to avoid warnings.
 - Make verification entries include `kind`, `target`, and `covers`. Add `execute: true` only when the command is intended to run under `mix spec.verify --run_commands`.
@@ -87,6 +90,7 @@ surface:
 - Use repository-root-relative file paths in verification `target`.
 - Prefer `source_file`, `test_file`, `guide_file`, `readme_file`, and `workflow_file` only when the target file can literally mention each covered id, usually with a nearby `covers:` comment or HTML comment marker.
 - Prefer `command` verifications for behavioral checks when adding literal ids to the target file would be noisy or unstable.
+- Use `.spec/decisions/*.md` for durable cross-cutting policy only. Keep in-flight planning in Git history and pull request discussion instead of adding transient `.spec` artifacts.
 - File-backed verifications only reach linked strength when the target content contains the covered id string.
 
 ## Common Findings And Fixes

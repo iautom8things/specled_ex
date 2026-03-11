@@ -1,0 +1,68 @@
+defmodule Mix.Tasks.Spec.Report do
+  use Mix.Task
+
+  alias SpecLedEx.Report
+  alias SpecLedEx.VerificationStrength
+
+  @shortdoc "Summarizes current-truth spec coverage, verification strength, and ADR usage"
+
+  @impl true
+  def run(args) do
+    Mix.Task.run("app.start")
+
+    {opts, rest, invalid} =
+      OptionParser.parse(
+        args,
+        strict: [
+          root: :string,
+          spec_dir: :string,
+          run_commands: :boolean,
+          min_strength: :string,
+          json: :boolean
+        ],
+        aliases: [r: :root]
+      )
+
+    validate_args!(rest, invalid)
+
+    root = opts[:root] || File.cwd!()
+    spec_dir = opts[:spec_dir] || SpecLedEx.detect_spec_dir(root)
+    authored_dir = SpecLedEx.detect_authored_dir(root, spec_dir)
+    index = SpecLedEx.build_index(root, spec_dir: spec_dir, authored_dir: authored_dir)
+
+    verification_report =
+      SpecLedEx.verify(index, root,
+        run_commands: opts[:run_commands] || false,
+        min_strength: validate_min_strength!(opts[:min_strength])
+      )
+
+    report = SpecLedEx.report(index, verification_report, root)
+
+    if opts[:json] do
+      Mix.shell().info(Jason.encode!(report, pretty: true))
+    else
+      Mix.shell().info(Report.format_human(report))
+    end
+  end
+
+  defp validate_args!([], []), do: :ok
+
+  defp validate_args!(rest, invalid) do
+    invalid_flags = Enum.map(invalid, fn {flag, _value} -> flag end)
+    extra_args = Enum.map(rest, &inspect/1)
+    details = Enum.join(invalid_flags ++ extra_args, ", ")
+    Mix.raise("Invalid arguments for spec.report: #{details}")
+  end
+
+  defp validate_min_strength!(nil), do: nil
+
+  defp validate_min_strength!(value) do
+    case VerificationStrength.normalize(value) do
+      {:ok, normalized} ->
+        normalized
+
+      {:error, message} ->
+        Mix.raise("Invalid value for --min-strength: #{message}")
+    end
+  end
+end

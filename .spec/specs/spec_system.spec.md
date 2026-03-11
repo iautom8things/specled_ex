@@ -10,8 +10,13 @@ summary: Canonical workspace contract for authored specs and generated Spec Led 
 surface:
   - .spec/README.md
   - .spec/AGENTS.md
+  - .spec/decisions/README.md
+  - .spec/decisions/*.md
   - .spec/specs/*.spec.md
   - .spec/state.json
+decisions:
+  - specled.decision.declarative_current_truth
+  - specled.decision.local_skill_scaffold
 ```
 
 ## Requirements
@@ -25,8 +30,12 @@ surface:
   statement: The repository shall include a .spec/AGENTS.md that gives local operating guidance for agents working inside the .spec workspace.
   priority: must
   stability: stable
+- id: spec.workspace.decisions_readme_present
+  statement: The repository shall include a .spec/decisions/README.md that explains when durable ADRs belong in the workspace.
+  priority: must
+  stability: stable
 - id: spec.workspace.state_generated
-  statement: When planning and verification run, the workspace shall generate .spec/state.json containing index and verification state.
+  statement: When planning and verification run, the workspace shall generate .spec/state.json containing indexed subjects, indexed decisions, and verification state.
   priority: must
   stability: stable
 ```
@@ -42,6 +51,10 @@ surface:
   target: .spec/AGENTS.md
   covers:
     - spec.workspace.agents_present
+- kind: source_file
+  target: .spec/decisions/README.md
+  covers:
+    - spec.workspace.decisions_readme_present
 - kind: command
   target: mix spec.plan
   covers:

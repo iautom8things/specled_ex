@@ -30,6 +30,7 @@ defmodule SpecLedEx.VerifierTest do
 
     assert check_codes(report) ==
              MapSet.new([
+               "duplicate_decision_id",
                "meta_field_missing",
                "parse_blocks",
                "duplicate_subject_id",
@@ -303,6 +304,76 @@ defmodule SpecLedEx.VerifierTest do
     assert File.read!(Path.join(root, "runs.txt")) == "run"
   end
 
+  test "verify validates decisions and subject decision references", %{root: root} do
+    valid_subject =
+      base_subject(%{
+        "meta" => %{
+          "id" => "package.subject",
+          "kind" => "module",
+          "status" => "active",
+          "decisions" => ["repo.governance.policy"]
+        }
+      })
+
+    invalid_subject =
+      base_subject(%{
+        "file" => ".spec/specs/other.spec.md",
+        "meta" => %{
+          "id" => "other.subject",
+          "kind" => "module",
+          "status" => "active",
+          "decisions" => ["repo.governance.missing"]
+        }
+      })
+
+    report =
+      Verifier.verify(
+        %{
+          "subjects" => [valid_subject, invalid_subject],
+          "decisions" => [
+            %{
+              "file" => ".spec/decisions/governance.md",
+              "meta" => %{
+                "id" => "repo.governance.policy",
+                "status" => "accepted",
+                "date" => "2026-03-11",
+                "affects" => ["repo.governance", "package.subject"]
+              },
+              "sections" => ["Context", "Decision", "Consequences"],
+              "parse_errors" => []
+            },
+            %{
+              "file" => ".spec/decisions/bad.md",
+              "meta" => %{
+                "id" => "repo.governance.bad",
+                "status" => "superseded",
+                "date" => "bad-date",
+                "affects" => ["missing.subject"]
+              },
+              "sections" => ["Context", "Decision"],
+              "parse_errors" => []
+            }
+          ]
+        },
+        root,
+        debug: true
+      )
+
+    assert report["status"] == "fail"
+
+    assert finding_codes(report) ==
+             MapSet.new([
+               "decision_invalid_date",
+               "decision_missing_section",
+               "decision_missing_superseded_by",
+               "decision_unknown_affect",
+               "subject_unknown_decision_reference"
+             ])
+
+    assert Enum.any?(report["checks"], &(&1["code"] == "decision_section_missing"))
+    assert Enum.any?(report["checks"], &(&1["code"] == "decision_affect_invalid"))
+  end
+
   test "verify only fails warnings in strict mode", %{root: root} do
     index = %{
       "subjects" => [
@@ -350,6 +421,7 @@ defmodule SpecLedEx.VerifierTest do
 
     assert check_codes(report) ==
              MapSet.new([
+               "duplicate_decision_id",
                "meta_field_present",
                "parse_blocks",
                "requirement_id_present",

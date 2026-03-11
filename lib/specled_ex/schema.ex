@@ -1,7 +1,7 @@
 defmodule SpecLedEx.Schema do
   @moduledoc false
 
-  alias SpecLedEx.Schema.{Exception, Meta, Requirement, Scenario, Verification}
+  alias SpecLedEx.Schema.{Decision, Exception, Meta, Requirement, Scenario, Verification}
 
   @id_pattern ~r/^[a-z0-9][a-z0-9._-]*$/
 
@@ -30,6 +30,10 @@ defmodule SpecLedEx.Schema do
 
   def exception do
     Exception.schema()
+  end
+
+  def decision do
+    Decision.schema()
   end
 
   @doc """
