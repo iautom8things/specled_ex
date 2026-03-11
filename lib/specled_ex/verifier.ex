@@ -2,6 +2,7 @@ defmodule SpecLedEx.Verifier do
   @moduledoc false
 
   alias SpecLedEx.Schema.Verification, as: VerificationSchema
+  alias SpecLedEx.VerificationStrength
 
   @command_kind "command"
   @file_kinds ~w(file source_file test_file guide_file readme_file workflow_file test doc workflow contract)
@@ -12,9 +13,18 @@ defmodule SpecLedEx.Verifier do
     strict? = Keyword.get(opts, :strict, false)
     debug? = Keyword.get(opts, :debug, false)
     run_commands? = Keyword.get(opts, :run_commands, false)
+    cli_minimum_strength = normalize_minimum_strength!(Keyword.get(opts, :min_strength))
     subjects = index["subjects"] || []
     command_results = build_command_results(subjects, root, run_commands?)
     global_claim_ids = build_global_claim_ids(subjects)
+    verification_claims =
+      build_verification_claims(
+        subjects,
+        root,
+        command_results,
+        global_claim_ids,
+        cli_minimum_strength
+      )
 
     findings =
       subjects
@@ -24,10 +34,13 @@ defmodule SpecLedEx.Verifier do
       |> then(&(&1 ++ duplicate_scenario_id_findings(subjects)))
       |> then(&(&1 ++ duplicate_exception_id_findings(subjects)))
       |> then(&(&1 ++ invalid_id_format_findings(subjects)))
+      |> then(&(&1 ++ verification_strength_findings(verification_claims)))
+      |> sort_findings()
 
     checks =
       if debug? do
         build_debug_checks(subjects, root, run_commands?, command_results, global_claim_ids)
+        |> sort_checks()
       else
         []
       end
@@ -47,6 +60,7 @@ defmodule SpecLedEx.Verifier do
         "warnings" => warnings,
         "findings" => length(findings)
       },
+      "verification" => verification_report(verification_claims, cli_minimum_strength),
       "findings" => findings
     }
 
@@ -356,7 +370,7 @@ defmodule SpecLedEx.Verifier do
   defp add_verification_target_content_findings(findings, verification, root, subject_id, file) do
     kind = string_field(verification, "kind")
     target = string_field(verification, "target")
-    covers = list_field(verification, "covers")
+    covers = valid_cover_ids(verification)
 
     if kind in @file_kinds and target != "" and covers != [] do
       full_path = Path.expand(target, root)
@@ -369,7 +383,7 @@ defmodule SpecLedEx.Verifier do
             else
               [
                 finding(
-                  "info",
+                  "warning",
                   "verification_target_missing_reference",
                   "Verification target #{target} does not reference covered requirement: #{cover_id}",
                   subject_id,
@@ -1077,6 +1091,152 @@ defmodule SpecLedEx.Verifier do
 
   defp verification_key(subject_id, file, idx), do: {subject_id, file, idx}
 
+  defp build_verification_claims(
+         subjects,
+         root,
+         command_results,
+         global_claim_ids,
+         cli_minimum_strength
+       ) do
+    subjects
+    |> Enum.flat_map(fn subject ->
+      file = string_field(subject, "file")
+      meta = subject_meta(subject)
+      subject_id = id_of(meta, "id") || file
+      minimum_strength = effective_minimum_strength(meta, cli_minimum_strength)
+
+      subject
+      |> verification_entries(subject_id, file, command_results)
+      |> Enum.flat_map(fn entry ->
+        build_entry_claims(entry, root, subject_id, file, global_claim_ids, minimum_strength)
+      end)
+    end)
+    |> Enum.sort_by(fn claim ->
+      {
+        claim["subject_id"] || "",
+        claim["file"] || "",
+        claim["verification_index"] || 0,
+        claim["cover_id"] || ""
+      }
+    end)
+  end
+
+  defp build_entry_claims(entry, root, subject_id, file, global_claim_ids, minimum_strength) do
+    verification = entry.item
+    kind = string_field(verification, "kind")
+
+    if known_verification_kind?(kind) do
+      verification
+      |> valid_cover_ids()
+      |> Enum.filter(&MapSet.member?(global_claim_ids, &1))
+      |> Enum.map(fn cover_id ->
+        %{
+          "subject_id" => subject_id,
+          "file" => file,
+          "verification_index" => entry.index,
+          "kind" => kind,
+          "target" => string_field(verification, "target"),
+          "cover_id" => cover_id,
+          "strength" => claim_strength(verification, entry.command_result, root, cover_id),
+          "required_strength" => minimum_strength
+        }
+      end)
+      |> Enum.map(fn claim ->
+        Map.put(
+          claim,
+          "meets_minimum",
+          VerificationStrength.meets_minimum?(claim["strength"], claim["required_strength"])
+        )
+      end)
+    else
+      []
+    end
+  end
+
+  defp effective_minimum_strength(meta, cli_minimum_strength) do
+    cond do
+      cli_minimum_strength ->
+        cli_minimum_strength
+
+      true ->
+        case VerificationStrength.normalize(string_field(meta, "verification_minimum_strength")) do
+          {:ok, normalized} when is_binary(normalized) -> normalized
+          _ -> VerificationStrength.default()
+        end
+    end
+  end
+
+  defp claim_strength(verification, command_result, root, cover_id) do
+    kind = string_field(verification, "kind")
+
+    cond do
+      kind == @command_kind and executable_command_succeeded?(verification, command_result) ->
+        "executed"
+
+      kind in @file_kinds and verification_target_mentions_cover?(verification, root, cover_id) ->
+        "linked"
+
+      true ->
+        "claimed"
+    end
+  end
+
+  defp executable_command_succeeded?(verification, command_result) do
+    bool_field(verification, "execute") and
+      string_field(verification, "target") != "" and
+      is_map(command_result) and
+      Map.get(command_result, :exit_code) == 0
+  end
+
+  defp verification_target_mentions_cover?(verification, root, cover_id) do
+    target = string_field(verification, "target")
+
+    if target == "" do
+      false
+    else
+      full_path = Path.expand(target, root)
+
+      case File.read(full_path) do
+        {:ok, content} -> String.contains?(content, cover_id)
+        {:error, _} -> false
+      end
+    end
+  end
+
+  defp verification_strength_findings(claims) do
+    Enum.flat_map(claims, fn claim ->
+      if claim["meets_minimum"] do
+        []
+      else
+        [
+          finding(
+            "error",
+            "verification_strength_below_minimum",
+            "Verification strength #{claim["strength"]} is below required #{claim["required_strength"]} for #{claim["cover_id"]}",
+            claim["subject_id"],
+            claim["file"]
+          )
+        ]
+      end
+    end)
+  end
+
+  defp verification_report(claims, cli_minimum_strength) do
+    %{
+      "default_minimum_strength" => VerificationStrength.default(),
+      "cli_minimum_strength" => cli_minimum_strength,
+      "strength_summary" => strength_summary(claims),
+      "threshold_failures" => Enum.count(claims, &(not &1["meets_minimum"])),
+      "claims" => claims
+    }
+  end
+
+  defp strength_summary(claims) do
+    Enum.reduce(VerificationStrength.levels(), %{}, fn level, acc ->
+      Map.put(acc, level, Enum.count(claims, &(&1["strength"] == level)))
+    end)
+  end
+
   defp coverage_counting_verification?(verification) do
     known_verification_kind?(string_field(verification, "kind"))
   end
@@ -1093,6 +1253,13 @@ defmodule SpecLedEx.Verifier do
     case field(verification, "covers") do
       covers when is_list(covers) -> Enum.all?(covers, &is_binary/1)
       _ -> false
+    end
+  end
+
+  defp valid_cover_ids(verification) do
+    case field(verification, "covers") do
+      covers when is_list(covers) -> Enum.filter(covers, &is_binary/1)
+      _ -> []
     end
   end
 
@@ -1129,8 +1296,43 @@ defmodule SpecLedEx.Verifier do
 
   defp known_verification_kind?(kind), do: kind in @known_verification_kinds
 
+  defp normalize_minimum_strength!(nil), do: nil
+
+  defp normalize_minimum_strength!(value) do
+    case VerificationStrength.normalize(value) do
+      {:ok, normalized} ->
+        normalized
+
+      {:error, message} ->
+        raise ArgumentError, "invalid min_strength: #{message}"
+    end
+  end
+
   defp display_kind(""), do: "<empty>"
   defp display_kind(kind), do: kind
+
+  defp sort_findings(findings) do
+    Enum.sort_by(findings, fn finding ->
+      {
+        finding["file"] || "",
+        finding["subject_id"] || "",
+        finding["code"] || "",
+        finding["message"] || ""
+      }
+    end)
+  end
+
+  defp sort_checks(checks) do
+    Enum.sort_by(checks, fn check ->
+      {
+        check["file"] || "",
+        check["subject_id"] || "",
+        check["code"] || "",
+        check["message"] || "",
+        check["status"] || ""
+      }
+    end)
+  end
 
   defp present_string?(item, key) do
     case string_field(item, key) do

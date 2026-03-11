@@ -1,6 +1,8 @@
 defmodule SpecLedEx.Schema.Meta do
   @moduledoc false
 
+  alias SpecLedEx.VerificationStrength
+
   @schema Zoi.struct(
             __MODULE__,
             %{
@@ -8,7 +10,9 @@ defmodule SpecLedEx.Schema.Meta do
               kind: Zoi.string(),
               status: Zoi.string(),
               summary: Zoi.string() |> Zoi.optional(),
-              surface: Zoi.list(Zoi.string()) |> Zoi.optional()
+              surface: Zoi.list(Zoi.string()) |> Zoi.optional(),
+              verification_minimum_strength:
+                Zoi.enum(VerificationStrength.levels()) |> Zoi.optional()
             },
             coerce: true
           )

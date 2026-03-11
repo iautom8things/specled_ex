@@ -3,7 +3,7 @@ defmodule SpecLedEx do
   Local tooling for Spec Led Development repositories.
   """
 
-  alias SpecLedEx.{Index, Json, Verifier}
+  alias SpecLedEx.{Index, Json, VerificationStrength, Verifier}
 
   @default_state ".spec/state.json"
 
@@ -22,12 +22,7 @@ defmodule SpecLedEx do
 
   def write_state(index, report, root \\ File.cwd!(), output_path \\ @default_state) do
     path = Path.expand(output_path, root)
-
     subjects = index["subjects"] || []
-
-    now = DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.to_iso8601()
-
-    normalized_index = normalize_index(subjects)
     findings = if report, do: report["findings"] || [], else: []
 
     summary =
@@ -41,15 +36,14 @@ defmodule SpecLedEx do
 
     state = %{
       "specification_version" => "1.0",
-      "generated_at" => now,
       "workspace" => %{
-        "root" => root,
         "spec_count" => length(subjects)
       },
-      "index" => normalized_index,
+      "index" => normalize_index(subjects),
       "findings" => normalize_findings(findings),
       "summary" => summary
     }
+    |> maybe_put("verification", normalize_verification(report))
 
     Json.write!(path, state)
     path
@@ -64,14 +58,10 @@ defmodule SpecLedEx do
   end
 
   defp normalize_index(subjects) do
-    requirements = flatten_subject_items(subjects, "requirements")
-    scenarios = flatten_subject_items(subjects, "scenarios")
-    verifications = flatten_subject_items(subjects, "verification")
-    exceptions = flatten_subject_items(subjects, "exceptions")
-
     %{
       "subjects" =>
-        Enum.map(subjects, fn s ->
+        subjects
+        |> Enum.map(fn s ->
           meta = string_key_map(value_for(s, "meta"))
 
           %{
@@ -80,16 +70,57 @@ defmodule SpecLedEx do
             "title" => value_for(s, "title"),
             "meta" => meta
           }
+        end)
+        |> stable_sort(fn subject, index ->
+          {
+            value_for(subject, "file") || "",
+            value_for(subject, "id") || "",
+            index
+          }
         end),
-      "requirements" => requirements,
-      "scenarios" => scenarios,
-      "verifications" => verifications,
-      "exceptions" => exceptions
+      "requirements" =>
+        flatten_subject_items(subjects, "requirements")
+        |> stable_sort(fn item, index ->
+          {
+            value_for(item, "subject_id") || "",
+            value_for(item, "id") || "",
+            index
+          }
+        end),
+      "scenarios" =>
+        flatten_subject_items(subjects, "scenarios")
+        |> stable_sort(fn item, index ->
+          {
+            value_for(item, "subject_id") || "",
+            value_for(item, "id") || "",
+            index
+          }
+        end),
+      "verifications" =>
+        flatten_subject_items(subjects, "verification")
+        |> stable_sort(fn item, index ->
+          {
+            value_for(item, "subject_id") || "",
+            value_for(item, "verification_index") || 0,
+            index
+          }
+        end)
+        |> Enum.map(&Map.delete(&1, "verification_index")),
+      "exceptions" =>
+        flatten_subject_items(subjects, "exceptions")
+        |> stable_sort(fn item, index ->
+          {
+            value_for(item, "subject_id") || "",
+            value_for(item, "id") || "",
+            index
+          }
+        end)
     }
   end
 
   defp normalize_findings(findings) do
-    Enum.flat_map(findings, fn
+    findings
+    |> Enum.flat_map(fn
       f when is_map(f) ->
         [
           %{
@@ -104,27 +135,102 @@ defmodule SpecLedEx do
       _ ->
         []
     end)
+    |> stable_sort(fn finding, index ->
+      {
+        value_for(finding, "file") || "",
+        value_for(finding, "entity_id") || "",
+        value_for(finding, "code") || "",
+        value_for(finding, "message") || "",
+        index
+      }
+    end)
+  end
+
+  defp normalize_verification(nil), do: nil
+
+  defp normalize_verification(report) when is_map(report) do
+    verification = value_for(report, "verification")
+
+    if is_map(verification) do
+      claims =
+        verification
+        |> value_for("claims")
+        |> normalize_verification_claims()
+
+      %{
+        "default_minimum_strength" =>
+          value_for(verification, "default_minimum_strength") || VerificationStrength.default(),
+        "cli_minimum_strength" => value_for(verification, "cli_minimum_strength"),
+        "strength_summary" =>
+          normalize_strength_summary(value_for(verification, "strength_summary")),
+        "threshold_failures" => value_for(verification, "threshold_failures") || 0,
+        "claims" => claims
+      }
+    end
   end
 
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
 
   defp flatten_subject_items(subjects, key) do
-    Enum.flat_map(subjects, fn subject ->
+    subjects
+    |> Enum.flat_map(fn subject ->
       file = value_for(subject, "file")
       meta = string_key_map(value_for(subject, "meta"))
       subject_id = value_for(meta, "id")
 
       subject
       |> list_or_empty(key)
+      |> Enum.with_index()
       |> Enum.flat_map(fn
-        item when is_map(item) ->
-          [item |> string_key_map() |> Map.merge(%{"file" => file, "subject_id" => subject_id})]
+        {item, item_index} when is_map(item) ->
+          [
+            item
+            |> string_key_map()
+            |> Map.merge(%{
+              "file" => file,
+              "subject_id" => subject_id,
+              "verification_index" => if(key == "verification", do: item_index)
+            })
+            |> drop_nil_values()
+          ]
 
         _ ->
           []
       end)
     end)
+  end
+
+  defp normalize_verification_claims(claims) when is_list(claims) do
+    claims
+    |> Enum.flat_map(fn
+      claim when is_map(claim) ->
+        [string_key_map(claim)]
+
+      _ ->
+        []
+    end)
+    |> stable_sort(fn claim, index ->
+      {
+        value_for(claim, "subject_id") || "",
+        value_for(claim, "file") || "",
+        value_for(claim, "verification_index") || 0,
+        value_for(claim, "cover_id") || "",
+        index
+      }
+    end)
+  end
+
+  defp normalize_verification_claims(_claims), do: []
+
+  defp normalize_strength_summary(summary) when is_map(summary) do
+    Enum.reduce(VerificationStrength.levels(), %{}, fn level, acc ->
+      Map.put(acc, level, value_for(summary, level) || 0)
+    end)
+  end
+
+  defp normalize_strength_summary(_summary) do
+    Enum.into(VerificationStrength.levels(), %{}, fn level -> {level, 0} end)
   end
 
   defp list_or_empty(map, key) when is_map(map) do
@@ -149,6 +255,20 @@ defmodule SpecLedEx do
   defp normalize_value(value) when is_map(value), do: string_key_map(value)
   defp normalize_value(value) when is_list(value), do: Enum.map(value, &normalize_value/1)
   defp normalize_value(value), do: value
+
+  defp drop_nil_values(map) do
+    Enum.reduce(map, %{}, fn
+      {_key, nil}, acc -> acc
+      {key, value}, acc -> Map.put(acc, key, value)
+    end)
+  end
+
+  defp stable_sort(items, sorter) do
+    items
+    |> Enum.with_index()
+    |> Enum.sort_by(fn {item, index} -> sorter.(item, index) end)
+    |> Enum.map(&elem(&1, 0))
+  end
 
   defp maybe_from_struct(%{__struct__: _} = value), do: Map.from_struct(value)
   defp maybe_from_struct(value), do: value

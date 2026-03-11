@@ -70,8 +70,21 @@ defmodule SpecLedEx.Case do
     SpecLedEx.read_state(root, output_path)
   end
 
+  def render_spec_init_template(relative_path) do
+    :spec_led_ex
+    |> :code.priv_dir()
+    |> List.to_string()
+    |> Path.join("spec_init")
+    |> Path.join(relative_path)
+    |> EEx.eval_file([])
+  end
+
   def reenable_tasks(tasks \\ ~w(spec.init spec.plan spec.verify spec.check)) do
     Enum.each(tasks, &Mix.Task.reenable/1)
+  end
+
+  def message_contains?(messages, expected) do
+    Enum.any?(messages, &String.contains?(&1, expected))
   end
 
   def drain_shell_messages(messages \\ []) do

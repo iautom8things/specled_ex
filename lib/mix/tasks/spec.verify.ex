@@ -1,7 +1,18 @@
 defmodule Mix.Tasks.Spec.Verify do
   use Mix.Task
 
+  alias SpecLedEx.VerificationStrength
+
   @shortdoc "Validates authored specs and writes .spec/state.json"
+  @moduledoc """
+  Validates authored specs and writes `.spec/state.json`.
+
+  ## Options
+
+    * `--run-commands` - execute `kind: command` verifications with `execute: true`
+    * `--min-strength claimed|linked|executed` - require a minimum verification strength
+    * `--strict` - fail on warnings as well as errors
+  """
 
   @impl true
   def run(args) do
@@ -16,13 +27,15 @@ defmodule Mix.Tasks.Spec.Verify do
           strict: :boolean,
           debug: :boolean,
           run_commands: :boolean,
-          spec_dir: :string
+          spec_dir: :string,
+          min_strength: :string
         ],
         aliases: [r: :root, o: :output, s: :strict, d: :debug]
       )
 
     validate_args!(rest, invalid)
 
+    min_strength = validate_min_strength!(opts[:min_strength])
     root = opts[:root] || File.cwd!()
     spec_dir = opts[:spec_dir] || SpecLedEx.detect_spec_dir(root)
     authored_dir = SpecLedEx.detect_authored_dir(root, spec_dir)
@@ -34,7 +47,12 @@ defmodule Mix.Tasks.Spec.Verify do
     index = SpecLedEx.build_index(root, spec_dir: spec_dir, authored_dir: authored_dir)
 
     report =
-      SpecLedEx.verify(index, root, strict: strict?, debug: debug?, run_commands: run_commands?)
+      SpecLedEx.verify(index, root,
+        strict: strict?,
+        debug: debug?,
+        run_commands: run_commands?,
+        min_strength: min_strength
+      )
 
     path = SpecLedEx.write_state(index, report, root, output)
 
@@ -81,5 +99,17 @@ defmodule Mix.Tasks.Spec.Verify do
     extra_args = Enum.map(rest, &inspect/1)
     details = Enum.join(invalid_flags ++ extra_args, ", ")
     Mix.raise("Invalid arguments for spec.verify: #{details}")
+  end
+
+  defp validate_min_strength!(nil), do: nil
+
+  defp validate_min_strength!(value) do
+    case VerificationStrength.normalize(value) do
+      {:ok, normalized} ->
+        normalized
+
+      {:error, message} ->
+        Mix.raise("Invalid value for --min-strength: #{message}")
+    end
   end
 end

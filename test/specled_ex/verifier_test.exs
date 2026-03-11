@@ -70,33 +70,29 @@ defmodule SpecLedEx.VerifierTest do
 
   test "verify reports requirement and scenario structure issues", %{root: root} do
     report =
-      Verifier.verify(
+      verify_subject(
+        root,
         %{
-          "subjects" => [
-            base_subject(%{
-              "requirements" => [
-                %{"statement" => "Missing id"},
-                %{"id" => "covered.req", "statement" => "Covered"}
-              ],
-              "scenarios" => [
-                %{
-                  "id" => "scenario.bad",
-                  "covers" => ["unknown.req"],
-                  "given" => [],
-                  "when" => [],
-                  "then" => []
-                },
-                %{
-                  "covers" => [],
-                  "given" => ["g"],
-                  "when" => ["w"],
-                  "then" => ["t"]
-                }
-              ]
-            })
+          "requirements" => [
+            %{"statement" => "Missing id"},
+            %{"id" => "covered.req", "statement" => "Covered"}
+          ],
+          "scenarios" => [
+            %{
+              "id" => "scenario.bad",
+              "covers" => ["unknown.req"],
+              "given" => [],
+              "when" => [],
+              "then" => []
+            },
+            %{
+              "covers" => [],
+              "given" => ["g"],
+              "when" => ["w"],
+              "then" => ["t"]
+            }
           ]
-        },
-        root
+        }
       )
 
     assert report["summary"]["warnings"] == 5
@@ -182,51 +178,47 @@ defmodule SpecLedEx.VerifierTest do
     write_files(root, %{"present.txt" => "present"})
 
     report =
-      Verifier.verify(
+      verify_subject(
+        root,
         %{
-          "subjects" => [
-            base_subject(%{
-              "requirements" => [
-                %{"id" => "req.1", "statement" => "Covered"},
-                %{"id" => "req.2", "statement" => "Covered by exception"}
-              ],
-              "verification" => [
-                %{"kind" => "source_file", "target" => "present.txt", "covers" => ["req.1"]},
-                %{"kind" => "source_file", "target" => "missing.txt", "covers" => ["req.1"]},
-                %{"kind" => "source_file", "target" => "", "covers" => []},
-                %{
-                  "kind" => "command",
-                  "target" => "printf ok",
-                  "covers" => ["req.1"],
-                  "execute" => true
-                },
-                %{
-                  "kind" => "command",
-                  "target" => "printf boom && exit 2",
-                  "covers" => ["req.1"],
-                  "execute" => true
-                },
-                %{
-                  "kind" => "command",
-                  "target" => "printf skip",
-                  "covers" => ["req.1"],
-                  "execute" => false
-                },
-                %{"kind" => "command", "target" => "", "covers" => []},
-                %{
-                  "kind" => "command",
-                  "target" => "printf noop",
-                  "covers" => ["unknown.claim"],
-                  "execute" => false
-                }
-              ],
-              "exceptions" => [
-                %{"id" => "exception.one", "covers" => ["req.2"], "reason" => "accepted"}
-              ]
-            })
+          "requirements" => [
+            %{"id" => "req.1", "statement" => "Covered"},
+            %{"id" => "req.2", "statement" => "Covered by exception"}
+          ],
+          "verification" => [
+            %{"kind" => "source_file", "target" => "present.txt", "covers" => ["req.1"]},
+            %{"kind" => "source_file", "target" => "missing.txt", "covers" => ["req.1"]},
+            %{"kind" => "source_file", "target" => "", "covers" => []},
+            %{
+              "kind" => "command",
+              "target" => "printf ok",
+              "covers" => ["req.1"],
+              "execute" => true
+            },
+            %{
+              "kind" => "command",
+              "target" => "printf boom && exit 2",
+              "covers" => ["req.1"],
+              "execute" => true
+            },
+            %{
+              "kind" => "command",
+              "target" => "printf skip",
+              "covers" => ["req.1"],
+              "execute" => false
+            },
+            %{"kind" => "command", "target" => "", "covers" => []},
+            %{
+              "kind" => "command",
+              "target" => "printf noop",
+              "covers" => ["unknown.claim"],
+              "execute" => false
+            }
+          ],
+          "exceptions" => [
+            %{"id" => "exception.one", "covers" => ["req.2"], "reason" => "accepted"}
           ]
         },
-        root,
         debug: true,
         run_commands: true
       )
@@ -243,35 +235,12 @@ defmodule SpecLedEx.VerifierTest do
                "verification_target_missing_reference"
              ])
 
-    assert Enum.any?(
-             report["checks"],
-             &(&1["code"] == "verification_target_exists" and &1["status"] == "pass")
-           )
-
-    assert Enum.any?(
-             report["checks"],
-             &(&1["code"] == "verification_command_passed" and &1["status"] == "pass")
-           )
-
-    assert Enum.any?(
-             report["checks"],
-             &(&1["code"] == "verification_command_skipped" and &1["status"] == "pass")
-           )
-
-    assert Enum.any?(
-             report["checks"],
-             &(&1["code"] == "verification_command_failed" and &1["status"] == "error")
-           )
-
-    assert Enum.any?(
-             report["checks"],
-             &(&1["code"] == "verification_cover_valid" and &1["status"] == "pass")
-           )
-
-    assert Enum.any?(
-             report["checks"],
-             &(&1["code"] == "verification_cover_unknown" and &1["status"] == "warning")
-           )
+    assert Enum.any?(checks(report, "verification_target_exists"), &(&1["status"] == "pass"))
+    assert Enum.any?(checks(report, "verification_command_passed"), &(&1["status"] == "pass"))
+    assert Enum.any?(checks(report, "verification_command_skipped"), &(&1["status"] == "pass"))
+    assert Enum.any?(checks(report, "verification_command_failed"), &(&1["status"] == "error"))
+    assert Enum.any?(checks(report, "verification_cover_valid"), &(&1["status"] == "pass"))
+    assert Enum.any?(checks(report, "verification_cover_unknown"), &(&1["status"] == "warning"))
   end
 
   test "verify reports unknown verification kinds and excludes them from coverage", %{root: root} do
@@ -412,7 +381,7 @@ defmodule SpecLedEx.VerifierTest do
         ]
       })
 
-    report = Verifier.verify(%{"subjects" => [subject_a, subject_b]}, root)
+    report = verify_subjects(root, [subject_a, subject_b])
 
     refute Enum.any?(report["findings"], &(&1["code"] == "verification_unknown_cover"))
   end
@@ -432,10 +401,9 @@ defmodule SpecLedEx.VerifierTest do
         ]
       })
 
-    report = Verifier.verify(%{"subjects" => [subject_a]}, root)
+    report = verify_subjects(root, [subject_a])
 
-    unknown_covers =
-      Enum.filter(report["findings"], &(&1["code"] == "verification_unknown_cover"))
+    unknown_covers = findings(report, "verification_unknown_cover")
 
     assert length(unknown_covers) == 1
     assert hd(unknown_covers)["message"] =~ "req.nowhere"
@@ -458,12 +426,10 @@ defmodule SpecLedEx.VerifierTest do
         ]
       })
 
-    report = Verifier.verify(%{"subjects" => [subject_a, subject_b]}, root, debug: true)
+    report = verify_subjects(root, [subject_a, subject_b], debug: true)
 
     cross_subject_checks =
-      Enum.filter(report["checks"], fn c ->
-        c["code"] == "verification_cover_valid" and c["message"] =~ "cross-subject"
-      end)
+      Enum.filter(checks(report, "verification_cover_valid"), &String.contains?(&1["message"], "cross-subject"))
 
     assert length(cross_subject_checks) == 1
     assert hd(cross_subject_checks)["message"] =~ "req.from_a"
@@ -554,7 +520,7 @@ defmodule SpecLedEx.VerifierTest do
            )
   end
 
-  test "verify emits info finding when target file does not reference covered requirement", %{
+  test "verify emits warning finding when target file does not reference covered requirement", %{
     root: root
   } do
     write_files(root, %{
@@ -587,13 +553,13 @@ defmodule SpecLedEx.VerifierTest do
         root
       )
 
-    content_findings =
-      Enum.filter(report["findings"], &(&1["code"] == "verification_target_missing_reference"))
+    content_findings = findings(report, "verification_target_missing_reference")
 
     assert length(content_findings) == 1
-    assert hd(content_findings)["severity"] == "info"
+    assert hd(content_findings)["severity"] == "warning"
     assert hd(content_findings)["message"] =~ "req.greeting"
     assert hd(content_findings)["message"] =~ "test/my_test.exs"
+    assert report["verification"]["strength_summary"]["claimed"] == 1
   end
 
   test "verify does not emit content finding when target file references requirement id", %{
@@ -630,10 +596,9 @@ defmodule SpecLedEx.VerifierTest do
         root
       )
 
-    refute Enum.any?(
-             report["findings"],
-             &(&1["code"] == "verification_target_missing_reference")
-           )
+    assert findings(report, "verification_target_missing_reference") == []
+
+    assert report["verification"]["strength_summary"]["linked"] == 1
   end
 
   test "verify skips content probe when target file does not exist", %{root: root} do
@@ -656,15 +621,8 @@ defmodule SpecLedEx.VerifierTest do
         root
       )
 
-    refute Enum.any?(
-             report["findings"],
-             &(&1["code"] == "verification_target_missing_reference")
-           )
-
-    assert Enum.any?(
-             report["findings"],
-             &(&1["code"] == "verification_target_missing")
-           )
+    assert findings(report, "verification_target_missing_reference") == []
+    assert findings(report, "verification_target_missing") != []
   end
 
   test "verify skips content probe for command verification kind", %{root: root} do
@@ -683,10 +641,7 @@ defmodule SpecLedEx.VerifierTest do
         root
       )
 
-    refute Enum.any?(
-             report["findings"],
-             &(&1["code"] == "verification_target_missing_reference")
-           )
+    assert findings(report, "verification_target_missing_reference") == []
   end
 
   test "verify content probe does not affect pass/fail status", %{root: root} do
@@ -713,13 +668,10 @@ defmodule SpecLedEx.VerifierTest do
 
     assert report["status"] == "pass"
 
-    assert Enum.any?(
-             report["findings"],
-             &(&1["code"] == "verification_target_missing_reference")
-           )
+    assert findings(report, "verification_target_missing_reference") != []
   end
 
-  test "verify content probe info findings do not cause failure in strict mode", %{root: root} do
+  test "verify content probe warning findings fail in strict mode", %{root: root} do
     write_files(root, %{"lib/code.ex" => "defmodule Code do end"})
 
     report =
@@ -742,7 +694,94 @@ defmodule SpecLedEx.VerifierTest do
         strict: true
       )
 
+    assert report["status"] == "fail"
+  end
+
+  test "verify reports linked strength below an executed CLI minimum", %{root: root} do
+    write_files(root, %{"lib/linked.ex" => "# req.threshold\n"})
+
+    report =
+      Verifier.verify(
+        %{
+          "subjects" => [
+            base_subject(%{
+              "meta" => %{
+                "id" => "threshold.subject",
+                "kind" => "module",
+                "status" => "active",
+                "verification_minimum_strength" => "linked"
+              },
+              "requirements" => [%{"id" => "req.threshold", "statement" => "Covered"}],
+              "verification" => [
+                %{
+                  "kind" => "source_file",
+                  "target" => "lib/linked.ex",
+                  "covers" => ["req.threshold"]
+                }
+              ]
+            })
+          ]
+        },
+        root,
+        min_strength: "executed"
+      )
+
+    assert report["status"] == "fail"
+    assert report["verification"]["cli_minimum_strength"] == "executed"
+    assert report["verification"]["threshold_failures"] == 1
+
+    assert claim_for(report, "req.threshold") == %{
+             "cover_id" => "req.threshold",
+             "file" => ".spec/specs/example.spec.md",
+             "kind" => "source_file",
+             "meets_minimum" => false,
+             "required_strength" => "executed",
+             "strength" => "linked",
+             "subject_id" => "threshold.subject",
+             "target" => "lib/linked.ex",
+             "verification_index" => 0
+           }
+
+    assert findings(report, "verification_strength_below_minimum") != []
+  end
+
+  test "verify reports executed strength for successful commands", %{root: root} do
+    report =
+      Verifier.verify(
+        %{
+          "subjects" => [
+            base_subject(%{
+              "meta" => %{
+                "id" => "executed.subject",
+                "kind" => "module",
+                "status" => "active",
+                "verification_minimum_strength" => "executed"
+              },
+              "requirements" => [%{"id" => "req.executed", "statement" => "Executed"}],
+              "verification" => [
+                %{
+                  "kind" => "command",
+                  "target" => "printf ok",
+                  "covers" => ["req.executed"],
+                  "execute" => true
+                }
+              ]
+            })
+          ]
+        },
+        root,
+        run_commands: true
+      )
+
     assert report["status"] == "pass"
+    assert report["verification"]["strength_summary"]["executed"] == 1
+    assert report["verification"]["threshold_failures"] == 0
+
+    claim = claim_for(report, "req.executed")
+
+    assert claim["strength"] == "executed"
+    assert claim["required_strength"] == "executed"
+    assert claim["meets_minimum"]
   end
 
   defp base_subject(overrides) do
@@ -766,9 +805,29 @@ defmodule SpecLedEx.VerifierTest do
     |> MapSet.new()
   end
 
+  defp findings(report, code) do
+    Enum.filter(report["findings"], &(&1["code"] == code))
+  end
+
   defp check_codes(report) do
     report["checks"]
     |> Enum.map(& &1["code"])
     |> MapSet.new()
+  end
+
+  defp checks(report, code) do
+    Enum.filter(report["checks"], &(&1["code"] == code))
+  end
+
+  defp claim_for(report, cover_id) do
+    Enum.find(report["verification"]["claims"], &(&1["cover_id"] == cover_id))
+  end
+
+  defp verify_subject(root, overrides, opts \\ []) do
+    Verifier.verify(%{"subjects" => [base_subject(overrides)]}, root, opts)
+  end
+
+  defp verify_subjects(root, subjects, opts \\ []) do
+    Verifier.verify(%{"subjects" => subjects}, root, opts)
   end
 end

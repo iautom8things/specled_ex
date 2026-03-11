@@ -11,7 +11,7 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     assert File.exists?(readme)
     assert File.exists?(package_spec)
-    assert File.read!(readme) =~ "# `.spec`"
+    assert File.read!(readme) == render_spec_init_template("README.md.eex")
 
     File.write!(package_spec, "# Custom Package Spec\n")
 
@@ -19,13 +19,13 @@ defmodule Mix.Tasks.SpecTasksTest do
     assert File.read!(package_spec) == "# Custom Package Spec\n"
 
     Mix.Tasks.Spec.Init.run(["--root", root, "--force"])
-    assert File.read!(package_spec) =~ "# Package"
+    assert File.read!(package_spec) == render_spec_init_template("specs/package.spec.md.eex")
 
     messages = drain_shell_messages()
 
-    assert Enum.any?(messages, &String.contains?(&1, "spec.init scaffolded"))
-    assert Enum.any?(messages, &String.contains?(&1, "kept"))
-    assert Enum.any?(messages, &String.contains?(&1, "wrote"))
+    assert message_contains?(messages, "spec.init scaffolded")
+    assert message_contains?(messages, "kept")
+    assert message_contains?(messages, "wrote")
   end
 
   test "spec.init scaffold passes spec.check", %{root: root} do
@@ -65,8 +65,8 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     assert state["workspace"]["spec_count"] == 1
     assert state["index"]["requirements"] == []
-    assert Enum.any?(messages, &String.contains?(&1, "spec.plan wrote"))
-    assert Enum.any?(messages, &String.contains?(&1, "subjects=1"))
+    assert message_contains?(messages, "spec.plan wrote")
+    assert message_contains?(messages, "subjects=1")
   end
 
   test "spec.plan supports absolute spec_dir paths", %{root: root} do
@@ -102,24 +102,12 @@ defmodule Mix.Tasks.SpecTasksTest do
     state = read_state(root)
     messages = drain_shell_messages()
 
-    assert state["findings"] == [
-             %{
-               "code" => "requirement_without_verification",
-               "entity_id" => "warning.subject",
-               "file" => ".spec/specs/warning.spec.md",
-               "level" => "warning",
-               "message" =>
-                 "Requirement is not referenced by any verification item: warning.requirement"
-             }
-           ]
+    assert [%{"code" => "requirement_without_verification", "entity_id" => "warning.subject"}] =
+             state["findings"]
 
-    assert Enum.any?(messages, &String.contains?(&1, "spec.verify wrote"))
-    assert Enum.any?(messages, &String.contains?(&1, "status=fail errors=0 warnings=1"))
-
-    assert Enum.any?(
-             messages,
-             &String.contains?(&1, "[WARNING] warning.subject requirement_without_verification")
-           )
+    assert message_contains?(messages, "spec.verify wrote")
+    assert message_contains?(messages, "status=fail errors=0 warnings=1")
+    assert message_contains?(messages, "[WARNING] warning.subject requirement_without_verification")
   end
 
   test "spec.verify rejects invalid CLI options", %{root: root} do
@@ -178,6 +166,28 @@ defmodule Mix.Tasks.SpecTasksTest do
     assert Enum.any?(messages, &String.contains?(&1, "[PASS] passing.subject"))
   end
 
+  test "spec.verify requires explicit --run-commands to execute commands", %{root: root} do
+    write_subject_spec(
+      root,
+      "command_only",
+      meta: %{"id" => "command.only", "kind" => "module", "status" => "active"},
+      requirements: [%{"id" => "command.requirement", "statement" => "Covered by command"}],
+      verification: [
+        %{
+          "kind" => "command",
+          "target" => "printf verify-only >> verify_only.txt",
+          "covers" => ["command.requirement"],
+          "execute" => true
+        }
+      ]
+    )
+
+    Mix.Tasks.Spec.Verify.run(["--root", root])
+
+    refute File.exists?(Path.join(root, "verify_only.txt"))
+    assert read_state(root)["summary"]["findings"] == 0
+  end
+
   test "spec.check succeeds for covered specs", %{root: root} do
     write_files(root, %{"README.md" => "readme\n# covered.requirement"})
 
@@ -213,7 +223,7 @@ defmodule Mix.Tasks.SpecTasksTest do
     assert read_state(failing_root)["summary"]["findings"] == 1
   end
 
-  test "spec.check accepts verify-only flags and forwards them to strict verify", %{root: root} do
+  test "spec.check executes commands by default", %{root: root} do
     write_subject_spec(
       root,
       "commanded",
@@ -229,19 +239,71 @@ defmodule Mix.Tasks.SpecTasksTest do
       ]
     )
 
-    Mix.Tasks.Spec.Check.run(["--root", root, "--debug", "--run-commands"])
+    Mix.Tasks.Spec.Check.run(["--root", root, "--debug"])
 
     messages = drain_shell_messages()
 
     assert read_state(root)["summary"]["findings"] == 0
     assert File.read!(Path.join(root, "checked.txt")) == "checked"
-    assert Enum.any?(messages, &String.contains?(&1, "debug_checks="))
-    assert Enum.any?(messages, &String.contains?(&1, "status=pass errors=0 warnings=0"))
+    assert message_contains?(messages, "debug_checks=")
+    assert message_contains?(messages, "status=pass errors=0 warnings=0")
+  end
+
+  test "spec.check allows opting out of command execution", %{root: root} do
+    write_subject_spec(
+      root,
+      "commanded_skipped",
+      meta: %{"id" => "commanded.skipped", "kind" => "module", "status" => "active"},
+      requirements: [%{"id" => "commanded.skipped.requirement", "statement" => "Covered"}],
+      verification: [
+        %{
+          "kind" => "command",
+          "target" => "printf skipped >> skipped.txt",
+          "covers" => ["commanded.skipped.requirement"],
+          "execute" => true
+        }
+      ]
+    )
+
+    Mix.Tasks.Spec.Check.run(["--root", root, "--no-run-commands"])
+
+    refute File.exists?(Path.join(root, "skipped.txt"))
+    assert read_state(root)["summary"]["findings"] == 0
+  end
+
+  test "spec.check forwards min strength to strict verify", %{root: root} do
+    write_files(root, %{"lib/linked.ex" => "# req.forwarded\n"})
+
+    write_subject_spec(
+      root,
+      "forwarded",
+      meta: %{"id" => "forwarded.subject", "kind" => "module", "status" => "active"},
+      requirements: [%{"id" => "req.forwarded", "statement" => "Linked only"}],
+      verification: [
+        %{"kind" => "source_file", "target" => "lib/linked.ex", "covers" => ["req.forwarded"]}
+      ]
+    )
+
+    assert_raise Mix.Error, ~r/Spec verify failed: 1 finding/, fn ->
+      Mix.Tasks.Spec.Check.run(["--root", root, "--min-strength", "executed"])
+    end
+
+    state = read_state(root)
+
+    assert state["verification"]["cli_minimum_strength"] == "executed"
+    assert state["verification"]["threshold_failures"] == 1
+    assert Enum.map(state["findings"], & &1["code"]) == ["verification_strength_below_minimum"]
   end
 
   test "spec.check rejects strict toggles because it is always strict", %{root: root} do
     assert_raise Mix.Error, ~r/Invalid arguments for spec.check: --no-strict/, fn ->
       Mix.Tasks.Spec.Check.run(["--root", root, "--no-strict"])
+    end
+  end
+
+  test "spec.verify rejects invalid min strength values", %{root: root} do
+    assert_raise Mix.Error, ~r/Invalid value for --min-strength/, fn ->
+      Mix.Tasks.Spec.Verify.run(["--root", root, "--min-strength", "strongest"])
     end
   end
 end

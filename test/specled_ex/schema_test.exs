@@ -10,11 +10,13 @@ defmodule SpecLedEx.SchemaTest do
                "id" => "example.subject",
                "kind" => "module",
                "status" => "active",
-               "summary" => "preserved"
+               "summary" => "preserved",
+               "verification_minimum_strength" => "linked"
              })
 
     assert %Meta{} = meta
     assert meta.summary == "preserved"
+    assert meta.verification_minimum_strength == "linked"
     assert Schema.meta() == Meta.schema()
   end
 
@@ -65,6 +67,18 @@ defmodule SpecLedEx.SchemaTest do
 
     assert message =~ "spec-meta validation failed"
     assert message =~ "invalid id format"
+  end
+
+  test "validate_block rejects invalid verification minimum strength" do
+    assert {:error, message} =
+             Schema.validate_block("spec-meta", %{
+               "id" => "example.subject",
+               "kind" => "module",
+               "status" => "active",
+               "verification_minimum_strength" => "strongest"
+             })
+
+    assert message =~ "spec-meta validation failed"
   end
 
   test "validate_block reports item indexes for invalid list entries" do
