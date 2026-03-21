@@ -32,7 +32,7 @@ decisions:
   priority: must
   stability: stable
 - id: specled.package.default_local_loop
-  statement: The package README shall teach a default local loop that uses mix spec.assist before mix spec.check, explains the ready-for-check decision, and reserves ADRs for durable cross-cutting policy.
+  statement: The package README shall teach a default local loop centered on mix spec.assist, mix spec.check, and mix spec.diffcheck, explain the ready-for-check decision, reserve ADRs for durable cross-cutting policy, and present mix spec.plan and mix spec.verify as advanced plumbing rather than the beginner path.
   priority: should
   stability: evolving
 - id: specled.package.index_and_state

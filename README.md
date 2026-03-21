@@ -2,31 +2,52 @@
 
 Local helper package for Spec Led Development repositories.
 
-It provides canonical `mix spec.*` tasks:
+The commands make the most sense when you group them by job instead of reading
+them as one flat list.
+
+## Core Commands
+
+These are the commands most maintainers should learn first:
 
 - `mix spec.init`
   - scaffolds `.spec/` with starter files, including `README.md`, `AGENTS.md`, and `decisions/README.md`
   - in interactive runs, can also scaffold a local Skill for Spec Led Development
   - keeps `.spec` declarative and current-state only
-- `mix spec.plan`
-  - reads `.spec/specs/*.spec.md` and `.spec/decisions/*.md`
-  - updates `.spec/state.json` with subject and ADR index data
 - `mix spec.assist`
   - reads the current Git change set and points at the next subject, proof, or ADR update to make
   - stays read-only in this release
   - supports `--bugfix` for regression-first guidance
+- `mix spec.check`
+  - runs the strict package check before you finish
+  - updates derived state and fails on errors or warnings
+  - enables `kind: command` execution by default; use `--no-run-commands` to opt out
+- `mix spec.diffcheck`
+  - acts as the branch guard
+  - fails when code, docs, or tests moved ahead of current-truth subject or ADR updates
+  - most useful before merge and in CI
+
+## Occasional Commands
+
+These are helpful, but they are not part of the default local loop:
+
+- `mix spec.report`
+  - summarizes source, guide, and test coverage, verification strength, weak spots, and ADR usage
+  - useful for brownfield adoption and maintenance review
+- `mix spec.adr.new`
+  - scaffolds a durable ADR under `.spec/decisions/`
+  - use it only when the change is durable and cross-cutting
+
+## Advanced Commands
+
+These are low-level plumbing commands. They are useful for debugging and tooling,
+but they are not where a junior developer should start:
+
+- `mix spec.plan`
+  - reads `.spec/specs/*.spec.md` and `.spec/decisions/*.md`
+  - updates `.spec/state.json` with subject and ADR index data
 - `mix spec.verify`
   - validates authored specs, updates `.spec/state.json`, and exits non-zero when the verification report fails
   - keeps `kind: command` verification execution off by default for fast local runs
-- `mix spec.check`
-  - runs `plan` plus strict `verify`
-  - enables `kind: command` execution by default; use `--no-run-commands` to opt out
-- `mix spec.adr.new`
-  - scaffolds a durable ADR under `.spec/decisions/`
-- `mix spec.report`
-  - summarizes source, guide, and test coverage, verification strength, weak spots, and ADR usage
-- `mix spec.diffcheck`
-  - inspects the current Git diff and fails when code, docs, or tests moved ahead of current-truth subject or ADR updates
 
 ## Default Local Loop
 
@@ -40,6 +61,7 @@ Use one small loop by default:
 4. if it says `needs subject updates`, update the named subject
 5. if it says `needs decision update`, add or revise an ADR only when the change is durable and cross-cutting
 6. when it says `ready for check`, run `mix spec.check`
+7. run `mix spec.diffcheck --base ...` when the branch should be ready for review or merge
 
 For bug fixes:
 
@@ -68,12 +90,6 @@ When a cross-cutting policy needs to stay durable:
 mix spec.adr.new repo.policy --title "Repository Policy"
 ```
 
-For a fast local structural pass:
-
-```bash
-mix spec.verify
-```
-
 For coverage and brownfield frontier checks:
 
 ```bash
@@ -84,6 +100,12 @@ For diff-aware governance enforcement:
 
 ```bash
 mix spec.diffcheck
+```
+
+For a fast local structural pass or package debugging:
+
+```bash
+mix spec.verify
 ```
 
 For stronger local or CI proof requirements:
