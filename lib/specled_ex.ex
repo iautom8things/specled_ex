@@ -3,7 +3,7 @@ defmodule SpecLedEx do
   Local tooling for Spec Led Development repositories.
   """
 
-  alias SpecLedEx.{Diffcheck, Index, Json, Report, VerificationStrength, Verifier}
+  alias SpecLedEx.{Assist, Diffcheck, Index, Json, Report, VerificationStrength, Verifier}
 
   @default_state ".spec/state.json"
 
@@ -21,6 +21,10 @@ defmodule SpecLedEx do
 
   def diffcheck(index, root \\ File.cwd!(), opts \\ []) do
     Diffcheck.run(index, root, opts)
+  end
+
+  def assist(index, root \\ File.cwd!(), opts \\ []) do
+    Assist.run(index, root, opts)
   end
 
   def read_state(root \\ File.cwd!(), output_path \\ @default_state) do
@@ -43,18 +47,19 @@ defmodule SpecLedEx do
       |> Map.delete("verification_items")
       |> Map.delete("parse_errors")
 
-    state = %{
-      "specification_version" => "1.0",
-      "workspace" => %{
-        "spec_count" => length(subjects),
-        "decision_count" => length(decisions)
-      },
-      "index" => normalize_index(subjects),
-      "decisions" => normalize_decisions(decisions),
-      "findings" => normalize_findings(findings),
-      "summary" => summary
-    }
-    |> maybe_put("verification", normalize_verification(report))
+    state =
+      %{
+        "specification_version" => "1.0",
+        "workspace" => %{
+          "spec_count" => length(subjects),
+          "decision_count" => length(decisions)
+        },
+        "index" => normalize_index(subjects),
+        "decisions" => normalize_decisions(decisions),
+        "findings" => normalize_findings(findings),
+        "summary" => summary
+      }
+      |> maybe_put("verification", normalize_verification(report))
 
     Json.write!(path, state)
     path

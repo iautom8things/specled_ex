@@ -4,25 +4,27 @@ User-facing commands for the Spec Led Development workflow.
 
 ## Intent
 
-Provide four Mix tasks that cover the full local workflow:
-scaffold, index, verify, and strict check.
+Provide the user-facing Mix tasks that scaffold, reconcile, verify, report on, and strictly enforce the local Spec Led workflow.
 
 ```spec-meta
 id: specled.mix_tasks
 kind: workflow
 status: active
-summary: Mix tasks for scaffolding, planning, verifying, reporting on, and diff-checking Spec Led Development workspaces.
+summary: Mix tasks for scaffolding, planning, guiding, verifying, reporting on, and diff-checking Spec Led Development workspaces.
 surface:
   - lib/mix/tasks/spec.init.ex
   - lib/mix/tasks/spec.plan.ex
+  - lib/mix/tasks/spec.assist.ex
   - lib/mix/tasks/spec.verify.ex
   - lib/mix/tasks/spec.check.ex
   - lib/mix/tasks/spec.adr.new.ex
   - lib/mix/tasks/spec.report.ex
   - lib/mix/tasks/spec.diffcheck.ex
+  - test_support/specled_ex_case.ex
 decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.local_skill_scaffold
+  - specled.decision.guided_reconciliation_loop
 ```
 
 ## Requirements
@@ -44,6 +46,10 @@ decisions:
   statement: mix spec.plan shall build the authored subject and decision index and write .spec/state.json.
   priority: must
   stability: stable
+- id: specled.tasks.assist_guidance
+  statement: mix spec.assist shall provide a read-only guided reconciliation step that points at the next subject, proof, or ADR update for the current Git change set and tell the maintainer when the branch is ready for the strict check.
+  priority: should
+  stability: evolving
 - id: specled.tasks.verify_findings
   statement: mix spec.verify shall validate specs, derive findings, and write .spec/state.json with a verification report before returning.
   priority: must
@@ -70,13 +76,14 @@ decisions:
 
 ```spec-verification
 - kind: command
-  target: mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_report_task_test.exs
+  target: mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_report_task_test.exs test/mix/tasks/spec_assist_task_test.exs
   execute: true
   covers:
     - specled.tasks.init_scaffold
     - specled.tasks.init_local_skill
     - specled.tasks.adr_new_scaffold
     - specled.tasks.plan_writes_state
+    - specled.tasks.assist_guidance
     - specled.tasks.verify_findings
     - specled.tasks.verify_exit_status
     - specled.tasks.check_strict_gate

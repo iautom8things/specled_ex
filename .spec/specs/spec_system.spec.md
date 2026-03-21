@@ -17,6 +17,7 @@ surface:
 decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.local_skill_scaffold
+  - specled.decision.guided_reconciliation_loop
 ```
 
 ## Requirements
@@ -38,6 +39,10 @@ decisions:
   statement: When planning and verification run, the workspace shall generate .spec/state.json containing indexed subjects, indexed decisions, and verification state.
   priority: must
   stability: stable
+- id: spec.workspace.reconcile_loop
+  statement: "The workspace guidance files shall teach the default local reconcile loop: change the code, tighten the proof, run mix spec.assist, update current-truth subjects, use ADRs only for durable cross-cutting policy, and then run mix spec.check."
+  priority: should
+  stability: evolving
 ```
 
 ## Verification
@@ -47,14 +52,17 @@ decisions:
   target: .spec/README.md
   covers:
     - spec.workspace.readme_present
+    - spec.workspace.reconcile_loop
 - kind: source_file
   target: .spec/AGENTS.md
   covers:
     - spec.workspace.agents_present
+    - spec.workspace.reconcile_loop
 - kind: source_file
   target: .spec/decisions/README.md
   covers:
     - spec.workspace.decisions_readme_present
+    - spec.workspace.reconcile_loop
 - kind: command
   target: mix spec.plan
   covers:

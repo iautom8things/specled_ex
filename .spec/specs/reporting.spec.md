@@ -14,11 +14,11 @@ summary: Builds current-state summaries for coverage, verification strength, wea
 surface:
   - lib/specled_ex/report.ex
   - lib/specled_ex/coverage.ex
-  - lib/specled_ex.ex
   - lib/mix/tasks/spec.report.ex
 decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.explicit_subject_ownership
+  - specled.decision.guided_reconciliation_loop
 ```
 
 ## Requirements
@@ -26,6 +26,10 @@ decisions:
 ```spec-requirements
 - id: specled.reporting.coverage_summary
   statement: spec.report shall summarize source, guide, and test coverage plus weak spots by subject from the current workspace, using executed command proof by default unless explicitly disabled.
+  priority: should
+  stability: evolving
+- id: specled.reporting.frontier_summary
+  statement: spec.report shall include frontier data for uncovered source, guide, and test files plus short next-gap hints for brownfield adoption.
   priority: should
   stability: evolving
 - id: specled.reporting.decision_index
@@ -42,5 +46,6 @@ decisions:
   execute: true
   covers:
     - specled.reporting.coverage_summary
+    - specled.reporting.frontier_summary
     - specled.reporting.decision_index
 ```

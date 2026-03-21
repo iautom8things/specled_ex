@@ -11,6 +11,10 @@ It provides canonical `mix spec.*` tasks:
 - `mix spec.plan`
   - reads `.spec/specs/*.spec.md` and `.spec/decisions/*.md`
   - updates `.spec/state.json` with subject and ADR index data
+- `mix spec.assist`
+  - reads the current Git change set and points at the next subject, proof, or ADR update to make
+  - stays read-only in this release
+  - supports `--bugfix` for regression-first guidance
 - `mix spec.verify`
   - validates authored specs, updates `.spec/state.json`, and exits non-zero when the verification report fails
   - keeps `kind: command` verification execution off by default for fast local runs
@@ -24,6 +28,25 @@ It provides canonical `mix spec.*` tasks:
 - `mix spec.diffcheck`
   - inspects the current Git diff and fails when code, docs, or tests moved ahead of current-truth subject or ADR updates
 
+## Default Local Loop
+
+<!-- covers: specled.package.default_local_loop -->
+
+Use one small loop by default:
+
+1. make the code, test, or docs change
+2. add or tighten the smallest test when behavior changed
+3. run `mix spec.assist`
+4. if it says `needs subject updates`, update the named subject
+5. if it says `needs decision update`, add or revise an ADR only when the change is durable and cross-cutting
+6. when it says `ready for check`, run `mix spec.check`
+
+For bug fixes:
+
+```bash
+mix spec.assist --bugfix
+```
+
 ## Local Usage
 
 Add as a path dependency in another project:
@@ -35,6 +58,7 @@ Add as a path dependency in another project:
 Then run:
 
 ```bash
+mix spec.assist
 mix spec.check
 ```
 
@@ -50,10 +74,15 @@ For a fast local structural pass:
 mix spec.verify
 ```
 
-For coverage and diff-aware governance checks:
+For coverage and brownfield frontier checks:
 
 ```bash
 mix spec.report
+```
+
+For diff-aware governance enforcement:
+
+```bash
 mix spec.diffcheck
 ```
 

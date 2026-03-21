@@ -1,6 +1,7 @@
 defmodule SpecLedEx.Report do
   @moduledoc false
 
+  alias SpecLedEx.ChangeAnalysis
   alias SpecLedEx.Coverage
   alias SpecLedEx.VerificationStrength
 
@@ -11,6 +12,9 @@ defmodule SpecLedEx.Report do
     subject_file_map = Coverage.subject_file_map(index, root)
     findings = verification_report["findings"] || []
     claims = get_in(verification_report, ["verification", "claims"]) || []
+    source_coverage = Coverage.category_summary(root, covered_files, "lib")
+    guide_coverage = Coverage.category_summary(root, covered_files, "guides")
+    test_coverage = Coverage.category_summary(root, covered_files, "test")
 
     %{
       "generated_at" => DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.to_iso8601(),
@@ -25,10 +29,11 @@ defmodule SpecLedEx.Report do
       },
       "verification" => verification_report["verification"] || default_verification_summary(),
       "coverage" => %{
-        "source" => Coverage.category_summary(root, covered_files, "lib"),
-        "guides" => Coverage.category_summary(root, covered_files, "guides"),
-        "tests" => Coverage.category_summary(root, covered_files, "test")
+        "source" => source_coverage,
+        "guides" => guide_coverage,
+        "tests" => test_coverage
       },
+      "frontier" => ChangeAnalysis.frontier(index, root),
       "decisions" => decision_summary(subjects, decisions),
       "weak_spots" => weak_spots(subjects, subject_file_map, findings, claims)
     }
@@ -48,7 +53,9 @@ defmodule SpecLedEx.Report do
         format_category_line("source", coverage["source"]),
         format_category_line("guides", coverage["guides"]),
         format_category_line("tests", coverage["tests"])
-      ] ++ format_weak_spots(report["weak_spots"] || [])
+      ] ++
+        format_weak_spots(report["weak_spots"] || []) ++
+        format_frontier(report["frontier"])
 
     Enum.join(lines, "\n")
   end
@@ -66,6 +73,34 @@ defmodule SpecLedEx.Report do
       Enum.map(weak_spots, fn weak_spot ->
         "#{weak_spot["id"]} warnings=#{weak_spot["warnings"]} errors=#{weak_spot["errors"]} covered_files=#{weak_spot["covered_files"]}"
       end)
+  end
+
+  defp format_frontier(nil), do: []
+
+  defp format_frontier(frontier) do
+    lines = [
+      "frontier covered_subjects=#{frontier["covered_subject_count"] || 0} uncovered_files=#{frontier["uncovered_file_count"] || 0}"
+    ]
+
+    next_gap_lines =
+      [
+        format_gap_line("source", frontier["uncovered_source_files"] || []),
+        format_gap_line("guides", frontier["uncovered_guide_files"] || []),
+        format_gap_line("tests", frontier["uncovered_test_files"] || [])
+      ]
+      |> Enum.reject(&is_nil/1)
+
+    if next_gap_lines == [] do
+      lines ++ ["next_gaps=none"]
+    else
+      lines ++ next_gap_lines
+    end
+  end
+
+  defp format_gap_line(_label, []), do: nil
+
+  defp format_gap_line(label, files) do
+    "next_gaps #{label}=#{Enum.join(Enum.take(files, 3), ", ")}"
   end
 
   defp decision_summary(subjects, decisions) do

@@ -7,7 +7,7 @@ description: Draft, revise, and validate authored Spec Led Development subject s
 
 ## Overview
 
-Author `.spec/specs/*.spec.md` files that match this package's parser and verifier. Keep every claim grounded in repository evidence, prefer YAML fenced blocks, and leave the workspace passing `mix spec.verify --debug` and `mix spec.check`.
+Author `.spec/specs/*.spec.md` files that match this package's parser and verifier. Keep every claim grounded in repository evidence, prefer YAML fenced blocks, and use `mix spec.assist` to reconcile code, tests, docs, and current truth before you finish with `mix spec.check`.
 
 ## Workflow
 
@@ -31,10 +31,14 @@ Author `.spec/specs/*.spec.md` files that match this package's parser and verifi
    - Add `spec-exceptions` only when a requirement is intentionally not verified yet and the reason should suppress the uncovered-requirement warning.
    - Add `spec-meta.decisions` only when the subject depends on a durable cross-cutting ADR in `.spec/decisions/*.md`.
 5. Validate and tighten.
+   - After code, docs, or tests change, run `mix spec.assist`.
+   - For a regression fix, run `mix spec.assist --bugfix`.
+   - If assist says `ready for check`, move to `mix spec.check`.
+   - If assist says `needs subject updates`, update the named subject before you finish.
    - Run `mix spec.verify --debug` after edits.
    - Fix warnings as well as errors; `mix spec.check` runs strict verification and fails on both.
    - Run `mix spec.check` once the subject is complete.
-   - Run `mix spec.diffcheck` when the work also changed code, docs, or tests.
+   - Run `mix spec.diffcheck` when you need to enforce diff-aware co-changes before merge.
 
 ## Authoring Rules
 

@@ -32,6 +32,15 @@ defmodule Mix.Tasks.Spec.Diffcheck do
       Mix.shell().info("[#{severity}] #{finding["code"]} #{file} :: #{finding["message"]}")
     end)
 
+    guidance = report["guidance"] || %{}
+    impacted_subjects = guidance["impacted_subject_ids"] || []
+    uncovered_policy_files = guidance["uncovered_policy_files"] || []
+
+    Mix.shell().info("guidance change_type=#{guidance["change_type"] || "non_contract_or_meta"}")
+    Mix.shell().info("guidance impacted_subjects=#{Enum.join(impacted_subjects, ", ")}")
+    Mix.shell().info("guidance uncovered_policy_files=#{Enum.join(uncovered_policy_files, ", ")}")
+    Mix.shell().info("guidance next=#{guidance["suggested_command"]}")
+
     if report["status"] == "fail" do
       Mix.raise("Spec diffcheck failed: #{length(report["findings"] || [])} finding(s)")
     end

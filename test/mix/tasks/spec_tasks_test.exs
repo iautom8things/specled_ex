@@ -164,7 +164,13 @@ defmodule Mix.Tasks.SpecTasksTest do
     Mix.Tasks.Spec.Init.run(["--root", root])
     reenable_tasks()
 
-    Mix.Tasks.Spec.Adr.New.run(["--root", root, "--title", "Governance Policy", "repo.governance.policy"])
+    Mix.Tasks.Spec.Adr.New.run([
+      "--root",
+      root,
+      "--title",
+      "Governance Policy",
+      "repo.governance.policy"
+    ])
 
     path = Path.join(root, ".spec/decisions/repo.governance.policy.md")
     messages = drain_shell_messages()
@@ -250,7 +256,8 @@ defmodule Mix.Tasks.SpecTasksTest do
   test "spec.report emits human and json summaries", %{root: root} do
     write_files(root, %{
       "lib/example.ex" => "# report.requirement\n",
-      "test/example_test.exs" => "# report.requirement\n"
+      "test/example_test.exs" => "# report.requirement\n",
+      "guides/overview.md" => "# Uncovered guide\n"
     })
 
     write_subject_spec(
@@ -264,7 +271,11 @@ defmodule Mix.Tasks.SpecTasksTest do
       },
       requirements: [%{"id" => "report.requirement", "statement" => "Covered requirement"}],
       verification: [
-        %{"kind" => "test_file", "target" => "test/example_test.exs", "covers" => ["report.requirement"]}
+        %{
+          "kind" => "test_file",
+          "target" => "test/example_test.exs",
+          "covers" => ["report.requirement"]
+        }
       ]
     )
 
@@ -302,6 +313,8 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     assert message_contains?(human_messages, "Spec Led Development Report")
     assert message_contains?(human_messages, "source covered=1/1")
+    assert message_contains?(human_messages, "frontier covered_subjects=1 uncovered_files=1")
+    assert message_contains?(human_messages, "next_gaps guides=guides/overview.md")
 
     reenable_tasks(["spec.report"])
     Mix.Tasks.Spec.Report.run(["--root", root, "--json"])
@@ -311,6 +324,9 @@ defmodule Mix.Tasks.SpecTasksTest do
     assert report["summary"]["subjects"] == 1
     assert report["decisions"]["count"] == 1
     assert report["coverage"]["source"]["covered"] == 1
+    assert report["frontier"]["covered_subject_count"] == 1
+    assert report["frontier"]["uncovered_guide_files"] == ["guides/overview.md"]
+    assert report["frontier"]["uncovered_file_count"] == 1
   end
 
   test "spec.check succeeds for covered specs", %{root: root} do
@@ -359,6 +375,9 @@ defmodule Mix.Tasks.SpecTasksTest do
     messages = drain_shell_messages()
 
     assert message_contains?(messages, "diffcheck_missing_spec_update")
+    assert message_contains?(messages, "guidance change_type=single_subject")
+    assert message_contains?(messages, "guidance impacted_subjects=example.subject")
+    assert message_contains?(messages, "guidance next=mix spec.assist --base HEAD")
   end
 
   test "spec.diffcheck requires a decision update for cross-cutting changes", %{root: root} do
@@ -372,13 +391,23 @@ defmodule Mix.Tasks.SpecTasksTest do
     write_subject_spec(
       root,
       "a",
-      meta: %{"id" => "a.subject", "kind" => "module", "status" => "active", "surface" => ["lib/a.ex"]}
+      meta: %{
+        "id" => "a.subject",
+        "kind" => "module",
+        "status" => "active",
+        "surface" => ["lib/a.ex"]
+      }
     )
 
     write_subject_spec(
       root,
       "b",
-      meta: %{"id" => "b.subject", "kind" => "module", "status" => "active", "surface" => ["lib/b.ex"]}
+      meta: %{
+        "id" => "b.subject",
+        "kind" => "module",
+        "status" => "active",
+        "surface" => ["lib/b.ex"]
+      }
     )
 
     write_decision(
@@ -418,8 +447,15 @@ defmodule Mix.Tasks.SpecTasksTest do
       "lib/b.ex" => "defmodule B do\n  def run, do: :ok\nend\n"
     })
 
-    File.write!(Path.join(root, ".spec/specs/a.spec.md"), File.read!(Path.join(root, ".spec/specs/a.spec.md")) <> "\n")
-    File.write!(Path.join(root, ".spec/specs/b.spec.md"), File.read!(Path.join(root, ".spec/specs/b.spec.md")) <> "\n")
+    File.write!(
+      Path.join(root, ".spec/specs/a.spec.md"),
+      File.read!(Path.join(root, ".spec/specs/a.spec.md")) <> "\n"
+    )
+
+    File.write!(
+      Path.join(root, ".spec/specs/b.spec.md"),
+      File.read!(Path.join(root, ".spec/specs/b.spec.md")) <> "\n"
+    )
 
     assert_raise Mix.Error, ~r/Spec diffcheck failed: 1 finding/, fn ->
       Mix.Tasks.Spec.Diffcheck.run(["--root", root, "--base", "HEAD"])
@@ -428,6 +464,72 @@ defmodule Mix.Tasks.SpecTasksTest do
     messages = drain_shell_messages()
 
     assert message_contains?(messages, "diffcheck_missing_decision_update")
+    assert message_contains?(messages, "guidance change_type=cross_cutting")
+    assert message_contains?(messages, "guidance impacted_subjects=a.subject, b.subject")
+    assert message_contains?(messages, "guidance next=mix spec.assist --base HEAD")
+  end
+
+  test "spec.diffcheck ignores branch-local plan docs under docs/plans", %{root: root} do
+    init_git_repo(root)
+
+    write_files(root, %{"lib/example.ex" => "defmodule Example do\nend\n"})
+
+    write_subject_spec(
+      root,
+      "example",
+      meta: %{
+        "id" => "example.subject",
+        "kind" => "module",
+        "status" => "active",
+        "surface" => ["lib/example.ex"]
+      }
+    )
+
+    commit_all(root, "initial")
+
+    write_files(root, %{"docs/plans/notes.md" => "# Branch-local notes\n"})
+
+    Mix.Tasks.Spec.Diffcheck.run(["--root", root, "--base", "HEAD"])
+    messages = drain_shell_messages()
+
+    assert message_contains?(messages, "spec.diffcheck base=HEAD changed_files=1 findings=0")
+    assert message_contains?(messages, "guidance change_type=non_contract_or_meta")
+    assert message_contains?(messages, "guidance uncovered_policy_files=")
+  end
+
+  test "spec.diffcheck governs assist scaffolds and skills as package surfaces", %{root: root} do
+    init_git_repo(root)
+
+    write_files(root, %{
+      "priv/spec_init/README.md.eex" => "template\n",
+      "skills/write-spec-led-specs/SKILL.md" => "skill\n"
+    })
+
+    write_subject_spec(
+      root,
+      "assist",
+      meta: %{
+        "id" => "assist.subject",
+        "kind" => "workflow",
+        "status" => "active",
+        "surface" => ["priv/spec_init/README.md.eex", "skills/write-spec-led-specs/SKILL.md"]
+      }
+    )
+
+    commit_all(root, "initial")
+
+    write_files(root, %{
+      "priv/spec_init/README.md.eex" => "template updated\n"
+    })
+
+    assert_raise Mix.Error, ~r/Spec diffcheck failed: 1 finding/, fn ->
+      Mix.Tasks.Spec.Diffcheck.run(["--root", root, "--base", "HEAD"])
+    end
+
+    messages = drain_shell_messages()
+
+    assert message_contains?(messages, "diffcheck_missing_spec_update")
+    assert message_contains?(messages, "priv/spec_init/README.md.eex")
   end
 
   test "spec.check fails for strict findings", %{root: root} do

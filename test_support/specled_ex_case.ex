@@ -92,7 +92,7 @@ defmodule SpecLedEx.Case do
   end
 
   def reenable_tasks(
-        tasks \\ ~w(spec.init spec.plan spec.verify spec.check spec.adr.new spec.report spec.diffcheck)
+        tasks \\ ~w(spec.init spec.plan spec.verify spec.check spec.adr.new spec.report spec.diffcheck spec.assist)
       ) do
     Enum.each(tasks, &Mix.Task.reenable/1)
   end

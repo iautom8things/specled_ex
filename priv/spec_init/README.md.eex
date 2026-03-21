@@ -17,9 +17,10 @@ This folder is the package-local Spec Led layer.
 
 ## Core Loop
 
-1. update current-truth subjects in `specs/`
-2. add or revise an ADR only when the change is cross-cutting and durable
-3. use Git history and pull requests as the change timeline
-4. run `mix spec.verify --debug`
-5. run `mix spec.check`
-6. run `mix spec.diffcheck` when code, docs, or tests changed
+1. make the smallest code, docs, or test change that moves the behavior
+2. add or tighten the smallest proof when behavior changed
+3. run `mix spec.assist`
+4. if it says `needs subject updates`, update the right current-truth subject in `specs/`
+5. if it says `needs decision update`, add or revise an ADR only when the change is cross-cutting and durable
+6. when it says `ready for check`, run `mix spec.check`
+7. run `mix spec.diffcheck` when you need diff-aware enforcement

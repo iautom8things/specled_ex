@@ -14,7 +14,6 @@ status: active
 summary: Builds the authored index and writes canonical derived state for the workspace.
 surface:
   - lib/specled_ex/index.ex
-  - lib/specled_ex.ex
   - lib/specled_ex/json.ex
 decisions:
   - specled.decision.declarative_current_truth

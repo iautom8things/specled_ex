@@ -2,7 +2,7 @@
 
 Use this folder for durable cross-cutting decisions that shape the current Spec Led Development workspace.
 
-<!-- covers: spec.workspace.decisions_readme_present -->
+<!-- covers: spec.workspace.decisions_readme_present spec.workspace.reconcile_loop -->
 
 ## What Belongs Here
 
@@ -19,5 +19,6 @@ Use this folder for durable cross-cutting decisions that shape the current Spec 
 ## Workflow
 
 1. Update the current-truth subject specs in `.spec/specs/`.
-2. Add or revise an ADR here only when the change is cross-cutting and should stay durable.
-3. Use Git history and pull requests as the time dimension for how the change evolved.
+2. Use `mix spec.assist` to understand whether the change is local, cross-cutting, or on the uncovered frontier.
+3. Add or revise an ADR here only when the change is cross-cutting and should stay durable.
+4. Use Git history and pull requests as the time dimension for how the change evolved.
