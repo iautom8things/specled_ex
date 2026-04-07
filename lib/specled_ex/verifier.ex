@@ -8,17 +8,19 @@ defmodule SpecLedEx.Verifier do
   @file_kinds ~w(file source_file test_file guide_file readme_file workflow_file test doc workflow contract)
   @known_verification_kinds VerificationSchema.kinds()
   @id_pattern ~r/^[a-z0-9][a-z0-9._-]*$/
+  @default_command_timeout_ms 120_000
 
   def verify(index, root, opts \\ []) do
     strict? = Keyword.get(opts, :strict, false)
     debug? = Keyword.get(opts, :debug, false)
     run_commands? = Keyword.get(opts, :run_commands, false)
+    command_timeout_ms = Keyword.get(opts, :command_timeout_ms, @default_command_timeout_ms)
     cli_minimum_strength = normalize_minimum_strength!(Keyword.get(opts, :min_strength))
     subjects = index["subjects"] || []
     decisions = index["decisions"] || []
     subject_ids = build_subject_ids(subjects)
     decision_ids = build_decision_ids(decisions)
-    command_results = build_command_results(subjects, root, run_commands?)
+    command_results = build_command_results(subjects, root, run_commands?, command_timeout_ms)
     global_claim_ids = build_global_claim_ids(subjects)
 
     verification_claims =
@@ -1561,9 +1563,9 @@ defmodule SpecLedEx.Verifier do
 
   defp ids_from(_, _kind), do: []
 
-  defp build_command_results(_subjects, _root, false), do: %{}
+  defp build_command_results(_subjects, _root, false, _timeout), do: %{}
 
-  defp build_command_results(subjects, root, true) do
+  defp build_command_results(subjects, root, true, timeout_ms) do
     Enum.reduce(subjects, %{}, fn subject, acc ->
       file = string_field(subject, "file")
       meta = subject_meta(subject)
@@ -1574,7 +1576,7 @@ defmodule SpecLedEx.Verifier do
       |> map_items()
       |> Enum.with_index()
       |> Enum.reduce(acc, fn {verification, idx}, inner_acc ->
-        case command_result(verification, root) do
+        case command_result(verification, root, timeout_ms) do
           nil -> inner_acc
           result -> Map.put(inner_acc, verification_key(subject_id, file, idx), result)
         end
@@ -1582,11 +1584,75 @@ defmodule SpecLedEx.Verifier do
     end)
   end
 
-  defp command_result(verification, root) do
+  # Captures command output via temp files instead of pipe-based System.cmd.
+  # OTP's erl_child_setup retains pipe write-end fds for the BEAM's lifetime,
+  # preventing EOF on System.cmd's read end after the child exits.
+  # See: specled.decision.tempfile_command_execution
+  defp command_result(verification, root, timeout_ms) do
     if runnable_command_verification?(verification) do
       target = string_field(verification, "target")
-      {output, exit_code} = System.cmd("sh", ["-lc", target], cd: root, stderr_to_stdout: true)
+      run_command(target, root, timeout_ms)
+    end
+  end
+
+  defp run_command(target, root, timeout_ms) do
+    tmp_out = Path.join(System.tmp_dir!(), "specled_cmd_#{System.unique_integer([:positive])}")
+    tmp_exit = "#{tmp_out}.exit"
+
+    # Write a wrapper script to avoid shell escaping issues with nested quotes.
+    # The script captures stdout/stderr to a temp file and the exit code to another.
+    tmp_script = "#{tmp_out}.sh"
+
+    File.write!(tmp_script, """
+    #!/bin/sh
+    cd "#{root}" || exit 127
+    (#{target}) > "#{tmp_out}" 2>&1
+    echo $? > "#{tmp_exit}"
+    """)
+
+    port =
+      Port.open(
+        {:spawn_executable, "/bin/sh"},
+        [:binary, :exit_status, {:args, [tmp_script]}]
+      )
+
+    try do
+      exit_status =
+        receive do
+          {^port, {:exit_status, status}} -> status
+        after
+          timeout_ms ->
+            Port.close(port)
+            :timeout
+        end
+
+      output =
+        case File.read(tmp_out) do
+          {:ok, data} -> data
+          {:error, _} -> ""
+        end
+
+      exit_code =
+        if exit_status == :timeout do
+          1
+        else
+          case File.read(tmp_exit) do
+            {:ok, code_str} ->
+              case Integer.parse(String.trim(code_str)) do
+                {n, _} -> n
+                :error -> 1
+              end
+
+            {:error, _} ->
+              1
+          end
+        end
+
       %{output: output, exit_code: exit_code}
+    after
+      File.rm(tmp_out)
+      File.rm(tmp_exit)
+      File.rm(tmp_script)
     end
   end
 

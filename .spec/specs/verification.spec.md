@@ -22,6 +22,7 @@ decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.file_backed_linked_strength
   - specled.decision.explicit_subject_ownership
+  - specled.decision.tempfile_command_execution
 ```
 
 ## Requirements
@@ -53,6 +54,14 @@ decisions:
   stability: evolving
 - id: specled.verify.strength_semantics
   statement: Verification strength ordering shall treat `claimed`, `linked`, and `executed` as an ordered proof scale and use that ordering to enforce effective minimum strength thresholds.
+  priority: must
+  stability: stable
+- id: specled.verify.command_execution_resilience
+  statement: >
+    Command verifications shall capture output via temp files and wait for
+    process exit status, not pipe EOF. Commands shall run under a configurable
+    timeout (default 120s). Output and exit code files shall be cleaned up even
+    if reading fails.
   priority: must
   stability: stable
 ```
@@ -88,6 +97,37 @@ decisions:
     - verification does not crash
   covers:
     - specled.verify.malformed_entries_nonfatal
+- id: specled.verify.scenario.command_captures_output_via_tempfile
+  given:
+    - a spec with a command verification targeting "printf ok" with execute true
+  when:
+    - verification runs with run_commands true
+  then:
+    - the command output is captured correctly
+    - the exit code is 0
+    - no temp files remain after verification
+  covers:
+    - specled.verify.command_execution_resilience
+- id: specled.verify.scenario.command_timeout
+  given:
+    - a spec with a command verification targeting a slow command
+  when:
+    - verification runs with run_commands true and a short timeout
+  then:
+    - the command is killed after the timeout
+    - a non-zero exit code is recorded
+  covers:
+    - specled.verify.command_execution_resilience
+- id: specled.verify.scenario.command_failed_exit_code
+  given:
+    - a spec with a command verification targeting "exit 2"
+  when:
+    - verification runs with run_commands true
+  then:
+    - the exit code is 2
+    - the verification is reported as failed
+  covers:
+    - specled.verify.command_execution_resilience
 ```
 
 ## Verification
@@ -104,4 +144,5 @@ decisions:
     - specled.verify.malformed_entries_nonfatal
     - specled.verify.decision_governance
     - specled.verify.strength_semantics
+    - specled.verify.command_execution_resilience
 ```
