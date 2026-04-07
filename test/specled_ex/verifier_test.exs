@@ -856,6 +856,118 @@ defmodule SpecLedEx.VerifierTest do
     assert claim["meets_minimum"]
   end
 
+  # ── command execution resilience ──────────────────────────────────────────
+
+  test "command verification captures output via temp files", %{root: root} do
+    report =
+      verify_subject(
+        root,
+        %{
+          "requirements" => [%{"id" => "req.cmd", "statement" => "Command runs"}],
+          "verification" => [
+            %{
+              "kind" => "command",
+              "target" => "printf 'hello from command'",
+              "covers" => ["req.cmd"],
+              "execute" => true
+            }
+          ]
+        },
+        run_commands: true,
+        debug: true
+      )
+
+    assert report["status"] == "pass"
+
+    passed_check =
+      Enum.find(report["checks"], fn c ->
+        c["code"] == "verification_command_passed" and c["status"] == "pass"
+      end)
+
+    assert passed_check
+  end
+
+  test "command verification captures non-zero exit codes", %{root: root} do
+    report =
+      verify_subject(
+        root,
+        %{
+          "requirements" => [%{"id" => "req.fail", "statement" => "Fails"}],
+          "verification" => [
+            %{
+              "kind" => "command",
+              "target" => "exit 2",
+              "covers" => ["req.fail"],
+              "execute" => true
+            }
+          ]
+        },
+        run_commands: true,
+        debug: true
+      )
+
+    assert report["status"] == "fail"
+
+    failed_check =
+      Enum.find(report["checks"], fn c ->
+        c["code"] == "verification_command_failed" and c["status"] == "error"
+      end)
+
+    assert failed_check
+  end
+
+  test "command verification times out on slow commands", %{root: root} do
+    report =
+      verify_subject(
+        root,
+        %{
+          "requirements" => [%{"id" => "req.slow", "statement" => "Slow"}],
+          "verification" => [
+            %{
+              "kind" => "command",
+              "target" => "sleep 30",
+              "covers" => ["req.slow"],
+              "execute" => true
+            }
+          ]
+        },
+        run_commands: true,
+        command_timeout_ms: 500,
+        debug: true
+      )
+
+    assert report["status"] == "fail"
+
+    failed_check =
+      Enum.find(report["checks"], fn c ->
+        c["code"] == "verification_command_failed" and c["status"] == "error"
+      end)
+
+    assert failed_check
+  end
+
+  test "command verification writes output to temp files then cleans up", %{root: root} do
+    report =
+      verify_subject(
+        root,
+        %{
+          "requirements" => [%{"id" => "req.out", "statement" => "Output captured"}],
+          "verification" => [
+            %{
+              "kind" => "command",
+              "target" => "printf run >> #{Path.join(root, "proof.txt")}",
+              "covers" => ["req.out"],
+              "execute" => true
+            }
+          ]
+        },
+        run_commands: true
+      )
+
+    assert report["status"] == "pass"
+    assert File.read!(Path.join(root, "proof.txt")) == "run"
+  end
+
   defp base_subject(overrides) do
     Map.merge(
       %{
