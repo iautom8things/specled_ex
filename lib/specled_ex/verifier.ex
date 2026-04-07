@@ -1568,7 +1568,6 @@ defmodule SpecLedEx.Verifier do
       file = string_field(subject, "file")
       meta = subject_meta(subject)
       subject_id = id_of(meta, "id") || file
-
       subject
       |> field("verification")
       |> map_items()
@@ -1585,7 +1584,37 @@ defmodule SpecLedEx.Verifier do
   defp command_result(verification, root) do
     if runnable_command_verification?(verification) do
       target = string_field(verification, "target")
-      {output, exit_code} = System.cmd("sh", ["-lc", target], cd: root, stderr_to_stdout: true)
+
+      # Avoid System.cmd pipe — erl_child_setup fd inheritance in OTP prevents
+      # EOF on the pipe after the child exits, causing System.cmd to hang.
+      # Write output + exit code to temp files, then read them back.
+      tmp_out = Path.join(System.tmp_dir!(), "specled_cmd_#{System.unique_integer([:positive])}")
+      tmp_exit = "#{tmp_out}.exit"
+
+      wrapper = "cd #{root} && #{target} > #{tmp_out} 2>&1; echo $? > #{tmp_exit}"
+      port = Port.open({:spawn, "sh -c '#{wrapper}'"}, [:binary, :exit_status])
+
+      receive do
+        {^port, {:exit_status, _}} -> :ok
+      end
+
+      output = File.read!(tmp_out)
+
+      exit_code =
+        case File.read(tmp_exit) do
+          {:ok, code_str} ->
+            case Integer.parse(String.trim(code_str)) do
+              {n, _} -> n
+              :error -> 1
+            end
+
+          _ ->
+            1
+        end
+
+      File.rm(tmp_out)
+      File.rm(tmp_exit)
+
       %{output: output, exit_code: exit_code}
     end
   end
