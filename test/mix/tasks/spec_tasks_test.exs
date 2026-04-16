@@ -10,15 +10,18 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     readme = Path.join(root, ".spec/README.md")
     agents = Path.join(root, ".spec/AGENTS.md")
+    config_yml = Path.join(root, ".spec/config.yml")
     decisions_readme = Path.join(root, ".spec/decisions/README.md")
     package_spec = Path.join(root, ".spec/specs/package.spec.md")
 
     assert File.exists?(readme)
     assert File.exists?(agents)
+    assert File.exists?(config_yml)
     assert File.exists?(decisions_readme)
     assert File.exists?(package_spec)
     assert File.read!(readme) == render_spec_init_template("README.md.eex")
     assert File.read!(agents) == render_spec_init_template("AGENTS.md.eex")
+    assert File.read!(config_yml) == render_spec_init_template("config.yml.eex")
     assert File.read!(decisions_readme) == render_spec_init_template("decisions/README.md.eex")
 
     File.write!(agents, "# Custom Spec Agents\n")
@@ -63,6 +66,16 @@ defmodule Mix.Tasks.SpecTasksTest do
     Mix.Tasks.Spec.Init.run(["--root", root])
 
     refute File.exists?(Path.join(root, ".agents/skills/spec-led-development/SKILL.md"))
+  end
+
+  @tag spec: "specled.config.init_scaffolds_config_yml"
+  test "spec.init scaffolds .spec/config.yml that parses back to defaults", %{root: root} do
+    answer_shell_yes(false)
+
+    Mix.Tasks.Spec.Init.run(["--root", root])
+
+    assert File.exists?(Path.join(root, ".spec/config.yml"))
+    assert SpecLedEx.Config.load(root) == SpecLedEx.Config.defaults()
   end
 
   test "spec.init scaffold passes spec.check", %{root: root} do

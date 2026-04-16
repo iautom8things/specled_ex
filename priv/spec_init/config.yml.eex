@@ -1,0 +1,19 @@
+# .spec/config.yml — spec-led workspace configuration.
+#
+# All keys are optional. Missing or malformed values fall back to the defaults
+# shown below. See SpecLedEx.Config for the authoritative schema.
+
+test_tags:
+  # When true, `mix spec.check` scans the paths below for `@tag spec:`
+  # annotations and emits findings for requirements that are not backed by a
+  # matching tag. Disabled by default to keep existing adopters quiet on upgrade.
+  enabled: false
+
+  # Directories (relative to the project root) the scanner walks when enabled.
+  paths:
+    - test
+
+  # Severity for tag-related findings. One of `warning` or `error`.
+  # `warning` leaves `mix spec.check` exit status unchanged; `error` fails the
+  # gate so CI can enforce coverage.
+  enforcement: warning
