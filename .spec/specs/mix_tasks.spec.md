@@ -92,10 +92,6 @@ decisions:
   statement: When building the index, the effective test-tag enabled value shall follow CLI flag > `.spec/config.yml` > built-in default precedence.
   priority: must
   stability: evolving
-- id: specled.tasks.init_scaffold_config_yml
-  statement: mix spec.init shall scaffold `.spec/config.yml` alongside the rest of the workspace when one does not already exist.
-  priority: must
-  stability: evolving
 ```
 
 ## Verification
@@ -123,5 +119,4 @@ decisions:
   covers:
     - specled.tasks.test_tags_flag
     - specled.tasks.test_tags_precedence
-    - specled.tasks.init_scaffold_config_yml
 ```

@@ -13,12 +13,11 @@ accumulate.
 ```spec-meta
 id: specled.tag_scanning
 kind: module
-status: draft
+status: active
 summary: AST-based scanner that extracts tag spec values from ExUnit files without compiling them.
 surface:
   - lib/specled_ex/tag_scanner.ex
   - test/specled_ex/tag_scanner_test.exs
-  - test_support/specled_ex_case.ex
 decisions:
   - specled.decision.ast_tag_scanning
   - specled.decision.configurable_test_tag_enforcement
@@ -38,8 +37,9 @@ decisions:
 - id: specled.tag_scanning.scan_aggregates_results
   statement: >-
     SpecLedEx.TagScanner.scan/2 shall return an ok tuple carrying a tag_map of
-    requirement id to list of test occurrences and a parse_errors list of
-    file/reason entries aggregated across the input paths.
+    requirement id to list of test occurrences, a parse_errors list of
+    file/reason entries, and a dynamic_entries list of annotations whose value
+    could not be resolved to a literal, all aggregated across the input paths.
   priority: must
   stability: evolving
 - id: specled.tag_scanning.parse_errors_surfaced
@@ -70,8 +70,9 @@ decisions:
   stability: evolving
 - id: specled.tag_scanning.deduplicated_matches
   statement: >-
-    The tag scanner shall deduplicate identical file, line, and test_name
-    entries under the same requirement id.
+    The tag scanner shall deduplicate identical file and test_name entries
+    under the same requirement id, so two `@tag spec` annotations with the
+    same id on the same test count once.
   priority: should
   stability: evolving
 ```
@@ -162,7 +163,7 @@ decisions:
 ```spec-verification
 - kind: command
   target: mix test test/specled_ex/tag_scanner_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.tag_scanning.supported_forms
     - specled.tag_scanning.scan_aggregates_results

@@ -126,22 +126,7 @@
       }
     ]
   },
-  "findings": [
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.tag_scanning",
-      "file": ".spec/specs/tag_scanning.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/tag_scanner.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.tag_scanning",
-      "file": ".spec/specs/tag_scanning.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/tag_scanner_test.exs"
-    }
-  ],
+  "findings": [],
   "index": {
     "exceptions": [],
     "requirements": [
@@ -411,14 +396,6 @@
       },
       {
         "file": ".spec/specs/mix_tasks.spec.md",
-        "id": "specled.tasks.init_scaffold_config_yml",
-        "priority": "must",
-        "stability": "evolving",
-        "statement": "mix spec.init shall scaffold `.spec/config.yml` alongside the rest of the workspace when one does not already exist.",
-        "subject_id": "specled.mix_tasks"
-      },
-      {
-        "file": ".spec/specs/mix_tasks.spec.md",
         "id": "specled.tasks.next_guidance",
         "priority": "should",
         "stability": "evolving",
@@ -630,7 +607,7 @@
         "id": "specled.tag_scanning.deduplicated_matches",
         "priority": "should",
         "stability": "evolving",
-        "statement": "The tag scanner shall deduplicate identical file, line, and test_name entries under the same requirement id.",
+        "statement": "The tag scanner shall deduplicate identical file and test_name entries under the same requirement id, so two `@tag spec` annotations with the same id on the same test count once.",
         "subject_id": "specled.tag_scanning"
       },
       {
@@ -670,7 +647,7 @@
         "id": "specled.tag_scanning.scan_aggregates_results",
         "priority": "must",
         "stability": "evolving",
-        "statement": "SpecLedEx.TagScanner.scan/2 shall return an ok tuple carrying a tag_map of requirement id to list of test occurrences and a parse_errors list of file/reason entries aggregated across the input paths.",
+        "statement": "SpecLedEx.TagScanner.scan/2 shall return an ok tuple carrying a tag_map of requirement id to list of test occurrences, a parse_errors list of file/reason entries, and a dynamic_entries list of annotations whose value could not be resolved to a literal, all aggregated across the input paths.",
         "subject_id": "specled.tag_scanning"
       },
       {
@@ -1407,6 +1384,7 @@
           "surface": [
             "lib/specled_ex/config.ex",
             "lib/mix/tasks/spec.init.ex",
+            "priv/spec_init/config.yml.eex",
             "test/specled_ex/config_test.exs"
           ],
           "verification_minimum_strength": null
@@ -1635,12 +1613,11 @@
           ],
           "id": "specled.tag_scanning",
           "kind": "module",
-          "status": "draft",
+          "status": "active",
           "summary": "AST-based scanner that extracts tag spec values from ExUnit files without compiling them.",
           "surface": [
             "lib/specled_ex/tag_scanner.ex",
-            "test/specled_ex/tag_scanner_test.exs",
-            "test_support/specled_ex_case.ex"
+            "test/specled_ex/tag_scanner_test.exs"
           ],
           "verification_minimum_strength": null
         },
@@ -1764,23 +1741,14 @@
           "specled.config.yaml_parses_known_fields",
           "specled.config.malformed_yaml_degrades",
           "specled.config.unknown_enforcement_warns",
-          "specled.config.paths_filtered_to_strings"
-        ],
-        "execute": true,
-        "file": ".spec/specs/config.spec.md",
-        "kind": "command",
-        "subject_id": "specled.config",
-        "target": "mix test test/specled_ex/config_test.exs"
-      },
-      {
-        "covers": [
+          "specled.config.paths_filtered_to_strings",
           "specled.config.init_scaffolds_config_yml"
         ],
         "execute": true,
         "file": ".spec/specs/config.spec.md",
         "kind": "command",
         "subject_id": "specled.config",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs"
+        "target": "mix test test/specled_ex/config_test.exs"
       },
       {
         "covers": [
@@ -1840,8 +1808,7 @@
       {
         "covers": [
           "specled.tasks.test_tags_flag",
-          "specled.tasks.test_tags_precedence",
-          "specled.tasks.init_scaffold_config_yml"
+          "specled.tasks.test_tags_precedence"
         ],
         "execute": false,
         "file": ".spec/specs/mix_tasks.spec.md",
@@ -1938,7 +1905,7 @@
           "specled.tag_scanning.ignored_non_spec_tags",
           "specled.tag_scanning.deduplicated_matches"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/tag_scanning.spec.md",
         "kind": "command",
         "subject_id": "specled.tag_scanning",
@@ -1983,11 +1950,11 @@
     "decision_parse_errors": 0,
     "decisions": 9,
     "exceptions": 0,
-    "findings": 2,
-    "requirements": 81,
+    "findings": 0,
+    "requirements": 80,
     "scenarios": 31,
     "subjects": 14,
-    "verifications": 25
+    "verifications": 24
   },
   "verification": {
     "claims": [
@@ -2201,6 +2168,17 @@
         "verification_index": 0
       },
       {
+        "cover_id": "specled.config.init_scaffolds_config_yml",
+        "file": ".spec/specs/config.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.config",
+        "target": "mix test test/specled_ex/config_test.exs",
+        "verification_index": 0
+      },
+      {
         "cover_id": "specled.config.malformed_yaml_degrades",
         "file": ".spec/specs/config.spec.md",
         "kind": "command",
@@ -2243,17 +2221,6 @@
         "subject_id": "specled.config",
         "target": "mix test test/specled_ex/config_test.exs",
         "verification_index": 0
-      },
-      {
-        "cover_id": "specled.config.init_scaffolds_config_yml",
-        "file": ".spec/specs/config.spec.md",
-        "kind": "command",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "executed",
-        "subject_id": "specled.config",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs",
-        "verification_index": 1
       },
       {
         "cover_id": "specled.decisions.frontmatter_contract",
@@ -2463,17 +2430,6 @@
         "subject_id": "specled.mix_tasks",
         "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
         "verification_index": 0
-      },
-      {
-        "cover_id": "specled.tasks.init_scaffold_config_yml",
-        "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "command",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "claimed",
-        "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs",
-        "verification_index": 1
       },
       {
         "cover_id": "specled.tasks.test_tags_flag",
@@ -2690,7 +2646,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tag_scanning",
         "target": "mix test test/specled_ex/tag_scanner_test.exs",
         "verification_index": 0
@@ -2701,7 +2657,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tag_scanning",
         "target": "mix test test/specled_ex/tag_scanner_test.exs",
         "verification_index": 0
@@ -2712,7 +2668,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tag_scanning",
         "target": "mix test test/specled_ex/tag_scanner_test.exs",
         "verification_index": 0
@@ -2723,7 +2679,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tag_scanning",
         "target": "mix test test/specled_ex/tag_scanner_test.exs",
         "verification_index": 0
@@ -2734,7 +2690,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tag_scanning",
         "target": "mix test test/specled_ex/tag_scanner_test.exs",
         "verification_index": 0
@@ -2745,7 +2701,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tag_scanning",
         "target": "mix test test/specled_ex/tag_scanner_test.exs",
         "verification_index": 0
@@ -2756,7 +2712,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tag_scanning",
         "target": "mix test test/specled_ex/tag_scanner_test.exs",
         "verification_index": 0
@@ -2919,8 +2875,8 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 22,
-      "executed": 54,
+      "claimed": 14,
+      "executed": 61,
       "linked": 8
     },
     "threshold_failures": 0
