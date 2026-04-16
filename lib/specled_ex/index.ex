@@ -1,7 +1,7 @@
 defmodule SpecLedEx.Index do
   @moduledoc false
 
-  alias SpecLedEx.{DecisionParser, Parser}
+  alias SpecLedEx.{Config, DecisionParser, Parser, TagScanner}
 
   def build(root, opts \\ []) do
     spec_dir = opts[:spec_dir] || detect_spec_dir(root)
@@ -30,7 +30,7 @@ defmodule SpecLedEx.Index do
     subjects = Enum.map(spec_files, &Parser.parse_file(&1, root))
     decisions = Enum.map(decision_files, &DecisionParser.parse_file(&1, root))
 
-    %{
+    base_index = %{
       "version" => 1,
       "generated_at" => DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.to_iso8601(),
       "spec_dir" => spec_dir,
@@ -40,7 +40,52 @@ defmodule SpecLedEx.Index do
       "decisions" => decisions,
       "summary" => summary(subjects, decisions)
     }
+
+    maybe_add_tag_data(base_index, root, opts)
   end
+
+  defp maybe_add_tag_data(index, root, opts) do
+    config = opts[:config] || Config.load(root)
+    test_tags = config.test_tags || %Config.TestTags{}
+
+    enabled? =
+      case Keyword.get(opts, :test_tags) do
+        nil -> test_tags.enabled
+        flag when is_boolean(flag) -> flag
+      end
+
+    if enabled? do
+      effective = %Config.TestTags{test_tags | enabled: true}
+      scan_paths = Enum.map(effective.paths, &expand_path(&1, root))
+
+      {:ok, tag_map, parse_errors, dynamics} =
+        TagScanner.scan(scan_paths, include_dynamic: true)
+
+      index
+      |> Map.put("test_tags", normalize_tag_map(tag_map, root))
+      |> Map.put("test_tags_errors", Enum.map(parse_errors, &normalize_file_entry(&1, root)))
+      |> Map.put("test_tags_dynamic", Enum.map(dynamics, &normalize_file_entry(&1, root)))
+      |> Map.put("test_tags_config", %{
+        "enabled" => effective.enabled,
+        "paths" => effective.paths,
+        "enforcement" => Atom.to_string(effective.enforcement)
+      })
+    else
+      index
+    end
+  end
+
+  defp normalize_tag_map(tag_map, root) do
+    for {id, entries} <- tag_map, into: %{} do
+      {id, Enum.map(entries, &normalize_file_entry(&1, root))}
+    end
+  end
+
+  defp normalize_file_entry(%{file: file} = entry, root) when is_binary(file) do
+    %{entry | file: Path.relative_to(file, root)}
+  end
+
+  defp normalize_file_entry(entry, _root), do: entry
 
   def detect_spec_dir(root) do
     if File.dir?(Path.join(root, ".spec")) do

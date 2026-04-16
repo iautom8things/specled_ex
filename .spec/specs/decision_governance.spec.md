@@ -17,6 +17,7 @@ surface:
   - lib/specled_ex/verifier.ex
 decisions:
   - specled.decision.declarative_current_truth
+  - specled.decision.configurable_test_tag_enforcement
 ```
 
 ## Requirements

@@ -6,6 +6,7 @@ affects:
   - specled.config
   - specled.index_state
   - specled.verification
+  - specled.decisions
   - specled.branch_guard
   - specled.mix_tasks
   - specled.tag_scanning

@@ -50,6 +50,7 @@ defmodule SpecLedEx.Verifier do
       |> then(&(&1 ++ duplicate_decision_id_findings(decisions)))
       |> then(&(&1 ++ invalid_id_format_findings(subjects, decisions)))
       |> then(&(&1 ++ verification_strength_findings(verification_claims)))
+      |> then(&(&1 ++ SpecLedEx.TagFindings.findings(index)))
       |> sort_findings()
 
     checks =

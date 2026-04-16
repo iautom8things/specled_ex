@@ -16,6 +16,7 @@ summary: Validates authored specs, checks references, derives findings, and writ
 surface:
   - lib/specled_ex/verifier.ex
   - lib/specled_ex/verification_strength.ex
+  - lib/specled_ex/tag_findings.ex
   - lib/specled_ex/decision_parser.ex
   - lib/specled_ex/schema/decision.ex
 decisions:
@@ -218,8 +219,8 @@ decisions:
     - specled.verify.strength_semantics
     - specled.verify.command_execution_resilience
 - kind: command
-  target: mix test test/specled_ex/verifier_test.exs
-  execute: false
+  target: mix test test/specled_ex/tag_findings_test.exs
+  execute: true
   covers:
     - specled.verify.requirement_without_test_tag
     - specled.verify.verification_cover_untagged

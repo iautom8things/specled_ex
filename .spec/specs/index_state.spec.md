@@ -82,8 +82,8 @@ decisions:
     - specled.index.canonical_state_output
     - specled.index.json_resilience
 - kind: command
-  target: mix test test/specled_ex/index_state_test.exs
-  execute: false
+  target: mix test test/specled_ex/index_state_tag_test.exs
+  execute: true
   covers:
     - specled.index.tag_data_conditional
     - specled.index.tag_data_absent_when_disabled
