@@ -6,14 +6,15 @@
   "blocks": [
     "specled_-i46.5"
   ],
+  "closed_at": "2026-04-16T19:49:51Z",
   "created": "2026-04-16T17:11:10Z",
   "description": "Advances: specled.branch_guard, specled.mix_tasks\n\nBranchCheck emits a finding when the current change set adds a new must requirement without a backing @tag spec annotation. Mix tasks gain --test-tags / --no-test-tags flags on spec.check and spec.validate with precedence CLI \u003e config \u003e default.\n\nTouches:\n- lib/specled_ex/branch_check.ex\n- lib/specled_ex/change_analysis.ex\n- lib/mix/tasks/spec.check.ex\n- lib/mix/tasks/spec.validate.ex\n- lib/mix/tasks/spec.prime.ex\n- test/specled_ex/branch_check_test.exs\n- test/mix/tasks/spec_tasks_test.exs\n\nMerge gate:\n- [ ] Code compiles cleanly\n- [ ] Branch guard emits finding for new untagged must requirements\n- [ ] --test-tags / --no-test-tags flags work end-to-end\n- [ ] Precedence CLI \u003e config \u003e default verified by test\n- [ ] Existing branch guard tests pass\n- [ ] mix spec.check passes for specled.branch_guard and specled.mix_tasks",
   "id": "specled_-i46.4",
   "labels": [],
   "parent": "specled_-i46",
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "S4: Branch Guard + Mix task flags",
   "type": "task",
-  "updated_at": "2026-04-16T19:41:35Z"
+  "updated_at": "2026-04-16T19:49:51Z"
 }
