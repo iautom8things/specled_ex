@@ -15,6 +15,8 @@ defmodule Mix.Tasks.Spec.Check do
     * `--no-run-commands` - skip executing `kind: command` verifications
     * `--min-strength claimed|linked|executed` - require a minimum verification strength
     * `--base <ref>` - compare the current branch against the given Git base
+    * `--test-tags` / `--no-test-tags` - enable or disable test-tag scanning
+      for this invocation, overriding `.spec/config.yml`
   """
 
   @impl true
@@ -29,7 +31,8 @@ defmodule Mix.Tasks.Spec.Check do
           debug: :boolean,
           run_commands: :boolean,
           base: :string,
-          min_strength: :string
+          min_strength: :string,
+          test_tags: :boolean
         ],
         aliases: [r: :root, o: :output, d: :debug]
       )
@@ -44,7 +47,11 @@ defmodule Mix.Tasks.Spec.Check do
     debug? = opts[:debug] || false
     run_commands? = run_commands?(opts)
 
-    index = SpecLedEx.index(root, spec_dir: spec_dir, authored_dir: authored_dir)
+    index_opts =
+      [spec_dir: spec_dir, authored_dir: authored_dir]
+      |> maybe_put_test_tags(opts)
+
+    index = SpecLedEx.index(root, index_opts)
     path = SpecLedEx.write_state(index, nil, root, output)
     Mix.shell().info("spec.index wrote #{path}")
 
@@ -93,6 +100,13 @@ defmodule Mix.Tasks.Spec.Check do
     extra_args = Enum.map(rest, &inspect/1)
     details = Enum.join(invalid_flags ++ extra_args, ", ")
     Mix.raise("Invalid arguments for spec.check: #{details}")
+  end
+
+  defp maybe_put_test_tags(index_opts, task_opts) do
+    case Keyword.fetch(task_opts, :test_tags) do
+      {:ok, value} when is_boolean(value) -> Keyword.put(index_opts, :test_tags, value)
+      _ -> index_opts
+    end
   end
 
   defp run_commands?(opts) do
