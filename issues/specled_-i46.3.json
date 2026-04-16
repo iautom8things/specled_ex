@@ -7,14 +7,15 @@
   "blocks": [
     "specled_-i46.4"
   ],
+  "closed_at": "2026-04-16T19:41:33Z",
   "created": "2026-04-16T17:11:01Z",
   "description": "Advances: specled.index_state, specled.verification\n\nThread tag scan data through Index.build/2. Emit new verifier findings:\n- requirement_without_test_tag (severity from config enforcement)\n- verification_cover_untagged (warning)\n- tag_scan_parse_error (warning)\n- tag_dynamic_value_skipped (warning)\n\nConditional scanning — index keys test_tags, test_tags_errors, test_tags_config only populated when enabled. All tag findings suppressed when index has no tag data.\n\nTouches:\n- lib/specled_ex/index.ex\n- lib/specled_ex/verifier.ex\n- test/specled_ex/verifier_test.exs\n- test/specled_ex/index_state_test.exs\n\nMerge gate:\n- [ ] Code compiles cleanly\n- [ ] All new finding types emit correctly\n- [ ] Enforcement config drives severity\n- [ ] Existing verifier/index tests still pass\n- [ ] mix spec.check passes for specled.index_state and specled.verification",
   "id": "specled_-i46.3",
   "labels": [],
   "parent": "specled_-i46",
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "S3: Verifier + Index tag integration",
   "type": "task",
-  "updated_at": "2026-04-16T19:25:05Z"
+  "updated_at": "2026-04-16T19:41:33Z"
 }
