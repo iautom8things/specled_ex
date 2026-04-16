@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-i46.1",
     "specled_-i46.2"
@@ -13,8 +13,8 @@
   "labels": [],
   "parent": "specled_-i46",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "S3: Verifier + Index tag integration",
   "type": "task",
-  "updated_at": "2026-04-16T17:11:21Z"
+  "updated_at": "2026-04-16T19:25:05Z"
 }
