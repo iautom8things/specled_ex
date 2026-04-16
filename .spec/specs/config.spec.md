@@ -11,7 +11,7 @@ halting the spec tooling, but malformed values are surfaced so the maintainer no
 ```spec-meta
 id: specled.config
 kind: module
-status: draft
+status: active
 summary: Loads `.spec/config.yml` with defaults and exposes test-tag scanning settings to the index, verifier, and CLI tasks.
 surface:
   - lib/specled_ex/config.ex
@@ -119,7 +119,7 @@ decisions:
 ```spec-verification
 - kind: command
   target: mix test test/specled_ex/config_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.config.defaults_when_missing
     - specled.config.yaml_parses_known_fields
@@ -128,7 +128,7 @@ decisions:
     - specled.config.paths_filtered_to_strings
 - kind: command
   target: mix test test/mix/tasks/spec_tasks_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.config.init_scaffolds_config_yml
 ```
