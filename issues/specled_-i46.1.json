@@ -4,14 +4,15 @@
   "blocks": [
     "specled_-i46.3"
   ],
+  "closed_at": "2026-04-16T17:23:55Z",
   "created": "2026-04-16T17:10:43Z",
   "description": "Advances: specled.config\n\nAdd SpecLedEx.Config that loads .spec/config.yml with defaults. Fields: test_tags.enabled (bool), test_tags.paths (list), test_tags.enforcement (:warning|:error). Uses yaml_elixir (already a dep). spec.init scaffolds default config file.\n\nTouches:\n- lib/specled_ex/config.ex (new)\n- lib/mix/tasks/spec.init.ex\n- test/specled_ex/config_test.exs (new)\n\nMerge gate:\n- [ ] Code compiles cleanly\n- [ ] Config unit tests pass (load valid YAML, missing file, malformed YAML, unknown enforcement, path filter)\n- [ ] spec.init scaffolds config.yml\n- [ ] mix spec.check passes for specled.config\n- [ ] No existing tests broken",
   "id": "specled_-i46.1",
   "labels": [],
   "parent": "specled_-i46",
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "S1: Config module (.spec/config.yml)",
   "type": "task",
-  "updated_at": "2026-04-16T17:19:16Z"
+  "updated_at": "2026-04-16T17:23:55Z"
 }
