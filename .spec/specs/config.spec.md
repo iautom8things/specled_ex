@@ -16,6 +16,7 @@ summary: Loads `.spec/config.yml` with defaults and exposes test-tag scanning se
 surface:
   - lib/specled_ex/config.ex
   - lib/mix/tasks/spec.init.ex
+  - priv/spec_init/config.yml.eex
   - test/specled_ex/config_test.exs
 decisions:
   - specled.decision.configurable_test_tag_enforcement
@@ -126,9 +127,5 @@ decisions:
     - specled.config.malformed_yaml_degrades
     - specled.config.unknown_enforcement_warns
     - specled.config.paths_filtered_to_strings
-- kind: command
-  target: mix test test/mix/tasks/spec_tasks_test.exs
-  execute: true
-  covers:
     - specled.config.init_scaffolds_config_yml
 ```

@@ -144,6 +144,20 @@ defmodule SpecLedEx.ConfigTest do
     end
   end
 
+  describe "mix spec.init scaffolds config.yml" do
+    @tag spec: "specled.config.init_scaffolds_config_yml"
+    test "writes .spec/config.yml that round-trips through load/2", %{root: root} do
+      answer_shell_yes(false)
+
+      Mix.Tasks.Spec.Init.run(["--root", root])
+
+      config_path = Path.join(root, ".spec/config.yml")
+      assert File.exists?(config_path)
+      assert File.read!(config_path) == render_spec_init_template("config.yml.eex")
+      assert Config.load(root) == Config.defaults()
+    end
+  end
+
   defp write_config(root, body) do
     File.mkdir_p!(Path.join(root, ".spec"))
     File.write!(Path.join([root, ".spec", "config.yml"]), body)
