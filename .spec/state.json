@@ -19,6 +19,7 @@
           "specled.config",
           "specled.index_state",
           "specled.verification",
+          "specled.decisions",
           "specled.branch_guard",
           "specled.mix_tasks",
           "specled.tag_scanning"
@@ -1396,7 +1397,8 @@
         "id": "specled.decisions",
         "meta": {
           "decisions": [
-            "specled.decision.declarative_current_truth"
+            "specled.decision.declarative_current_truth",
+            "specled.decision.configurable_test_tag_enforcement"
           ],
           "id": "specled.decisions",
           "kind": "workflow",
@@ -1641,6 +1643,7 @@
           "surface": [
             "lib/specled_ex/verifier.ex",
             "lib/specled_ex/verification_strength.ex",
+            "lib/specled_ex/tag_findings.ex",
             "lib/specled_ex/decision_parser.ex",
             "lib/specled_ex/schema/decision.ex"
           ],
@@ -1778,11 +1781,11 @@
           "specled.index.tag_data_conditional",
           "specled.index.tag_data_absent_when_disabled"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/index_state.spec.md",
         "kind": "command",
         "subject_id": "specled.index_state",
-        "target": "mix test test/specled_ex/index_state_test.exs"
+        "target": "mix test test/specled_ex/index_state_tag_test.exs"
       },
       {
         "covers": [
@@ -1937,11 +1940,11 @@
           "specled.verify.tag_findings_respect_enforcement",
           "specled.verify.tag_findings_suppressed_when_disabled"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/verification.spec.md",
         "kind": "command",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/verifier_test.exs"
+        "target": "mix test test/specled_ex/tag_findings_test.exs"
       }
     ]
   },
@@ -2283,9 +2286,9 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.index_state",
-        "target": "mix test test/specled_ex/index_state_test.exs",
+        "target": "mix test test/specled_ex/index_state_tag_test.exs",
         "verification_index": 1
       },
       {
@@ -2294,9 +2297,9 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.index_state",
-        "target": "mix test test/specled_ex/index_state_test.exs",
+        "target": "mix test test/specled_ex/index_state_tag_test.exs",
         "verification_index": 1
       },
       {
@@ -2811,9 +2814,9 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/verifier_test.exs",
+        "target": "mix test test/specled_ex/tag_findings_test.exs",
         "verification_index": 1
       },
       {
@@ -2822,9 +2825,9 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/verifier_test.exs",
+        "target": "mix test test/specled_ex/tag_findings_test.exs",
         "verification_index": 1
       },
       {
@@ -2833,9 +2836,9 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/verifier_test.exs",
+        "target": "mix test test/specled_ex/tag_findings_test.exs",
         "verification_index": 1
       },
       {
@@ -2844,9 +2847,9 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/verifier_test.exs",
+        "target": "mix test test/specled_ex/tag_findings_test.exs",
         "verification_index": 1
       },
       {
@@ -2855,9 +2858,9 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/verifier_test.exs",
+        "target": "mix test test/specled_ex/tag_findings_test.exs",
         "verification_index": 1
       },
       {
@@ -2866,17 +2869,17 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/verifier_test.exs",
+        "target": "mix test test/specled_ex/tag_findings_test.exs",
         "verification_index": 1
       }
     ],
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 14,
-      "executed": 61,
+      "claimed": 6,
+      "executed": 69,
       "linked": 8
     },
     "threshold_failures": 0
