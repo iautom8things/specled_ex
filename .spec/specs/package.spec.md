@@ -32,7 +32,7 @@ decisions:
   priority: must
   stability: stable
 - id: specled.package.default_local_loop
-  statement: The package README shall teach mix spec.prime as the session-start context command, a default local loop centered on mix spec.next and mix spec.check, explain the ready-for-check decision, reserve ADRs for durable cross-cutting policy, and present mix spec.status as occasional plus mix spec.index and mix spec.validate as advanced plumbing.
+  statement: The package README shall teach mix spec.prime as the session-start context command, a default local loop centered on mix spec.next and mix spec.check that includes a step to annotate new tests with `@tag spec:` when test-tag scanning is enabled, explain the ready-for-check decision, reserve ADRs for durable cross-cutting policy, and present mix spec.status as occasional plus mix spec.index and mix spec.validate as advanced plumbing.
   priority: should
   stability: evolving
 - id: specled.package.index_and_state

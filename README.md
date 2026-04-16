@@ -64,10 +64,11 @@ Use one small loop by default:
 1. if you are entering the repo or handing work to an agent, run `mix spec.prime --base HEAD`
 2. make the code, test, or docs change
 3. add or tighten the smallest test when behavior changed
-4. run `mix spec.next`
-5. if it says `needs subject updates`, update the named subject
-6. if it says `needs decision update`, add or revise an ADR only when the change is durable and cross-cutting
-7. when it says `ready for check`, run `mix spec.check --base ...`
+4. annotate that test with `@tag spec: "<requirement.id>"` when test-tag scanning is enabled (see below)
+5. run `mix spec.next`
+6. if it says `needs subject updates`, update the named subject
+7. if it says `needs decision update`, add or revise an ADR only when the change is durable and cross-cutting
+8. when it says `ready for check`, run `mix spec.check --base ...`
 
 For bug fixes:
 
@@ -124,6 +125,118 @@ For stronger local or CI proof requirements:
 mix spec.validate --min-strength linked
 mix spec.check --min-strength executed
 ```
+
+To override test-tag scanning for a single run:
+
+```bash
+mix spec.check --test-tags
+mix spec.validate --no-test-tags
+```
+
+## Test-Tag Scanning
+
+Test-tag scanning links requirements to the tests that cover them by looking
+for `@tag spec: "<requirement.id>"` annotations in your ExUnit files, without
+running the suite. Adoption is opt-in per-workspace.
+
+### Getting Started With Test Tags
+
+1. Enable scanning in `.spec/config.yml` (scaffolded by `mix spec.init`):
+
+   ```yaml
+   test_tags:
+     enabled: true
+     paths:
+       - test
+     enforcement: warning
+   ```
+
+2. Tag each ExUnit test with the requirement id it covers:
+
+   ```elixir
+   defmodule Billing.InvoiceTest do
+     use ExUnit.Case
+
+     @tag spec: "billing.invoice"
+     test "emits an invoice line per sku" do
+       assert Billing.invoice(order).lines == [...]
+     end
+   end
+   ```
+
+3. Run `mix spec.check`. The scanner walks the configured paths, builds a
+   `requirement_id → [tests]` map, and the verifier emits findings for any
+   `must` requirement with no backing annotation.
+
+4. When coverage is complete, graduate to `enforcement: error` to make the
+   check a hard gate.
+
+### Supported Annotation Shapes
+
+```elixir
+# single id (string)
+@tag spec: "auth.login"
+test "logs in", do: ...
+
+# keyword list (other keys are ignored)
+@tag [spec: "auth.logout", timeout: 5_000]
+test "logs out", do: ...
+
+# list of ids (the test covers multiple requirements)
+@tag spec: ["a.one", "a.two"]
+test "covers both", do: ...
+
+# module-wide tag (attaches to every test in the module)
+defmodule DomainTest do
+  use ExUnit.Case
+  @moduletag spec: "domain.root"
+
+  test "one", do: ...
+  test "two", do: ...
+end
+```
+
+Annotations whose value is a module attribute, variable, or other non-literal
+expression are reported as `tag_dynamic_value_skipped` findings so the gap is
+visible.
+
+### `.spec/config.yml` Schema
+
+| Key                      | Type          | Default     | Description                                                                        |
+|--------------------------|---------------|-------------|------------------------------------------------------------------------------------|
+| `test_tags.enabled`      | boolean       | `false`     | When `true`, `mix spec.check` and friends scan `paths` for `@tag spec:` and emit tag findings. |
+| `test_tags.paths`        | list of paths | `["test"]`  | Directories (or individual files) the scanner walks when enabled.                  |
+| `test_tags.enforcement`  | `warning` \| `error` | `warning`   | Severity of `requirement_without_test_tag` and `verification_cover_untagged` findings. |
+
+Unknown `enforcement` values fall back to the default and log a warning. A
+missing or malformed `.spec/config.yml` degrades to defaults.
+
+### CLI Overrides
+
+`mix spec.check` and `mix spec.validate` accept `--test-tags` /
+`--no-test-tags` to override the workspace default for a single invocation:
+
+```bash
+# force-enable for a one-off run
+mix spec.check --test-tags
+
+# force-disable for a one-off run, even when config enables it
+mix spec.validate --no-test-tags
+```
+
+Precedence: CLI flag > `.spec/config.yml` > built-in default.
+
+### Finding Codes
+
+| Code                                        | Severity         | Emitted by          | Meaning                                                                           |
+|---------------------------------------------|------------------|---------------------|-----------------------------------------------------------------------------------|
+| `requirement_without_test_tag`              | warning \| error | verifier            | A `must` requirement has no backing `@tag spec` annotation.                       |
+| `verification_cover_untagged`               | warning \| error | verifier            | A `test_file`/`test` verification target does not annotate the id it covers.      |
+| `tag_scan_parse_error`                      | warning          | verifier            | The scanner could not parse a test file as Elixir.                                |
+| `tag_dynamic_value_skipped`                 | warning          | verifier            | An `@tag spec:` value was not a literal string or list of strings.                |
+| `branch_guard_requirement_without_test_tag` | warning \| error | `mix spec.check`    | A `must` requirement new on this branch has no backing `@tag spec` annotation.    |
+
+The `warning|error` severity is driven by `test_tags.enforcement`.
 
 ## Verification Strength
 
