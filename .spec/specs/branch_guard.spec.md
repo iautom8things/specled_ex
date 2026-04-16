@@ -90,7 +90,7 @@ decisions:
     - specled.branch_guard.plan_docs_excluded
 - kind: command
   target: mix test test/specled_ex/branch_check_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.branch_guard.new_requirement_tag_warning
     - specled.branch_guard.tag_findings_respect_enforcement

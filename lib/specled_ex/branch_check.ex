@@ -65,9 +65,11 @@ defmodule SpecLedEx.BranchCheck do
         []
       end
 
+    tag_findings = new_requirement_tag_findings(index, analysis, root)
+
     findings =
       Enum.sort_by(
-        file_findings ++ governance_findings,
+        file_findings ++ governance_findings ++ tag_findings,
         &{&1["code"], &1["file"] || "", &1["message"]}
       )
 
@@ -106,6 +108,118 @@ defmodule SpecLedEx.BranchCheck do
     length(policy_files) > 1 and MapSet.size(impacted_subjects) > 1
   end
 
+  defp new_requirement_tag_findings(index, analysis, root) do
+    case Map.get(index, "test_tags") do
+      nil ->
+        []
+
+      tag_map when is_map(tag_map) ->
+        severity = severity_from_config(Map.get(index, "test_tags_config"))
+        subjects_by_file = subjects_by_file(index)
+
+        analysis.changed_files
+        |> Enum.filter(&spec_file?/1)
+        |> Enum.flat_map(fn path ->
+          subject = Map.get(subjects_by_file, path)
+
+          if subject do
+            subject_id = subject_id(subject)
+            current_ids = must_ids_from_subject(subject)
+            base_ids = base_must_ids(root, analysis.base, path)
+            new_ids = current_ids -- base_ids
+
+            new_ids
+            |> Enum.reject(&Map.has_key?(tag_map, &1))
+            |> Enum.map(fn id ->
+              finding(
+                severity,
+                "branch_guard_requirement_without_test_tag",
+                "New must requirement has no backing @tag spec annotation: #{id}",
+                path,
+                subject_id
+              )
+            end)
+          else
+            []
+          end
+        end)
+    end
+  end
+
+  defp severity_from_config(%{"enforcement" => "error"}), do: "error"
+  defp severity_from_config(_), do: "warning"
+
+  defp subjects_by_file(index) do
+    index
+    |> Map.get("subjects")
+    |> List.wrap()
+    |> Enum.reduce(%{}, fn subject, acc ->
+      case Map.get(subject, "file") do
+        file when is_binary(file) -> Map.put(acc, file, subject)
+        _ -> acc
+      end
+    end)
+  end
+
+  defp subject_id(subject) do
+    case subject do
+      %{"meta" => %{"id" => id}} when is_binary(id) and id != "" -> id
+      _ -> Map.get(subject, "file")
+    end
+  end
+
+  defp must_ids_from_subject(subject) do
+    subject
+    |> Map.get("requirements")
+    |> List.wrap()
+    |> Enum.filter(&is_map/1)
+    |> Enum.filter(fn req -> field(req, "priority") == "must" end)
+    |> Enum.map(&field(&1, "id"))
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp field(map, key) when is_map(map) and is_binary(key) do
+    Map.get(map, key, Map.get(map, String.to_atom(key)))
+  end
+
+  defp field(_, _), do: nil
+
+  defp base_must_ids(root, base, path) do
+    case git_show(root, base, path) do
+      {:ok, content} -> extract_must_ids(content)
+      :missing -> []
+    end
+  end
+
+  defp git_show(root, base, path) when is_binary(base) do
+    {output, exit_code} =
+      System.cmd("git", ["-C", root, "show", "#{base}:#{path}"], stderr_to_stdout: true)
+
+    if exit_code == 0, do: {:ok, output}, else: :missing
+  end
+
+  defp git_show(_root, _base, _path), do: :missing
+
+  defp extract_must_ids(content) do
+    ~r/```spec-requirements\s*\n(.*?)\n```/ms
+    |> Regex.scan(content, capture: :all_but_first)
+    |> Enum.flat_map(fn [block] ->
+      case YamlElixir.read_from_string(block) do
+        {:ok, items} when is_list(items) ->
+          items
+          |> Enum.filter(&is_map/1)
+          |> Enum.filter(fn item -> Map.get(item, "priority") == "must" end)
+          |> Enum.map(&Map.get(&1, "id"))
+          |> Enum.reject(&is_nil/1)
+
+        _ ->
+          []
+      end
+    end)
+  end
+
+  defp spec_file?(path), do: String.starts_with?(path, ".spec/specs/") and String.ends_with?(path, ".spec.md")
+
   defp finding(severity, code, message, file) do
     %{
       "severity" => severity,
@@ -113,5 +227,11 @@ defmodule SpecLedEx.BranchCheck do
       "message" => message,
       "file" => file
     }
+  end
+
+  defp finding(severity, code, message, file, subject_id) do
+    severity
+    |> finding(code, message, file)
+    |> Map.put("subject_id", subject_id)
   end
 end

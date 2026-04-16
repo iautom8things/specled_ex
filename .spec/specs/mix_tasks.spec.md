@@ -114,8 +114,8 @@ decisions:
     - specled.tasks.status_summary
     - specled.tasks.no_app_start
 - kind: command
-  target: mix test test/mix/tasks/spec_tasks_test.exs
-  execute: false
+  target: mix test test/mix/tasks/spec_check_test_tags_test.exs
+  execute: true
   covers:
     - specled.tasks.test_tags_flag
     - specled.tasks.test_tags_precedence

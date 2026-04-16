@@ -12,6 +12,8 @@ defmodule Mix.Tasks.Spec.Validate do
     * `--run-commands` - execute `kind: command` verifications with `execute: true`
     * `--min-strength claimed|linked|executed` - require a minimum verification strength
     * `--strict` - fail on warnings as well as errors
+    * `--test-tags` / `--no-test-tags` - enable or disable test-tag scanning
+      for this invocation, overriding `.spec/config.yml`
   """
 
   @impl true
@@ -26,7 +28,8 @@ defmodule Mix.Tasks.Spec.Validate do
           debug: :boolean,
           run_commands: :boolean,
           spec_dir: :string,
-          min_strength: :string
+          min_strength: :string,
+          test_tags: :boolean
         ],
         aliases: [r: :root, o: :output, s: :strict, d: :debug]
       )
@@ -42,7 +45,11 @@ defmodule Mix.Tasks.Spec.Validate do
     debug? = opts[:debug] || false
     run_commands? = opts[:run_commands] || false
 
-    index = SpecLedEx.index(root, spec_dir: spec_dir, authored_dir: authored_dir)
+    index_opts =
+      [spec_dir: spec_dir, authored_dir: authored_dir]
+      |> maybe_put_test_tags(opts)
+
+    index = SpecLedEx.index(root, index_opts)
 
     report =
       SpecLedEx.validate(index, root,
@@ -97,6 +104,13 @@ defmodule Mix.Tasks.Spec.Validate do
     extra_args = Enum.map(rest, &inspect/1)
     details = Enum.join(invalid_flags ++ extra_args, ", ")
     Mix.raise("Invalid arguments for spec.validate: #{details}")
+  end
+
+  defp maybe_put_test_tags(index_opts, task_opts) do
+    case Keyword.fetch(task_opts, :test_tags) do
+      {:ok, value} when is_boolean(value) -> Keyword.put(index_opts, :test_tags, value)
+      _ -> index_opts
+    end
   end
 
   defp validate_min_strength!(nil), do: nil

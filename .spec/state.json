@@ -1732,7 +1732,7 @@
           "specled.branch_guard.new_requirement_tag_warning",
           "specled.branch_guard.tag_findings_respect_enforcement"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/branch_guard.spec.md",
         "kind": "command",
         "subject_id": "specled.branch_guard",
@@ -1813,11 +1813,11 @@
           "specled.tasks.test_tags_flag",
           "specled.tasks.test_tags_precedence"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/mix_tasks.spec.md",
         "kind": "command",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs"
+        "target": "mix test test/mix/tasks/spec_check_test_tags_test.exs"
       },
       {
         "covers": [
@@ -2143,7 +2143,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.branch_guard",
         "target": "mix test test/specled_ex/branch_check_test.exs",
         "verification_index": 1
@@ -2154,7 +2154,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.branch_guard",
         "target": "mix test test/specled_ex/branch_check_test.exs",
         "verification_index": 1
@@ -2440,9 +2440,9 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs",
+        "target": "mix test test/mix/tasks/spec_check_test_tags_test.exs",
         "verification_index": 1
       },
       {
@@ -2451,9 +2451,9 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs",
+        "target": "mix test test/mix/tasks/spec_check_test_tags_test.exs",
         "verification_index": 1
       },
       {
@@ -2878,8 +2878,8 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 6,
-      "executed": 69,
+      "claimed": 2,
+      "executed": 73,
       "linked": 8
     },
     "threshold_failures": 0
