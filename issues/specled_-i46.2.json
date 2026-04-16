@@ -4,14 +4,15 @@
   "blocks": [
     "specled_-i46.3"
   ],
+  "closed_at": "2026-04-16T17:35:39Z",
   "created": "2026-04-16T17:10:53Z",
   "description": "Advances: specled.tag_scanning\n\nAST-based scanner extracting @tag spec: requirement ids from ExUnit files. FIRST write AST-pinning tests against Code.string_to_quoted output for all 4 supported tag forms, THEN derive scanner patterns. scan/2 returns {:ok, tag_map, parse_errors} — no silent error drops. Handles @tag spec: \"id\", @tag [spec: \"id\", ...], @tag spec: [\"a\",\"b\"], @moduletag spec: \"id\". Collects dynamic values (non-literal) as tag_dynamic_value_skipped.\n\nDecision: .spec/decisions/specled.decision.ast_tag_scanning.md\n\nTouches:\n- lib/specled_ex/tag_scanner.ex (new)\n- test/specled_ex/tag_scanner_test.exs (new)\n- test_support/specled_ex_case.ex (add write_test_file/3)\n\nMerge gate:\n- [ ] Code compiles cleanly\n- [ ] All 4 tag forms correctly extracted (AST-pinning tests pass)\n- [ ] Parse errors collected, not dropped\n- [ ] Dynamic tag values collected separately\n- [ ] Property tests pass\n- [ ] mix spec.check passes for specled.tag_scanning",
   "id": "specled_-i46.2",
   "labels": [],
   "parent": "specled_-i46",
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "S2: Tag Scanner (AST-based)",
   "type": "task",
-  "updated_at": "2026-04-16T17:24:04Z"
+  "updated_at": "2026-04-16T17:35:39Z"
 }
