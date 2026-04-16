@@ -4,14 +4,15 @@
     "specled_-i46.4"
   ],
   "blocks": [],
+  "closed_at": "2026-04-16T19:53:17Z",
   "created": "2026-04-16T17:11:18Z",
   "description": "Advances: specled.config, specled.tag_scanning\n\nClose documentation gaps identified in red team review:\n- README: test-tag annotation guide, .spec/config.yml schema reference, --test-tags flag\n- README: Getting Started with Test Tags section\n- README: Default Local Loop updated with tag annotation step\n- AGENTS.md: tag annotation workflow for LLM agents\n- CHANGELOG: unreleased entries for tag scanning, config, CLI flags\n- Finding code reference table (all existing + new codes)\n\nADR already authored (specled.decision.ast_tag_scanning, specled.decision.configurable_test_tag_enforcement) during /distill.\n\nTouches:\n- README.md\n- AGENTS.md\n- CHANGELOG.md\n\nMerge gate:\n- [ ] All CRITICAL and HIGH doc gaps from 04c closed\n- [ ] README tag annotation examples compile as valid Elixir\n- [ ] mix spec.check passes on specled_ex repo itself",
   "id": "specled_-i46.5",
   "labels": [],
   "parent": "specled_-i46",
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "S5: Docs + CHANGELOG",
   "type": "task",
-  "updated_at": "2026-04-16T19:49:54Z"
+  "updated_at": "2026-04-16T19:53:17Z"
 }
