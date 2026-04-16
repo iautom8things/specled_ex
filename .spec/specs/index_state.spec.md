@@ -18,6 +18,7 @@ surface:
 decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.explicit_subject_ownership
+  - specled.decision.configurable_test_tag_enforcement
 ```
 
 ## Requirements
@@ -35,6 +36,39 @@ decisions:
   statement: JSON state helpers shall return an empty map for missing or invalid files, create parent directories on write, and skip rewriting identical canonical bytes.
   priority: must
   stability: stable
+- id: specled.index.tag_data_conditional
+  statement: Index building shall only scan test tags when enabled by configuration or caller options, and shall store the resulting tag map, parse errors, and effective tag configuration on the index under dedicated keys (`test_tags`, `test_tags_errors`, `test_tags_config`).
+  priority: must
+  stability: evolving
+- id: specled.index.tag_data_absent_when_disabled
+  statement: When test-tag scanning is disabled, the `test_tags`, `test_tags_errors`, and `test_tags_config` keys shall be absent or nil on the index so downstream verifiers do not emit tag findings.
+  priority: must
+  stability: evolving
+```
+
+## Scenarios
+
+```spec-scenarios
+- id: specled.index.scenario.tag_scan_enabled_populates_keys
+  given:
+    - "a workspace whose `.spec/config.yml` enables test_tags"
+    - "a test file containing an `@tag spec` annotation with id a.one"
+  when:
+    - Index.build/2 runs
+  then:
+    - the index has a non-nil `test_tags` map containing `a.one`
+    - the index has a `test_tags_config` entry describing the effective config
+  covers:
+    - specled.index.tag_data_conditional
+- id: specled.index.scenario.tag_scan_disabled_omits_keys
+  given:
+    - a workspace with test-tag scanning disabled
+  when:
+    - Index.build/2 runs
+  then:
+    - the index has `test_tags`, `test_tags_errors`, and `test_tags_config` absent or nil
+  covers:
+    - specled.index.tag_data_absent_when_disabled
 ```
 
 ## Verification
@@ -47,4 +81,10 @@ decisions:
     - specled.index.subject_and_decision_index
     - specled.index.canonical_state_output
     - specled.index.json_resilience
+- kind: command
+  target: mix test test/specled_ex/index_state_test.exs
+  execute: false
+  covers:
+    - specled.index.tag_data_conditional
+    - specled.index.tag_data_absent_when_disabled
 ```

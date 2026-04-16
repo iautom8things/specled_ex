@@ -30,6 +30,7 @@ decisions:
   - specled.decision.local_skill_scaffold
   - specled.decision.guided_reconciliation_loop
   - specled.decision.no_app_start
+  - specled.decision.configurable_test_tag_enforcement
 ```
 
 ## Requirements
@@ -83,6 +84,18 @@ decisions:
   statement: No mix spec.* task shall call Mix.Task.run("app.start") or otherwise require the host OTP application to be running, since spec tasks perform only file I/O, Git CLI calls, and in-memory parsing.
   priority: must
   stability: stable
+- id: specled.tasks.test_tags_flag
+  statement: mix spec.check and mix spec.validate shall accept `--test-tags` and `--no-test-tags` flags that enable or disable test-tag scanning for that invocation, overriding the config default.
+  priority: must
+  stability: evolving
+- id: specled.tasks.test_tags_precedence
+  statement: When building the index, the effective test-tag enabled value shall follow CLI flag > `.spec/config.yml` > built-in default precedence.
+  priority: must
+  stability: evolving
+- id: specled.tasks.init_scaffold_config_yml
+  statement: mix spec.init shall scaffold `.spec/config.yml` alongside the rest of the workspace when one does not already exist.
+  priority: must
+  stability: evolving
 ```
 
 ## Verification
@@ -104,4 +117,11 @@ decisions:
     - specled.tasks.check_strict_gate
     - specled.tasks.status_summary
     - specled.tasks.no_app_start
+- kind: command
+  target: mix test test/mix/tasks/spec_tasks_test.exs
+  execute: false
+  covers:
+    - specled.tasks.test_tags_flag
+    - specled.tasks.test_tags_precedence
+    - specled.tasks.init_scaffold_config_yml
 ```
