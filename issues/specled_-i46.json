@@ -2,13 +2,14 @@
   "assignee": "",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-04-16T19:53:28Z",
   "created": "2026-04-16T17:10:35Z",
   "description": "Advances: specled.config, specled.tag_scanning, specled.index_state, specled.verification, specled.branch_guard, specled.mix_tasks\n\nJira: TBD\n\nDistilled from mega-plan think-i2e. Spec dir: .spec/\nPlan: ~/Documents/my-vault/LLMs/plans/-Users-mz-src-specled_ex/2026-04-16-specled-scenarios/runs/20260416-083656-claude/\n\nCovers specled_ex stages S1–S5. S0 (spike) and S6–S12 (specled_scenarios package) live elsewhere.\n\nVerification: mix spec.check",
   "id": "specled_-i46",
   "labels": [],
   "priority": 2,
-  "status": "open",
+  "status": "closed",
   "title": "specled-scenarios (specled_ex side, S1–S5)",
   "type": "epic",
-  "updated_at": "2026-04-16T17:10:35Z"
+  "updated_at": "2026-04-16T19:53:28Z"
 }
