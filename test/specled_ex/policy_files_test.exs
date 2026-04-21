@@ -113,4 +113,86 @@ defmodule SpecLedEx.PolicyFilesTest do
       assert PolicyFiles.policy_target?(path)
     end
   end
+
+  describe "ChangeAnalysis delegation" do
+    alias SpecLedEx.ChangeAnalysis
+
+    @tag spec: "specled.policy_files.change_analysis_delegates"
+    test "ChangeAnalysis.classify/1 agrees with PolicyFiles.classify/1 on representative paths" do
+      paths = [
+        "lib/x.ex",
+        "test/x_test.exs",
+        "test_support/helper.ex",
+        "docs/x.md",
+        "docs/plans/note.md",
+        "guides/intro.md",
+        "priv/repo/migrations/20260101_add.exs",
+        "priv/static/app.css",
+        "priv/plts/dialyzer.plt",
+        "README.md",
+        "CHANGELOG.md",
+        "AGENTS.md",
+        "mix.exs",
+        "weird/top/level/file.txt"
+      ]
+
+      for path <- paths do
+        assert ChangeAnalysis.classify(path) == PolicyFiles.classify(path),
+               "ChangeAnalysis.classify/1 drifted from PolicyFiles for #{path}"
+      end
+    end
+
+    @tag spec: "specled.policy_files.change_analysis_delegates"
+    test "ChangeAnalysis.co_change_rule/1 agrees with PolicyFiles on paths and kinds" do
+      for path <- [
+            "lib/x.ex",
+            "test/x_test.exs",
+            "docs/plans/note.md",
+            "priv/plts/dialyzer.plt",
+            "weird/file.txt"
+          ] do
+        assert ChangeAnalysis.co_change_rule(path) == PolicyFiles.co_change_rule(path)
+      end
+
+      for kind <- [:lib, :test, :doc, :generated, :unknown] do
+        assert ChangeAnalysis.co_change_rule(kind) == PolicyFiles.co_change_rule(kind)
+      end
+    end
+
+    @tag spec: "specled.policy_files.change_analysis_delegates"
+    test "ChangeAnalysis.policy_target?/1 agrees with PolicyFiles on representative paths" do
+      for path <- [
+            "lib/x.ex",
+            "test/x_test.exs",
+            "docs/plans/note.md",
+            "priv/plts/dialyzer.plt",
+            "README.md",
+            "weird/file.txt"
+          ] do
+        assert ChangeAnalysis.policy_target?(path) == PolicyFiles.policy_target?(path)
+      end
+    end
+
+    @tag spec: "specled.policy_files.change_analysis_delegates"
+    test "ChangeAnalysis source file has no path prefix or extension checks" do
+      # Defends against re-inlining. If someone reintroduces prefix checks
+      # inside ChangeAnalysis (re-breaking the delegation), this fails.
+      source = File.read!("lib/specled_ex/change_analysis.ex")
+
+      # policy_target?, classify, and co_change_rule must be one-liner
+      # delegations — no prefix matching, no String.starts_with? against
+      # policy kinds, no ~w(lib/ test/ ...) lists, no file extension tests.
+      refute source =~ ~r/@policy_prefixes\s*~w/,
+             "ChangeAnalysis must not define its own policy prefix list"
+
+      refute source =~ ~r/@policy_root_files\s*~w/,
+             "ChangeAnalysis must not define its own policy root files list"
+
+      refute source =~ ~r/String\.starts_with\?\(path,\s*"lib\//,
+             "ChangeAnalysis must not do its own \"lib/\" prefix match"
+
+      refute source =~ ~r/String\.starts_with\?\(path,\s*"priv\//,
+             "ChangeAnalysis must not do its own \"priv/\" prefix match"
+    end
+  end
 end
