@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-04-21T20:28:48Z",
+  "description": "Advances: specled.compiler_tracer\n\nDeliverable:\nSpecLedEx.Compiler.Tracer (Code.Tracer behaviour) captures remote_function / imported_function / imported_macro callee edges and on :on_module serializes per-module edges as ETF to _build/\u003cenv\u003e/.spec/xref_mfa.etf; SpecLedEx.Compiler.Xref.load/1 invokes Mix.Task.run(\"xref\", [\"graph\", \"--format\", \"dot\", \"--output\", \"-\"]) in-process and parses DOT into a graph keyed by edge kind; tracer registered in project mix.exs and test/fixtures/sample_project/mix.exs via elixirc_options: [tracers: [SpecLedEx.Compiler.Tracer]]; ETF manifest read directly via :erlang.binary_to_term/1 (no subprocess for MFA edges).\n\nVerification:\n- Tests to pass:\n  - mix test test/specled_ex/compiler/tracer_test.exs\n  - mix test test/specled_ex/compiler/xref_test.exs\n- Behaviors to demonstrate:\n  - specled.compiler_tracer.scenario.mfa_edges_emitted\n  - specled.compiler_tracer.scenario.xref_dot_parsed\n\nAllowed touches:\n- lib/specled_ex/compiler/tracer.ex\n- lib/specled_ex/compiler/xref.ex\n- test/specled_ex/compiler/tracer_test.exs\n- test/specled_ex/compiler/xref_test.exs\n- mix.exs (register tracer in elixirc_options)\n- test/fixtures/sample_project/mix.exs (register tracer)\n\nOut of Scope (files):\n- lib/specled_ex/realization/implementation.ex (S3b)\n- lib/specled_ex/realization/closure.ex (S3b)\n- lib/specled_ex/realization/expanded_behavior.ex\n- lib/specled_ex/realization/use.ex\n- lib/specled_ex/compiler/context.ex (S2; extend only if necessary — flag in PR)\n- lib/specled_ex/compiler/manifest.ex\n\nOut of Scope (intent):\n- Do NOT shell out to mix xref as a subprocess; use Mix.Task.run/2.\n- Do NOT parse fabricated --format json; verified non-existent in Elixir 1.18.\n- Do NOT add xref-JSON code paths anywhere — decision: specled.decision.custom_compile_tracer.\n- Tracer logic lives in single file lib/specled_ex/compiler/tracer.ex (\u003c=300 LOC); helpers factor into tracer/ subdir only if the cap is breached.\n\nMerge gate:\n- [ ] Code compiles cleanly with tracer registered (no compile warnings about unknown tracer)\n- [ ] Tests listed above pass\n- [ ] _build/test/.spec/xref_mfa.etf exists after fixture compile\n- [ ] Scope check: diff touches only Allowed globs\n- [ ] Auditor APPROVE comment on the ticket",
+  "id": "specled_-q59.3",
+  "labels": [],
+  "parent": "specled_-q59",
+  "priority": 2,
+  "status": "open",
+  "title": "S3a: compile tracer + xref integration",
+  "type": "task",
+  "updated_at": "2026-04-21T20:28:48Z"
+}
