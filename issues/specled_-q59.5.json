@@ -1,6 +1,8 @@
 {
   "assignee": "",
-  "blocked_by": [],
+  "blocked_by": [
+    "specled_-q59.2"
+  ],
   "blocks": [],
   "created": "2026-04-21T20:29:28Z",
   "description": "Advances: specled.coverage_capture\n\nDeliverable:\nSpecLedEx.Coverage.Formatter (ExUnit formatter) with snapshot_fn DI (default \u0026:cover.analyse/1) and anonymous ETS (:ets.new(:anon, [:public, :set])); per-test state keyed by test_pid carrying {snapshot, tags, test_id}; SpecLedEx.Coverage.Store (reader + build_records/1 helper) writes/reads .spec/_coverage/per_test.coverdata as ETF; split Coverage.init/2 (pure config) vs Coverage.install/1 (impure); mix spec.cover.test task forces async: false globally via Application.put_env(:ex_unit, :async, false) + ExUnit.configure(async: false) before loading test modules, wraps mix test --cover, logs async: true test files on exit; SpecLedEx.IntegrationCase with run_fixture_mix_test(root, args) using System.cmd for child BEAM.\n\nVerification:\n- Tests to pass:\n  - mix test test/specled_ex/coverage/formatter_test.exs\n  - mix test test/specled_ex/coverage/store_test.exs\n  - mix test test/mix/tasks/spec_cover_test_test.exs --include integration\n- Behaviors to demonstrate:\n  - specled.coverage_capture.scenario.formatter_stub_snapshot\n  - specled.coverage_capture.scenario.store_round_trip\n  - specled.coverage_capture.scenario.spec_cover_test_forces_serial\n\nAllowed touches:\n- lib/specled_ex/coverage.ex\n- lib/specled_ex/coverage/formatter.ex\n- lib/specled_ex/coverage/store.ex\n- lib/mix/tasks/spec.cover.test.ex\n- test/specled_ex/coverage/formatter_test.exs\n- test/specled_ex/coverage/store_test.exs\n- test/mix/tasks/spec_cover_test_test.exs\n- test_support/specled_ex_integration_case.ex (extend if needed — S2 stub)\n\nOut of Scope (files):\n- lib/specled_ex/coverage_triangulation.ex (S4b)\n- lib/mix/tasks/spec.triangle.ex (S4b)\n- lib/specled_ex/realization/**\n- lib/specled_ex/compiler/**\n- test/integration/scenario_* (S4b owns those tests)\n\nOut of Scope (intent):\n- Do NOT attempt async-safe per-test attribution; :cover has no per-pid surface (decision: specled.decision.serialized_per_test_coverage).\n- Do NOT use named ETS tables; parallel formatter instances in unit tests must coexist.\n- Do NOT add duration_ms / captured_at timestamps (scope cut #23) or schema version fields (cut #26).\n- Do NOT ship an adapter/ directory for ExCoveralls (scope cut #18); if adapter ships here, flat file at lib/specled_ex/coverage/excoveralls.ex (otherwise defer to v1.x).\n- mix test --cover must continue to work unchanged in its cumulative mode.\n\nMerge gate:\n- [ ] Code compiles cleanly\n- [ ] Tests listed above pass\n- [ ] mix spec.cover.test produces .spec/_coverage/per_test.coverdata with at least one record per test on the fixture\n- [ ] No use of named ETS in coverage modules (grep check)\n- [ ] Scope check: diff touches only Allowed globs\n- [ ] Auditor APPROVE comment on the ticket",
@@ -11,5 +13,5 @@
   "status": "open",
   "title": "S4a: per-test coverage capture (serialized run)",
   "type": "task",
-  "updated_at": "2026-04-21T20:29:28Z"
+  "updated_at": "2026-04-21T20:30:28Z"
 }
