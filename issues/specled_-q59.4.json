@@ -1,6 +1,8 @@
 {
   "assignee": "",
-  "blocked_by": [],
+  "blocked_by": [
+    "specled_-q59.3"
+  ],
   "blocks": [],
   "created": "2026-04-21T20:29:02Z",
   "description": "Advances: specled.implementation_tier\n\nDeliverable:\nSpecLedEx.Realization.Implementation orchestrator; SpecLedEx.Realization.Closure.compute/2 walks MFA callee edges from the tracer side-manifest starting at declared implementation bindings, stopping at subject boundaries + out-of-project modules + already-visited MFAs; Closure.subject_for_mfa/2 with MFA ownership rule (realized_by.implementation wins; surface-file mapping with lexical tiebreak; otherwise shared helper); hash-ref composition (Cargo pattern) — closures reference other subjects' hashes by id + hash string, not canonical AST; shared-helper accounting inlines orphan MFAs into each caller's closure; Scenario 1 integration test (scenario_refactor_stable_test.exs).\n\nVerification:\n- Tests to pass:\n  - mix test test/specled_ex/realization/closure_test.exs\n  - mix test test/specled_ex/realization/implementation_test.exs\n  - mix test test/integration/scenario_refactor_stable_test.exs --include integration\n- Behaviors to demonstrate:\n  - specled.implementation_tier.scenario.closure_walk_stops_at_boundary\n  - specled.implementation_tier.scenario.shared_helper_inlined\n  - specled.implementation_tier.scenario.ownership_lexical_tiebreak\n  - specled.implementation_tier.scenario.refactor_does_not_drift (Scenario 1)\n\nAllowed touches:\n- lib/specled_ex/realization/implementation.ex\n- lib/specled_ex/realization/closure.ex\n- test/specled_ex/realization/implementation_test.exs\n- test/specled_ex/realization/closure_test.exs\n- test/integration/scenario_refactor_stable_test.exs\n\nOut of Scope (files):\n- lib/specled_ex/compiler/** (S3a owns tracer + xref)\n- lib/specled_ex/realization/api_boundary.ex (S2)\n- lib/specled_ex/realization/drift.ex (extended in S5b only)\n- lib/specled_ex/realization/expanded_behavior.ex (S5a)\n- lib/specled_ex/realization/use.ex (S5b)\n- lib/specled_ex/coverage/**\n- lib/specled_ex/coverage_triangulation.ex\n\nOut of Scope (intent):\n- Do NOT introduce a configurable closure_strategy (scope cut #1) — hardcode subject_boundary.\n- Do NOT define Coverage.subject_for_mfa/1 here (scope audit #17); Closure owns ownership.\n- Do NOT persist closure sets in state.json; recompute per-check.\n- Hash-ref composition uses the string form \"subject:\u003cid\u003e:hash:\u003chash\u003e\" in the hash input, not the referenced canonical AST.\n\nMerge gate:\n- [ ] Code compiles cleanly\n- [ ] Tests listed above pass\n- [ ] mix spec.check passes on specled_ex's own repo\n- [ ] Scope check: diff touches only Allowed globs\n- [ ] Auditor APPROVE comment on the ticket",
@@ -11,5 +13,5 @@
   "status": "open",
   "title": "S3b: implementation tier + subject-boundary closure",
   "type": "task",
-  "updated_at": "2026-04-21T20:29:02Z"
+  "updated_at": "2026-04-21T20:30:28Z"
 }
