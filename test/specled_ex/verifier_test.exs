@@ -946,6 +946,207 @@ defmodule SpecLedEx.VerifierTest do
     assert failed_check
   end
 
+  # ── tagged_tests verification kind ───────────────────────────────────────
+
+  @tag spec: "specled.tagged_tests.strength_progression"
+  test "tagged_tests verification does not require a target and earns linked strength when tagged",
+       %{root: root} do
+    report =
+      Verifier.verify(
+        %{
+          "subjects" => [
+            base_subject(%{
+              "requirements" => [
+                %{"id" => "req.alpha", "statement" => "Alpha"},
+                %{"id" => "req.beta", "statement" => "Beta"}
+              ],
+              "verification" => [
+                %{
+                  "kind" => "tagged_tests",
+                  "covers" => ["req.alpha", "req.beta"],
+                  "execute" => false
+                }
+              ]
+            })
+          ],
+          "test_tags" => %{
+            "req.alpha" => [%{file: "test/alpha_test.exs", line: 3, test_name: "t1"}],
+            "req.beta" => [%{file: "test/beta_test.exs", line: 4, test_name: "t2"}]
+          }
+        },
+        root
+      )
+
+    assert report["status"] == "pass"
+
+    claim_alpha = claim_for(report, "req.alpha")
+    claim_beta = claim_for(report, "req.beta")
+
+    assert claim_alpha["strength"] == "linked"
+    assert claim_alpha["kind"] == "tagged_tests"
+    assert claim_beta["strength"] == "linked"
+
+    refute Enum.any?(report["findings"], &(&1["code"] == "verification_missing_target"))
+  end
+
+  @tag spec: "specled.tagged_tests.missing_tag_finding"
+  test "tagged_tests verification flags covers that have no @tag spec entry",
+       %{root: root} do
+    report =
+      Verifier.verify(
+        %{
+          "subjects" => [
+            base_subject(%{
+              "requirements" => [%{"id" => "req.untagged", "statement" => "Untagged"}],
+              "verification" => [
+                %{
+                  "kind" => "tagged_tests",
+                  "covers" => ["req.untagged"]
+                }
+              ]
+            })
+          ],
+          "test_tags" => %{}
+        },
+        root
+      )
+
+    assert Enum.any?(
+             findings(report, "tagged_tests_cover_missing_tag"),
+             &(&1["message"] =~ "req.untagged")
+           )
+
+    claim = claim_for(report, "req.untagged")
+    assert claim["strength"] == "claimed"
+  end
+
+  @tag spec: "specled.tagged_tests.merged_run_attribution"
+  test "tagged_tests verifications across subjects are merged into one mix test invocation",
+       %{root: root} do
+    marker = Path.join(root, "tagged_tests_calls.txt")
+
+    # Build a fake `mix` on PATH that appends its args to a marker file and
+    # exits 0 — the merged command is `mix test --only spec:<id>... <files>`.
+    shim_dir = Path.join(root, "bin")
+    File.mkdir_p!(shim_dir)
+    shim_path = Path.join(shim_dir, "mix")
+
+    File.write!(shim_path, """
+    #!/bin/sh
+    echo "$@" >> "#{marker}"
+    exit 0
+    """)
+
+    File.chmod!(shim_path, 0o755)
+
+    original_path = System.get_env("PATH")
+    System.put_env("PATH", "#{shim_dir}:#{original_path}")
+
+    try do
+      report =
+        Verifier.verify(
+          %{
+            "subjects" => [
+              base_subject(%{
+                "file" => ".spec/specs/alpha.spec.md",
+                "meta" => %{"id" => "alpha", "kind" => "module", "status" => "active"},
+                "requirements" => [%{"id" => "req.alpha", "statement" => "Alpha"}],
+                "verification" => [
+                  %{"kind" => "tagged_tests", "covers" => ["req.alpha"], "execute" => true}
+                ]
+              }),
+              base_subject(%{
+                "file" => ".spec/specs/beta.spec.md",
+                "meta" => %{"id" => "beta", "kind" => "module", "status" => "active"},
+                "requirements" => [%{"id" => "req.beta", "statement" => "Beta"}],
+                "verification" => [
+                  %{"kind" => "tagged_tests", "covers" => ["req.beta"], "execute" => true}
+                ]
+              })
+            ],
+            "test_tags" => %{
+              "req.alpha" => [%{file: "test/alpha_test.exs", line: 3, test_name: "t1"}],
+              "req.beta" => [%{file: "test/beta_test.exs", line: 4, test_name: "t2"}]
+            }
+          },
+          root,
+          run_commands: true
+        )
+
+      assert report["status"] == "pass"
+
+      calls = File.read!(marker) |> String.trim() |> String.split("\n", trim: true)
+      assert length(calls) == 1, "expected a single merged mix test invocation"
+
+      [call] = calls
+      assert call =~ "test"
+      assert call =~ "--only spec:req.alpha"
+      assert call =~ "--only spec:req.beta"
+      assert call =~ "test/alpha_test.exs"
+      assert call =~ "test/beta_test.exs"
+
+      assert claim_for(report, "req.alpha")["strength"] == "executed"
+      assert claim_for(report, "req.beta")["strength"] == "executed"
+    after
+      System.put_env("PATH", original_path)
+    end
+  end
+
+  @tag spec: "specled.tagged_tests.merged_run_attribution"
+  test "tagged_tests merged command failure surfaces a finding per subject",
+       %{root: root} do
+    shim_dir = Path.join(root, "bin")
+    File.mkdir_p!(shim_dir)
+    shim_path = Path.join(shim_dir, "mix")
+    File.write!(shim_path, "#!/bin/sh\necho boom\nexit 2\n")
+    File.chmod!(shim_path, 0o755)
+
+    original_path = System.get_env("PATH")
+    System.put_env("PATH", "#{shim_dir}:#{original_path}")
+
+    try do
+      report =
+        Verifier.verify(
+          %{
+            "subjects" => [
+              base_subject(%{
+                "file" => ".spec/specs/alpha.spec.md",
+                "meta" => %{"id" => "alpha", "kind" => "module", "status" => "active"},
+                "requirements" => [%{"id" => "req.alpha", "statement" => "Alpha"}],
+                "verification" => [
+                  %{"kind" => "tagged_tests", "covers" => ["req.alpha"], "execute" => true}
+                ]
+              }),
+              base_subject(%{
+                "file" => ".spec/specs/beta.spec.md",
+                "meta" => %{"id" => "beta", "kind" => "module", "status" => "active"},
+                "requirements" => [%{"id" => "req.beta", "statement" => "Beta"}],
+                "verification" => [
+                  %{"kind" => "tagged_tests", "covers" => ["req.beta"], "execute" => true}
+                ]
+              })
+            ],
+            "test_tags" => %{
+              "req.alpha" => [%{file: "test/alpha_test.exs"}],
+              "req.beta" => [%{file: "test/beta_test.exs"}]
+            }
+          },
+          root,
+          run_commands: true
+        )
+
+      assert report["status"] == "fail"
+
+      failures = findings(report, "verification_command_failed")
+      assert length(failures) == 2
+
+      assert claim_for(report, "req.alpha")["strength"] == "linked"
+      assert claim_for(report, "req.beta")["strength"] == "linked"
+    after
+      System.put_env("PATH", original_path)
+    end
+  end
+
   test "command verification writes output to temp files then cleans up", %{root: root} do
     report =
       verify_subject(
