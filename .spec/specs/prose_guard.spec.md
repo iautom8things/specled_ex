@@ -98,13 +98,9 @@ surface:
 ```spec-verification
 - kind: command
   target: mix test test/specled_ex/config/prose_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.prose_guard.config_thresholds
-- kind: command
-  target: mix test test/mix/tasks/spec_tasks_test.exs
-  execute: false
-  covers:
     - specled.prose_guard.finding_emitted
     - specled.prose_guard.severity_configurable
     - specled.prose_guard.non_must_exempt

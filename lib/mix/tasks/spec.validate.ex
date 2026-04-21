@@ -1,6 +1,8 @@
 defmodule Mix.Tasks.Spec.Validate do
   use Mix.Task
 
+  alias SpecLedEx.Config
+  alias SpecLedEx.Config.Prose
   alias SpecLedEx.VerificationStrength
 
   @shortdoc "Validates authored specs and writes .spec/state.json"
@@ -58,6 +60,7 @@ defmodule Mix.Tasks.Spec.Validate do
         run_commands: run_commands?,
         min_strength: min_strength
       )
+      |> with_prose_findings(index, root, strict?)
 
     path = SpecLedEx.write_state(index, report, root, output)
 
@@ -123,5 +126,45 @@ defmodule Mix.Tasks.Spec.Validate do
       {:error, message} ->
         Mix.raise("Invalid value for --min-strength: #{message}")
     end
+  end
+
+  defp with_prose_findings(report, index, root, strict?) do
+    config = Config.load(root)
+    severities = config.branch_guard.severities
+    new_findings = Prose.findings(index, config.prose, severities)
+
+    case new_findings do
+      [] ->
+        report
+
+      _ ->
+        merged = (report["findings"] || []) ++ new_findings
+        sorted = Enum.sort_by(merged, &sort_key/1)
+
+        errors = Enum.count(sorted, &(&1["severity"] == "error"))
+        warnings = Enum.count(sorted, &(&1["severity"] == "warning"))
+        fail? = errors > 0 or (strict? and warnings > 0)
+        summary = Map.get(report, "summary", %{})
+
+        summary =
+          summary
+          |> Map.put("errors", errors)
+          |> Map.put("warnings", warnings)
+          |> Map.put("findings", length(sorted))
+
+        report
+        |> Map.put("findings", sorted)
+        |> Map.put("summary", summary)
+        |> Map.put("status", if(fail?, do: "fail", else: "pass"))
+    end
+  end
+
+  defp sort_key(finding) do
+    {
+      finding["file"] || "",
+      finding["subject_id"] || "",
+      finding["code"] || "",
+      finding["message"] || ""
+    }
   end
 end
