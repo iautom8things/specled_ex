@@ -1,11 +1,22 @@
 defmodule SpecLedEx.BranchCheck do
   @moduledoc false
 
+  alias SpecLedEx.BranchCheck.Severity
+  alias SpecLedEx.BranchCheck.Trailer
   alias SpecLedEx.ChangeAnalysis
+  alias SpecLedEx.Config
+
+  @per_code_defaults %{
+    "branch_guard_unmapped_change" => :error,
+    "branch_guard_missing_subject_update" => :error,
+    "branch_guard_missing_decision_update" => :error,
+    "branch_guard_requirement_without_test_tag" => :warning
+  }
 
   def run(index, root, opts \\ []) do
     analysis = ChangeAnalysis.analyze(index, root, opts)
     changed_subject_ids = MapSet.new(analysis.changed_subject_ids)
+    severity_opts = severity_opts(root, analysis.base)
 
     file_findings =
       Enum.flat_map(analysis.policy_files, fn path ->
@@ -17,14 +28,12 @@ defmodule SpecLedEx.BranchCheck do
             []
 
           MapSet.size(impacted_subjects) == 0 ->
-            [
-              finding(
-                "error",
-                "branch_guard_unmapped_change",
-                "Changed file is not covered by any current-truth subject: #{path}",
-                path
-              )
-            ]
+            emit(
+              severity_opts,
+              "branch_guard_unmapped_change",
+              "Changed file is not covered by any current-truth subject: #{path}",
+              path
+            )
 
           true ->
             missing_subject_ids =
@@ -36,14 +45,12 @@ defmodule SpecLedEx.BranchCheck do
             if missing_subject_ids == [] do
               []
             else
-              [
-                finding(
-                  "error",
-                  "branch_guard_missing_subject_update",
-                  "Changed file #{path} impacts subject specs that were not updated: #{Enum.join(missing_subject_ids, ", ")}",
-                  path
-                )
-              ]
+              emit(
+                severity_opts,
+                "branch_guard_missing_subject_update",
+                "Changed file #{path} impacts subject specs that were not updated: #{Enum.join(missing_subject_ids, ", ")}",
+                path
+              )
             end
         end
       end)
@@ -53,19 +60,17 @@ defmodule SpecLedEx.BranchCheck do
     governance_findings =
       if needs_decision_update?(analysis.policy_files, impacted_subjects) and
            not analysis.decision_changed? do
-        [
-          finding(
-            "error",
-            "branch_guard_missing_decision_update",
-            "Cross-cutting change spans multiple subjects but no decision file changed",
-            nil
-          )
-        ]
+        emit(
+          severity_opts,
+          "branch_guard_missing_decision_update",
+          "Cross-cutting change spans multiple subjects but no decision file changed",
+          nil
+        )
       else
         []
       end
 
-    tag_findings = new_requirement_tag_findings(index, analysis, root)
+    tag_findings = new_requirement_tag_findings(index, analysis, root, severity_opts)
 
     findings =
       Enum.sort_by(
@@ -85,6 +90,43 @@ defmodule SpecLedEx.BranchCheck do
       "findings" => findings,
       "guidance" => guidance(analysis)
     }
+  end
+
+  defp severity_opts(root, base) do
+    config = Config.load(root)
+
+    trailer_overrides =
+      if is_binary(base) and base != "HEAD" do
+        Trailer.read(root, base).overrides
+      else
+        %{}
+      end
+
+    [
+      config_severities: config.branch_guard.severities,
+      trailer_override: trailer_overrides
+    ]
+  end
+
+  defp emit(severity_opts, code, message, file, subject_id \\ nil, default \\ nil) do
+    resolved_default = default || Map.get(@per_code_defaults, code, :warning)
+
+    case Severity.resolve(code, severity_opts, resolved_default) do
+      :off ->
+        []
+
+      severity ->
+        item =
+          %{
+            "severity" => Atom.to_string(severity),
+            "code" => code,
+            "message" => message,
+            "file" => file
+          }
+
+        item = if subject_id, do: Map.put(item, "subject_id", subject_id), else: item
+        [item]
+    end
   end
 
   defp guidance(analysis) do
@@ -108,13 +150,17 @@ defmodule SpecLedEx.BranchCheck do
     length(policy_files) > 1 and MapSet.size(impacted_subjects) > 1
   end
 
-  defp new_requirement_tag_findings(index, analysis, root) do
+  defp new_requirement_tag_findings(index, analysis, root, severity_opts) do
     case Map.get(index, "test_tags") do
       nil ->
         []
 
       tag_map when is_map(tag_map) ->
-        severity = severity_from_config(Map.get(index, "test_tags_config"))
+        # test_tags_config.enforcement is a legacy per-finding default
+        # switch. If set to "error" it raises the per-code default; the
+        # config.severities and trailer_override in severity_opts still
+        # take precedence via Severity.resolve/3.
+        test_tags_default = test_tags_default(Map.get(index, "test_tags_config"))
         subjects_by_file = subjects_by_file(index)
 
         analysis.changed_files
@@ -130,13 +176,14 @@ defmodule SpecLedEx.BranchCheck do
 
             new_ids
             |> Enum.reject(&Map.has_key?(tag_map, &1))
-            |> Enum.map(fn id ->
-              finding(
-                severity,
+            |> Enum.flat_map(fn id ->
+              emit(
+                severity_opts,
                 "branch_guard_requirement_without_test_tag",
                 "New must requirement has no backing @tag spec annotation: #{id}",
                 path,
-                subject_id
+                subject_id,
+                test_tags_default
               )
             end)
           else
@@ -146,8 +193,8 @@ defmodule SpecLedEx.BranchCheck do
     end
   end
 
-  defp severity_from_config(%{"enforcement" => "error"}), do: "error"
-  defp severity_from_config(_), do: "warning"
+  defp test_tags_default(%{"enforcement" => "error"}), do: :error
+  defp test_tags_default(_), do: nil
 
   defp subjects_by_file(index) do
     index
@@ -219,19 +266,4 @@ defmodule SpecLedEx.BranchCheck do
   end
 
   defp spec_file?(path), do: String.starts_with?(path, ".spec/specs/") and String.ends_with?(path, ".spec.md")
-
-  defp finding(severity, code, message, file) do
-    %{
-      "severity" => severity,
-      "code" => code,
-      "message" => message,
-      "file" => file
-    }
-  end
-
-  defp finding(severity, code, message, file, subject_id) do
-    severity
-    |> finding(code, message, file)
-    |> Map.put("subject_id", subject_id)
-  end
 end
