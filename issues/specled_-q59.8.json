@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-04-21T20:30:20Z",
+  "description": "Advances: specled.use_tier\n\nDeliverable:\nSpecLedEx.Realization.Use.consumers_for/2 enumerates consumer modules via Compiler.Tracer imported_macro edges (recomputed per-check, NOT persisted); use-tier hash composes provider expanded_behavior hash + sorted consumer module list; macro-provider root-cause finding format (one finding per provider drift with root_cause.provider, tier: :use, hash_prefix_before/after as 8-char hex, consumers_affected count, consumers list); cyclic-deps tiebreak by lexicographic subject id (extend Drift.dedupe/2 + tests); Scenario 4 integration test (scenario_macro_provider_drift_test.exs); extended test/specled_ex/realization/drift_test.exs with cyclic fixture.\n\nVerification:\n- Tests to pass:\n  - mix test test/specled_ex/realization/use_test.exs\n  - mix test test/specled_ex/realization/drift_test.exs (extended)\n  - mix test test/integration/scenario_macro_provider_drift_test.exs --include integration\n- Behaviors to demonstrate:\n  - specled.use_tier.scenario.consumers_current_not_persisted\n  - specled.use_tier.scenario.provider_drift_one_finding (Scenario 4)\n  - specled.api_boundary.scenario.cyclic_dedupe_tiebreak_stable (Drift extended tests)\n\nAllowed touches:\n- lib/specled_ex/realization/use.ex\n- lib/specled_ex/realization/drift.ex (extend existing; respect 150 LOC cap)\n- test/specled_ex/realization/use_test.exs\n- test/specled_ex/realization/drift_test.exs (extend)\n- test/integration/scenario_macro_provider_drift_test.exs\n\nOut of Scope (files):\n- lib/specled_ex/realization/expanded_behavior.ex (S5a) — consume but do not modify\n- lib/specled_ex/realization/api_boundary.ex (S2)\n- lib/specled_ex/realization/implementation.ex (S3b)\n- lib/specled_ex/realization/closure.ex (S3b)\n- lib/specled_ex/compiler/** (consume tracer output only)\n- lib/specled_ex/coverage/**\n\nOut of Scope (intent):\n- Do NOT persist consumer lists in state.json (scope cut #27); always recompute.\n- Do NOT emit per-consumer drift findings when a root_cause covers them.\n- 8-char hash prefixes required in root_cause output — shorter prefixes collide across history, longer are illegible.\n- Drift.dedupe/2 still exports exactly one function; no new public API.\n\nMerge gate:\n- [ ] Code compiles cleanly\n- [ ] Tests listed above pass\n- [ ] Drift.dedupe/2 public surface unchanged (still one exported function)\n- [ ] Drift module \u003c= 150 LOC including moduledoc\n- [ ] Scope check: diff touches only Allowed globs\n- [ ] Auditor APPROVE comment on the ticket",
+  "id": "specled_-q59.8",
+  "labels": [],
+  "parent": "specled_-q59",
+  "priority": 2,
+  "status": "open",
+  "title": "S5b: use tier + macro root-cause dedup",
+  "type": "task",
+  "updated_at": "2026-04-21T20:30:20Z"
+}
