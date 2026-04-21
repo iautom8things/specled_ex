@@ -98,7 +98,7 @@ surface:
 ```spec-verification
 - kind: command
   target: mix test test/specled_ex/branch_check/severity_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.severity.resolve_precedence
     - specled.severity.off_is_absorbing

@@ -2,10 +2,9 @@ defmodule SpecLedEx.ChangeAnalysis do
   @moduledoc false
 
   alias SpecLedEx.Coverage
+  alias SpecLedEx.PolicyFiles
 
   @decision_pattern ~r/^\.spec\/decisions\/.+\.md$/
-  @policy_prefixes ~w(lib/ test/ guides/ docs/ priv/ skills/ test_support/)
-  @policy_root_files ~w(README.md AGENTS.md CHANGELOG.md mix.exs)
 
   def analyze(index, root, opts \\ []) do
     git_repo? = git_repo?(root)
@@ -142,10 +141,11 @@ defmodule SpecLedEx.ChangeAnalysis do
     not File.exists?(Path.join(root, path)) and MapSet.size(changed_subject_ids) > 0
   end
 
-  def policy_target?(path) do
-    (Enum.any?(@policy_prefixes, &String.starts_with?(path, &1)) and
-       not String.starts_with?(path, "docs/plans/")) or path in @policy_root_files
-  end
+  def policy_target?(path), do: PolicyFiles.policy_target?(path)
+
+  def classify(path), do: PolicyFiles.classify(path)
+
+  def co_change_rule(path_or_kind), do: PolicyFiles.co_change_rule(path_or_kind)
 
   defp changed_subject_ids(index, changed_files) do
     changed_files = MapSet.new(changed_files)

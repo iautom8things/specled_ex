@@ -86,7 +86,7 @@ decisions:
 ```spec-verification
 - kind: command
   target: mix test test/specled_ex/branch_check/trailer_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.spec_drift_trailer.parse_vocabulary
     - specled.spec_drift_trailer.scans_base_to_head

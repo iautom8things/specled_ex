@@ -118,7 +118,7 @@ decisions:
 ```spec-verification
 - kind: command
   target: mix test test/specled_ex/policy_files_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.policy_files.classify_kinds
     - specled.policy_files.priv_defaults_to_lib

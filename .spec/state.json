@@ -547,34 +547,6 @@
     },
     {
       "code": "surface_target_missing",
-      "entity_id": "specled.policy_files",
-      "file": ".spec/specs/policy_files.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/policy_files.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.policy_files",
-      "file": ".spec/specs/policy_files.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/policy_files_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.prose_guard",
-      "file": ".spec/specs/prose_guard.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/config/prose.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.prose_guard",
-      "file": ".spec/specs/prose_guard.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/config/prose_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
       "entity_id": "specled.realized_by",
       "file": ".spec/specs/realized_by.spec.md",
       "level": "warning",
@@ -593,34 +565,6 @@
       "file": ".spec/specs/realized_by.spec.md",
       "level": "warning",
       "message": "Surface entry does not exist: test/specled_ex/realization/effective_binding_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.severity",
-      "file": ".spec/specs/severity.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/branch_check/severity.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.severity",
-      "file": ".spec/specs/severity.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/branch_check/severity_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.spec_drift_trailer",
-      "file": ".spec/specs/spec_drift_trailer.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/branch_check/trailer.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.spec_drift_trailer",
-      "file": ".spec/specs/spec_drift_trailer.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/branch_check/trailer_test.exs"
     },
     {
       "code": "surface_target_missing",
@@ -4666,7 +4610,7 @@
           "specled.policy_files.co_change_rule_total",
           "specled.policy_files.change_analysis_delegates"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/policy_files.spec.md",
         "kind": "command",
         "subject_id": "specled.policy_files",
@@ -4686,25 +4630,16 @@
       },
       {
         "covers": [
-          "specled.prose_guard.config_thresholds"
-        ],
-        "execute": false,
-        "file": ".spec/specs/prose_guard.spec.md",
-        "kind": "command",
-        "subject_id": "specled.prose_guard",
-        "target": "mix test test/specled_ex/config/prose_test.exs"
-      },
-      {
-        "covers": [
+          "specled.prose_guard.config_thresholds",
           "specled.prose_guard.finding_emitted",
           "specled.prose_guard.severity_configurable",
           "specled.prose_guard.non_must_exempt"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/prose_guard.spec.md",
         "kind": "command",
         "subject_id": "specled.prose_guard",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs"
+        "target": "mix test test/specled_ex/config/prose_test.exs"
       },
       {
         "covers": [
@@ -4736,7 +4671,7 @@
           "specled.severity.known_values",
           "specled.severity.non_emitting"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/severity.spec.md",
         "kind": "command",
         "subject_id": "specled.severity",
@@ -4748,7 +4683,7 @@
           "specled.spec_drift_trailer.scans_base_to_head",
           "specled.spec_drift_trailer.self_report_documented"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/spec_drift_trailer.spec.md",
         "kind": "command",
         "subject_id": "specled.spec_drift_trailer",
@@ -4912,11 +4847,11 @@
     "decision_parse_errors": 0,
     "decisions": 19,
     "exceptions": 0,
-    "findings": 62,
+    "findings": 54,
     "requirements": 160,
     "scenarios": 85,
     "subjects": 29,
-    "verifications": 61
+    "verifications": 60
   },
   "verification": {
     "claims": [
@@ -6116,8 +6051,8 @@
         "required_strength": "claimed",
         "strength": "claimed",
         "subject_id": "specled.prose_guard",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs",
-        "verification_index": 1
+        "target": "mix test test/specled_ex/config/prose_test.exs",
+        "verification_index": 0
       },
       {
         "cover_id": "specled.prose_guard.non_must_exempt",
@@ -6127,8 +6062,8 @@
         "required_strength": "claimed",
         "strength": "claimed",
         "subject_id": "specled.prose_guard",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs",
-        "verification_index": 1
+        "target": "mix test test/specled_ex/config/prose_test.exs",
+        "verification_index": 0
       },
       {
         "cover_id": "specled.prose_guard.severity_configurable",
@@ -6138,8 +6073,8 @@
         "required_strength": "claimed",
         "strength": "claimed",
         "subject_id": "specled.prose_guard",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs",
-        "verification_index": 1
+        "target": "mix test test/specled_ex/config/prose_test.exs",
+        "verification_index": 0
       },
       {
         "cover_id": "specled.realized_by.existing_surface_coexists",
