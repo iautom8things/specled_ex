@@ -1,13 +1,13 @@
 defmodule SpecLedEx.Schema.Verification do
   @moduledoc false
 
-  @kinds ~w(command file source_file test_file guide_file readme_file workflow_file test doc workflow contract)
+  @kinds ~w(command tagged_tests file source_file test_file guide_file readme_file workflow_file test doc workflow contract)
 
   @schema Zoi.struct(
             __MODULE__,
             %{
               kind: Zoi.enum(@kinds),
-              target: Zoi.string(),
+              target: Zoi.string() |> Zoi.default(""),
               covers: Zoi.list(Zoi.string()),
               execute: Zoi.boolean() |> Zoi.optional()
             },

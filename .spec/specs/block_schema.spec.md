@@ -38,6 +38,10 @@ decisions:
   statement: Block validation shall reject invalid ids, invalid verification kinds or strengths, and malformed list items with indexed error messages.
   priority: must
   stability: stable
+- id: specled.schema.tagged_tests_kind
+  statement: The `spec-verification` contract shall accept `tagged_tests` as a verification kind and allow `target` to be omitted, since tagged_tests verifications derive their test set from the `@tag spec:` index.
+  priority: must
+  stability: evolving
 ```
 
 ## Verification
@@ -50,4 +54,5 @@ decisions:
     - specled.schema.meta_contract
     - specled.schema.block_structs
     - specled.schema.validation_errors
+    - specled.schema.tagged_tests_kind
 ```

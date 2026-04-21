@@ -127,7 +127,358 @@
       }
     ]
   },
-  "findings": [],
+  "findings": [
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.block_schema",
+      "file": ".spec/specs/block_schema.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.schema.block_structs"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.block_schema",
+      "file": ".spec/specs/block_schema.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.schema.meta_contract"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.block_schema",
+      "file": ".spec/specs/block_schema.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.schema.tagged_tests_kind"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.block_schema",
+      "file": ".spec/specs/block_schema.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.schema.validation_errors"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.branch_guard",
+      "file": ".spec/specs/branch_guard.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.branch_guard.cross_cutting_decision"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.branch_guard",
+      "file": ".spec/specs/branch_guard.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.branch_guard.subject_cochange"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.config",
+      "file": ".spec/specs/config.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.config.defaults_when_missing"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.config",
+      "file": ".spec/specs/config.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.config.init_scaffolds_config_yml"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.config",
+      "file": ".spec/specs/config.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.config.malformed_yaml_degrades"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.config",
+      "file": ".spec/specs/config.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.config.yaml_parses_known_fields"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.decisions",
+      "file": ".spec/specs/decision_governance.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.decisions.frontmatter_contract"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.decisions",
+      "file": ".spec/specs/decision_governance.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.decisions.reference_validation"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.index_state",
+      "file": ".spec/specs/index_state.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.index.canonical_state_output"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.index_state",
+      "file": ".spec/specs/index_state.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.index.json_resilience"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.index_state",
+      "file": ".spec/specs/index_state.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.index.subject_and_decision_index"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.mix_tasks",
+      "file": ".spec/specs/mix_tasks.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.tasks.check_strict_gate"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.mix_tasks",
+      "file": ".spec/specs/mix_tasks.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.tasks.index_writes_state"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.mix_tasks",
+      "file": ".spec/specs/mix_tasks.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.tasks.init_scaffold"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.mix_tasks",
+      "file": ".spec/specs/mix_tasks.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.tasks.no_app_start"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.mix_tasks",
+      "file": ".spec/specs/mix_tasks.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.tasks.validate_exit_status"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.mix_tasks",
+      "file": ".spec/specs/mix_tasks.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.tasks.validate_findings"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.next",
+      "file": ".spec/specs/next.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.next.change_classification"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.next",
+      "file": ".spec/specs/next.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.next.read_only"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.package",
+      "file": ".spec/specs/package.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.package.declarative_governance"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.package",
+      "file": ".spec/specs/package.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.package.index_and_state"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.package",
+      "file": ".spec/specs/package.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.package.mix_tasks"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.parser",
+      "file": ".spec/specs/parser.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.parser.resilient_errors"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.parser",
+      "file": ".spec/specs/parser.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.parser.standard_blocks"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "spec.system",
+      "file": ".spec/specs/spec_system.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: spec.workspace.agents_present"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "spec.system",
+      "file": ".spec/specs/spec_system.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: spec.workspace.decisions_readme_present"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "spec.system",
+      "file": ".spec/specs/spec_system.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: spec.workspace.readme_present"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "spec.system",
+      "file": ".spec/specs/spec_system.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: spec.workspace.state_generated"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.status",
+      "file": ".spec/specs/status.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.status.decision_index"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.tag_scanning",
+      "file": ".spec/specs/tag_scanning.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.tag_scanning.dynamic_values_reported"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.tag_scanning",
+      "file": ".spec/specs/tag_scanning.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.tag_scanning.ignored_non_spec_tags"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.tag_scanning",
+      "file": ".spec/specs/tag_scanning.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.tag_scanning.moduletag_applies_to_all_tests"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.tag_scanning",
+      "file": ".spec/specs/tag_scanning.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.tag_scanning.parse_errors_surfaced"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.tag_scanning",
+      "file": ".spec/specs/tag_scanning.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.tag_scanning.scan_aggregates_results"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.tag_scanning",
+      "file": ".spec/specs/tag_scanning.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.tag_scanning.supported_forms"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.tagged_tests",
+      "file": ".spec/specs/tagged_tests_verification.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.tagged_tests.build_command"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.tagged_tests",
+      "file": ".spec/specs/tagged_tests_verification.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.tagged_tests.collect_entries"
+    },
+    {
+      "code": "tagged_tests_cover_missing_tag",
+      "entity_id": "specled.tagged_tests",
+      "file": ".spec/specs/tagged_tests_verification.spec.md",
+      "level": "warning",
+      "message": "tagged_tests verification covers specled.tagged_tests.build_command but no test carries @tag spec: specled.tagged_tests.build_command"
+    },
+    {
+      "code": "tagged_tests_cover_missing_tag",
+      "entity_id": "specled.tagged_tests",
+      "file": ".spec/specs/tagged_tests_verification.spec.md",
+      "level": "warning",
+      "message": "tagged_tests verification covers specled.tagged_tests.collect_entries but no test carries @tag spec: specled.tagged_tests.collect_entries"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.verification",
+      "file": ".spec/specs/verification.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.verify.command_execution_resilience"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.verification",
+      "file": ".spec/specs/verification.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.verify.coverage_warnings"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.verification",
+      "file": ".spec/specs/verification.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.verify.decision_governance"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.verification",
+      "file": ".spec/specs/verification.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.verify.malformed_entries_nonfatal"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.verification",
+      "file": ".spec/specs/verification.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.verify.meta_required"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.verification",
+      "file": ".spec/specs/verification.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.verify.reference_checks"
+    },
+    {
+      "code": "requirement_without_test_tag",
+      "entity_id": "specled.verification",
+      "file": ".spec/specs/verification.spec.md",
+      "level": "warning",
+      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.verify.strength_semantics"
+    }
+  ],
   "index": {
     "exceptions": [],
     "requirements": [
@@ -193,6 +544,14 @@
         "priority": "must",
         "stability": "stable",
         "statement": "The `spec-meta` contract shall accept stable ids, kind, status, optional summary and surface, optional ADR references, and optional verification minimum strength.",
+        "subject_id": "specled.block_schema"
+      },
+      {
+        "file": ".spec/specs/block_schema.spec.md",
+        "id": "specled.schema.tagged_tests_kind",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "The `spec-verification` contract shall accept `tagged_tests` as a verification kind and allow `target` to be omitted, since tagged_tests verifications derive their test set from the `@tag spec:` index.",
         "subject_id": "specled.block_schema"
       },
       {
@@ -658,6 +1017,46 @@
         "stability": "evolving",
         "statement": "The tag scanner shall extract requirement ids from the four supported forms (`@tag spec` with a string, `@tag` with a keyword list containing a `spec` entry, `@tag spec` with a list of strings, and `@moduletag spec`) without compiling the test files.",
         "subject_id": "specled.tag_scanning"
+      },
+      {
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "id": "specled.tagged_tests.build_command",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "SpecLedEx.TaggedTests.build_command/2 shall combine the given cover ids into a single `mix test` command line that accumulates one `--only spec:<id>` flag per id backed by the tag map and appends the unique set of test files drawn from the tag entries. It shall drop ids with no tag entry and return `:no_tests` when none of the ids are backed.",
+        "subject_id": "specled.tagged_tests"
+      },
+      {
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "id": "specled.tagged_tests.collect_entries",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "SpecLedEx.TaggedTests.collect_entries/1 shall return one entry per executable `kind: tagged_tests` verification across the provided subjects, carrying the subject-scoped verification key and the list of cover ids. Non-executable entries and other kinds shall be excluded.",
+        "subject_id": "specled.tagged_tests"
+      },
+      {
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "id": "specled.tagged_tests.merged_run_attribution",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "When verification runs with command execution enabled, the verifier shall invoke the aggregated `mix test` command at most once per report and distribute its exit code and output to every participating tagged_tests verification so each claim receives the same execution outcome.",
+        "subject_id": "specled.tagged_tests"
+      },
+      {
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "id": "specled.tagged_tests.missing_tag_finding",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "The verifier shall emit a `tagged_tests_cover_missing_tag` warning for every cover id declared on a `tagged_tests` verification that has no entry in the tag map, so silent gaps between specs and tagged tests surface during spec.check.",
+        "subject_id": "specled.tagged_tests"
+      },
+      {
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "id": "specled.tagged_tests.strength_progression",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "A `tagged_tests` claim shall reach `linked` strength when its cover id has at least one entry in the tag map and `executed` strength when the aggregated run also exits zero. Untagged covers shall remain at `claimed` strength.",
+        "subject_id": "specled.tagged_tests"
       },
       {
         "file": ".spec/specs/verification.spec.md",
@@ -1127,6 +1526,121 @@
         ],
         "when": [
           "SpecLedEx.TagScanner.scan/2 runs on a directory containing it"
+        ]
+      },
+      {
+        "covers": [
+          "specled.tagged_tests.build_command"
+        ],
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "given": [
+          "a tag map with entries for ids `a.one`, `a.two`, and `b.one` across two test files"
+        ],
+        "id": "specled.tagged_tests.scenario.build_command_combines_ids_and_files",
+        "subject_id": "specled.tagged_tests",
+        "then": [
+          "the returned command begins with `mix test`",
+          "it includes one `--only spec:<id>` flag per id",
+          "it appends each unique test file exactly once"
+        ],
+        "when": [
+          "SpecLedEx.TaggedTests.build_command/2 is called with all three ids"
+        ]
+      },
+      {
+        "covers": [
+          "specled.tagged_tests.build_command"
+        ],
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "given": [
+          "a tag map that contains entries for `a.one` only"
+        ],
+        "id": "specled.tagged_tests.scenario.build_command_drops_unmapped_ids",
+        "subject_id": "specled.tagged_tests",
+        "then": [
+          "the returned command includes `--only spec:a.one` and the backing file",
+          "the returned command does not reference `missing.id`"
+        ],
+        "when": [
+          "SpecLedEx.TaggedTests.build_command/2 is called with `[a.one, missing.id]`"
+        ]
+      },
+      {
+        "covers": [
+          "specled.tagged_tests.build_command"
+        ],
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "given": [
+          "a tag map with no entries for the requested cover ids"
+        ],
+        "id": "specled.tagged_tests.scenario.build_command_no_tests_when_all_unmapped",
+        "subject_id": "specled.tagged_tests",
+        "then": [
+          "the function returns `:no_tests`"
+        ],
+        "when": [
+          "SpecLedEx.TaggedTests.build_command/2 is called"
+        ]
+      },
+      {
+        "covers": [
+          "specled.tagged_tests.collect_entries"
+        ],
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "given": [
+          "a subject with one `kind: tagged_tests` verification flagged execute=true",
+          "a second subject mixing `kind: command` and non-executable `kind: tagged_tests` entries"
+        ],
+        "id": "specled.tagged_tests.scenario.collect_entries_filters_kinds",
+        "subject_id": "specled.tagged_tests",
+        "then": [
+          "exactly the executable tagged_tests entries are returned",
+          "each entry carries the subject-scoped verification key and the declared cover ids"
+        ],
+        "when": [
+          "SpecLedEx.TaggedTests.collect_entries/1 is called with both subjects"
+        ]
+      },
+      {
+        "covers": [
+          "specled.tagged_tests.merged_run_attribution",
+          "specled.tagged_tests.strength_progression"
+        ],
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "given": [
+          "two subjects each declaring a `kind: tagged_tests` verification with execute=true",
+          "a tag map backing every cover id to a test file",
+          "a shim `mix` executable on PATH that records each invocation"
+        ],
+        "id": "specled.tagged_tests.scenario.merged_run_executes_once_across_subjects",
+        "subject_id": "specled.tagged_tests",
+        "then": [
+          "the shim is invoked exactly once",
+          "the recorded command includes every expected `--only spec:<id>` flag and test file",
+          "both claims reach `executed` strength"
+        ],
+        "when": [
+          "verification runs with run_commands=true"
+        ]
+      },
+      {
+        "covers": [
+          "specled.tagged_tests.missing_tag_finding",
+          "specled.tagged_tests.strength_progression"
+        ],
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "given": [
+          "a subject with a `kind: tagged_tests` verification covering `req.untagged`",
+          "an empty tag map"
+        ],
+        "id": "specled.tagged_tests.scenario.missing_tag_warning_emitted",
+        "subject_id": "specled.tagged_tests",
+        "then": [
+          "a `tagged_tests_cover_missing_tag` warning references `req.untagged`",
+          "the corresponding claim stays at `claimed` strength"
+        ],
+        "when": [
+          "verification runs"
         ]
       },
       {
@@ -1626,6 +2140,23 @@
         "title": "Tag Scanning"
       },
       {
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "id": "specled.tagged_tests",
+        "meta": {
+          "decisions": null,
+          "id": "specled.tagged_tests",
+          "kind": "module",
+          "status": "active",
+          "summary": "Workspace-wide aggregation of tagged_tests verifications into a single mix test invocation.",
+          "surface": [
+            "lib/specled_ex/tagged_tests.ex",
+            "test/specled_ex/tagged_tests_test.exs"
+          ],
+          "verification_minimum_strength": null
+        },
+        "title": "Tagged Tests Verification"
+      },
+      {
         "file": ".spec/specs/verification.spec.md",
         "id": "specled.verification",
         "meta": {
@@ -1706,7 +2237,8 @@
         "covers": [
           "specled.schema.meta_contract",
           "specled.schema.block_structs",
-          "specled.schema.validation_errors"
+          "specled.schema.validation_errors",
+          "specled.schema.tagged_tests_kind"
         ],
         "execute": true,
         "file": ".spec/specs/block_schema.spec.md",
@@ -1916,6 +2448,20 @@
       },
       {
         "covers": [
+          "specled.tagged_tests.collect_entries",
+          "specled.tagged_tests.build_command",
+          "specled.tagged_tests.merged_run_attribution",
+          "specled.tagged_tests.strength_progression",
+          "specled.tagged_tests.missing_tag_finding"
+        ],
+        "execute": true,
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "subject_id": "specled.tagged_tests",
+        "target": ""
+      },
+      {
+        "covers": [
           "specled.verify.meta_required",
           "specled.verify.reference_checks",
           "specled.verify.coverage_warnings",
@@ -1953,11 +2499,11 @@
     "decision_parse_errors": 0,
     "decisions": 9,
     "exceptions": 0,
-    "findings": 0,
-    "requirements": 80,
-    "scenarios": 31,
-    "subjects": 14,
-    "verifications": 24
+    "findings": 50,
+    "requirements": 86,
+    "scenarios": 37,
+    "subjects": 15,
+    "verifications": 25
   },
   "verification": {
     "claims": [
@@ -2073,6 +2619,17 @@
       },
       {
         "cover_id": "specled.schema.meta_contract",
+        "file": ".spec/specs/block_schema.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.block_schema",
+        "target": "mix test test/specled_ex/schema_test.exs test/specled_ex/parser_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.schema.tagged_tests_kind",
         "file": ".spec/specs/block_schema.spec.md",
         "kind": "command",
         "meets_minimum": true,
@@ -2721,6 +3278,61 @@
         "verification_index": 0
       },
       {
+        "cover_id": "specled.tagged_tests.build_command",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "claimed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.collect_entries",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "claimed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.merged_run_attribution",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.missing_tag_finding",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.strength_progression",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
         "cover_id": "specled.verify.command_execution_resilience",
         "file": ".spec/specs/verification.spec.md",
         "kind": "command",
@@ -2878,14 +3490,14 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 2,
-      "executed": 73,
+      "claimed": 4,
+      "executed": 77,
       "linked": 8
     },
     "threshold_failures": 0
   },
   "workspace": {
     "decision_count": 9,
-    "spec_count": 14
+    "spec_count": 15
   }
 }

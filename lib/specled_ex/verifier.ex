@@ -2,13 +2,16 @@ defmodule SpecLedEx.Verifier do
   @moduledoc false
 
   alias SpecLedEx.Schema.Verification, as: VerificationSchema
+  alias SpecLedEx.TaggedTests
   alias SpecLedEx.VerificationStrength
 
   @command_kind "command"
+  @tagged_tests_kind "tagged_tests"
   @file_kinds ~w(file source_file test_file guide_file readme_file workflow_file test doc workflow contract)
   @known_verification_kinds VerificationSchema.kinds()
   @id_pattern ~r/^[a-z0-9][a-z0-9._-]*$/
   @default_command_timeout_ms 120_000
+  @tagged_tests_command "mix test"
 
   def verify(index, root, opts \\ []) do
     strict? = Keyword.get(opts, :strict, false)
@@ -18,9 +21,14 @@ defmodule SpecLedEx.Verifier do
     cli_minimum_strength = normalize_minimum_strength!(Keyword.get(opts, :min_strength))
     subjects = index["subjects"] || []
     decisions = index["decisions"] || []
+    tag_scan_enabled? = Map.has_key?(index, "test_tags")
+    tag_map = tag_map_from_index(index)
     subject_ids = build_subject_ids(subjects)
     decision_ids = build_decision_ids(decisions)
-    command_results = build_command_results(subjects, root, run_commands?, command_timeout_ms)
+
+    command_results =
+      build_command_results(subjects, tag_map, root, run_commands?, command_timeout_ms)
+
     global_claim_ids = build_global_claim_ids(subjects)
 
     verification_claims =
@@ -29,12 +37,23 @@ defmodule SpecLedEx.Verifier do
         root,
         command_results,
         global_claim_ids,
+        tag_map,
         cli_minimum_strength
       )
 
     findings =
       subjects
-      |> Enum.flat_map(&verify_subject(&1, root, command_results, global_claim_ids, decision_ids))
+      |> Enum.flat_map(
+        &verify_subject(
+          &1,
+          root,
+          command_results,
+          global_claim_ids,
+          decision_ids,
+          tag_map,
+          tag_scan_enabled?
+        )
+      )
       |> then(fn subject_findings ->
         decision_findings =
           Enum.flat_map(decisions, fn decision ->
@@ -63,7 +82,8 @@ defmodule SpecLedEx.Verifier do
           command_results,
           global_claim_ids,
           subject_ids,
-          decision_ids
+          decision_ids,
+          tag_map
         )
         |> sort_checks()
       else
@@ -97,7 +117,15 @@ defmodule SpecLedEx.Verifier do
     end
   end
 
-  defp verify_subject(subject, root, command_results, global_claim_ids, decision_ids) do
+  defp verify_subject(
+         subject,
+         root,
+         command_results,
+         global_claim_ids,
+         decision_ids,
+         tag_map,
+         tag_scan_enabled?
+       ) do
     file = string_field(subject, "file")
     meta = subject_meta(subject)
     subject_id = id_of(meta, "id") || file
@@ -119,7 +147,16 @@ defmodule SpecLedEx.Verifier do
     |> add_missing_scenario_id_findings(scenarios, subject_id, file)
     |> add_scenario_cover_findings(scenarios, MapSet.new(requirement_ids), subject_id, file)
     |> add_scenario_structure_findings(scenarios, subject_id, file)
-    |> add_verification_findings(verifications, local_claim_ids, global_claim_ids, root, subject_id, file)
+    |> add_verification_findings(
+      verifications,
+      local_claim_ids,
+      global_claim_ids,
+      root,
+      subject_id,
+      file,
+      tag_map,
+      tag_scan_enabled?
+    )
     |> add_requirement_coverage_findings(
       requirement_ids,
       verifications,
@@ -272,7 +309,9 @@ defmodule SpecLedEx.Verifier do
          global_claim_ids,
          root,
          subject_id,
-         file
+         file,
+         tag_map,
+         tag_scan_enabled?
        ) do
     Enum.reduce(verifications, findings, fn entry, acc ->
       verification = entry.item
@@ -283,6 +322,7 @@ defmodule SpecLedEx.Verifier do
       |> add_verification_cover_findings(verification, local_claim_ids, global_claim_ids, subject_id, file)
       |> add_verification_target_content_findings(verification, root, subject_id, file)
       |> add_verification_command_runtime_findings(verification, entry.command_result, subject_id, file)
+      |> add_tagged_tests_cover_findings(verification, tag_map, tag_scan_enabled?, subject_id, file)
     end)
   end
 
@@ -316,28 +356,60 @@ defmodule SpecLedEx.Verifier do
     target = string_field(verification, "target")
     execute? = bool_field(verification, "execute")
 
-    if kind == @command_kind and execute? and target != "" and command_result do
-      %{output: output, exit_code: exit_code} = command_result
+    cond do
+      kind == @command_kind and execute? and target != "" and command_result ->
+        append_command_runtime_finding(findings, command_result, target, subject_id, file)
 
-      if exit_code == 0 do
+      kind == @tagged_tests_kind and execute? and command_result ->
+        label = "tagged_tests: #{Map.get(command_result, :command) || @tagged_tests_command}"
+        append_command_runtime_finding(findings, command_result, label, subject_id, file)
+
+      true ->
         findings
-      else
-        details =
-          output
-          |> String.trim()
-          |> String.slice(0, 1000)
+    end
+  end
 
+  defp append_command_runtime_finding(findings, command_result, label, subject_id, file) do
+    %{output: output, exit_code: exit_code} = command_result
+
+    if exit_code == 0 do
+      findings
+    else
+      details =
+        output
+        |> String.trim()
+        |> String.slice(0, 1000)
+
+      [
+        finding(
+          "error",
+          "verification_command_failed",
+          "Verification command failed: #{label}\n#{details}",
+          subject_id,
+          file
+        )
+        | findings
+      ]
+    end
+  end
+
+  defp add_tagged_tests_cover_findings(findings, verification, tag_map, tag_scan_enabled?, subject_id, file) do
+    if tag_scan_enabled? and string_field(verification, "kind") == @tagged_tests_kind do
+      verification
+      |> valid_cover_ids()
+      |> Enum.reject(&Map.has_key?(tag_map, &1))
+      |> Enum.reduce(findings, fn cover_id, acc ->
         [
           finding(
-            "error",
-            "verification_command_failed",
-            "Verification command failed: #{target}\n#{details}",
+            "warning",
+            "tagged_tests_cover_missing_tag",
+            "tagged_tests verification covers #{cover_id} but no test carries @tag spec: #{cover_id}",
             subject_id,
             file
           )
-          | findings
+          | acc
         ]
-      end
+      end)
     else
       findings
     end
@@ -510,6 +582,15 @@ defmodule SpecLedEx.Verifier do
     end)
   end
 
+  defp tag_map_from_index(index) when is_map(index) do
+    case Map.get(index, "test_tags") do
+      map when is_map(map) -> map
+      _ -> %{}
+    end
+  end
+
+  defp tag_map_from_index(_), do: %{}
+
   defp build_global_claim_ids(subjects) do
     subjects
     |> Enum.flat_map(fn subject ->
@@ -539,7 +620,8 @@ defmodule SpecLedEx.Verifier do
          command_results,
          global_claim_ids,
          subject_ids,
-         decision_ids
+         decision_ids,
+         tag_map
        ) do
     subject_checks =
       subjects
@@ -550,7 +632,8 @@ defmodule SpecLedEx.Verifier do
           run_commands?,
           command_results,
           global_claim_ids,
-          decision_ids
+          decision_ids,
+          tag_map
         )
       )
 
@@ -573,7 +656,8 @@ defmodule SpecLedEx.Verifier do
          run_commands?,
          command_results,
          global_claim_ids,
-         decision_ids
+         decision_ids,
+         tag_map
        ) do
     file = string_field(subject, "file")
     meta = subject_meta(subject)
@@ -602,7 +686,8 @@ defmodule SpecLedEx.Verifier do
       root,
       subject_id,
       file,
-      run_commands?
+      run_commands?,
+      tag_map
     )
     |> add_requirement_coverage_debug_checks(
       requirement_ids,
@@ -776,7 +861,8 @@ defmodule SpecLedEx.Verifier do
          root,
          subject_id,
          file,
-         run_commands?
+         run_commands?,
+         _tag_map
        ) do
     Enum.reduce(verifications, checks, fn entry, acc ->
       verification = entry.item
@@ -898,6 +984,60 @@ defmodule SpecLedEx.Verifier do
                 "pass",
                 "verification_command_present",
                 "Verification command present: #{target}",
+                subject_id,
+                file
+              )
+              | acc
+            ]
+
+          kind == @tagged_tests_kind and run_commands? and execute? and command_result ->
+            %{output: output, exit_code: exit_code, command: cmd} = command_result
+            label = cmd || @tagged_tests_command
+
+            if exit_code == 0 do
+              [
+                check(
+                  "pass",
+                  "verification_command_passed",
+                  "tagged_tests command passed: #{label}",
+                  subject_id,
+                  file
+                )
+                | acc
+              ]
+            else
+              details = output |> String.trim() |> String.slice(0, 300)
+
+              [
+                check(
+                  "error",
+                  "verification_command_failed",
+                  "tagged_tests command failed: #{label} #{details}",
+                  subject_id,
+                  file
+                )
+                | acc
+              ]
+            end
+
+          kind == @tagged_tests_kind and run_commands? and not execute? ->
+            [
+              check(
+                "pass",
+                "verification_command_skipped",
+                "tagged_tests verification not executed (set execute=true to run)",
+                subject_id,
+                file
+              )
+              | acc
+            ]
+
+          kind == @tagged_tests_kind ->
+            [
+              check(
+                "pass",
+                "verification_command_present",
+                "tagged_tests verification present (covers: #{Enum.join(covers, ", ")})",
                 subject_id,
                 file
               )
@@ -1564,9 +1704,15 @@ defmodule SpecLedEx.Verifier do
 
   defp ids_from(_, _kind), do: []
 
-  defp build_command_results(_subjects, _root, false, _timeout), do: %{}
+  defp build_command_results(_subjects, _tag_map, _root, false, _timeout), do: %{}
 
-  defp build_command_results(subjects, root, true, timeout_ms) do
+  defp build_command_results(subjects, tag_map, root, true, timeout_ms) do
+    per_command = build_per_command_results(subjects, root, timeout_ms)
+    merged = merged_tagged_tests_results(subjects, tag_map, root, timeout_ms)
+    Map.merge(per_command, merged)
+  end
+
+  defp build_per_command_results(subjects, root, timeout_ms) do
     Enum.reduce(subjects, %{}, fn subject, acc ->
       file = string_field(subject, "file")
       meta = subject_meta(subject)
@@ -1583,6 +1729,27 @@ defmodule SpecLedEx.Verifier do
         end
       end)
     end)
+  end
+
+  defp merged_tagged_tests_results(subjects, tag_map, root, timeout_ms) do
+    case TaggedTests.collect_entries(subjects) do
+      [] ->
+        %{}
+
+      entries ->
+        cover_ids = entries |> Enum.flat_map(& &1.covers) |> Enum.uniq()
+
+        result =
+          case TaggedTests.build_command(cover_ids, tag_map) do
+            :no_tests ->
+              %{output: "No @tag spec entries found for covers", exit_code: 0, command: nil}
+
+            {:ok, cmd} ->
+              cmd |> run_command(root, timeout_ms) |> Map.put(:command, cmd)
+          end
+
+        Enum.reduce(entries, %{}, fn entry, acc -> Map.put(acc, entry.key, result) end)
+    end
   end
 
   # Captures command output via temp files instead of pipe-based System.cmd.
@@ -1678,6 +1845,7 @@ defmodule SpecLedEx.Verifier do
          root,
          command_results,
          global_claim_ids,
+         tag_map,
          cli_minimum_strength
        ) do
     subjects
@@ -1690,7 +1858,15 @@ defmodule SpecLedEx.Verifier do
       subject
       |> verification_entries(subject_id, file, command_results)
       |> Enum.flat_map(fn entry ->
-        build_entry_claims(entry, root, subject_id, file, global_claim_ids, minimum_strength)
+        build_entry_claims(
+          entry,
+          root,
+          subject_id,
+          file,
+          global_claim_ids,
+          tag_map,
+          minimum_strength
+        )
       end)
     end)
     |> Enum.sort_by(fn claim ->
@@ -1703,7 +1879,7 @@ defmodule SpecLedEx.Verifier do
     end)
   end
 
-  defp build_entry_claims(entry, root, subject_id, file, global_claim_ids, minimum_strength) do
+  defp build_entry_claims(entry, root, subject_id, file, global_claim_ids, tag_map, minimum_strength) do
     verification = entry.item
     kind = string_field(verification, "kind")
 
@@ -1719,7 +1895,7 @@ defmodule SpecLedEx.Verifier do
           "kind" => kind,
           "target" => string_field(verification, "target"),
           "cover_id" => cover_id,
-          "strength" => claim_strength(verification, entry.command_result, root, cover_id),
+          "strength" => claim_strength(verification, entry.command_result, root, tag_map, cover_id),
           "required_strength" => minimum_strength
         }
       end)
@@ -1748,12 +1924,18 @@ defmodule SpecLedEx.Verifier do
     end
   end
 
-  defp claim_strength(verification, command_result, root, cover_id) do
+  defp claim_strength(verification, command_result, root, tag_map, cover_id) do
     kind = string_field(verification, "kind")
 
     cond do
       kind == @command_kind and executable_command_succeeded?(verification, command_result) ->
         "executed"
+
+      kind == @tagged_tests_kind and tagged_tests_executed?(verification, command_result, tag_map, cover_id) ->
+        "executed"
+
+      kind == @tagged_tests_kind and Map.has_key?(tag_map, cover_id) ->
+        "linked"
 
       kind in @file_kinds and verification_target_mentions_cover?(verification, root, cover_id) ->
         "linked"
@@ -1761,6 +1943,13 @@ defmodule SpecLedEx.Verifier do
       true ->
         "claimed"
     end
+  end
+
+  defp tagged_tests_executed?(verification, command_result, tag_map, cover_id) do
+    bool_field(verification, "execute") and
+      Map.has_key?(tag_map, cover_id) and
+      is_map(command_result) and
+      Map.get(command_result, :exit_code) == 0
   end
 
   defp executable_command_succeeded?(verification, command_result) do
