@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-04-21T20:25:59Z",
+  "description": "Advances: specled.severity, specled.spec_drift_trailer, specled.policy_files, specled.prose_guard, specled.realized_by, specled.binding, specled.api_boundary, specled.compiler_context, specled.compiler_tracer, specled.implementation_tier, specled.coverage_capture, specled.triangulation, specled.expanded_behavior_tier, specled.use_tier\n\nJira: TBD\n\nDistilled from mega-plan run 20260421-135615-claude. Spec dir: .spec/\n\nPlanning epic: think-ew1\nRefined plan: plans/-Users-mz-src-specled-ex/2026-04-21-realized-by-triangle/runs/20260421-135615-claude/05-refined-plan.md\n\n14 subjects authored under .spec/specs/. 10 decisions under .spec/decisions/.\nStage children are S1..S5 decomposed into 8 tickets: think-ccn, think-rne, think-p3e, think-pez, think-ko7, think-nwo, think-mlb, think-f3e.\n\nJira MCP unavailable at distill time — recording Jira: TBD. PR creation hook will catch this.",
+  "id": "specled_-q59",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "realized-by bindings + triangle closure",
+  "type": "epic",
+  "updated_at": "2026-04-21T20:25:59Z"
+}
