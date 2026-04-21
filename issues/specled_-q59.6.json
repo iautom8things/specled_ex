@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-04-21T20:29:42Z",
+  "description": "Advances: specled.triangulation\n\nDeliverable:\nSpecLedEx.CoverageTriangulation.findings/3 pure function over (coverage_records, closure_map, tag_index); emits branch_guard_untested_realization, branch_guard_untethered_test (default :info severity, per-test opt-out via @tag spec_triangulation: :indirect), branch_guard_underspecified_realization; execution_reach metric rendered as \"N/M (0.FF)\"; detector_unavailable: :no_coverage_artifact graceful degrade when .spec/_coverage/per_test.coverdata is missing; Scenario 2 integration test (scenario_test_only_change_test.exs completion — S1 shipped the half) and Scenario 5 integration test (scenario_mistagged_test_test.exs); mix spec.triangle \u003csubject.id\u003e Should-Have diagnostic (read-only per-requirement binding/closure/exercising-tests/execution_reach print).\n\nVerification:\n- Tests to pass:\n  - mix test test/specled_ex/coverage_triangulation_test.exs\n  - mix test test/integration/scenario_test_only_change_test.exs --include integration\n  - mix test test/integration/scenario_mistagged_test_test.exs --include integration\n  - mix test test/mix/tasks/spec_triangle_test.exs\n- Behaviors to demonstrate:\n  - specled.triangulation.scenario.untethered_test_flagged\n  - specled.triangulation.scenario.opt_out_tag_suppresses\n  - specled.triangulation.scenario.cold_run_detector_unavailable\n  - specled.triangulation.scenario.test_only_change_scenario_gate (Scenario 2)\n\nAllowed touches:\n- lib/specled_ex/coverage_triangulation.ex\n- lib/mix/tasks/spec.triangle.ex\n- test/specled_ex/coverage_triangulation_test.exs\n- test/integration/scenario_test_only_change_test.exs\n- test/integration/scenario_mistagged_test_test.exs\n- test/mix/tasks/spec_triangle_test.exs\n\nOut of Scope (files):\n- lib/specled_ex/coverage/** (S4a)\n- lib/mix/tasks/spec.cover.test.ex (S4a)\n- lib/specled_ex/realization/**\n\nOut of Scope (intent):\n- findings/3 MUST be a pure function — no filesystem I/O, no Mix globals.\n- Do NOT emit speculative triangulation findings when coverage_artifact is missing; emit exactly one detector_unavailable and stop.\n- Do NOT remove the :indirect opt-out tag; per-test override is required (decision: m4 severity default).\n- mix spec.triangle MUST be read-only; it does not write state.json.\n\nMerge gate:\n- [ ] Code compiles cleanly\n- [ ] Tests listed above pass\n- [ ] mix spec.check passes with triangulation enabled on fixture\n- [ ] Scope check: diff touches only Allowed globs\n- [ ] Auditor APPROVE comment on the ticket",
+  "id": "specled_-q59.6",
+  "labels": [],
+  "parent": "specled_-q59",
+  "priority": 2,
+  "status": "open",
+  "title": "S4b: coverage × closure × tags triangulation",
+  "type": "task",
+  "updated_at": "2026-04-21T20:29:42Z"
+}
