@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added per-test coverage capture: `mix spec.cover.test` wraps `mix test --cover` with a serialized run (forces `async: false` and warns about test files that opt back in), and `SpecLedEx.Coverage.Formatter` writes per-test snapshots through anonymous ETS to `.spec/_coverage/per_test.coverdata`. `SpecLedEx.Coverage.Store` reads/writes the artifact and exposes a `build_records/1` helper. `mix test --cover` continues to work unchanged in cumulative mode.
 - Added `SpecLedEx.BranchCheck.Severity`, a single resolver for per-finding severity with the precedence `trailer_override > config.severities > per_code_default`. `:off` in config is absorbing — it beats any trailer override — and unknown values fall back to the per-code default with a `Logger.warning/1`.
 - Added `SpecLedEx.BranchCheck.Trailer`, which parses `Spec-Drift:` git trailers (`refactor`, `docs_only`, `test_only`, or explicit `<code>=<severity>`) and shells `git log <base>..HEAD` so trailers written on any commit in the PR range apply to the whole range. HEAD-only scanning is deliberately not supported.
 - Added `SpecLedEx.PolicyFiles`, a single place to ask whether a changed path is `:lib`, `:test`, `:doc`, `:generated`, or `:unknown` and which co-change rule applies. `priv/` defaults to `:lib`; only `priv/plts/` is `:generated`, preserving migration and static-asset signal. `docs/plans/` is `:doc` but always `:ignored` for co-change. `SpecLedEx.ChangeAnalysis` now delegates to it.
