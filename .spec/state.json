@@ -3793,7 +3793,7 @@
           "id": "specled.triangulation",
           "kind": "workflow",
           "realized_by": null,
-          "status": "draft",
+          "status": "active",
           "summary": "Pure function over `(coverage_records, closures, tag_index)` returning new findings `branch_guard_untested_realization`, `branch_guard_untethered_test`, `branch_guard_underspecified_realization`, plus `detector_unavailable` on missing inputs; `mix spec.triangle` prints per-subject diagnostics.",
           "surface": [
             "lib/specled_ex/coverage_triangulation.ex",
@@ -4456,7 +4456,7 @@
           "specled.triangulation.execution_reach_metric",
           "specled.triangulation.detector_unavailable_on_missing_coverage"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/triangulation.spec.md",
         "kind": "command",
         "subject_id": "specled.triangulation",
@@ -4466,7 +4466,7 @@
         "covers": [
           "specled.triangulation.pure_function"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/triangulation.spec.md",
         "kind": "command",
         "subject_id": "specled.triangulation",
@@ -4476,7 +4476,7 @@
         "covers": [
           "specled.triangulation.untethered_test"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/triangulation.spec.md",
         "kind": "command",
         "subject_id": "specled.triangulation",
@@ -4486,7 +4486,7 @@
         "covers": [
           "specled.triangulation.spec_triangle_task"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/triangulation.spec.md",
         "kind": "command",
         "subject_id": "specled.triangulation",
@@ -6095,7 +6095,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.triangulation",
         "target": "mix test test/specled_ex/coverage_triangulation_test.exs",
         "verification_index": 0
@@ -6106,7 +6106,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.triangulation",
         "target": "mix test test/specled_ex/coverage_triangulation_test.exs",
         "verification_index": 0
@@ -6117,7 +6117,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.triangulation",
         "target": "mix test test/specled_ex/coverage_triangulation_test.exs",
         "verification_index": 0
@@ -6128,7 +6128,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.triangulation",
         "target": "mix test test/specled_ex/coverage_triangulation_test.exs",
         "verification_index": 0
@@ -6139,7 +6139,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.triangulation",
         "target": "mix test test/specled_ex/coverage_triangulation_test.exs",
         "verification_index": 0
@@ -6150,7 +6150,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.triangulation",
         "target": "mix test test/specled_ex/coverage_triangulation_test.exs",
         "verification_index": 0
@@ -6161,7 +6161,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.triangulation",
         "target": "mix test test/integration/scenario_test_only_change_test.exs --include integration",
         "verification_index": 1
@@ -6172,7 +6172,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.triangulation",
         "target": "mix test test/integration/scenario_mistagged_test_test.exs --include integration",
         "verification_index": 2
@@ -6183,7 +6183,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.triangulation",
         "target": "mix test test/mix/tasks/spec_triangle_test.exs",
         "verification_index": 3
@@ -6401,8 +6401,8 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 27,
-      "executed": 129,
+      "claimed": 18,
+      "executed": 138,
       "linked": 10
     },
     "threshold_failures": 0
