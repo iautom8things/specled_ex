@@ -344,41 +344,6 @@
     },
     {
       "code": "surface_target_missing",
-      "entity_id": "specled.implementation_tier",
-      "file": ".spec/specs/implementation_tier.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/realization/closure.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.implementation_tier",
-      "file": ".spec/specs/implementation_tier.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/realization/implementation.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.implementation_tier",
-      "file": ".spec/specs/implementation_tier.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/integration/scenario_refactor_stable_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.implementation_tier",
-      "file": ".spec/specs/implementation_tier.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/realization/closure_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.implementation_tier",
-      "file": ".spec/specs/implementation_tier.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/realization/implementation_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
       "entity_id": "specled.triangulation",
       "file": ".spec/specs/triangulation.spec.md",
       "level": "warning",
@@ -4294,7 +4259,7 @@
           "specled.implementation_tier.shared_helper_accounting",
           "specled.implementation_tier.hash_ref_composition"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/implementation_tier.spec.md",
         "kind": "command",
         "subject_id": "specled.implementation_tier",
@@ -4304,7 +4269,7 @@
         "covers": [
           "specled.implementation_tier.closure_walks_tracer_edges"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/implementation_tier.spec.md",
         "kind": "command",
         "subject_id": "specled.implementation_tier",
@@ -4314,7 +4279,7 @@
         "covers": [
           "specled.implementation_tier.scenario_refactor_stable"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/implementation_tier.spec.md",
         "kind": "command",
         "subject_id": "specled.implementation_tier",
@@ -4675,7 +4640,7 @@
     "decision_parse_errors": 0,
     "decisions": 19,
     "exceptions": 0,
-    "findings": 25,
+    "findings": 20,
     "requirements": 160,
     "scenarios": 85,
     "subjects": 29,
@@ -5382,7 +5347,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.implementation_tier",
         "target": "mix test test/specled_ex/realization/closure_test.exs",
         "verification_index": 0
@@ -5393,7 +5358,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.implementation_tier",
         "target": "mix test test/specled_ex/realization/closure_test.exs",
         "verification_index": 0
@@ -5404,7 +5369,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.implementation_tier",
         "target": "mix test test/specled_ex/realization/closure_test.exs",
         "verification_index": 0
@@ -5415,7 +5380,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.implementation_tier",
         "target": "mix test test/specled_ex/realization/closure_test.exs",
         "verification_index": 0
@@ -5426,7 +5391,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.implementation_tier",
         "target": "mix test test/specled_ex/realization/implementation_test.exs",
         "verification_index": 1
@@ -5437,7 +5402,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.implementation_tier",
         "target": "mix test test/integration/scenario_refactor_stable_test.exs --include integration",
         "verification_index": 2
@@ -6513,8 +6478,8 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 40,
-      "executed": 116,
+      "claimed": 34,
+      "executed": 122,
       "linked": 10
     },
     "threshold_failures": 0

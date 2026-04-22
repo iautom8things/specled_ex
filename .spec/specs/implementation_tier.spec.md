@@ -133,7 +133,7 @@ surface:
 ```spec-verification
 - kind: command
   target: mix test test/specled_ex/realization/closure_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.implementation_tier.closure_walks_tracer_edges
     - specled.implementation_tier.ownership_rule
@@ -141,12 +141,12 @@ surface:
     - specled.implementation_tier.hash_ref_composition
 - kind: command
   target: mix test test/specled_ex/realization/implementation_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.implementation_tier.closure_walks_tracer_edges
 - kind: command
   target: mix test test/integration/scenario_refactor_stable_test.exs --include integration
-  execute: false
+  execute: true
   covers:
     - specled.implementation_tier.scenario_refactor_stable
 ```
