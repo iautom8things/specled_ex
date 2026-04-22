@@ -15,7 +15,7 @@ serves the compile/exports/runtime edge-kind classification.
 ```spec-meta
 id: specled.compiler_tracer
 kind: module
-status: draft
+status: active
 summary: SpecLedEx.Compiler.Tracer emits `{mod, fun, arity} => [callees]` ETF to `_build/<env>/.spec/xref_mfa.etf` on `:on_module`; Compiler.Xref runs `Mix.Task.run("xref", ["graph","--format","dot","--output","-"])` in-process and parses DOT.
 surface:
   - lib/specled_ex/compiler/tracer.ex
