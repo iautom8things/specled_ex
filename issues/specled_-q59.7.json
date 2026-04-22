@@ -35,11 +35,15 @@
     {
       "text": "AUDIT: APPROVE\nSession: auditor-q59.7-iter2-bouncefix-audit\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/ (parent conversation log)\n\nReasoning: Iteration-2 correctly fixes the orthogonality gap that earned the prior bounce. I ran my own independent α-rename probe (/tmp/audit_probe.exs — compiled AuditProbe.A with `def plain(x), do: x + 1` and AuditProbe.B with `def plain(y), do: y + 1`, pulled debug_info via :beam_lib.chunks, applied ExpandedBehavior's normalize_clause pipeline verbatim, and hashed). Results: WITH α-rename both fixtures hash to d4e264f4b5df4d85bd6b7c65eef1cee482d2050c38a5593796af5fe1082962d7 (identical — matches the verifier's reported hash exactly); WITHOUT α-rename (simulated no-op, only deep_strip_meta) the hashes diverge to ee5c4ddb... and 44926159... — proving the new test at expanded_behavior_test.exs:221 would FAIL if α-rename were a no-op. I independently confirmed the variable node shape for `plain/1` is {:x, [version: 0, line: 2, column: 13], nil} and {:y, [version: 0, line: 2, column: 13], nil} — ctx=nil, which satisfies Canonical.rename_node/2's guard `ctx in [nil, Elixir]` (canonical.ex:117). The wrapping-bug fix is real and load-bearing: find_definition/3 now normalizes each clause individually (expanded_behavior.ex:258-263) BEFORE wrapping into the 4-tuple, so Canonical.alpha_rename actually reaches inner variable nodes (Macro.prewalk only recurses into 2- and 3-tuples). The private deep_strip_meta/1 at expanded_behavior.ex:281-297 is byte-identical to Implementation.deep_strip_meta/1 at implementation.ex:376-392 — not a Canonical fork, just a local mirror of the same precedented workaround. Canonical.ex diff b5c0278^..e456fd2 is empty (0 lines). All 6 must requirements have passing tests that would fail if the behavior were broken. Mechanical scope: 8 files cumulative, all Allowed; iteration-2 diff scoped to expanded_behavior.ex + expanded_behavior_test.exs (both Allowed). Spec.md edits match q59.4/q59.5/q59.6 precedent (status draft-\u003eactive + 3 execute false-\u003etrue on own-subject stubs, no substantive spec-text edits). Test runs: expanded_behavior_test 12/0, typespecs_test 8/0, full suite 374/0. mix spec.check: 3 pre-existing specled.use_tier warnings (q59.8 scope), 0 specled.expanded_behavior_tier findings. No Compiler.Context or HashStore schema changes.\n\nIf BOUNCE, specify for whom: N/A (APPROVE)",
       "timestamp": "2026-04-22T17:34:33Z"
+    },
+    {
+      "text": "APPROVED. Closing per auditor sign-off.",
+      "timestamp": "2026-04-22T17:34:54Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "S5a: expanded_behavior + typespecs tiers",
   "type": "task",
-  "updated_at": "2026-04-22T17:34:33Z"
+  "updated_at": "2026-04-22T17:34:54Z"
 }
