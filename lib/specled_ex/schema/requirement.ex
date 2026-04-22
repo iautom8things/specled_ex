@@ -7,7 +7,8 @@ defmodule SpecLedEx.Schema.Requirement do
               id: SpecLedEx.Schema.id(),
               statement: Zoi.string(),
               priority: Zoi.string() |> Zoi.optional(),
-              stability: Zoi.string() |> Zoi.optional()
+              stability: Zoi.string() |> Zoi.optional(),
+              realized_by: Zoi.any() |> Zoi.optional()
             },
             coerce: true
           )

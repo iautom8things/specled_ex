@@ -13,7 +13,8 @@ defmodule SpecLedEx.Schema.Meta do
               surface: Zoi.list(Zoi.string()) |> Zoi.optional(),
               decisions: Zoi.list(SpecLedEx.Schema.id()) |> Zoi.optional(),
               verification_minimum_strength:
-                Zoi.enum(VerificationStrength.levels()) |> Zoi.optional()
+                Zoi.enum(VerificationStrength.levels()) |> Zoi.optional(),
+              realized_by: Zoi.any() |> Zoi.optional()
             },
             coerce: true
           )

@@ -24,7 +24,8 @@ defmodule SpecLedEx.MixProject do
     [
       {:jason, "~> 1.4"},
       {:yaml_elixir, "~> 2.11"},
-      {:zoi, "~> 0.17"}
+      {:zoi, "~> 0.17"},
+      {:stream_data, "~> 1.0", only: [:test, :dev]}
     ]
   end
 end
