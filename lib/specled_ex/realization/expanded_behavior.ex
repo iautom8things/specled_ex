@@ -63,8 +63,15 @@ defmodule SpecLedEx.Realization.ExpandedBehavior do
          {:module, ^mod} <- Code.ensure_loaded(mod),
          {:ok, binary} <- beam_binary_for(mod),
          :ok <- ensure_debug_info(mod, binary),
-         {:ok, ast} <- extract_expanded_clause(mod, binary, fun, arity, mfa_string) do
-      {:ok, Canonical.hash(Canonical.normalize(ast))}
+         {:ok, normalized_clauses} <-
+           extract_expanded_clause(mod, binary, fun, arity, mfa_string) do
+      # Canonical.normalize was already applied to each clause inside
+      # extract_expanded_clause; wrap the result here for the per-MFA hash
+      # input. Wrapping AFTER normalization avoids the 4-tuple-opacity
+      # problem where Canonical's prewalk (which only recurses into 3- and
+      # 2-tuples) would not have collapsed inner variable names.
+      hash_input = {:__expanded__, fun, arity, normalized_clauses}
+      {:ok, Canonical.hash(hash_input)}
     else
       {:error, {:debug_info_stripped, mod}} ->
         {:error, {:debug_info_stripped, mod}}
@@ -248,8 +255,12 @@ defmodule SpecLedEx.Realization.ExpandedBehavior do
   defp find_definition(%{definitions: definitions}, fun, arity) do
     Enum.find_value(definitions, :error, fn
       {{^fun, ^arity}, _kind, _meta, clauses} when clauses != [] ->
-        stripped = Enum.map(clauses, fn {_meta, args, guards, body} -> {args, guards, body} end)
-        {:ok, {:__expanded__, fun, arity, stripped}}
+        normalized =
+          Enum.map(clauses, fn {_meta, args, guards, body} ->
+            {normalize_clause(args), normalize_clause(guards), normalize_clause(body)}
+          end)
+
+        {:ok, normalized}
 
       _ ->
         nil
@@ -257,4 +268,31 @@ defmodule SpecLedEx.Realization.ExpandedBehavior do
   end
 
   defp find_definition(_, _, _), do: :error
+
+  # Apply Canonical.normalize first (strip meta on args, sort attr lists,
+  # α-rename source-context variables), then deep_strip_meta to also strip
+  # metadata from FORM positions. Mirrors `SpecLedEx.Realization.Implementation.deep_strip_meta/1`:
+  # Canonical's strip_meta only recurses into the args position, so meta
+  # like `{:., [line: N], [:erlang, :+]}` on remote-call dot expressions
+  # survives an otherwise-canonical pass and would flip the hash on a pure
+  # line-number shift.
+  defp normalize_clause(ast), do: ast |> Canonical.normalize() |> deep_strip_meta()
+
+  defp deep_strip_meta({form, _meta, args}) when is_list(args) do
+    {deep_strip_meta(form), [], Enum.map(args, &deep_strip_meta/1)}
+  end
+
+  defp deep_strip_meta({form, _meta, ctx}) when is_atom(ctx) do
+    {deep_strip_meta(form), [], ctx}
+  end
+
+  defp deep_strip_meta({left, right}) do
+    {deep_strip_meta(left), deep_strip_meta(right)}
+  end
+
+  defp deep_strip_meta(list) when is_list(list) do
+    Enum.map(list, &deep_strip_meta/1)
+  end
+
+  defp deep_strip_meta(other), do: other
 end
