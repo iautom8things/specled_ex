@@ -18,7 +18,7 @@ Modules compiled with `@compile {:no_debug_info, true}` degrade gracefully via
 ```spec-meta
 id: specled.expanded_behavior_tier
 kind: workflow
-status: draft
+status: active
 summary: expanded_behavior reads beam debug_info and canonicalizes the expanded AST; typespecs hashes @spec/@type declarations; both emit `detector_unavailable` when debug_info is stripped.
 surface:
   - lib/specled_ex/realization/expanded_behavior.ex
@@ -132,20 +132,20 @@ surface:
 ```spec-verification
 - kind: command
   target: mix test test/specled_ex/realization/expanded_behavior_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.expanded_behavior_tier.reads_beam_debug_info
     - specled.expanded_behavior_tier.hash_stable_on_refactor
     - specled.expanded_behavior_tier.no_debug_info_detector_unavailable
 - kind: command
   target: mix test test/specled_ex/realization/typespecs_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.expanded_behavior_tier.typespecs_hashes_spec_and_type
     - specled.expanded_behavior_tier.typespecs_drift_finding
 - kind: source_file
   target: test/fixtures/sample_project/lib/sample_project/no_debug.ex
-  execute: false
+  execute: true
   covers:
     - specled.expanded_behavior_tier.mixed_fixture_coverage
 ```
