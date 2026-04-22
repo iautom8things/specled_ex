@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-q59.1"
   ],
@@ -14,8 +14,8 @@
   "labels": [],
   "parent": "specled_-q59",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "S2: realized_by bindings + api_boundary tier",
   "type": "task",
-  "updated_at": "2026-04-21T20:30:28Z"
+  "updated_at": "2026-04-22T01:02:31Z"
 }
