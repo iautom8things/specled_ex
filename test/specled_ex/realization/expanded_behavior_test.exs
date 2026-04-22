@@ -178,8 +178,13 @@ defmodule SpecLedEx.Realization.ExpandedBehaviorTest do
                ExpandedBehavior.hash("SpecLedEx.ExpBehTest.Consumer.handle_event/2")
     end
 
-    test "hash is stable when the DSL-emitted body is only cosmetically renamed" do
-      # Baseline build.
+    test "DSL-emitted handle_event/2 hash is stable when surrounding source is reflowed" do
+      # Reflow + add whitespace + rename Consumer.plain/1's local — none of
+      # which is in handle_event/2's hash input. This proves the tier hashes
+      # the right MFA in isolation (its definition only) and is unaffected by
+      # edits to sibling code or whitespace shifts. The harder
+      # source-context α-rename guarantee is exercised by the next test on
+      # `plain/1` itself, where the variable IS in the hash input.
       dir_a = compile_fixture!(@dsl_baseline, "baseline_b")
 
       reload!([
@@ -191,7 +196,6 @@ defmodule SpecLedEx.Realization.ExpandedBehaviorTest do
       {:ok, hash_before} =
         ExpandedBehavior.hash("SpecLedEx.ExpBehTest.Consumer.handle_event/2")
 
-      # Rename locals inside the DSL body. No semantic change.
       dir_b = compile_fixture!(@dsl_renamed, "renamed_b")
 
       reload!([
@@ -204,7 +208,44 @@ defmodule SpecLedEx.Realization.ExpandedBehaviorTest do
         ExpandedBehavior.hash("SpecLedEx.ExpBehTest.Consumer.handle_event/2")
 
       assert hash_before == hash_after_rename,
-             "local-rename inside the expanded body should not move the expanded_behavior hash"
+             "reflow / sibling edits / whitespace must not move the hash for an unrelated MFA"
+
+      on_exit(fn ->
+        :code.del_path(String.to_charlist(dir_a))
+        :code.del_path(String.to_charlist(dir_b))
+        File.rm_rf!(dir_a)
+        File.rm_rf!(dir_b)
+      end)
+    end
+
+    test "hash is stable across local-variable rename in source-context code" do
+      # `Consumer.plain/1` is source-defined (not macro-emitted), so its
+      # bound variable carries `ctx in [nil, Elixir]` after expansion — the
+      # exact case Canonical's α-rename DOES collapse. Renaming `x` to `y`
+      # MUST not move the expanded_behavior hash for plain/1, because
+      # α-rename maps both to `v1` after canonicalization.
+      dir_a = compile_fixture!(@dsl_baseline, "plain_baseline")
+
+      reload!([
+        SpecLedEx.ExpBehTest.DSL,
+        SpecLedEx.ExpBehTest.Consumer,
+        SpecLedEx.ExpBehTest.Typed
+      ])
+
+      {:ok, plain_before} = ExpandedBehavior.hash("SpecLedEx.ExpBehTest.Consumer.plain/1")
+
+      dir_b = compile_fixture!(@dsl_renamed, "plain_renamed")
+
+      reload!([
+        SpecLedEx.ExpBehTest.DSL,
+        SpecLedEx.ExpBehTest.Consumer,
+        SpecLedEx.ExpBehTest.Typed
+      ])
+
+      {:ok, plain_after} = ExpandedBehavior.hash("SpecLedEx.ExpBehTest.Consumer.plain/1")
+
+      assert plain_before == plain_after,
+             "α-rename must collapse `x` and `y` in source-context code so the hash is stable"
 
       on_exit(fn ->
         :code.del_path(String.to_charlist(dir_a))
