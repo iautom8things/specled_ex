@@ -11,9 +11,15 @@
   "id": "specled_-q59.4",
   "labels": [],
   "parent": "specled_-q59",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: UUID not available in this harness\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/\u003csession-uuid\u003e.jsonl\n\nCommit: 4b43d32eb5090c32d6def8109267eb38a778c8fb\nFiles touched:\n- lib/specled_ex/realization/closure.ex (new)\n- lib/specled_ex/realization/implementation.ex (new)\n- test/specled_ex/realization/closure_test.exs (new)\n- test/specled_ex/realization/implementation_test.exs (new)\n- test/integration/scenario_refactor_stable_test.exs (new)\n- .spec/specs/implementation_tier.spec.md (stubs flipped to execute: true)\n- .spec/state.json (index recomputed by mix spec.check)\n\nTests added:\n- SpecLedEx.Realization.ClosureTest (8 tests, covers: closure_walks_tracer_edges, ownership_rule, shared_helper_accounting)\n- SpecLedEx.Realization.ImplementationTest (9 tests, covers: hash_ref_composition, closure_walks_tracer_edges, dangling + drift)\n- SpecLedEx.Integration.ScenarioRefactorStableTest (1 integration test, covers: scenario_refactor_stable — the gating criterion of Scenario 1)\n\nVerification stubs flipped:\n- mix test test/specled_ex/realization/closure_test.exs → execute: true\n- mix test test/specled_ex/realization/implementation_test.exs → execute: true\n- mix test test/integration/scenario_refactor_stable_test.exs --include integration → execute: true\n\nSummary: Closure.compute/2 walks the tracer MFA edge manifest from a subject's declared implementation bindings, stopping at subject boundaries (ownership via realized_by.implementation first, then spec-meta.surface file-match with lexical tiebreak), out-of-project modules, and already-visited MFAs; orphans inline as shared helpers. Implementation.run/4 composes per-subject impl hashes with Cargo-style hash references (\"subject:\u003cid\u003e:hash:\u003chex\u003e\") to other subjects — A's hash flips when B's impl hash flips, without inlining B's canonical AST. A deep_strip_meta pass inside the orchestrator (kept local to Implementation; Canonical module was not in Allowed touches) handles the line-meta on dot-expression form tuples that Canonical.strip_meta's shallow recursion misses — this is the mechanical enabler for the refactor_does_not_drift scenario.\n\nTest results:\n- mix test test/specled_ex/realization/closure_test.exs → 8 pass\n- mix test test/specled_ex/realization/implementation_test.exs → 9 pass\n- mix test test/integration/scenario_refactor_stable_test.exs --include integration → 1 pass\n- Full suite: mix test --include integration → 313 tests, 0 failures\n- mix spec.check → 20 pre-existing warnings against other still-draft subjects (coverage_capture, expanded_behavior_tier, triangulation, use_tier — S4/S5 work); ZERO findings against specled.implementation_tier. Prior ticket (q59.3) accepted the same pre-existing state.",
+      "timestamp": "2026-04-22T03:19:15Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "S3b: implementation tier + subject-boundary closure",
   "type": "task",
-  "updated_at": "2026-04-22T03:05:22Z"
+  "updated_at": "2026-04-22T03:19:15Z"
 }
