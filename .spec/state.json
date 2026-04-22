@@ -260,125 +260,6 @@
   "findings": [
     {
       "code": "surface_target_missing",
-      "entity_id": "specled.api_boundary",
-      "file": ".spec/specs/api_boundary.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/mix/tasks/spec.suggest_binding.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.api_boundary",
-      "file": ".spec/specs/api_boundary.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/realization/api_boundary.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.api_boundary",
-      "file": ".spec/specs/api_boundary.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/realization/drift.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.api_boundary",
-      "file": ".spec/specs/api_boundary.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/mix/tasks/spec_suggest_binding_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.api_boundary",
-      "file": ".spec/specs/api_boundary.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/realization/api_boundary_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.api_boundary",
-      "file": ".spec/specs/api_boundary.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/realization/drift_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.binding",
-      "file": ".spec/specs/binding.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/realization/binding.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.binding",
-      "file": ".spec/specs/binding.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/realization/canonical.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.binding",
-      "file": ".spec/specs/binding.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/realization/hash_store.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.binding",
-      "file": ".spec/specs/binding.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/realization/binding_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.binding",
-      "file": ".spec/specs/binding.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/realization/canonical_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.binding",
-      "file": ".spec/specs/binding.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/realization/hash_store_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.compiler_context",
-      "file": ".spec/specs/compiler_context.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/compiler/context.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.compiler_context",
-      "file": ".spec/specs/compiler_context.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/compiler/manifest.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.compiler_context",
-      "file": ".spec/specs/compiler_context.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/compiler/manifest_integration_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.compiler_context",
-      "file": ".spec/specs/compiler_context.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/compiler/manifest_test.exs"
-    },
-    {
-      "code": "verification_target_missing",
-      "entity_id": "specled.compiler_context",
-      "file": ".spec/specs/compiler_context.spec.md",
-      "level": "warning",
-      "message": "Verification target file does not exist: lib/specled_ex/realization/api_boundary.ex"
-    },
-    {
-      "code": "surface_target_missing",
       "entity_id": "specled.compiler_tracer",
       "file": ".spec/specs/compiler_tracer.spec.md",
       "level": "warning",
@@ -390,13 +271,6 @@
       "file": ".spec/specs/compiler_tracer.spec.md",
       "level": "warning",
       "message": "Surface entry does not exist: lib/specled_ex/compiler/xref.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.compiler_tracer",
-      "file": ".spec/specs/compiler_tracer.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/fixtures/sample_project/mix.exs"
     },
     {
       "code": "surface_target_missing",
@@ -460,13 +334,6 @@
       "file": ".spec/specs/coverage_capture.spec.md",
       "level": "warning",
       "message": "Surface entry does not exist: test/specled_ex/coverage/store_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.coverage_capture",
-      "file": ".spec/specs/coverage_capture.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test_support/specled_ex_integration_case.ex"
     },
     {
       "code": "surface_target_missing",
@@ -547,27 +414,6 @@
     },
     {
       "code": "surface_target_missing",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/realization/effective_binding.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/schema/realized_by.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/realization/effective_binding_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
       "entity_id": "specled.triangulation",
       "file": ".spec/specs/triangulation.spec.md",
       "level": "warning",
@@ -606,13 +452,6 @@
       "entity_id": "specled.use_tier",
       "file": ".spec/specs/use_tier.spec.md",
       "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/realization/drift.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.use_tier",
-      "file": ".spec/specs/use_tier.spec.md",
-      "level": "warning",
       "message": "Surface entry does not exist: lib/specled_ex/realization/use.ex"
     },
     {
@@ -621,13 +460,6 @@
       "file": ".spec/specs/use_tier.spec.md",
       "level": "warning",
       "message": "Surface entry does not exist: test/integration/scenario_macro_provider_drift_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.use_tier",
-      "file": ".spec/specs/use_tier.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/realization/drift_test.exs"
     },
     {
       "code": "surface_target_missing",
@@ -3510,6 +3342,7 @@
           ],
           "id": "specled.api_boundary",
           "kind": "workflow",
+          "realized_by": null,
           "status": "draft",
           "summary": "Hashes function heads + arg shapes per binding, emits `branch_guard_realization_drift` and `branch_guard_dangling_binding` findings, deduplicated via Drift.",
           "surface": [
@@ -3535,6 +3368,7 @@
           ],
           "id": "specled.binding",
           "kind": "module",
+          "realized_by": null,
           "status": "draft",
           "summary": "Resolves MFAs beam-first with source fallback, canonicalizes ASTs deterministically, and backs the hash store used by tier orchestrators.",
           "surface": [
@@ -3558,6 +3392,7 @@
           ],
           "id": "specled.block_schema",
           "kind": "contract",
+          "realized_by": null,
           "status": "active",
           "summary": "Validates authored block payloads into Zoi-backed structs with precise validation errors.",
           "surface": [
@@ -3584,6 +3419,7 @@
           ],
           "id": "specled.branch_guard",
           "kind": "workflow",
+          "realized_by": null,
           "status": "active",
           "summary": "Uses the current Git change set to enforce subject co-changes and cross-cutting ADR updates during the final local check.",
           "surface": [
@@ -3604,6 +3440,7 @@
           ],
           "id": "specled.compiler_context",
           "kind": "module",
+          "realized_by": null,
           "status": "draft",
           "summary": "Carries manifest, xref_graph, tracer_table, and compile_path — every realization orchestrator accepts this as an argument rather than reaching into Mix globals.",
           "surface": [
@@ -3625,6 +3462,7 @@
           ],
           "id": "specled.compiler_tracer",
           "kind": "module",
+          "realized_by": null,
           "status": "draft",
           "summary": "SpecLedEx.Compiler.Tracer emits `{mod, fun, arity} => [callees]` ETF to `_build/<env>/.spec/xref_mfa.etf` on `:on_module`; Compiler.Xref runs `Mix.Task.run(\"xref\", [\"graph\",\"--format\",\"dot\",\"--output\",\"-\"])` in-process and parses DOT.",
           "surface": [
@@ -3648,6 +3486,7 @@
           ],
           "id": "specled.config",
           "kind": "module",
+          "realized_by": null,
           "status": "active",
           "summary": "Loads `.spec/config.yml` with defaults and exposes test-tag scanning settings to the index, verifier, and CLI tasks.",
           "surface": [
@@ -3669,6 +3508,7 @@
           ],
           "id": "specled.coverage_capture",
           "kind": "workflow",
+          "realized_by": null,
           "status": "draft",
           "summary": "`mix spec.cover.test` task + ExUnit formatter that captures per-test line coverage serialized; Store reads/writes `.spec/_coverage/per_test.coverdata`.",
           "surface": [
@@ -3695,6 +3535,7 @@
           ],
           "id": "specled.decisions",
           "kind": "workflow",
+          "realized_by": null,
           "status": "active",
           "summary": "Parses ADRs, validates their contract, and lets subject specs reference durable cross-cutting decisions.",
           "surface": [
@@ -3713,6 +3554,7 @@
           "decisions": null,
           "id": "specled.expanded_behavior_tier",
           "kind": "workflow",
+          "realized_by": null,
           "status": "draft",
           "summary": "expanded_behavior reads beam debug_info and canonicalizes the expanded AST; typespecs hashes @spec/@type declarations; both emit `detector_unavailable` when debug_info is stripped.",
           "surface": [
@@ -3733,6 +3575,7 @@
           "decisions": null,
           "id": "specled.implementation_tier",
           "kind": "workflow",
+          "realized_by": null,
           "status": "draft",
           "summary": "Walks tracer edges from declared MFAs; hashes closure with subject-boundary stops + hash-ref composition (Cargo pattern); MFA ownership via binding map with surface + lexical tiebreak.",
           "surface": [
@@ -3757,6 +3600,7 @@
           ],
           "id": "specled.index_state",
           "kind": "workflow",
+          "realized_by": null,
           "status": "active",
           "summary": "Builds the authored index and writes canonical derived state for the workspace.",
           "surface": [
@@ -3780,6 +3624,7 @@
           ],
           "id": "specled.mix_tasks",
           "kind": "workflow",
+          "realized_by": null,
           "status": "active",
           "summary": "Mix tasks for scaffolding, session-start priming, indexing, guiding, validating, summarizing, and strictly checking Spec Led Development workspaces.",
           "surface": [
@@ -3813,6 +3658,7 @@
           ],
           "id": "specled.next",
           "kind": "workflow",
+          "realized_by": null,
           "status": "active",
           "summary": "Classifies the current change set, points at impacted subjects or uncovered frontier files, and suggests the next Spec Led step without writing current truth automatically.",
           "surface": [
@@ -3840,6 +3686,7 @@
           ],
           "id": "specled.package",
           "kind": "package",
+          "realized_by": null,
           "status": "active",
           "summary": "Elixir package for Spec Led Development. Provides Mix tasks to scaffold, orient, index, guide, validate, summarize, and strictly check authored specs.",
           "surface": [
@@ -3859,6 +3706,7 @@
           "decisions": null,
           "id": "specled.parser",
           "kind": "module",
+          "realized_by": null,
           "status": "active",
           "summary": "Extracts structured spec blocks from authored Markdown files.",
           "surface": [
@@ -3877,6 +3725,7 @@
           ],
           "id": "specled.policy_files",
           "kind": "module",
+          "realized_by": null,
           "status": "active",
           "summary": "Classifies changed paths into `:lib`, `:test`, `:doc`, `:generated`, or `:unknown` and exposes co-change rules per kind.",
           "surface": [
@@ -3899,6 +3748,7 @@
           ],
           "id": "specled.prime",
           "kind": "workflow",
+          "realized_by": null,
           "status": "active",
           "summary": "Combines workspace status, current-branch guidance, and the default local loop into one session-start command.",
           "surface": [
@@ -3917,6 +3767,7 @@
           "decisions": null,
           "id": "specled.prose_guard",
           "kind": "workflow",
+          "realized_by": null,
           "status": "active",
           "summary": "Emits `spec_requirement_too_short` when a `must` requirement's statement falls below the configured char/word threshold.",
           "surface": [
@@ -3936,6 +3787,7 @@
           "decisions": null,
           "id": "specled.realized_by",
           "kind": "module",
+          "realized_by": null,
           "status": "draft",
           "summary": "zoi schema for `realized_by` on spec-meta and requirement-level overrides; EffectiveBinding merges subject and requirement bindings for a given requirement.",
           "surface": [
@@ -3958,6 +3810,7 @@
           "decisions": null,
           "id": "specled.severity",
           "kind": "module",
+          "realized_by": null,
           "status": "active",
           "summary": "Resolves severity per finding from trailer overrides, config map, and per-code defaults.",
           "surface": [
@@ -3977,6 +3830,7 @@
           ],
           "id": "specled.spec_drift_trailer",
           "kind": "module",
+          "realized_by": null,
           "status": "active",
           "summary": "Parses `Spec-Drift:` git trailers across base..HEAD and exposes a trailer_override map to Severity.",
           "surface": [
@@ -3998,6 +3852,7 @@
           ],
           "id": "spec.system",
           "kind": "policy",
+          "realized_by": null,
           "status": "active",
           "summary": "Canonical workspace contract for authored specs and generated Spec Led state.",
           "surface": [
@@ -4024,6 +3879,7 @@
           ],
           "id": "specled.status",
           "kind": "workflow",
+          "realized_by": null,
           "status": "active",
           "summary": "Builds current-state summaries for coverage, verification strength, weak spots, and ADR usage.",
           "surface": [
@@ -4045,6 +3901,7 @@
           ],
           "id": "specled.tag_scanning",
           "kind": "module",
+          "realized_by": null,
           "status": "active",
           "summary": "AST-based scanner that extracts tag spec values from ExUnit files without compiling them.",
           "surface": [
@@ -4062,6 +3919,7 @@
           "decisions": null,
           "id": "specled.tagged_tests",
           "kind": "module",
+          "realized_by": null,
           "status": "active",
           "summary": "Workspace-wide aggregation of tagged_tests verifications into a single mix test invocation.",
           "surface": [
@@ -4079,6 +3937,7 @@
           "decisions": null,
           "id": "specled.triangulation",
           "kind": "workflow",
+          "realized_by": null,
           "status": "draft",
           "summary": "Pure function over `(coverage_records, closures, tag_index)` returning new findings `branch_guard_untested_realization`, `branch_guard_untethered_test`, `branch_guard_underspecified_realization`, plus `detector_unavailable` on missing inputs; `mix spec.triangle` prints per-subject diagnostics.",
           "surface": [
@@ -4099,6 +3958,7 @@
           "decisions": null,
           "id": "specled.use_tier",
           "kind": "workflow",
+          "realized_by": null,
           "status": "draft",
           "summary": "use tier enumerates consumers via tracer; macro-provider root-cause dedup via Drift.dedupe/2 collapses N per-consumer findings to one per-provider finding with consumers_affected count and 8-char hash-prefix diff.",
           "surface": [
@@ -4125,6 +3985,7 @@
           ],
           "id": "specled.verification",
           "kind": "workflow",
+          "realized_by": null,
           "status": "active",
           "summary": "Validates authored specs, checks references, derives findings, and writes state.",
           "surface": [
@@ -4196,7 +4057,7 @@
           "specled.api_boundary.dangling_finding_emitted",
           "specled.api_boundary.umbrella_graceful_degrade"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/api_boundary.spec.md",
         "kind": "command",
         "subject_id": "specled.api_boundary",
@@ -4207,7 +4068,7 @@
           "specled.api_boundary.drift_dedupe_narrow",
           "specled.api_boundary.dedupe_cyclic_tiebreak"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/api_boundary.spec.md",
         "kind": "command",
         "subject_id": "specled.api_boundary",
@@ -4217,7 +4078,7 @@
         "covers": [
           "specled.api_boundary.suggest_binding_proposal_only"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/api_boundary.spec.md",
         "kind": "command",
         "subject_id": "specled.api_boundary",
@@ -4228,7 +4089,7 @@
           "specled.binding.resolve_beam_first",
           "specled.binding.dangling_reported"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/binding.spec.md",
         "kind": "command",
         "subject_id": "specled.binding",
@@ -4239,7 +4100,7 @@
           "specled.binding.canonical_strips_positions",
           "specled.binding.canonical_deterministic_bytes"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/binding.spec.md",
         "kind": "command",
         "subject_id": "specled.binding",
@@ -4249,7 +4110,7 @@
         "covers": [
           "specled.binding.hash_store_atomic"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/binding.spec.md",
         "kind": "command",
         "subject_id": "specled.binding",
@@ -4259,7 +4120,7 @@
         "covers": [
           "specled.binding.hasher_version_internal"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/binding.spec.md",
         "kind": "command",
         "subject_id": "specled.binding",
@@ -4308,7 +4169,7 @@
           "specled.compiler_context.load_from_opts",
           "specled.compiler_context.manifest_wraps_stdlib"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/compiler_context.spec.md",
         "kind": "command",
         "subject_id": "specled.compiler_context",
@@ -4318,7 +4179,7 @@
         "covers": [
           "specled.compiler_context.manifest_fixture_integration"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/compiler_context.spec.md",
         "kind": "command",
         "subject_id": "specled.compiler_context",
@@ -4328,7 +4189,7 @@
         "covers": [
           "specled.compiler_context.orchestrators_take_context"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/compiler_context.spec.md",
         "kind": "source_file",
         "subject_id": "specled.compiler_context",
@@ -4648,7 +4509,7 @@
           "specled.realized_by.requirement_override",
           "specled.realized_by.existing_surface_coexists"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/realized_by.spec.md",
         "kind": "command",
         "subject_id": "specled.realized_by",
@@ -4658,7 +4519,7 @@
         "covers": [
           "specled.realized_by.effective_binding_merge"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/realized_by.spec.md",
         "kind": "command",
         "subject_id": "specled.realized_by",
@@ -4847,7 +4708,7 @@
     "decision_parse_errors": 0,
     "decisions": 19,
     "exceptions": 0,
-    "findings": 54,
+    "findings": 30,
     "requirements": 160,
     "scenarios": 85,
     "subjects": 29,
@@ -4960,7 +4821,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.api_boundary",
         "target": "mix test test/specled_ex/realization/api_boundary_test.exs",
         "verification_index": 0
@@ -4971,7 +4832,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.api_boundary",
         "target": "mix test test/specled_ex/realization/api_boundary_test.exs",
         "verification_index": 0
@@ -4982,7 +4843,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.api_boundary",
         "target": "mix test test/specled_ex/realization/api_boundary_test.exs",
         "verification_index": 0
@@ -4993,7 +4854,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.api_boundary",
         "target": "mix test test/specled_ex/realization/api_boundary_test.exs",
         "verification_index": 0
@@ -5004,7 +4865,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.api_boundary",
         "target": "mix test test/specled_ex/realization/drift_test.exs",
         "verification_index": 1
@@ -5015,7 +4876,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.api_boundary",
         "target": "mix test test/specled_ex/realization/drift_test.exs",
         "verification_index": 1
@@ -5026,7 +4887,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.api_boundary",
         "target": "mix test test/mix/tasks/spec_suggest_binding_test.exs",
         "verification_index": 2
@@ -5037,7 +4898,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.binding",
         "target": "mix test test/specled_ex/realization/binding_test.exs",
         "verification_index": 0
@@ -5048,7 +4909,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.binding",
         "target": "mix test test/specled_ex/realization/binding_test.exs",
         "verification_index": 0
@@ -5059,7 +4920,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.binding",
         "target": "mix test test/specled_ex/realization/canonical_test.exs",
         "verification_index": 1
@@ -5070,7 +4931,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.binding",
         "target": "mix test test/specled_ex/realization/canonical_test.exs",
         "verification_index": 1
@@ -5081,7 +4942,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.binding",
         "target": "mix test test/specled_ex/realization/hash_store_test.exs",
         "verification_index": 2
@@ -5092,7 +4953,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.binding",
         "target": "mix test test/specled_ex/realization/hash_store_versioning_test.exs",
         "verification_index": 3
@@ -5103,7 +4964,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.block_schema",
         "target": "mix test test/specled_ex/schema_test.exs test/specled_ex/parser_test.exs",
         "verification_index": 0
@@ -5114,7 +4975,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.block_schema",
         "target": "mix test test/specled_ex/schema_test.exs test/specled_ex/parser_test.exs",
         "verification_index": 0
@@ -5125,7 +4986,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.block_schema",
         "target": "mix test test/specled_ex/schema_test.exs test/specled_ex/parser_test.exs",
         "verification_index": 0
@@ -5136,7 +4997,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.block_schema",
         "target": "mix test test/specled_ex/schema_test.exs test/specled_ex/parser_test.exs",
         "verification_index": 0
@@ -5147,7 +5008,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.branch_guard",
         "target": "mix test test/mix/tasks/spec_tasks_test.exs",
         "verification_index": 0
@@ -5158,7 +5019,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.branch_guard",
         "target": "mix test test/mix/tasks/spec_tasks_test.exs",
         "verification_index": 0
@@ -5169,7 +5030,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.branch_guard",
         "target": "mix test test/mix/tasks/spec_tasks_test.exs",
         "verification_index": 0
@@ -5180,7 +5041,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.branch_guard",
         "target": "mix test test/mix/tasks/spec_tasks_test.exs",
         "verification_index": 0
@@ -5191,7 +5052,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.branch_guard",
         "target": "mix test test/specled_ex/branch_check_test.exs",
         "verification_index": 1
@@ -5202,7 +5063,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.branch_guard",
         "target": "mix test test/specled_ex/branch_check_test.exs",
         "verification_index": 1
@@ -5213,7 +5074,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.compiler_context",
         "target": "mix test test/specled_ex/compiler/manifest_test.exs",
         "verification_index": 0
@@ -5224,7 +5085,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.compiler_context",
         "target": "mix test test/specled_ex/compiler/manifest_test.exs",
         "verification_index": 0
@@ -5235,7 +5096,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.compiler_context",
         "target": "mix test test/specled_ex/compiler/manifest_test.exs",
         "verification_index": 0
@@ -5246,7 +5107,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.compiler_context",
         "target": "mix test test/specled_ex/compiler/manifest_integration_test.exs --include integration",
         "verification_index": 1
@@ -5257,7 +5118,7 @@
         "kind": "source_file",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.compiler_context",
         "target": "lib/specled_ex/realization/api_boundary.ex",
         "verification_index": 2
@@ -5323,7 +5184,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.config",
         "target": "mix test test/specled_ex/config_test.exs",
         "verification_index": 0
@@ -5334,7 +5195,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.config",
         "target": "mix test test/specled_ex/config_test.exs",
         "verification_index": 0
@@ -5345,7 +5206,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.config",
         "target": "mix test test/specled_ex/config_test.exs",
         "verification_index": 0
@@ -5356,7 +5217,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.config",
         "target": "mix test test/specled_ex/config_test.exs",
         "verification_index": 0
@@ -5367,7 +5228,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.config",
         "target": "mix test test/specled_ex/config_test.exs",
         "verification_index": 0
@@ -5378,7 +5239,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.config",
         "target": "mix test test/specled_ex/config_test.exs",
         "verification_index": 0
@@ -5466,7 +5327,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.decisions",
         "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/verifier_test.exs",
         "verification_index": 0
@@ -5477,7 +5338,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.decisions",
         "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/verifier_test.exs",
         "verification_index": 0
@@ -5620,7 +5481,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.index_state",
         "target": "mix test test/specled_ex_test.exs test/specled_ex/index_state_test.exs test/specled_ex/json_test.exs",
         "verification_index": 0
@@ -5631,7 +5492,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.index_state",
         "target": "mix test test/specled_ex_test.exs test/specled_ex/index_state_test.exs test/specled_ex/json_test.exs",
         "verification_index": 0
@@ -5642,7 +5503,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.index_state",
         "target": "mix test test/specled_ex_test.exs test/specled_ex/index_state_test.exs test/specled_ex/json_test.exs",
         "verification_index": 0
@@ -5653,7 +5514,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.index_state",
         "target": "mix test test/specled_ex/index_state_tag_test.exs",
         "verification_index": 1
@@ -5664,7 +5525,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.index_state",
         "target": "mix test test/specled_ex/index_state_tag_test.exs",
         "verification_index": 1
@@ -5675,7 +5536,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
         "verification_index": 0
@@ -5686,7 +5547,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
         "verification_index": 0
@@ -5697,7 +5558,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
         "verification_index": 0
@@ -5708,7 +5569,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
         "verification_index": 0
@@ -5719,7 +5580,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
         "verification_index": 0
@@ -5730,7 +5591,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
         "verification_index": 0
@@ -5741,7 +5602,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
         "verification_index": 0
@@ -5752,7 +5613,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
         "verification_index": 0
@@ -5763,7 +5624,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
         "verification_index": 0
@@ -5774,7 +5635,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
         "verification_index": 0
@@ -5785,7 +5646,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
         "verification_index": 0
@@ -5796,7 +5657,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
         "verification_index": 0
@@ -5807,7 +5668,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "mix test test/mix/tasks/spec_check_test_tags_test.exs",
         "verification_index": 1
@@ -5818,7 +5679,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "mix test test/mix/tasks/spec_check_test_tags_test.exs",
         "verification_index": 1
@@ -5829,7 +5690,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.next",
         "target": "mix test test/mix/tasks/spec_next_task_test.exs",
         "verification_index": 0
@@ -5840,7 +5701,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.next",
         "target": "mix test test/mix/tasks/spec_next_task_test.exs",
         "verification_index": 0
@@ -5851,7 +5712,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.next",
         "target": "mix test test/mix/tasks/spec_next_task_test.exs",
         "verification_index": 0
@@ -5862,7 +5723,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.next",
         "target": "mix test test/mix/tasks/spec_next_task_test.exs",
         "verification_index": 0
@@ -5873,7 +5734,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.package",
         "target": "mix test test/specled_ex_test.exs test/specled_ex/index_state_test.exs",
         "verification_index": 0
@@ -5884,7 +5745,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.package",
         "target": "mix test test/specled_ex_test.exs test/specled_ex/index_state_test.exs",
         "verification_index": 0
@@ -5906,7 +5767,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.package",
         "target": "mix run -e 'Mix.Task.load_all(); Enum.each(~w(spec.init spec.prime spec.next spec.check spec.status spec.decision.new spec.index spec.validate), fn task -> Mix.Task.get(task) || raise(\"missing #{task}\") end)'",
         "verification_index": 2
@@ -5917,7 +5778,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.parser",
         "target": "mix test test/specled_ex/parser_test.exs",
         "verification_index": 0
@@ -5928,7 +5789,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.parser",
         "target": "mix test test/specled_ex/parser_test.exs",
         "verification_index": 0
@@ -5939,7 +5800,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.parser",
         "target": "mix test test/specled_ex/parser_test.exs",
         "verification_index": 0
@@ -5950,7 +5811,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.policy_files",
         "target": "mix test test/specled_ex/policy_files_test.exs",
         "verification_index": 0
@@ -5961,7 +5822,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.policy_files",
         "target": "mix test test/specled_ex/policy_files_test.exs",
         "verification_index": 0
@@ -5972,7 +5833,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.policy_files",
         "target": "mix test test/specled_ex/policy_files_test.exs",
         "verification_index": 0
@@ -5983,7 +5844,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.policy_files",
         "target": "mix test test/specled_ex/policy_files_test.exs",
         "verification_index": 0
@@ -5994,7 +5855,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.policy_files",
         "target": "mix test test/specled_ex/policy_files_test.exs",
         "verification_index": 0
@@ -6005,7 +5866,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.prime",
         "target": "mix test test/mix/tasks/spec_prime_task_test.exs",
         "verification_index": 0
@@ -6016,7 +5877,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.prime",
         "target": "mix test test/mix/tasks/spec_prime_task_test.exs",
         "verification_index": 0
@@ -6027,7 +5888,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.prime",
         "target": "mix test test/mix/tasks/spec_prime_task_test.exs",
         "verification_index": 0
@@ -6038,7 +5899,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.prose_guard",
         "target": "mix test test/specled_ex/config/prose_test.exs",
         "verification_index": 0
@@ -6049,7 +5910,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.prose_guard",
         "target": "mix test test/specled_ex/config/prose_test.exs",
         "verification_index": 0
@@ -6060,7 +5921,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.prose_guard",
         "target": "mix test test/specled_ex/config/prose_test.exs",
         "verification_index": 0
@@ -6071,7 +5932,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.prose_guard",
         "target": "mix test test/specled_ex/config/prose_test.exs",
         "verification_index": 0
@@ -6082,7 +5943,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.realized_by",
         "target": "mix test test/specled_ex/parser_test.exs",
         "verification_index": 0
@@ -6093,7 +5954,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.realized_by",
         "target": "mix test test/specled_ex/parser_test.exs",
         "verification_index": 0
@@ -6104,7 +5965,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.realized_by",
         "target": "mix test test/specled_ex/parser_test.exs",
         "verification_index": 0
@@ -6115,7 +5976,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.realized_by",
         "target": "mix test test/specled_ex/parser_test.exs",
         "verification_index": 0
@@ -6126,7 +5987,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.realized_by",
         "target": "mix test test/specled_ex/realization/effective_binding_test.exs",
         "verification_index": 1
@@ -6137,7 +5998,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.severity",
         "target": "mix test test/specled_ex/branch_check/severity_test.exs",
         "verification_index": 0
@@ -6148,7 +6009,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.severity",
         "target": "mix test test/specled_ex/branch_check/severity_test.exs",
         "verification_index": 0
@@ -6159,7 +6020,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.severity",
         "target": "mix test test/specled_ex/branch_check/severity_test.exs",
         "verification_index": 0
@@ -6170,7 +6031,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.severity",
         "target": "mix test test/specled_ex/branch_check/severity_test.exs",
         "verification_index": 0
@@ -6181,7 +6042,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.spec_drift_trailer",
         "target": "mix test test/specled_ex/branch_check/trailer_test.exs",
         "verification_index": 0
@@ -6192,7 +6053,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.spec_drift_trailer",
         "target": "mix test test/specled_ex/branch_check/trailer_test.exs",
         "verification_index": 0
@@ -6203,7 +6064,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.spec_drift_trailer",
         "target": "mix test test/specled_ex/branch_check/trailer_test.exs",
         "verification_index": 0
@@ -6214,7 +6075,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.status",
         "target": "mix test test/specled_ex/index_state_test.exs test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs",
         "verification_index": 0
@@ -6225,7 +6086,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.status",
         "target": "mix test test/specled_ex/index_state_test.exs test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs",
         "verification_index": 0
@@ -6236,7 +6097,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.status",
         "target": "mix test test/specled_ex/index_state_test.exs test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs",
         "verification_index": 0
@@ -6247,7 +6108,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tag_scanning",
         "target": "mix test test/specled_ex/tag_scanner_test.exs",
         "verification_index": 0
@@ -6258,7 +6119,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tag_scanning",
         "target": "mix test test/specled_ex/tag_scanner_test.exs",
         "verification_index": 0
@@ -6269,7 +6130,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tag_scanning",
         "target": "mix test test/specled_ex/tag_scanner_test.exs",
         "verification_index": 0
@@ -6280,7 +6141,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tag_scanning",
         "target": "mix test test/specled_ex/tag_scanner_test.exs",
         "verification_index": 0
@@ -6291,7 +6152,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tag_scanning",
         "target": "mix test test/specled_ex/tag_scanner_test.exs",
         "verification_index": 0
@@ -6302,7 +6163,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tag_scanning",
         "target": "mix test test/specled_ex/tag_scanner_test.exs",
         "verification_index": 0
@@ -6313,7 +6174,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tag_scanning",
         "target": "mix test test/specled_ex/tag_scanner_test.exs",
         "verification_index": 0
@@ -6533,7 +6394,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
         "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
         "verification_index": 0
@@ -6544,7 +6405,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
         "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
         "verification_index": 0
@@ -6555,7 +6416,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
         "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
         "verification_index": 0
@@ -6566,7 +6427,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
         "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
         "verification_index": 0
@@ -6577,7 +6438,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
         "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
         "verification_index": 0
@@ -6588,7 +6449,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
         "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
         "verification_index": 0
@@ -6599,7 +6460,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
         "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
         "verification_index": 0
@@ -6610,7 +6471,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
         "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
         "verification_index": 0
@@ -6621,7 +6482,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
         "target": "mix test test/specled_ex/tag_findings_test.exs",
         "verification_index": 1
@@ -6632,7 +6493,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
         "target": "mix test test/specled_ex/tag_findings_test.exs",
         "verification_index": 1
@@ -6643,7 +6504,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
         "target": "mix test test/specled_ex/tag_findings_test.exs",
         "verification_index": 1
@@ -6654,7 +6515,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
         "target": "mix test test/specled_ex/tag_findings_test.exs",
         "verification_index": 1
@@ -6665,7 +6526,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
         "target": "mix test test/specled_ex/tag_findings_test.exs",
         "verification_index": 1
@@ -6676,7 +6537,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.verification",
         "target": "mix test test/specled_ex/tag_findings_test.exs",
         "verification_index": 1
@@ -6685,9 +6546,9 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 158,
-      "executed": 0,
-      "linked": 8
+      "claimed": 45,
+      "executed": 112,
+      "linked": 9
     },
     "threshold_failures": 0
   },

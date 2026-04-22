@@ -106,19 +106,19 @@ decisions:
 ```spec-verification
 - kind: command
   target: mix test test/specled_ex/compiler/manifest_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.compiler_context.struct_shape
     - specled.compiler_context.load_from_opts
     - specled.compiler_context.manifest_wraps_stdlib
 - kind: command
   target: mix test test/specled_ex/compiler/manifest_integration_test.exs --include integration
-  execute: false
+  execute: true
   covers:
     - specled.compiler_context.manifest_fixture_integration
 - kind: source_file
   target: lib/specled_ex/realization/api_boundary.ex
-  execute: false
+  execute: true
   covers:
     - specled.compiler_context.orchestrators_take_context
 ```

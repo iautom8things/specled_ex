@@ -45,8 +45,14 @@ defmodule SpecLedEx.Parser do
       case decode_yaml(raw) do
         {:ok, meta} when is_map(meta) ->
           case SpecLedEx.Schema.validate_block("spec-meta", meta) do
-            {:ok, validated} -> Map.put(spec, "meta", validated)
-            {:error, message} -> push_parse_error(Map.put(spec, "meta", meta), message)
+            {:ok, validated} ->
+              Map.put(spec, "meta", validated)
+
+            {:error, message} ->
+              push_parse_error(
+                Map.put(spec, "meta", meta),
+                contextualize(message, spec)
+              )
           end
 
         {:ok, _invalid_shape} ->
@@ -75,8 +81,11 @@ defmodule SpecLedEx.Parser do
       case decode_yaml(raw) do
         {:ok, items} when is_list(items) ->
           case SpecLedEx.Schema.validate_block(tag, items) do
-            {:ok, validated} -> Map.put(spec, key, validated)
-            {:error, message} -> push_parse_error(Map.put(spec, key, items), message)
+            {:ok, validated} ->
+              Map.put(spec, key, validated)
+
+            {:error, message} ->
+              push_parse_error(Map.put(spec, key, items), contextualize(message, spec))
           end
 
         {:ok, _invalid_shape} ->
@@ -87,6 +96,11 @@ defmodule SpecLedEx.Parser do
       end
     end
   end
+
+  defp contextualize(message, %{"file" => file}) when is_binary(file),
+    do: "#{message} (in #{file})"
+
+  defp contextualize(message, _), do: message
 
   defp decode_yaml(raw) do
     case YamlElixir.read_from_string(raw) do

@@ -166,6 +166,85 @@ defmodule SpecLedEx.ParserTest do
     assert "spec-requirements may only appear once per file" in spec["parse_errors"]
   end
 
+  test "parse_file accepts realized_by on spec-meta and spec-requirements", %{root: root} do
+    path =
+      write_spec(
+        root,
+        "bindings",
+        """
+        # Bindings
+
+        ```spec-meta
+        id: bindings.subject
+        kind: module
+        status: active
+        realized_by:
+          api_boundary:
+            - "MyMod.a/1"
+          implementation:
+            - "MyMod.a/1"
+        ```
+
+        ```spec-requirements
+        - id: bindings.override
+          statement: An override
+          priority: must
+          realized_by:
+            api_boundary:
+              - "MyMod.c/3"
+        - id: bindings.plain
+          statement: No override
+          priority: must
+        ```
+        """
+      )
+
+    spec = Parser.parse_file(path, root)
+
+    assert spec["parse_errors"] == []
+    assert %Meta{realized_by: %{"api_boundary" => ["MyMod.a/1"]}} = spec["meta"]
+
+    [%Requirement{id: "bindings.override", realized_by: override} | _] = spec["requirements"]
+    assert override == %{"api_boundary" => ["MyMod.c/3"]}
+
+    plain =
+      Enum.find(spec["requirements"], fn req ->
+        match?(%Requirement{id: "bindings.plain"}, req)
+      end)
+
+    assert plain.realized_by == nil
+  end
+
+  test "parse_file rejects unknown realized_by tiers with an error naming the tier",
+       %{root: root} do
+    path =
+      write_spec(
+        root,
+        "bad_binding",
+        """
+        # Bad Binding
+
+        ```spec-meta
+        id: bad_binding.subject
+        kind: module
+        status: active
+        realized_by:
+          shenanigans:
+            - "Foo"
+        ```
+        """
+      )
+
+    spec = Parser.parse_file(path, root)
+
+    assert Enum.any?(spec["parse_errors"], fn err ->
+             String.contains?(err, "shenanigans") and
+               String.contains?(err, ".spec/specs/bad_binding.spec.md")
+           end),
+           "expected parse error naming 'shenanigans' and the subject file, got: " <>
+             inspect(spec["parse_errors"])
+  end
+
   test "parse_file preserves malformed list items for later reporting", %{root: root} do
     path =
       write_spec(
