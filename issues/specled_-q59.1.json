@@ -33,11 +33,15 @@
     {
       "text": "AUDIT: APPROVE\nSession: 71f1c51a-63fb-4092-a147-99a48bff7714\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/71f1c51a-63fb-4092-a147-99a48bff7714.jsonl\n\nReasoning: Both AUDIT: BOUNCE gaps are genuinely closed, not hand-waved. (1) Severity-routing intent is satisfied end-to-end: branch_check.ex:4 aliases Severity; all four finding emissions now flow through the single emit/6 helper at branch_check.ex:111-130, which calls Severity.resolve/3 at :114 and returns [] on :off at :115-116. severity_from_config is gone from branch_check.ex; its residue in lib/specled_ex/tag_findings.ex predates this ticket (first appeared in 7784f32, specled_-i46.3) and lives outside the Allowed list — correctly treated as inherited. The integration tests at test/specled_ex/branch_check/severity_integration_test.exs:12-46, :48-88, :130-178 exercise real BranchCheck.run/3 with config.severities :off and prove end-to-end suppression of branch_guard_unmapped_change and branch_guard_missing_decision_update, plus :error escalation of branch_guard_requirement_without_test_tag — all three would fail if a regressor bypassed Severity.resolve/3. The source-level refute at :91-111 catches hardcoded 'error'/'warning' strings on branch_guard codes. (2) change_analysis_delegates is now guarded by 4 tests at test/specled_ex/policy_files_test.exs:117-197, the last of which (:177-196) refutes @policy_prefixes, @policy_root_files, and inline lib//priv/ String.starts_with? checks inside ChangeAnalysis source — exactly the failing-if-violated defense the audit demanded.\n\nSelective-audit exceptions verified acceptable: (a) The four .spec/specs/*.spec.md stub flips (severity/spec_drift_trailer/policy_files/prose_guard) are outside Allowed but required by the Merge gate ('Tests listed above pass' requires execute: true to run); disclosed in both IMPLEMENTED comments. (b) mix spec.check's 54 warnings are all surface_target_missing / verification_target_missing on S2-S5 subjects (api_boundary, binding, compiler_context, compiler_tracer, coverage_capture, expanded_behavior_tier, implementation_tier, realized_by, triangulation, use_tier) — zero reference any of this ticket's 4 subjects. Reproduced against current HEAD; pre-existing from distillation commit c46b3be, not regressed. mix.exs untouched. No new deps. No realized_by/HashStore/Binding/tier-orchestrator work. No per-requirement prose opt-outs.\n\nmix test: 213 tests, 0 failures (15.4s). Spec stubs: 55 tests, 0 failures (9+11+16+19). Numbers match the IMPLEMENTED iteration 2 claim exactly.",
       "timestamp": "2026-04-22T00:10:46Z"
+    },
+    {
+      "text": "APPROVED. Closing per auditor sign-off.",
+      "timestamp": "2026-04-22T00:11:02Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "S1: cheap escape hatches — severity, Spec-Drift trailer, PolicyFiles, prose-rot",
   "type": "task",
-  "updated_at": "2026-04-22T00:10:46Z"
+  "updated_at": "2026-04-22T00:11:02Z"
 }
