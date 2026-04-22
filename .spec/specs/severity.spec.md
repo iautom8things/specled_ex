@@ -12,7 +12,7 @@ this module, every finding-emitting call site re-invents its own policy.
 ```spec-meta
 id: specled.severity
 kind: module
-status: draft
+status: active
 summary: Resolves severity per finding from trailer overrides, config map, and per-code defaults.
 surface:
   - lib/specled_ex/branch_check/severity.ex

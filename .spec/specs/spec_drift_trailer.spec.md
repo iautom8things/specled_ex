@@ -13,7 +13,7 @@ merge commits where the trailer may live one commit deep, not at the tip.
 ```spec-meta
 id: specled.spec_drift_trailer
 kind: module
-status: draft
+status: active
 summary: Parses `Spec-Drift:` git trailers across base..HEAD and exposes a trailer_override map to Severity.
 surface:
   - lib/specled_ex/branch_check/trailer.ex
