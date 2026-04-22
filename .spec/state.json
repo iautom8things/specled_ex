@@ -260,41 +260,6 @@
   "findings": [
     {
       "code": "surface_target_missing",
-      "entity_id": "specled.compiler_tracer",
-      "file": ".spec/specs/compiler_tracer.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/compiler/tracer.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.compiler_tracer",
-      "file": ".spec/specs/compiler_tracer.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/compiler/xref.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.compiler_tracer",
-      "file": ".spec/specs/compiler_tracer.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/compiler/tracer_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.compiler_tracer",
-      "file": ".spec/specs/compiler_tracer.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/compiler/xref_test.exs"
-    },
-    {
-      "code": "verification_target_missing",
-      "entity_id": "specled.compiler_tracer",
-      "file": ".spec/specs/compiler_tracer.spec.md",
-      "level": "warning",
-      "message": "Verification target file does not exist: lib/specled_ex/compiler/tracer.ex"
-    },
-    {
-      "code": "surface_target_missing",
       "entity_id": "specled.coverage_capture",
       "file": ".spec/specs/coverage_capture.spec.md",
       "level": "warning",
@@ -2094,16 +2059,17 @@
         ],
         "file": ".spec/specs/compiler_tracer.spec.md",
         "given": [
-          "the fixture project compiled"
+          "a compiled Elixir project with inter-file call edges"
         ],
         "id": "specled.compiler_tracer.scenario.xref_dot_parsed",
         "subject_id": "specled.compiler_tracer",
         "then": [
-          "the returned graph carries edges under at least one of `:compile`, `:exports`, or `:runtime`",
+          "the returned graph is a map keyed by `:compile`, `:exports`, and `:runtime`",
+          "at least one of those kinds contains edges",
           "the function did not spawn a subprocess"
         ],
         "when": [
-          "Compiler.Xref.load/1 is called with the fixture context"
+          "Compiler.Xref.load/1 is called in-process against the current Mix project"
         ]
       },
       {
@@ -4201,7 +4167,7 @@
           "specled.compiler_tracer.registered_in_mix_exs",
           "specled.compiler_tracer.etf_read_direct"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/compiler_tracer.spec.md",
         "kind": "command",
         "subject_id": "specled.compiler_tracer",
@@ -4211,17 +4177,17 @@
         "covers": [
           "specled.compiler_tracer.xref_in_process"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/compiler_tracer.spec.md",
         "kind": "command",
         "subject_id": "specled.compiler_tracer",
-        "target": "mix test test/specled_ex/compiler/xref_test.exs"
+        "target": "mix test test/specled_ex/compiler/xref_test.exs --include integration"
       },
       {
         "covers": [
           "specled.compiler_tracer.single_file_cap"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/compiler_tracer.spec.md",
         "kind": "source_file",
         "subject_id": "specled.compiler_tracer",
@@ -4708,7 +4674,7 @@
     "decision_parse_errors": 0,
     "decisions": 19,
     "exceptions": 0,
-    "findings": 30,
+    "findings": 25,
     "requirements": 160,
     "scenarios": 85,
     "subjects": 29,
@@ -5129,7 +5095,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.compiler_tracer",
         "target": "mix test test/specled_ex/compiler/tracer_test.exs",
         "verification_index": 0
@@ -5140,7 +5106,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.compiler_tracer",
         "target": "mix test test/specled_ex/compiler/tracer_test.exs",
         "verification_index": 0
@@ -5151,7 +5117,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.compiler_tracer",
         "target": "mix test test/specled_ex/compiler/tracer_test.exs",
         "verification_index": 0
@@ -5162,9 +5128,9 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.compiler_tracer",
-        "target": "mix test test/specled_ex/compiler/xref_test.exs",
+        "target": "mix test test/specled_ex/compiler/xref_test.exs --include integration",
         "verification_index": 1
       },
       {
@@ -5173,7 +5139,7 @@
         "kind": "source_file",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.compiler_tracer",
         "target": "lib/specled_ex/compiler/tracer.ex",
         "verification_index": 2
@@ -6546,9 +6512,9 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 45,
-      "executed": 112,
-      "linked": 9
+      "claimed": 40,
+      "executed": 116,
+      "linked": 10
     },
     "threshold_failures": 0
   },

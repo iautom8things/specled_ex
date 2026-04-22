@@ -92,11 +92,12 @@ decisions:
     - specled.compiler_tracer.registered_in_mix_exs
 - id: specled.compiler_tracer.scenario.xref_dot_parsed
   given:
-    - the fixture project compiled
+    - a compiled Elixir project with inter-file call edges
   when:
-    - Compiler.Xref.load/1 is called with the fixture context
+    - Compiler.Xref.load/1 is called in-process against the current Mix project
   then:
-    - the returned graph carries edges under at least one of `:compile`, `:exports`, or `:runtime`
+    - the returned graph is a map keyed by `:compile`, `:exports`, and `:runtime`
+    - at least one of those kinds contains edges
     - the function did not spawn a subprocess
   covers:
     - specled.compiler_tracer.xref_in_process
@@ -107,19 +108,19 @@ decisions:
 ```spec-verification
 - kind: command
   target: mix test test/specled_ex/compiler/tracer_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.compiler_tracer.captures_remote_calls
     - specled.compiler_tracer.registered_in_mix_exs
     - specled.compiler_tracer.etf_read_direct
 - kind: command
-  target: mix test test/specled_ex/compiler/xref_test.exs
-  execute: false
+  target: mix test test/specled_ex/compiler/xref_test.exs --include integration
+  execute: true
   covers:
     - specled.compiler_tracer.xref_in_process
 - kind: source_file
   target: lib/specled_ex/compiler/tracer.ex
-  execute: false
+  execute: true
   covers:
     - specled.compiler_tracer.single_file_cap
 ```
