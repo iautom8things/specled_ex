@@ -1,4 +1,6 @@
 defmodule SpecLedEx.Realization.DriftTest do
+  # covers: specled.use_tier.root_cause_dedupe
+  # covers: specled.use_tier.hash_prefix_length
   use ExUnit.Case, async: true
 
   alias SpecLedEx.Realization.Drift
@@ -78,6 +80,113 @@ defmodule SpecLedEx.Realization.DriftTest do
       second = Drift.dedupe(Enum.shuffle(deltas), pred)
 
       assert hd(first).subject_id == hd(second).subject_id
+    end
+  end
+
+  describe "macro-provider root_cause dedupe (specled.use_tier.root_cause_dedupe)" do
+    test "collapses N consumer drifts into one root_cause finding naming the provider" do
+      provider_mod = SpecLedEx.MacroProviderFixture.A
+
+      provider_delta = %{
+        subject_id: "provider_subj",
+        code: :branch_guard_realization_drift,
+        tier: :use,
+        provider: provider_mod,
+        provider_mfa: {provider_mod, :__using__, 1},
+        hash_prefix_before: "abc12345",
+        hash_prefix_after: "def67890",
+        consumers: [SpecLedEx.MacroFixture.C1, SpecLedEx.MacroFixture.C2, SpecLedEx.MacroFixture.C3]
+      }
+
+      consumer_deltas =
+        for c <- ["consumer_c1_subj", "consumer_c2_subj", "consumer_c3_subj"] do
+          %{subject_id: c, code: :branch_guard_realization_drift, tier: :expanded_behavior}
+        end
+
+      deltas = consumer_deltas ++ [provider_delta]
+
+      pred = fn from, to ->
+        # Each consumer subject depends on the provider subject.
+        from in ["consumer_c1_subj", "consumer_c2_subj", "consumer_c3_subj"] and
+          to == "provider_subj"
+      end
+
+      assert [result] = Drift.dedupe(deltas, pred)
+      assert result.subject_id == "provider_subj"
+
+      assert Enum.sort(result.root_cause_of) ==
+               ["consumer_c1_subj", "consumer_c2_subj", "consumer_c3_subj"]
+
+      assert %{
+               provider: {SpecLedEx.MacroProviderFixture.A, :__using__, 1},
+               tier: :use,
+               hash_prefix_before: "abc12345",
+               hash_prefix_after: "def67890",
+               consumers_affected: 3,
+               consumers: [
+                 SpecLedEx.MacroFixture.C1,
+                 SpecLedEx.MacroFixture.C2,
+                 SpecLedEx.MacroFixture.C3
+               ]
+             } = result.root_cause
+    end
+
+    test "use-tier delta is always picked as root regardless of edge orientation" do
+      # Even if pred says provider depends on consumer (inverted direction),
+      # the use-tier delta still wins as root.
+      provider_delta = %{
+        subject_id: "P",
+        code: :branch_guard_realization_drift,
+        tier: :use,
+        provider: SomeProvider,
+        provider_mfa: {SomeProvider, :__using__, 1},
+        hash_prefix_before: "11111111",
+        hash_prefix_after: "22222222",
+        consumers: [SomeConsumer]
+      }
+
+      consumer_delta = %{
+        subject_id: "C",
+        code: :branch_guard_realization_drift,
+        tier: :expanded_behavior
+      }
+
+      pred = fn _from, _to -> true end
+
+      assert [result] = Drift.dedupe([provider_delta, consumer_delta], pred)
+      assert result.subject_id == "P"
+      assert result.root_cause.tier == :use
+      assert result.root_cause.consumers_affected == 1
+    end
+
+    test "8-character hex prefixes are preserved verbatim (specled.use_tier.hash_prefix_length)" do
+      delta = %{
+        subject_id: "P",
+        code: :branch_guard_realization_drift,
+        tier: :use,
+        provider: SomeProvider,
+        provider_mfa: {SomeProvider, :__using__, 1},
+        hash_prefix_before: "deadbeef",
+        hash_prefix_after: "cafef00d",
+        consumers: [Cn1, Cn2]
+      }
+
+      assert [result] = Drift.dedupe([delta], fn _, _ -> false end)
+      assert result.root_cause.hash_prefix_before == "deadbeef"
+      assert result.root_cause.hash_prefix_after == "cafef00d"
+      assert String.length(result.root_cause.hash_prefix_before) == 8
+      assert String.length(result.root_cause.hash_prefix_after) == 8
+    end
+
+    test "non-use-tier deltas do not get a root_cause map injected" do
+      delta = %{
+        subject_id: "S",
+        code: :branch_guard_realization_drift,
+        tier: :expanded_behavior
+      }
+
+      assert [result] = Drift.dedupe([delta], fn _, _ -> false end)
+      refute Map.has_key?(result, :root_cause)
     end
   end
 

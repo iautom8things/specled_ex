@@ -15,7 +15,7 @@ the tracer on-demand (not persisted) so the consumer list is always current.
 ```spec-meta
 id: specled.use_tier
 kind: workflow
-status: draft
+status: active
 summary: use tier enumerates consumers via tracer; macro-provider root-cause dedup via Drift.dedupe/2 collapses N per-consumer findings to one per-provider finding with consumers_affected count and 8-char hash-prefix diff.
 surface:
   - lib/specled_ex/realization/use.ex
@@ -114,19 +114,19 @@ surface:
 ```spec-verification
 - kind: command
   target: mix test test/specled_ex/realization/use_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.use_tier.enumerate_consumers
     - specled.use_tier.provider_hash_composes
 - kind: command
   target: mix test test/specled_ex/realization/drift_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.use_tier.root_cause_dedupe
     - specled.use_tier.hash_prefix_length
 - kind: command
   target: mix test test/integration/scenario_macro_provider_drift_test.exs --include integration
-  execute: false
+  execute: true
   covers:
     - specled.use_tier.scenario_macro_provider_drift
 ```
