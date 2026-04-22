@@ -17,7 +17,7 @@ mode; only `mix spec.cover.test` produces the per-test artifact at
 ```spec-meta
 id: specled.coverage_capture
 kind: workflow
-status: draft
+status: active
 summary: `mix spec.cover.test` task + ExUnit formatter that captures per-test line coverage serialized; Store reads/writes `.spec/_coverage/per_test.coverdata`.
 surface:
   - lib/specled_ex/coverage.ex
