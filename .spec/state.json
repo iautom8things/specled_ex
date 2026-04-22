@@ -3343,7 +3343,7 @@
           "id": "specled.api_boundary",
           "kind": "workflow",
           "realized_by": null,
-          "status": "draft",
+          "status": "active",
           "summary": "Hashes function heads + arg shapes per binding, emits `branch_guard_realization_drift` and `branch_guard_dangling_binding` findings, deduplicated via Drift.",
           "surface": [
             "lib/specled_ex/realization/api_boundary.ex",
@@ -3369,7 +3369,7 @@
           "id": "specled.binding",
           "kind": "module",
           "realized_by": null,
-          "status": "draft",
+          "status": "active",
           "summary": "Resolves MFAs beam-first with source fallback, canonicalizes ASTs deterministically, and backs the hash store used by tier orchestrators.",
           "surface": [
             "lib/specled_ex/realization/binding.ex",
@@ -3441,7 +3441,7 @@
           "id": "specled.compiler_context",
           "kind": "module",
           "realized_by": null,
-          "status": "draft",
+          "status": "active",
           "summary": "Carries manifest, xref_graph, tracer_table, and compile_path — every realization orchestrator accepts this as an argument rather than reaching into Mix globals.",
           "surface": [
             "lib/specled_ex/compiler/context.ex",
@@ -3788,7 +3788,7 @@
           "id": "specled.realized_by",
           "kind": "module",
           "realized_by": null,
-          "status": "draft",
+          "status": "active",
           "summary": "zoi schema for `realized_by` on spec-meta and requirement-level overrides; EffectiveBinding merges subject and requirement bindings for a given requirement.",
           "surface": [
             "lib/specled_ex/schema/realized_by.ex",

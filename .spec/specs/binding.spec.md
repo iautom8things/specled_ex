@@ -15,7 +15,7 @@ source AST lookup is a fallback for when beam is not available.
 ```spec-meta
 id: specled.binding
 kind: module
-status: draft
+status: active
 summary: Resolves MFAs beam-first with source fallback, canonicalizes ASTs deterministically, and backs the hash store used by tier orchestrators.
 surface:
   - lib/specled_ex/realization/binding.ex

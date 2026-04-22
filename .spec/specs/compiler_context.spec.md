@@ -14,7 +14,7 @@ once via `Context.load/1`; tests construct it with fixture paths.
 ```spec-meta
 id: specled.compiler_context
 kind: module
-status: draft
+status: active
 summary: Carries manifest, xref_graph, tracer_table, and compile_path — every realization orchestrator accepts this as an argument rather than reaching into Mix globals.
 surface:
   - lib/specled_ex/compiler/context.ex

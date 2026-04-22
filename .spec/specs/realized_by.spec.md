@@ -13,7 +13,7 @@ reading state can tell where a reference came from.
 ```spec-meta
 id: specled.realized_by
 kind: module
-status: draft
+status: active
 summary: zoi schema for `realized_by` on spec-meta and requirement-level overrides; EffectiveBinding merges subject and requirement bindings for a given requirement.
 surface:
   - lib/specled_ex/schema/realized_by.ex
