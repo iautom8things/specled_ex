@@ -13,7 +13,7 @@ default, `:generated` only for explicit carve-outs like `priv/plts/`).
 ```spec-meta
 id: specled.policy_files
 kind: module
-status: draft
+status: active
 summary: Classifies changed paths into `:lib`, `:test`, `:doc`, `:generated`, or `:unknown` and exposes co-change rules per kind.
 surface:
   - lib/specled_ex/policy_files.ex

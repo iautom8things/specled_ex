@@ -13,7 +13,7 @@ per-workspace configurable; this is a prompt, not a proof.
 ```spec-meta
 id: specled.prose_guard
 kind: workflow
-status: draft
+status: active
 summary: Emits `spec_requirement_too_short` when a `must` requirement's statement falls below the configured char/word threshold.
 surface:
   - lib/specled_ex/verifier.ex
