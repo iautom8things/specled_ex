@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-04-22T17:33:56Z",
+  "description": "",
+  "id": "specled_-myn",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "explore adding examples / allow for code blocks to say ```yaml other-name``` so we have syntax highlighting",
+  "type": "task",
+  "updated_at": "2026-04-22T17:33:56Z"
+}
