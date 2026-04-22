@@ -59,4 +59,30 @@ defmodule SpecLedEx.IntegrationCase do
       "compile.elixir"
     ])
   end
+
+  @doc """
+  Runs a Mix command in a child BEAM rooted at `root`, with `ERL_LIBS`
+  pointing at the parent project's `_build/<env>/lib` so parent-defined Mix
+  tasks (e.g. `spec.cover.test`) and modules (e.g. the coverage formatter)
+  are loadable inside the child.
+
+  Returns `{output, status}` from `System.cmd/3` (stderr merged into stdout).
+  Use this to drive `mix spec.cover.test` or any other parent task against a
+  scaffolded fixture without contaminating the outer `:cover` state.
+  """
+  @spec run_fixture_mix_test(Path.t(), [String.t()]) :: {String.t(), non_neg_integer()}
+  def run_fixture_mix_test(root, args) when is_binary(root) and is_list(args) do
+    parent_lib = Path.expand("_build/#{Mix.env()}/lib")
+    parent_ebin = Path.join([parent_lib, "spec_led_ex", "ebin"])
+
+    System.cmd("mix", args,
+      cd: root,
+      env: [
+        {"MIX_ENV", "test"},
+        {"ERL_LIBS", parent_lib},
+        {"SPECLED_EX_EBIN", parent_ebin}
+      ],
+      stderr_to_stdout: true
+    )
+  end
 end

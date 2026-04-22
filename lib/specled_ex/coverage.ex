@@ -5,6 +5,69 @@ defmodule SpecLedEx.Coverage do
   @command_prefixes ~w(.spec/ lib/ test/ guides/ docs/ priv/ config/ .github/)
   @root_files ~w(README.md CHANGELOG.md AGENTS.md mix.exs)
 
+  @default_artifact_path ".spec/_coverage/per_test.coverdata"
+
+  @typedoc """
+  Pure formatter configuration produced by `init/2`.
+  """
+  @type config :: %{
+          snapshot_fn: (term() -> term()),
+          modules_fn: (-> [module()]),
+          snapshot_target: term(),
+          artifact_path: Path.t()
+        }
+
+  @doc """
+  Default on-disk location for the per-test coverage artifact.
+  """
+  @spec default_artifact_path() :: Path.t()
+  def default_artifact_path, do: @default_artifact_path
+
+  @doc """
+  Resolves formatter options into a config map. Pure: no ETS, no `:cover`
+  calls. Companion to `install/1` which performs the side-effecting setup.
+
+  `opts` are caller-supplied; `env` is a keyword of host overrides (used by the
+  Mix task to inject an `:artifact_path` or `:modules_fn` distinct from the
+  formatter caller).
+  """
+  @spec init(keyword(), keyword()) :: config()
+  def init(opts, env \\ []) when is_list(opts) and is_list(env) do
+    %{
+      snapshot_fn: opts[:snapshot_fn] || default_snapshot_fn(),
+      modules_fn: opts[:modules_fn] || env[:modules_fn] || (&__MODULE__.cover_modules_safe/0),
+      snapshot_target: Keyword.get(opts, :snapshot_target, :_),
+      artifact_path: opts[:artifact_path] || env[:artifact_path] || @default_artifact_path
+    }
+  end
+
+  defp default_snapshot_fn do
+    fn target -> apply(:cover, :analyse, [target]) end
+  end
+
+  @doc """
+  Allocates the impure resources for a coverage run (anonymous ETS) and
+  returns a runtime state that combines the config with `:table`.
+
+  The ETS table is anonymous (`:ets.new(:anon, [:public, :set])`) so multiple
+  formatters can coexist within a single VM (as occurs in unit tests).
+  """
+  @spec install(config()) :: map()
+  def install(config) when is_map(config) do
+    table = :ets.new(:anon, [:public, :set])
+    Map.put(config, :table, table)
+  end
+
+  @doc false
+  @spec cover_modules_safe() :: [module()]
+  def cover_modules_safe do
+    apply(:cover, :modules, [])
+  rescue
+    _ -> []
+  catch
+    _, _ -> []
+  end
+
   def subject_file_map(index, root) do
     index["subjects"]
     |> List.wrap()
