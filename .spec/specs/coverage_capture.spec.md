@@ -142,20 +142,20 @@ decisions:
 ```spec-verification
 - kind: command
   target: mix test test/specled_ex/coverage/formatter_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.coverage_capture.formatter_snapshot_fn_di
     - specled.coverage_capture.keyed_by_test_pid
     - specled.coverage_capture.anonymous_ets
 - kind: command
   target: mix test test/specled_ex/coverage/store_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.coverage_capture.store_split
     - specled.coverage_capture.artifact_path
 - kind: command
   target: mix test test/mix/tasks/spec_cover_test_test.exs --include integration
-  execute: false
+  execute: true
   covers:
     - specled.coverage_capture.serialized_run
     - specled.coverage_capture.integration_case
