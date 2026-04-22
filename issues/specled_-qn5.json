@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-04-22T17:34:21Z",
+  "description": "",
+  "id": "specled_-qn5",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "change alias for bw to drop the underscore _",
+  "type": "task",
+  "updated_at": "2026-04-22T17:34:21Z"
+}
