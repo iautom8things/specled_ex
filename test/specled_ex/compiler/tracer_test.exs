@@ -101,7 +101,7 @@ defmodule SpecLedEx.Compiler.TracerTest do
   end
 
   describe "scenario specled.compiler_tracer.scenario.mfa_edges_emitted" do
-    test "remote call in a compiled module produces an edge in the ETF" do
+    test "remote call in a compiled module produces an edge in the ETF (in-process)" do
       unique = System.unique_integer([:positive])
       caller_mod = Module.concat([SpecLedEx, "TracerScenarioFixture#{unique}"])
       callee_mod = Module.concat([SpecLedEx, "TracerScenarioCallee#{unique}"])
@@ -132,6 +132,45 @@ defmodule SpecLedEx.Compiler.TracerTest do
       caller_key = {caller_mod, :caller, 0}
       assert Map.has_key?(edges, caller_key), "no edge recorded for #{inspect(caller_key)}"
       assert {callee_mod, :callee, 1} in Map.fetch!(edges, caller_key)
+    end
+
+    @tag :integration
+    test "fixture subprocess compile with tracer registered produces fixture ETF" do
+      fixture_root = Path.expand(Path.join(["test", "fixtures", "sample_project"]))
+      fixture_build = Path.join(fixture_root, "_build")
+      fixture_etf = Path.join([fixture_build, "test", ".spec", "xref_mfa.etf"])
+
+      File.rm_rf!(fixture_build)
+
+      parent_lib = Path.expand("_build/#{Mix.env()}/lib")
+
+      {output, status} =
+        System.cmd("mix", ["compile"],
+          cd: fixture_root,
+          env: [
+            {"MIX_ENV", "test"},
+            {"ERL_LIBS", parent_lib}
+          ],
+          stderr_to_stdout: true
+        )
+
+      assert status == 0, "fixture compile failed: #{output}"
+
+      assert File.exists?(fixture_etf),
+             "expected fixture ETF at #{fixture_etf}; compile output:\n#{output}"
+
+      edges = fixture_etf |> File.read!() |> :erlang.binary_to_term()
+
+      assert is_map(edges), "ETF should deserialize to a map, got: #{inspect(edges)}"
+      assert map_size(edges) > 0, "expected at least one caller entry, got empty map"
+
+      sample_keys =
+        edges
+        |> Map.keys()
+        |> Enum.filter(fn {mod, _fun, _arity} -> mod == Sample end)
+
+      assert sample_keys != [],
+             "expected at least one edge from Sample.*/*, got keys: #{inspect(Map.keys(edges))}"
     end
   end
 

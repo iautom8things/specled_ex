@@ -2040,17 +2040,18 @@
         ],
         "file": ".spec/specs/compiler_tracer.spec.md",
         "given": [
-          "a fixture module with `def caller, do: Other.callee(1)`",
-          "tracer registered in fixture mix.exs"
+          "a fixture module containing at least one remote call",
+          "tracer registered in fixture mix.exs",
+          "the fixture subprocess's code path includes the parent's tracer beam (via `ERL_LIBS`)"
         ],
         "id": "specled.compiler_tracer.scenario.mfa_edges_emitted",
         "subject_id": "specled.compiler_tracer",
         "then": [
-          "`_build/test/.spec/xref_mfa.etf` exists",
-          "the deserialized term contains an edge from `{Fixture, :caller, 0}` to `{Other, :callee, 1}`"
+          "`<fixture>/_build/test/.spec/xref_mfa.etf` exists",
+          "the deserialized term is a non-empty map keyed by `{caller_mod, caller_fun, caller_arity}` with at least one entry whose caller module is the fixture's module"
         ],
         "when": [
-          "the fixture compiles"
+          "the fixture compiles as a subprocess"
         ]
       },
       {
@@ -4171,7 +4172,7 @@
         "file": ".spec/specs/compiler_tracer.spec.md",
         "kind": "command",
         "subject_id": "specled.compiler_tracer",
-        "target": "mix test test/specled_ex/compiler/tracer_test.exs"
+        "target": "mix test test/specled_ex/compiler/tracer_test.exs --include integration"
       },
       {
         "covers": [
@@ -5097,7 +5098,7 @@
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.compiler_tracer",
-        "target": "mix test test/specled_ex/compiler/tracer_test.exs",
+        "target": "mix test test/specled_ex/compiler/tracer_test.exs --include integration",
         "verification_index": 0
       },
       {
@@ -5108,7 +5109,7 @@
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.compiler_tracer",
-        "target": "mix test test/specled_ex/compiler/tracer_test.exs",
+        "target": "mix test test/specled_ex/compiler/tracer_test.exs --include integration",
         "verification_index": 0
       },
       {
@@ -5119,7 +5120,7 @@
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.compiler_tracer",
-        "target": "mix test test/specled_ex/compiler/tracer_test.exs",
+        "target": "mix test test/specled_ex/compiler/tracer_test.exs --include integration",
         "verification_index": 0
       },
       {

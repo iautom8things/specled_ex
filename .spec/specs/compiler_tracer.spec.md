@@ -80,13 +80,14 @@ decisions:
 ```spec-scenarios
 - id: specled.compiler_tracer.scenario.mfa_edges_emitted
   given:
-    - "a fixture module with `def caller, do: Other.callee(1)`"
+    - a fixture module containing at least one remote call
     - tracer registered in fixture mix.exs
+    - the fixture subprocess's code path includes the parent's tracer beam (via `ERL_LIBS`)
   when:
-    - the fixture compiles
+    - the fixture compiles as a subprocess
   then:
-    - "`_build/test/.spec/xref_mfa.etf` exists"
-    - "the deserialized term contains an edge from `{Fixture, :caller, 0}` to `{Other, :callee, 1}`"
+    - "`<fixture>/_build/test/.spec/xref_mfa.etf` exists"
+    - the deserialized term is a non-empty map keyed by `{caller_mod, caller_fun, caller_arity}` with at least one entry whose caller module is the fixture's module
   covers:
     - specled.compiler_tracer.captures_remote_calls
     - specled.compiler_tracer.registered_in_mix_exs
@@ -107,7 +108,7 @@ decisions:
 
 ```spec-verification
 - kind: command
-  target: mix test test/specled_ex/compiler/tracer_test.exs
+  target: mix test test/specled_ex/compiler/tracer_test.exs --include integration
   execute: true
   covers:
     - specled.compiler_tracer.captures_remote_calls
