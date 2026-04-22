@@ -9,9 +9,15 @@
   "id": "specled_-q59.8",
   "labels": [],
   "parent": "specled_-q59",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: 406852e5-52c2-4c90-b344-55db26b96bf5\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/406852e5-52c2-4c90-b344-55db26b96bf5.jsonl\n\nCommit: b140f43\nFiles touched (Allowed only):\n  - lib/specled_ex/realization/use.ex (NEW, +257 LOC)\n  - lib/specled_ex/realization/drift.ex (extended, 105 -\u003e 135 LOC, single public fn preserved)\n  - test/specled_ex/realization/use_test.exs (NEW, 10 tests)\n  - test/specled_ex/realization/drift_test.exs (extended, +4 tests on macro-provider dedup)\n  - test/integration/scenario_macro_provider_drift_test.exs (NEW, scenario 4 gate)\n  - .spec/specs/use_tier.spec.md (status draft -\u003e active; 3 execute: false -\u003e true on own subject stubs)\n  - .spec/state.json (regen: 3 surface_target_missing warnings cleared, strength upgraded)\n\nTests added: 15 new tests\n  - SpecLedEx.Realization.UseTest: consumers_for/2 (4 tests), scenario.consumers_current_not_persisted (1), hash/2 composition (5)\n  - SpecLedEx.Realization.DriftTest: macro-provider root_cause dedupe (4 tests)\n  - SpecLedEx.Integration.ScenarioMacroProviderDriftTest: scenario 4 gate (1)\n\nVerification stubs flipped:\n  - mix test test/specled_ex/realization/use_test.exs (covers enumerate_consumers, provider_hash_composes)\n  - mix test test/specled_ex/realization/drift_test.exs (covers root_cause_dedupe, hash_prefix_length)\n  - mix test test/integration/scenario_macro_provider_drift_test.exs --include integration (covers scenario_macro_provider_drift)\n\nLocal sanity:\n  - mix test --include integration: 389 tests, 0 failures (was 374 pre-S5b)\n  - mix compile --warnings-as-errors: clean\n  - mix spec.check: 0 use_tier findings; 11 pre-existing branch findings (verified baseline by stashing S5b changes — same 11 on HEAD e456fd2). Same noise S5a-S5a iter2 carried through.\n\nSummary: Built 5th realization tier (Use) consuming the tracer ETF without persisting consumer lists, composed-hash sensitive to provider-expansion change OR consumer set change. Extended Drift.dedupe to recognize tier: :use deltas as forced roots with a synthesized root_cause map (provider MFA, 8-char hash prefixes, consumers_affected, consumers). Drift module stays single-function and under 150 LOC. Subject specled.use_tier flipped to active — all five must requirements covered.",
+      "timestamp": "2026-04-22T19:32:05Z"
+    }
+  ],
   "priority": 2,
   "status": "open",
   "title": "S5b: use tier + macro root-cause dedup",
   "type": "task",
-  "updated_at": "2026-04-21T20:30:28Z"
+  "updated_at": "2026-04-22T19:32:05Z"
 }
