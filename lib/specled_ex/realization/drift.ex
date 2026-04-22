@@ -1,4 +1,7 @@
 defmodule SpecLedEx.Realization.Drift do
+  # covers: specled.use_tier.root_cause_dedupe
+  # covers: specled.use_tier.hash_prefix_length
+  # covers: specled.use_tier.scenario_macro_provider_drift
   @moduledoc """
   Deduplicates realization deltas across a dependency graph.
 
@@ -13,6 +16,11 @@ defmodule SpecLedEx.Realization.Drift do
   Cyclic connected components are detected: when subjects form a cycle without
   a clear root, the lexicographically smallest id wins deterministically
   (see `specled.api_boundary.dedupe_cyclic_tiebreak`).
+
+  Macro-provider root cause: a delta carrying `tier: :use` is always picked as
+  the root for its component, and is reshaped with a `:root_cause` map naming
+  the provider, hash prefixes, and consumer modules — collapsing the per-
+  consumer expanded_behavior drifts into one finding per provider.
   """
 
   @doc """
@@ -20,7 +28,8 @@ defmodule SpecLedEx.Realization.Drift do
 
   Per connected component (by dependency), picks one subject as the root cause
   and drops the rest. The root-cause delta carries `:root_cause_of` with the
-  dropped subject ids.
+  dropped subject ids. When the root delta carries `tier: :use`, the result
+  also carries a `:root_cause` map with the macro-provider shape.
   """
   @spec dedupe([map()], (String.t(), String.t() -> boolean())) :: [map()]
   def dedupe(deltas, pred) when is_list(deltas) and is_function(pred, 2) do
@@ -30,13 +39,14 @@ defmodule SpecLedEx.Realization.Drift do
 
     components
     |> Enum.flat_map(fn comp ->
-      root = pick_root(comp, adj)
+      root = pick_root(comp, adj, deltas)
       dropped = comp -- [root]
 
       root_delta =
         deltas
         |> Enum.find(&(&1.subject_id == root))
         |> Map.put(:root_cause_of, dropped)
+        |> maybe_add_root_cause()
 
       [root_delta]
     end)
@@ -90,15 +100,36 @@ defmodule SpecLedEx.Realization.Drift do
     do_bfs(queue, undirected, visited, acc)
   end
 
-  defp pick_root(comp, adj) do
-    providers =
-      Enum.filter(comp, fn id ->
-        Enum.all?(comp, fn other ->
-          other == id or not Enum.member?(Map.get(adj, id, []), other)
-        end)
-      end)
+  defp pick_root(comp, adj, deltas) do
+    case Enum.find(deltas, fn d -> d.subject_id in comp and Map.get(d, :tier) == :use end) do
+      %{subject_id: id} ->
+        id
 
-    candidates = if providers == [], do: comp, else: providers
-    Enum.min(candidates)
+      nil ->
+        providers =
+          Enum.filter(comp, fn id ->
+            Enum.all?(comp, fn other ->
+              other == id or not Enum.member?(Map.get(adj, id, []), other)
+            end)
+          end)
+
+        candidates = if providers == [], do: comp, else: providers
+        Enum.min(candidates)
+    end
   end
+
+  defp maybe_add_root_cause(%{tier: :use} = delta) do
+    consumers = Map.get(delta, :consumers, [])
+
+    Map.put(delta, :root_cause, %{
+      provider: Map.get(delta, :provider_mfa) || Map.get(delta, :provider),
+      tier: :use,
+      hash_prefix_before: Map.get(delta, :hash_prefix_before),
+      hash_prefix_after: Map.get(delta, :hash_prefix_after),
+      consumers_affected: length(consumers),
+      consumers: consumers
+    })
+  end
+
+  defp maybe_add_root_cause(delta), do: delta
 end

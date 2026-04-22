@@ -257,29 +257,7 @@
       }
     ]
   },
-  "findings": [
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.use_tier",
-      "file": ".spec/specs/use_tier.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/realization/use.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.use_tier",
-      "file": ".spec/specs/use_tier.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/integration/scenario_macro_provider_drift_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.use_tier",
-      "file": ".spec/specs/use_tier.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/realization/use_test.exs"
-    }
-  ],
+  "findings": [],
   "index": {
     "exceptions": [],
     "requirements": [
@@ -3772,7 +3750,7 @@
           "id": "specled.use_tier",
           "kind": "workflow",
           "realized_by": null,
-          "status": "draft",
+          "status": "active",
           "summary": "use tier enumerates consumers via tracer; macro-provider root-cause dedup via Drift.dedupe/2 collapses N per-consumer findings to one per-provider finding with consumers_affected count and 8-char hash-prefix diff.",
           "surface": [
             "lib/specled_ex/realization/use.ex",
@@ -4455,7 +4433,7 @@
           "specled.use_tier.enumerate_consumers",
           "specled.use_tier.provider_hash_composes"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/use_tier.spec.md",
         "kind": "command",
         "subject_id": "specled.use_tier",
@@ -4466,7 +4444,7 @@
           "specled.use_tier.root_cause_dedupe",
           "specled.use_tier.hash_prefix_length"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/use_tier.spec.md",
         "kind": "command",
         "subject_id": "specled.use_tier",
@@ -4476,7 +4454,7 @@
         "covers": [
           "specled.use_tier.scenario_macro_provider_drift"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/use_tier.spec.md",
         "kind": "command",
         "subject_id": "specled.use_tier",
@@ -4521,7 +4499,7 @@
     "decision_parse_errors": 0,
     "decisions": 19,
     "exceptions": 0,
-    "findings": 3,
+    "findings": 0,
     "requirements": 160,
     "scenarios": 85,
     "subjects": 29,
@@ -6152,7 +6130,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.use_tier",
         "target": "mix test test/specled_ex/realization/use_test.exs",
         "verification_index": 0
@@ -6163,7 +6141,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.use_tier",
         "target": "mix test test/specled_ex/realization/use_test.exs",
         "verification_index": 0
@@ -6174,7 +6152,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.use_tier",
         "target": "mix test test/specled_ex/realization/drift_test.exs",
         "verification_index": 1
@@ -6185,7 +6163,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.use_tier",
         "target": "mix test test/specled_ex/realization/drift_test.exs",
         "verification_index": 1
@@ -6196,7 +6174,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.use_tier",
         "target": "mix test test/integration/scenario_macro_provider_drift_test.exs --include integration",
         "verification_index": 2
@@ -6359,8 +6337,8 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 12,
-      "executed": 143,
+      "claimed": 7,
+      "executed": 148,
       "linked": 11
     },
     "threshold_failures": 0
