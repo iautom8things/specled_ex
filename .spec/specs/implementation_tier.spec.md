@@ -16,7 +16,7 @@ cause.
 ```spec-meta
 id: specled.implementation_tier
 kind: workflow
-status: draft
+status: active
 summary: Walks tracer edges from declared MFAs; hashes closure with subject-boundary stops + hash-ref composition (Cargo pattern); MFA ownership via binding map with surface + lexical tiebreak.
 surface:
   - lib/specled_ex/realization/implementation.ex
