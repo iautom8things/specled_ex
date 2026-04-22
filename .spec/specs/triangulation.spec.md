@@ -16,7 +16,7 @@ nothing if any input is missing (graceful degrade via `detector_unavailable`).
 ```spec-meta
 id: specled.triangulation
 kind: workflow
-status: draft
+status: active
 summary: >-
   Pure function over `(coverage_records, closures, tag_index)` returning new
   findings `branch_guard_untested_realization`, `branch_guard_untethered_test`,
@@ -149,7 +149,7 @@ surface:
 ```spec-verification
 - kind: command
   target: mix test test/specled_ex/coverage_triangulation_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.triangulation.pure_function
     - specled.triangulation.untested_realization
@@ -159,17 +159,17 @@ surface:
     - specled.triangulation.detector_unavailable_on_missing_coverage
 - kind: command
   target: mix test test/integration/scenario_test_only_change_test.exs --include integration
-  execute: false
+  execute: true
   covers:
     - specled.triangulation.pure_function
 - kind: command
   target: mix test test/integration/scenario_mistagged_test_test.exs --include integration
-  execute: false
+  execute: true
   covers:
     - specled.triangulation.untethered_test
 - kind: command
   target: mix test test/mix/tasks/spec_triangle_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.triangulation.spec_triangle_task
 ```
