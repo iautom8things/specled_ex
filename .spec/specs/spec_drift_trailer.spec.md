@@ -30,8 +30,14 @@ decisions:
     SpecLedEx.BranchCheck.Trailer.parse/1 shall accept the trailer values
     `refactor`, `docs_only`, `test_only`, and severity-coded forms
     `<code>=<severity>` (e.g., `branch_guard_realization_drift=info`) and
-    return a structured override map keyed by finding code. Unknown
-    tokens shall be ignored and reported via a :warnings list so mistyped
+    return a structured override map keyed by finding code.
+  priority: must
+  stability: evolving
+- id: specled.spec_drift_trailer.parse_unknown_token_warns
+  statement: >-
+    SpecLedEx.BranchCheck.Trailer.parse/1 shall ignore unknown trailer
+    tokens (producing no override for them) and report each unknown
+    token via a `:warnings` list on the return value, so mistyped
     trailers do not silently fail.
   priority: must
   stability: evolving
@@ -78,7 +84,7 @@ decisions:
     - the returned override map is empty
     - the returned :warnings list names `lolwut`
   covers:
-    - specled.spec_drift_trailer.parse_vocabulary
+    - specled.spec_drift_trailer.parse_unknown_token_warns
 ```
 
 ## Verification
@@ -89,6 +95,7 @@ decisions:
   execute: true
   covers:
     - specled.spec_drift_trailer.parse_vocabulary
+    - specled.spec_drift_trailer.parse_unknown_token_warns
     - specled.spec_drift_trailer.scans_base_to_head
     - specled.spec_drift_trailer.self_report_documented
 ```

@@ -2,8 +2,9 @@ defmodule SpecLedEx.Realization.EffectiveBinding do
   @moduledoc """
   Merges subject-level and requirement-level `realized_by` bindings per requirement.
 
-  Rule (see `specled.realized_by.effective_binding_merge`): per tier, the
-  requirement value replaces the subject value if set; otherwise the subject
+  Rule (see `specled.realized_by.effective_binding_inherits_subject` and
+  `specled.realized_by.effective_binding_requirement_replaces_tier`): per tier,
+  the requirement value replaces the subject value if set; otherwise the subject
   value is used. Tiers not set by either layer are absent from the return value.
 
   Inputs are the normalized binding maps returned by `SpecLedEx.Schema.RealizedBy.validate/1`.

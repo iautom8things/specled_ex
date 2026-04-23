@@ -66,6 +66,28 @@ decisions:
     if reading fails.
   priority: must
   stability: stable
+- id: specled.verify.command_output_via_tempfile
+  statement: >
+    Command verifications shall capture stdout+stderr via a temp file and
+    wait for process exit status (not pipe EOF) so that large outputs and
+    flushing semantics do not corrupt or truncate the captured text, and
+    temp files shall be removed after the result is read.
+  priority: must
+  stability: stable
+- id: specled.verify.command_timeout_enforced
+  statement: >
+    Command verifications shall run under a configurable timeout (default
+    120s). When the timeout elapses, the spawned process shall be killed
+    and a non-zero exit code shall be recorded on the result.
+  priority: must
+  stability: stable
+- id: specled.verify.command_exit_code_recorded
+  statement: >
+    Command verifications shall record the spawned process's exact exit
+    code on the result, and a non-zero exit code shall mark the
+    verification as failed.
+  priority: must
+  stability: stable
 - id: specled.verify.requirement_without_test_tag
   statement: When test-tag data is present on the index, verification shall emit a `requirement_without_test_tag` finding for each `must` requirement whose id appears in no `@tag spec:` annotation within the configured scan paths.
   priority: must
@@ -133,7 +155,7 @@ decisions:
     - the exit code is 0
     - no temp files remain after verification
   covers:
-    - specled.verify.command_execution_resilience
+    - specled.verify.command_output_via_tempfile
 - id: specled.verify.scenario.command_timeout
   given:
     - a spec with a command verification targeting a slow command
@@ -143,7 +165,7 @@ decisions:
     - the command is killed after the timeout
     - a non-zero exit code is recorded
   covers:
-    - specled.verify.command_execution_resilience
+    - specled.verify.command_timeout_enforced
 - id: specled.verify.scenario.command_failed_exit_code
   given:
     - a spec with a command verification targeting "exit 2"
@@ -153,7 +175,7 @@ decisions:
     - the exit code is 2
     - the verification is reported as failed
   covers:
-    - specled.verify.command_execution_resilience
+    - specled.verify.command_exit_code_recorded
 - id: specled.verify.scenario.requirement_without_tag_emits_finding
   given:
     - an index with a `must` requirement `billing.invoice` and a tag_map that does not contain `billing.invoice`
@@ -218,6 +240,9 @@ decisions:
     - specled.verify.decision_governance
     - specled.verify.strength_semantics
     - specled.verify.command_execution_resilience
+    - specled.verify.command_output_via_tempfile
+    - specled.verify.command_timeout_enforced
+    - specled.verify.command_exit_code_recorded
 - kind: command
   target: mix test test/specled_ex/tag_findings_test.exs
   execute: true

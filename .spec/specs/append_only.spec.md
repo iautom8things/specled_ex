@@ -41,6 +41,15 @@ decisions:
     its `affects` list.
   priority: must
   stability: evolving
+- id: specled.append_only.requirement_deleted_authorized
+  statement: >-
+    AppendOnly.analyze shall NOT emit `append_only/requirement_deleted`
+    for a removed requirement id when a head-side ADR in the weakening
+    set (`deprecates`, `weakens`, `narrows-scope`, `adds-exception`)
+    lists that id in its `affects` list with a non-empty
+    `reverses_what`, authorizing the deletion.
+  priority: must
+  stability: evolving
 - id: specled.append_only.must_downgraded
   statement: >-
     AppendOnly.analyze shall emit `append_only/must_downgraded` at `:error`
@@ -171,7 +180,7 @@ decisions:
   then:
     - "no `append_only/requirement_deleted` finding is emitted for `x.req_a`"
   covers:
-    - specled.append_only.requirement_deleted
+    - specled.append_only.requirement_deleted_authorized
 
 - id: specled.append_only.scenario.must_to_should_downgrade
   given:
@@ -314,6 +323,7 @@ decisions:
   execute: true
   covers:
     - specled.append_only.requirement_deleted
+    - specled.append_only.requirement_deleted_authorized
     - specled.append_only.must_downgraded
     - specled.append_only.scenario_regression
     - specled.append_only.negative_removed
@@ -331,6 +341,7 @@ decisions:
   execute: true
   covers:
     - specled.append_only.requirement_deleted
+    - specled.append_only.requirement_deleted_authorized
     - specled.append_only.must_downgraded
     - specled.append_only.scenario_regression
     - specled.append_only.negative_removed

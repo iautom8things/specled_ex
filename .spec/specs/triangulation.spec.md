@@ -55,7 +55,15 @@ surface:
     exercise only MFAs owned by subject `B` (not `A`), a
     `branch_guard_untethered_test` finding shall name the test file,
     the tag, and the observed owner. Default severity is `:info`.
-    Per-test opt-out shall be `@tag spec_triangulation: :indirect`.
+  priority: must
+  stability: evolving
+- id: specled.triangulation.untethered_test_opt_out
+  statement: >-
+    A test that would otherwise trigger
+    `branch_guard_untethered_test` shall be suppressed (no finding
+    emitted for it) when the test carries
+    `@tag spec_triangulation: :indirect`, providing an explicit
+    per-test opt-out for intentional indirect coverage.
   priority: must
   stability: evolving
 - id: specled.triangulation.underspecified_realization
@@ -109,7 +117,6 @@ surface:
     - the finding severity is `:info` by default
   covers:
     - specled.triangulation.untethered_test
-    - specled.triangulation.pure_function
 - id: specled.triangulation.scenario.opt_out_tag_suppresses
   given:
     - the same untethered test
@@ -119,7 +126,7 @@ surface:
   then:
     - no `branch_guard_untethered_test` finding references this test
   covers:
-    - specled.triangulation.untethered_test
+    - specled.triangulation.untethered_test_opt_out
 - id: specled.triangulation.scenario.cold_run_detector_unavailable
   given:
     - a project with no `.spec/_coverage/per_test.coverdata`
@@ -154,6 +161,7 @@ surface:
     - specled.triangulation.pure_function
     - specled.triangulation.untested_realization
     - specled.triangulation.untethered_test
+    - specled.triangulation.untethered_test_opt_out
     - specled.triangulation.underspecified_realization
     - specled.triangulation.execution_reach_metric
     - specled.triangulation.detector_unavailable_on_missing_coverage
@@ -167,6 +175,7 @@ surface:
   execute: true
   covers:
     - specled.triangulation.untethered_test
+    - specled.triangulation.untethered_test_opt_out
 - kind: command
   target: mix test test/mix/tasks/spec_triangle_test.exs
   execute: true

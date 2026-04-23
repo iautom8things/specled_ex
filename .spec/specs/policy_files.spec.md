@@ -36,10 +36,18 @@ decisions:
   stability: evolving
 - id: specled.policy_files.priv_defaults_to_lib
   statement: >-
-    Paths under `priv/` shall classify as `:lib` by default. Only
-    `priv/plts/` shall classify as `:generated`. This preserves existing
+    Paths under `priv/` (excluding the `priv/plts/` carve-out below)
+    shall classify as `:lib` by default. This preserves existing
     file-touch semantics on migration files, static assets, and other
-    `priv/` content so that upgrades do not silently lose co-change signal.
+    `priv/` content so that upgrades do not silently lose co-change
+    signal.
+  priority: must
+  stability: evolving
+- id: specled.policy_files.priv_plts_is_generated
+  statement: >-
+    Paths under `priv/plts/` shall classify as `:generated`, carving
+    the dialyzer PLT cache out of the default priv -> :lib rule so
+    regenerated PLT artifacts do not trigger co-change gates.
   priority: must
   stability: evolving
 - id: specled.policy_files.plan_docs_excluded
@@ -80,7 +88,6 @@ decisions:
     - the returned kind is `:lib`
   covers:
     - specled.policy_files.priv_defaults_to_lib
-    - specled.policy_files.classify_kinds
 - id: specled.policy_files.scenario.priv_plts_is_generated
   given:
     - a changed path `priv/plts/dialyzer.plt`
@@ -89,7 +96,7 @@ decisions:
   then:
     - the returned kind is `:generated`
   covers:
-    - specled.policy_files.priv_defaults_to_lib
+    - specled.policy_files.priv_plts_is_generated
 - id: specled.policy_files.scenario.docs_plans_ignored
   given:
     - a changed path `docs/plans/2026-04-21-notes.md`
@@ -109,8 +116,18 @@ decisions:
     - classify returns `:unknown`
     - co_change_rule returns `:unknown_escalates`
   covers:
-    - specled.policy_files.classify_kinds
     - specled.policy_files.co_change_rule_total
+
+- id: specled.policy_files.scenario.classify_totality
+  given:
+    - "a representative set of repo-relative paths drawn from lib/, test/, priv/, priv/plts/, docs/, README, and arbitrary unrecognized paths"
+  when:
+    - SpecLedEx.PolicyFiles.classify/1 is called on each
+  then:
+    - "every return value is an atom in the closed set {:lib, :test, :doc, :generated, :unknown}"
+    - no invocation returns `nil` or raises
+  covers:
+    - specled.policy_files.classify_kinds
 ```
 
 ## Verification
@@ -122,6 +139,7 @@ decisions:
   covers:
     - specled.policy_files.classify_kinds
     - specled.policy_files.priv_defaults_to_lib
+    - specled.policy_files.priv_plts_is_generated
     - specled.policy_files.plan_docs_excluded
     - specled.policy_files.co_change_rule_total
     - specled.policy_files.change_analysis_delegates
