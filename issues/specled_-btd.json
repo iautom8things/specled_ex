@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
   "created": "2026-04-23T21:52:30Z",
@@ -7,8 +7,8 @@
   "id": "specled_-btd",
   "labels": [],
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "fix: mix spec.triangle passes MFA strings to mfa_source_file/1 which expects a tuple",
   "type": "bug",
-  "updated_at": "2026-04-23T21:52:30Z"
+  "updated_at": "2026-04-23T23:11:57Z"
 }
