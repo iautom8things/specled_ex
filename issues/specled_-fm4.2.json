@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-04-23T11:44:15Z",
+  "description": "Advances: specled.decisions\n\nDeliverable:\nAdd `change_type: clarifies` to every ADR under `.spec/decisions/*.md` whose frontmatter currently lacks a `change_type:` field (19 legacy files as of 2026-04-23). This is a dogfooding pass so that W2a turning on the `append_only/missing_change_type` warning emits zero findings on specled_ex's own history.\n\nMechanics:\n- One frontmatter line added per file: `change_type: clarifies` (directly under `affects:` or at the end of the frontmatter block).\n- No body changes. No status changes. No affects changes.\n- Do not touch the 3 ADRs authored by the W0/W1 distill pass (specled.decision.adr_append_only, specled.decision.modal_class_diff_time, specled.decision.change_type_enum_v1) - those ship with an explicit change_type already.\n- Do not touch the W1 budget ADR (specled.decision.append_only_finding_budget) - also ships with change_type.\n\nVerification:\n- Tests to pass: mix spec.validate (runs the CrossField parse pass - must be clean)\n- Behaviors to demonstrate:\n  - CrossField emits no `missing_change_type` warnings after the backfill.\n  - `mix spec.check --base \u003cpre-W1.5 commit\u003e` shows no append_only/missing_change_type finding on any prior ADR (once W2a ships; dry-run with the warning rule deferred is acceptable here).\n\nOut of Scope (files):\n- lib/**/* (no code changes)\n- test/**/* (no test changes)\n- .spec/specs/*.md (no subject-spec edits)\n- any ADR body text (frontmatter only)\n\nAllowed touches (this stage may modify):\n- .spec/decisions/*.md (frontmatter add only)\n\nOut of Scope (intent):\n- Do not fix or edit the body of any legacy ADR, even if the ADR is stale.\n- Do not rename or renumber any ADR file.\n- Do not transition status on any ADR (no accepted -\u003e deprecated here).\n- If a legacy ADR has a genuinely different change_type (deprecates, weakens, etc.), do NOT mass-apply `clarifies` blindly. The default is `clarifies` only because no historical ADR on specled_ex authorized a weakening; audit each file's Context/Decision sections before stamping.\n\nMerge gate:\n- [ ] Code compiles cleanly (no code change, but compile stays green)\n- [ ] mix spec.validate passes with zero CrossField errors\n- [ ] Scope check: diff touches only `.spec/decisions/*.md` frontmatter (mechanical)\n- [ ] Auditor APPROVE comment on the ticket",
+  "id": "specled_-fm4.2",
+  "labels": [],
+  "parent": "specled_-fm4",
+  "priority": 2,
+  "status": "open",
+  "title": "W1.5: Backfill change_type on legacy ADRs",
+  "type": "task",
+  "updated_at": "2026-04-23T11:44:15Z"
+}
