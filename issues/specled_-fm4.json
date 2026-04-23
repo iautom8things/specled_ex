@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-04-23T11:43:27Z",
+  "description": "Advances: specled.append_only, specled.overlap, specled.modal_class, specled.decisions, specled.config, specled.mix_tasks, specled.branch_guard\n\nJira: TBD\n\nDistilled from mega-plan run 20260422-204208-claude (think-gzy) on 2026-04-23.\n\nPlanning epic: think-gzy (closed). Implementation epic (bw-plan side): think-fng.\nRefined plan: /Users/mz/dev/cs/specled/ideas/2026-04-18-spec-guardrails/runs/20260422-204208-claude/05-refined-plan.md\nGlobal contracts: /Users/mz/dev/cs/specled/ideas/2026-04-18-spec-guardrails/runs/20260422-204208-claude/00-global-contracts.md\nSpec dir: .spec/\n\n3 new subjects authored: specled.append_only, specled.overlap, specled.modal_class.\n3 new decisions authored: specled.decision.adr_append_only, specled.decision.modal_class_diff_time, specled.decision.change_type_enum_v1.\nExisting subjects extended by implementation (not rewritten by distill): specled.decisions (ADR governance fields), specled.config (guardrails.severities), specled.mix_tasks (--verbose flag).\n\nStage children land W1 -\u003e W1.5 -\u003e W2a -\u003e W2b -\u003e W3. W2a + W2b must merge to the same feature branch before anything lands on main (user directive 2026-04-23 closes the C1 refines-weakening gap window).\n\nW0 (doc ratification) and W4 (specled-repo templates + CI workflow) live outside specled_ex and are not tracked as children of this epic.\n\nJira MCP unavailable at distill time - recording Jira: TBD. PR creation hook will catch this.",
+  "id": "specled_-fm4",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "spec-guardrails: append-only + overlap + severity config",
+  "type": "epic",
+  "updated_at": "2026-04-23T11:43:27Z"
+}
