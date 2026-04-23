@@ -17,6 +17,10 @@ defmodule Mix.Tasks.Spec.Check do
     * `--base <ref>` - compare the current branch against the given Git base
     * `--test-tags` / `--no-test-tags` - enable or disable test-tag scanning
       for this invocation, overriding `.spec/config.yml`
+    * `--verbose` - print findings of every severity including `:info`. Without
+      this flag, `:info`-severity findings are suppressed from stdout (they
+      remain in `.spec/state.json`). `SPECLED_SHOW_INFO=1` in the environment
+      has the same effect as `--verbose`.
   """
 
   @impl true
@@ -32,7 +36,8 @@ defmodule Mix.Tasks.Spec.Check do
           run_commands: :boolean,
           base: :string,
           min_strength: :string,
-          test_tags: :boolean
+          test_tags: :boolean,
+          verbose: :boolean
         ],
         aliases: [r: :root, o: :output, d: :debug]
       )
@@ -46,6 +51,7 @@ defmodule Mix.Tasks.Spec.Check do
     output = opts[:output] || "#{spec_dir}/state.json"
     debug? = opts[:debug] || false
     run_commands? = run_commands?(opts)
+    verbose? = verbose?(opts)
 
     index_opts =
       [spec_dir: spec_dir, authored_dir: authored_dir]
@@ -81,12 +87,12 @@ defmodule Mix.Tasks.Spec.Check do
     end
 
     if report["status"] == "fail" do
-      print_validation_findings(report["findings"] || [])
+      print_validation_findings(report["findings"] || [], verbose?)
       Mix.raise("Spec check failed: #{length(report["findings"] || [])} validation finding(s)")
     end
 
     branch_report = SpecLedEx.branch_check(index, root, base: opts[:base])
-    print_branch_report(branch_report)
+    print_branch_report(branch_report, verbose?)
 
     if branch_report["status"] == "fail" do
       Mix.raise("Spec check failed: #{length(branch_report["findings"] || [])} branch finding(s)")
@@ -116,6 +122,24 @@ defmodule Mix.Tasks.Spec.Check do
     end
   end
 
+  defp verbose?(opts) do
+    case Keyword.fetch(opts, :verbose) do
+      {:ok, true} -> true
+      {:ok, false} -> false
+      :error -> System.get_env("SPECLED_SHOW_INFO") == "1"
+    end
+  end
+
+  defp filter_for_stdout(findings, true), do: findings
+
+  defp filter_for_stdout(findings, false) do
+    Enum.reject(findings, fn finding ->
+      (finding["severity"] || finding[:severity] || "warning")
+      |> to_string()
+      |> String.downcase() == "info"
+    end)
+  end
+
   defp print_debug_checks(checks) do
     Mix.shell().info("debug_checks=#{length(checks)}")
 
@@ -129,8 +153,10 @@ defmodule Mix.Tasks.Spec.Check do
     end)
   end
 
-  defp print_validation_findings(findings) do
-    Enum.each(findings, fn finding ->
+  defp print_validation_findings(findings, verbose?) do
+    findings
+    |> filter_for_stdout(verbose?)
+    |> Enum.each(fn finding ->
       severity = String.upcase(finding["severity"] || "warning")
       subject_id = finding["subject_id"] || "global"
       file = finding["file"] || "-"
@@ -140,12 +166,14 @@ defmodule Mix.Tasks.Spec.Check do
     end)
   end
 
-  defp print_branch_report(report) do
+  defp print_branch_report(report, verbose?) do
     Mix.shell().info(
       "branch base=#{report["base"]} changed_files=#{report["summary"]["changed_files"]} findings=#{report["summary"]["findings"]}"
     )
 
-    Enum.each(report["findings"] || [], fn finding ->
+    (report["findings"] || [])
+    |> filter_for_stdout(verbose?)
+    |> Enum.each(fn finding ->
       severity = String.upcase(finding["severity"] || "warning")
       file = finding["file"] || "-"
       Mix.shell().info("[#{severity}] #{finding["code"]} #{file} :: #{finding["message"]}")

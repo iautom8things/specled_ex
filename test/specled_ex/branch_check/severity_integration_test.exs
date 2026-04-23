@@ -177,6 +177,155 @@ defmodule SpecLedEx.BranchCheck.SeverityIntegrationTest do
     end
   end
 
+  describe "BranchCheck.run/3 routes guardrails.severities through Severity.resolve/3" do
+    @tag spec: "specled.config.guardrails_severities"
+    @tag spec: "specled.severity.resolve_precedence"
+    test "guardrails.severities downgrades append_only/requirement_deleted to :warning",
+         %{root: root} do
+      init_git_repo(root)
+
+      File.mkdir_p!(Path.join(root, ".spec"))
+
+      File.write!(Path.join(root, ".spec/config.yml"), """
+      guardrails:
+        severities:
+          append_only/requirement_deleted: warning
+      """)
+
+      write_subject_spec(
+        root,
+        "billing",
+        meta: %{"id" => "billing.subject", "kind" => "module", "status" => "active"},
+        requirements: [
+          %{
+            "id" => "billing.invoice",
+            "statement" => "The system MUST emit an invoice on every charge.",
+            "priority" => "must"
+          }
+        ]
+      )
+
+      index = SpecLedEx.index(root)
+      SpecLedEx.write_state(index, nil, root)
+      commit_all(root, "initial")
+
+      write_subject_spec(
+        root,
+        "billing",
+        meta: %{"id" => "billing.subject", "kind" => "module", "status" => "active"},
+        requirements: []
+      )
+
+      commit_all(root, "remove billing.invoice")
+
+      new_index = SpecLedEx.index(root)
+      report = SpecLedEx.BranchCheck.run(new_index, root, base: "HEAD~1")
+
+      findings =
+        Enum.filter(report["findings"], &(&1["code"] == "append_only/requirement_deleted"))
+
+      assert [finding] = findings
+      assert finding["severity"] == "warning"
+    end
+
+    @tag spec: "specled.config.guardrails_severities"
+    @tag spec: "specled.severity.off_is_absorbing"
+    test "guardrails.severities :off suppresses overlap/duplicate_covers", %{root: root} do
+      init_git_repo(root)
+
+      File.mkdir_p!(Path.join(root, ".spec"))
+
+      File.write!(Path.join(root, ".spec/config.yml"), """
+      guardrails:
+        severities:
+          overlap/duplicate_covers: off
+      """)
+
+      write_subject_spec(
+        root,
+        "billing",
+        meta: %{"id" => "billing.subject", "kind" => "module", "status" => "active"},
+        requirements: [
+          %{
+            "id" => "billing.invoice",
+            "statement" => "The system MUST emit an invoice on every charge.",
+            "priority" => "must"
+          }
+        ],
+        scenarios: [
+          %{
+            "id" => "billing.scenario.a",
+            "covers" => ["billing.invoice"]
+          },
+          %{
+            "id" => "billing.scenario.b",
+            "covers" => ["billing.invoice"]
+          }
+        ]
+      )
+
+      commit_all(root, "initial with duplicate covers")
+
+      index = SpecLedEx.index(root)
+      report = SpecLedEx.BranchCheck.run(index, root, base: "HEAD")
+
+      refute Enum.any?(report["findings"], &(&1["code"] == "overlap/duplicate_covers"))
+    end
+
+    @tag spec: "specled.config.guardrails_severities"
+    @tag spec: "specled.severity.resolve_precedence"
+    test "guardrails.severities namespace is independent of branch_guard.severities",
+         %{root: root} do
+      init_git_repo(root)
+
+      File.mkdir_p!(Path.join(root, ".spec"))
+
+      # branch_guard.severities sets an off for branch_guard_unmapped_change,
+      # but that must NOT leak into guardrails' namespace — append_only codes
+      # keep their per-code defaults.
+      File.write!(Path.join(root, ".spec/config.yml"), """
+      branch_guard:
+        severities:
+          branch_guard_unmapped_change: off
+      """)
+
+      write_subject_spec(
+        root,
+        "billing",
+        meta: %{"id" => "billing.subject", "kind" => "module", "status" => "active"},
+        requirements: [
+          %{
+            "id" => "billing.invoice",
+            "statement" => "The system MUST emit an invoice on every charge.",
+            "priority" => "must"
+          }
+        ]
+      )
+
+      index = SpecLedEx.index(root)
+      SpecLedEx.write_state(index, nil, root)
+      commit_all(root, "initial")
+
+      write_subject_spec(
+        root,
+        "billing",
+        meta: %{"id" => "billing.subject", "kind" => "module", "status" => "active"},
+        requirements: []
+      )
+
+      commit_all(root, "remove billing.invoice")
+
+      new_index = SpecLedEx.index(root)
+      report = SpecLedEx.BranchCheck.run(new_index, root, base: "HEAD~1")
+
+      findings =
+        Enum.filter(report["findings"], &(&1["code"] == "append_only/requirement_deleted"))
+
+      assert [finding] = findings
+      assert finding["severity"] == "error"
+    end
+  end
+
   describe "@per_code_defaults covers every finding code emitted by this project" do
     # Table-driven: one row per finding code with its baked-in default severity.
     # Every entry in this table must appear in BranchCheck's @per_code_defaults

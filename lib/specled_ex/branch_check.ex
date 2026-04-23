@@ -152,6 +152,7 @@ defmodule SpecLedEx.BranchCheck do
 
     [
       config_severities: config.branch_guard.severities,
+      guardrails_severities: config.guardrails.severities,
       trailer_override: trailer_overrides
     ]
   end
