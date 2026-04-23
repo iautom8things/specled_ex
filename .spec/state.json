@@ -120,7 +120,6 @@
           "specled.status",
           "specled.branch_guard"
         ],
-        "change_type": "clarifies",
         "date": "2026-03-11",
         "file": ".spec/decisions/specled.decision.declarative_current_truth.md",
         "id": "specled.decision.declarative_current_truth",
@@ -151,7 +150,6 @@
           "specled.verification",
           "specled.status"
         ],
-        "change_type": "clarifies",
         "date": "2026-03-11",
         "file": ".spec/decisions/specled.decision.explicit_subject_ownership.md",
         "id": "specled.decision.explicit_subject_ownership",
@@ -164,7 +162,6 @@
           "specled.verification",
           "specled.parser"
         ],
-        "change_type": "clarifies",
         "date": "2026-03-11",
         "file": ".spec/decisions/specled.decision.file_backed_linked_strength.md",
         "id": "specled.decision.file_backed_linked_strength",
@@ -198,7 +195,6 @@
           "specled.branch_guard",
           "specled.status"
         ],
-        "change_type": "clarifies",
         "date": "2026-03-20",
         "file": ".spec/decisions/specled.decision.guided_reconciliation_loop.md",
         "id": "specled.decision.guided_reconciliation_loop",
@@ -227,7 +223,6 @@
           "spec.system",
           "specled.mix_tasks"
         ],
-        "change_type": "clarifies",
         "date": "2026-03-11",
         "file": ".spec/decisions/specled.decision.local_skill_scaffold.md",
         "id": "specled.decision.local_skill_scaffold",
@@ -254,12 +249,23 @@
           "specled.prime",
           "specled.status"
         ],
-        "change_type": "clarifies",
         "date": "2026-04-07",
         "file": ".spec/decisions/specled.decision.no_app_start.md",
         "id": "specled.decision.no_app_start",
         "status": "accepted",
         "title": "Spec Tasks Shall Not Start the OTP Application"
+      },
+      {
+        "affects": [
+          "specled.parser",
+          "specled.parser.resilient_errors"
+        ],
+        "change_type": "narrows-scope",
+        "date": "2026-04-23",
+        "file": ".spec/decisions/specled.decision.parser_resilient_errors_split.md",
+        "id": "specled.decision.parser_resilient_errors_split",
+        "status": "accepted",
+        "title": "Split `parser.resilient_errors` Into Per-Failure-Mode Sub-Requirements"
       },
       {
         "affects": [
@@ -523,6 +529,14 @@
       },
       {
         "file": ".spec/specs/append_only.spec.md",
+        "id": "specled.append_only.requirement_deleted_authorized",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "AppendOnly.analyze shall NOT emit `append_only/requirement_deleted` for a removed requirement id when a head-side ADR in the weakening set (`deprecates`, `weakens`, `narrows-scope`, `adds-exception`) lists that id in its `affects` list with a non-empty `reverses_what`, authorizing the deletion.",
+        "subject_id": "specled.append_only"
+      },
+      {
+        "file": ".spec/specs/append_only.spec.md",
         "id": "specled.append_only.same_pr_self_authorization",
         "priority": "must",
         "stability": "evolving",
@@ -547,10 +561,18 @@
       },
       {
         "file": ".spec/specs/binding.spec.md",
+        "id": "specled.binding.canonical_reserved_idents_preserved",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "Canonical.normalize/1's α-rename pass shall NOT rewrite reserved identifiers (`__MODULE__`, `__CALLER__`, `__ENV__`, `__DIR__`, `__STACKTRACE__`, `__block__`) and shall NOT rewrite variables whose context is anything other than `nil` or `Elixir` (macro hygiene contexts are left intact).",
+        "subject_id": "specled.binding"
+      },
+      {
+        "file": ".spec/specs/binding.spec.md",
         "id": "specled.binding.canonical_strips_positions",
         "priority": "must",
         "stability": "evolving",
-        "statement": "SpecLedEx.Realization.Canonical.normalize/1 shall strip line/column metadata, sort `@behaviour`/`@derive`/`@spec` lists, and apply α-renaming to locally-bound variables. The α-rename guard shall not rewrite reserved identifiers (`__MODULE__`, `__CALLER__`, `__ENV__`, `__DIR__`, `__STACKTRACE__`, `__block__`) and shall only rewrite variables whose context is `nil` or `Elixir` — other contexts (macro hygiene) are left intact.",
+        "statement": "SpecLedEx.Realization.Canonical.normalize/1 shall strip line/column metadata, sort `@behaviour`/`@derive`/`@spec` lists, and apply α-renaming to locally-bound variables whose context is `nil` or `Elixir`, so cosmetic refactors (rename, reflow, reordered attributes) produce a stable canonical form.",
         "subject_id": "specled.binding"
       },
       {
@@ -583,6 +605,14 @@
         "priority": "must",
         "stability": "evolving",
         "statement": "SpecLedEx.Realization.Binding.resolve/2 shall look up a target MFA on a compiled module via `function_exported?/3` (calling `Code.ensure_loaded/1` first) and, on hit, return the AST extracted from beam debug_info. Source-file AST lookup is invoked only when the beam lookup misses or beam debug_info is not present.",
+        "subject_id": "specled.binding"
+      },
+      {
+        "file": ".spec/specs/binding.spec.md",
+        "id": "specled.binding.resolve_sees_use_generated",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "Binding.resolve/2 shall return `{:ok, ast}` for functions injected by `use`-based macros (e.g. DSLs that emit callbacks), because beam debug_info reflects post-expansion bytecode that source-only traversal would miss.",
         "subject_id": "specled.binding"
       },
       {
@@ -1211,6 +1241,30 @@
       },
       {
         "file": ".spec/specs/modal_class.spec.md",
+        "id": "specled.modal_class.classify_must",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "ModalClass.classify/1 shall return `:must` when the statement contains a MUST modal verb in imperative position (e.g. `The system MUST reject invalid input.`).",
+        "subject_id": "specled.modal_class"
+      },
+      {
+        "file": ".spec/specs/modal_class.spec.md",
+        "id": "specled.modal_class.classify_none",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "ModalClass.classify/1 shall return `:none` when the statement contains no recognized modal verb (e.g. `The system logs a warning.`).",
+        "subject_id": "specled.modal_class"
+      },
+      {
+        "file": ".spec/specs/modal_class.spec.md",
+        "id": "specled.modal_class.classify_should",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "ModalClass.classify/1 shall return `:should` when the statement contains a SHOULD modal verb in imperative position (e.g. `The system should log a warning.`).",
+        "subject_id": "specled.modal_class"
+      },
+      {
+        "file": ".spec/specs/modal_class.spec.md",
         "id": "specled.modal_class.classify_total",
         "priority": "must",
         "stability": "stable",
@@ -1219,10 +1273,18 @@
       },
       {
         "file": ".spec/specs/modal_class.spec.md",
-        "id": "specled.modal_class.cross_polarity_conservative",
+        "id": "specled.modal_class.cross_polarity_negative_to_positive_is_not_downgrade",
         "priority": "must",
         "stability": "evolving",
-        "statement": "ModalClass.downgrade?/2 shall classify every positive-family modal (`:must`, `:shall`, `:should`, `:may`) to negative-family modal (`:must_not`, `:shall_not`) transition as downgrade true (conservative), and every negative-family to positive-family transition as downgrade false; the negative-to-positive polarity loss is caught by the separate `specled.append_only.negative_removed` detector through the `polarity` field, and keeping the asymmetry here is what lets the relation remain monotonic per `specled.modal_class.downgrade_monotonic`.",
+        "statement": "ModalClass.downgrade?/2 shall return false for every negative-family to positive-family transition; the negative-to-positive polarity loss is caught by the separate `specled.append_only.negative_removed` detector through the `polarity` field, and keeping this asymmetry is what lets the relation remain monotonic per `specled.modal_class.downgrade_monotonic`.",
+        "subject_id": "specled.modal_class"
+      },
+      {
+        "file": ".spec/specs/modal_class.spec.md",
+        "id": "specled.modal_class.cross_polarity_positive_to_negative_is_downgrade",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "ModalClass.downgrade?/2 shall return true for every positive-family modal (`:must`, `:shall`, `:should`, `:may`) to negative-family modal (`:must_not`, `:shall_not`) transition (conservative: any polarity flip from positive to negative is treated as a downgrade).",
         "subject_id": "specled.modal_class"
       },
       {
@@ -1235,10 +1297,26 @@
       },
       {
         "file": ".spec/specs/modal_class.spec.md",
+        "id": "specled.modal_class.downgrade_must_to_weaker",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "ModalClass.downgrade?/2 shall return true when the prior modal is stronger in the positive family than the current modal (e.g. `:must` -> `:should`, `:must` -> `:may`, `:must` -> `:none`).",
+        "subject_id": "specled.modal_class"
+      },
+      {
+        "file": ".spec/specs/modal_class.spec.md",
         "id": "specled.modal_class.downgrade_total",
         "priority": "must",
         "stability": "stable",
         "statement": "ModalClass.downgrade?/2 shall be total over the full modal × modal Cartesian product (49 pairs) and shall return a boolean without raising.",
+        "subject_id": "specled.modal_class"
+      },
+      {
+        "file": ".spec/specs/modal_class.spec.md",
+        "id": "specled.modal_class.downgrade_weaker_to_stronger_is_false",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "ModalClass.downgrade?/2 shall return false when the prior modal is weaker than the current modal within the same polarity family (e.g. `:should` -> `:must` is an upgrade, not a downgrade).",
         "subject_id": "specled.modal_class"
       },
       {
@@ -1363,6 +1441,22 @@
       },
       {
         "file": ".spec/specs/parser.spec.md",
+        "id": "specled.parser.resilient_on_decode_error",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "The parser shall record a parse error and continue (not crash) when a structured block contains malformed YAML/JSON that cannot be decoded.",
+        "subject_id": "specled.parser"
+      },
+      {
+        "file": ".spec/specs/parser.spec.md",
+        "id": "specled.parser.resilient_on_duplicate_block",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "The parser shall record a duplicate-block parse error and continue (not crash) when the same structured block kind appears more than once in a single spec file.",
+        "subject_id": "specled.parser"
+      },
+      {
+        "file": ".spec/specs/parser.spec.md",
         "id": "specled.parser.standard_blocks",
         "priority": "must",
         "stability": "stable",
@@ -1414,7 +1508,15 @@
         "id": "specled.policy_files.priv_defaults_to_lib",
         "priority": "must",
         "stability": "evolving",
-        "statement": "Paths under `priv/` shall classify as `:lib` by default. Only `priv/plts/` shall classify as `:generated`. This preserves existing file-touch semantics on migration files, static assets, and other `priv/` content so that upgrades do not silently lose co-change signal.",
+        "statement": "Paths under `priv/` (excluding the `priv/plts/` carve-out below) shall classify as `:lib` by default. This preserves existing file-touch semantics on migration files, static assets, and other `priv/` content so that upgrades do not silently lose co-change signal.",
+        "subject_id": "specled.policy_files"
+      },
+      {
+        "file": ".spec/specs/policy_files.spec.md",
+        "id": "specled.policy_files.priv_plts_is_generated",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "Paths under `priv/plts/` shall classify as `:generated`, carving the dialyzer PLT cache out of the default priv -> :lib rule so regenerated PLT artifacts do not trigger co-change gates.",
         "subject_id": "specled.policy_files"
       },
       {
@@ -1475,10 +1577,18 @@
       },
       {
         "file": ".spec/specs/realized_by.spec.md",
-        "id": "specled.realized_by.effective_binding_merge",
+        "id": "specled.realized_by.effective_binding_inherits_subject",
         "priority": "must",
         "stability": "evolving",
-        "statement": "SpecLedEx.Realization.EffectiveBinding.for_requirement/2 shall return the merged binding for a requirement: per tier, the requirement value replaces the subject value if set; otherwise the subject value is used. Tiers not set by either layer shall be absent from the return value.",
+        "statement": "When a requirement declares no `realized_by` tiers, EffectiveBinding. for_requirement/2 shall return the subject-level binding verbatim for every tier the subject declares, and shall omit tiers the subject does not declare.",
+        "subject_id": "specled.realized_by"
+      },
+      {
+        "file": ".spec/specs/realized_by.spec.md",
+        "id": "specled.realized_by.effective_binding_requirement_replaces_tier",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "When a requirement declares a `realized_by` value for a tier, that value shall replace (not merge into) the subject-level value for that tier in the returned binding, while tiers the requirement does not set fall through to the subject value.",
         "subject_id": "specled.realized_by"
       },
       {
@@ -1547,10 +1657,18 @@
       },
       {
         "file": ".spec/specs/spec_drift_trailer.spec.md",
+        "id": "specled.spec_drift_trailer.parse_unknown_token_warns",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "SpecLedEx.BranchCheck.Trailer.parse/1 shall ignore unknown trailer tokens (producing no override for them) and report each unknown token via a `:warnings` list on the return value, so mistyped trailers do not silently fail.",
+        "subject_id": "specled.spec_drift_trailer"
+      },
+      {
+        "file": ".spec/specs/spec_drift_trailer.spec.md",
         "id": "specled.spec_drift_trailer.parse_vocabulary",
         "priority": "must",
         "stability": "evolving",
-        "statement": "SpecLedEx.BranchCheck.Trailer.parse/1 shall accept the trailer values `refactor`, `docs_only`, `test_only`, and severity-coded forms `<code>=<severity>` (e.g., `branch_guard_realization_drift=info`) and return a structured override map keyed by finding code. Unknown tokens shall be ignored and reported via a :warnings list so mistyped trailers do not silently fail.",
+        "statement": "SpecLedEx.BranchCheck.Trailer.parse/1 shall accept the trailer values `refactor`, `docs_only`, `test_only`, and severity-coded forms `<code>=<severity>` (e.g., `branch_guard_realization_drift=info`) and return a structured override map keyed by finding code.",
         "subject_id": "specled.spec_drift_trailer"
       },
       {
@@ -1611,6 +1729,30 @@
       },
       {
         "file": ".spec/specs/tag_scanning.spec.md",
+        "id": "specled.tag_scanning.form_keyword_list",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "The tag scanner shall extract the `spec:` entry of a keyword-list `@tag [spec: \"<id>\", ...]` annotation and ignore every non-`spec` key in that keyword list.",
+        "subject_id": "specled.tag_scanning"
+      },
+      {
+        "file": ".spec/specs/tag_scanning.spec.md",
+        "id": "specled.tag_scanning.form_list_of_ids",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "The tag scanner shall extract every id from an `@tag spec` whose value is a list of string literals and link all of them to the following test name.",
+        "subject_id": "specled.tag_scanning"
+      },
+      {
+        "file": ".spec/specs/tag_scanning.spec.md",
+        "id": "specled.tag_scanning.form_string_literal",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "The tag scanner shall extract a single requirement id from an `@tag spec, \"<id>\"` annotation carrying a string literal value and link it to the following test name.",
+        "subject_id": "specled.tag_scanning"
+      },
+      {
+        "file": ".spec/specs/tag_scanning.spec.md",
         "id": "specled.tag_scanning.ignored_non_spec_tags",
         "priority": "must",
         "stability": "evolving",
@@ -1659,6 +1801,30 @@
       },
       {
         "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "id": "specled.tagged_tests.build_command_combines_backed_ids",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "build_command/2 shall, when given cover ids all backed by the tag map, produce a single `mix test` command line that begins with `mix test`, includes exactly one `--only spec:<id>` flag per id, and appends each unique backing test file exactly once.",
+        "subject_id": "specled.tagged_tests"
+      },
+      {
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "id": "specled.tagged_tests.build_command_drops_unbacked_ids",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "build_command/2 shall omit any cover id not backed by the tag map from the emitted command (no `--only spec:<id>` flag and no file reference), while still emitting flags and files for the backed ids.",
+        "subject_id": "specled.tagged_tests"
+      },
+      {
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "id": "specled.tagged_tests.build_command_no_tests_when_all_unbacked",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "build_command/2 shall return the atom `:no_tests` when none of the requested cover ids have an entry in the tag map, so the caller can short-circuit execution without building an empty command.",
+        "subject_id": "specled.tagged_tests"
+      },
+      {
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
         "id": "specled.tagged_tests.collect_entries",
         "priority": "must",
         "stability": "evolving",
@@ -1679,6 +1845,22 @@
         "priority": "must",
         "stability": "evolving",
         "statement": "The verifier shall emit a `tagged_tests_cover_missing_tag` warning for every cover id declared on a `tagged_tests` verification that has no entry in the tag map, so silent gaps between specs and tagged tests surface during spec.check.",
+        "subject_id": "specled.tagged_tests"
+      },
+      {
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "id": "specled.tagged_tests.strength_claimed_on_untagged_cover",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "A `tagged_tests` claim whose cover id has no entry in the tag map shall remain at `claimed` strength, independent of any aggregated run outcome.",
+        "subject_id": "specled.tagged_tests"
+      },
+      {
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "id": "specled.tagged_tests.strength_executed_on_green_run",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "A `tagged_tests` claim whose cover ids are all backed by the tag map and whose aggregated `mix test` run exits zero shall be reported at `executed` strength (the strongest tagged_tests strength tier).",
         "subject_id": "specled.tagged_tests"
       },
       {
@@ -1742,7 +1924,15 @@
         "id": "specled.triangulation.untethered_test",
         "priority": "must",
         "stability": "evolving",
-        "statement": "When a test carries `@tag spec: \"A.req\"` but its coverage records exercise only MFAs owned by subject `B` (not `A`), a `branch_guard_untethered_test` finding shall name the test file, the tag, and the observed owner. Default severity is `:info`. Per-test opt-out shall be `@tag spec_triangulation: :indirect`.",
+        "statement": "When a test carries `@tag spec: \"A.req\"` but its coverage records exercise only MFAs owned by subject `B` (not `A`), a `branch_guard_untethered_test` finding shall name the test file, the tag, and the observed owner. Default severity is `:info`.",
+        "subject_id": "specled.triangulation"
+      },
+      {
+        "file": ".spec/specs/triangulation.spec.md",
+        "id": "specled.triangulation.untethered_test_opt_out",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "A test that would otherwise trigger `branch_guard_untethered_test` shall be suppressed (no finding emitted for it) when the test carries `@tag spec_triangulation: :indirect`, providing an explicit per-test opt-out for intentional indirect coverage.",
         "subject_id": "specled.triangulation"
       },
       {
@@ -1791,6 +1981,30 @@
         "priority": "must",
         "stability": "stable",
         "statement": "Command verifications shall capture output via temp files and wait for process exit status, not pipe EOF. Commands shall run under a configurable timeout (default 120s). Output and exit code files shall be cleaned up even if reading fails.\n",
+        "subject_id": "specled.verification"
+      },
+      {
+        "file": ".spec/specs/verification.spec.md",
+        "id": "specled.verify.command_exit_code_recorded",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "Command verifications shall record the spawned process's exact exit code on the result, and a non-zero exit code shall mark the verification as failed.\n",
+        "subject_id": "specled.verification"
+      },
+      {
+        "file": ".spec/specs/verification.spec.md",
+        "id": "specled.verify.command_output_via_tempfile",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "Command verifications shall capture stdout+stderr via a temp file and wait for process exit status (not pipe EOF) so that large outputs and flushing semantics do not corrupt or truncate the captured text, and temp files shall be removed after the result is read.\n",
+        "subject_id": "specled.verification"
+      },
+      {
+        "file": ".spec/specs/verification.spec.md",
+        "id": "specled.verify.command_timeout_enforced",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "Command verifications shall run under a configurable timeout (default 120s). When the timeout elapses, the spawned process shall be killed and a non-zero exit code shall be recorded on the result.\n",
         "subject_id": "specled.verification"
       },
       {
@@ -2029,7 +2243,7 @@
       },
       {
         "covers": [
-          "specled.append_only.requirement_deleted"
+          "specled.append_only.requirement_deleted_authorized"
         ],
         "file": ".spec/specs/append_only.spec.md",
         "given": [
@@ -2358,7 +2572,7 @@
       },
       {
         "covers": [
-          "specled.binding.canonical_strips_positions"
+          "specled.binding.canonical_reserved_idents_preserved"
         ],
         "file": ".spec/specs/binding.spec.md",
         "given": [
@@ -2375,7 +2589,7 @@
       },
       {
         "covers": [
-          "specled.binding.resolve_beam_first"
+          "specled.binding.resolve_sees_use_generated"
         ],
         "file": ".spec/specs/binding.spec.md",
         "given": [
@@ -2868,6 +3082,24 @@
       },
       {
         "covers": [
+          "specled.modal_class.classify_total"
+        ],
+        "file": ".spec/specs/modal_class.spec.md",
+        "given": [
+          "a sample of arbitrary binary strings including empty string, whitespace-only, and non-modal prose"
+        ],
+        "id": "specled.modal_class.scenario.classify_totality",
+        "subject_id": "specled.modal_class",
+        "then": [
+          "every return value is an atom in the closed set {:must, :shall, :must_not, :shall_not, :should, :may, :none}",
+          "no invocation raises"
+        ],
+        "when": [
+          "SpecLedEx.ModalClass.classify/1 is invoked on each"
+        ]
+      },
+      {
+        "covers": [
           "specled.modal_class.classify_deterministic"
         ],
         "file": ".spec/specs/modal_class.spec.md",
@@ -2885,7 +3117,25 @@
       },
       {
         "covers": [
-          "specled.modal_class.classify_total"
+          "specled.modal_class.downgrade_total"
+        ],
+        "file": ".spec/specs/modal_class.spec.md",
+        "given": [
+          "the full modal × modal Cartesian product (49 pairs) enumerated"
+        ],
+        "id": "specled.modal_class.scenario.downgrade_totality",
+        "subject_id": "specled.modal_class",
+        "then": [
+          "every return value is a boolean",
+          "no invocation raises"
+        ],
+        "when": [
+          "SpecLedEx.ModalClass.downgrade?/2 is invoked on each pair"
+        ]
+      },
+      {
+        "covers": [
+          "specled.modal_class.classify_must"
         ],
         "file": ".spec/specs/modal_class.spec.md",
         "given": [
@@ -2902,7 +3152,7 @@
       },
       {
         "covers": [
-          "specled.modal_class.cross_polarity_conservative"
+          "specled.modal_class.cross_polarity_negative_to_positive_is_not_downgrade"
         ],
         "file": ".spec/specs/modal_class.spec.md",
         "given": [
@@ -2919,7 +3169,7 @@
       },
       {
         "covers": [
-          "specled.modal_class.cross_polarity_conservative"
+          "specled.modal_class.cross_polarity_positive_to_negative_is_downgrade"
         ],
         "file": ".spec/specs/modal_class.spec.md",
         "given": [
@@ -2936,7 +3186,7 @@
       },
       {
         "covers": [
-          "specled.modal_class.downgrade_total"
+          "specled.modal_class.downgrade_must_to_weaker"
         ],
         "file": ".spec/specs/modal_class.spec.md",
         "given": [
@@ -2953,7 +3203,7 @@
       },
       {
         "covers": [
-          "specled.modal_class.classify_total"
+          "specled.modal_class.classify_none"
         ],
         "file": ".spec/specs/modal_class.spec.md",
         "given": [
@@ -2970,7 +3220,7 @@
       },
       {
         "covers": [
-          "specled.modal_class.classify_total",
+          "specled.modal_class.classify_should",
           "specled.modal_class.classify_case_and_punctuation_insensitive"
         ],
         "file": ".spec/specs/modal_class.spec.md",
@@ -2988,7 +3238,7 @@
       },
       {
         "covers": [
-          "specled.modal_class.downgrade_total"
+          "specled.modal_class.downgrade_weaker_to_stronger_is_false"
         ],
         "file": ".spec/specs/modal_class.spec.md",
         "given": [
@@ -3109,7 +3359,7 @@
       },
       {
         "covers": [
-          "specled.parser.resilient_errors"
+          "specled.parser.resilient_on_duplicate_block"
         ],
         "file": ".spec/specs/parser.spec.md",
         "given": [
@@ -3146,7 +3396,7 @@
       },
       {
         "covers": [
-          "specled.parser.resilient_errors"
+          "specled.parser.resilient_on_decode_error"
         ],
         "file": ".spec/specs/parser.spec.md",
         "given": [
@@ -3160,6 +3410,42 @@
         ],
         "when": [
           "the parser processes the file"
+        ]
+      },
+      {
+        "covers": [
+          "specled.parser.resilient_errors"
+        ],
+        "file": ".spec/specs/parser.spec.md",
+        "given": [
+          "a spec file containing a structured block that cannot be decoded, and elsewhere a duplicated structured block"
+        ],
+        "id": "specled.parser.resilient_errors_totality",
+        "subject_id": "specled.parser",
+        "then": [
+          "the result includes parse errors for both failure modes",
+          "the parser does not crash and continues to extract well-formed blocks"
+        ],
+        "when": [
+          "the parser processes the file"
+        ]
+      },
+      {
+        "covers": [
+          "specled.policy_files.classify_kinds"
+        ],
+        "file": ".spec/specs/policy_files.spec.md",
+        "given": [
+          "a representative set of repo-relative paths drawn from lib/, test/, priv/, priv/plts/, docs/, README, and arbitrary unrecognized paths"
+        ],
+        "id": "specled.policy_files.scenario.classify_totality",
+        "subject_id": "specled.policy_files",
+        "then": [
+          "every return value is an atom in the closed set {:lib, :test, :doc, :generated, :unknown}",
+          "no invocation returns `nil` or raises"
+        ],
+        "when": [
+          "SpecLedEx.PolicyFiles.classify/1 is called on each"
         ]
       },
       {
@@ -3182,7 +3468,7 @@
       },
       {
         "covers": [
-          "specled.policy_files.priv_defaults_to_lib"
+          "specled.policy_files.priv_plts_is_generated"
         ],
         "file": ".spec/specs/policy_files.spec.md",
         "given": [
@@ -3199,8 +3485,7 @@
       },
       {
         "covers": [
-          "specled.policy_files.priv_defaults_to_lib",
-          "specled.policy_files.classify_kinds"
+          "specled.policy_files.priv_defaults_to_lib"
         ],
         "file": ".spec/specs/policy_files.spec.md",
         "given": [
@@ -3217,7 +3502,6 @@
       },
       {
         "covers": [
-          "specled.policy_files.classify_kinds",
           "specled.policy_files.co_change_rule_total"
         ],
         "file": ".spec/specs/policy_files.spec.md",
@@ -3292,7 +3576,7 @@
       {
         "covers": [
           "specled.realized_by.requirement_override",
-          "specled.realized_by.effective_binding_merge"
+          "specled.realized_by.effective_binding_requirement_replaces_tier"
         ],
         "file": ".spec/specs/realized_by.spec.md",
         "given": [
@@ -3311,7 +3595,7 @@
       },
       {
         "covers": [
-          "specled.realized_by.effective_binding_merge"
+          "specled.realized_by.effective_binding_inherits_subject"
         ],
         "file": ".spec/specs/realized_by.spec.md",
         "given": [
@@ -3425,7 +3709,7 @@
       },
       {
         "covers": [
-          "specled.spec_drift_trailer.parse_vocabulary"
+          "specled.spec_drift_trailer.parse_unknown_token_warns"
         ],
         "file": ".spec/specs/spec_drift_trailer.spec.md",
         "given": [
@@ -3460,7 +3744,7 @@
       },
       {
         "covers": [
-          "specled.tag_scanning.supported_forms"
+          "specled.tag_scanning.form_keyword_list"
         ],
         "file": ".spec/specs/tag_scanning.spec.md",
         "given": [
@@ -3478,7 +3762,7 @@
       },
       {
         "covers": [
-          "specled.tag_scanning.supported_forms"
+          "specled.tag_scanning.form_list_of_ids"
         ],
         "file": ".spec/specs/tag_scanning.spec.md",
         "given": [
@@ -3495,7 +3779,7 @@
       },
       {
         "covers": [
-          "specled.tag_scanning.supported_forms"
+          "specled.tag_scanning.form_string_literal"
         ],
         "file": ".spec/specs/tag_scanning.spec.md",
         "given": [
@@ -3583,7 +3867,7 @@
       },
       {
         "covers": [
-          "specled.tagged_tests.build_command"
+          "specled.tagged_tests.build_command_combines_backed_ids"
         ],
         "file": ".spec/specs/tagged_tests_verification.spec.md",
         "given": [
@@ -3602,7 +3886,7 @@
       },
       {
         "covers": [
-          "specled.tagged_tests.build_command"
+          "specled.tagged_tests.build_command_drops_unbacked_ids"
         ],
         "file": ".spec/specs/tagged_tests_verification.spec.md",
         "given": [
@@ -3620,7 +3904,7 @@
       },
       {
         "covers": [
-          "specled.tagged_tests.build_command"
+          "specled.tagged_tests.build_command_no_tests_when_all_unbacked"
         ],
         "file": ".spec/specs/tagged_tests_verification.spec.md",
         "given": [
@@ -3657,7 +3941,7 @@
       {
         "covers": [
           "specled.tagged_tests.merged_run_attribution",
-          "specled.tagged_tests.strength_progression"
+          "specled.tagged_tests.strength_executed_on_green_run"
         ],
         "file": ".spec/specs/tagged_tests_verification.spec.md",
         "given": [
@@ -3679,7 +3963,7 @@
       {
         "covers": [
           "specled.tagged_tests.missing_tag_finding",
-          "specled.tagged_tests.strength_progression"
+          "specled.tagged_tests.strength_claimed_on_untagged_cover"
         ],
         "file": ".spec/specs/tagged_tests_verification.spec.md",
         "given": [
@@ -3716,7 +4000,7 @@
       },
       {
         "covers": [
-          "specled.triangulation.untethered_test"
+          "specled.triangulation.untethered_test_opt_out"
         ],
         "file": ".spec/specs/triangulation.spec.md",
         "given": [
@@ -3754,8 +4038,7 @@
       },
       {
         "covers": [
-          "specled.triangulation.untethered_test",
-          "specled.triangulation.pure_function"
+          "specled.triangulation.untethered_test"
         ],
         "file": ".spec/specs/triangulation.spec.md",
         "given": [
@@ -3854,7 +4137,7 @@
       },
       {
         "covers": [
-          "specled.verify.command_execution_resilience"
+          "specled.verify.command_output_via_tempfile"
         ],
         "file": ".spec/specs/verification.spec.md",
         "given": [
@@ -3873,7 +4156,7 @@
       },
       {
         "covers": [
-          "specled.verify.command_execution_resilience"
+          "specled.verify.command_exit_code_recorded"
         ],
         "file": ".spec/specs/verification.spec.md",
         "given": [
@@ -3891,7 +4174,7 @@
       },
       {
         "covers": [
-          "specled.verify.command_execution_resilience"
+          "specled.verify.command_timeout_enforced"
         ],
         "file": ".spec/specs/verification.spec.md",
         "given": [
@@ -4131,7 +4414,10 @@
           "surface": [
             "lib/specled_ex/branch_check.ex",
             "lib/specled_ex/coverage.ex",
-            "lib/mix/tasks/spec.check.ex"
+            "lib/mix/tasks/spec.check.ex",
+            "lib/specled_ex/config/branch_guard.ex",
+            "test/specled_ex/config/branch_guard_test.exs",
+            "test/specled_ex/branch_check/load_prior_state_test.exs"
           ],
           "verification_minimum_strength": null
         },
@@ -4177,7 +4463,8 @@
             "test/specled_ex/compiler/tracer_test.exs",
             "test/specled_ex/compiler/xref_test.exs",
             "mix.exs",
-            "test/fixtures/sample_project/mix.exs"
+            "test/fixtures/sample_project/mix.exs",
+            "test/fixtures/sample_project/.gitignore"
           ],
           "verification_minimum_strength": null
         },
@@ -4271,7 +4558,9 @@
             "lib/specled_ex/realization/typespecs.ex",
             "test/specled_ex/realization/expanded_behavior_test.exs",
             "test/specled_ex/realization/typespecs_test.exs",
-            "test/fixtures/sample_project/lib/sample_project/no_debug.ex"
+            "test/fixtures/sample_project/lib/sample_project/no_debug.ex",
+            "test/fixtures/sample_project/lib/sample.ex",
+            "test/integration/mixed_debug_info_fixture_test.exs"
           ],
           "verification_minimum_strength": null
         },
@@ -4348,6 +4637,7 @@
             "lib/specled_ex/prime.ex",
             "priv/spec_init/agents/skills/spec-led-development/SKILL.md.eex",
             "priv/spec_init/specs/spec_system.spec.md.eex",
+            "priv/spec_init/specs/package.spec.md.eex",
             "skills/write-spec-led-specs/references/authoring-reference.md",
             "test_support/specled_ex_case.ex"
           ],
@@ -4444,7 +4734,8 @@
             "README.md",
             "CHANGELOG.md",
             "mix.exs",
-            "lib/specled_ex.ex"
+            "lib/specled_ex.ex",
+            "test/test_helper.exs"
           ],
           "verification_minimum_strength": null
         },
@@ -4547,6 +4838,7 @@
             "lib/specled_ex/schema/requirement.ex",
             "lib/specled_ex/parser.ex",
             "lib/specled_ex/realization/effective_binding.ex",
+            "lib/specled_ex/config/realization.ex",
             "test/specled_ex/parser_test.exs",
             "test/specled_ex/realization/effective_binding_test.exs"
           ],
@@ -4566,7 +4858,8 @@
           "summary": "Resolves severity per finding from trailer overrides, config map, and per-code defaults.",
           "surface": [
             "lib/specled_ex/branch_check/severity.ex",
-            "test/specled_ex/branch_check/severity_test.exs"
+            "test/specled_ex/branch_check/severity_test.exs",
+            "test/specled_ex/branch_check/severity_integration_test.exs"
           ],
           "verification_minimum_strength": null
         },
@@ -4838,6 +5131,7 @@
       {
         "covers": [
           "specled.append_only.requirement_deleted",
+          "specled.append_only.requirement_deleted_authorized",
           "specled.append_only.must_downgraded",
           "specled.append_only.scenario_regression",
           "specled.append_only.negative_removed",
@@ -4860,6 +5154,7 @@
       {
         "covers": [
           "specled.append_only.requirement_deleted",
+          "specled.append_only.requirement_deleted_authorized",
           "specled.append_only.must_downgraded",
           "specled.append_only.scenario_regression",
           "specled.append_only.negative_removed",
@@ -4879,6 +5174,7 @@
       {
         "covers": [
           "specled.binding.resolve_beam_first",
+          "specled.binding.resolve_sees_use_generated",
           "specled.binding.dangling_reported"
         ],
         "execute": true,
@@ -4890,6 +5186,7 @@
       {
         "covers": [
           "specled.binding.canonical_strips_positions",
+          "specled.binding.canonical_reserved_idents_preserved",
           "specled.binding.canonical_deterministic_bytes"
         ],
         "execute": true,
@@ -5249,11 +5546,17 @@
       {
         "covers": [
           "specled.modal_class.classify_total",
+          "specled.modal_class.classify_must",
+          "specled.modal_class.classify_should",
+          "specled.modal_class.classify_none",
           "specled.modal_class.classify_deterministic",
           "specled.modal_class.classify_case_and_punctuation_insensitive",
           "specled.modal_class.downgrade_total",
+          "specled.modal_class.downgrade_must_to_weaker",
+          "specled.modal_class.downgrade_weaker_to_stronger_is_false",
           "specled.modal_class.downgrade_monotonic",
-          "specled.modal_class.cross_polarity_conservative"
+          "specled.modal_class.cross_polarity_positive_to_negative_is_downgrade",
+          "specled.modal_class.cross_polarity_negative_to_positive_is_not_downgrade"
         ],
         "execute": true,
         "file": ".spec/specs/modal_class.spec.md",
@@ -5346,6 +5649,8 @@
           "specled.parser.standard_blocks",
           "specled.parser.title_extraction",
           "specled.parser.resilient_errors",
+          "specled.parser.resilient_on_decode_error",
+          "specled.parser.resilient_on_duplicate_block",
           "specled.parser.info_string_tokens"
         ],
         "execute": true,
@@ -5358,6 +5663,7 @@
         "covers": [
           "specled.policy_files.classify_kinds",
           "specled.policy_files.priv_defaults_to_lib",
+          "specled.policy_files.priv_plts_is_generated",
           "specled.policy_files.plan_docs_excluded",
           "specled.policy_files.co_change_rule_total",
           "specled.policy_files.change_analysis_delegates"
@@ -5408,7 +5714,8 @@
       },
       {
         "covers": [
-          "specled.realized_by.effective_binding_merge"
+          "specled.realized_by.effective_binding_inherits_subject",
+          "specled.realized_by.effective_binding_requirement_replaces_tier"
         ],
         "execute": true,
         "file": ".spec/specs/realized_by.spec.md",
@@ -5432,6 +5739,7 @@
       {
         "covers": [
           "specled.spec_drift_trailer.parse_vocabulary",
+          "specled.spec_drift_trailer.parse_unknown_token_warns",
           "specled.spec_drift_trailer.scans_base_to_head",
           "specled.spec_drift_trailer.self_report_documented"
         ],
@@ -5456,6 +5764,9 @@
       {
         "covers": [
           "specled.tag_scanning.supported_forms",
+          "specled.tag_scanning.form_string_literal",
+          "specled.tag_scanning.form_keyword_list",
+          "specled.tag_scanning.form_list_of_ids",
           "specled.tag_scanning.scan_aggregates_results",
           "specled.tag_scanning.parse_errors_surfaced",
           "specled.tag_scanning.dynamic_values_reported",
@@ -5473,8 +5784,13 @@
         "covers": [
           "specled.tagged_tests.collect_entries",
           "specled.tagged_tests.build_command",
+          "specled.tagged_tests.build_command_combines_backed_ids",
+          "specled.tagged_tests.build_command_drops_unbacked_ids",
+          "specled.tagged_tests.build_command_no_tests_when_all_unbacked",
           "specled.tagged_tests.merged_run_attribution",
           "specled.tagged_tests.strength_progression",
+          "specled.tagged_tests.strength_executed_on_green_run",
+          "specled.tagged_tests.strength_claimed_on_untagged_cover",
           "specled.tagged_tests.missing_tag_finding"
         ],
         "execute": true,
@@ -5488,6 +5804,7 @@
           "specled.triangulation.pure_function",
           "specled.triangulation.untested_realization",
           "specled.triangulation.untethered_test",
+          "specled.triangulation.untethered_test_opt_out",
           "specled.triangulation.underspecified_realization",
           "specled.triangulation.execution_reach_metric",
           "specled.triangulation.detector_unavailable_on_missing_coverage"
@@ -5510,7 +5827,8 @@
       },
       {
         "covers": [
-          "specled.triangulation.untethered_test"
+          "specled.triangulation.untethered_test",
+          "specled.triangulation.untethered_test_opt_out"
         ],
         "execute": true,
         "file": ".spec/specs/triangulation.spec.md",
@@ -5569,7 +5887,10 @@
           "specled.verify.malformed_entries_nonfatal",
           "specled.verify.decision_governance",
           "specled.verify.strength_semantics",
-          "specled.verify.command_execution_resilience"
+          "specled.verify.command_execution_resilience",
+          "specled.verify.command_output_via_tempfile",
+          "specled.verify.command_timeout_enforced",
+          "specled.verify.command_exit_code_recorded"
         ],
         "execute": true,
         "file": ".spec/specs/verification.spec.md",
@@ -5597,11 +5918,11 @@
   "specification_version": "1.0",
   "summary": {
     "decision_parse_errors": 0,
-    "decisions": 23,
+    "decisions": 24,
     "exceptions": 0,
     "findings": 0,
-    "requirements": 196,
-    "scenarios": 115,
+    "requirements": 222,
+    "scenarios": 119,
     "subjects": 32,
     "verifications": 69
   },
@@ -5905,6 +6226,17 @@
         "verification_index": 0
       },
       {
+        "cover_id": "specled.append_only.requirement_deleted_authorized",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.append_only",
+        "target": "mix test test/specled_ex/append_only_test.exs",
+        "verification_index": 0
+      },
+      {
         "cover_id": "specled.append_only.same_pr_self_authorization",
         "file": ".spec/specs/append_only.spec.md",
         "kind": "command",
@@ -6015,6 +6347,17 @@
         "verification_index": 1
       },
       {
+        "cover_id": "specled.append_only.requirement_deleted_authorized",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.append_only",
+        "target": "lib/specled_ex/append_only.ex",
+        "verification_index": 1
+      },
+      {
         "cover_id": "specled.append_only.same_pr_self_authorization",
         "file": ".spec/specs/append_only.spec.md",
         "kind": "source_file",
@@ -6059,7 +6402,29 @@
         "verification_index": 0
       },
       {
+        "cover_id": "specled.binding.resolve_sees_use_generated",
+        "file": ".spec/specs/binding.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.binding",
+        "target": "mix test test/specled_ex/realization/binding_test.exs",
+        "verification_index": 0
+      },
+      {
         "cover_id": "specled.binding.canonical_deterministic_bytes",
+        "file": ".spec/specs/binding.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.binding",
+        "target": "mix test test/specled_ex/realization/canonical_test.exs",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.binding.canonical_reserved_idents_preserved",
         "file": ".spec/specs/binding.spec.md",
         "kind": "command",
         "meets_minimum": true,
@@ -7060,6 +7425,39 @@
         "verification_index": 0
       },
       {
+        "cover_id": "specled.modal_class.classify_must",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.modal_class",
+        "target": "mix test test/specled_ex/modal_class_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.modal_class.classify_none",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.modal_class",
+        "target": "mix test test/specled_ex/modal_class_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.modal_class.classify_should",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.modal_class",
+        "target": "mix test test/specled_ex/modal_class_test.exs",
+        "verification_index": 0
+      },
+      {
         "cover_id": "specled.modal_class.classify_total",
         "file": ".spec/specs/modal_class.spec.md",
         "kind": "command",
@@ -7071,7 +7469,18 @@
         "verification_index": 0
       },
       {
-        "cover_id": "specled.modal_class.cross_polarity_conservative",
+        "cover_id": "specled.modal_class.cross_polarity_negative_to_positive_is_not_downgrade",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.modal_class",
+        "target": "mix test test/specled_ex/modal_class_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.modal_class.cross_polarity_positive_to_negative_is_downgrade",
         "file": ".spec/specs/modal_class.spec.md",
         "kind": "command",
         "meets_minimum": true,
@@ -7093,7 +7502,29 @@
         "verification_index": 0
       },
       {
+        "cover_id": "specled.modal_class.downgrade_must_to_weaker",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.modal_class",
+        "target": "mix test test/specled_ex/modal_class_test.exs",
+        "verification_index": 0
+      },
+      {
         "cover_id": "specled.modal_class.downgrade_total",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.modal_class",
+        "target": "mix test test/specled_ex/modal_class_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.modal_class.downgrade_weaker_to_stronger_is_false",
         "file": ".spec/specs/modal_class.spec.md",
         "kind": "command",
         "meets_minimum": true,
@@ -7324,6 +7755,28 @@
         "verification_index": 0
       },
       {
+        "cover_id": "specled.parser.resilient_on_decode_error",
+        "file": ".spec/specs/parser.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.parser",
+        "target": "mix test test/specled_ex/parser_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.parser.resilient_on_duplicate_block",
+        "file": ".spec/specs/parser.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.parser",
+        "target": "mix test test/specled_ex/parser_test.exs",
+        "verification_index": 0
+      },
+      {
         "cover_id": "specled.parser.standard_blocks",
         "file": ".spec/specs/parser.spec.md",
         "kind": "command",
@@ -7391,6 +7844,17 @@
       },
       {
         "cover_id": "specled.policy_files.priv_defaults_to_lib",
+        "file": ".spec/specs/policy_files.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.policy_files",
+        "target": "mix test test/specled_ex/policy_files_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.policy_files.priv_plts_is_generated",
         "file": ".spec/specs/policy_files.spec.md",
         "kind": "command",
         "meets_minimum": true,
@@ -7522,7 +7986,18 @@
         "verification_index": 0
       },
       {
-        "cover_id": "specled.realized_by.effective_binding_merge",
+        "cover_id": "specled.realized_by.effective_binding_inherits_subject",
+        "file": ".spec/specs/realized_by.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.realized_by",
+        "target": "mix test test/specled_ex/realization/effective_binding_test.exs",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.realized_by.effective_binding_requirement_replaces_tier",
         "file": ".spec/specs/realized_by.spec.md",
         "kind": "command",
         "meets_minimum": true,
@@ -7574,6 +8049,17 @@
         "strength": "executed",
         "subject_id": "specled.severity",
         "target": "mix test test/specled_ex/branch_check/severity_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.spec_drift_trailer.parse_unknown_token_warns",
+        "file": ".spec/specs/spec_drift_trailer.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_drift_trailer",
+        "target": "mix test test/specled_ex/branch_check/trailer_test.exs",
         "verification_index": 0
       },
       {
@@ -7665,6 +8151,39 @@
         "verification_index": 0
       },
       {
+        "cover_id": "specled.tag_scanning.form_keyword_list",
+        "file": ".spec/specs/tag_scanning.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tag_scanning",
+        "target": "mix test test/specled_ex/tag_scanner_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tag_scanning.form_list_of_ids",
+        "file": ".spec/specs/tag_scanning.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tag_scanning",
+        "target": "mix test test/specled_ex/tag_scanner_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tag_scanning.form_string_literal",
+        "file": ".spec/specs/tag_scanning.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tag_scanning",
+        "target": "mix test test/specled_ex/tag_scanner_test.exs",
+        "verification_index": 0
+      },
+      {
         "cover_id": "specled.tag_scanning.ignored_non_spec_tags",
         "file": ".spec/specs/tag_scanning.spec.md",
         "kind": "command",
@@ -7731,6 +8250,39 @@
         "verification_index": 0
       },
       {
+        "cover_id": "specled.tagged_tests.build_command_combines_backed_ids",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "claimed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.build_command_drops_unbacked_ids",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "claimed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.build_command_no_tests_when_all_unbacked",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "claimed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
         "cover_id": "specled.tagged_tests.collect_entries",
         "file": ".spec/specs/tagged_tests_verification.spec.md",
         "kind": "tagged_tests",
@@ -7754,6 +8306,28 @@
       },
       {
         "cover_id": "specled.tagged_tests.missing_tag_finding",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "claimed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.strength_claimed_on_untagged_cover",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "claimed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.strength_executed_on_green_run",
         "file": ".spec/specs/tagged_tests_verification.spec.md",
         "kind": "tagged_tests",
         "meets_minimum": true,
@@ -7841,6 +8415,17 @@
         "verification_index": 0
       },
       {
+        "cover_id": "specled.triangulation.untethered_test_opt_out",
+        "file": ".spec/specs/triangulation.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.triangulation",
+        "target": "mix test test/specled_ex/coverage_triangulation_test.exs",
+        "verification_index": 0
+      },
+      {
         "cover_id": "specled.triangulation.pure_function",
         "file": ".spec/specs/triangulation.spec.md",
         "kind": "command",
@@ -7853,6 +8438,17 @@
       },
       {
         "cover_id": "specled.triangulation.untethered_test",
+        "file": ".spec/specs/triangulation.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.triangulation",
+        "target": "mix test test/integration/scenario_mistagged_test_test.exs --include integration",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.triangulation.untethered_test_opt_out",
         "file": ".spec/specs/triangulation.spec.md",
         "kind": "command",
         "meets_minimum": true,
@@ -7930,6 +8526,39 @@
       },
       {
         "cover_id": "specled.verify.command_execution_resilience",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.verify.command_exit_code_recorded",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.verify.command_output_via_tempfile",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.verify.command_timeout_enforced",
         "file": ".spec/specs/verification.spec.md",
         "kind": "command",
         "meets_minimum": true,
@@ -8086,14 +8715,14 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 7,
-      "executed": 184,
-      "linked": 34
+      "claimed": 12,
+      "executed": 206,
+      "linked": 35
     },
     "threshold_failures": 0
   },
   "workspace": {
-    "decision_count": 23,
+    "decision_count": 24,
     "spec_count": 32
   }
 }

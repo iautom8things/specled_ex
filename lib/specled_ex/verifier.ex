@@ -57,7 +57,7 @@ defmodule SpecLedEx.Verifier do
       |> then(fn subject_findings ->
         decision_findings =
           Enum.flat_map(decisions, fn decision ->
-            verify_decision(decision, subject_ids, decision_ids)
+            verify_decision(decision, subject_ids, decision_ids, global_claim_ids)
           end)
 
         subject_findings ++ decision_findings
@@ -639,7 +639,7 @@ defmodule SpecLedEx.Verifier do
 
     decision_checks =
       decisions
-      |> Enum.flat_map(&build_decision_debug_checks(&1, subject_ids, decision_ids))
+      |> Enum.flat_map(&build_decision_debug_checks(&1, subject_ids, decision_ids, global_claim_ids))
 
     global_checks =
       []
@@ -1219,7 +1219,7 @@ defmodule SpecLedEx.Verifier do
     end
   end
 
-  defp build_decision_debug_checks(decision, subject_ids, decision_ids) do
+  defp build_decision_debug_checks(decision, subject_ids, decision_ids, claim_ids) do
     file = string_field(decision, "file")
     meta = decision_meta(decision)
     decision_id = id_of(meta, "id") || file
@@ -1228,7 +1228,7 @@ defmodule SpecLedEx.Verifier do
     |> add_decision_meta_debug_checks(meta, decision_id, file)
     |> add_decision_parse_debug_checks(list_field(decision, "parse_errors"), decision_id, file)
     |> add_decision_section_debug_checks(list_field(decision, "sections"), decision_id, file)
-    |> add_decision_affects_debug_checks(meta, subject_ids, decision_id, file)
+    |> add_decision_affects_debug_checks(meta, subject_ids, claim_ids, decision_id, file)
     |> add_decision_supersession_debug_checks(meta, decision_ids, decision_id, file)
   end
 
@@ -1337,9 +1337,9 @@ defmodule SpecLedEx.Verifier do
     end)
   end
 
-  defp add_decision_affects_debug_checks(checks, meta, subject_ids, decision_id, file) do
+  defp add_decision_affects_debug_checks(checks, meta, subject_ids, claim_ids, decision_id, file) do
     Enum.reduce(list_field(meta, "affects"), checks, fn affect, acc ->
-      if valid_decision_affect?(affect, subject_ids) do
+      if valid_decision_affect?(affect, subject_ids, claim_ids) do
         [check("pass", "decision_affect_valid", "Decision affect valid: #{affect}", decision_id, file) | acc]
       else
         [check("error", "decision_affect_invalid", "Decision affect invalid: #{affect}", decision_id, file) | acc]
@@ -1409,7 +1409,7 @@ defmodule SpecLedEx.Verifier do
     end
   end
 
-  defp verify_decision(decision, subject_ids, decision_ids) do
+  defp verify_decision(decision, subject_ids, decision_ids, claim_ids) do
     file = string_field(decision, "file")
     meta = decision_meta(decision)
     decision_id = id_of(meta, "id") || file
@@ -1418,7 +1418,7 @@ defmodule SpecLedEx.Verifier do
     |> add_decision_meta_findings(meta, decision_id, file)
     |> add_decision_parse_error_findings(list_field(decision, "parse_errors"), decision_id, file)
     |> add_decision_section_findings(list_field(decision, "sections"), decision_id, file)
-    |> add_decision_affects_findings(meta, subject_ids, decision_id, file)
+    |> add_decision_affects_findings(meta, subject_ids, claim_ids, decision_id, file)
     |> add_decision_supersession_findings(meta, decision_ids, decision_id, file)
   end
 
@@ -1517,9 +1517,9 @@ defmodule SpecLedEx.Verifier do
     end)
   end
 
-  defp add_decision_affects_findings(findings, meta, subject_ids, decision_id, file) do
+  defp add_decision_affects_findings(findings, meta, subject_ids, claim_ids, decision_id, file) do
     Enum.reduce(list_field(meta, "affects"), findings, fn affect, acc ->
-      if valid_decision_affect?(affect, subject_ids) do
+      if valid_decision_affect?(affect, subject_ids, claim_ids) do
         acc
       else
         [
@@ -1693,9 +1693,11 @@ defmodule SpecLedEx.Verifier do
     _ -> false
   end
 
-  defp valid_decision_affect?(affect, subject_ids) do
+  defp valid_decision_affect?(affect, subject_ids, claim_ids) do
     is_binary(affect) and affect != "" and
-      (MapSet.member?(subject_ids, affect) or String.starts_with?(affect, "repo."))
+      (MapSet.member?(subject_ids, affect) or
+         MapSet.member?(claim_ids, affect) or
+         String.starts_with?(affect, "repo."))
   end
 
   defp ids_from(items, kind) when is_list(items) do
