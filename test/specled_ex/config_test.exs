@@ -144,6 +144,76 @@ defmodule SpecLedEx.ConfigTest do
     end
   end
 
+  describe "load/2 guardrails.severities" do
+    @tag spec: "specled.config.guardrails_severities"
+    test "parses known severity tokens keyed by finding code", %{root: root} do
+      write_config(root, """
+      guardrails:
+        severities:
+          append_only/requirement_deleted: warning
+          overlap/duplicate_covers: off
+      """)
+
+      config = Config.load(root)
+
+      assert config.guardrails.severities == %{
+               "append_only/requirement_deleted" => :warning,
+               "overlap/duplicate_covers" => :off
+             }
+
+      assert config.branch_guard.severities == %{}
+      assert config.diagnostics == []
+    end
+
+    @tag spec: "specled.config.guardrails_severities"
+    test "drops unknown severity tokens and records a config_warning diagnostic", %{root: root} do
+      write_config(root, """
+      guardrails:
+        severities:
+          overlap/duplicate_covers: panic
+      """)
+
+      config = Config.load(root)
+
+      assert config.guardrails.severities == %{}
+
+      assert Enum.any?(config.diagnostics, fn diag ->
+               diag.kind == :config_warning and
+                 diag.message =~ "overlap/duplicate_covers" and
+                 diag.message =~ "panic"
+             end)
+    end
+
+    @tag spec: "specled.config.guardrails_severities"
+    test "guardrails and branch_guard keep separate namespaces", %{root: root} do
+      write_config(root, """
+      branch_guard:
+        severities:
+          branch_guard_unmapped_change: off
+      guardrails:
+        severities:
+          append_only/requirement_deleted: info
+      """)
+
+      config = Config.load(root)
+
+      assert config.branch_guard.severities == %{"branch_guard_unmapped_change" => :off}
+      assert config.guardrails.severities == %{"append_only/requirement_deleted" => :info}
+      assert config.diagnostics == []
+    end
+
+    @tag spec: "specled.config.guardrails_severities"
+    test "defaults to empty map when `guardrails` key is absent", %{root: root} do
+      write_config(root, """
+      test_tags:
+        enabled: true
+      """)
+
+      config = Config.load(root)
+      assert config.guardrails.severities == %{}
+    end
+  end
+
   describe "mix spec.init scaffolds config.yml" do
     @tag spec: "specled.config.init_scaffolds_config_yml"
     test "writes .spec/config.yml that round-trips through load/2", %{root: root} do

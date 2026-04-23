@@ -49,6 +49,10 @@ decisions:
   statement: mix spec.init shall scaffold a default `.spec/config.yml` alongside the rest of the workspace when one does not already exist.
   priority: must
   stability: evolving
+- id: specled.config.guardrails_severities
+  statement: SpecLedEx.Config shall parse `guardrails.severities` from `.spec/config.yml` as a map of finding code to severity atom (one of `:off`, `:info`, `:warning`, `:error`) and expose it on the returned struct under a `guardrails` field that is distinct from `branch_guard.severities`, with entries whose severity tokens are unknown dropped and recorded as a config_warning diagnostic.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -113,6 +117,17 @@ decisions:
     - the scaffolded YAML parses back to defaults via SpecLedEx.Config.load/2
   covers:
     - specled.config.init_scaffolds_config_yml
+- id: specled.config.scenario.guardrails_severities_parse_and_drop
+  given:
+    - "a `.spec/config.yml` that sets guardrails.severities.append_only/requirement_deleted to warning and guardrails.severities.overlap/duplicate_covers to panic"
+  when:
+    - SpecLedEx.Config.load/2 is called
+  then:
+    - "config.guardrails.severities equals %{\"append_only/requirement_deleted\" => :warning}"
+    - "the panic entry is dropped and a config_warning diagnostic is recorded naming overlap/duplicate_covers and panic"
+    - "config.branch_guard.severities remains its parsed namespace (distinct from guardrails)"
+  covers:
+    - specled.config.guardrails_severities
 ```
 
 ## Verification
@@ -128,4 +143,5 @@ decisions:
     - specled.config.unknown_enforcement_warns
     - specled.config.paths_filtered_to_strings
     - specled.config.init_scaffolds_config_yml
+    - specled.config.guardrails_severities
 ```

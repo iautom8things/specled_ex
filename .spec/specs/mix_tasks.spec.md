@@ -92,6 +92,10 @@ decisions:
   statement: When building the index, the effective test-tag enabled value shall follow CLI flag > `.spec/config.yml` > built-in default precedence.
   priority: must
   stability: evolving
+- id: specled.tasks.check_verbose_flag
+  statement: mix spec.check shall accept a `--verbose` flag and honor `SPECLED_SHOW_INFO=1` that together govern stdout filtering; without either, findings whose resolved severity is `:info` shall be suppressed from stdout while still being written to `.spec/state.json` unchanged. With either flag or env var, every finding regardless of severity shall be printed.
+  priority: must
+  stability: evolving
 ```
 
 ## Verification
@@ -119,4 +123,9 @@ decisions:
   covers:
     - specled.tasks.test_tags_flag
     - specled.tasks.test_tags_precedence
+- kind: command
+  target: mix test test/mix/tasks/spec_check_test.exs
+  execute: true
+  covers:
+    - specled.tasks.check_verbose_flag
 ```
