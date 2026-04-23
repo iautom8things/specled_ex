@@ -6,7 +6,6 @@ affects:
   - repo.governance
   - spec.system
   - specled.mix_tasks
-change_type: clarifies
 ---
 
 # Local Skill Scaffold Supports Repo Usage

@@ -11,7 +11,6 @@ affects:
   - specled.next
   - specled.branch_guard
   - specled.status
-change_type: clarifies
 ---
 
 # Guided Reconciliation Before Strict Enforcement
