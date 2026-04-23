@@ -115,6 +115,7 @@ defmodule Mix.Tasks.Spec.SuggestBinding do
     |> Path.rootname(".ex")
     |> String.replace_prefix("lib/", "")
     |> String.split("/")
+    |> Enum.flat_map(&String.split(&1, "."))
     |> Enum.map(&Macro.camelize/1)
     |> Enum.join(".")
   end
