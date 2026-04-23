@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
   "created": "2026-04-23T19:59:54Z",
@@ -7,8 +7,8 @@
   "id": "specled_-kox",
   "labels": [],
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "fix: spec.suggest_binding miscamelizes dotted Mix task filenames",
   "type": "bug",
-  "updated_at": "2026-04-23T19:59:54Z"
+  "updated_at": "2026-04-23T22:00:20Z"
 }
