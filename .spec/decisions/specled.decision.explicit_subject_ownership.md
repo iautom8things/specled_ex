@@ -9,6 +9,7 @@ affects:
   - specled.block_schema
   - specled.verification
   - specled.status
+change_type: clarifies
 ---
 
 # Explicit Subject Ownership For Self-Hosted Internals

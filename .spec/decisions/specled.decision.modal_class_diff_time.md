@@ -5,6 +5,7 @@ date: 2026-04-23
 affects:
   - specled.modal_class
   - specled.append_only
+change_type: clarifies
 ---
 
 # Modal Class Is Computed at Diff Time, Never Cached

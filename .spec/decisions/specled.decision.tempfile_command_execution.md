@@ -4,6 +4,7 @@ status: accepted
 date: 2026-04-07
 affects:
   - specled.verification
+change_type: clarifies
 ---
 
 # Command Verification Shall Use Temp-File Output Capture

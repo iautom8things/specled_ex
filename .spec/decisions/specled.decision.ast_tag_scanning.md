@@ -7,6 +7,7 @@ affects:
   - specled.index_state
   - specled.verification
   - specled.branch_guard
+change_type: clarifies
 ---
 
 # Tag Scanning Shall Read Test Files Via AST, Not Compilation

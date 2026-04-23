@@ -5,6 +5,7 @@ date: 2026-04-23
 affects:
   - specled.append_only
   - specled.decisions
+change_type: clarifies
 ---
 
 # ADR Files Are Append-Only; Structural Fields Are Immutable Once Accepted

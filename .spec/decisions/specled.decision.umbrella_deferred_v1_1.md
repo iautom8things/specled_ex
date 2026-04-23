@@ -8,6 +8,7 @@ affects:
   - specled.expanded_behavior_tier
   - specled.use_tier
   - specled.triangulation
+change_type: clarifies
 ---
 
 # Umbrella Apps Are Not Supported In v1; Detectors Emit `detector_unavailable`

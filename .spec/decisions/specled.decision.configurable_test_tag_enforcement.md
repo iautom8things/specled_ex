@@ -10,6 +10,7 @@ affects:
   - specled.branch_guard
   - specled.mix_tasks
   - specled.tag_scanning
+change_type: clarifies
 ---
 
 # Test-Tag Enforcement Shall Be Opt-In And Configurable Per-Workspace

@@ -9,6 +9,7 @@ affects:
   - specled.expanded_behavior_tier
   - specled.use_tier
   - specled.triangulation
+change_type: clarifies
 ---
 
 # All Realization Orchestrators Accept `%SpecLedEx.Compiler.Context{}` Explicitly

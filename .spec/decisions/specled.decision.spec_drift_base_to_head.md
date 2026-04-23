@@ -5,6 +5,7 @@ date: 2026-04-21
 affects:
   - specled.spec_drift_trailer
   - specled.branch_guard
+change_type: clarifies
 ---
 
 # `Spec-Drift:` Trailers Are Scanned Across `base..HEAD`, Not HEAD Only

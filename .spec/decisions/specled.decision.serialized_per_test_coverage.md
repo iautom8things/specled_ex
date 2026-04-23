@@ -5,6 +5,7 @@ date: 2026-04-21
 affects:
   - specled.coverage_capture
   - specled.triangulation
+change_type: clarifies
 ---
 
 # Per-Test Coverage Runs Are A Dedicated Serialized Pass, Not A Layer On `mix test --cover`
