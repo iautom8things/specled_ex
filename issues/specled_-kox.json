@@ -2,6 +2,7 @@
   "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-04-23T22:09:25Z",
   "created": "2026-04-23T19:59:54Z",
   "description": "Advances: specled.api_boundary\n\n`mix spec.suggest_binding` proposes module names that are not real Elixir module names for Mix tasks whose filenames contain dots.\n\n## Repro\n\nRun `mix spec.suggest_binding --fail-on-missing` on the current branch. Observe proposals like:\n\n    - \"Mix.Tasks.Spec.suggestBinding\"\n    - \"Mix.Tasks.Spec.check\"\n    - \"Mix.Tasks.Spec.cover.test\"\n\nThese are bogus. The real module names are:\n\n    - Mix.Tasks.Spec.SuggestBinding\n    - Mix.Tasks.Spec.Check\n    - Mix.Tasks.Spec.Cover.Test\n\n## Root cause\n\n`lib/mix/tasks/spec.suggest_binding.ex`, `file_to_module_name/1`:\n\n```elixir\npath\n|\u003e Path.rootname(\".ex\")\n|\u003e String.replace_prefix(\"lib/\", \"\")\n|\u003e String.split(\"/\")\n|\u003e Enum.map(\u0026Macro.camelize/1)\n|\u003e Enum.join(\".\")\n```\n\nSplits on `/` only. A filename segment like `spec.suggest_binding` contains a `.`, and `Macro.camelize/1` on a dotted string does not capitalize the piece after the dot the way the module-name convention requires — it yields `Spec.suggestBinding`. Same failure for `spec.check` -\u003e `Spec.check` and `spec.cover.test` -\u003e `Spec.cover.test`.\n\n## Fix sketch\n\nSplit on `.` inside each path segment first, camelize each dotted sub-part, then rejoin with `.`:\n\n```elixir\npath\n|\u003e Path.rootname(\".ex\")\n|\u003e String.replace_prefix(\"lib/\", \"\")\n|\u003e String.split(\"/\")\n|\u003e Enum.flat_map(\u0026String.split(\u00261, \".\"))\n|\u003e Enum.map(\u0026Macro.camelize/1)\n|\u003e Enum.join(\".\")\n```\n\n## Tests to add\n\n- Fixture subject with surface `lib/mix/tasks/foo.bar_baz.ex` — proposal should render `Mix.Tasks.Foo.BarBaz`, not `Mix.Tasks.foo.barBaz`.\n- Nested dotted task `lib/mix/tasks/spec.cover.test.ex` — should render `Mix.Tasks.Spec.Cover.Test`.\n\n## Impact\n\nAgents pasting the proposal verbatim get unresolvable bindings. api_boundary / implementation tiers then emit `branch_guard_dangling_binding` on the first `mix spec.check` because the module atom does not exist.",
   "id": "specled_-kox",
@@ -21,8 +22,8 @@
     }
   ],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "fix: spec.suggest_binding miscamelizes dotted Mix task filenames",
   "type": "bug",
-  "updated_at": "2026-04-23T22:09:19Z"
+  "updated_at": "2026-04-23T22:09:25Z"
 }
