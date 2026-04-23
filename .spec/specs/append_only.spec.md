@@ -13,7 +13,7 @@ state payloads plus the head-side decision list.
 ```yaml spec-meta
 id: specled.append_only
 kind: module
-status: draft
+status: active
 summary: Diff-time detectors for deleted requirements, modal downgrades, scenario regressions, polarity loss, ADR widening, and ADR deletion, plus supporting bootstrap + advisory findings.
 surface:
   - lib/specled_ex/append_only.ex
