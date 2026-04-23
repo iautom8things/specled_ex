@@ -18,6 +18,16 @@ surface:
   - mix.exs
   - lib/specled_ex.ex
   - test/test_helper.exs
+realized_by:
+  api_boundary:
+    - "SpecLedEx.build_index/2"
+    - "SpecLedEx.verify/3"
+    - "SpecLedEx.report/3"
+    - "SpecLedEx.write_state/4"
+    - "SpecLedEx.normalize_for_state/1"
+    - "SpecLedEx.detect_spec_dir/1"
+    - "SpecLedEx.detect_authored_dir/2"
+    - "SpecLedEx.detect_decision_dir/2"
 decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.local_skill_scaffold

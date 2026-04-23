@@ -24,6 +24,13 @@ surface:
   - lib/specled_ex/config/realization.ex
   - test/specled_ex/parser_test.exs
   - test/specled_ex/realization/effective_binding_test.exs
+realized_by:
+  api_boundary:
+    - "SpecLedEx.Schema.RealizedBy.validate/1"
+    - "SpecLedEx.Realization.EffectiveBinding.for_requirement/2"
+  implementation:
+    - "SpecLedEx.Schema.normalize_realized_by/1"
+    - "SpecLedEx.Schema.maybe_normalize_realized_by/2"
 ```
 
 ## Requirements

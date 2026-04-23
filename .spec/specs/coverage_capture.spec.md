@@ -28,6 +28,19 @@ surface:
   - test/specled_ex/coverage/store_test.exs
   - test/mix/tasks/spec_cover_test_test.exs
   - test_support/specled_ex_integration_case.ex
+realized_by:
+  api_boundary:
+    - "SpecLedEx.Coverage.init/2"
+    - "SpecLedEx.Coverage.install/1"
+    - "SpecLedEx.Coverage.default_artifact_path/0"
+    - "SpecLedEx.Coverage.Formatter"
+    - "SpecLedEx.Coverage.Store.write/2"
+    - "SpecLedEx.Coverage.Store.read/1"
+    - "Mix.Tasks.Spec.Cover.Test.run/1"
+  implementation:
+    - "SpecLedEx.Coverage.Formatter.init/1"
+    - "SpecLedEx.Coverage.Store.build_records/1"
+    - "SpecLedEx.Coverage.cover_modules_safe/0"
 decisions:
   - specled.decision.serialized_per_test_coverage
 ```

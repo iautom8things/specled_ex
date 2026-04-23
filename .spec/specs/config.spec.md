@@ -18,6 +18,17 @@ surface:
   - lib/mix/tasks/spec.init.ex
   - priv/spec_init/config.yml.eex
   - test/specled_ex/config_test.exs
+realized_by:
+  api_boundary:
+    - "SpecLedEx.Config.load/2"
+    - "SpecLedEx.Config.defaults/0"
+    - "Mix.Tasks.Spec.Init.run/1"
+  implementation:
+    - "SpecLedEx.Config.parse/1"
+    - "SpecLedEx.Config.build/1"
+    - "SpecLedEx.Config.build_test_tags/1"
+    - "SpecLedEx.Config.parse_enforcement/2"
+    - "SpecLedEx.Config.Guardrails.parse/1"
 decisions:
   - specled.decision.configurable_test_tag_enforcement
 ```

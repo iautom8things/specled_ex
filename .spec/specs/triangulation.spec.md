@@ -28,6 +28,12 @@ surface:
   - test/specled_ex/coverage_triangulation_test.exs
   - test/integration/scenario_test_only_change_test.exs
   - test/integration/scenario_mistagged_test_test.exs
+realized_by:
+  api_boundary:
+    - "Mix.Tasks.Spec.Triangle.run/1"
+  implementation:
+    - "SpecLedEx.CoverageTriangulation.findings/3"
+    - "SpecLedEx.CoverageTriangulation.execution_reach_map/2"
 ```
 
 ## Requirements

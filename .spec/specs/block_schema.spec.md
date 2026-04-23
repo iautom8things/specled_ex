@@ -19,6 +19,15 @@ surface:
   - lib/specled_ex/schema/scenario.ex
   - lib/specled_ex/schema/verification.ex
   - lib/specled_ex/schema/exception.ex
+realized_by:
+  api_boundary:
+    - "SpecLedEx.Schema.validate_block/2"
+  expanded_behavior:
+    - "SpecLedEx.Schema.Meta"
+    - "SpecLedEx.Schema.Requirement"
+    - "SpecLedEx.Schema.Scenario"
+    - "SpecLedEx.Schema.Verification"
+    - "SpecLedEx.Schema.Exception"
 decisions:
   - specled.decision.explicit_subject_ownership
 ```

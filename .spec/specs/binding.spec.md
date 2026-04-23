@@ -24,6 +24,17 @@ surface:
   - test/specled_ex/realization/binding_test.exs
   - test/specled_ex/realization/canonical_test.exs
   - test/specled_ex/realization/hash_store_test.exs
+realized_by:
+  api_boundary:
+    - "SpecLedEx.Realization.Binding.resolve/2"
+    - "SpecLedEx.Realization.Canonical.hash/1"
+    - "SpecLedEx.Realization.HashStore.read/2"
+  implementation:
+    - "SpecLedEx.Realization.Binding.resolve/2"
+    - "SpecLedEx.Realization.Canonical.normalize/1"
+    - "SpecLedEx.Realization.Canonical.hash/1"
+    - "SpecLedEx.Realization.HashStore.read/2"
+    - "SpecLedEx.Realization.HashStore.write/2"
 decisions:
   - specled.decision.beam_first_binding_resolution
   - specled.decision.deterministic_hashing

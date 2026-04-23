@@ -21,6 +21,10 @@ summary: Workspace-wide aggregation of tagged_tests verifications into a single 
 surface:
   - lib/specled_ex/tagged_tests.ex
   - test/specled_ex/tagged_tests_test.exs
+realized_by:
+  implementation:
+    - "SpecLedEx.TaggedTests.collect_entries/1"
+    - "SpecLedEx.TaggedTests.build_command/2"
 ```
 
 ## Requirements

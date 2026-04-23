@@ -19,6 +19,14 @@ surface:
   - lib/specled_ex/tag_findings.ex
   - lib/specled_ex/decision_parser.ex
   - lib/specled_ex/schema/decision.ex
+realized_by:
+  implementation:
+    - "SpecLedEx.Verifier.verify/3"
+    - "SpecLedEx.VerificationStrength.meets_minimum?/2"
+    - "SpecLedEx.VerificationStrength.normalize/1"
+    - "SpecLedEx.VerificationStrength.default/0"
+    - "SpecLedEx.VerificationStrength.levels/0"
+    - "SpecLedEx.TagFindings.findings/1"
 decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.file_backed_linked_strength

@@ -16,6 +16,13 @@ surface:
   - lib/specled_ex/decision_parser/cross_field.ex
   - lib/specled_ex/schema/decision.ex
   - lib/specled_ex/verifier.ex
+realized_by:
+  api_boundary:
+    - "SpecLedEx.DecisionParser.parse_file/4"
+    - "SpecLedEx.DecisionParser.CrossField.validate/3"
+    - "SpecLedEx.Schema.Decision"
+  implementation:
+    - "SpecLedEx.Verifier.verify_decision/4"
 decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.configurable_test_tag_enforcement

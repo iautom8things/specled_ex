@@ -20,6 +20,9 @@ surface:
   - lib/specled_ex.ex
   - test/specled_ex/append_only_test.exs
   - test_support/append_only_fixtures.ex
+realized_by:
+  api_boundary:
+    - "SpecLedEx.AppendOnly.analyze/4"
 decisions:
   - specled.decision.adr_append_only
   - specled.decision.modal_class_diff_time

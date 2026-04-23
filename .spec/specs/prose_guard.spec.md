@@ -20,6 +20,12 @@ surface:
   - lib/specled_ex/config/prose.ex
   - lib/mix/tasks/spec.validate.ex
   - test/specled_ex/config/prose_test.exs
+realized_by:
+  api_boundary:
+    - "Mix.Tasks.Spec.Validate"
+  implementation:
+    - "SpecLedEx.Config.Prose.findings/3"
+    - "SpecLedEx.Config.Prose.parse/1"
 ```
 
 ## Requirements

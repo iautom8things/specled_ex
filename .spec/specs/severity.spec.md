@@ -18,6 +18,12 @@ surface:
   - lib/specled_ex/branch_check/severity.ex
   - test/specled_ex/branch_check/severity_test.exs
   - test/specled_ex/branch_check/severity_integration_test.exs
+realized_by:
+  implementation:
+    - "SpecLedEx.BranchCheck.Severity.resolve/3"
+    - "SpecLedEx.BranchCheck.Severity.sanitized/3"
+  typespecs:
+    - "SpecLedEx.BranchCheck.Severity"
 ```
 
 ## Requirements

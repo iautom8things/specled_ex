@@ -15,6 +15,12 @@ surface:
   - lib/mix/tasks/spec.prime.ex
   - lib/specled_ex/prime.ex
   - test/mix/tasks/spec_prime_task_test.exs
+realized_by:
+  api_boundary:
+    - "Mix.Tasks.Spec.Prime.run/1"
+  implementation:
+    - "SpecLedEx.Prime.build/4"
+    - "SpecLedEx.Prime.format_human/1"
 decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.guided_reconciliation_loop

@@ -25,6 +25,13 @@ surface:
   - test/specled_ex/realization/api_boundary_test.exs
   - test/specled_ex/realization/drift_test.exs
   - test/mix/tasks/spec_suggest_binding_test.exs
+realized_by:
+  api_boundary:
+    - "SpecLedEx.Realization.ApiBoundary.hash/2"
+    - "SpecLedEx.Realization.ApiBoundary.run/1"
+    - "SpecLedEx.Realization.Drift.dedupe/2"
+    - "Mix.Tasks.Spec.Check"
+    - "Mix.Tasks.Spec.SuggestBinding"
 decisions:
   - specled.decision.finding_code_budget
 ```

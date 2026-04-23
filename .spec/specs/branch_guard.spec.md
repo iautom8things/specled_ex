@@ -18,6 +18,13 @@ surface:
   - lib/specled_ex/config/branch_guard.ex
   - test/specled_ex/config/branch_guard_test.exs
   - test/specled_ex/branch_check/load_prior_state_test.exs
+realized_by:
+  api_boundary:
+    - "Mix.Tasks.Spec.Check.run/1"
+  implementation:
+    - "SpecLedEx.BranchCheck.run/3"
+    - "SpecLedEx.Coverage"
+    - "SpecLedEx.Config.BranchGuard"
 decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.guided_reconciliation_loop

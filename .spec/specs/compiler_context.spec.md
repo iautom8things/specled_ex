@@ -21,6 +21,11 @@ surface:
   - lib/specled_ex/compiler/manifest.ex
   - test/specled_ex/compiler/manifest_test.exs
   - test/specled_ex/compiler/manifest_integration_test.exs
+realized_by:
+  api_boundary:
+    - "SpecLedEx.Compiler.Context.load/1"
+    - "SpecLedEx.Compiler.Manifest.load/1"
+    - "SpecLedEx.Compiler.Manifest.sources_for/2"
 decisions:
   - specled.decision.compiler_context_di
 ```

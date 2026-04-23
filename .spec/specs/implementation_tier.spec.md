@@ -24,6 +24,12 @@ surface:
   - test/specled_ex/realization/implementation_test.exs
   - test/specled_ex/realization/closure_test.exs
   - test/integration/scenario_refactor_stable_test.exs
+realized_by:
+  implementation:
+    - "SpecLedEx.Realization.Implementation.run/4"
+    - "SpecLedEx.Realization.Implementation.hash_for_subject/3"
+    - "SpecLedEx.Realization.Closure.compute/2"
+    - "SpecLedEx.Realization.Closure.subject_for_mfa/2"
 ```
 
 ## Requirements

@@ -19,6 +19,10 @@ summary: Pure classify/1 over requirement statements plus total downgrade?/2 ove
 surface:
   - lib/specled_ex/modal_class.ex
   - test/specled_ex/modal_class_test.exs
+realized_by:
+  implementation:
+    - "SpecLedEx.ModalClass.classify/1"
+    - "SpecLedEx.ModalClass.downgrade?/2"
 decisions:
   - specled.decision.modal_class_diff_time
   - specled.decision.finding_code_budget
