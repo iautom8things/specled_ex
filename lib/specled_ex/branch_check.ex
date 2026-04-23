@@ -1,19 +1,39 @@
 defmodule SpecLedEx.BranchCheck do
+  # covers: specled.branch_guard.subject_cochange specled.branch_guard.cross_cutting_decision specled.branch_guard.guidance_output specled.branch_guard.plan_docs_excluded specled.branch_guard.new_requirement_tag_warning specled.branch_guard.tag_findings_respect_enforcement
   @moduledoc false
 
+  alias SpecLedEx.AppendOnly
   alias SpecLedEx.BranchCheck.Severity
   alias SpecLedEx.BranchCheck.Trailer
   alias SpecLedEx.ChangeAnalysis
   alias SpecLedEx.Config
+  alias SpecLedEx.Overlap
 
   @per_code_defaults %{
+    # branch_guard/* (existing)
     "branch_guard_unmapped_change" => :error,
     "branch_guard_missing_subject_update" => :error,
     "branch_guard_missing_decision_update" => :error,
-    "branch_guard_requirement_without_test_tag" => :warning
+    "branch_guard_requirement_without_test_tag" => :warning,
+    # append_only/* (10 ratified codes)
+    "append_only/requirement_deleted" => :error,
+    "append_only/must_downgraded" => :error,
+    "append_only/scenario_regression" => :error,
+    "append_only/negative_removed" => :error,
+    "append_only/disabled_without_reason" => :warning,
+    "append_only/no_baseline" => :info,
+    "append_only/adr_affects_widened" => :error,
+    "append_only/same_pr_self_authorization" => :warning,
+    "append_only/missing_change_type" => :warning,
+    "append_only/decision_deleted" => :error,
+    # overlap/* (2 ratified codes)
+    "overlap/duplicate_covers" => :error,
+    "overlap/must_stem_collision" => :error
   }
 
   def run(index, root, opts \\ []) do
+    validate_base!(root, Keyword.get(opts, :base))
+
     analysis = ChangeAnalysis.analyze(index, root, opts)
     changed_subject_ids = MapSet.new(analysis.changed_subject_ids)
     severity_opts = severity_opts(root, analysis.base)
@@ -72,9 +92,16 @@ defmodule SpecLedEx.BranchCheck do
 
     tag_findings = new_requirement_tag_findings(index, analysis, root, severity_opts)
 
+    {append_only_findings, overlap_findings} =
+      contract_findings(index, root, analysis.base, severity_opts)
+
     findings =
       Enum.sort_by(
-        file_findings ++ governance_findings ++ tag_findings,
+        file_findings ++
+          governance_findings ++
+          tag_findings ++
+          append_only_findings ++
+          overlap_findings,
         &{&1["code"], &1["file"] || "", &1["message"]}
       )
 
@@ -90,6 +117,27 @@ defmodule SpecLedEx.BranchCheck do
       "findings" => findings,
       "guidance" => guidance(analysis)
     }
+  end
+
+  @doc """
+  Classifies the merged stdout/stderr output of a failed
+  `git show <base>:.spec/state.json` into a `no_baseline` variant tag.
+
+  Pure function — used by `fetch_prior_state/2` after the shell-out returns
+  a non-zero exit, and unit-tested directly against canonical Git error
+  strings.
+  """
+  @spec classify_load_error(binary()) :: :first_run | :shallow_clone | :bad_ref
+  def classify_load_error(output) when is_binary(output) do
+    cond do
+      String.contains?(output, "does not exist in") -> :first_run
+      String.contains?(output, "exists on disk, but not in") -> :first_run
+      String.contains?(output, "bad object") -> :shallow_clone
+      String.contains?(output, "bad revision") -> :shallow_clone
+      String.contains?(output, "ambiguous argument") -> :bad_ref
+      String.contains?(output, "unknown revision") -> :bad_ref
+      true -> :first_run
+    end
   end
 
   defp severity_opts(root, base) do
@@ -129,6 +177,79 @@ defmodule SpecLedEx.BranchCheck do
     end
   end
 
+  defp contract_findings(index, root, base, severity_opts) do
+    current_state = SpecLedEx.normalize_for_state(index)
+    decisions = Map.get(index, "decisions", []) |> List.wrap()
+
+    # AppendOnly needs a real prior commit to compare against. When the base is
+    # the trivial `HEAD` sentinel (no historical comparison) or the directory
+    # is not a git repo, there is no meaningful prior state — skip entirely
+    # rather than emit a no_baseline info on every run.
+    append_only_raw =
+      if append_only_applicable?(root, base) do
+        case fetch_prior_state(root, base) do
+          {:ok, prior_state} ->
+            AppendOnly.analyze(prior_state, current_state, decisions)
+
+          {:missing, variant} ->
+            AppendOnly.analyze(:missing, current_state, decisions, baseline_variant: variant)
+        end
+      else
+        []
+      end
+
+    subjects = Map.get(index, "subjects", []) |> List.wrap()
+    requirements = get_in(current_state, ["index", "requirements"]) || []
+    overlap_raw = Overlap.analyze(subjects, requirements)
+
+    {render_findings(append_only_raw, severity_opts),
+     render_findings(overlap_raw, severity_opts)}
+  end
+
+  defp append_only_applicable?(_root, nil), do: false
+  defp append_only_applicable?(_root, "HEAD"), do: false
+
+  defp append_only_applicable?(root, base) when is_binary(base) do
+    git_repo?(root)
+  end
+
+  defp append_only_applicable?(_root, _base), do: false
+
+  defp git_repo?(root) do
+    {output, exit_code} =
+      System.cmd("git", ["-C", root, "rev-parse", "--is-inside-work-tree"], into: "")
+
+    exit_code == 0 and String.trim(output) == "true"
+  end
+
+  defp render_findings(findings, severity_opts) do
+    Enum.flat_map(findings, fn finding ->
+      default = Map.get(@per_code_defaults, finding.code, finding.severity)
+
+      case Severity.resolve(finding.code, severity_opts, default) do
+        :off ->
+          []
+
+        severity ->
+          base_item = %{
+            "severity" => Atom.to_string(severity),
+            "code" => finding.code,
+            "message" => finding.message,
+            "file" => nil
+          }
+
+          [
+            base_item
+            |> maybe_put("subject_id", finding.subject_id)
+            |> maybe_put("entity_id", finding.entity_id)
+          ]
+      end
+    end)
+  end
+
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
+
   defp guidance(analysis) do
     change_type =
       cond do
@@ -156,10 +277,6 @@ defmodule SpecLedEx.BranchCheck do
         []
 
       tag_map when is_map(tag_map) ->
-        # test_tags_config.enforcement is a legacy per-finding default
-        # switch. If set to "error" it raises the per-code default; the
-        # config.severities and trailer_override in severity_opts still
-        # take precedence via Severity.resolve/3.
         test_tags_default = test_tags_default(Map.get(index, "test_tags_config"))
         subjects_by_file = subjects_by_file(index)
 
@@ -275,5 +392,68 @@ defmodule SpecLedEx.BranchCheck do
     |> Enum.any?(&(&1 == "spec-requirements"))
   end
 
-  defp spec_file?(path), do: String.starts_with?(path, ".spec/specs/") and String.ends_with?(path, ".spec.md")
+  defp spec_file?(path),
+    do: String.starts_with?(path, ".spec/specs/") and String.ends_with?(path, ".spec.md")
+
+  ## ── Prior-state loader split (fetch_prior_state + classify_load_error) ──
+
+  defp fetch_prior_state(_root, nil), do: {:missing, :first_run}
+
+  defp fetch_prior_state(root, base) when is_binary(base) do
+    case git_show_state_json(root, base) do
+      {:ok, body} ->
+        case Jason.decode(body) do
+          {:ok, state} when is_map(state) -> {:ok, state}
+          _ -> {:missing, :first_run}
+        end
+
+      {:error, output} ->
+        variant =
+          cond do
+            shallow_clone?(root) -> :shallow_clone
+            true -> classify_load_error(output)
+          end
+
+        {:missing, variant}
+    end
+  end
+
+  defp git_show_state_json(root, base) do
+    {output, exit_code} =
+      System.cmd(
+        "git",
+        ["-C", root, "show", "#{base}:.spec/state.json"],
+        stderr_to_stdout: true
+      )
+
+    if exit_code == 0, do: {:ok, output}, else: {:error, output}
+  end
+
+  defp shallow_clone?(root) do
+    {output, exit_code} =
+      System.cmd("git", ["-C", root, "rev-parse", "--is-shallow-repository"], into: "")
+
+    exit_code == 0 and String.trim(output) == "true"
+  end
+
+  ## ── --base validation (commit-only refs, C13) ──────────────────────
+
+  defp validate_base!(_root, nil), do: :ok
+  defp validate_base!(_root, "HEAD"), do: :ok
+
+  defp validate_base!(root, base) when is_binary(base) do
+    {_output, exit_code} =
+      System.cmd(
+        "git",
+        ["-C", root, "rev-parse", "--verify", "#{base}^{commit}"],
+        stderr_to_stdout: true
+      )
+
+    if exit_code != 0 do
+      raise ArgumentError,
+            "--base #{inspect(base)} does not resolve to a commit (git rev-parse --verify '#{base}^{commit}' failed)"
+    end
+
+    :ok
+  end
 end

@@ -109,7 +109,7 @@ decisions:
 ```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/overlap_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.overlap.duplicate_covers
     - specled.overlap.must_stem_collision
@@ -118,7 +118,7 @@ decisions:
     - specled.overlap.no_prior_state
 - kind: source_file
   target: lib/specled_ex/overlap.ex
-  execute: false
+  execute: true
   covers:
     - specled.overlap.duplicate_covers
     - specled.overlap.must_stem_collision
