@@ -132,6 +132,43 @@ defmodule Mix.Tasks.Spec.SuggestBindingTest do
       end
     end
 
+    test "camelizes dotted Mix task filenames into valid module names", %{root: root} do
+      init_git_repo(root)
+
+      write_subject_spec(root, "dotted",
+        meta: %{
+          "id" => "dotted.subject",
+          "kind" => "module",
+          "status" => "active",
+          "surface" => [
+            "lib/mix/tasks/foo.bar_baz.ex",
+            "lib/mix/tasks/spec.cover.test.ex"
+          ]
+        },
+        requirements: [
+          %{"id" => "dotted.req", "statement" => "x", "priority" => "must"}
+        ]
+      )
+
+      commit_all(root, "seed")
+
+      Mix.Tasks.Spec.SuggestBinding.run(["--root", root])
+
+      joined = drain_shell_messages() |> Enum.join("\n")
+
+      assert String.contains?(joined, "Mix.Tasks.Foo.BarBaz"),
+             "expected 'Mix.Tasks.Foo.BarBaz' in output, got:\n#{joined}"
+
+      assert String.contains?(joined, "Mix.Tasks.Spec.Cover.Test"),
+             "expected 'Mix.Tasks.Spec.Cover.Test' in output, got:\n#{joined}"
+
+      refute String.contains?(joined, "Mix.Tasks.foo.barBaz"),
+             "stale camelize bug still present; got:\n#{joined}"
+
+      refute String.contains?(joined, "Mix.Tasks.Spec.cover.test"),
+             "stale camelize bug still present; got:\n#{joined}"
+    end
+
     test "does not print a proposal for subjects that already have realized_by", %{root: root} do
       init_git_repo(root)
 
