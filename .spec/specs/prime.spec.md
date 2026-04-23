@@ -6,7 +6,7 @@ Session-start context for agents and maintainers.
 
 Give one read-only command that helps a maintainer or agent understand the current workspace and branch before editing current truth.
 
-```spec-meta
+```yaml spec-meta
 id: specled.prime
 kind: workflow
 status: active
@@ -23,7 +23,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.prime.session_context
   statement: mix spec.prime shall provide a read-only session-start summary that combines workspace status, current-branch guidance, and the default local loop for the current repository.
   priority: should
@@ -40,7 +40,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/mix/tasks/spec_prime_task_test.exs
   execute: true

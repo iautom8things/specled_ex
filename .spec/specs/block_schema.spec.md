@@ -7,7 +7,7 @@ Zoi-backed contracts for authored Spec Led Development blocks.
 Define the structured shape of authored `spec-meta`, `spec-requirements`,
 `spec-scenarios`, `spec-verification`, and `spec-exceptions` blocks.
 
-```spec-meta
+```yaml spec-meta
 id: specled.block_schema
 kind: contract
 status: active
@@ -25,7 +25,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.schema.meta_contract
   statement: The `spec-meta` contract shall accept stable ids, kind, status, optional summary and surface, optional ADR references, and optional verification minimum strength.
   priority: must
@@ -46,7 +46,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/schema_test.exs test/specled_ex/parser_test.exs
   execute: true

@@ -43,6 +43,7 @@ Author `.spec/specs/*.spec.md` files that match this package's parser and verifi
 ## Authoring Rules
 
 - Prefer YAML inside fenced blocks. The parser also accepts JSON, but the repository's authored specs use YAML and it is easier to maintain.
+- Write opening fences as ` ```yaml spec-meta ` (and likewise for other spec tags). The leading `yaml` token gives GitHub and editors syntax highlighting, while the parser still matches the spec tag anywhere in the info string.
 - Use stable lowercase ids that match `^[a-z0-9][a-z0-9._-]*$`.
 - Keep subject ids, requirement ids, scenario ids, and exception ids unique across the repository for their kind.
 - Give each requirement a concrete `statement`.

@@ -13,7 +13,7 @@ composable — when subject B's MFA changes, subject A's implementation hash
 flips via the referenced hash, and drift findings dedupe around the root
 cause.
 
-```spec-meta
+```yaml spec-meta
 id: specled.implementation_tier
 kind: workflow
 status: active
@@ -28,7 +28,7 @@ surface:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.implementation_tier.closure_walks_tracer_edges
   statement: >-
     SpecLedEx.Realization.Closure.compute/2 shall walk MFA callee edges
@@ -79,7 +79,7 @@ surface:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.implementation_tier.scenario.closure_walk_stops_at_boundary
   given:
     - subjects A with binding `A.foo/0` and B with binding `B.bar/0`
@@ -130,7 +130,7 @@ surface:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/realization/closure_test.exs
   execute: true

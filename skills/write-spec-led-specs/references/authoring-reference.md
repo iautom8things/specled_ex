@@ -11,7 +11,7 @@ One or two sentences that describe the subject boundary.
 
 Explain what the subject covers and why it matters.
 
-```spec-meta
+```yaml spec-meta
 id: package.subject
 kind: module
 status: active
@@ -24,7 +24,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: package.subject.behavior
   statement: Describe the required behavior.
   priority: must
@@ -33,7 +33,7 @@ decisions:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: package.subject.example_flow
   given:
     - the relevant precondition
@@ -47,7 +47,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: source_file
   target: lib/path/to/file.ex
   covers:
@@ -57,7 +57,7 @@ decisions:
 
 ## Exceptions
 
-```spec-exceptions
+```yaml spec-exceptions
 - id: package.subject.deferred_coverage
   covers:
     - package.subject.behavior
@@ -72,6 +72,7 @@ decisions:
 - Make `spec-meta` a mapping with at least `id`, `kind`, and `status`. Additional keys such as `summary`, `surface`, and `decisions` are preserved.
 - Make `spec-requirements`, `spec-scenarios`, `spec-verification`, and `spec-exceptions` decode to lists.
 - Prefer YAML. JSON also parses because the implementation uses `YamlElixir`, but YAML matches the repository examples.
+- Prefer `yaml` as the first fence info token and the spec tag as the second, for example ` ```yaml spec-meta `. GitHub and most editors highlight on the first token, and the parser recognizes the spec tag anywhere in the info string. Bare ` ```spec-meta ` fences still parse, but new content should adopt the tagged form so readers get syntax highlighting.
 
 ## Field Rules
 

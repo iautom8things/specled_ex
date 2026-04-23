@@ -6,7 +6,7 @@ User-facing commands for the Spec Led Development workflow.
 
 Provide the user-facing Mix tasks that scaffold, guide, summarize, and strictly enforce the local Spec Led workflow.
 
-```spec-meta
+```yaml spec-meta
 id: specled.mix_tasks
 kind: workflow
 status: active
@@ -35,7 +35,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.tasks.init_scaffold
   statement: mix spec.init shall create the canonical .spec/ workspace with README.md, AGENTS.md, decisions/README.md, spec_system.spec.md, and package.spec.md.
   priority: must
@@ -96,7 +96,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs
   execute: true

@@ -14,7 +14,7 @@ Use this Skill when working on the local `.spec` workspace.
 3. Keep one subject per file. Update an existing subject when the change fits its boundary. Add a new subject only when the behavior is distinct.
 4. Ground requirements and scenarios in repository evidence from `lib/`, `guides/`, and `test/`.
 5. Add or revise an ADR in `.spec/decisions/*.md` only when the rule is cross-cutting and should remain durable after the branch merges.
-6. Prefer YAML fenced blocks and stable lowercase ids.
+6. Prefer YAML fenced blocks and stable lowercase ids. Write opening fences as ` ```yaml spec-meta ` (and likewise for other spec tags) so GitHub and editors highlight the YAML body.
 7. Choose the smallest reliable verification target.
    - Prefer targeted command verifications for behavioral checks.
    - Use file-backed targets only when the target can carry stable `covers:` markers for the ids it names.

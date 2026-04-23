@@ -7,7 +7,7 @@ Local tooling package for Spec Led Development repositories.
 Provide Mix tasks and library functions that let Elixir projects
 adopt Spec Led Development with a single dependency.
 
-```spec-meta
+```yaml spec-meta
 id: specled.package
 kind: package
 status: active
@@ -26,7 +26,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.package.mix_tasks
   statement: The package shall provide mix spec.init, mix spec.prime, mix spec.next, mix spec.check, mix spec.status, mix spec.decision.new, mix spec.index, and mix spec.validate as user-facing commands.
   priority: must
@@ -47,7 +47,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex_test.exs test/specled_ex/index_state_test.exs
   execute: true

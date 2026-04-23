@@ -15,7 +15,7 @@ independently, so a typespec change produces its own drift finding.
 Modules compiled with `@compile {:no_debug_info, true}` degrade gracefully via
 `detector_unavailable`.
 
-```spec-meta
+```yaml spec-meta
 id: specled.expanded_behavior_tier
 kind: workflow
 status: active
@@ -30,7 +30,7 @@ surface:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.expanded_behavior_tier.reads_beam_debug_info
   statement: >-
     SpecLedEx.Realization.ExpandedBehavior.hash/2 shall read
@@ -88,7 +88,7 @@ surface:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.expanded_behavior_tier.scenario.expanded_hash_stable_on_rename
   given:
     - a fixture module using `use SomeDSL` that expands into `handle_event/2`
@@ -129,7 +129,7 @@ surface:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/realization/expanded_behavior_test.exs
   execute: true

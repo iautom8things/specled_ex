@@ -2,7 +2,7 @@
 
 High-level package contract.
 
-```spec-meta
+```yaml spec-meta
 id: package.todo
 kind: package
 status: active
@@ -12,7 +12,7 @@ surface: []
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: package.todo.requirement
   statement: Define package behavior requirements here.
   priority: must
@@ -21,7 +21,7 @@ surface: []
 
 ## Exceptions
 
-```spec-exceptions
+```yaml spec-exceptions
 - id: package.todo.bootstrap_waiver
   covers:
     - package.todo.requirement

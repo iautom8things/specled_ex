@@ -13,7 +13,7 @@ ids, looks up the backing test files in the test-tag index, and runs a single
 back to each participating verification slot so per-subject findings and
 strength calculations stay independent.
 
-```spec-meta
+```yaml spec-meta
 id: specled.tagged_tests
 kind: module
 status: active
@@ -25,7 +25,7 @@ surface:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.tagged_tests.collect_entries
   statement: >-
     SpecLedEx.TaggedTests.collect_entries/1 shall return one entry per
@@ -74,7 +74,7 @@ surface:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.tagged_tests.scenario.collect_entries_filters_kinds
   given:
     - "a subject with one `kind: tagged_tests` verification flagged execute=true"
@@ -146,7 +146,7 @@ surface:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: tagged_tests
   execute: true
   covers:

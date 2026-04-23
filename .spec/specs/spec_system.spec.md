@@ -2,7 +2,7 @@
 
 This subject defines the contract for the `.spec` workspace itself.
 
-```spec-meta
+```yaml spec-meta
 id: spec.system
 kind: policy
 status: active
@@ -22,7 +22,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: spec.workspace.readme_present
   statement: The repository shall include a .spec/README.md that explains purpose, layout, and workflow.
   priority: must
@@ -51,7 +51,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: source_file
   target: .spec/README.md
   covers:

@@ -7,7 +7,7 @@ Index building and canonical state persistence for the Spec Led Development work
 Define how the package discovers authored current-truth subjects and ADRs, then
 persists a stable `.spec/state.json` artifact for later inspection and diffing.
 
-```spec-meta
+```yaml spec-meta
 id: specled.index_state
 kind: workflow
 status: active
@@ -23,7 +23,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.index.subject_and_decision_index
   statement: Index building shall discover authored subject specs and authored ADRs, detect the canonical workspace directories, and summarize indexed counts without treating `decisions/README.md` as an ADR.
   priority: must
@@ -48,7 +48,7 @@ decisions:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.index.scenario.tag_scan_enabled_populates_keys
   given:
     - "a workspace whose `.spec/config.yml` enables test_tags"
@@ -73,7 +73,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex_test.exs test/specled_ex/index_state_test.exs test/specled_ex/json_test.exs
   execute: true

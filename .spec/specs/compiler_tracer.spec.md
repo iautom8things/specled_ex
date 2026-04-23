@@ -12,7 +12,7 @@ own tracer in `mix.exs` and write MFA-level callee edges to an ETF side-manifest
 at compile completion. The coarse `mix xref graph --format dot --output -` output
 serves the compile/exports/runtime edge-kind classification.
 
-```spec-meta
+```yaml spec-meta
 id: specled.compiler_tracer
 kind: module
 status: active
@@ -30,7 +30,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.compiler_tracer.captures_remote_calls
   statement: >-
     SpecLedEx.Compiler.Tracer shall implement `trace/2` for the
@@ -77,7 +77,7 @@ decisions:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.compiler_tracer.scenario.mfa_edges_emitted
   given:
     - a fixture module containing at least one remote call
@@ -106,7 +106,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/compiler/tracer_test.exs --include integration
   execute: true

@@ -14,7 +14,7 @@ tests). `mix test --cover` continues to work in its traditional cumulative
 mode; only `mix spec.cover.test` produces the per-test artifact at
 `.spec/_coverage/per_test.coverdata`.
 
-```spec-meta
+```yaml spec-meta
 id: specled.coverage_capture
 kind: workflow
 status: active
@@ -34,7 +34,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.coverage_capture.serialized_run
   statement: >-
     `mix spec.cover.test` shall call
@@ -99,7 +99,7 @@ decisions:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.coverage_capture.scenario.formatter_stub_snapshot
   given:
     - "a formatter initialized with `snapshot_fn: stub_fn`"
@@ -139,7 +139,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/coverage/formatter_test.exs
   execute: true

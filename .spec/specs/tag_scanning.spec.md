@@ -10,7 +10,7 @@ tag shapes, and produce a `requirement_id → [tests]` map the index and verifie
 consume. Surface parse errors and dynamic tag values as findings so silent gaps do not
 accumulate.
 
-```spec-meta
+```yaml spec-meta
 id: specled.tag_scanning
 kind: module
 status: active
@@ -25,7 +25,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.tag_scanning.supported_forms
   statement: >-
     The tag scanner shall extract requirement ids from the four supported forms
@@ -79,7 +79,7 @@ decisions:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.tag_scanning.scenario.extract_literal_string
   given:
     - a test file containing an `@tag spec` annotation with the string literal `auth.login` before a `test/2` definition
@@ -160,7 +160,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/tag_scanner_test.exs
   execute: true

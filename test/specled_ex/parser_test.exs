@@ -245,6 +245,118 @@ defmodule SpecLedEx.ParserTest do
              inspect(spec["parse_errors"])
   end
 
+  describe "info-string tokens" do
+    test "language-first fences (```yaml spec-meta) parse like bare tags", %{root: root} do
+      path =
+        write_spec(
+          root,
+          "lang_first",
+          """
+          # Language First
+
+          ```yaml spec-meta
+          id: lang_first.subject
+          kind: module
+          status: active
+          ```
+
+          ```yaml spec-requirements
+          - id: lang_first.requirement
+            statement: Example statement
+          ```
+          """
+        )
+
+      spec = Parser.parse_file(path, root)
+
+      assert spec["parse_errors"] == []
+      assert %Meta{id: "lang_first.subject"} = spec["meta"]
+      assert [%Requirement{id: "lang_first.requirement"}] = spec["requirements"]
+    end
+
+    test "tag-first fences with trailing language token (```spec-meta yaml) still parse",
+         %{root: root} do
+      path =
+        write_spec(
+          root,
+          "tag_first",
+          """
+          # Tag First
+
+          ```spec-meta yaml
+          id: tag_first.subject
+          kind: module
+          status: active
+          ```
+          """
+        )
+
+      spec = Parser.parse_file(path, root)
+
+      assert spec["parse_errors"] == []
+      assert %Meta{id: "tag_first.subject"} = spec["meta"]
+    end
+
+    test "non-spec fenced blocks are ignored", %{root: root} do
+      path =
+        write_spec(
+          root,
+          "mixed_fences",
+          """
+          # Mixed Fences
+
+          ```elixir
+          defmodule Sample do
+          end
+          ```
+
+          ```yaml spec-meta
+          id: mixed.subject
+          kind: module
+          status: active
+          ```
+
+          ```bash
+          mix spec.check
+          ```
+          """
+        )
+
+      spec = Parser.parse_file(path, root)
+
+      assert spec["parse_errors"] == []
+      assert %Meta{id: "mixed.subject"} = spec["meta"]
+    end
+
+    test "duplicate detection treats tagged and bare fences as the same block kind",
+         %{root: root} do
+      path =
+        write_spec(
+          root,
+          "mixed_duplicates",
+          """
+          # Mixed Duplicates
+
+          ```yaml spec-meta
+          id: mixed_duplicates.subject
+          kind: module
+          status: active
+          ```
+
+          ```spec-meta
+          id: mixed_duplicates.other
+          kind: module
+          status: active
+          ```
+          """
+        )
+
+      spec = Parser.parse_file(path, root)
+
+      assert "spec-meta may only appear once per file" in spec["parse_errors"]
+    end
+  end
+
   test "parse_file preserves malformed list items for later reporting", %{root: root} do
     path =
       write_spec(

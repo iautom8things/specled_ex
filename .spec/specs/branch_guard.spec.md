@@ -6,7 +6,7 @@ Diff-aware co-change validation for current-truth subject specs and durable ADRs
 
 Catch code, docs, and test changes that move ahead of current-truth specs or skip a needed cross-cutting ADR update.
 
-```spec-meta
+```yaml spec-meta
 id: specled.branch_guard
 kind: workflow
 status: active
@@ -24,7 +24,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.branch_guard.subject_cochange
   statement: The branch guard inside mix spec.check shall fail when changed code, tests, guides, templates, skills, or governed package files are not matched by current-truth subject spec updates for the impacted subjects, including unmapped changed policy files outside current subject coverage.
   priority: must
@@ -53,7 +53,7 @@ decisions:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.branch_guard.scenario.new_requirement_without_tag
   given:
     - a branch that adds a new `must` requirement `billing.invoice` to an existing subject
@@ -79,7 +79,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/mix/tasks/spec_tasks_test.exs
   execute: true
