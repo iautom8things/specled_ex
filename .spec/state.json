@@ -4380,7 +4380,7 @@
           "id": "specled.overlap",
           "kind": "module",
           "realized_by": null,
-          "status": "draft",
+          "status": "active",
           "summary": "Head-only detector for duplicate `covers:` entries and MUST-stem collisions within a subject, run alongside AppendOnly under `BranchCheck.run/3`.",
           "surface": [
             "lib/specled_ex/overlap.ex",

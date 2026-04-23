@@ -13,7 +13,7 @@ head-only check against `current_state`; no prior-state comparison is involved.
 ```yaml spec-meta
 id: specled.overlap
 kind: module
-status: draft
+status: active
 summary: Head-only detector for duplicate `covers:` entries and MUST-stem collisions within a subject, run alongside AppendOnly under `BranchCheck.run/3`.
 surface:
   - lib/specled_ex/overlap.ex
