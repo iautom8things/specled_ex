@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [
     "specled_-fm4.2"
@@ -10,8 +10,8 @@
   "labels": [],
   "parent": "specled_-fm4",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "W1: Structured ADR schema + CrossField + ModalClass + finding-budget ADR",
   "type": "task",
-  "updated_at": "2026-04-23T11:45:52Z"
+  "updated_at": "2026-04-23T12:32:22Z"
 }
