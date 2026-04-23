@@ -21,6 +21,7 @@ surface:
   - lib/specled_ex/schema/requirement.ex
   - lib/specled_ex/parser.ex
   - lib/specled_ex/realization/effective_binding.ex
+  - lib/specled_ex/config/realization.ex
   - test/specled_ex/parser_test.exs
   - test/specled_ex/realization/effective_binding_test.exs
 ```

@@ -24,6 +24,7 @@ surface:
   - test/specled_ex/compiler/xref_test.exs
   - mix.exs
   - test/fixtures/sample_project/mix.exs
+  - test/fixtures/sample_project/.gitignore
 decisions:
   - specled.decision.custom_compile_tracer
 ```
