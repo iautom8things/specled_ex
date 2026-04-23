@@ -6,6 +6,7 @@ affects:
   - specled.compiler_tracer
   - specled.implementation_tier
   - specled.use_tier
+change_type: clarifies
 ---
 
 # Use A Custom `Code.Tracer` Side-Manifest For MFA Edges, Not Post-Hoc Xref JSON

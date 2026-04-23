@@ -5,6 +5,7 @@ date: 2026-04-21
 affects:
   - specled.policy_files
   - specled.branch_guard
+change_type: clarifies
 ---
 
 # `priv/` Defaults To `:lib`; Only `priv/plts/` Is `:generated`

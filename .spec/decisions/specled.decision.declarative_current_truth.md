@@ -9,6 +9,7 @@ affects:
   - specled.mix_tasks
   - specled.status
   - specled.branch_guard
+change_type: clarifies
 ---
 
 # Declarative Current Truth With Git History

@@ -9,6 +9,7 @@ affects:
   - specled.prose_guard
   - specled.implementation_tier
   - specled.branch_guard
+change_type: clarifies
 ---
 
 # v1 Ships Exactly Seven New Branch-Guard Finding Codes; Additions Require Spec Justification

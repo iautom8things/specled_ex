@@ -6,6 +6,7 @@ affects:
   - specled.binding
   - specled.api_boundary
   - specled.use_tier
+change_type: clarifies
 ---
 
 # `Binding.resolve/2` Consults BEAM First, Source AST Second

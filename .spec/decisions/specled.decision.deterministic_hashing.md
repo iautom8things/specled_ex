@@ -8,6 +8,7 @@ affects:
   - specled.implementation_tier
   - specled.expanded_behavior_tier
   - specled.use_tier
+change_type: clarifies
 ---
 
 # All Hash Inputs Serialize Via `:erlang.term_to_binary/2` With `[:deterministic, minor_version: 2]`

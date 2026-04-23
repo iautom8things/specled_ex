@@ -8,6 +8,7 @@ affects:
   - specled.next
   - specled.prime
   - specled.status
+change_type: clarifies
 ---
 
 # Spec Tasks Shall Not Start the OTP Application

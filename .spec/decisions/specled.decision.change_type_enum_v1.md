@@ -5,6 +5,7 @@ date: 2026-04-23
 affects:
   - specled.append_only
   - specled.decisions
+change_type: clarifies
 ---
 
 # v1 `change_type` Enum: 7 Values, 4-Value Weakening Set, Optional With Warning

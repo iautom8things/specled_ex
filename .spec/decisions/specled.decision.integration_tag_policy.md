@@ -9,6 +9,7 @@ affects:
   - specled.expanded_behavior_tier
   - specled.use_tier
   - specled.triangulation
+change_type: clarifies
 ---
 
 # `:integration` Tag Is Excluded From Local `mix test`; CI Opts In

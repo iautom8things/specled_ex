@@ -6,6 +6,7 @@ affects:
   - repo.governance
   - specled.verification
   - specled.parser
+change_type: clarifies
 ---
 
 # File-Backed Linked Strength Requires Literal Ids
