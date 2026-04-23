@@ -14,7 +14,7 @@ cached on the requirement struct and never serialized into `state.json`.
 ```yaml spec-meta
 id: specled.modal_class
 kind: module
-status: draft
+status: active
 summary: Pure classify/1 over requirement statements plus total downgrade?/2 over the modal × modal Cartesian product, consumed by AppendOnly's detect_must_downgrade/3.
 surface:
   - lib/specled_ex/modal_class.ex
@@ -65,11 +65,15 @@ decisions:
   stability: stable
 - id: specled.modal_class.cross_polarity_conservative
   statement: >-
-    ModalClass.downgrade?/2 shall classify `:must` to `:must_not` (and
-    `:shall` to `:shall_not`) as downgrade true and `:must_not` to
-    `:must` (and `:shall_not` to `:shall`) as downgrade false, and any
-    ambiguous cross-polarity transition that loses a negative assertion
-    shall be classified as a downgrade to stay conservative.
+    ModalClass.downgrade?/2 shall classify every positive-family modal
+    (`:must`, `:shall`, `:should`, `:may`) to negative-family modal
+    (`:must_not`, `:shall_not`) transition as downgrade true
+    (conservative), and every negative-family to positive-family
+    transition as downgrade false; the negative-to-positive polarity
+    loss is caught by the separate `specled.append_only.negative_removed`
+    detector through the `polarity` field, and keeping the asymmetry
+    here is what lets the relation remain monotonic per
+    `specled.modal_class.downgrade_monotonic`.
   priority: must
   stability: evolving
 ```
@@ -174,7 +178,7 @@ decisions:
 ```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/modal_class_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.modal_class.classify_total
     - specled.modal_class.classify_deterministic
@@ -184,7 +188,7 @@ decisions:
     - specled.modal_class.cross_polarity_conservative
 - kind: source_file
   target: lib/specled_ex/modal_class.ex
-  execute: false
+  execute: true
   covers:
     - specled.modal_class.classify_total
     - specled.modal_class.downgrade_total

@@ -14,6 +14,17 @@
       },
       {
         "affects": [
+          "specled.append_only",
+          "specled.overlap"
+        ],
+        "date": "2026-04-23",
+        "file": ".spec/decisions/specled.decision.append_only_finding_budget.md",
+        "id": "specled.decision.append_only_finding_budget",
+        "status": "accepted",
+        "title": "Append-Only + Overlap Finding-Code Budget: Twelve Ratified Codes"
+      },
+      {
+        "affects": [
           "specled.tag_scanning",
           "specled.index_state",
           "specled.verification",
@@ -318,27 +329,6 @@
       "file": ".spec/specs/append_only.spec.md",
       "level": "warning",
       "message": "Verification target file does not exist: lib/specled_ex/append_only.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.modal_class",
-      "file": ".spec/specs/modal_class.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/modal_class.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.modal_class",
-      "file": ".spec/specs/modal_class.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/modal_class_test.exs"
-    },
-    {
-      "code": "verification_target_missing",
-      "entity_id": "specled.modal_class",
-      "file": ".spec/specs/modal_class.spec.md",
-      "level": "warning",
-      "message": "Verification target file does not exist: lib/specled_ex/modal_class.ex"
     },
     {
       "code": "surface_target_missing",
@@ -887,6 +877,70 @@
       },
       {
         "file": ".spec/specs/decision_governance.spec.md",
+        "id": "specled.decisions.change_type_enum",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "ADR frontmatter shall accept an optional `change_type:` field whose value is one of `deprecates`, `weakens`, `narrows-scope`, `adds-exception`, `supersedes`, `clarifies`, or `refines`; values outside this set shall be rejected at schema parse.",
+        "subject_id": "specled.decisions"
+      },
+      {
+        "file": ".spec/specs/decision_governance.spec.md",
+        "id": "specled.decisions.change_type_optional",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "ADRs without a `change_type:` field shall parse successfully and emit a `cross_field/missing_change_type` warning-level diagnostic rather than a parse error, so that legacy ADRs and bootstrap adoption paths are not broken.",
+        "subject_id": "specled.decisions"
+      },
+      {
+        "file": ".spec/specs/decision_governance.spec.md",
+        "id": "specled.decisions.cross_field_adr_append_only",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "When a prior-state decision list is supplied, the CrossField validator shall emit an error for every ADR whose `affects`, `change_type`, or `reverses_what` differs from the prior-state version, and shall emit an error for any status transition other than `accepted` → `deprecated` or `accepted` → `superseded`.",
+        "subject_id": "specled.decisions"
+      },
+      {
+        "file": ".spec/specs/decision_governance.spec.md",
+        "id": "specled.decisions.cross_field_affects_non_empty",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "The CrossField validator shall emit an error when an ADR with any non-`clarifies` `change_type` (including nil) carries an empty `affects:` list, except that a nil `change_type` is handled by the separate missing_change_type warning rather than as an affects error.",
+        "subject_id": "specled.decisions"
+      },
+      {
+        "file": ".spec/specs/decision_governance.spec.md",
+        "id": "specled.decisions.cross_field_affects_resolve",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "The CrossField validator shall emit an error when an `affects:` id does not resolve in the current index, except that `change_type: deprecates` exempts its `affects:` targets from the resolution check (the point of deprecation is that the target id is being removed).",
+        "subject_id": "specled.decisions"
+      },
+      {
+        "file": ".spec/specs/decision_governance.spec.md",
+        "id": "specled.decisions.cross_field_idempotent",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "`SpecLedEx.DecisionParser.CrossField.validate/3` shall be pure and idempotent: repeated invocation with byte-identical inputs shall return byte-identical output, and running the validator twice on the same inputs shall produce the same error set as running it once.",
+        "subject_id": "specled.decisions"
+      },
+      {
+        "file": ".spec/specs/decision_governance.spec.md",
+        "id": "specled.decisions.cross_field_reverses_what",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "The CrossField validator shall emit an error when an ADR whose `change_type` is in the weakening set carries an empty (after `String.trim/1`) or missing `reverses_what:` value.",
+        "subject_id": "specled.decisions"
+      },
+      {
+        "file": ".spec/specs/decision_governance.spec.md",
+        "id": "specled.decisions.cross_field_supersedes_replaces",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "The CrossField validator shall emit an error for any ADR whose `change_type` is `supersedes` when `replaces:` is absent or empty, and shall emit an error when any id in `replaces:` does not resolve in the current index.",
+        "subject_id": "specled.decisions"
+      },
+      {
+        "file": ".spec/specs/decision_governance.spec.md",
         "id": "specled.decisions.frontmatter_contract",
         "priority": "must",
         "stability": "stable",
@@ -899,6 +953,14 @@
         "priority": "must",
         "stability": "evolving",
         "statement": "The verifier shall reject ADR affects or supersession links that do not resolve and shall warn when a subject references an unknown ADR id.",
+        "subject_id": "specled.decisions"
+      },
+      {
+        "file": ".spec/specs/decision_governance.spec.md",
+        "id": "specled.decisions.weakening_set",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "The weakening set that authorizes AppendOnly exceptions shall be exactly `{deprecates, weakens, narrows-scope, adds-exception}`; `supersedes` shall not authorize weakening on its own (the replacement requirement still goes through R1.a..R1.d), and `clarifies` / `refines` shall authorize no weakening.",
         "subject_id": "specled.decisions"
       },
       {
@@ -1170,7 +1232,7 @@
         "id": "specled.modal_class.cross_polarity_conservative",
         "priority": "must",
         "stability": "evolving",
-        "statement": "ModalClass.downgrade?/2 shall classify `:must` to `:must_not` (and `:shall` to `:shall_not`) as downgrade true and `:must_not` to `:must` (and `:shall_not` to `:shall`) as downgrade false, and any ambiguous cross-polarity transition that loses a negative assertion shall be classified as a downgrade to stay conservative.",
+        "statement": "ModalClass.downgrade?/2 shall classify every positive-family modal (`:must`, `:shall`, `:should`, `:may`) to negative-family modal (`:must_not`, `:shall_not`) transition as downgrade true (conservative), and every negative-family to positive-family transition as downgrade false; the negative-to-positive polarity loss is caught by the separate `specled.append_only.negative_removed` detector through the `polarity` field, and keeping the asymmetry here is what lets the relation remain monotonic per `specled.modal_class.downgrade_monotonic`.",
         "subject_id": "specled.modal_class"
       },
       {
@@ -4166,7 +4228,9 @@
         "meta": {
           "decisions": [
             "specled.decision.declarative_current_truth",
-            "specled.decision.configurable_test_tag_enforcement"
+            "specled.decision.configurable_test_tag_enforcement",
+            "specled.decision.change_type_enum_v1",
+            "specled.decision.adr_append_only"
           ],
           "id": "specled.decisions",
           "kind": "workflow",
@@ -4175,6 +4239,7 @@
           "summary": "Parses ADRs, validates their contract, and lets subject specs reference durable cross-cutting decisions.",
           "surface": [
             "lib/specled_ex/decision_parser.ex",
+            "lib/specled_ex/decision_parser/cross_field.ex",
             "lib/specled_ex/schema/decision.ex",
             "lib/specled_ex/verifier.ex"
           ],
@@ -4292,7 +4357,7 @@
           "id": "specled.modal_class",
           "kind": "module",
           "realized_by": null,
-          "status": "draft",
+          "status": "active",
           "summary": "Pure classify/1 over requirement statements plus total downgrade?/2 over the modal × modal Cartesian product, consumed by AppendOnly's detect_must_downgrade/3.",
           "surface": [
             "lib/specled_ex/modal_class.ex",
@@ -4997,13 +5062,48 @@
       {
         "covers": [
           "specled.decisions.frontmatter_contract",
-          "specled.decisions.reference_validation"
+          "specled.decisions.reference_validation",
+          "specled.decisions.change_type_enum",
+          "specled.decisions.weakening_set",
+          "specled.decisions.change_type_optional",
+          "specled.decisions.cross_field_supersedes_replaces",
+          "specled.decisions.cross_field_reverses_what",
+          "specled.decisions.cross_field_affects_non_empty",
+          "specled.decisions.cross_field_affects_resolve",
+          "specled.decisions.cross_field_adr_append_only",
+          "specled.decisions.cross_field_idempotent"
         ],
         "execute": true,
         "file": ".spec/specs/decision_governance.spec.md",
         "kind": "command",
         "subject_id": "specled.decisions",
-        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/verifier_test.exs"
+        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs"
+      },
+      {
+        "covers": [
+          "specled.decisions.cross_field_supersedes_replaces",
+          "specled.decisions.cross_field_reverses_what",
+          "specled.decisions.cross_field_affects_non_empty",
+          "specled.decisions.cross_field_affects_resolve",
+          "specled.decisions.cross_field_adr_append_only",
+          "specled.decisions.cross_field_idempotent"
+        ],
+        "execute": true,
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "source_file",
+        "subject_id": "specled.decisions",
+        "target": "lib/specled_ex/decision_parser/cross_field.ex"
+      },
+      {
+        "covers": [
+          "specled.decisions.change_type_enum",
+          "specled.decisions.weakening_set"
+        ],
+        "execute": true,
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "source_file",
+        "subject_id": "specled.decisions",
+        "target": "lib/specled_ex/schema/decision.ex"
       },
       {
         "covers": [
@@ -5135,7 +5235,7 @@
           "specled.modal_class.downgrade_monotonic",
           "specled.modal_class.cross_polarity_conservative"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/modal_class.spec.md",
         "kind": "command",
         "subject_id": "specled.modal_class",
@@ -5146,7 +5246,7 @@
           "specled.modal_class.classify_total",
           "specled.modal_class.downgrade_total"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/modal_class.spec.md",
         "kind": "source_file",
         "subject_id": "specled.modal_class",
@@ -5477,13 +5577,13 @@
   "specification_version": "1.0",
   "summary": {
     "decision_parse_errors": 0,
-    "decisions": 22,
+    "decisions": 23,
     "exceptions": 0,
-    "findings": 10,
-    "requirements": 185,
+    "findings": 7,
+    "requirements": 194,
     "scenarios": 114,
     "subjects": 32,
-    "verifications": 66
+    "verifications": 68
   },
   "verification": {
     "claims": [
@@ -6346,6 +6446,94 @@
         "verification_index": 2
       },
       {
+        "cover_id": "specled.decisions.change_type_enum",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "claimed",
+        "subject_id": "specled.decisions",
+        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.change_type_optional",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "claimed",
+        "subject_id": "specled.decisions",
+        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_adr_append_only",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "claimed",
+        "subject_id": "specled.decisions",
+        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_affects_non_empty",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "claimed",
+        "subject_id": "specled.decisions",
+        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_affects_resolve",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "claimed",
+        "subject_id": "specled.decisions",
+        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_idempotent",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "claimed",
+        "subject_id": "specled.decisions",
+        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_reverses_what",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "claimed",
+        "subject_id": "specled.decisions",
+        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_supersedes_replaces",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "claimed",
+        "subject_id": "specled.decisions",
+        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "verification_index": 0
+      },
+      {
         "cover_id": "specled.decisions.frontmatter_contract",
         "file": ".spec/specs/decision_governance.spec.md",
         "kind": "command",
@@ -6353,7 +6541,7 @@
         "required_strength": "claimed",
         "strength": "claimed",
         "subject_id": "specled.decisions",
-        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/verifier_test.exs",
+        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
         "verification_index": 0
       },
       {
@@ -6364,8 +6552,107 @@
         "required_strength": "claimed",
         "strength": "claimed",
         "subject_id": "specled.decisions",
-        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/verifier_test.exs",
+        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
         "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.weakening_set",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "claimed",
+        "subject_id": "specled.decisions",
+        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_adr_append_only",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.decisions",
+        "target": "lib/specled_ex/decision_parser/cross_field.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_affects_non_empty",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.decisions",
+        "target": "lib/specled_ex/decision_parser/cross_field.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_affects_resolve",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.decisions",
+        "target": "lib/specled_ex/decision_parser/cross_field.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_idempotent",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.decisions",
+        "target": "lib/specled_ex/decision_parser/cross_field.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_reverses_what",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.decisions",
+        "target": "lib/specled_ex/decision_parser/cross_field.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_supersedes_replaces",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.decisions",
+        "target": "lib/specled_ex/decision_parser/cross_field.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.decisions.change_type_enum",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.decisions",
+        "target": "lib/specled_ex/schema/decision.ex",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.decisions.weakening_set",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.decisions",
+        "target": "lib/specled_ex/schema/decision.ex",
+        "verification_index": 2
       },
       {
         "cover_id": "specled.expanded_behavior_tier.hash_stable_on_refactor",
@@ -6780,7 +7067,7 @@
         "kind": "source_file",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.modal_class",
         "target": "lib/specled_ex/modal_class.ex",
         "verification_index": 1
@@ -6791,7 +7078,7 @@
         "kind": "source_file",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.modal_class",
         "target": "lib/specled_ex/modal_class.ex",
         "verification_index": 1
@@ -7757,14 +8044,14 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 195,
+      "claimed": 202,
       "executed": 0,
-      "linked": 11
+      "linked": 21
     },
     "threshold_failures": 0
   },
   "workspace": {
-    "decision_count": 22,
+    "decision_count": 23,
     "spec_count": 32
   }
 }

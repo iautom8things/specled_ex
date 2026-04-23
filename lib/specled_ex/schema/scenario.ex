@@ -8,7 +8,9 @@ defmodule SpecLedEx.Schema.Scenario do
               covers: Zoi.list(Zoi.string()),
               given: Zoi.list(Zoi.string()),
               when: Zoi.list(Zoi.string()),
-              then: Zoi.list(Zoi.string())
+              then: Zoi.list(Zoi.string()),
+              execute: Zoi.boolean() |> Zoi.optional(),
+              reason: Zoi.string() |> Zoi.optional()
             },
             coerce: true
           )

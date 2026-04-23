@@ -104,4 +104,145 @@ defmodule SpecLedEx.SchemaTest do
 
     assert message =~ "spec-verification[0] validation failed"
   end
+
+  describe "decision schema change_type" do
+    alias SpecLedEx.Schema.Decision
+
+    test "accepts every value in the change_type enum" do
+      for change_type <- Decision.change_types() do
+        decision =
+          Zoi.parse(Decision.schema(), %{
+            "id" => "adr.example",
+            "status" => "accepted",
+            "date" => "2026-04-23",
+            "affects" => ["example.subject"],
+            "change_type" => change_type
+          })
+
+        assert {:ok, result} = decision
+        assert result.change_type == change_type
+      end
+    end
+
+    test "rejects change_type values outside the enum" do
+      assert {:error, _} =
+               Zoi.parse(Decision.schema(), %{
+                 "id" => "adr.example",
+                 "status" => "accepted",
+                 "date" => "2026-04-23",
+                 "affects" => ["example.subject"],
+                 "change_type" => "not-a-real-change-type"
+               })
+    end
+
+    test "accepts the deprecated status" do
+      assert {:ok, result} =
+               Zoi.parse(Decision.schema(), %{
+                 "id" => "adr.example",
+                 "status" => "deprecated",
+                 "date" => "2026-04-23",
+                 "affects" => ["example.subject"]
+               })
+
+      assert result.status == "deprecated"
+    end
+
+    test "accepts replaces and reverses_what optional fields" do
+      assert {:ok, result} =
+               Zoi.parse(Decision.schema(), %{
+                 "id" => "adr.new",
+                 "status" => "accepted",
+                 "date" => "2026-04-23",
+                 "affects" => ["example.subject"],
+                 "change_type" => "supersedes",
+                 "replaces" => ["adr.old"],
+                 "reverses_what" => "old decision is obsolete"
+               })
+
+      assert result.replaces == ["adr.old"]
+      assert result.reverses_what == "old decision is obsolete"
+    end
+
+    test "weakening_types/0 returns exactly four atoms" do
+      assert Decision.weakening_types() ==
+               ~w(deprecates weakens narrows-scope adds-exception)
+    end
+  end
+
+  describe "requirement schema optional fields" do
+    test "accepts polarity, refines, and supersedes" do
+      assert {:ok, [req]} =
+               Schema.validate_block("spec-requirements", [
+                 %{
+                   "id" => "example.req_a",
+                   "statement" => "The system SHALL do X.",
+                   "polarity" => "negative",
+                   "refines" => "example.req_parent",
+                   "supersedes" => "example.req_old"
+                 }
+               ])
+
+      assert req.polarity == "negative"
+      assert req.refines == "example.req_parent"
+      assert req.supersedes == "example.req_old"
+    end
+
+    test "rejects polarity values outside the enum" do
+      assert {:error, _message} =
+               Schema.validate_block("spec-requirements", [
+                 %{
+                   "id" => "example.req_a",
+                   "statement" => "Statement",
+                   "polarity" => "indifferent"
+                 }
+               ])
+    end
+
+    test "existing fixtures without the new fields still parse" do
+      assert {:ok, [req]} =
+               Schema.validate_block("spec-requirements", [
+                 %{"id" => "example.req", "statement" => "Statement"}
+               ])
+
+      assert req.polarity == nil
+      assert req.refines == nil
+      assert req.supersedes == nil
+    end
+  end
+
+  describe "scenario schema execute and reason" do
+    test "accepts execute and reason optional fields" do
+      assert {:ok, [scenario]} =
+               Schema.validate_block("spec-scenarios", [
+                 %{
+                   "id" => "example.scenario",
+                   "covers" => ["example.req"],
+                   "given" => ["given"],
+                   "when" => ["when"],
+                   "then" => ["then"],
+                   "execute" => false,
+                   "reason" => "disabled pending refactor"
+                 }
+               ])
+
+      assert scenario.execute == false
+      assert scenario.reason == "disabled pending refactor"
+    end
+
+    test "existing scenarios without execute/reason still parse" do
+      assert {:ok, [scenario]} =
+               Schema.validate_block("spec-scenarios", [
+                 %{
+                   "id" => "example.scenario",
+                   "covers" => ["example.req"],
+                   "given" => ["g"],
+                   "when" => ["w"],
+                   "then" => ["t"]
+                 }
+               ])
+
+      assert scenario.execute == nil
+      assert scenario.reason == nil
+    end
+  end
 end
