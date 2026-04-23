@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-fm4.4"
   ],
@@ -10,8 +10,8 @@
   "labels": [],
   "parent": "specled_-fm4",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "W3: guardrails.severities config + info-level output filter",
   "type": "task",
-  "updated_at": "2026-04-23T11:45:52Z"
+  "updated_at": "2026-04-23T17:39:29Z"
 }
