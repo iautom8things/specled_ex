@@ -3,12 +3,12 @@
   "blocked_by": [],
   "blocks": [],
   "created": "2026-04-22T17:27:58Z",
-  "description": "",
+  "description": "See if we can replace all 'command'-style verifications with one 'implicit' invocation of `mix test` that has all of the files and tags explicitly specified, so as to reduce the number of BEAM processes / startup costs around N × x separate `mix test` runs.",
   "id": "specled_-6wz",
   "labels": [],
   "priority": 2,
   "status": "open",
-  "title": "explore if it's possible to replace all 'command' style verifications with some 'implicit' single-command invocation of Running ExUnit with seed: 697418, max_cases: 20\n\n...................................................................................................................................................................................................\n13:27:49.654 [debug] SpecLedEx.HashStore: silent rehash triggered for 1 entries (hasher_version \u003c 1)\n.\n13:27:49.658 [debug] SpecLedEx.HashStore: silent rehash triggered for 1 entries (hasher_version \u003c 1)\n.\n13:27:49.659 [debug] SpecLedEx.HashStore: silent rehash triggered for 1 entries (hasher_version \u003c 1)\n.................................................................................................................................................................................\nFinished in 19.2 seconds (0.2s async, 18.9s sync)\n374 tests, 0 failures with all of the files and tags epxlicitly specified, so as to reduce the number of beam processes / start up costs around N * x mix tests",
+  "title": "explore replacing 'command'-style verifications with a single `mix test` invocation",
   "type": "task",
-  "updated_at": "2026-04-22T17:27:58Z"
+  "updated_at": "2026-04-23T00:29:31Z"
 }
