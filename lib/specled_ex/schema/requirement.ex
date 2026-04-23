@@ -1,6 +1,8 @@
 defmodule SpecLedEx.Schema.Requirement do
   @moduledoc false
 
+  @polarities ~w(positive negative)
+
   @schema Zoi.struct(
             __MODULE__,
             %{
@@ -8,7 +10,10 @@ defmodule SpecLedEx.Schema.Requirement do
               statement: Zoi.string(),
               priority: Zoi.string() |> Zoi.optional(),
               stability: Zoi.string() |> Zoi.optional(),
-              realized_by: Zoi.any() |> Zoi.optional()
+              realized_by: Zoi.any() |> Zoi.optional(),
+              polarity: Zoi.enum(@polarities) |> Zoi.optional(),
+              refines: SpecLedEx.Schema.id() |> Zoi.optional(),
+              supersedes: SpecLedEx.Schema.id() |> Zoi.optional()
             },
             coerce: true
           )
@@ -20,4 +25,6 @@ defmodule SpecLedEx.Schema.Requirement do
 
   @doc "Returns the Zoi schema for Requirement"
   def schema, do: @schema
+
+  def polarities, do: @polarities
 end
