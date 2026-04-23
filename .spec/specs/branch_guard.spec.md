@@ -15,6 +15,9 @@ surface:
   - lib/specled_ex/branch_check.ex
   - lib/specled_ex/coverage.ex
   - lib/mix/tasks/spec.check.ex
+  - lib/specled_ex/config/branch_guard.ex
+  - test/specled_ex/config/branch_guard_test.exs
+  - test/specled_ex/branch_check/load_prior_state_test.exs
 decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.guided_reconciliation_loop

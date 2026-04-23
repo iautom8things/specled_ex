@@ -26,6 +26,8 @@ surface:
   - test/specled_ex/realization/expanded_behavior_test.exs
   - test/specled_ex/realization/typespecs_test.exs
   - test/fixtures/sample_project/lib/sample_project/no_debug.ex
+  - test/fixtures/sample_project/lib/sample.ex
+  - test/integration/mixed_debug_info_fixture_test.exs
 ```
 
 ## Requirements

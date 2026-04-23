@@ -17,6 +17,7 @@ summary: Resolves severity per finding from trailer overrides, config map, and p
 surface:
   - lib/specled_ex/branch_check/severity.ex
   - test/specled_ex/branch_check/severity_test.exs
+  - test/specled_ex/branch_check/severity_integration_test.exs
 ```
 
 ## Requirements

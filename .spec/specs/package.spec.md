@@ -17,6 +17,7 @@ surface:
   - CHANGELOG.md
   - mix.exs
   - lib/specled_ex.ex
+  - test/test_helper.exs
 decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.local_skill_scaffold
