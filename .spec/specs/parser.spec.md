@@ -15,6 +15,11 @@ status: active
 summary: Extracts structured spec blocks from authored Markdown files.
 surface:
   - lib/specled_ex/parser.ex
+realized_by:
+  api_boundary:
+    - "SpecLedEx.Parser.parse_file/2"
+  implementation:
+    - "SpecLedEx.Parser"
 ```
 
 ## Requirements

@@ -18,6 +18,15 @@ summary: AST-based scanner that extracts tag spec values from ExUnit files witho
 surface:
   - lib/specled_ex/tag_scanner.ex
   - test/specled_ex/tag_scanner_test.exs
+realized_by:
+  api_boundary:
+    - "SpecLedEx.TagScanner.scan/2"
+    - "SpecLedEx.TagScanner.scan_file/1"
+  implementation:
+    - "SpecLedEx.TagScanner.extract_spec_from_arg/1"
+    - "SpecLedEx.TagScanner.resolve_spec_value/1"
+    - "SpecLedEx.TagScanner.extract_module_tags/2"
+    - "SpecLedEx.TagScanner.collect_moduletags/2"
 decisions:
   - specled.decision.ast_tag_scanning
   - specled.decision.configurable_test_tag_enforcement

@@ -19,6 +19,10 @@ surface:
   - lib/specled_ex/policy_files.ex
   - test/specled_ex/policy_files_test.exs
   - lib/specled_ex/change_analysis.ex
+realized_by:
+  implementation:
+    - "SpecLedEx.PolicyFiles.classify/1"
+    - "SpecLedEx.PolicyFiles.co_change_rule/1"
 decisions:
   - specled.decision.priv_conservative_classification
 ```

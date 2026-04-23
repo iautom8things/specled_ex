@@ -28,6 +28,12 @@ surface:
   - test/fixtures/sample_project/lib/sample_project/no_debug.ex
   - test/fixtures/sample_project/lib/sample.ex
   - test/integration/mixed_debug_info_fixture_test.exs
+realized_by:
+  implementation:
+    - "SpecLedEx.Realization.ExpandedBehavior.hash/2"
+    - "SpecLedEx.Realization.ExpandedBehavior.run/3"
+    - "SpecLedEx.Realization.Typespecs.hash/2"
+    - "SpecLedEx.Realization.Typespecs.run/3"
 ```
 
 ## Requirements

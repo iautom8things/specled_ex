@@ -19,6 +19,13 @@ surface:
   - priv/spec_init/README.md.eex
   - priv/spec_init/AGENTS.md.eex
   - test/mix/tasks/spec_next_task_test.exs
+realized_by:
+  api_boundary:
+    - "Mix.Tasks.Spec.Next.run/1"
+    - "SpecLedEx.next/3"
+  implementation:
+    - "SpecLedEx.Next.run/3"
+    - "SpecLedEx.ChangeAnalysis.analyze/3"
 decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.guided_reconciliation_loop

@@ -26,6 +26,18 @@ surface:
   - priv/spec_init/specs/package.spec.md.eex
   - skills/write-spec-led-specs/references/authoring-reference.md
   - test_support/specled_ex_case.ex
+realized_by:
+  api_boundary:
+    - "Mix.Tasks.Spec.Check.run/1"
+  implementation:
+    - "Mix.Tasks.Spec.Init.run/1"
+    - "Mix.Tasks.Spec.Prime.run/1"
+    - "Mix.Tasks.Spec.Next.run/1"
+    - "Mix.Tasks.Spec.Check.run/1"
+    - "Mix.Tasks.Spec.Status.run/1"
+    - "Mix.Tasks.Spec.Decision.New.run/1"
+    - "Mix.Tasks.Spec.Index.run/1"
+    - "Mix.Tasks.Spec.Validate.run/1"
 decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.local_skill_scaffold

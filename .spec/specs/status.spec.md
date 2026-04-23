@@ -15,6 +15,16 @@ surface:
   - lib/specled_ex/status.ex
   - lib/specled_ex/coverage.ex
   - lib/mix/tasks/spec.status.ex
+realized_by:
+  api_boundary:
+    - "Mix.Tasks.Spec.Status.run/1"
+  implementation:
+    - "SpecLedEx.Status.build/3"
+    - "SpecLedEx.Status.format_human/1"
+    - "SpecLedEx.Coverage.covered_files/2"
+    - "SpecLedEx.Coverage.subject_file_map/2"
+    - "SpecLedEx.Coverage.category_summary/3"
+    - "SpecLedEx.Coverage.subject_id/1"
 decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.explicit_subject_ownership

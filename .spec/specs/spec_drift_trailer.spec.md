@@ -18,6 +18,12 @@ summary: Parses `Spec-Drift:` git trailers across base..HEAD and exposes a trail
 surface:
   - lib/specled_ex/branch_check/trailer.ex
   - test/specled_ex/branch_check/trailer_test.exs
+realized_by:
+  implementation:
+    - "SpecLedEx.BranchCheck.Trailer.parse/1"
+    - "SpecLedEx.BranchCheck.Trailer.read/2"
+    - "SpecLedEx.BranchCheck.Trailer.apply_token/2"
+    - "SpecLedEx.BranchCheck.Trailer.apply_pair/2"
 decisions:
   - specled.decision.spec_drift_base_to_head
 ```

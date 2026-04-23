@@ -25,6 +25,14 @@ surface:
   - mix.exs
   - test/fixtures/sample_project/mix.exs
   - test/fixtures/sample_project/.gitignore
+realized_by:
+  api_boundary:
+    - "SpecLedEx.Compiler.Tracer.trace/2"
+    - "SpecLedEx.Compiler.Xref.load/1"
+    - "SpecLedEx.Compiler.Xref.parse/1"
+  implementation:
+    - "SpecLedEx.Compiler.Tracer.ensure_table/0"
+    - "SpecLedEx.Compiler.Tracer.manifest_path/1"
 decisions:
   - specled.decision.custom_compile_tracer
 ```

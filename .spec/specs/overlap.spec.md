@@ -18,6 +18,9 @@ summary: Head-only detector for duplicate `covers:` entries and MUST-stem collis
 surface:
   - lib/specled_ex/overlap.ex
   - test/specled_ex/overlap_test.exs
+realized_by:
+  implementation:
+    - "SpecLedEx.Overlap.analyze/2"
 decisions:
   - specled.decision.finding_code_budget
   - specled.decision.declarative_current_truth

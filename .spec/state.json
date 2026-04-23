@@ -4305,7 +4305,15 @@
           ],
           "id": "specled.api_boundary",
           "kind": "workflow",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "SpecLedEx.Realization.ApiBoundary.hash/2",
+              "SpecLedEx.Realization.ApiBoundary.run/1",
+              "SpecLedEx.Realization.Drift.dedupe/2",
+              "Mix.Tasks.Spec.Check",
+              "Mix.Tasks.Spec.SuggestBinding"
+            ]
+          },
           "status": "active",
           "summary": "Hashes function heads + arg shapes per binding, emits `branch_guard_realization_drift` and `branch_guard_dangling_binding` findings, deduplicated via Drift.",
           "surface": [
@@ -4334,7 +4342,11 @@
           ],
           "id": "specled.append_only",
           "kind": "module",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "SpecLedEx.AppendOnly.analyze/4"
+            ]
+          },
           "status": "active",
           "summary": "Diff-time detectors for deleted requirements, modal downgrades, scenario regressions, polarity loss, ADR widening, and ADR deletion, plus supporting bootstrap + advisory findings.",
           "surface": [
@@ -4357,7 +4369,20 @@
           ],
           "id": "specled.binding",
           "kind": "module",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "SpecLedEx.Realization.Binding.resolve/2",
+              "SpecLedEx.Realization.Canonical.hash/1",
+              "SpecLedEx.Realization.HashStore.read/2"
+            ],
+            "implementation": [
+              "SpecLedEx.Realization.Binding.resolve/2",
+              "SpecLedEx.Realization.Canonical.normalize/1",
+              "SpecLedEx.Realization.Canonical.hash/1",
+              "SpecLedEx.Realization.HashStore.read/2",
+              "SpecLedEx.Realization.HashStore.write/2"
+            ]
+          },
           "status": "active",
           "summary": "Resolves MFAs beam-first with source fallback, canonicalizes ASTs deterministically, and backs the hash store used by tier orchestrators.",
           "surface": [
@@ -4381,7 +4406,18 @@
           ],
           "id": "specled.block_schema",
           "kind": "contract",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "SpecLedEx.Schema.validate_block/2"
+            ],
+            "expanded_behavior": [
+              "SpecLedEx.Schema.Meta",
+              "SpecLedEx.Schema.Requirement",
+              "SpecLedEx.Schema.Scenario",
+              "SpecLedEx.Schema.Verification",
+              "SpecLedEx.Schema.Exception"
+            ]
+          },
           "status": "active",
           "summary": "Validates authored block payloads into Zoi-backed structs with precise validation errors.",
           "surface": [
@@ -4408,7 +4444,16 @@
           ],
           "id": "specled.branch_guard",
           "kind": "workflow",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "Mix.Tasks.Spec.Check.run/1"
+            ],
+            "implementation": [
+              "SpecLedEx.BranchCheck.run/3",
+              "SpecLedEx.Coverage",
+              "SpecLedEx.Config.BranchGuard"
+            ]
+          },
           "status": "active",
           "summary": "Uses the current Git change set to enforce subject co-changes and cross-cutting ADR updates during the final local check.",
           "surface": [
@@ -4432,7 +4477,13 @@
           ],
           "id": "specled.compiler_context",
           "kind": "module",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "SpecLedEx.Compiler.Context.load/1",
+              "SpecLedEx.Compiler.Manifest.load/1",
+              "SpecLedEx.Compiler.Manifest.sources_for/2"
+            ]
+          },
           "status": "active",
           "summary": "Carries manifest, xref_graph, tracer_table, and compile_path — every realization orchestrator accepts this as an argument rather than reaching into Mix globals.",
           "surface": [
@@ -4454,7 +4505,17 @@
           ],
           "id": "specled.compiler_tracer",
           "kind": "module",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "SpecLedEx.Compiler.Tracer.trace/2",
+              "SpecLedEx.Compiler.Xref.load/1",
+              "SpecLedEx.Compiler.Xref.parse/1"
+            ],
+            "implementation": [
+              "SpecLedEx.Compiler.Tracer.ensure_table/0",
+              "SpecLedEx.Compiler.Tracer.manifest_path/1"
+            ]
+          },
           "status": "active",
           "summary": "SpecLedEx.Compiler.Tracer emits `{mod, fun, arity} => [callees]` ETF to `_build/<env>/.spec/xref_mfa.etf` on `:on_module`; Compiler.Xref runs `Mix.Task.run(\"xref\", [\"graph\",\"--format\",\"dot\",\"--output\",\"-\"])` in-process and parses DOT.",
           "surface": [
@@ -4479,7 +4540,20 @@
           ],
           "id": "specled.config",
           "kind": "module",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "SpecLedEx.Config.load/2",
+              "SpecLedEx.Config.defaults/0",
+              "Mix.Tasks.Spec.Init.run/1"
+            ],
+            "implementation": [
+              "SpecLedEx.Config.parse/1",
+              "SpecLedEx.Config.build/1",
+              "SpecLedEx.Config.build_test_tags/1",
+              "SpecLedEx.Config.parse_enforcement/2",
+              "SpecLedEx.Config.Guardrails.parse/1"
+            ]
+          },
           "status": "active",
           "summary": "Loads `.spec/config.yml` with defaults and exposes test-tag scanning settings to the index, verifier, and CLI tasks.",
           "surface": [
@@ -4501,7 +4575,22 @@
           ],
           "id": "specled.coverage_capture",
           "kind": "workflow",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "SpecLedEx.Coverage.init/2",
+              "SpecLedEx.Coverage.install/1",
+              "SpecLedEx.Coverage.default_artifact_path/0",
+              "SpecLedEx.Coverage.Formatter",
+              "SpecLedEx.Coverage.Store.write/2",
+              "SpecLedEx.Coverage.Store.read/1",
+              "Mix.Tasks.Spec.Cover.Test.run/1"
+            ],
+            "implementation": [
+              "SpecLedEx.Coverage.Formatter.init/1",
+              "SpecLedEx.Coverage.Store.build_records/1",
+              "SpecLedEx.Coverage.cover_modules_safe/0"
+            ]
+          },
           "status": "active",
           "summary": "`mix spec.cover.test` task + ExUnit formatter that captures per-test line coverage serialized; Store reads/writes `.spec/_coverage/per_test.coverdata`.",
           "surface": [
@@ -4530,7 +4619,16 @@
           ],
           "id": "specled.decisions",
           "kind": "workflow",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "SpecLedEx.DecisionParser.parse_file/4",
+              "SpecLedEx.DecisionParser.CrossField.validate/3",
+              "SpecLedEx.Schema.Decision"
+            ],
+            "implementation": [
+              "SpecLedEx.Verifier.verify_decision/4"
+            ]
+          },
           "status": "active",
           "summary": "Parses ADRs, validates their contract, and lets subject specs reference durable cross-cutting decisions.",
           "surface": [
@@ -4550,7 +4648,14 @@
           "decisions": null,
           "id": "specled.expanded_behavior_tier",
           "kind": "workflow",
-          "realized_by": null,
+          "realized_by": {
+            "implementation": [
+              "SpecLedEx.Realization.ExpandedBehavior.hash/2",
+              "SpecLedEx.Realization.ExpandedBehavior.run/3",
+              "SpecLedEx.Realization.Typespecs.hash/2",
+              "SpecLedEx.Realization.Typespecs.run/3"
+            ]
+          },
           "status": "active",
           "summary": "expanded_behavior reads beam debug_info and canonicalizes the expanded AST; typespecs hashes @spec/@type declarations; both emit `detector_unavailable` when debug_info is stripped.",
           "surface": [
@@ -4573,7 +4678,14 @@
           "decisions": null,
           "id": "specled.implementation_tier",
           "kind": "workflow",
-          "realized_by": null,
+          "realized_by": {
+            "implementation": [
+              "SpecLedEx.Realization.Implementation.run/4",
+              "SpecLedEx.Realization.Implementation.hash_for_subject/3",
+              "SpecLedEx.Realization.Closure.compute/2",
+              "SpecLedEx.Realization.Closure.subject_for_mfa/2"
+            ]
+          },
           "status": "active",
           "summary": "Walks tracer edges from declared MFAs; hashes closure with subject-boundary stops + hash-ref composition (Cargo pattern); MFA ownership via binding map with surface + lexical tiebreak.",
           "surface": [
@@ -4598,7 +4710,13 @@
           ],
           "id": "specled.index_state",
           "kind": "workflow",
-          "realized_by": null,
+          "realized_by": {
+            "implementation": [
+              "SpecLedEx.Index.build/2",
+              "SpecLedEx.Json.write!/2",
+              "SpecLedEx.Json.encode_to_iodata!/1"
+            ]
+          },
           "status": "active",
           "summary": "Builds the authored index and writes canonical derived state for the workspace.",
           "surface": [
@@ -4622,7 +4740,21 @@
           ],
           "id": "specled.mix_tasks",
           "kind": "workflow",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "Mix.Tasks.Spec.Check.run/1"
+            ],
+            "implementation": [
+              "Mix.Tasks.Spec.Init.run/1",
+              "Mix.Tasks.Spec.Prime.run/1",
+              "Mix.Tasks.Spec.Next.run/1",
+              "Mix.Tasks.Spec.Check.run/1",
+              "Mix.Tasks.Spec.Status.run/1",
+              "Mix.Tasks.Spec.Decision.New.run/1",
+              "Mix.Tasks.Spec.Index.run/1",
+              "Mix.Tasks.Spec.Validate.run/1"
+            ]
+          },
           "status": "active",
           "summary": "Mix tasks for scaffolding, session-start priming, indexing, guiding, validating, summarizing, and strictly checking Spec Led Development workspaces.",
           "surface": [
@@ -4655,7 +4787,12 @@
           ],
           "id": "specled.modal_class",
           "kind": "module",
-          "realized_by": null,
+          "realized_by": {
+            "implementation": [
+              "SpecLedEx.ModalClass.classify/1",
+              "SpecLedEx.ModalClass.downgrade?/2"
+            ]
+          },
           "status": "active",
           "summary": "Pure classify/1 over requirement statements plus total downgrade?/2 over the modal × modal Cartesian product, consumed by AppendOnly's detect_must_downgrade/3.",
           "surface": [
@@ -4678,7 +4815,16 @@
           ],
           "id": "specled.next",
           "kind": "workflow",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "Mix.Tasks.Spec.Next.run/1",
+              "SpecLedEx.next/3"
+            ],
+            "implementation": [
+              "SpecLedEx.Next.run/3",
+              "SpecLedEx.ChangeAnalysis.analyze/3"
+            ]
+          },
           "status": "active",
           "summary": "Classifies the current change set, points at impacted subjects or uncovered frontier files, and suggests the next Spec Led step without writing current truth automatically.",
           "surface": [
@@ -4704,7 +4850,11 @@
           ],
           "id": "specled.overlap",
           "kind": "module",
-          "realized_by": null,
+          "realized_by": {
+            "implementation": [
+              "SpecLedEx.Overlap.analyze/2"
+            ]
+          },
           "status": "active",
           "summary": "Head-only detector for duplicate `covers:` entries and MUST-stem collisions within a subject, run alongside AppendOnly under `BranchCheck.run/3`.",
           "surface": [
@@ -4727,7 +4877,18 @@
           ],
           "id": "specled.package",
           "kind": "package",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "SpecLedEx.build_index/2",
+              "SpecLedEx.verify/3",
+              "SpecLedEx.report/3",
+              "SpecLedEx.write_state/4",
+              "SpecLedEx.normalize_for_state/1",
+              "SpecLedEx.detect_spec_dir/1",
+              "SpecLedEx.detect_authored_dir/2",
+              "SpecLedEx.detect_decision_dir/2"
+            ]
+          },
           "status": "active",
           "summary": "Elixir package for Spec Led Development. Provides Mix tasks to scaffold, orient, index, guide, validate, summarize, and strictly check authored specs.",
           "surface": [
@@ -4748,7 +4909,14 @@
           "decisions": null,
           "id": "specled.parser",
           "kind": "module",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "SpecLedEx.Parser.parse_file/2"
+            ],
+            "implementation": [
+              "SpecLedEx.Parser"
+            ]
+          },
           "status": "active",
           "summary": "Extracts structured spec blocks from authored Markdown files.",
           "surface": [
@@ -4767,7 +4935,12 @@
           ],
           "id": "specled.policy_files",
           "kind": "module",
-          "realized_by": null,
+          "realized_by": {
+            "implementation": [
+              "SpecLedEx.PolicyFiles.classify/1",
+              "SpecLedEx.PolicyFiles.co_change_rule/1"
+            ]
+          },
           "status": "active",
           "summary": "Classifies changed paths into `:lib`, `:test`, `:doc`, `:generated`, or `:unknown` and exposes co-change rules per kind.",
           "surface": [
@@ -4790,7 +4963,15 @@
           ],
           "id": "specled.prime",
           "kind": "workflow",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "Mix.Tasks.Spec.Prime.run/1"
+            ],
+            "implementation": [
+              "SpecLedEx.Prime.build/4",
+              "SpecLedEx.Prime.format_human/1"
+            ]
+          },
           "status": "active",
           "summary": "Combines workspace status, current-branch guidance, and the default local loop into one session-start command.",
           "surface": [
@@ -4809,7 +4990,15 @@
           "decisions": null,
           "id": "specled.prose_guard",
           "kind": "workflow",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "Mix.Tasks.Spec.Validate"
+            ],
+            "implementation": [
+              "SpecLedEx.Config.Prose.findings/3",
+              "SpecLedEx.Config.Prose.parse/1"
+            ]
+          },
           "status": "active",
           "summary": "Emits `spec_requirement_too_short` when a `must` requirement's statement falls below the configured char/word threshold.",
           "surface": [
@@ -4829,7 +5018,16 @@
           "decisions": null,
           "id": "specled.realized_by",
           "kind": "module",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "SpecLedEx.Schema.RealizedBy.validate/1",
+              "SpecLedEx.Realization.EffectiveBinding.for_requirement/2"
+            ],
+            "implementation": [
+              "SpecLedEx.Schema.normalize_realized_by/1",
+              "SpecLedEx.Schema.maybe_normalize_realized_by/2"
+            ]
+          },
           "status": "active",
           "summary": "zoi schema for `realized_by` on spec-meta and requirement-level overrides; EffectiveBinding merges subject and requirement bindings for a given requirement.",
           "surface": [
@@ -4853,7 +5051,15 @@
           "decisions": null,
           "id": "specled.severity",
           "kind": "module",
-          "realized_by": null,
+          "realized_by": {
+            "implementation": [
+              "SpecLedEx.BranchCheck.Severity.resolve/3",
+              "SpecLedEx.BranchCheck.Severity.sanitized/3"
+            ],
+            "typespecs": [
+              "SpecLedEx.BranchCheck.Severity"
+            ]
+          },
           "status": "active",
           "summary": "Resolves severity per finding from trailer overrides, config map, and per-code defaults.",
           "surface": [
@@ -4874,7 +5080,14 @@
           ],
           "id": "specled.spec_drift_trailer",
           "kind": "module",
-          "realized_by": null,
+          "realized_by": {
+            "implementation": [
+              "SpecLedEx.BranchCheck.Trailer.parse/1",
+              "SpecLedEx.BranchCheck.Trailer.read/2",
+              "SpecLedEx.BranchCheck.Trailer.apply_token/2",
+              "SpecLedEx.BranchCheck.Trailer.apply_pair/2"
+            ]
+          },
           "status": "active",
           "summary": "Parses `Spec-Drift:` git trailers across base..HEAD and exposes a trailer_override map to Severity.",
           "surface": [
@@ -4923,7 +5136,19 @@
           ],
           "id": "specled.status",
           "kind": "workflow",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "Mix.Tasks.Spec.Status.run/1"
+            ],
+            "implementation": [
+              "SpecLedEx.Status.build/3",
+              "SpecLedEx.Status.format_human/1",
+              "SpecLedEx.Coverage.covered_files/2",
+              "SpecLedEx.Coverage.subject_file_map/2",
+              "SpecLedEx.Coverage.category_summary/3",
+              "SpecLedEx.Coverage.subject_id/1"
+            ]
+          },
           "status": "active",
           "summary": "Builds current-state summaries for coverage, verification strength, weak spots, and ADR usage.",
           "surface": [
@@ -4945,7 +5170,18 @@
           ],
           "id": "specled.tag_scanning",
           "kind": "module",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "SpecLedEx.TagScanner.scan/2",
+              "SpecLedEx.TagScanner.scan_file/1"
+            ],
+            "implementation": [
+              "SpecLedEx.TagScanner.extract_spec_from_arg/1",
+              "SpecLedEx.TagScanner.resolve_spec_value/1",
+              "SpecLedEx.TagScanner.extract_module_tags/2",
+              "SpecLedEx.TagScanner.collect_moduletags/2"
+            ]
+          },
           "status": "active",
           "summary": "AST-based scanner that extracts tag spec values from ExUnit files without compiling them.",
           "surface": [
@@ -4963,7 +5199,12 @@
           "decisions": null,
           "id": "specled.tagged_tests",
           "kind": "module",
-          "realized_by": null,
+          "realized_by": {
+            "implementation": [
+              "SpecLedEx.TaggedTests.collect_entries/1",
+              "SpecLedEx.TaggedTests.build_command/2"
+            ]
+          },
           "status": "active",
           "summary": "Workspace-wide aggregation of tagged_tests verifications into a single mix test invocation.",
           "surface": [
@@ -4981,7 +5222,15 @@
           "decisions": null,
           "id": "specled.triangulation",
           "kind": "workflow",
-          "realized_by": null,
+          "realized_by": {
+            "api_boundary": [
+              "Mix.Tasks.Spec.Triangle.run/1"
+            ],
+            "implementation": [
+              "SpecLedEx.CoverageTriangulation.findings/3",
+              "SpecLedEx.CoverageTriangulation.execution_reach_map/2"
+            ]
+          },
           "status": "active",
           "summary": "Pure function over `(coverage_records, closures, tag_index)` returning new findings `branch_guard_untested_realization`, `branch_guard_untethered_test`, `branch_guard_underspecified_realization`, plus `detector_unavailable` on missing inputs; `mix spec.triangle` prints per-subject diagnostics.",
           "surface": [
@@ -5002,7 +5251,14 @@
           "decisions": null,
           "id": "specled.use_tier",
           "kind": "workflow",
-          "realized_by": null,
+          "realized_by": {
+            "implementation": [
+              "SpecLedEx.Realization.Use.run/3",
+              "SpecLedEx.Realization.Use.hash/2",
+              "SpecLedEx.Realization.Use.consumers_for/2",
+              "SpecLedEx.Realization.Drift.dedupe/2"
+            ]
+          },
           "status": "active",
           "summary": "use tier enumerates consumers via tracer; macro-provider root-cause dedup via Drift.dedupe/2 collapses N per-consumer findings to one per-provider finding with consumers_affected count and 8-char hash-prefix diff.",
           "surface": [
@@ -5029,7 +5285,16 @@
           ],
           "id": "specled.verification",
           "kind": "workflow",
-          "realized_by": null,
+          "realized_by": {
+            "implementation": [
+              "SpecLedEx.Verifier.verify/3",
+              "SpecLedEx.VerificationStrength.meets_minimum?/2",
+              "SpecLedEx.VerificationStrength.normalize/1",
+              "SpecLedEx.VerificationStrength.default/0",
+              "SpecLedEx.VerificationStrength.levels/0",
+              "SpecLedEx.TagFindings.findings/1"
+            ]
+          },
           "status": "active",
           "summary": "Validates authored specs, checks references, derives findings, and writes state.",
           "surface": [

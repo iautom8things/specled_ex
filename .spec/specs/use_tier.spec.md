@@ -23,6 +23,12 @@ surface:
   - test/specled_ex/realization/use_test.exs
   - test/specled_ex/realization/drift_test.exs
   - test/integration/scenario_macro_provider_drift_test.exs
+realized_by:
+  implementation:
+    - "SpecLedEx.Realization.Use.run/3"
+    - "SpecLedEx.Realization.Use.hash/2"
+    - "SpecLedEx.Realization.Use.consumers_for/2"
+    - "SpecLedEx.Realization.Drift.dedupe/2"
 ```
 
 ## Requirements
