@@ -58,35 +58,59 @@ defmodule SpecLedEx do
 
   def write_state(index, report, root \\ File.cwd!(), output_path \\ @default_state) do
     path = Path.expand(output_path, root)
+    findings = if report, do: report["findings"] || [], else: []
+
+    state =
+      index
+      |> normalize_for_state()
+      |> Map.put("findings", normalize_findings(findings))
+      |> update_in(["summary", "findings"], fn _ -> length(findings) end)
+      |> maybe_put("verification", normalize_verification(report))
+
+    Json.write!(path, state)
+    path
+  end
+
+  @doc """
+  Canonicalizes an index into the shape written to `state.json`.
+
+  Pure function. Takes the index map produced by `build_index/2` and returns
+  the normalized state payload — same top-level keys as `state.json` minus
+  the `"verification"` slot (which only appears when a verification report is
+  supplied to `write_state/4`).
+
+  `"findings"` is always the empty list and `summary["findings"]` is `0`;
+  `write_state/4` overlays the real values from its verification report.
+
+  Consumers (AppendOnly, tests) that need a canonical in-memory state
+  without writing to disk can call this directly. Round-trip invariant:
+  `normalize_for_state(index) == Jason.decode!(File.read!(write_state(index, nil, ...)))`.
+  """
+  @spec normalize_for_state(map()) :: map()
+  def normalize_for_state(index) when is_map(index) do
     subjects = index["subjects"] || []
     decisions = index["decisions"] || []
-    findings = if report, do: report["findings"] || [], else: []
 
     summary =
       (index["summary"] || %{})
       |> Map.merge(%{
-        "findings" => length(findings),
+        "findings" => 0,
         "verifications" => (index["summary"] || %{})["verification_items"] || 0
       })
       |> Map.delete("verification_items")
       |> Map.delete("parse_errors")
 
-    state =
-      %{
-        "specification_version" => "1.0",
-        "workspace" => %{
-          "spec_count" => length(subjects),
-          "decision_count" => length(decisions)
-        },
-        "index" => normalize_index(subjects),
-        "decisions" => normalize_decisions(decisions),
-        "findings" => normalize_findings(findings),
-        "summary" => summary
-      }
-      |> maybe_put("verification", normalize_verification(report))
-
-    Json.write!(path, state)
-    path
+    %{
+      "specification_version" => "1.0",
+      "workspace" => %{
+        "spec_count" => length(subjects),
+        "decision_count" => length(decisions)
+      },
+      "index" => normalize_index(subjects),
+      "decisions" => normalize_decisions(decisions),
+      "findings" => [],
+      "summary" => summary
+    }
   end
 
   def detect_spec_dir(root \\ File.cwd!()) do
@@ -206,7 +230,10 @@ defmodule SpecLedEx do
                 "status" => value_for(meta, "status"),
                 "date" => value_for(meta, "date"),
                 "affects" => value_for(meta, "affects") || [],
-                "superseded_by" => value_for(meta, "superseded_by")
+                "superseded_by" => value_for(meta, "superseded_by"),
+                "change_type" => value_for(meta, "change_type"),
+                "reverses_what" => value_for(meta, "reverses_what"),
+                "replaces" => value_for(meta, "replaces")
               }
               |> drop_nil_values()
             ]

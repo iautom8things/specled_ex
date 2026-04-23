@@ -19,7 +19,7 @@ surface:
   - lib/specled_ex/append_only.ex
   - lib/specled_ex.ex
   - test/specled_ex/append_only_test.exs
-  - test/support/append_only_fixtures.ex
+  - test_support/append_only_fixtures.ex
 decisions:
   - specled.decision.adr_append_only
   - specled.decision.modal_class_diff_time
@@ -311,7 +311,7 @@ decisions:
 ```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/append_only_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.append_only.requirement_deleted
     - specled.append_only.must_downgraded
@@ -328,7 +328,7 @@ decisions:
     - specled.append_only.fix_block_discipline
 - kind: source_file
   target: lib/specled_ex/append_only.ex
-  execute: false
+  execute: true
   covers:
     - specled.append_only.requirement_deleted
     - specled.append_only.must_downgraded
