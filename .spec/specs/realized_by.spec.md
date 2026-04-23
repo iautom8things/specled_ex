@@ -53,13 +53,20 @@ surface:
     inherit the subject binding.
   priority: must
   stability: evolving
-- id: specled.realized_by.effective_binding_merge
+- id: specled.realized_by.effective_binding_inherits_subject
   statement: >-
-    SpecLedEx.Realization.EffectiveBinding.for_requirement/2 shall
-    return the merged binding for a requirement: per tier, the
-    requirement value replaces the subject value if set; otherwise
-    the subject value is used. Tiers not set by either layer shall be
-    absent from the return value.
+    When a requirement declares no `realized_by` tiers, EffectiveBinding.
+    for_requirement/2 shall return the subject-level binding verbatim
+    for every tier the subject declares, and shall omit tiers the
+    subject does not declare.
+  priority: must
+  stability: evolving
+- id: specled.realized_by.effective_binding_requirement_replaces_tier
+  statement: >-
+    When a requirement declares a `realized_by` value for a tier, that
+    value shall replace (not merge into) the subject-level value for
+    that tier in the returned binding, while tiers the requirement does
+    not set fall through to the subject value.
   priority: must
   stability: evolving
 - id: specled.realized_by.existing_surface_coexists
@@ -85,7 +92,7 @@ surface:
     - "the returned map has `api_boundary: [\"MyMod.a/1\", \"MyMod.b/2\"]`"
     - no other tier keys are present
   covers:
-    - specled.realized_by.effective_binding_merge
+    - specled.realized_by.effective_binding_inherits_subject
 - id: specled.realized_by.scenario.requirement_override_replaces_tier
   given:
     - "a subject with `realized_by.api_boundary: [\"MyMod.a/1\"]` and `realized_by.implementation: [\"MyMod.a/1\"]`"
@@ -97,7 +104,7 @@ surface:
     - "the returned map has `implementation: [\"MyMod.a/1\"]`"
   covers:
     - specled.realized_by.requirement_override
-    - specled.realized_by.effective_binding_merge
+    - specled.realized_by.effective_binding_requirement_replaces_tier
 - id: specled.realized_by.scenario.unknown_tier_rejected
   given:
     - "a subject with `realized_by.shenanigans: [\"Foo\"]`"
@@ -124,5 +131,6 @@ surface:
   target: mix test test/specled_ex/realization/effective_binding_test.exs
   execute: true
   covers:
-    - specled.realized_by.effective_binding_merge
+    - specled.realized_by.effective_binding_inherits_subject
+    - specled.realized_by.effective_binding_requirement_replaces_tier
 ```

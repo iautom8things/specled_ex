@@ -45,6 +45,29 @@ surface:
     are backed.
   priority: must
   stability: evolving
+- id: specled.tagged_tests.build_command_combines_backed_ids
+  statement: >-
+    build_command/2 shall, when given cover ids all backed by the tag
+    map, produce a single `mix test` command line that begins with
+    `mix test`, includes exactly one `--only spec:<id>` flag per id,
+    and appends each unique backing test file exactly once.
+  priority: must
+  stability: evolving
+- id: specled.tagged_tests.build_command_drops_unbacked_ids
+  statement: >-
+    build_command/2 shall omit any cover id not backed by the tag map
+    from the emitted command (no `--only spec:<id>` flag and no file
+    reference), while still emitting flags and files for the backed
+    ids.
+  priority: must
+  stability: evolving
+- id: specled.tagged_tests.build_command_no_tests_when_all_unbacked
+  statement: >-
+    build_command/2 shall return the atom `:no_tests` when none of the
+    requested cover ids have an entry in the tag map, so the caller can
+    short-circuit execution without building an empty command.
+  priority: must
+  stability: evolving
 - id: specled.tagged_tests.merged_run_attribution
   statement: >-
     When verification runs with command execution enabled, the verifier
@@ -60,6 +83,21 @@ surface:
     id has at least one entry in the tag map and `executed` strength
     when the aggregated run also exits zero. Untagged covers shall
     remain at `claimed` strength.
+  priority: must
+  stability: evolving
+- id: specled.tagged_tests.strength_executed_on_green_run
+  statement: >-
+    A `tagged_tests` claim whose cover ids are all backed by the tag
+    map and whose aggregated `mix test` run exits zero shall be
+    reported at `executed` strength (the strongest tagged_tests
+    strength tier).
+  priority: must
+  stability: evolving
+- id: specled.tagged_tests.strength_claimed_on_untagged_cover
+  statement: >-
+    A `tagged_tests` claim whose cover id has no entry in the tag map
+    shall remain at `claimed` strength, independent of any aggregated
+    run outcome.
   priority: must
   stability: evolving
 - id: specled.tagged_tests.missing_tag_finding
@@ -96,7 +134,7 @@ surface:
     - it includes one `--only spec:<id>` flag per id
     - it appends each unique test file exactly once
   covers:
-    - specled.tagged_tests.build_command
+    - specled.tagged_tests.build_command_combines_backed_ids
 - id: specled.tagged_tests.scenario.build_command_drops_unmapped_ids
   given:
     - a tag map that contains entries for `a.one` only
@@ -106,7 +144,7 @@ surface:
     - the returned command includes `--only spec:a.one` and the backing file
     - the returned command does not reference `missing.id`
   covers:
-    - specled.tagged_tests.build_command
+    - specled.tagged_tests.build_command_drops_unbacked_ids
 - id: specled.tagged_tests.scenario.build_command_no_tests_when_all_unmapped
   given:
     - a tag map with no entries for the requested cover ids
@@ -115,7 +153,7 @@ surface:
   then:
     - the function returns `:no_tests`
   covers:
-    - specled.tagged_tests.build_command
+    - specled.tagged_tests.build_command_no_tests_when_all_unbacked
 - id: specled.tagged_tests.scenario.merged_run_executes_once_across_subjects
   given:
     - "two subjects each declaring a `kind: tagged_tests` verification with execute=true"
@@ -129,7 +167,7 @@ surface:
     - both claims reach `executed` strength
   covers:
     - specled.tagged_tests.merged_run_attribution
-    - specled.tagged_tests.strength_progression
+    - specled.tagged_tests.strength_executed_on_green_run
 - id: specled.tagged_tests.scenario.missing_tag_warning_emitted
   given:
     - "a subject with a `kind: tagged_tests` verification covering `req.untagged`"
@@ -141,7 +179,7 @@ surface:
     - the corresponding claim stays at `claimed` strength
   covers:
     - specled.tagged_tests.missing_tag_finding
-    - specled.tagged_tests.strength_progression
+    - specled.tagged_tests.strength_claimed_on_untagged_cover
 ```
 
 ## Verification
@@ -152,7 +190,12 @@ surface:
   covers:
     - specled.tagged_tests.collect_entries
     - specled.tagged_tests.build_command
+    - specled.tagged_tests.build_command_combines_backed_ids
+    - specled.tagged_tests.build_command_drops_unbacked_ids
+    - specled.tagged_tests.build_command_no_tests_when_all_unbacked
     - specled.tagged_tests.merged_run_attribution
     - specled.tagged_tests.strength_progression
+    - specled.tagged_tests.strength_executed_on_green_run
+    - specled.tagged_tests.strength_claimed_on_untagged_cover
     - specled.tagged_tests.missing_tag_finding
 ```

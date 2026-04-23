@@ -34,6 +34,27 @@ decisions:
     compiling the test files.
   priority: must
   stability: evolving
+- id: specled.tag_scanning.form_string_literal
+  statement: >-
+    The tag scanner shall extract a single requirement id from an
+    `@tag spec, "<id>"` annotation carrying a string literal value and
+    link it to the following test name.
+  priority: must
+  stability: evolving
+- id: specled.tag_scanning.form_keyword_list
+  statement: >-
+    The tag scanner shall extract the `spec:` entry of a keyword-list
+    `@tag [spec: "<id>", ...]` annotation and ignore every non-`spec`
+    key in that keyword list.
+  priority: must
+  stability: evolving
+- id: specled.tag_scanning.form_list_of_ids
+  statement: >-
+    The tag scanner shall extract every id from an `@tag spec` whose
+    value is a list of string literals and link all of them to the
+    following test name.
+  priority: must
+  stability: evolving
 - id: specled.tag_scanning.scan_aggregates_results
   statement: >-
     SpecLedEx.TagScanner.scan/2 shall return an ok tuple carrying a tag_map of
@@ -88,7 +109,7 @@ decisions:
   then:
     - the returned tag list contains `auth.login` linked to that test name
   covers:
-    - specled.tag_scanning.supported_forms
+    - specled.tag_scanning.form_string_literal
 - id: specled.tag_scanning.scenario.extract_keyword_list
   given:
     - a test file containing a keyword-list `@tag` annotation whose `spec` entry is `auth.logout` and whose `timeout` entry is 5_000
@@ -98,7 +119,7 @@ decisions:
     - the returned tag list contains `auth.logout`
     - the `timeout` key is ignored
   covers:
-    - specled.tag_scanning.supported_forms
+    - specled.tag_scanning.form_keyword_list
 - id: specled.tag_scanning.scenario.extract_list_of_ids
   given:
     - a test file containing an `@tag spec` annotation whose value is the list `[a.one, a.two]`
@@ -107,7 +128,7 @@ decisions:
   then:
     - the returned tag list contains both `a.one` and `a.two` linked to the same test
   covers:
-    - specled.tag_scanning.supported_forms
+    - specled.tag_scanning.form_list_of_ids
 - id: specled.tag_scanning.scenario.moduletag_attaches_to_every_test
   given:
     - a test file declaring a `@moduletag spec` annotation with id `domain.root` at the top
@@ -166,6 +187,9 @@ decisions:
   execute: true
   covers:
     - specled.tag_scanning.supported_forms
+    - specled.tag_scanning.form_string_literal
+    - specled.tag_scanning.form_keyword_list
+    - specled.tag_scanning.form_list_of_ids
     - specled.tag_scanning.scan_aggregates_results
     - specled.tag_scanning.parse_errors_surfaced
     - specled.tag_scanning.dynamic_values_reported

@@ -41,6 +41,14 @@ decisions:
     the beam lookup misses or beam debug_info is not present.
   priority: must
   stability: evolving
+- id: specled.binding.resolve_sees_use_generated
+  statement: >-
+    Binding.resolve/2 shall return `{:ok, ast}` for functions injected
+    by `use`-based macros (e.g. DSLs that emit callbacks), because beam
+    debug_info reflects post-expansion bytecode that source-only
+    traversal would miss.
+  priority: must
+  stability: evolving
 - id: specled.binding.dangling_reported
   statement: >-
     When resolve/2 cannot locate the MFA via beam or source, it shall
@@ -53,11 +61,18 @@ decisions:
   statement: >-
     SpecLedEx.Realization.Canonical.normalize/1 shall strip line/column
     metadata, sort `@behaviour`/`@derive`/`@spec` lists, and apply
-    α-renaming to locally-bound variables. The α-rename guard shall not
-    rewrite reserved identifiers (`__MODULE__`, `__CALLER__`,
-    `__ENV__`, `__DIR__`, `__STACKTRACE__`, `__block__`) and shall only
-    rewrite variables whose context is `nil` or `Elixir` — other
-    contexts (macro hygiene) are left intact.
+    α-renaming to locally-bound variables whose context is `nil` or
+    `Elixir`, so cosmetic refactors (rename, reflow, reordered
+    attributes) produce a stable canonical form.
+  priority: must
+  stability: evolving
+- id: specled.binding.canonical_reserved_idents_preserved
+  statement: >-
+    Canonical.normalize/1's α-rename pass shall NOT rewrite reserved
+    identifiers (`__MODULE__`, `__CALLER__`, `__ENV__`, `__DIR__`,
+    `__STACKTRACE__`, `__block__`) and shall NOT rewrite variables
+    whose context is anything other than `nil` or `Elixir` (macro
+    hygiene contexts are left intact).
   priority: must
   stability: evolving
 - id: specled.binding.canonical_deterministic_bytes
@@ -110,7 +125,7 @@ decisions:
   then:
     - "the result is `{:ok, ast}` — source-fallback would miss this function"
   covers:
-    - specled.binding.resolve_beam_first
+    - specled.binding.resolve_sees_use_generated
 - id: specled.binding.scenario.dangling_binding_detected
   given:
     - "a binding `\"MyMod.missing_fun/0\"` with no matching definition in beam or source"
@@ -139,7 +154,7 @@ decisions:
   then:
     - "both identifiers appear verbatim in the normalized AST"
   covers:
-    - specled.binding.canonical_strips_positions
+    - specled.binding.canonical_reserved_idents_preserved
 - id: specled.binding.scenario.atomic_write_survives_crash
   given:
     - an existing `.spec/state.json` with committed entries
@@ -173,12 +188,14 @@ decisions:
   execute: true
   covers:
     - specled.binding.resolve_beam_first
+    - specled.binding.resolve_sees_use_generated
     - specled.binding.dangling_reported
 - kind: command
   target: mix test test/specled_ex/realization/canonical_test.exs
   execute: true
   covers:
     - specled.binding.canonical_strips_positions
+    - specled.binding.canonical_reserved_idents_preserved
     - specled.binding.canonical_deterministic_bytes
 - kind: command
   target: mix test test/specled_ex/realization/hash_store_test.exs

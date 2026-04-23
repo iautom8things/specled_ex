@@ -63,7 +63,7 @@ defmodule SpecLedEx.ModalClass do
     negative `{:must_not, :shall_not}`), rank-decreasing transitions
     return `true`; rank-increasing transitions return `false`.
   * Positive → negative cross-polarity returns `true` (conservative per
-    `specled.modal_class.cross_polarity_conservative`).
+    `specled.modal_class.cross_polarity_positive_to_negative_is_downgrade`).
   * Negative → positive cross-polarity returns `false` — the polarity
     loss is caught by `specled.append_only.negative_removed` through the
     `polarity` field, not here. This asymmetry keeps the relation acyclic

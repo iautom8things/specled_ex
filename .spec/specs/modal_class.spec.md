@@ -34,6 +34,27 @@ decisions:
     for any binary-string input, never raising and never returning nil.
   priority: must
   stability: stable
+- id: specled.modal_class.classify_must
+  statement: >-
+    ModalClass.classify/1 shall return `:must` when the statement
+    contains a MUST modal verb in imperative position (e.g.
+    `The system MUST reject invalid input.`).
+  priority: must
+  stability: stable
+- id: specled.modal_class.classify_should
+  statement: >-
+    ModalClass.classify/1 shall return `:should` when the statement
+    contains a SHOULD modal verb in imperative position (e.g.
+    `The system should log a warning.`).
+  priority: must
+  stability: stable
+- id: specled.modal_class.classify_none
+  statement: >-
+    ModalClass.classify/1 shall return `:none` when the statement
+    contains no recognized modal verb (e.g. `The system logs a
+    warning.`).
+  priority: must
+  stability: stable
 - id: specled.modal_class.classify_deterministic
   statement: >-
     ModalClass.classify/1 shall be deterministic: identical input strings
@@ -56,6 +77,20 @@ decisions:
     raising.
   priority: must
   stability: stable
+- id: specled.modal_class.downgrade_must_to_weaker
+  statement: >-
+    ModalClass.downgrade?/2 shall return true when the prior modal is
+    stronger in the positive family than the current modal (e.g.
+    `:must` -> `:should`, `:must` -> `:may`, `:must` -> `:none`).
+  priority: must
+  stability: stable
+- id: specled.modal_class.downgrade_weaker_to_stronger_is_false
+  statement: >-
+    ModalClass.downgrade?/2 shall return false when the prior modal is
+    weaker than the current modal within the same polarity family
+    (e.g. `:should` -> `:must` is an upgrade, not a downgrade).
+  priority: must
+  stability: stable
 - id: specled.modal_class.downgrade_monotonic
   statement: >-
     ModalClass.downgrade?/2 shall be monotonic on the partial order over
@@ -63,16 +98,22 @@ decisions:
     from b to c is true, then downgrade? from a to c is true.
   priority: must
   stability: stable
-- id: specled.modal_class.cross_polarity_conservative
+- id: specled.modal_class.cross_polarity_positive_to_negative_is_downgrade
   statement: >-
-    ModalClass.downgrade?/2 shall classify every positive-family modal
-    (`:must`, `:shall`, `:should`, `:may`) to negative-family modal
-    (`:must_not`, `:shall_not`) transition as downgrade true
-    (conservative), and every negative-family to positive-family
-    transition as downgrade false; the negative-to-positive polarity
-    loss is caught by the separate `specled.append_only.negative_removed`
-    detector through the `polarity` field, and keeping the asymmetry
-    here is what lets the relation remain monotonic per
+    ModalClass.downgrade?/2 shall return true for every positive-family
+    modal (`:must`, `:shall`, `:should`, `:may`) to negative-family
+    modal (`:must_not`, `:shall_not`) transition (conservative: any
+    polarity flip from positive to negative is treated as a downgrade).
+  priority: must
+  stability: evolving
+- id: specled.modal_class.cross_polarity_negative_to_positive_is_not_downgrade
+  statement: >-
+    ModalClass.downgrade?/2 shall return false for every negative-family
+    to positive-family transition; the negative-to-positive polarity
+    loss is caught by the separate
+    `specled.append_only.negative_removed` detector through the
+    `polarity` field, and keeping this asymmetry is what lets the
+    relation remain monotonic per
     `specled.modal_class.downgrade_monotonic`.
   priority: must
   stability: evolving
@@ -89,7 +130,7 @@ decisions:
   then:
     - "the return value is `:must`"
   covers:
-    - specled.modal_class.classify_total
+    - specled.modal_class.classify_must
 
 - id: specled.modal_class.scenario.should_classification
   given:
@@ -99,7 +140,7 @@ decisions:
   then:
     - "the return value is `:should`"
   covers:
-    - specled.modal_class.classify_total
+    - specled.modal_class.classify_should
     - specled.modal_class.classify_case_and_punctuation_insensitive
 
 - id: specled.modal_class.scenario.none_classification
@@ -110,7 +151,7 @@ decisions:
   then:
     - "the return value is `:none`"
   covers:
-    - specled.modal_class.classify_total
+    - specled.modal_class.classify_none
 
 - id: specled.modal_class.scenario.deterministic
   given:
@@ -122,6 +163,17 @@ decisions:
   covers:
     - specled.modal_class.classify_deterministic
 
+- id: specled.modal_class.scenario.classify_totality
+  given:
+    - "a sample of arbitrary binary strings including empty string, whitespace-only, and non-modal prose"
+  when:
+    - SpecLedEx.ModalClass.classify/1 is invoked on each
+  then:
+    - "every return value is an atom in the closed set {:must, :shall, :must_not, :shall_not, :should, :may, :none}"
+    - no invocation raises
+  covers:
+    - specled.modal_class.classify_total
+
 - id: specled.modal_class.scenario.must_to_should_is_downgrade
   given:
     - "modals `:must` and `:should`"
@@ -130,7 +182,7 @@ decisions:
   then:
     - the return value is true
   covers:
-    - specled.modal_class.downgrade_total
+    - specled.modal_class.downgrade_must_to_weaker
 
 - id: specled.modal_class.scenario.should_to_must_is_not_downgrade
   given:
@@ -140,7 +192,7 @@ decisions:
   then:
     - the return value is false
   covers:
-    - specled.modal_class.downgrade_total
+    - specled.modal_class.downgrade_weaker_to_stronger_is_false
 
 - id: specled.modal_class.scenario.must_to_must_not_is_downgrade
   given:
@@ -150,7 +202,7 @@ decisions:
   then:
     - the return value is true
   covers:
-    - specled.modal_class.cross_polarity_conservative
+    - specled.modal_class.cross_polarity_positive_to_negative_is_downgrade
 
 - id: specled.modal_class.scenario.must_not_to_must_is_not_downgrade
   given:
@@ -160,7 +212,18 @@ decisions:
   then:
     - the return value is false
   covers:
-    - specled.modal_class.cross_polarity_conservative
+    - specled.modal_class.cross_polarity_negative_to_positive_is_not_downgrade
+
+- id: specled.modal_class.scenario.downgrade_totality
+  given:
+    - "the full modal × modal Cartesian product (49 pairs) enumerated"
+  when:
+    - "SpecLedEx.ModalClass.downgrade?/2 is invoked on each pair"
+  then:
+    - "every return value is a boolean"
+    - no invocation raises
+  covers:
+    - specled.modal_class.downgrade_total
 
 - id: specled.modal_class.scenario.transitivity
   given:
@@ -181,11 +244,17 @@ decisions:
   execute: true
   covers:
     - specled.modal_class.classify_total
+    - specled.modal_class.classify_must
+    - specled.modal_class.classify_should
+    - specled.modal_class.classify_none
     - specled.modal_class.classify_deterministic
     - specled.modal_class.classify_case_and_punctuation_insensitive
     - specled.modal_class.downgrade_total
+    - specled.modal_class.downgrade_must_to_weaker
+    - specled.modal_class.downgrade_weaker_to_stronger_is_false
     - specled.modal_class.downgrade_monotonic
-    - specled.modal_class.cross_polarity_conservative
+    - specled.modal_class.cross_polarity_positive_to_negative_is_downgrade
+    - specled.modal_class.cross_polarity_negative_to_positive_is_not_downgrade
 - kind: source_file
   target: lib/specled_ex/modal_class.ex
   execute: true

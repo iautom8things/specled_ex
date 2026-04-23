@@ -32,6 +32,14 @@ surface:
   statement: The parser shall continue parsing and collect parse errors when a block cannot be decoded, when a structured block appears more than once, or when block items fail schema validation.
   priority: must
   stability: stable
+- id: specled.parser.resilient_on_decode_error
+  statement: The parser shall record a parse error and continue (not crash) when a structured block contains malformed YAML/JSON that cannot be decoded.
+  priority: must
+  stability: stable
+- id: specled.parser.resilient_on_duplicate_block
+  statement: The parser shall record a duplicate-block parse error and continue (not crash) when the same structured block kind appears more than once in a single spec file.
+  priority: must
+  stability: stable
 - id: specled.parser.info_string_tokens
   statement: The parser shall recognize a spec block when any whitespace-separated token of the opening fence info string matches a spec-* tag, so authors can prefix or suffix a syntax-highlight language such as `yaml` without losing parser recognition.
   priority: must
@@ -50,7 +58,7 @@ surface:
     - the result includes a parse error
     - the parser does not crash
   covers:
-    - specled.parser.resilient_errors
+    - specled.parser.resilient_on_decode_error
 - id: specled.parser.duplicate_empty_block
   given:
     - a spec file with two empty spec-requirements blocks
@@ -59,6 +67,16 @@ surface:
   then:
     - the result includes a duplicate-block parse error
     - the parser does not crash
+  covers:
+    - specled.parser.resilient_on_duplicate_block
+- id: specled.parser.resilient_errors_totality
+  given:
+    - a spec file containing a structured block that cannot be decoded, and elsewhere a duplicated structured block
+  when:
+    - the parser processes the file
+  then:
+    - the result includes parse errors for both failure modes
+    - the parser does not crash and continues to extract well-formed blocks
   covers:
     - specled.parser.resilient_errors
 - id: specled.parser.language_tagged_fence
@@ -84,5 +102,7 @@ surface:
     - specled.parser.standard_blocks
     - specled.parser.title_extraction
     - specled.parser.resilient_errors
+    - specled.parser.resilient_on_decode_error
+    - specled.parser.resilient_on_duplicate_block
     - specled.parser.info_string_tokens
 ```
