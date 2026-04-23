@@ -176,4 +176,54 @@ defmodule SpecLedEx.BranchCheck.SeverityIntegrationTest do
              )
     end
   end
+
+  describe "@per_code_defaults covers every finding code emitted by this project" do
+    # Table-driven: one row per finding code with its baked-in default severity.
+    # Every entry in this table must appear in BranchCheck's @per_code_defaults
+    # map so that `BranchCheck.Severity.resolve/3` can honor config and trailer
+    # overrides without needing to re-derive the default at each emission site.
+    # Source-level check keeps this independent of runtime wiring.
+
+    branch_guard_codes = [
+      {"branch_guard_unmapped_change", :error},
+      {"branch_guard_missing_subject_update", :error},
+      {"branch_guard_missing_decision_update", :error},
+      {"branch_guard_requirement_without_test_tag", :warning}
+    ]
+
+    append_only_codes = [
+      {"append_only/requirement_deleted", :error},
+      {"append_only/must_downgraded", :error},
+      {"append_only/scenario_regression", :error},
+      {"append_only/negative_removed", :error},
+      {"append_only/disabled_without_reason", :warning},
+      {"append_only/no_baseline", :info},
+      {"append_only/adr_affects_widened", :error},
+      {"append_only/same_pr_self_authorization", :warning},
+      {"append_only/missing_change_type", :warning},
+      {"append_only/decision_deleted", :error}
+    ]
+
+    overlap_codes = [
+      {"overlap/duplicate_covers", :error},
+      {"overlap/must_stem_collision", :error}
+    ]
+
+    for {code, expected} <- branch_guard_codes ++ append_only_codes ++ overlap_codes do
+      @code code
+      @expected expected
+
+      @tag spec: "specled.severity.resolve_precedence"
+      test "@per_code_defaults maps #{code} to :#{expected}" do
+        source = File.read!("lib/specled_ex/branch_check.ex")
+        severity = Atom.to_string(@expected)
+
+        pattern =
+          ~r/"#{Regex.escape(@code)}"\s*=>\s*:#{severity}/
+
+        assert Regex.match?(pattern, source),
+               "expected BranchCheck @per_code_defaults to map #{inspect(@code)} => :#{severity}"
+      end
+    end
+  end
 end

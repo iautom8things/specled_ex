@@ -186,4 +186,167 @@ defmodule SpecLedEx.BranchCheckTest do
              &(&1["code"] == "branch_guard_requirement_without_test_tag")
            )
   end
+
+  describe "append_only integration" do
+    @tag spec: "specled.append_only.requirement_deleted"
+    test "AppendOnly finding flows into BranchCheck.run via Severity.resolve/3", %{root: root} do
+      init_git_repo(root)
+
+      write_subject_spec(
+        root,
+        "billing",
+        meta: %{"id" => "billing.subject", "kind" => "module", "status" => "active"},
+        requirements: [
+          %{
+            "id" => "billing.invoice",
+            "statement" => "The system MUST emit an invoice on every charge.",
+            "priority" => "must"
+          }
+        ]
+      )
+
+      # Commit state.json alongside the spec so there is a prior baseline.
+      index = SpecLedEx.index(root)
+      SpecLedEx.write_state(index, nil, root)
+      commit_all(root, "initial: add billing subject + state.json")
+
+      # Now delete the requirement. No authorizing ADR → AppendOnly must fire.
+      write_subject_spec(
+        root,
+        "billing",
+        meta: %{"id" => "billing.subject", "kind" => "module", "status" => "active"},
+        requirements: []
+      )
+
+      commit_all(root, "remove billing.invoice")
+
+      new_index = SpecLedEx.index(root)
+      report = BranchCheck.run(new_index, root, base: "HEAD~1")
+
+      findings =
+        Enum.filter(report["findings"], &(&1["code"] == "append_only/requirement_deleted"))
+
+      assert [finding] = findings
+      assert finding["severity"] == "error"
+      assert finding["entity_id"] == "billing.invoice"
+      assert finding["message"] =~ "billing.invoice"
+      assert finding["message"] =~ "fix:"
+      assert report["status"] == "fail"
+    end
+
+    @tag spec: "specled.severity.resolve_precedence"
+    test "Spec-Drift trailer downgrades an append_only finding to :info", %{root: root} do
+      init_git_repo(root)
+
+      write_subject_spec(
+        root,
+        "billing",
+        meta: %{"id" => "billing.subject", "kind" => "module", "status" => "active"},
+        requirements: [
+          %{
+            "id" => "billing.invoice",
+            "statement" => "The system MUST emit an invoice on every charge.",
+            "priority" => "must"
+          }
+        ]
+      )
+
+      index = SpecLedEx.index(root)
+      SpecLedEx.write_state(index, nil, root)
+      commit_all(root, "initial")
+
+      write_subject_spec(
+        root,
+        "billing",
+        meta: %{"id" => "billing.subject", "kind" => "module", "status" => "active"},
+        requirements: []
+      )
+
+      commit_all(root, """
+      Retire billing.invoice
+
+      Spec-Drift: append_only/requirement_deleted=info
+      """)
+
+      new_index = SpecLedEx.index(root)
+      report = BranchCheck.run(new_index, root, base: "HEAD~1")
+
+      findings =
+        Enum.filter(report["findings"], &(&1["code"] == "append_only/requirement_deleted"))
+
+      assert [finding] = findings
+      assert finding["severity"] == "info"
+    end
+
+    @tag spec: "specled.append_only.no_baseline"
+    test "missing state.json at base yields append_only/no_baseline at :info", %{root: root} do
+      init_git_repo(root)
+
+      # First commit has a spec but no state.json — simulates the bootstrap
+      # case (or a base ref predating spec-guardrails adoption).
+      write_subject_spec(
+        root,
+        "billing",
+        meta: %{"id" => "billing.subject", "kind" => "module", "status" => "active"},
+        requirements: [
+          %{
+            "id" => "billing.invoice",
+            "statement" => "The system MUST emit an invoice on every charge.",
+            "priority" => "must"
+          }
+        ]
+      )
+
+      commit_all(root, "initial spec, no state.json")
+
+      # Second commit adds state.json so head has one. Prior baseline still
+      # missing at HEAD~1 → no_baseline fires on this base.
+      index = SpecLedEx.index(root)
+      SpecLedEx.write_state(index, nil, root)
+      commit_all(root, "add state.json")
+
+      report = BranchCheck.run(index, root, base: "HEAD~1")
+
+      findings = Enum.filter(report["findings"], &(&1["code"] == "append_only/no_baseline"))
+
+      assert [finding] = findings
+      assert finding["severity"] == "info"
+      assert finding["message"] =~ "first-run"
+    end
+  end
+
+  describe "--base validation" do
+    test "--base pointing at a non-existent ref raises a clean ArgumentError", %{root: root} do
+      init_git_repo(root)
+
+      write_subject_spec(
+        root,
+        "billing",
+        meta: %{"id" => "billing.subject", "kind" => "module", "status" => "active"}
+      )
+
+      commit_all(root, "initial")
+
+      index = SpecLedEx.index(root)
+
+      assert_raise ArgumentError, ~r/does not resolve to a commit/, fn ->
+        BranchCheck.run(index, root, base: "definitely-not-a-real-ref")
+      end
+    end
+  end
+
+  describe "self-integration" do
+    @tag :integration
+    test "git show HEAD:.spec/state.json parses against specled_ex's own repo" do
+      root = File.cwd!()
+
+      {output, exit_code} =
+        System.cmd("git", ["-C", root, "show", "HEAD:.spec/state.json"], stderr_to_stdout: true)
+
+      assert exit_code == 0, "git show HEAD:.spec/state.json failed: #{output}"
+      assert {:ok, state} = Jason.decode(output)
+      assert is_map(state)
+      assert is_map(state["index"])
+    end
+  end
 end
