@@ -11,7 +11,7 @@ reads from the outer project state contaminate fixture compiles). `%SpecLedEx.Co
 is the one struct every tier orchestrator accepts as an argument. Production builds it
 once via `Context.load/1`; tests construct it with fixture paths.
 
-```spec-meta
+```yaml spec-meta
 id: specled.compiler_context
 kind: module
 status: active
@@ -27,7 +27,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.compiler_context.struct_shape
   statement: >-
     SpecLedEx.Compiler.Context shall be a struct with fields
@@ -75,7 +75,7 @@ decisions:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.compiler_context.scenario.load_with_explicit_paths
   given:
     - "a call `Context.load(app: :sample_project, env: :test, build_path: \"_build\")`"
@@ -103,7 +103,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/compiler/manifest_test.exs
   execute: true

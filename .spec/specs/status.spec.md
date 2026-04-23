@@ -6,7 +6,7 @@ Coverage and weak-spot reporting for the current Spec Led Development workspace.
 
 Summarize what the workspace covers now without introducing persistent in-flight planning artifacts.
 
-```spec-meta
+```yaml spec-meta
 id: specled.status
 kind: workflow
 status: active
@@ -24,7 +24,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.status.coverage_summary
   statement: mix spec.status shall summarize source, guide, and test coverage plus weak spots by subject from the current workspace, using executed command proof by default unless explicitly disabled.
   priority: should
@@ -41,7 +41,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/index_state_test.exs test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs
   execute: true

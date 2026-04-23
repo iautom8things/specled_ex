@@ -1,7 +1,8 @@
 defmodule SpecLedEx.Parser do
   @moduledoc false
 
-  @block_pattern ~r/```(spec-meta|spec-requirements|spec-scenarios|spec-verification|spec-exceptions)\s*\n(.*?)\n```/ms
+  @block_pattern ~r/```([^\n`]*)\n(.*?)\n```/ms
+  @spec_tags ~w(spec-meta spec-requirements spec-scenarios spec-verification spec-exceptions)
   @seen_blocks_key "__seen_blocks__"
 
   def parse_file(path, root) do
@@ -9,10 +10,19 @@ defmodule SpecLedEx.Parser do
 
     @block_pattern
     |> Regex.scan(content)
-    |> Enum.reduce(base_spec(path, root, content), fn [_, tag, raw], spec ->
-      decode_block(spec, tag, raw)
+    |> Enum.reduce(base_spec(path, root, content), fn [_, info_string, raw], spec ->
+      case find_spec_tag(info_string) do
+        nil -> spec
+        tag -> decode_block(spec, tag, raw)
+      end
     end)
     |> Map.delete(@seen_blocks_key)
+  end
+
+  defp find_spec_tag(info_string) do
+    info_string
+    |> String.split(~r/\s+/, trim: true)
+    |> Enum.find(&(&1 in @spec_tags))
   end
 
   defp base_spec(path, root, content) do

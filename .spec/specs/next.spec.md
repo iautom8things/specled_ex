@@ -6,7 +6,7 @@ Guided reconciliation for the current Git change set.
 
 Give maintainers a deterministic, read-only next step after code, test, or docs changes.
 
-```spec-meta
+```yaml spec-meta
 id: specled.next
 kind: workflow
 status: active
@@ -28,7 +28,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.next.change_classification
   statement: mix spec.next shall inspect the current Git change set, classify it as covered local, covered cross-cutting, uncovered frontier, or likely non-contract, and list the impacted subjects or uncovered policy files plus the next suggested commands.
   priority: must
@@ -49,7 +49,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/mix/tasks/spec_next_task_test.exs
   execute: true

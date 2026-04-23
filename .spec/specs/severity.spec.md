@@ -9,7 +9,7 @@ computed at check time: a per-commit trailer can escalate or relax a finding, co
 silences codes entirely with `:off`, and baked-in defaults cover anything else. Without
 this module, every finding-emitting call site re-invents its own policy.
 
-```spec-meta
+```yaml spec-meta
 id: specled.severity
 kind: module
 status: active
@@ -21,7 +21,7 @@ surface:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.severity.resolve_precedence
   statement: >-
     SpecLedEx.BranchCheck.Severity.resolve/3 shall apply the precedence
@@ -57,7 +57,7 @@ surface:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.severity.scenario.trailer_escalates_warning_to_error
   given:
     - a code with per-code default `:warning`
@@ -95,7 +95,7 @@ surface:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/branch_check/severity_test.exs
   execute: true

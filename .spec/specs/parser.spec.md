@@ -8,7 +8,7 @@ Parse Markdown spec files into a normalized map of metadata, requirements,
 scenarios, verification targets, and exceptions. Record parse errors
 without crashing so the verifier can report them.
 
-```spec-meta
+```yaml spec-meta
 id: specled.parser
 kind: module
 status: active
@@ -19,7 +19,7 @@ surface:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.parser.standard_blocks
   statement: The parser shall extract spec-meta, spec-requirements, spec-scenarios, spec-verification, and spec-exceptions fenced blocks from a spec file.
   priority: must
@@ -32,11 +32,15 @@ surface:
   statement: The parser shall continue parsing and collect parse errors when a block cannot be decoded, when a structured block appears more than once, or when block items fail schema validation.
   priority: must
   stability: stable
+- id: specled.parser.info_string_tokens
+  statement: The parser shall recognize a spec block when any whitespace-separated token of the opening fence info string matches a spec-* tag, so authors can prefix or suffix a syntax-highlight language such as `yaml` without losing parser recognition.
+  priority: must
+  stability: stable
 ```
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.parser.malformed_json
   given:
     - a spec file with invalid JSON in a spec-meta block
@@ -57,11 +61,22 @@ surface:
     - the parser does not crash
   covers:
     - specled.parser.resilient_errors
+- id: specled.parser.language_tagged_fence
+  given:
+    - a spec file whose opening fences are written as `yaml spec-meta` and `yaml spec-requirements`
+  when:
+    - the parser processes the file
+  then:
+    - the spec-meta and spec-requirements blocks are extracted as if the fences were bare
+    - no parse errors are recorded
+  covers:
+    - specled.parser.info_string_tokens
+    - specled.parser.standard_blocks
 ```
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/parser_test.exs
   execute: true
@@ -69,4 +84,5 @@ surface:
     - specled.parser.standard_blocks
     - specled.parser.title_extraction
     - specled.parser.resilient_errors
+    - specled.parser.info_string_tokens
 ```

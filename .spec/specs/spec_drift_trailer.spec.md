@@ -10,7 +10,7 @@ self-report that downgrades or re-labels findings for the lifespan of the PR wit
 editing config. The window is `base..HEAD`, not HEAD-only: CI sees squash commits and
 merge commits where the trailer may live one commit deep, not at the tip.
 
-```spec-meta
+```yaml spec-meta
 id: specled.spec_drift_trailer
 kind: module
 status: active
@@ -24,7 +24,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.spec_drift_trailer.parse_vocabulary
   statement: >-
     SpecLedEx.BranchCheck.Trailer.parse/1 shall accept the trailer values
@@ -55,7 +55,7 @@ decisions:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.spec_drift_trailer.scenario.refactor_downgrades_realization_drift
   given:
     - "a branch with two commits, the second carrying `Spec-Drift: refactor` in its message"
@@ -83,7 +83,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/branch_check/trailer_test.exs
   execute: true

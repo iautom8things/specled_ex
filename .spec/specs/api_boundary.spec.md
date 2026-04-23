@@ -12,7 +12,7 @@ the first tier users opt into because it catches surface-level drift cheaply
 and without any compiled metadata. S2 ships this tier only; subsequent tiers
 (implementation, expanded_behavior, use, typespecs) land in later slices.
 
-```spec-meta
+```yaml spec-meta
 id: specled.api_boundary
 kind: workflow
 status: active
@@ -31,7 +31,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.api_boundary.hash_function_head
   statement: >-
     SpecLedEx.Realization.ApiBoundary.hash/2 shall produce a hash that
@@ -99,7 +99,7 @@ decisions:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.api_boundary.scenario.refactor_whitespace_stable
   given:
     - "a subject with binding `realized_by.api_boundary: [\"Foo.bar/1\"]`"
@@ -166,7 +166,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/realization/api_boundary_test.exs
   execute: true

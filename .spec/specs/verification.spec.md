@@ -8,7 +8,7 @@ Take an indexed set of authored specs, validate structure and references,
 and produce a verification report with findings. This is the core of
 the intent verification loop.
 
-```spec-meta
+```yaml spec-meta
 id: specled.verification
 kind: workflow
 status: active
@@ -29,7 +29,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.verify.meta_required
   statement: Verification shall emit errors when a subject is missing spec-meta id, kind, or status.
   priority: must
@@ -94,7 +94,7 @@ decisions:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.verify.uncovered_requirement
   given:
     - a spec with a requirement that has no covering verification
@@ -205,7 +205,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs
   execute: true

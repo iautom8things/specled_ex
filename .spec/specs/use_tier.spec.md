@@ -12,7 +12,7 @@ one finding names A as the provider, lists the affected consumers with hash
 prefixes, and suppresses the per-consumer drift. Consumers are recomputed from
 the tracer on-demand (not persisted) so the consumer list is always current.
 
-```spec-meta
+```yaml spec-meta
 id: specled.use_tier
 kind: workflow
 status: active
@@ -27,7 +27,7 @@ surface:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.use_tier.enumerate_consumers
   statement: >-
     SpecLedEx.Realization.Use.consumers_for/2 shall enumerate every
@@ -77,7 +77,7 @@ surface:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.use_tier.scenario.consumers_current_not_persisted
   given:
     - a Provider with two committed consumers C1, C2 in state.json's use-tier record
@@ -111,7 +111,7 @@ surface:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/realization/use_test.exs
   execute: true

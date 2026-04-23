@@ -6,7 +6,7 @@ ADR parsing and validation rules for durable cross-cutting decisions.
 
 Define how `.spec/decisions/*.md` files are structured and how subject specs connect to them.
 
-```spec-meta
+```yaml spec-meta
 id: specled.decisions
 kind: workflow
 status: active
@@ -22,7 +22,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.decisions.frontmatter_contract
   statement: ADR files shall require YAML frontmatter with id, status, date, and affects plus Context, Decision, and Consequences sections.
   priority: must
@@ -35,7 +35,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/decision_parser_test.exs test/specled_ex/verifier_test.exs
   execute: true

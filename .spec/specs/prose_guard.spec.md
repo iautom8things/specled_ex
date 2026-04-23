@@ -10,7 +10,7 @@ emit a `spec_requirement_too_short` finding so the author has a concrete signal 
 the statement needs more. The threshold is intentionally crude (char/word counts) and
 per-workspace configurable; this is a prompt, not a proof.
 
-```spec-meta
+```yaml spec-meta
 id: specled.prose_guard
 kind: workflow
 status: active
@@ -24,7 +24,7 @@ surface:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.prose_guard.finding_emitted
   statement: >-
     mix spec.validate shall emit one `spec_requirement_too_short` finding
@@ -59,7 +59,7 @@ surface:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.prose_guard.scenario.too_short_must_flagged
   given:
     - "a subject file with a must requirement whose statement is `Does the thing.` (14 chars, 3 words)"
@@ -95,7 +95,7 @@ surface:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/config/prose_test.exs
   execute: true

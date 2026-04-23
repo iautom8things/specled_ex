@@ -10,7 +10,7 @@ conformance, typespecs, `use` consumers. Requirement-level bindings override the
 subject-level binding for that requirement only; the merge is explicit so an agent
 reading state can tell where a reference came from.
 
-```spec-meta
+```yaml spec-meta
 id: specled.realized_by
 kind: module
 status: active
@@ -27,7 +27,7 @@ surface:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.realized_by.schema_shape
   statement: >-
     SpecLedEx.Schema.RealizedBy shall define a zoi schema with the keys
@@ -73,7 +73,7 @@ surface:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.realized_by.scenario.subject_binding_inherits
   given:
     - "a subject with spec-meta `realized_by.api_boundary: [\"MyMod.a/1\", \"MyMod.b/2\"]`"
@@ -110,7 +110,7 @@ surface:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/parser_test.exs
   execute: true

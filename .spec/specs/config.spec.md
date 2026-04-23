@@ -8,7 +8,7 @@ Let a project opt into tag scanning and tune enforcement without recompiling or 
 code. Keep the file optional: absent or malformed config degrades to safe defaults without
 halting the spec tooling, but malformed values are surfaced so the maintainer notices.
 
-```spec-meta
+```yaml spec-meta
 id: specled.config
 kind: module
 status: active
@@ -24,7 +24,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.config.defaults_when_missing
   statement: SpecLedEx.Config shall return the default configuration struct when `.spec/config.yml` is missing, empty, or unreadable, without raising.
   priority: must
@@ -53,7 +53,7 @@ decisions:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.config.scenario.missing_file_uses_defaults
   given:
     - a workspace with no `.spec/config.yml`
@@ -117,7 +117,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/config_test.exs
   execute: true

@@ -13,7 +13,7 @@ executing any MFA in its closure is `branch_guard_untested_realization`. The
 module consumes `Coverage.Store`, the closure map, and the tag index; it emits
 nothing if any input is missing (graceful degrade via `detector_unavailable`).
 
-```spec-meta
+```yaml spec-meta
 id: specled.triangulation
 kind: workflow
 status: active
@@ -32,7 +32,7 @@ surface:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.triangulation.pure_function
   statement: >-
     SpecLedEx.CoverageTriangulation.findings/3 shall be a pure function
@@ -97,7 +97,7 @@ surface:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.triangulation.scenario.untethered_test_flagged
   given:
     - "a test with `@tag spec: \"subject_a.req1\"` that exercises only MFAs owned by subject_b"
@@ -146,7 +146,7 @@ surface:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/coverage_triangulation_test.exs
   execute: true

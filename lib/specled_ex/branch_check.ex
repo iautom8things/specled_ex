@@ -248,21 +248,31 @@ defmodule SpecLedEx.BranchCheck do
   defp git_show(_root, _base, _path), do: :missing
 
   defp extract_must_ids(content) do
-    ~r/```spec-requirements\s*\n(.*?)\n```/ms
+    ~r/```([^\n`]*)\n(.*?)\n```/ms
     |> Regex.scan(content, capture: :all_but_first)
-    |> Enum.flat_map(fn [block] ->
-      case YamlElixir.read_from_string(block) do
-        {:ok, items} when is_list(items) ->
-          items
-          |> Enum.filter(&is_map/1)
-          |> Enum.filter(fn item -> Map.get(item, "priority") == "must" end)
-          |> Enum.map(&Map.get(&1, "id"))
-          |> Enum.reject(&is_nil/1)
+    |> Enum.flat_map(fn [info_string, block] ->
+      if info_string_has_requirements_tag?(info_string) do
+        case YamlElixir.read_from_string(block) do
+          {:ok, items} when is_list(items) ->
+            items
+            |> Enum.filter(&is_map/1)
+            |> Enum.filter(fn item -> Map.get(item, "priority") == "must" end)
+            |> Enum.map(&Map.get(&1, "id"))
+            |> Enum.reject(&is_nil/1)
 
-        _ ->
-          []
+          _ ->
+            []
+        end
+      else
+        []
       end
     end)
+  end
+
+  defp info_string_has_requirements_tag?(info_string) do
+    info_string
+    |> String.split(~r/\s+/, trim: true)
+    |> Enum.any?(&(&1 == "spec-requirements"))
   end
 
   defp spec_file?(path), do: String.starts_with?(path, ".spec/specs/") and String.ends_with?(path, ".spec.md")

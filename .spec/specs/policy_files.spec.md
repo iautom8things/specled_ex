@@ -10,7 +10,7 @@ implicitly inside `change_analysis.ex` with scattered prefix checks. Centralizin
 classification lets the priv/ question be resolved once (conservatively: `:lib` by
 default, `:generated` only for explicit carve-outs like `priv/plts/`).
 
-```spec-meta
+```yaml spec-meta
 id: specled.policy_files
 kind: module
 status: active
@@ -25,7 +25,7 @@ decisions:
 
 ## Requirements
 
-```spec-requirements
+```yaml spec-requirements
 - id: specled.policy_files.classify_kinds
   statement: >-
     SpecLedEx.PolicyFiles.classify/1 shall return `:lib`, `:test`,
@@ -70,7 +70,7 @@ decisions:
 
 ## Scenarios
 
-```spec-scenarios
+```yaml spec-scenarios
 - id: specled.policy_files.scenario.priv_repo_migrations_is_lib
   given:
     - a changed path `priv/repo/migrations/20260401_add_users.exs`
@@ -115,7 +115,7 @@ decisions:
 
 ## Verification
 
-```spec-verification
+```yaml spec-verification
 - kind: command
   target: mix test test/specled_ex/policy_files_test.exs
   execute: true
