@@ -23,11 +23,15 @@
     {
       "text": "AUDIT: APPROVE\nSession: a0cbaa07-297e-4089-8a49-1ac06a740870\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/a0cbaa07-297e-4089-8a49-1ac06a740870.jsonl\n\nReasoning: Verified all 13 must-requirements are tested by assertions that would fail if the detector logic were a no-op. Spot-checks passed on the high-risk items: `same_pr_self_authorization` uses `MapSet.equal?` at append_only.ex:592 and the paired test at :472/:503 would fail under a subset relaxation; `missing_change_type` gates on `consulted_ids` overlap at append_only.ex:284 with the correct negative test at :559 (identity state ⇒ no consulted ids ⇒ no warning); `findings_sorted` at :624 exercises multi-subject ordering and the nil-safety branch lands via the broad-mix test at :678 (adr_affects_widened emits nil subject_id alongside subject \"x\" findings); T1 round-trip at test/specled_ex_test.exs:148-156 genuinely reads the file from disk via Jason.decode!(File.read!(…)) rather than comparing normalize_for_state to itself. Scope intent is clean: grep confirms no AppendOnly wiring in branch_check/*, no System.cmd/File.read/File.write/Jason.decode inside lib/specled_ex/append_only.ex, exactly 10 append_only/* codes emitted, no modal_class field cached on requirements or in state.json. The two files outside Allowed touches (test_support/append_only_fixtures.ex and test/test_helper.exs) are legitimate path-convention alignment — test/support/ does not exist in this repo, test_support/ is the pre-existing home of specled_ex_case.ex and specled_ex_integration_case.ex.\n\nMinor gaps, not blocking:\n- `adr_affects_widened` tests assert affects-drift (:421) and change_type-drift (:438) but not reverses_what-drift directly; the three drift_on calls in append_only.ex:414-418 are structurally identical, so the uniformity is acceptable for v1.\n- The identity property at :728 generates requirements-only states; the scenario+ADR+polarity coverage comes from the unit identity test at :603. Combined, identity is sound over populated shapes.\n- Re-ran `mix test test/specled_ex/append_only_test.exs test/specled_ex_test.exs`: 36 tests + 2 properties, 0 failures.",
       "timestamp": "2026-04-23T16:08:19Z"
+    },
+    {
+      "text": "APPROVED. Closing per auditor sign-off.",
+      "timestamp": "2026-04-23T16:08:52Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "W2a: AppendOnly module + fixture builder + normalize_for_state",
   "type": "task",
-  "updated_at": "2026-04-23T16:08:19Z"
+  "updated_at": "2026-04-23T16:08:52Z"
 }
