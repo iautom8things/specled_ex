@@ -21,11 +21,15 @@
     {
       "text": "AUDIT: APPROVE\nSession: agent-a17edbe5a632261a9\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/dbd2428d-edaf-4363-b1e1-b4699b1b5126/subagents/agent-a17edbe5a632261a9.jsonl\n\nReasoning:\n- specled.config.guardrails_severities is covered by 4 tests at test/specled_ex/config_test.exs:147-215 that each would fail under a real violation: happy-path parse (147-165 asserts exact %{...} shape), unknown-token drop + config_warning diagnostic (167-185), namespace independence from branch_guard (187-203), default-empty when key absent (205-214). Paired with the Config.ex Guardrails.parse/1 implementation (config.ex:56-74) routing diagnostics through the same pipeline.\n- specled.tasks.check_verbose_flag is covered by 4 tests at test/mix/tasks/spec_check_test.exs. The key concern — whether tests pass for the wrong reason (no [INFO] because finding never fires) — is refuted by the --verbose positive test (line 23-36) which asserts [INFO] append_only/no_baseline IS printed. That positive assertion proves the fixture genuinely emits an :info finding, so the paired default negation at line 8-21 is meaningful, not vacuous. The rescue Mix.Error is correct because branch findings rightfully fail the task; stdout-filter behavior is orthogonal to exit status. state.json invariance asserted via map equality at line 60-74.\n- specled.branch_guard not regressed: full branch_check suite (test/specled_ex/branch_check_test.exs + test/specled_ex/branch_check/*) runs 55 tests, 0 failures; full mix test is 527/0.\n- Scope verified: lib/specled_ex/branch_check.ex diff is literally one line at severity_opts/2 (line 155 adds `guardrails_severities: config.guardrails.severities`) — this is the severity-wiring surface the ticket explicitly sanctions, not a core diff path change. @per_code_defaults byte-identical to HEAD~1. lib/specled_ex.ex (normalize_for_state/write_state) is not in the diff at all.\n- Intent scope: only one env var (SPECLED_SHOW_INFO at spec.check.ex:129); no Map.merge of the two severity namespaces (Config.BranchGuard.parse and Config.Guardrails.parse produce distinct struct fields; they collapse to a single config layer only inside Severity.resolve/3 via disjoint-key lookup, not via merge); state.json schema unchanged.\n- state.json diff is purely regenerated: new requirement/scenario/verification entries, summary counts bumped (194→196, 114→115, 68→69), and claimed→executed strength bumps because the verification stubs now run. Not hand-edited.\n- Soft items (CHANGELOG.md + state.json outside strict Allowed list, test-file path quirk) are legitimate housekeeping/regen/misnamed-path issues; verifier called them out honestly and none hide scope violations.",
       "timestamp": "2026-04-23T18:17:59Z"
+    },
+    {
+      "text": "APPROVED. Closing per auditor sign-off.",
+      "timestamp": "2026-04-23T18:18:19Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "W3: guardrails.severities config + info-level output filter",
   "type": "task",
-  "updated_at": "2026-04-23T18:17:59Z"
+  "updated_at": "2026-04-23T18:18:19Z"
 }
