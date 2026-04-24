@@ -1,5 +1,6 @@
 defmodule SpecLedEx.IndexStateTagTest do
   use SpecLedEx.Case
+  @moduletag spec: ["specled.index.tag_data_absent_when_disabled", "specled.index.tag_data_conditional"]
 
   alias SpecLedEx.Index
 

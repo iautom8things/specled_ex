@@ -2,6 +2,7 @@ defmodule SpecLedEx.Integration.ScenarioMacroProviderDriftTest do
   # covers: specled.use_tier.scenario_macro_provider_drift
   # covers: specled.use_tier.scenario.provider_drift_one_finding
   use ExUnit.Case, async: false
+  @moduletag spec: ["specled.use_tier.scenario_macro_provider_drift"]
 
   @moduletag :integration
 

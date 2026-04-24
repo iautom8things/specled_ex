@@ -1,5 +1,6 @@
 defmodule SpecLedEx.BranchCheck.SeverityTest do
   use SpecLedEx.Case
+  @moduletag spec: ["specled.severity.known_values", "specled.severity.non_emitting", "specled.severity.off_is_absorbing", "specled.severity.resolve_precedence"]
 
   import ExUnit.CaptureLog
 

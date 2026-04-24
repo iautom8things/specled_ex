@@ -1,5 +1,6 @@
 defmodule SpecLedEx.Realization.EffectiveBindingTest do
   use ExUnit.Case, async: true
+  @moduletag spec: ["specled.realized_by.effective_binding_inherits_subject", "specled.realized_by.effective_binding_requirement_replaces_tier"]
 
   alias SpecLedEx.Realization.EffectiveBinding
 

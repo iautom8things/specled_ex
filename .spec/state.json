@@ -668,7 +668,7 @@
         "id": "specled.branch_guard.new_requirement_tag_warning",
         "priority": "must",
         "stability": "evolving",
-        "statement": "When test-tag data is present on the index, the branch guard inside mix spec.check shall emit a finding for each `must` requirement added on the current branch whose id appears in no `@tag spec:` annotation in the configured scan paths.",
+        "statement": "When test-tag data is present on the index, the branch guard inside mix spec.check shall emit a finding for each `must` requirement added on the current branch that is covered by at least one `tagged_tests` verification on its owning subject and whose id appears in no `@tag spec:` annotation in the configured scan paths. Requirements covered exclusively by non-`tagged_tests` kinds shall not produce this finding.",
         "subject_id": "specled.branch_guard"
       },
       {
@@ -1721,6 +1721,14 @@
       },
       {
         "file": ".spec/specs/tag_scanning.spec.md",
+        "id": "specled.tag_scanning.describe_block_recursion",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "The tag scanner shall walk into `describe/2` bodies so that `test/2` definitions nested inside `describe` blocks inherit the module's `@moduletag spec` ids and pick up `@tag spec` annotations declared within that describe block, matching the behaviour for top-level tests.",
+        "subject_id": "specled.tag_scanning"
+      },
+      {
+        "file": ".spec/specs/tag_scanning.spec.md",
         "id": "specled.tag_scanning.dynamic_values_reported",
         "priority": "must",
         "stability": "evolving",
@@ -1813,6 +1821,14 @@
         "priority": "must",
         "stability": "evolving",
         "statement": "build_command/2 shall omit any cover id not backed by the tag map from the emitted command (no `--only spec:<id>` flag and no file reference), while still emitting flags and files for the backed ids.",
+        "subject_id": "specled.tagged_tests"
+      },
+      {
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "id": "specled.tagged_tests.build_command_includes_integration_flag",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "build_command/2 shall append `--include integration` to every emitted command so host projects that configure `ExUnit.configure(exclude: :integration)` still execute integration-tagged tests participating in a merged run. The flag is appended after the `--only spec:<id>` flags and before the test file arguments.",
         "subject_id": "specled.tagged_tests"
       },
       {
@@ -2052,7 +2068,7 @@
         "id": "specled.verify.requirement_without_test_tag",
         "priority": "must",
         "stability": "evolving",
-        "statement": "When test-tag data is present on the index, verification shall emit a `requirement_without_test_tag` finding for each `must` requirement whose id appears in no `@tag spec:` annotation within the configured scan paths.",
+        "statement": "When test-tag data is present on the index, verification shall emit a `requirement_without_test_tag` finding for each `must` requirement that is covered by at least one `tagged_tests` verification on its owning subject and whose id appears in no `@tag spec:` annotation within the configured scan paths. Requirements covered exclusively by non-`tagged_tests` kinds (source_file, command, file-based kinds) shall not produce this finding.",
         "subject_id": "specled.verification"
       },
       {
@@ -2631,6 +2647,7 @@
         "file": ".spec/specs/branch_guard.spec.md",
         "given": [
           "a branch that adds a new `must` requirement `billing.invoice` to an existing subject",
+          "that subject declares a `tagged_tests` verification covering `billing.invoice`",
           "a tag_map that does not contain `billing.invoice`"
         ],
         "id": "specled.branch_guard.scenario.new_requirement_without_tag",
@@ -3727,6 +3744,24 @@
       },
       {
         "covers": [
+          "specled.tag_scanning.describe_block_recursion"
+        ],
+        "file": ".spec/specs/tag_scanning.spec.md",
+        "given": [
+          "a test file with a `@moduletag spec: [\"domain.root\"]` annotation",
+          "the module contains a `describe` block wrapping a `test/2` definition"
+        ],
+        "id": "specled.tag_scanning.scenario.describe_nested_moduletag",
+        "subject_id": "specled.tag_scanning",
+        "then": [
+          "the returned tag list links `domain.root` to the nested test name"
+        ],
+        "when": [
+          "SpecLedEx.TagScanner.scan_file/1 runs on that file"
+        ]
+      },
+      {
+        "covers": [
           "specled.tag_scanning.deduplicated_matches"
         ],
         "file": ".spec/specs/tag_scanning.spec.md",
@@ -3863,6 +3898,24 @@
         ],
         "when": [
           "SpecLedEx.TagScanner.scan/2 runs on a directory containing it"
+        ]
+      },
+      {
+        "covers": [
+          "specled.tagged_tests.build_command_includes_integration_flag"
+        ],
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "given": [
+          "a tag map with one backed cover id and a single test file"
+        ],
+        "id": "specled.tagged_tests.scenario.build_command_appends_include_integration",
+        "subject_id": "specled.tagged_tests",
+        "then": [
+          "the returned command contains `--include integration`",
+          "the `--include integration` flag appears after the `--only spec:<id>` flags and before the test file"
+        ],
+        "when": [
+          "SpecLedEx.TaggedTests.build_command/2 is called"
         ]
       },
       {
@@ -4231,7 +4284,9 @@
         ],
         "file": ".spec/specs/verification.spec.md",
         "given": [
-          "an index with a `must` requirement `billing.invoice` and a tag_map that does not contain `billing.invoice`"
+          "an index with a `must` requirement `billing.invoice`",
+          "the subject owning that requirement declares a `tagged_tests` verification covering `billing.invoice`",
+          "a tag_map that does not contain `billing.invoice`"
         ],
         "id": "specled.verify.scenario.requirement_without_tag_emits_finding",
         "subject_id": "specled.verification",
@@ -5209,7 +5264,9 @@
           "summary": "Workspace-wide aggregation of tagged_tests verifications into a single mix test invocation.",
           "surface": [
             "lib/specled_ex/tagged_tests.ex",
-            "test/specled_ex/tagged_tests_test.exs"
+            "test/specled_ex/tagged_tests_test.exs",
+            "priv/helper_scripts/tag_tests_from_specs.exs",
+            "priv/helper_scripts/flip_command_to_tagged_tests.exs"
           ],
           "verification_minimum_strength": null
         },
@@ -5368,9 +5425,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/api_boundary.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.api_boundary",
-        "target": "mix test test/specled_ex/realization/api_boundary_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5379,9 +5436,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/api_boundary.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.api_boundary",
-        "target": "mix test test/specled_ex/realization/drift_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5389,9 +5446,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/api_boundary.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.api_boundary",
-        "target": "mix test test/mix/tasks/spec_suggest_binding_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5412,9 +5469,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/append_only.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.append_only",
-        "target": "mix test test/specled_ex/append_only_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5444,9 +5501,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/binding.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.binding",
-        "target": "mix test test/specled_ex/realization/binding_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5456,9 +5513,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/binding.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.binding",
-        "target": "mix test test/specled_ex/realization/canonical_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5466,9 +5523,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/binding.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.binding",
-        "target": "mix test test/specled_ex/realization/hash_store_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5476,9 +5533,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/binding.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.binding",
-        "target": "mix test test/specled_ex/realization/hash_store_versioning_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5489,9 +5546,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/block_schema.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.block_schema",
-        "target": "mix test test/specled_ex/schema_test.exs test/specled_ex/parser_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5502,9 +5559,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/branch_guard.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.branch_guard",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5513,9 +5570,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/branch_guard.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.branch_guard",
-        "target": "mix test test/specled_ex/branch_check_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5525,9 +5582,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/compiler_context.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.compiler_context",
-        "target": "mix test test/specled_ex/compiler/manifest_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5535,9 +5592,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/compiler_context.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.compiler_context",
-        "target": "mix test test/specled_ex/compiler/manifest_integration_test.exs --include integration"
+        "target": ""
       },
       {
         "covers": [
@@ -5557,9 +5614,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/compiler_tracer.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.compiler_tracer",
-        "target": "mix test test/specled_ex/compiler/tracer_test.exs --include integration"
+        "target": ""
       },
       {
         "covers": [
@@ -5567,9 +5624,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/compiler_tracer.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.compiler_tracer",
-        "target": "mix test test/specled_ex/compiler/xref_test.exs --include integration"
+        "target": ""
       },
       {
         "covers": [
@@ -5593,9 +5650,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/config.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.config",
-        "target": "mix test test/specled_ex/config_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5605,9 +5662,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/coverage_capture.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.coverage_capture",
-        "target": "mix test test/specled_ex/coverage/formatter_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5616,9 +5673,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/coverage_capture.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.coverage_capture",
-        "target": "mix test test/specled_ex/coverage/store_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5627,9 +5684,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/coverage_capture.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.coverage_capture",
-        "target": "mix test test/mix/tasks/spec_cover_test_test.exs --include integration"
+        "target": ""
       },
       {
         "covers": [
@@ -5647,9 +5704,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/decision_governance.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.decisions",
-        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5685,9 +5742,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/expanded_behavior_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.expanded_behavior_tier",
-        "target": "mix test test/specled_ex/realization/expanded_behavior_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5696,9 +5753,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/expanded_behavior_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.expanded_behavior_tier",
-        "target": "mix test test/specled_ex/realization/typespecs_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5719,9 +5776,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/implementation_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.implementation_tier",
-        "target": "mix test test/specled_ex/realization/closure_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5729,9 +5786,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/implementation_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.implementation_tier",
-        "target": "mix test test/specled_ex/realization/implementation_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5739,9 +5796,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/implementation_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.implementation_tier",
-        "target": "mix test test/integration/scenario_refactor_stable_test.exs --include integration"
+        "target": ""
       },
       {
         "covers": [
@@ -5751,9 +5808,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/index_state.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.index_state",
-        "target": "mix test test/specled_ex_test.exs test/specled_ex/index_state_test.exs test/specled_ex/json_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5762,9 +5819,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/index_state.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.index_state",
-        "target": "mix test test/specled_ex/index_state_tag_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5783,9 +5840,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5794,9 +5851,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_check_test_tags_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5804,9 +5861,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_check_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5825,9 +5882,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/modal_class.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.modal_class",
-        "target": "mix test test/specled_ex/modal_class_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5849,9 +5906,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/next.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.next",
-        "target": "mix test test/mix/tasks/spec_next_task_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5863,9 +5920,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/overlap.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.overlap",
-        "target": "mix test test/specled_ex/overlap_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5886,9 +5943,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/package.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.package",
-        "target": "mix test test/specled_ex_test.exs test/specled_ex/index_state_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5920,9 +5977,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/parser.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.parser",
-        "target": "mix test test/specled_ex/parser_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5935,9 +5992,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/policy_files.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.policy_files",
-        "target": "mix test test/specled_ex/policy_files_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5947,9 +6004,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/prime.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.prime",
-        "target": "mix test test/mix/tasks/spec_prime_task_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5960,9 +6017,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/prose_guard.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.prose_guard",
-        "target": "mix test test/specled_ex/config/prose_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5973,9 +6030,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/realized_by.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.realized_by",
-        "target": "mix test test/specled_ex/parser_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5984,9 +6041,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/realized_by.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.realized_by",
-        "target": "mix test test/specled_ex/realization/effective_binding_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -5997,9 +6054,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/severity.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.severity",
-        "target": "mix test test/specled_ex/branch_check/severity_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -6010,9 +6067,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/spec_drift_trailer.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.spec_drift_trailer",
-        "target": "mix test test/specled_ex/branch_check/trailer_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -6022,9 +6079,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/status.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.status",
-        "target": "mix test test/specled_ex/index_state_test.exs test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -6037,13 +6094,14 @@
           "specled.tag_scanning.dynamic_values_reported",
           "specled.tag_scanning.moduletag_applies_to_all_tests",
           "specled.tag_scanning.ignored_non_spec_tags",
-          "specled.tag_scanning.deduplicated_matches"
+          "specled.tag_scanning.deduplicated_matches",
+          "specled.tag_scanning.describe_block_recursion"
         ],
         "execute": true,
         "file": ".spec/specs/tag_scanning.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.tag_scanning",
-        "target": "mix test test/specled_ex/tag_scanner_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -6052,6 +6110,7 @@
           "specled.tagged_tests.build_command_combines_backed_ids",
           "specled.tagged_tests.build_command_drops_unbacked_ids",
           "specled.tagged_tests.build_command_no_tests_when_all_unbacked",
+          "specled.tagged_tests.build_command_includes_integration_flag",
           "specled.tagged_tests.merged_run_attribution",
           "specled.tagged_tests.strength_progression",
           "specled.tagged_tests.strength_executed_on_green_run",
@@ -6076,9 +6135,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/triangulation.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.triangulation",
-        "target": "mix test test/specled_ex/coverage_triangulation_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -6086,9 +6145,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/triangulation.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.triangulation",
-        "target": "mix test test/integration/scenario_test_only_change_test.exs --include integration"
+        "target": ""
       },
       {
         "covers": [
@@ -6097,9 +6156,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/triangulation.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.triangulation",
-        "target": "mix test test/integration/scenario_mistagged_test_test.exs --include integration"
+        "target": ""
       },
       {
         "covers": [
@@ -6107,9 +6166,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/triangulation.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.triangulation",
-        "target": "mix test test/mix/tasks/spec_triangle_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -6118,9 +6177,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/use_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.use_tier",
-        "target": "mix test test/specled_ex/realization/use_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -6129,9 +6188,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/use_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.use_tier",
-        "target": "mix test test/specled_ex/realization/drift_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -6139,9 +6198,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/use_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.use_tier",
-        "target": "mix test test/integration/scenario_macro_provider_drift_test.exs --include integration"
+        "target": ""
       },
       {
         "covers": [
@@ -6159,9 +6218,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/verification.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -6174,9 +6233,9 @@
         ],
         "execute": true,
         "file": ".spec/specs/verification.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/tag_findings_test.exs"
+        "target": ""
       }
     ]
   },
@@ -6186,8 +6245,8 @@
     "decisions": 24,
     "exceptions": 0,
     "findings": 0,
-    "requirements": 222,
-    "scenarios": 119,
+    "requirements": 224,
+    "scenarios": 121,
     "subjects": 32,
     "verifications": 69
   },
@@ -6295,232 +6354,232 @@
       {
         "cover_id": "specled.api_boundary.dangling_finding_emitted",
         "file": ".spec/specs/api_boundary.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.api_boundary",
-        "target": "mix test test/specled_ex/realization/api_boundary_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.api_boundary.drift_finding_emitted",
         "file": ".spec/specs/api_boundary.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.api_boundary",
-        "target": "mix test test/specled_ex/realization/api_boundary_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.api_boundary.hash_function_head",
         "file": ".spec/specs/api_boundary.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.api_boundary",
-        "target": "mix test test/specled_ex/realization/api_boundary_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.api_boundary.umbrella_graceful_degrade",
         "file": ".spec/specs/api_boundary.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.api_boundary",
-        "target": "mix test test/specled_ex/realization/api_boundary_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.api_boundary.dedupe_cyclic_tiebreak",
         "file": ".spec/specs/api_boundary.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.api_boundary",
-        "target": "mix test test/specled_ex/realization/drift_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.api_boundary.drift_dedupe_narrow",
         "file": ".spec/specs/api_boundary.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.api_boundary",
-        "target": "mix test test/specled_ex/realization/drift_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.api_boundary.suggest_binding_proposal_only",
         "file": ".spec/specs/api_boundary.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.api_boundary",
-        "target": "mix test test/mix/tasks/spec_suggest_binding_test.exs",
+        "target": "",
         "verification_index": 2
       },
       {
         "cover_id": "specled.append_only.adr_affects_widened",
         "file": ".spec/specs/append_only.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.append_only",
-        "target": "mix test test/specled_ex/append_only_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.append_only.decision_deleted",
         "file": ".spec/specs/append_only.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.append_only",
-        "target": "mix test test/specled_ex/append_only_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.append_only.disabled_without_reason",
         "file": ".spec/specs/append_only.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.append_only",
-        "target": "mix test test/specled_ex/append_only_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.append_only.findings_sorted",
         "file": ".spec/specs/append_only.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.append_only",
-        "target": "mix test test/specled_ex/append_only_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.append_only.fix_block_discipline",
         "file": ".spec/specs/append_only.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.append_only",
-        "target": "mix test test/specled_ex/append_only_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.append_only.identity",
         "file": ".spec/specs/append_only.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.append_only",
-        "target": "mix test test/specled_ex/append_only_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.append_only.missing_change_type",
         "file": ".spec/specs/append_only.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.append_only",
-        "target": "mix test test/specled_ex/append_only_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.append_only.must_downgraded",
         "file": ".spec/specs/append_only.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.append_only",
-        "target": "mix test test/specled_ex/append_only_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.append_only.negative_removed",
         "file": ".spec/specs/append_only.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.append_only",
-        "target": "mix test test/specled_ex/append_only_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.append_only.no_baseline",
         "file": ".spec/specs/append_only.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.append_only",
-        "target": "mix test test/specled_ex/append_only_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.append_only.requirement_deleted",
         "file": ".spec/specs/append_only.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.append_only",
-        "target": "mix test test/specled_ex/append_only_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.append_only.requirement_deleted_authorized",
         "file": ".spec/specs/append_only.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.append_only",
-        "target": "mix test test/specled_ex/append_only_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.append_only.same_pr_self_authorization",
         "file": ".spec/specs/append_only.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.append_only",
-        "target": "mix test test/specled_ex/append_only_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.append_only.scenario_regression",
         "file": ".spec/specs/append_only.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.append_only",
-        "target": "mix test test/specled_ex/append_only_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
@@ -6647,243 +6706,243 @@
       {
         "cover_id": "specled.binding.dangling_reported",
         "file": ".spec/specs/binding.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.binding",
-        "target": "mix test test/specled_ex/realization/binding_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.binding.resolve_beam_first",
         "file": ".spec/specs/binding.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.binding",
-        "target": "mix test test/specled_ex/realization/binding_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.binding.resolve_sees_use_generated",
         "file": ".spec/specs/binding.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.binding",
-        "target": "mix test test/specled_ex/realization/binding_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.binding.canonical_deterministic_bytes",
         "file": ".spec/specs/binding.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.binding",
-        "target": "mix test test/specled_ex/realization/canonical_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.binding.canonical_reserved_idents_preserved",
         "file": ".spec/specs/binding.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.binding",
-        "target": "mix test test/specled_ex/realization/canonical_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.binding.canonical_strips_positions",
         "file": ".spec/specs/binding.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.binding",
-        "target": "mix test test/specled_ex/realization/canonical_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.binding.hash_store_atomic",
         "file": ".spec/specs/binding.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.binding",
-        "target": "mix test test/specled_ex/realization/hash_store_test.exs",
+        "target": "",
         "verification_index": 2
       },
       {
         "cover_id": "specled.binding.hasher_version_internal",
         "file": ".spec/specs/binding.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.binding",
-        "target": "mix test test/specled_ex/realization/hash_store_versioning_test.exs",
+        "target": "",
         "verification_index": 3
       },
       {
         "cover_id": "specled.schema.block_structs",
         "file": ".spec/specs/block_schema.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.block_schema",
-        "target": "mix test test/specled_ex/schema_test.exs test/specled_ex/parser_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.schema.meta_contract",
         "file": ".spec/specs/block_schema.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.block_schema",
-        "target": "mix test test/specled_ex/schema_test.exs test/specled_ex/parser_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.schema.tagged_tests_kind",
         "file": ".spec/specs/block_schema.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.block_schema",
-        "target": "mix test test/specled_ex/schema_test.exs test/specled_ex/parser_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.schema.validation_errors",
         "file": ".spec/specs/block_schema.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.block_schema",
-        "target": "mix test test/specled_ex/schema_test.exs test/specled_ex/parser_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.branch_guard.cross_cutting_decision",
         "file": ".spec/specs/branch_guard.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.branch_guard",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.branch_guard.guidance_output",
         "file": ".spec/specs/branch_guard.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.branch_guard",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.branch_guard.plan_docs_excluded",
         "file": ".spec/specs/branch_guard.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.branch_guard",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.branch_guard.subject_cochange",
         "file": ".spec/specs/branch_guard.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.branch_guard",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.branch_guard.new_requirement_tag_warning",
         "file": ".spec/specs/branch_guard.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.branch_guard",
-        "target": "mix test test/specled_ex/branch_check_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.branch_guard.tag_findings_respect_enforcement",
         "file": ".spec/specs/branch_guard.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.branch_guard",
-        "target": "mix test test/specled_ex/branch_check_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.compiler_context.load_from_opts",
         "file": ".spec/specs/compiler_context.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.compiler_context",
-        "target": "mix test test/specled_ex/compiler/manifest_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.compiler_context.manifest_wraps_stdlib",
         "file": ".spec/specs/compiler_context.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.compiler_context",
-        "target": "mix test test/specled_ex/compiler/manifest_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.compiler_context.struct_shape",
         "file": ".spec/specs/compiler_context.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.compiler_context",
-        "target": "mix test test/specled_ex/compiler/manifest_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.compiler_context.manifest_fixture_integration",
         "file": ".spec/specs/compiler_context.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.compiler_context",
-        "target": "mix test test/specled_ex/compiler/manifest_integration_test.exs --include integration",
+        "target": "",
         "verification_index": 1
       },
       {
@@ -6900,45 +6959,45 @@
       {
         "cover_id": "specled.compiler_tracer.captures_remote_calls",
         "file": ".spec/specs/compiler_tracer.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.compiler_tracer",
-        "target": "mix test test/specled_ex/compiler/tracer_test.exs --include integration",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.compiler_tracer.etf_read_direct",
         "file": ".spec/specs/compiler_tracer.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.compiler_tracer",
-        "target": "mix test test/specled_ex/compiler/tracer_test.exs --include integration",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.compiler_tracer.registered_in_mix_exs",
         "file": ".spec/specs/compiler_tracer.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.compiler_tracer",
-        "target": "mix test test/specled_ex/compiler/tracer_test.exs --include integration",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.compiler_tracer.xref_in_process",
         "file": ".spec/specs/compiler_tracer.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.compiler_tracer",
-        "target": "mix test test/specled_ex/compiler/xref_test.exs --include integration",
+        "target": "",
         "verification_index": 1
       },
       {
@@ -6955,276 +7014,276 @@
       {
         "cover_id": "specled.config.defaults_when_missing",
         "file": ".spec/specs/config.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.config",
-        "target": "mix test test/specled_ex/config_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.config.guardrails_severities",
         "file": ".spec/specs/config.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.config",
-        "target": "mix test test/specled_ex/config_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.config.init_scaffolds_config_yml",
         "file": ".spec/specs/config.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.config",
-        "target": "mix test test/specled_ex/config_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.config.malformed_yaml_degrades",
         "file": ".spec/specs/config.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.config",
-        "target": "mix test test/specled_ex/config_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.config.paths_filtered_to_strings",
         "file": ".spec/specs/config.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.config",
-        "target": "mix test test/specled_ex/config_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.config.unknown_enforcement_warns",
         "file": ".spec/specs/config.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.config",
-        "target": "mix test test/specled_ex/config_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.config.yaml_parses_known_fields",
         "file": ".spec/specs/config.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.config",
-        "target": "mix test test/specled_ex/config_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.coverage_capture.anonymous_ets",
         "file": ".spec/specs/coverage_capture.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.coverage_capture",
-        "target": "mix test test/specled_ex/coverage/formatter_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.coverage_capture.formatter_snapshot_fn_di",
         "file": ".spec/specs/coverage_capture.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.coverage_capture",
-        "target": "mix test test/specled_ex/coverage/formatter_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.coverage_capture.keyed_by_test_pid",
         "file": ".spec/specs/coverage_capture.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.coverage_capture",
-        "target": "mix test test/specled_ex/coverage/formatter_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.coverage_capture.artifact_path",
         "file": ".spec/specs/coverage_capture.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.coverage_capture",
-        "target": "mix test test/specled_ex/coverage/store_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.coverage_capture.store_split",
         "file": ".spec/specs/coverage_capture.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.coverage_capture",
-        "target": "mix test test/specled_ex/coverage/store_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.coverage_capture.integration_case",
         "file": ".spec/specs/coverage_capture.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.coverage_capture",
-        "target": "mix test test/mix/tasks/spec_cover_test_test.exs --include integration",
+        "target": "",
         "verification_index": 2
       },
       {
         "cover_id": "specled.coverage_capture.serialized_run",
         "file": ".spec/specs/coverage_capture.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.coverage_capture",
-        "target": "mix test test/mix/tasks/spec_cover_test_test.exs --include integration",
+        "target": "",
         "verification_index": 2
       },
       {
         "cover_id": "specled.decisions.change_type_enum",
         "file": ".spec/specs/decision_governance.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.decisions",
-        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.decisions.change_type_optional",
         "file": ".spec/specs/decision_governance.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.decisions",
-        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.decisions.cross_field_adr_append_only",
         "file": ".spec/specs/decision_governance.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.decisions",
-        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.decisions.cross_field_affects_non_empty",
         "file": ".spec/specs/decision_governance.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.decisions",
-        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.decisions.cross_field_affects_resolve",
         "file": ".spec/specs/decision_governance.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.decisions",
-        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.decisions.cross_field_idempotent",
         "file": ".spec/specs/decision_governance.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.decisions",
-        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.decisions.cross_field_reverses_what",
         "file": ".spec/specs/decision_governance.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.decisions",
-        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.decisions.cross_field_supersedes_replaces",
         "file": ".spec/specs/decision_governance.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.decisions",
-        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.decisions.frontmatter_contract",
         "file": ".spec/specs/decision_governance.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.decisions",
-        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.decisions.reference_validation",
         "file": ".spec/specs/decision_governance.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.decisions",
-        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.decisions.weakening_set",
         "file": ".spec/specs/decision_governance.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.decisions",
-        "target": "mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
@@ -7318,56 +7377,56 @@
       {
         "cover_id": "specled.expanded_behavior_tier.hash_stable_on_refactor",
         "file": ".spec/specs/expanded_behavior_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.expanded_behavior_tier",
-        "target": "mix test test/specled_ex/realization/expanded_behavior_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.expanded_behavior_tier.no_debug_info_detector_unavailable",
         "file": ".spec/specs/expanded_behavior_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.expanded_behavior_tier",
-        "target": "mix test test/specled_ex/realization/expanded_behavior_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.expanded_behavior_tier.reads_beam_debug_info",
         "file": ".spec/specs/expanded_behavior_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.expanded_behavior_tier",
-        "target": "mix test test/specled_ex/realization/expanded_behavior_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.expanded_behavior_tier.typespecs_drift_finding",
         "file": ".spec/specs/expanded_behavior_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.expanded_behavior_tier",
-        "target": "mix test test/specled_ex/realization/typespecs_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.expanded_behavior_tier.typespecs_hashes_spec_and_type",
         "file": ".spec/specs/expanded_behavior_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.expanded_behavior_tier",
-        "target": "mix test test/specled_ex/realization/typespecs_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
@@ -7384,419 +7443,419 @@
       {
         "cover_id": "specled.implementation_tier.closure_walks_tracer_edges",
         "file": ".spec/specs/implementation_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.implementation_tier",
-        "target": "mix test test/specled_ex/realization/closure_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.implementation_tier.hash_ref_composition",
         "file": ".spec/specs/implementation_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.implementation_tier",
-        "target": "mix test test/specled_ex/realization/closure_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.implementation_tier.ownership_rule",
         "file": ".spec/specs/implementation_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.implementation_tier",
-        "target": "mix test test/specled_ex/realization/closure_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.implementation_tier.shared_helper_accounting",
         "file": ".spec/specs/implementation_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.implementation_tier",
-        "target": "mix test test/specled_ex/realization/closure_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.implementation_tier.closure_walks_tracer_edges",
         "file": ".spec/specs/implementation_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.implementation_tier",
-        "target": "mix test test/specled_ex/realization/implementation_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.implementation_tier.scenario_refactor_stable",
         "file": ".spec/specs/implementation_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.implementation_tier",
-        "target": "mix test test/integration/scenario_refactor_stable_test.exs --include integration",
+        "target": "",
         "verification_index": 2
       },
       {
         "cover_id": "specled.index.canonical_state_output",
         "file": ".spec/specs/index_state.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.index_state",
-        "target": "mix test test/specled_ex_test.exs test/specled_ex/index_state_test.exs test/specled_ex/json_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.index.json_resilience",
         "file": ".spec/specs/index_state.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.index_state",
-        "target": "mix test test/specled_ex_test.exs test/specled_ex/index_state_test.exs test/specled_ex/json_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.index.subject_and_decision_index",
         "file": ".spec/specs/index_state.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.index_state",
-        "target": "mix test test/specled_ex_test.exs test/specled_ex/index_state_test.exs test/specled_ex/json_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.index.tag_data_absent_when_disabled",
         "file": ".spec/specs/index_state.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.index_state",
-        "target": "mix test test/specled_ex/index_state_tag_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.index.tag_data_conditional",
         "file": ".spec/specs/index_state.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.index_state",
-        "target": "mix test test/specled_ex/index_state_tag_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.tasks.check_strict_gate",
         "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tasks.decision_new_scaffold",
         "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tasks.index_writes_state",
         "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tasks.init_local_skill",
         "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tasks.init_scaffold",
         "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tasks.next_guidance",
         "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tasks.no_app_start",
         "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tasks.prime_context",
         "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tasks.prime_json",
         "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tasks.status_summary",
         "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tasks.validate_exit_status",
         "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tasks.validate_findings",
         "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tasks.test_tags_flag",
         "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_check_test_tags_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.tasks.test_tags_precedence",
         "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_check_test_tags_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.tasks.check_verbose_flag",
         "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
-        "target": "mix test test/mix/tasks/spec_check_test.exs",
+        "target": "",
         "verification_index": 2
       },
       {
         "cover_id": "specled.modal_class.classify_case_and_punctuation_insensitive",
         "file": ".spec/specs/modal_class.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.modal_class",
-        "target": "mix test test/specled_ex/modal_class_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.modal_class.classify_deterministic",
         "file": ".spec/specs/modal_class.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.modal_class",
-        "target": "mix test test/specled_ex/modal_class_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.modal_class.classify_must",
         "file": ".spec/specs/modal_class.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.modal_class",
-        "target": "mix test test/specled_ex/modal_class_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.modal_class.classify_none",
         "file": ".spec/specs/modal_class.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.modal_class",
-        "target": "mix test test/specled_ex/modal_class_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.modal_class.classify_should",
         "file": ".spec/specs/modal_class.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.modal_class",
-        "target": "mix test test/specled_ex/modal_class_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.modal_class.classify_total",
         "file": ".spec/specs/modal_class.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.modal_class",
-        "target": "mix test test/specled_ex/modal_class_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.modal_class.cross_polarity_negative_to_positive_is_not_downgrade",
         "file": ".spec/specs/modal_class.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.modal_class",
-        "target": "mix test test/specled_ex/modal_class_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.modal_class.cross_polarity_positive_to_negative_is_downgrade",
         "file": ".spec/specs/modal_class.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.modal_class",
-        "target": "mix test test/specled_ex/modal_class_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.modal_class.downgrade_monotonic",
         "file": ".spec/specs/modal_class.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.modal_class",
-        "target": "mix test test/specled_ex/modal_class_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.modal_class.downgrade_must_to_weaker",
         "file": ".spec/specs/modal_class.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.modal_class",
-        "target": "mix test test/specled_ex/modal_class_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.modal_class.downgrade_total",
         "file": ".spec/specs/modal_class.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.modal_class",
-        "target": "mix test test/specled_ex/modal_class_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.modal_class.downgrade_weaker_to_stronger_is_false",
         "file": ".spec/specs/modal_class.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.modal_class",
-        "target": "mix test test/specled_ex/modal_class_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
@@ -7824,100 +7883,100 @@
       {
         "cover_id": "specled.next.bugfix_guidance",
         "file": ".spec/specs/next.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.next",
-        "target": "mix test test/mix/tasks/spec_next_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.next.change_classification",
         "file": ".spec/specs/next.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.next",
-        "target": "mix test test/mix/tasks/spec_next_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.next.read_only",
         "file": ".spec/specs/next.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.next",
-        "target": "mix test test/mix/tasks/spec_next_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.next.reconciliation_status",
         "file": ".spec/specs/next.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.next",
-        "target": "mix test test/mix/tasks/spec_next_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.overlap.duplicate_covers",
         "file": ".spec/specs/overlap.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.overlap",
-        "target": "mix test test/specled_ex/overlap_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.overlap.findings_sorted",
         "file": ".spec/specs/overlap.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.overlap",
-        "target": "mix test test/specled_ex/overlap_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.overlap.must_stem_collision",
         "file": ".spec/specs/overlap.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.overlap",
-        "target": "mix test test/specled_ex/overlap_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.overlap.no_prior_state",
         "file": ".spec/specs/overlap.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.overlap",
-        "target": "mix test test/specled_ex/overlap_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.overlap.within_subject_scope",
         "file": ".spec/specs/overlap.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.overlap",
-        "target": "mix test test/specled_ex/overlap_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
@@ -7956,23 +8015,23 @@
       {
         "cover_id": "specled.package.declarative_governance",
         "file": ".spec/specs/package.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.package",
-        "target": "mix test test/specled_ex_test.exs test/specled_ex/index_state_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.package.index_and_state",
         "file": ".spec/specs/package.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.package",
-        "target": "mix test test/specled_ex_test.exs test/specled_ex/index_state_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
@@ -8000,507 +8059,518 @@
       {
         "cover_id": "specled.parser.info_string_tokens",
         "file": ".spec/specs/parser.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.parser",
-        "target": "mix test test/specled_ex/parser_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.parser.resilient_errors",
         "file": ".spec/specs/parser.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.parser",
-        "target": "mix test test/specled_ex/parser_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.parser.resilient_on_decode_error",
         "file": ".spec/specs/parser.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.parser",
-        "target": "mix test test/specled_ex/parser_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.parser.resilient_on_duplicate_block",
         "file": ".spec/specs/parser.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.parser",
-        "target": "mix test test/specled_ex/parser_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.parser.standard_blocks",
         "file": ".spec/specs/parser.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.parser",
-        "target": "mix test test/specled_ex/parser_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.parser.title_extraction",
         "file": ".spec/specs/parser.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.parser",
-        "target": "mix test test/specled_ex/parser_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.policy_files.change_analysis_delegates",
         "file": ".spec/specs/policy_files.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.policy_files",
-        "target": "mix test test/specled_ex/policy_files_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.policy_files.classify_kinds",
         "file": ".spec/specs/policy_files.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.policy_files",
-        "target": "mix test test/specled_ex/policy_files_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.policy_files.co_change_rule_total",
         "file": ".spec/specs/policy_files.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.policy_files",
-        "target": "mix test test/specled_ex/policy_files_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.policy_files.plan_docs_excluded",
         "file": ".spec/specs/policy_files.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.policy_files",
-        "target": "mix test test/specled_ex/policy_files_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.policy_files.priv_defaults_to_lib",
         "file": ".spec/specs/policy_files.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.policy_files",
-        "target": "mix test test/specled_ex/policy_files_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.policy_files.priv_plts_is_generated",
         "file": ".spec/specs/policy_files.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.policy_files",
-        "target": "mix test test/specled_ex/policy_files_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.prime.command_execution_default",
         "file": ".spec/specs/prime.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.prime",
-        "target": "mix test test/mix/tasks/spec_prime_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.prime.machine_output",
         "file": ".spec/specs/prime.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.prime",
-        "target": "mix test test/mix/tasks/spec_prime_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.prime.session_context",
         "file": ".spec/specs/prime.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.prime",
-        "target": "mix test test/mix/tasks/spec_prime_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.prose_guard.config_thresholds",
         "file": ".spec/specs/prose_guard.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.prose_guard",
-        "target": "mix test test/specled_ex/config/prose_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.prose_guard.finding_emitted",
         "file": ".spec/specs/prose_guard.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.prose_guard",
-        "target": "mix test test/specled_ex/config/prose_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.prose_guard.non_must_exempt",
         "file": ".spec/specs/prose_guard.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.prose_guard",
-        "target": "mix test test/specled_ex/config/prose_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.prose_guard.severity_configurable",
         "file": ".spec/specs/prose_guard.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.prose_guard",
-        "target": "mix test test/specled_ex/config/prose_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.realized_by.existing_surface_coexists",
         "file": ".spec/specs/realized_by.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.realized_by",
-        "target": "mix test test/specled_ex/parser_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.realized_by.meta_field",
         "file": ".spec/specs/realized_by.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.realized_by",
-        "target": "mix test test/specled_ex/parser_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.realized_by.requirement_override",
         "file": ".spec/specs/realized_by.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.realized_by",
-        "target": "mix test test/specled_ex/parser_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.realized_by.schema_shape",
         "file": ".spec/specs/realized_by.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.realized_by",
-        "target": "mix test test/specled_ex/parser_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.realized_by.effective_binding_inherits_subject",
         "file": ".spec/specs/realized_by.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.realized_by",
-        "target": "mix test test/specled_ex/realization/effective_binding_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.realized_by.effective_binding_requirement_replaces_tier",
         "file": ".spec/specs/realized_by.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.realized_by",
-        "target": "mix test test/specled_ex/realization/effective_binding_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.severity.known_values",
         "file": ".spec/specs/severity.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.severity",
-        "target": "mix test test/specled_ex/branch_check/severity_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.severity.non_emitting",
         "file": ".spec/specs/severity.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.severity",
-        "target": "mix test test/specled_ex/branch_check/severity_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.severity.off_is_absorbing",
         "file": ".spec/specs/severity.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.severity",
-        "target": "mix test test/specled_ex/branch_check/severity_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.severity.resolve_precedence",
         "file": ".spec/specs/severity.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.severity",
-        "target": "mix test test/specled_ex/branch_check/severity_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.spec_drift_trailer.parse_unknown_token_warns",
         "file": ".spec/specs/spec_drift_trailer.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.spec_drift_trailer",
-        "target": "mix test test/specled_ex/branch_check/trailer_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.spec_drift_trailer.parse_vocabulary",
         "file": ".spec/specs/spec_drift_trailer.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.spec_drift_trailer",
-        "target": "mix test test/specled_ex/branch_check/trailer_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.spec_drift_trailer.scans_base_to_head",
         "file": ".spec/specs/spec_drift_trailer.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.spec_drift_trailer",
-        "target": "mix test test/specled_ex/branch_check/trailer_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.spec_drift_trailer.self_report_documented",
         "file": ".spec/specs/spec_drift_trailer.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.spec_drift_trailer",
-        "target": "mix test test/specled_ex/branch_check/trailer_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.status.coverage_summary",
         "file": ".spec/specs/status.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.status",
-        "target": "mix test test/specled_ex/index_state_test.exs test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.status.decision_index",
         "file": ".spec/specs/status.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.status",
-        "target": "mix test test/specled_ex/index_state_test.exs test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.status.frontier_summary",
         "file": ".spec/specs/status.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.status",
-        "target": "mix test test/specled_ex/index_state_test.exs test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tag_scanning.deduplicated_matches",
         "file": ".spec/specs/tag_scanning.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.tag_scanning",
-        "target": "mix test test/specled_ex/tag_scanner_test.exs",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tag_scanning.describe_block_recursion",
+        "file": ".spec/specs/tag_scanning.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tag_scanning",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tag_scanning.dynamic_values_reported",
         "file": ".spec/specs/tag_scanning.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.tag_scanning",
-        "target": "mix test test/specled_ex/tag_scanner_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tag_scanning.form_keyword_list",
         "file": ".spec/specs/tag_scanning.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.tag_scanning",
-        "target": "mix test test/specled_ex/tag_scanner_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tag_scanning.form_list_of_ids",
         "file": ".spec/specs/tag_scanning.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.tag_scanning",
-        "target": "mix test test/specled_ex/tag_scanner_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tag_scanning.form_string_literal",
         "file": ".spec/specs/tag_scanning.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.tag_scanning",
-        "target": "mix test test/specled_ex/tag_scanner_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tag_scanning.ignored_non_spec_tags",
         "file": ".spec/specs/tag_scanning.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.tag_scanning",
-        "target": "mix test test/specled_ex/tag_scanner_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tag_scanning.moduletag_applies_to_all_tests",
         "file": ".spec/specs/tag_scanning.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.tag_scanning",
-        "target": "mix test test/specled_ex/tag_scanner_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tag_scanning.parse_errors_surfaced",
         "file": ".spec/specs/tag_scanning.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.tag_scanning",
-        "target": "mix test test/specled_ex/tag_scanner_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tag_scanning.scan_aggregates_results",
         "file": ".spec/specs/tag_scanning.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.tag_scanning",
-        "target": "mix test test/specled_ex/tag_scanner_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.tag_scanning.supported_forms",
         "file": ".spec/specs/tag_scanning.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.tag_scanning",
-        "target": "mix test test/specled_ex/tag_scanner_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
@@ -8509,7 +8579,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -8520,7 +8590,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -8531,7 +8601,18 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.build_command_includes_integration_flag",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -8542,7 +8623,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -8553,7 +8634,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -8564,7 +8645,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -8575,7 +8656,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -8586,7 +8667,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -8597,7 +8678,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -8608,7 +8689,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -8616,372 +8697,372 @@
       {
         "cover_id": "specled.triangulation.detector_unavailable_on_missing_coverage",
         "file": ".spec/specs/triangulation.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.triangulation",
-        "target": "mix test test/specled_ex/coverage_triangulation_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.triangulation.execution_reach_metric",
         "file": ".spec/specs/triangulation.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.triangulation",
-        "target": "mix test test/specled_ex/coverage_triangulation_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.triangulation.pure_function",
         "file": ".spec/specs/triangulation.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.triangulation",
-        "target": "mix test test/specled_ex/coverage_triangulation_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.triangulation.underspecified_realization",
         "file": ".spec/specs/triangulation.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.triangulation",
-        "target": "mix test test/specled_ex/coverage_triangulation_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.triangulation.untested_realization",
         "file": ".spec/specs/triangulation.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.triangulation",
-        "target": "mix test test/specled_ex/coverage_triangulation_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.triangulation.untethered_test",
         "file": ".spec/specs/triangulation.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.triangulation",
-        "target": "mix test test/specled_ex/coverage_triangulation_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.triangulation.untethered_test_opt_out",
         "file": ".spec/specs/triangulation.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.triangulation",
-        "target": "mix test test/specled_ex/coverage_triangulation_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.triangulation.pure_function",
         "file": ".spec/specs/triangulation.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.triangulation",
-        "target": "mix test test/integration/scenario_test_only_change_test.exs --include integration",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.triangulation.untethered_test",
         "file": ".spec/specs/triangulation.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.triangulation",
-        "target": "mix test test/integration/scenario_mistagged_test_test.exs --include integration",
+        "target": "",
         "verification_index": 2
       },
       {
         "cover_id": "specled.triangulation.untethered_test_opt_out",
         "file": ".spec/specs/triangulation.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.triangulation",
-        "target": "mix test test/integration/scenario_mistagged_test_test.exs --include integration",
+        "target": "",
         "verification_index": 2
       },
       {
         "cover_id": "specled.triangulation.spec_triangle_task",
         "file": ".spec/specs/triangulation.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.triangulation",
-        "target": "mix test test/mix/tasks/spec_triangle_test.exs",
+        "target": "",
         "verification_index": 3
       },
       {
         "cover_id": "specled.use_tier.enumerate_consumers",
         "file": ".spec/specs/use_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.use_tier",
-        "target": "mix test test/specled_ex/realization/use_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.use_tier.provider_hash_composes",
         "file": ".spec/specs/use_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.use_tier",
-        "target": "mix test test/specled_ex/realization/use_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.use_tier.hash_prefix_length",
         "file": ".spec/specs/use_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.use_tier",
-        "target": "mix test test/specled_ex/realization/drift_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.use_tier.root_cause_dedupe",
         "file": ".spec/specs/use_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.use_tier",
-        "target": "mix test test/specled_ex/realization/drift_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.use_tier.scenario_macro_provider_drift",
         "file": ".spec/specs/use_tier.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.use_tier",
-        "target": "mix test test/integration/scenario_macro_provider_drift_test.exs --include integration",
+        "target": "",
         "verification_index": 2
       },
       {
         "cover_id": "specled.verify.command_execution_resilience",
         "file": ".spec/specs/verification.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.verify.command_exit_code_recorded",
         "file": ".spec/specs/verification.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.verify.command_output_via_tempfile",
         "file": ".spec/specs/verification.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.verify.command_timeout_enforced",
         "file": ".spec/specs/verification.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.verify.coverage_warnings",
         "file": ".spec/specs/verification.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.verify.decision_governance",
         "file": ".spec/specs/verification.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.verify.malformed_entries_nonfatal",
         "file": ".spec/specs/verification.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.verify.meta_required",
         "file": ".spec/specs/verification.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.verify.reference_checks",
         "file": ".spec/specs/verification.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.verify.strength_semantics",
         "file": ".spec/specs/verification.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.verify.target_existence",
         "file": ".spec/specs/verification.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.verify.requirement_without_test_tag",
         "file": ".spec/specs/verification.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/tag_findings_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.verify.tag_dynamic_value_skipped",
         "file": ".spec/specs/verification.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/tag_findings_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.verify.tag_findings_respect_enforcement",
         "file": ".spec/specs/verification.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/tag_findings_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.verify.tag_findings_suppressed_when_disabled",
         "file": ".spec/specs/verification.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/tag_findings_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.verify.tag_scan_parse_error",
         "file": ".spec/specs/verification.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/tag_findings_test.exs",
+        "target": "",
         "verification_index": 1
       },
       {
         "cover_id": "specled.verify.verification_cover_untagged",
         "file": ".spec/specs/verification.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.verification",
-        "target": "mix test test/specled_ex/tag_findings_test.exs",
+        "target": "",
         "verification_index": 1
       }
     ],
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 12,
-      "executed": 206,
+      "claimed": 2,
+      "executed": 218,
       "linked": 35
     },
     "threshold_failures": 0

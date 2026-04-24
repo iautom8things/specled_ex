@@ -97,7 +97,14 @@ decisions:
   priority: must
   stability: stable
 - id: specled.verify.requirement_without_test_tag
-  statement: When test-tag data is present on the index, verification shall emit a `requirement_without_test_tag` finding for each `must` requirement whose id appears in no `@tag spec:` annotation within the configured scan paths.
+  statement: >-
+    When test-tag data is present on the index, verification shall emit a
+    `requirement_without_test_tag` finding for each `must` requirement that
+    is covered by at least one `tagged_tests` verification on its owning
+    subject and whose id appears in no `@tag spec:` annotation within the
+    configured scan paths. Requirements covered exclusively by
+    non-`tagged_tests` kinds (source_file, command, file-based kinds) shall
+    not produce this finding.
   priority: must
   stability: evolving
 - id: specled.verify.verification_cover_untagged
@@ -186,7 +193,9 @@ decisions:
     - specled.verify.command_exit_code_recorded
 - id: specled.verify.scenario.requirement_without_tag_emits_finding
   given:
-    - an index with a `must` requirement `billing.invoice` and a tag_map that does not contain `billing.invoice`
+    - an index with a `must` requirement `billing.invoice`
+    - the subject owning that requirement declares a `tagged_tests` verification covering `billing.invoice`
+    - a tag_map that does not contain `billing.invoice`
   when:
     - verification runs
   then:
@@ -236,8 +245,7 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/verifier_test.exs test/specled_ex/verification_strength_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.verify.meta_required
@@ -251,8 +259,7 @@ decisions:
     - specled.verify.command_output_via_tempfile
     - specled.verify.command_timeout_enforced
     - specled.verify.command_exit_code_recorded
-- kind: command
-  target: mix test test/specled_ex/tag_findings_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.verify.requirement_without_test_tag

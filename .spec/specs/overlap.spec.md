@@ -110,8 +110,7 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/overlap_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.overlap.duplicate_covers

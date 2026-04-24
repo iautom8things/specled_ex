@@ -126,16 +126,14 @@ realized_by:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/parser_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.realized_by.schema_shape
     - specled.realized_by.meta_field
     - specled.realized_by.requirement_override
     - specled.realized_by.existing_surface_coexists
-- kind: command
-  target: mix test test/specled_ex/realization/effective_binding_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.realized_by.effective_binding_inherits_subject

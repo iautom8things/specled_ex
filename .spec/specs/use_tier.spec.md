@@ -118,20 +118,17 @@ realized_by:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/realization/use_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.use_tier.enumerate_consumers
     - specled.use_tier.provider_hash_composes
-- kind: command
-  target: mix test test/specled_ex/realization/drift_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.use_tier.root_cause_dedupe
     - specled.use_tier.hash_prefix_length
-- kind: command
-  target: mix test test/integration/scenario_macro_provider_drift_test.exs --include integration
+- kind: tagged_tests
   execute: true
   covers:
     - specled.use_tier.scenario_macro_provider_drift

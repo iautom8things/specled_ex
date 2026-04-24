@@ -1,18 +1,25 @@
 defmodule SpecLedEx.TagFindingsTest do
   use SpecLedEx.Case
+  @moduletag spec: ["specled.verify.requirement_without_test_tag", "specled.verify.tag_dynamic_value_skipped", "specled.verify.tag_findings_respect_enforcement", "specled.verify.tag_findings_suppressed_when_disabled", "specled.verify.tag_scan_parse_error", "specled.verify.verification_cover_untagged"]
 
   alias SpecLedEx.Verifier
 
   @tag spec: "specled.verify.requirement_without_test_tag"
-  test "emits requirement_without_test_tag for must requirements missing an annotation", %{
-    root: root
-  } do
+  test "emits requirement_without_test_tag for must requirements covered by tagged_tests without a backing tag",
+       %{root: root} do
     index = %{
       "subjects" => [
         base_subject(%{
           "requirements" => [
             %{"id" => "billing.invoice", "statement" => "Must invoice", "priority" => "must"},
             %{"id" => "billing.refund", "statement" => "Should refund", "priority" => "should"}
+          ],
+          "verification" => [
+            %{
+              "kind" => "tagged_tests",
+              "covers" => ["billing.invoice"],
+              "execute" => true
+            }
           ]
         })
       ],
@@ -32,6 +39,43 @@ defmodule SpecLedEx.TagFindingsTest do
     assert length(tag_findings) == 1
     assert hd(tag_findings)["severity"] == "warning"
     assert hd(tag_findings)["message"] =~ "billing.invoice"
+  end
+
+  @tag spec: "specled.verify.requirement_without_test_tag"
+  test "skips requirement_without_test_tag when the requirement is covered only by non-tagged_tests kinds",
+       %{root: root} do
+    index = %{
+      "subjects" => [
+        base_subject(%{
+          "requirements" => [
+            %{
+              "id" => "docs.readme_present",
+              "statement" => "README must exist",
+              "priority" => "must"
+            }
+          ],
+          "verification" => [
+            %{
+              "kind" => "source_file",
+              "target" => ".spec/README.md",
+              "covers" => ["docs.readme_present"]
+            }
+          ]
+        })
+      ],
+      "test_tags" => %{},
+      "test_tags_errors" => [],
+      "test_tags_dynamic" => [],
+      "test_tags_config" => %{
+        "enabled" => true,
+        "paths" => ["test"],
+        "enforcement" => "warning"
+      }
+    }
+
+    report = Verifier.verify(index, root)
+
+    assert findings(report, "requirement_without_test_tag") == []
   end
 
   @tag spec: "specled.verify.verification_cover_untagged"
@@ -135,6 +179,13 @@ defmodule SpecLedEx.TagFindingsTest do
         base_subject(%{
           "requirements" => [
             %{"id" => "billing.invoice", "statement" => "Must invoice", "priority" => "must"}
+          ],
+          "verification" => [
+            %{
+              "kind" => "tagged_tests",
+              "covers" => ["billing.invoice"],
+              "execute" => true
+            }
           ]
         })
       ],

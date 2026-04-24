@@ -47,8 +47,7 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/mix/tasks/spec_prime_task_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.prime.session_context

@@ -137,8 +137,7 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/policy_files_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.policy_files.classify_kinds

@@ -153,21 +153,18 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/coverage/formatter_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.coverage_capture.formatter_snapshot_fn_di
     - specled.coverage_capture.keyed_by_test_pid
     - specled.coverage_capture.anonymous_ets
-- kind: command
-  target: mix test test/specled_ex/coverage/store_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.coverage_capture.store_split
     - specled.coverage_capture.artifact_path
-- kind: command
-  target: mix test test/mix/tasks/spec_cover_test_test.exs --include integration
+- kind: tagged_tests
   execute: true
   covers:
     - specled.coverage_capture.serialized_run

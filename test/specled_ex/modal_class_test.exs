@@ -1,5 +1,6 @@
 defmodule SpecLedEx.ModalClassTest do
   use SpecLedEx.Case
+  @moduletag spec: ["specled.modal_class.classify_case_and_punctuation_insensitive", "specled.modal_class.classify_deterministic", "specled.modal_class.classify_must", "specled.modal_class.classify_none", "specled.modal_class.classify_should", "specled.modal_class.classify_total", "specled.modal_class.cross_polarity_negative_to_positive_is_not_downgrade", "specled.modal_class.cross_polarity_positive_to_negative_is_downgrade", "specled.modal_class.downgrade_monotonic", "specled.modal_class.downgrade_must_to_weaker", "specled.modal_class.downgrade_total", "specled.modal_class.downgrade_weaker_to_stronger_is_false"]
 
   alias SpecLedEx.ModalClass
 

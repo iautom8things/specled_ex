@@ -1,5 +1,6 @@
 defmodule SpecLedEx.Realization.HashStoreTest do
   use ExUnit.Case, async: false
+  @moduletag spec: ["specled.binding.hash_store_atomic"]
 
   alias SpecLedEx.Realization.HashStore
 

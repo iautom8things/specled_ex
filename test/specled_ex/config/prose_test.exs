@@ -1,5 +1,6 @@
 defmodule SpecLedEx.Config.ProseTest do
   use SpecLedEx.Case
+  @moduletag spec: ["specled.prose_guard.config_thresholds", "specled.prose_guard.finding_emitted", "specled.prose_guard.non_must_exempt", "specled.prose_guard.severity_configurable"]
 
   @moduletag :capture_log
 

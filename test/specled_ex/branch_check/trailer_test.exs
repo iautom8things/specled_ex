@@ -1,5 +1,6 @@
 defmodule SpecLedEx.BranchCheck.TrailerTest do
   use SpecLedEx.Case
+  @moduletag spec: ["specled.spec_drift_trailer.parse_unknown_token_warns", "specled.spec_drift_trailer.parse_vocabulary", "specled.spec_drift_trailer.scans_base_to_head", "specled.spec_drift_trailer.self_report_documented"]
 
   alias SpecLedEx.BranchCheck.Severity
   alias SpecLedEx.BranchCheck.Trailer

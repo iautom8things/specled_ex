@@ -1,5 +1,6 @@
 defmodule Mix.Tasks.SpecTasksTest do
   use SpecLedEx.Case
+  @moduletag spec: ["specled.branch_guard.cross_cutting_decision", "specled.branch_guard.guidance_output", "specled.branch_guard.plan_docs_excluded", "specled.branch_guard.subject_cochange", "specled.status.coverage_summary", "specled.status.decision_index", "specled.status.frontier_summary", "specled.tasks.check_strict_gate", "specled.tasks.decision_new_scaffold", "specled.tasks.index_writes_state", "specled.tasks.init_local_skill", "specled.tasks.init_scaffold", "specled.tasks.next_guidance", "specled.tasks.no_app_start", "specled.tasks.prime_context", "specled.tasks.prime_json", "specled.tasks.status_summary", "specled.tasks.validate_exit_status", "specled.tasks.validate_findings"]
 
   test "spec.init scaffolds files, keeps existing content, and overwrites with force", %{
     root: root

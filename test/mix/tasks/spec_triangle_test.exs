@@ -1,6 +1,7 @@
 defmodule Mix.Tasks.SpecTriangleTest do
   # covers: specled.triangulation.spec_triangle_task
   use SpecLedEx.Case
+  @moduletag spec: ["specled.triangulation.spec_triangle_task"]
 
   test "prints per-requirement diagnostic for a known subject without mutating state.json",
        %{root: root} do

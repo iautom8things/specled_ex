@@ -2,6 +2,7 @@ defmodule SpecLedEx.TagFindings do
   @moduledoc false
 
   @test_file_kinds ["test_file", "test"]
+  @tagged_tests_kind "tagged_tests"
 
   def findings(index) do
     case Map.get(index, "test_tags") do
@@ -61,6 +62,7 @@ defmodule SpecLedEx.TagFindings do
   defp requirement_without_tag_findings(subjects, tag_map, severity) do
     Enum.flat_map(subjects, fn subject ->
       {subject_id, file} = subject_id_and_file(subject)
+      tagged_tests_covers = tagged_tests_cover_ids(subject)
 
       subject
       |> list_field("requirements")
@@ -68,6 +70,7 @@ defmodule SpecLedEx.TagFindings do
       |> Enum.filter(&must_priority?/1)
       |> Enum.map(&string_field(&1, "id"))
       |> Enum.reject(&(&1 == ""))
+      |> Enum.filter(&MapSet.member?(tagged_tests_covers, &1))
       |> Enum.reject(&Map.has_key?(tag_map, &1))
       |> Enum.map(fn req_id ->
         finding(
@@ -79,6 +82,16 @@ defmodule SpecLedEx.TagFindings do
         )
       end)
     end)
+  end
+
+  defp tagged_tests_cover_ids(subject) do
+    subject
+    |> list_field("verification")
+    |> Enum.filter(&map?/1)
+    |> Enum.filter(fn v -> string_field(v, "kind") == @tagged_tests_kind end)
+    |> Enum.flat_map(&list_field(&1, "covers"))
+    |> Enum.filter(&is_binary/1)
+    |> MapSet.new()
   end
 
   defp verification_cover_untagged_findings(subjects, tag_map, severity) do

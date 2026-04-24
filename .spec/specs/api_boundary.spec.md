@@ -174,22 +174,19 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/realization/api_boundary_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.api_boundary.hash_function_head
     - specled.api_boundary.drift_finding_emitted
     - specled.api_boundary.dangling_finding_emitted
     - specled.api_boundary.umbrella_graceful_degrade
-- kind: command
-  target: mix test test/specled_ex/realization/drift_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.api_boundary.drift_dedupe_narrow
     - specled.api_boundary.dedupe_cyclic_tiebreak
-- kind: command
-  target: mix test test/mix/tasks/spec_suggest_binding_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.api_boundary.suggest_binding_proposal_only

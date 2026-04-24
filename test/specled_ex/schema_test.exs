@@ -1,5 +1,6 @@
 defmodule SpecLedEx.SchemaTest do
   use SpecLedEx.Case
+  @moduletag spec: ["specled.schema.block_structs", "specled.schema.meta_contract", "specled.schema.tagged_tests_kind", "specled.schema.validation_errors"]
 
   alias SpecLedEx.Schema
   alias SpecLedEx.Schema.{Exception, Meta, Requirement, Scenario, Verification}

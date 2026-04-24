@@ -2,6 +2,7 @@ defmodule SpecLedEx.Integration.ScenarioTestOnlyChangeTest do
   # covers: specled.triangulation.pure_function
   # covers: specled.triangulation.scenario.test_only_change_scenario_gate
   use ExUnit.Case, async: true
+  @moduletag spec: ["specled.triangulation.pure_function"]
 
   @moduletag :integration
 

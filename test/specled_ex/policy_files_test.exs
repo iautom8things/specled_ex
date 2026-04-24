@@ -1,5 +1,6 @@
 defmodule SpecLedEx.PolicyFilesTest do
   use SpecLedEx.Case
+  @moduletag spec: ["specled.policy_files.change_analysis_delegates", "specled.policy_files.classify_kinds", "specled.policy_files.co_change_rule_total", "specled.policy_files.plan_docs_excluded", "specled.policy_files.priv_defaults_to_lib", "specled.policy_files.priv_plts_is_generated"]
 
   alias SpecLedEx.PolicyFiles
 

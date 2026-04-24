@@ -1,5 +1,6 @@
 defmodule SpecLedEx.Realization.ApiBoundaryTest do
   use ExUnit.Case, async: false
+  @moduletag spec: ["specled.api_boundary.dangling_finding_emitted", "specled.api_boundary.drift_finding_emitted", "specled.api_boundary.hash_function_head", "specled.api_boundary.umbrella_graceful_degrade"]
 
   alias SpecLedEx.Realization.{ApiBoundary, Binding, HashStore}
 

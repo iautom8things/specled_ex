@@ -69,6 +69,8 @@ defmodule SpecLedEx.Coverage do
   end
 
   def subject_file_map(index, root) do
+    tag_map = tag_map_from_index(index)
+
     index["subjects"]
     |> List.wrap()
     |> Enum.reduce(%{}, fn subject, acc ->
@@ -76,12 +78,21 @@ defmodule SpecLedEx.Coverage do
 
       files =
         subject
-        |> covered_files_for_subject(root)
+        |> covered_files_for_subject(root, tag_map)
         |> MapSet.new()
 
       Map.put(acc, subject_id, files)
     end)
   end
+
+  defp tag_map_from_index(index) when is_map(index) do
+    case Map.get(index, "test_tags") do
+      map when is_map(map) -> map
+      _ -> %{}
+    end
+  end
+
+  defp tag_map_from_index(_), do: %{}
 
   def covered_files(index, root) do
     index
@@ -152,7 +163,7 @@ defmodule SpecLedEx.Coverage do
     |> String.trim_leading("./")
   end
 
-  defp covered_files_for_subject(subject, root) do
+  defp covered_files_for_subject(subject, root, tag_map) do
     surface_files =
       subject
       |> field("meta")
@@ -175,6 +186,9 @@ defmodule SpecLedEx.Coverage do
             kind == "command" ->
               command_path_tokens(target)
 
+            kind == "tagged_tests" ->
+              tagged_tests_files(verification, tag_map)
+
             true ->
               []
           end
@@ -187,6 +201,29 @@ defmodule SpecLedEx.Coverage do
     |> Enum.uniq()
     |> Enum.sort()
   end
+
+  defp tagged_tests_files(verification, tag_map) do
+    verification
+    |> list_field("covers")
+    |> Enum.filter(&is_binary/1)
+    |> Enum.flat_map(fn cover_id ->
+      case Map.get(tag_map, cover_id) do
+        entries when is_list(entries) ->
+          entries
+          |> Enum.map(&tag_entry_file/1)
+          |> Enum.reject(&is_nil/1)
+
+        _ ->
+          []
+      end
+    end)
+    |> Enum.map(&normalize_relative_path/1)
+    |> Enum.uniq()
+  end
+
+  defp tag_entry_file(%{file: file}) when is_binary(file), do: file
+  defp tag_entry_file(%{"file" => file}) when is_binary(file), do: file
+  defp tag_entry_file(_), do: nil
 
   defp expand_surface_entry(entry, root) do
     cond do

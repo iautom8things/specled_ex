@@ -56,8 +56,7 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/schema_test.exs test/specled_ex/parser_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.schema.meta_contract

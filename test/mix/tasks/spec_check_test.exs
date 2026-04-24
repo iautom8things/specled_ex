@@ -1,5 +1,6 @@
 defmodule Mix.Tasks.Spec.CheckTest do
   use SpecLedEx.Case
+  @moduletag spec: ["specled.tasks.check_verbose_flag"]
 
   @moduletag :capture_log
 

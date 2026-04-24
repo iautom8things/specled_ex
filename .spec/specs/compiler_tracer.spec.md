@@ -116,15 +116,13 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/compiler/tracer_test.exs --include integration
+- kind: tagged_tests
   execute: true
   covers:
     - specled.compiler_tracer.captures_remote_calls
     - specled.compiler_tracer.registered_in_mix_exs
     - specled.compiler_tracer.etf_read_direct
-- kind: command
-  target: mix test test/specled_ex/compiler/xref_test.exs --include integration
+- kind: tagged_tests
   execute: true
   covers:
     - specled.compiler_tracer.xref_in_process

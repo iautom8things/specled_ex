@@ -103,8 +103,7 @@ realized_by:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/branch_check/severity_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.severity.resolve_precedence

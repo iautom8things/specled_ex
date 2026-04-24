@@ -194,27 +194,23 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/realization/binding_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.binding.resolve_beam_first
     - specled.binding.resolve_sees_use_generated
     - specled.binding.dangling_reported
-- kind: command
-  target: mix test test/specled_ex/realization/canonical_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.binding.canonical_strips_positions
     - specled.binding.canonical_reserved_idents_preserved
     - specled.binding.canonical_deterministic_bytes
-- kind: command
-  target: mix test test/specled_ex/realization/hash_store_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.binding.hash_store_atomic
-- kind: command
-  target: mix test test/specled_ex/realization/hash_store_versioning_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.binding.hasher_version_internal

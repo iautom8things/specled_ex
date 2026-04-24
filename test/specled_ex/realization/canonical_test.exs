@@ -1,5 +1,6 @@
 defmodule SpecLedEx.Realization.CanonicalTest do
   use ExUnit.Case, async: true
+  @moduletag spec: ["specled.binding.canonical_deterministic_bytes", "specled.binding.canonical_reserved_idents_preserved", "specled.binding.canonical_strips_positions"]
 
   alias SpecLedEx.Realization.Canonical
 

@@ -1,6 +1,7 @@
 defmodule SpecLedEx.OverlapTest do
   # covers: specled.overlap.duplicate_covers specled.overlap.must_stem_collision specled.overlap.within_subject_scope specled.overlap.findings_sorted specled.overlap.no_prior_state
   use ExUnit.Case, async: true
+  @moduletag spec: ["specled.overlap.duplicate_covers", "specled.overlap.findings_sorted", "specled.overlap.must_stem_collision", "specled.overlap.no_prior_state", "specled.overlap.within_subject_scope"]
 
   alias SpecLedEx.Overlap
 

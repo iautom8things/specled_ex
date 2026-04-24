@@ -1,5 +1,6 @@
 defmodule SpecLedEx.Coverage.StoreTest do
   use ExUnit.Case, async: true
+  @moduletag spec: ["specled.coverage_capture.artifact_path", "specled.coverage_capture.store_split"]
 
   alias SpecLedEx.Coverage.Store
 

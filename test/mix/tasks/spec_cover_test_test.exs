@@ -2,6 +2,7 @@ Code.require_file("../../../test_support/specled_ex_integration_case.ex", __DIR_
 
 defmodule Mix.Tasks.Spec.Cover.TestTest do
   use SpecLedEx.IntegrationCase
+  @moduletag spec: ["specled.coverage_capture.integration_case", "specled.coverage_capture.serialized_run"]
 
   alias SpecLedEx.Coverage.Store
 
