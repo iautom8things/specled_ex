@@ -22,7 +22,6 @@ surface:
 realized_by:
   api_boundary:
     - "SpecLedEx.Schema.validate_block/2"
-  expanded_behavior:
     - "SpecLedEx.Schema.Meta"
     - "SpecLedEx.Schema.Requirement"
     - "SpecLedEx.Schema.Scenario"
