@@ -7,13 +7,18 @@ defmodule Mix.Tasks.Spec.Triangle do
   alias SpecLedEx.CoverageTriangulation
   alias SpecLedEx.Realization.{Closure, EffectiveBinding}
 
-  @shortdoc "Prints per-requirement triangulation diagnostics for a subject"
+  @shortdoc "Prints per-requirement triangulation diagnostics for specs"
   @moduledoc """
-  Read-only per-subject triangulation diagnostic.
+  Read-only triangulation diagnostic.
 
+      mix spec.triangle
+      mix spec.triangle --all
       mix spec.triangle <subject.id>
 
-  For every requirement on the subject, prints:
+  With no subject id, or with `--all`, prints diagnostics for every indexed
+  subject. With a subject id, prints diagnostics for that subject only.
+
+  For every requirement on each selected subject, prints:
 
     * the effective `realized_by` binding (merged subject+requirement),
     * the closure MFAs reached from the declared `implementation` binding,
@@ -29,20 +34,10 @@ defmodule Mix.Tasks.Spec.Triangle do
   def run(args) do
     {opts, rest, invalid} =
       OptionParser.parse(args,
-        strict: [root: :string, spec_dir: :string, artifact_path: :string]
+        strict: [root: :string, spec_dir: :string, artifact_path: :string, all: :boolean]
       )
 
-    subject_id =
-      case rest do
-        [id | _] when is_binary(id) and id != "" ->
-          id
-
-        _ ->
-          Mix.raise(
-            "Usage: mix spec.triangle <subject.id> " <>
-              "(invalid: #{inspect(invalid)} rest: #{inspect(rest)})"
-          )
-      end
+    selection = parse_selection!(opts, rest, invalid)
 
     root = opts[:root] || File.cwd!()
     spec_dir = opts[:spec_dir] || SpecLedEx.detect_spec_dir(root)
@@ -51,11 +46,7 @@ defmodule Mix.Tasks.Spec.Triangle do
     # index/2 is a pure build — it does not write state.json.
     index = SpecLedEx.index(root, spec_dir: spec_dir, authored_dir: authored_dir)
 
-    subject = find_subject(index, subject_id)
-
-    if subject == nil do
-      Mix.raise("Unknown subject: #{subject_id}")
-    end
+    selected_subjects = select_subjects!(index, selection)
 
     artifact_path = opts[:artifact_path] || Store.default_path()
     coverage = load_coverage(artifact_path)
@@ -65,8 +56,36 @@ defmodule Mix.Tasks.Spec.Triangle do
     subjects = normalized_subjects(index)
     world = %{subjects: subjects, tracer_edges: edges}
 
-    diagnostic = build_diagnostic(subject, subjects, world, coverage, tag_index)
-    render(diagnostic)
+    selected_subjects
+    |> Enum.map(fn subject -> build_diagnostic(subject, subjects, world, coverage, tag_index) end)
+    |> render_all()
+  end
+
+  defp parse_selection!(_opts, rest, invalid) when invalid != [] do
+    usage!(invalid, rest)
+  end
+
+  defp parse_selection!(opts, rest, _invalid) do
+    case {Keyword.get(opts, :all, false), rest} do
+      {true, []} ->
+        :all
+
+      {false, []} ->
+        :all
+
+      {false, [id]} when is_binary(id) and id != "" ->
+        {:subject, id}
+
+      _ ->
+        usage!([], rest)
+    end
+  end
+
+  defp usage!(invalid, rest) do
+    Mix.raise(
+      "Usage: mix spec.triangle [--all | <subject.id>] " <>
+        "(invalid: #{inspect(invalid)} rest: #{inspect(rest)})"
+    )
   end
 
   # ---------------------------------------------------------------------------
@@ -124,6 +143,19 @@ defmodule Mix.Tasks.Spec.Triangle do
     end)
   end
 
+  defp select_subjects!(index, :all) do
+    index
+    |> Map.get("subjects", [])
+    |> Enum.filter(&(subject_id_of(&1) != nil))
+  end
+
+  defp select_subjects!(index, {:subject, subject_id}) do
+    case find_subject(index, subject_id) do
+      nil -> Mix.raise("Unknown subject: #{subject_id}")
+      subject -> [subject]
+    end
+  end
+
   defp subject_id_of(subject) do
     subject
     |> meta()
@@ -158,7 +190,8 @@ defmodule Mix.Tasks.Spec.Triangle do
 
       %{
         id: subject_id_of(subject) || "<unknown>",
-        surface: meta(subject) |> fetch_field("surface") |> List.wrap() |> Enum.filter(&is_binary/1),
+        surface:
+          meta(subject) |> fetch_field("surface") |> List.wrap() |> Enum.filter(&is_binary/1),
         impl_bindings: impl
       }
     end)
@@ -234,16 +267,15 @@ defmodule Mix.Tasks.Spec.Triangle do
     req_id = fetch_field(req, "id")
     effective_binding = EffectiveBinding.for_requirement(subject, req)
 
-    closure_mfas =
+    closure_mfa_tuples =
       if closure do
-        (closure.owned_mfas ++ closure.shared_mfas)
-        |> Enum.map(&mfa_to_string/1)
+        closure.owned_mfas ++ closure.shared_mfas
       else
         []
       end
 
     closure_files =
-      closure_mfas
+      closure_mfa_tuples
       |> Enum.flat_map(&mfa_source_file/1)
       |> Enum.uniq()
 
@@ -255,7 +287,7 @@ defmodule Mix.Tasks.Spec.Triangle do
     %{
       id: req_id,
       effective_binding: effective_binding,
-      closure_mfas: closure_mfas,
+      closure_mfas: Enum.map(closure_mfa_tuples, &mfa_to_string/1),
       closure_files: closure_files,
       exercising_tests: exercising
     }
@@ -325,17 +357,22 @@ defmodule Mix.Tasks.Spec.Triangle do
       Mix.shell().info("- #{req.id}")
       Mix.shell().info("  effective_binding: #{inspect(req.effective_binding)}")
 
-      Mix.shell().info(
-        "  closure_mfas: #{format_list(req.closure_mfas)}"
-      )
+      Mix.shell().info("  closure_mfas: #{format_list(req.closure_mfas)}")
 
-      Mix.shell().info(
-        "  closure_files: #{format_list(req.closure_files)}"
-      )
+      Mix.shell().info("  closure_files: #{format_list(req.closure_files)}")
 
-      Mix.shell().info(
-        "  exercising_tests: #{format_list(req.exercising_tests)}"
-      )
+      Mix.shell().info("  exercising_tests: #{format_list(req.exercising_tests)}")
+    end)
+  end
+
+  defp render_all([]), do: Mix.shell().info("subjects: 0")
+
+  defp render_all(diagnostics) do
+    diagnostics
+    |> Enum.with_index()
+    |> Enum.each(fn {diagnostic, index} ->
+      if index > 0, do: Mix.shell().info("")
+      render(diagnostic)
     end)
   end
 
