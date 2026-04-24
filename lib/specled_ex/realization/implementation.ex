@@ -124,8 +124,7 @@ defmodule SpecLedEx.Realization.Implementation do
       "requirement_id" => nil,
       "mfa" => subject.id,
       "current_hash" => Base.encode16(current, case: :lower),
-      "message" =>
-        "implementation hash for subject #{subject.id} differs from committed value"
+      "message" => "implementation hash for subject #{subject.id} differs from committed value"
     }
   end
 
@@ -212,7 +211,7 @@ defmodule SpecLedEx.Realization.Implementation do
             {entries, missing}
 
           {:ok, ast} ->
-            normalized = Canonical.normalize(ast)
+            normalized = ast |> implementation_ast() |> Canonical.normalize()
             {[{mfa_string, normalized} | entries], missing}
 
           {:error, :not_found, _details} ->
@@ -244,11 +243,28 @@ defmodule SpecLedEx.Realization.Implementation do
 
       case Binding.resolve(mfa_string, context) do
         {:ok, {:module, _}} -> []
-        {:ok, ast} -> [{mfa_string, Canonical.normalize(ast)}]
+        {:ok, ast} -> [{mfa_string, ast |> implementation_ast() |> Canonical.normalize()}]
         _ -> []
       end
     end)
     |> Enum.sort_by(&elem(&1, 0))
+  end
+
+  defp implementation_ast({fun, arity, clauses})
+       when is_atom(fun) and is_integer(arity) and is_list(clauses) do
+    {:__block__, [], Enum.map(clauses, &beam_clause_ast(fun, &1))}
+  end
+
+  defp implementation_ast(ast), do: ast
+
+  defp beam_clause_ast(fun, {args, guards, body}) when is_list(args) and is_list(guards) do
+    head =
+      case guards do
+        [] -> {fun, [], args}
+        _ -> {:when, [], [{fun, [], args} | guards]}
+      end
+
+    {:def, [], [head, [do: body]]}
   end
 
   defp compute_referenced_hashes(referenced_ids, world, context, cache) do
