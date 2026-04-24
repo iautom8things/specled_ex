@@ -1,5 +1,18 @@
 defmodule SpecLedEx.TagScannerTest do
   use SpecLedEx.Case
+  @moduletag spec: [
+               "specled.tag_scanning.deduplicated_matches",
+               "specled.tag_scanning.describe_block_recursion",
+               "specled.tag_scanning.dynamic_values_reported",
+               "specled.tag_scanning.form_keyword_list",
+               "specled.tag_scanning.form_list_of_ids",
+               "specled.tag_scanning.form_string_literal",
+               "specled.tag_scanning.ignored_non_spec_tags",
+               "specled.tag_scanning.moduletag_applies_to_all_tests",
+               "specled.tag_scanning.parse_errors_surfaced",
+               "specled.tag_scanning.scan_aggregates_results",
+               "specled.tag_scanning.supported_forms"
+             ]
 
   alias SpecLedEx.TagScanner
 
@@ -174,6 +187,51 @@ defmodule SpecLedEx.TagScannerTest do
         """)
 
       assert {:ok, []} = TagScanner.scan_file(path)
+    end
+  end
+
+  describe "scan_file/1 — describe block recursion" do
+    @tag spec: "specled.tag_scanning.describe_block_recursion"
+    test "@moduletag spec attaches to tests nested inside describe", %{root: root} do
+      path =
+        write_test_file(root, "test/example_test.exs", """
+        defmodule ExampleTest do
+          use ExUnit.Case
+
+          @moduletag spec: ["domain.root"]
+
+          describe "group" do
+            test "nested" do
+              assert true
+            end
+          end
+        end
+        """)
+
+      assert {:ok, tags} = TagScanner.scan_file(path)
+
+      assert [%{id: "domain.root", test_name: "nested"}] = tags
+    end
+
+    @tag spec: "specled.tag_scanning.describe_block_recursion"
+    test "@tag spec inside describe attaches to the following nested test", %{root: root} do
+      path =
+        write_test_file(root, "test/example_test.exs", """
+        defmodule ExampleTest do
+          use ExUnit.Case
+
+          describe "group" do
+            @tag spec: "auth.group"
+            test "nested" do
+              assert true
+            end
+          end
+        end
+        """)
+
+      assert {:ok, tags} = TagScanner.scan_file(path)
+
+      assert [%{id: "auth.group", test_name: "nested"}] = tags
     end
   end
 

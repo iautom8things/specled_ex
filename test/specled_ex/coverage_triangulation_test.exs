@@ -6,6 +6,7 @@ defmodule SpecLedEx.CoverageTriangulationTest do
   # covers: specled.triangulation.execution_reach_metric
   # covers: specled.triangulation.detector_unavailable_on_missing_coverage
   use ExUnit.Case, async: true
+  @moduletag spec: ["specled.triangulation.detector_unavailable_on_missing_coverage", "specled.triangulation.execution_reach_metric", "specled.triangulation.pure_function", "specled.triangulation.underspecified_realization", "specled.triangulation.untested_realization", "specled.triangulation.untethered_test", "specled.triangulation.untethered_test_opt_out"]
 
   alias SpecLedEx.CoverageTriangulation
 

@@ -5,6 +5,7 @@ defmodule SpecLedEx.Realization.ExpandedBehaviorTest do
   # covers: specled.expanded_behavior_tier.scenario.expanded_hash_stable_on_rename
   # covers: specled.expanded_behavior_tier.scenario.no_debug_info_degrades
   use ExUnit.Case, async: false
+  @moduletag spec: ["specled.expanded_behavior_tier.hash_stable_on_refactor", "specled.expanded_behavior_tier.no_debug_info_detector_unavailable", "specled.expanded_behavior_tier.reads_beam_debug_info"]
 
   alias SpecLedEx.Realization.{ExpandedBehavior, HashStore}
 

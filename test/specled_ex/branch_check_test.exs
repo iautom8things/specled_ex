@@ -1,5 +1,6 @@
 defmodule SpecLedEx.BranchCheckTest do
   use SpecLedEx.Case
+  @moduletag spec: ["specled.branch_guard.new_requirement_tag_warning", "specled.branch_guard.tag_findings_respect_enforcement"]
 
   alias SpecLedEx.{BranchCheck, Index}
 
@@ -37,6 +38,13 @@ defmodule SpecLedEx.BranchCheckTest do
       requirements: [
         %{"id" => "billing.list", "statement" => "Initial requirement", "priority" => "must"},
         %{"id" => "billing.invoice", "statement" => "Newly added", "priority" => "must"}
+      ],
+      verification: [
+        %{
+          "kind" => "tagged_tests",
+          "covers" => ["billing.list", "billing.invoice"],
+          "execute" => true
+        }
       ]
     )
 
@@ -137,6 +145,13 @@ defmodule SpecLedEx.BranchCheckTest do
       requirements: [
         %{"id" => "billing.list", "statement" => "Initial requirement", "priority" => "must"},
         %{"id" => "billing.invoice", "statement" => "Newly added", "priority" => "must"}
+      ],
+      verification: [
+        %{
+          "kind" => "tagged_tests",
+          "covers" => ["billing.list", "billing.invoice"],
+          "execute" => true
+        }
       ]
     )
 

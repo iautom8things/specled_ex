@@ -2,6 +2,7 @@ defmodule SpecLedEx.Realization.DriftTest do
   # covers: specled.use_tier.root_cause_dedupe
   # covers: specled.use_tier.hash_prefix_length
   use ExUnit.Case, async: true
+  @moduletag spec: ["specled.api_boundary.dedupe_cyclic_tiebreak", "specled.api_boundary.drift_dedupe_narrow", "specled.use_tier.hash_prefix_length", "specled.use_tier.root_cause_dedupe"]
 
   alias SpecLedEx.Realization.Drift
 

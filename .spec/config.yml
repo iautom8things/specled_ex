@@ -1,0 +1,5 @@
+test_tags:
+  enabled: true
+  paths:
+    - test
+  enforcement: warning

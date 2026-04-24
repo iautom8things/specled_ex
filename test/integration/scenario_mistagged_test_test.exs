@@ -3,6 +3,7 @@ defmodule SpecLedEx.Integration.ScenarioMistaggedTestTest do
   # covers: specled.triangulation.scenario.untethered_test_flagged
   # covers: specled.triangulation.scenario.opt_out_tag_suppresses
   use ExUnit.Case, async: true
+  @moduletag spec: ["specled.triangulation.untethered_test", "specled.triangulation.untethered_test_opt_out"]
 
   @moduletag :integration
 

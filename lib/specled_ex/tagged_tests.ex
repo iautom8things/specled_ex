@@ -3,6 +3,7 @@ defmodule SpecLedEx.TaggedTests do
 
   @kind "tagged_tests"
   @base_command "mix test"
+  @include_integration_flag "--include integration"
 
   @type entry :: %{key: {String.t(), String.t(), non_neg_integer()}, covers: [String.t()]}
 
@@ -11,6 +12,9 @@ defmodule SpecLedEx.TaggedTests do
 
   @doc "Returns the base command (without flags or files) used when aggregating tagged_tests runs."
   def base_command, do: @base_command
+
+  @doc "Returns the `--include integration` flag appended to merged commands."
+  def include_integration_flag, do: @include_integration_flag
 
   @doc """
   Collects every executable `tagged_tests` verification across the given subjects.
@@ -51,6 +55,12 @@ defmodule SpecLedEx.TaggedTests do
   `tag_map` to look up test file paths and to drop ids that have no
   `@tag spec:` annotation.
 
+  The emitted command always appends `--include integration` so that host
+  projects which configure `ExUnit.configure(exclude: :integration)` still
+  execute integration-tagged tests that participate in a merged run. With
+  ExUnit's default filter behaviour the flag is a no-op; it is a defensive
+  marker for host projects that opt into exclusion.
+
   Returns `{:ok, command}` when at least one cover id is present in `tag_map`,
   or `:no_tests` when none of the ids are tagged.
   """
@@ -79,7 +89,9 @@ defmodule SpecLedEx.TaggedTests do
           |> Enum.reject(&is_nil/1)
           |> Enum.uniq()
 
-        {:ok, Enum.join([@base_command | only_flags] ++ files, " ")}
+        command_parts = [@base_command | only_flags] ++ [@include_integration_flag] ++ files
+
+        {:ok, Enum.join(command_parts, " ")}
     end
   end
 

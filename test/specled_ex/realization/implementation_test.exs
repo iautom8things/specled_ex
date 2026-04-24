@@ -1,5 +1,6 @@
 defmodule SpecLedEx.Realization.ImplementationTest do
   use ExUnit.Case, async: false
+  @moduletag spec: ["specled.implementation_tier.closure_walks_tracer_edges"]
 
   alias SpecLedEx.Realization.{HashStore, Implementation}
 

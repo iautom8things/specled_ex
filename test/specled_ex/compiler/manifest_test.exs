@@ -1,5 +1,6 @@
 defmodule SpecLedEx.Compiler.ManifestTest do
   use ExUnit.Case, async: true
+  @moduletag spec: ["specled.compiler_context.load_from_opts", "specled.compiler_context.manifest_wraps_stdlib", "specled.compiler_context.struct_shape"]
 
   alias SpecLedEx.Compiler.{Context, Manifest}
 

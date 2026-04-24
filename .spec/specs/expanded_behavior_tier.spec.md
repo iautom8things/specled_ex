@@ -138,15 +138,13 @@ realized_by:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/realization/expanded_behavior_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.expanded_behavior_tier.reads_beam_debug_info
     - specled.expanded_behavior_tier.hash_stable_on_refactor
     - specled.expanded_behavior_tier.no_debug_info_detector_unavailable
-- kind: command
-  target: mix test test/specled_ex/realization/typespecs_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.expanded_behavior_tier.typespecs_hashes_spec_and_type

@@ -52,7 +52,13 @@ decisions:
   priority: should
   stability: evolving
 - id: specled.branch_guard.new_requirement_tag_warning
-  statement: When test-tag data is present on the index, the branch guard inside mix spec.check shall emit a finding for each `must` requirement added on the current branch whose id appears in no `@tag spec:` annotation in the configured scan paths.
+  statement: >-
+    When test-tag data is present on the index, the branch guard inside mix
+    spec.check shall emit a finding for each `must` requirement added on the
+    current branch that is covered by at least one `tagged_tests` verification
+    on its owning subject and whose id appears in no `@tag spec:` annotation
+    in the configured scan paths. Requirements covered exclusively by
+    non-`tagged_tests` kinds shall not produce this finding.
   priority: must
   stability: evolving
 - id: specled.branch_guard.tag_findings_respect_enforcement
@@ -67,6 +73,7 @@ decisions:
 - id: specled.branch_guard.scenario.new_requirement_without_tag
   given:
     - a branch that adds a new `must` requirement `billing.invoice` to an existing subject
+    - that subject declares a `tagged_tests` verification covering `billing.invoice`
     - a tag_map that does not contain `billing.invoice`
   when:
     - mix spec.check runs against the branch base
@@ -90,16 +97,14 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/mix/tasks/spec_tasks_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.branch_guard.subject_cochange
     - specled.branch_guard.cross_cutting_decision
     - specled.branch_guard.guidance_output
     - specled.branch_guard.plan_docs_excluded
-- kind: command
-  target: mix test test/specled_ex/branch_check_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.branch_guard.new_requirement_tag_warning

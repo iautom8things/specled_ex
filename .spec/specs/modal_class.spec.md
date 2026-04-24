@@ -243,8 +243,7 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/modal_class_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.modal_class.classify_total

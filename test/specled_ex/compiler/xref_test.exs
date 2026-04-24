@@ -1,5 +1,6 @@
 defmodule SpecLedEx.Compiler.XrefTest do
   use ExUnit.Case, async: false
+  @moduletag spec: ["specled.compiler_tracer.xref_in_process"]
 
   alias SpecLedEx.Compiler.Xref
 

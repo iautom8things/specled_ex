@@ -1,5 +1,6 @@
 defmodule SpecLedEx.Coverage.FormatterTest do
   use ExUnit.Case, async: true
+  @moduletag spec: ["specled.coverage_capture.anonymous_ets", "specled.coverage_capture.formatter_snapshot_fn_di", "specled.coverage_capture.keyed_by_test_pid"]
 
   alias SpecLedEx.Coverage
   alias SpecLedEx.Coverage.Formatter

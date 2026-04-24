@@ -96,8 +96,7 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/branch_check/trailer_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.spec_drift_trailer.parse_vocabulary

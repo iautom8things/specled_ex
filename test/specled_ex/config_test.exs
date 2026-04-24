@@ -1,5 +1,6 @@
 defmodule SpecLedEx.ConfigTest do
   use SpecLedEx.Case
+  @moduletag spec: ["specled.config.defaults_when_missing", "specled.config.guardrails_severities", "specled.config.init_scaffolds_config_yml", "specled.config.malformed_yaml_degrades", "specled.config.paths_filtered_to_strings", "specled.config.unknown_enforcement_warns", "specled.config.yaml_parses_known_fields"]
 
   alias SpecLedEx.Config
   alias SpecLedEx.Config.TestTags

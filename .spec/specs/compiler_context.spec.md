@@ -109,15 +109,13 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/compiler/manifest_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.compiler_context.struct_shape
     - specled.compiler_context.load_from_opts
     - specled.compiler_context.manifest_wraps_stdlib
-- kind: command
-  target: mix test test/specled_ex/compiler/manifest_integration_test.exs --include integration
+- kind: tagged_tests
   execute: true
   covers:
     - specled.compiler_context.manifest_fixture_integration

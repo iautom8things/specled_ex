@@ -100,8 +100,7 @@ realized_by:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/parser_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.parser.standard_blocks

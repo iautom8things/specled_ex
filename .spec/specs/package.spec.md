@@ -59,8 +59,7 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex_test.exs test/specled_ex/index_state_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.package.index_and_state

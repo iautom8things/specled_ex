@@ -21,6 +21,8 @@ summary: Workspace-wide aggregation of tagged_tests verifications into a single 
 surface:
   - lib/specled_ex/tagged_tests.ex
   - test/specled_ex/tagged_tests_test.exs
+  - priv/helper_scripts/tag_tests_from_specs.exs
+  - priv/helper_scripts/flip_command_to_tagged_tests.exs
 realized_by:
   implementation:
     - "SpecLedEx.TaggedTests.collect_entries/1"
@@ -70,6 +72,15 @@ realized_by:
     build_command/2 shall return the atom `:no_tests` when none of the
     requested cover ids have an entry in the tag map, so the caller can
     short-circuit execution without building an empty command.
+  priority: must
+  stability: evolving
+- id: specled.tagged_tests.build_command_includes_integration_flag
+  statement: >-
+    build_command/2 shall append `--include integration` to every emitted
+    command so host projects that configure `ExUnit.configure(exclude:
+    :integration)` still execute integration-tagged tests participating in a
+    merged run. The flag is appended after the `--only spec:<id>` flags and
+    before the test file arguments.
   priority: must
   stability: evolving
 - id: specled.tagged_tests.merged_run_attribution
@@ -158,6 +169,16 @@ realized_by:
     - the function returns `:no_tests`
   covers:
     - specled.tagged_tests.build_command_no_tests_when_all_unbacked
+- id: specled.tagged_tests.scenario.build_command_appends_include_integration
+  given:
+    - a tag map with one backed cover id and a single test file
+  when:
+    - SpecLedEx.TaggedTests.build_command/2 is called
+  then:
+    - the returned command contains `--include integration`
+    - the `--include integration` flag appears after the `--only spec:<id>` flags and before the test file
+  covers:
+    - specled.tagged_tests.build_command_includes_integration_flag
 - id: specled.tagged_tests.scenario.merged_run_executes_once_across_subjects
   given:
     - "two subjects each declaring a `kind: tagged_tests` verification with execute=true"
@@ -197,6 +218,7 @@ realized_by:
     - specled.tagged_tests.build_command_combines_backed_ids
     - specled.tagged_tests.build_command_drops_unbacked_ids
     - specled.tagged_tests.build_command_no_tests_when_all_unbacked
+    - specled.tagged_tests.build_command_includes_integration_flag
     - specled.tagged_tests.merged_run_attribution
     - specled.tagged_tests.strength_progression
     - specled.tagged_tests.strength_executed_on_green_run

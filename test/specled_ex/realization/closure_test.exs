@@ -1,5 +1,6 @@
 defmodule SpecLedEx.Realization.ClosureTest do
   use ExUnit.Case, async: true
+  @moduletag spec: ["specled.implementation_tier.closure_walks_tracer_edges", "specled.implementation_tier.hash_ref_composition", "specled.implementation_tier.ownership_rule", "specled.implementation_tier.shared_helper_accounting"]
 
   alias SpecLedEx.Realization.Closure
 

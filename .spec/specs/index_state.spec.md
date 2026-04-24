@@ -79,15 +79,13 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex_test.exs test/specled_ex/index_state_test.exs test/specled_ex/json_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.index.subject_and_decision_index
     - specled.index.canonical_state_output
     - specled.index.json_resilience
-- kind: command
-  target: mix test test/specled_ex/index_state_tag_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.index.tag_data_conditional

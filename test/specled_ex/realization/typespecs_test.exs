@@ -3,6 +3,7 @@ defmodule SpecLedEx.Realization.TypespecsTest do
   # covers: specled.expanded_behavior_tier.typespecs_drift_finding
   # covers: specled.expanded_behavior_tier.scenario.typespec_arg_change_drifts
   use ExUnit.Case, async: false
+  @moduletag spec: ["specled.expanded_behavior_tier.typespecs_drift_finding", "specled.expanded_behavior_tier.typespecs_hashes_spec_and_type"]
 
   alias SpecLedEx.Realization.{HashStore, Typespecs}
 

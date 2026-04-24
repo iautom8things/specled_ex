@@ -1,5 +1,6 @@
 defmodule SpecLedEx.DecisionParser.CrossFieldTest do
   use SpecLedEx.Case
+  @moduletag spec: ["specled.decisions.change_type_enum", "specled.decisions.change_type_optional", "specled.decisions.cross_field_adr_append_only", "specled.decisions.cross_field_affects_non_empty", "specled.decisions.cross_field_affects_resolve", "specled.decisions.cross_field_idempotent", "specled.decisions.cross_field_reverses_what", "specled.decisions.cross_field_supersedes_replaces", "specled.decisions.frontmatter_contract", "specled.decisions.reference_validation", "specled.decisions.weakening_set"]
 
   alias SpecLedEx.DecisionParser.CrossField
 

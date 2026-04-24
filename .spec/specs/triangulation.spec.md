@@ -160,8 +160,7 @@ realized_by:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/coverage_triangulation_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.triangulation.pure_function
@@ -171,19 +170,16 @@ realized_by:
     - specled.triangulation.underspecified_realization
     - specled.triangulation.execution_reach_metric
     - specled.triangulation.detector_unavailable_on_missing_coverage
-- kind: command
-  target: mix test test/integration/scenario_test_only_change_test.exs --include integration
+- kind: tagged_tests
   execute: true
   covers:
     - specled.triangulation.pure_function
-- kind: command
-  target: mix test test/integration/scenario_mistagged_test_test.exs --include integration
+- kind: tagged_tests
   execute: true
   covers:
     - specled.triangulation.untethered_test
     - specled.triangulation.untethered_test_opt_out
-- kind: command
-  target: mix test test/mix/tasks/spec_triangle_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.triangulation.spec_triangle_task

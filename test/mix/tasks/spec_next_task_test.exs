@@ -1,5 +1,6 @@
 defmodule Mix.Tasks.SpecNextTaskTest do
   use SpecLedEx.Case
+  @moduletag spec: ["specled.next.bugfix_guidance", "specled.next.change_classification", "specled.next.read_only", "specled.next.reconciliation_status", "specled.tasks.check_strict_gate", "specled.tasks.decision_new_scaffold", "specled.tasks.index_writes_state", "specled.tasks.init_local_skill", "specled.tasks.init_scaffold", "specled.tasks.next_guidance", "specled.tasks.no_app_start", "specled.tasks.prime_context", "specled.tasks.prime_json", "specled.tasks.status_summary", "specled.tasks.validate_exit_status", "specled.tasks.validate_findings"]
 
   test "spec.next guides a covered local change", %{root: root} do
     init_git_repo(root)

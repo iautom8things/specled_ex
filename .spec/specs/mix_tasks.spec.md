@@ -114,8 +114,7 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_status_task_test.exs test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.tasks.init_scaffold
@@ -130,14 +129,12 @@ decisions:
     - specled.tasks.check_strict_gate
     - specled.tasks.status_summary
     - specled.tasks.no_app_start
-- kind: command
-  target: mix test test/mix/tasks/spec_check_test_tags_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.tasks.test_tags_flag
     - specled.tasks.test_tags_precedence
-- kind: command
-  target: mix test test/mix/tasks/spec_check_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.tasks.check_verbose_flag
