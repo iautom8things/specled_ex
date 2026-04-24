@@ -102,8 +102,7 @@ realized_by:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/config/prose_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.prose_guard.config_thresholds

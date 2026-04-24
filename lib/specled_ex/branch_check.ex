@@ -288,11 +288,13 @@ defmodule SpecLedEx.BranchCheck do
 
           if subject do
             subject_id = subject_id(subject)
+            tagged_tests_covers = tagged_tests_cover_ids(subject)
             current_ids = must_ids_from_subject(subject)
             base_ids = base_must_ids(root, analysis.base, path)
             new_ids = current_ids -- base_ids
 
             new_ids
+            |> Enum.filter(&MapSet.member?(tagged_tests_covers, &1))
             |> Enum.reject(&Map.has_key?(tag_map, &1))
             |> Enum.flat_map(fn id ->
               emit(
@@ -309,6 +311,22 @@ defmodule SpecLedEx.BranchCheck do
           end
         end)
     end
+  end
+
+  defp tagged_tests_cover_ids(subject) do
+    subject
+    |> Map.get("verification", Map.get(subject, :verification, []))
+    |> List.wrap()
+    |> Enum.filter(&is_map/1)
+    |> Enum.filter(fn v ->
+      kind = Map.get(v, "kind", Map.get(v, :kind))
+      kind == "tagged_tests"
+    end)
+    |> Enum.flat_map(fn v ->
+      v |> Map.get("covers", Map.get(v, :covers, [])) |> List.wrap()
+    end)
+    |> Enum.filter(&is_binary/1)
+    |> MapSet.new()
   end
 
   defp test_tags_default(%{"enforcement" => "error"}), do: :error

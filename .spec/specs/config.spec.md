@@ -144,8 +144,7 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/config_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.config.defaults_when_missing

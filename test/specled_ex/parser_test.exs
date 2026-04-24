@@ -1,5 +1,6 @@
 defmodule SpecLedEx.ParserTest do
   use SpecLedEx.Case
+  @moduletag spec: ["specled.parser.info_string_tokens", "specled.parser.resilient_errors", "specled.parser.resilient_on_decode_error", "specled.parser.resilient_on_duplicate_block", "specled.parser.standard_blocks", "specled.parser.title_extraction", "specled.realized_by.existing_surface_coexists", "specled.realized_by.meta_field", "specled.realized_by.requirement_override", "specled.realized_by.schema_shape", "specled.schema.block_structs", "specled.schema.meta_contract", "specled.schema.tagged_tests_kind", "specled.schema.validation_errors"]
 
   alias SpecLedEx.Parser
   alias SpecLedEx.Schema.{Exception, Meta, Requirement, Scenario, Verification}

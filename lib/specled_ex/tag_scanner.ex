@@ -173,7 +173,44 @@ defmodule SpecLedEx.TagScanner do
     {[], [], tags ++ module_entries ++ pending_entries, dynamics ++ dyn_entries}
   end
 
+  # Recurse into `describe "...", do: ... end` bodies. Pending @tag/@moduletag
+  # accumulators reset at the describe boundary: tags declared outside a
+  # describe do not leak into its tests, and tags declared inside do not
+  # leak back out. Moduletag ids remain visible to nested tests.
+  defp process_statement({:describe, _meta, args}, file, moduletag_ids, {pending, pending_dyn, tags, dynamics}) do
+    describe_body = describe_body_from_args(args)
+
+    inner_statements =
+      case describe_body do
+        {:__block__, _, items} -> items
+        nil -> []
+        other -> [other]
+      end
+
+    {_inner_pending, _inner_dyn, inner_tags, inner_dynamics} =
+      Enum.reduce(inner_statements, {[], [], [], []}, fn stmt, acc ->
+        process_statement(stmt, file, moduletag_ids, acc)
+      end)
+
+    {pending, pending_dyn, tags ++ inner_tags, dynamics ++ inner_dynamics}
+  end
+
   defp process_statement(_other, _file, _moduletag_ids, acc), do: acc
+
+  defp describe_body_from_args(args) when is_list(args) do
+    Enum.reduce_while(args, nil, fn
+      list, _ when is_list(list) ->
+        case Keyword.get(list, :do) do
+          nil -> {:cont, nil}
+          body -> {:halt, body}
+        end
+
+      _, acc ->
+        {:cont, acc}
+    end)
+  end
+
+  defp describe_body_from_args(_), do: nil
 
   defp test_name_from_args([name | _]) when is_binary(name), do: name
   defp test_name_from_args(_), do: nil

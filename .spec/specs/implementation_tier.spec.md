@@ -137,21 +137,18 @@ realized_by:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/realization/closure_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.implementation_tier.closure_walks_tracer_edges
     - specled.implementation_tier.ownership_rule
     - specled.implementation_tier.shared_helper_accounting
     - specled.implementation_tier.hash_ref_composition
-- kind: command
-  target: mix test test/specled_ex/realization/implementation_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.implementation_tier.closure_walks_tracer_edges
-- kind: command
-  target: mix test test/integration/scenario_refactor_stable_test.exs --include integration
+- kind: tagged_tests
   execute: true
   covers:
     - specled.implementation_tier.scenario_refactor_stable

@@ -1,5 +1,6 @@
 defmodule SpecLedEx.VerificationStrengthTest do
   use ExUnit.Case
+  @moduletag spec: ["specled.verify.command_execution_resilience", "specled.verify.command_exit_code_recorded", "specled.verify.command_output_via_tempfile", "specled.verify.command_timeout_enforced", "specled.verify.coverage_warnings", "specled.verify.decision_governance", "specled.verify.malformed_entries_nonfatal", "specled.verify.meta_required", "specled.verify.reference_checks", "specled.verify.strength_semantics", "specled.verify.target_existence"]
 
   alias SpecLedEx.VerificationStrength
 

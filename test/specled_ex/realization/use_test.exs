@@ -3,6 +3,7 @@ defmodule SpecLedEx.Realization.UseTest do
   # covers: specled.use_tier.provider_hash_composes
   # covers: specled.use_tier.scenario.consumers_current_not_persisted
   use ExUnit.Case, async: false
+  @moduletag spec: ["specled.use_tier.enumerate_consumers", "specled.use_tier.provider_hash_composes"]
 
   alias SpecLedEx.Realization.Use
 

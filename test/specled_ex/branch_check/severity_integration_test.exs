@@ -74,6 +74,13 @@ defmodule SpecLedEx.BranchCheck.SeverityIntegrationTest do
         requirements: [
           %{"id" => "billing.list", "statement" => "Initial one", "priority" => "must"},
           %{"id" => "billing.invoice", "statement" => "Newly added", "priority" => "must"}
+        ],
+        verification: [
+          %{
+            "kind" => "tagged_tests",
+            "covers" => ["billing.list", "billing.invoice"],
+            "execute" => true
+          }
         ]
       )
 

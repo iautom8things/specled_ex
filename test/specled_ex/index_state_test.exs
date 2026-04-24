@@ -1,5 +1,6 @@
 defmodule SpecLedEx.IndexStateTest do
   use SpecLedEx.Case
+  @moduletag spec: ["specled.index.canonical_state_output", "specled.index.json_resilience", "specled.index.subject_and_decision_index", "specled.package.declarative_governance", "specled.package.index_and_state", "specled.status.coverage_summary", "specled.status.decision_index", "specled.status.frontier_summary"]
 
   alias SpecLedEx.Index
 

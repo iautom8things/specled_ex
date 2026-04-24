@@ -321,8 +321,7 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/append_only_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.append_only.requirement_deleted

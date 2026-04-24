@@ -1,5 +1,6 @@
 defmodule SpecLedEx.VerifierTest do
   use SpecLedEx.Case
+  @moduletag spec: ["specled.decisions.change_type_enum", "specled.decisions.change_type_optional", "specled.decisions.cross_field_adr_append_only", "specled.decisions.cross_field_affects_non_empty", "specled.decisions.cross_field_affects_resolve", "specled.decisions.cross_field_idempotent", "specled.decisions.cross_field_reverses_what", "specled.decisions.cross_field_supersedes_replaces", "specled.decisions.frontmatter_contract", "specled.decisions.reference_validation", "specled.decisions.weakening_set", "specled.verify.command_execution_resilience", "specled.verify.command_exit_code_recorded", "specled.verify.command_output_via_tempfile", "specled.verify.command_timeout_enforced", "specled.verify.coverage_warnings", "specled.verify.decision_governance", "specled.verify.malformed_entries_nonfatal", "specled.verify.meta_required", "specled.verify.reference_checks", "specled.verify.strength_semantics", "specled.verify.target_existence"]
 
   alias SpecLedEx.Verifier
 
@@ -990,6 +991,7 @@ defmodule SpecLedEx.VerifierTest do
   end
 
   @tag spec: "specled.tagged_tests.missing_tag_finding"
+  @tag spec: "specled.tagged_tests.strength_claimed_on_untagged_cover"
   test "tagged_tests verification flags covers that have no @tag spec entry",
        %{root: root} do
     report =
@@ -1021,6 +1023,7 @@ defmodule SpecLedEx.VerifierTest do
   end
 
   @tag spec: "specled.tagged_tests.merged_run_attribution"
+  @tag spec: "specled.tagged_tests.strength_executed_on_green_run"
   test "tagged_tests verifications across subjects are merged into one mix test invocation",
        %{root: root} do
     marker = Path.join(root, "tagged_tests_calls.txt")

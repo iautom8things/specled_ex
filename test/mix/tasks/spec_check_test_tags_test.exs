@@ -1,5 +1,6 @@
 defmodule Mix.Tasks.Spec.CheckTestTagsTest do
   use SpecLedEx.Case
+  @moduletag spec: ["specled.tasks.test_tags_flag", "specled.tasks.test_tags_precedence"]
 
   @moduletag :capture_log
 
@@ -63,9 +64,9 @@ defmodule Mix.Tasks.Spec.CheckTestTagsTest do
       ],
       verification: [
         %{
-          "kind" => "source_file",
-          "target" => ".spec/specs/placeholder.spec.md",
-          "covers" => ["placeholder.must"]
+          "kind" => "tagged_tests",
+          "covers" => ["placeholder.must"],
+          "execute" => true
         }
       ]
     )

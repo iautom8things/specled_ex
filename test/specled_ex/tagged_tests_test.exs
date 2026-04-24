@@ -1,6 +1,15 @@
 defmodule SpecLedEx.TaggedTestsTest do
   use SpecLedEx.Case
 
+  @moduletag spec: [
+               "specled.tagged_tests.build_command",
+               "specled.tagged_tests.build_command_combines_backed_ids",
+               "specled.tagged_tests.build_command_drops_unbacked_ids",
+               "specled.tagged_tests.build_command_includes_integration_flag",
+               "specled.tagged_tests.build_command_no_tests_when_all_unbacked",
+               "specled.tagged_tests.collect_entries"
+             ]
+
   alias SpecLedEx.TaggedTests
 
   describe "collect_entries/1" do
@@ -89,6 +98,32 @@ defmodule SpecLedEx.TaggedTestsTest do
 
       assert {:ok, command} = TaggedTests.build_command(["a.one"], tag_map)
       assert command =~ "test/a_test.exs"
+    end
+
+    @tag spec: "specled.tagged_tests.build_command_includes_integration_flag"
+    test "appends --include integration after the --only flags and before the files" do
+      tag_map = %{
+        "a.one" => [%{file: "test/a_test.exs", line: 3, test_name: "t1"}],
+        "b.one" => [%{file: "test/b_test.exs", line: 5, test_name: "t2"}]
+      }
+
+      assert {:ok, command} = TaggedTests.build_command(["a.one", "b.one"], tag_map)
+
+      assert command =~ "--include integration"
+
+      include_idx = index_of(command, "--include integration")
+      only_idx = index_of(command, "--only spec:")
+      file_idx = index_of(command, "test/a_test.exs")
+
+      assert only_idx < include_idx
+      assert include_idx < file_idx
+    end
+  end
+
+  defp index_of(haystack, needle) do
+    case :binary.match(haystack, needle) do
+      {pos, _len} -> pos
+      :nomatch -> nil
     end
   end
 

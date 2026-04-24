@@ -105,6 +105,15 @@ decisions:
     same id on the same test count once.
   priority: should
   stability: evolving
+- id: specled.tag_scanning.describe_block_recursion
+  statement: >-
+    The tag scanner shall walk into `describe/2` bodies so that `test/2`
+    definitions nested inside `describe` blocks inherit the module's
+    `@moduletag spec` ids and pick up `@tag spec` annotations declared
+    within that describe block, matching the behaviour for top-level
+    tests.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -186,13 +195,22 @@ decisions:
     - `a.one` appears exactly once in the returned list
   covers:
     - specled.tag_scanning.deduplicated_matches
+- id: specled.tag_scanning.scenario.describe_nested_moduletag
+  given:
+    - "a test file with a `@moduletag spec: [\"domain.root\"]` annotation"
+    - the module contains a `describe` block wrapping a `test/2` definition
+  when:
+    - SpecLedEx.TagScanner.scan_file/1 runs on that file
+  then:
+    - the returned tag list links `domain.root` to the nested test name
+  covers:
+    - specled.tag_scanning.describe_block_recursion
 ```
 
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/tag_scanner_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.tag_scanning.supported_forms
@@ -205,4 +223,5 @@ decisions:
     - specled.tag_scanning.moduletag_applies_to_all_tests
     - specled.tag_scanning.ignored_non_spec_tags
     - specled.tag_scanning.deduplicated_matches
+    - specled.tag_scanning.describe_block_recursion
 ```

@@ -122,8 +122,7 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/decision_parser_test.exs test/specled_ex/decision_parser/cross_field_test.exs test/specled_ex/verifier_test.exs
+- kind: tagged_tests
   execute: true
   covers:
     - specled.decisions.frontmatter_contract

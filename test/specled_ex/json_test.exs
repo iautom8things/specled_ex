@@ -1,5 +1,6 @@
 defmodule SpecLedEx.JsonTest do
   use SpecLedEx.Case
+  @moduletag spec: ["specled.index.canonical_state_output", "specled.index.json_resilience", "specled.index.subject_and_decision_index"]
 
   alias SpecLedEx.Json
 
