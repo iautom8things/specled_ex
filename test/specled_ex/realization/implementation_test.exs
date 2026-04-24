@@ -36,6 +36,11 @@ defmodule SpecLedEx.Realization.ImplementationTest do
     defmodule SpecLedEx.ImplFixtures.Helpers do
       def util(x), do: x + 100
     end
+
+    defmodule SpecLedEx.ImplFixtures.WrapperShape do
+      def guarded_tuple(a, b) when is_atom(a), do: {a, b}
+      def guarded_tuple(a, b), do: {b, a}
+    end
     """)
 
     {:ok, _mods, _warns} = Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir)
@@ -45,7 +50,8 @@ defmodule SpecLedEx.Realization.ImplementationTest do
           SpecLedEx.ImplFixtures.A,
           SpecLedEx.ImplFixtures.B,
           SpecLedEx.ImplFixtures.Solo,
-          SpecLedEx.ImplFixtures.Helpers
+          SpecLedEx.ImplFixtures.Helpers,
+          SpecLedEx.ImplFixtures.WrapperShape
         ] do
       :code.purge(mod)
       :code.delete(mod)
@@ -124,6 +130,20 @@ defmodule SpecLedEx.Realization.ImplementationTest do
   end
 
   describe "hash_for_subject/3 — specled.implementation_tier.hash_ref_composition" do
+    @tag spec: ["specled.implementation_tier.hash_ref_composition"]
+    test "normalizes Binding.resolve beam wrapper clauses before hashing" do
+      subject = %{
+        id: "Wrapped",
+        surface: [],
+        impl_bindings: ["SpecLedEx.ImplFixtures.WrapperShape.guarded_tuple/2"]
+      }
+
+      world = %{subjects: [subject], tracer_edges: %{}, in_project?: fn _ -> true end}
+
+      assert {:ok, hash} = Implementation.hash_for_subject(subject, world)
+      assert is_binary(hash)
+    end
+
     test "hash input for A includes a 'subject:B:hash:...' string, not B's canonical AST" do
       world = fixture_world()
 
@@ -195,7 +215,12 @@ defmodule SpecLedEx.Realization.ImplementationTest do
 
       # Now re-define Helpers.util/1 with a different body and reload. The
       # orchestrator re-reads the beam during composition, so the hash flips.
-      tmp_dir = Path.join(System.tmp_dir!(), "specled_impl_helpers_rewrite_#{:erlang.unique_integer([:positive])}")
+      tmp_dir =
+        Path.join(
+          System.tmp_dir!(),
+          "specled_impl_helpers_rewrite_#{:erlang.unique_integer([:positive])}"
+        )
+
       File.mkdir_p!(tmp_dir)
       source_path = Path.join(tmp_dir, "helpers_v2.ex")
 
