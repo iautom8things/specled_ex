@@ -16,11 +16,15 @@ surface:
   - lib/specled_ex/coverage.ex
   - lib/mix/tasks/spec.check.ex
   - lib/specled_ex/config/branch_guard.ex
+  - lib/specled_ex/realization/orchestrator.ex
   - test/specled_ex/config/branch_guard_test.exs
   - test/specled_ex/branch_check/load_prior_state_test.exs
+  - test/specled_ex/realization/orchestrator_test.exs
+  - test/integration/scenario_tier_dispatch_test.exs
 realized_by:
   api_boundary:
     - "Mix.Tasks.Spec.Check.run/1"
+    - "SpecLedEx.Realization.Orchestrator.run/2"
   implementation:
     - "SpecLedEx.BranchCheck.run/3"
     - "SpecLedEx.Coverage"
@@ -64,6 +68,68 @@ decisions:
 - id: specled.branch_guard.tag_findings_respect_enforcement
   statement: The branch guard shall honor `test_tags.enforcement` when promoting new-untagged-requirement findings to error severity.
   priority: should
+  stability: evolving
+- id: specled.branch_guard.tier_dispatch_wires_orchestrator
+  statement: >-
+    `SpecLedEx.BranchCheck.run/3` shall invoke
+    `SpecLedEx.Realization.Orchestrator.run/2` and merge its returned findings
+    into the branch report. The orchestrator shall walk every subject's
+    subject-level and requirement-level `realized_by:` blocks, dispatch each
+    declared tier to its corresponding `SpecLedEx.Realization.*` entrypoint,
+    and return string-keyed finding maps. No new `Mix.env/0` or
+    `Mix.Project.config/0` reads shall appear at tier call sites; the
+    orchestrator threads a `%SpecLedEx.Compiler.Context{}` through explicitly.
+  priority: must
+  stability: evolving
+- id: specled.branch_guard.tier_dispatch_surfaces_drift
+  statement: >-
+    When a declared binding's current hash differs from the committed hash in
+    `.spec/state.json`, the branch report shall include a
+    `branch_guard_realization_drift` finding naming the subject id, tier, and
+    the MFA (or provider module for the use tier). The finding's severity
+    shall flow through `SpecLedEx.BranchCheck.Severity.resolve/3` with the
+    same precedence rules as existing codes (trailer override > config >
+    default `:warning`).
+  priority: must
+  stability: evolving
+- id: specled.branch_guard.tier_dispatch_surfaces_dangling
+  statement: >-
+    When a declared binding does not resolve to a live MFA or module, the
+    branch report shall include a `branch_guard_dangling_binding` finding at
+    default severity `:error`, naming the subject id, tier, and offending
+    binding. Remediation text shall be copy-pastable for an agent prompt.
+  priority: must
+  stability: evolving
+- id: specled.branch_guard.tier_dispatch_commits_hashes_on_clean
+  statement: >-
+    On a run that produced neither drift nor dangling findings, the
+    orchestrator shall commit current hashes for the four flat-binding tiers
+    (`api_boundary`, `expanded_behavior`, `typespecs`, `use`) to `HashStore`
+    via `HashStore.write/2`. When drift or dangling findings are present, the
+    orchestrator shall NOT overwrite committed hashes. The implementation tier
+    is excluded from hash commit in this revision because its hash refresh
+    requires a `world` map whose construction lives inside `Implementation`'s
+    private API.
+  priority: must
+  stability: evolving
+- id: specled.branch_guard.tier_dispatch_umbrella_degrades
+  statement: >-
+    When `opts[:umbrella?]` is true, the orchestrator shall dispatch every
+    enabled tier with `umbrella?: true` regardless of binding presence. Each
+    tier shall emit a single `detector_unavailable` finding with `reason:
+    :umbrella_unsupported` and shall not raise.
+  priority: must
+  stability: evolving
+- id: specled.branch_guard.tier_dispatch_impl_opt_in
+  statement: >-
+    `SpecLedEx.Realization.Orchestrator.default_tiers/0` shall return the four
+    flat-binding tiers (`api_boundary`, `expanded_behavior`, `typespecs`,
+    `use`). The `implementation` tier is opt-in via `enabled_tiers:` for this
+    revision because dispatching it against real repo bindings surfaces a
+    pre-existing AST shape mismatch between `Binding.resolve/2` and
+    `Canonical.normalize/1`. A follow-up ticket tracks reshaping one of the
+    two call sites so the impl tier can be enabled by default.
+  priority: must
   stability: evolving
 ```
 
@@ -109,4 +175,19 @@ decisions:
   covers:
     - specled.branch_guard.new_requirement_tag_warning
     - specled.branch_guard.tag_findings_respect_enforcement
+- kind: command
+  target: mix test test/specled_ex/realization/orchestrator_test.exs
+  execute: true
+  covers:
+    - specled.branch_guard.tier_dispatch_wires_orchestrator
+    - specled.branch_guard.tier_dispatch_commits_hashes_on_clean
+    - specled.branch_guard.tier_dispatch_umbrella_degrades
+    - specled.branch_guard.tier_dispatch_impl_opt_in
+- kind: command
+  target: mix test test/integration/scenario_tier_dispatch_test.exs
+  execute: true
+  covers:
+    - specled.branch_guard.tier_dispatch_wires_orchestrator
+    - specled.branch_guard.tier_dispatch_surfaces_drift
+    - specled.branch_guard.tier_dispatch_surfaces_dangling
 ```

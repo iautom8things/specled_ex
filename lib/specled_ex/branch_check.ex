@@ -8,6 +8,7 @@ defmodule SpecLedEx.BranchCheck do
   alias SpecLedEx.ChangeAnalysis
   alias SpecLedEx.Config
   alias SpecLedEx.Overlap
+  alias SpecLedEx.Realization.Orchestrator
 
   @per_code_defaults %{
     # branch_guard/* (existing)
@@ -15,6 +16,10 @@ defmodule SpecLedEx.BranchCheck do
     "branch_guard_missing_subject_update" => :error,
     "branch_guard_missing_decision_update" => :error,
     "branch_guard_requirement_without_test_tag" => :warning,
+    # realization tier findings (q59.9 wiring)
+    "branch_guard_realization_drift" => :warning,
+    "branch_guard_dangling_binding" => :error,
+    "detector_unavailable" => :info,
     # append_only/* (10 ratified codes)
     "append_only/requirement_deleted" => :error,
     "append_only/must_downgraded" => :error,
@@ -95,13 +100,16 @@ defmodule SpecLedEx.BranchCheck do
     {append_only_findings, overlap_findings} =
       contract_findings(index, root, analysis.base, severity_opts)
 
+    realization_findings = realization_findings(index, root, severity_opts, opts)
+
     findings =
       Enum.sort_by(
         file_findings ++
           governance_findings ++
           tag_findings ++
           append_only_findings ++
-          overlap_findings,
+          overlap_findings ++
+          realization_findings,
         &{&1["code"], &1["file"] || "", &1["message"]}
       )
 
@@ -176,6 +184,29 @@ defmodule SpecLedEx.BranchCheck do
         item = if subject_id, do: Map.put(item, "subject_id", subject_id), else: item
         [item]
     end
+  end
+
+  defp realization_findings(index, root, severity_opts, opts) do
+    raw =
+      Orchestrator.run(index,
+        root: root,
+        umbrella?: Keyword.get(opts, :umbrella?, false),
+        context: Keyword.get(opts, :context),
+        commit_hashes?: Keyword.get(opts, :commit_realization_hashes?, true)
+      )
+
+    Enum.flat_map(raw, fn finding ->
+      code = Map.get(finding, "code")
+      default = Map.get(@per_code_defaults, code, :warning)
+
+      case Severity.resolve(code, severity_opts, default) do
+        :off ->
+          []
+
+        severity ->
+          [Map.put(finding, "severity", Atom.to_string(severity))]
+      end
+    end)
   end
 
   defp contract_findings(index, root, base, severity_opts) do
