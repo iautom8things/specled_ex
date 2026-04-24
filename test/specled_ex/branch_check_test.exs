@@ -113,6 +113,57 @@ defmodule SpecLedEx.BranchCheckTest do
            )
   end
 
+  @tag spec: "specled.branch_guard.new_requirement_tag_warning"
+  test "does not emit finding when the new must requirement is covered only by a non-tagged_tests verification",
+       %{root: root} do
+    init_git_repo(root)
+
+    write_files(root, %{
+      ".spec/config.yml" => """
+      test_tags:
+        enabled: true
+        paths:
+          - test
+      """
+    })
+
+    write_subject_spec(
+      root,
+      "billing",
+      meta: %{"id" => "billing.subject", "kind" => "module", "status" => "active"},
+      requirements: [
+        %{"id" => "billing.list", "statement" => "Initial requirement", "priority" => "must"}
+      ]
+    )
+
+    commit_all(root, "initial")
+
+    write_subject_spec(
+      root,
+      "billing",
+      meta: %{"id" => "billing.subject", "kind" => "module", "status" => "active"},
+      requirements: [
+        %{"id" => "billing.list", "statement" => "Initial requirement", "priority" => "must"},
+        %{"id" => "billing.docs_ready", "statement" => "Docs ready", "priority" => "must"}
+      ],
+      verification: [
+        %{
+          "kind" => "source_file",
+          "target" => ".spec/specs/billing.spec.md",
+          "covers" => ["billing.docs_ready"]
+        }
+      ]
+    )
+
+    index = Index.build(root)
+    report = BranchCheck.run(index, root, base: "HEAD")
+
+    refute Enum.any?(
+             report["findings"],
+             &(&1["code"] == "branch_guard_requirement_without_test_tag")
+           )
+  end
+
   @tag spec: "specled.branch_guard.tag_findings_respect_enforcement"
   test "promotes finding severity to error under enforcement=error", %{root: root} do
     init_git_repo(root)
