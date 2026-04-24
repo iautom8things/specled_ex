@@ -159,7 +159,8 @@ defmodule SpecLedEx.Realization.Binding do
     with {:ok, binary} <- beam_binary_for(mod),
          {:ok, {^mod, chunks}} <- :beam_lib.chunks(binary, [:debug_info]),
          {:debug_info, {:debug_info_v1, backend, data}} <- List.keyfind(chunks, :debug_info, 0),
-         {:ok, {:elixir_v1, module_map, _}} <- backend.debug_info(:elixir_v1, mod, data, []) do
+         {:ok, module_map} when is_map(module_map) <-
+           backend.debug_info(:elixir_v1, mod, data, []) do
       find_clause_ast(module_map, fun, arity)
     else
       _ -> :error
