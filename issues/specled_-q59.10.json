@@ -11,11 +11,15 @@
     {
       "text": "IMPLEMENTED\nSession: 019dbef0-adce-7212-a0ee-319f03842e75\nLog: ~/.codex/sessions/2026/04/24/rollout-2026-04-24T06-02-17-019dbef0-adce-7212-a0ee-319f03842e75.jsonl\n\nCommit: 270a95e8bb8f6b934e08821e10b5326d2df45a1b\nFiles touched:\n- lib/specled_ex/realization/implementation.ex\n- test/specled_ex/realization/implementation_test.exs\nTests added:\n- SpecLedEx.Realization.ImplementationTest \"hash_for_subject/3 — specled.implementation_tier.hash_ref_composition\" / \"normalizes Binding.resolve beam wrapper clauses before hashing\"\nVerification stubs flipped: none\n\nSummary: Implementation now converts Binding.resolve/2 beam wrappers `{fun, arity, clauses}` into ordinary def-clause AST before canonical normalization for owned and shared MFAs. The regression fixture compiles a guarded tuple-body function that reproduced the Macro.prewalk crash and asserts implementation hashing succeeds.",
       "timestamp": "2026-04-24T10:12:46Z"
+    },
+    {
+      "text": "VERIFY: PASS\nSession: 019dbefa-8ed1-7850-a514-2b8ab4f4d597\nLog: ~/.codex/sessions/2026/04/24/rollout-2026-04-24T06-13-04-019dbefa-8ed1-7850-a514-2b8ab4f4d597.jsonl\n\nMechanical checks:\n- Files touched: 2\n- Files outside Allowed globs: 0\n- Files matching Out-of-Scope globs: 0 (source ticket had no explicit Out-of-Scope glob section)\n\nSemantic checks:\n- Spec stubs run: 3, passed: 3\n- Requirements with passing tests: 5/5\n- Intent-level scope concerns: none\n- Project verification: pass\n\nVerdict: PASS\n\nNotes: Tagged test stubs were verified with the repo tagged-tests command shape: mix test with --only spec:\u003cid\u003e filters, --include integration, and the resolved implementation/closure/refactor test files. mix spec.next --bugfix independently reported ready for check and recommended mix spec.check --base origin/main; that project verification passed.",
+      "timestamp": "2026-04-24T10:15:02Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "[BUG] implementation tier crashes on Binding.resolve output shape",
   "type": "bug",
-  "updated_at": "2026-04-24T10:12:46Z"
+  "updated_at": "2026-04-24T10:15:02Z"
 }
