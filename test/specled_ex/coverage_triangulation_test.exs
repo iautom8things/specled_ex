@@ -6,25 +6,29 @@ defmodule SpecLedEx.CoverageTriangulationTest do
   # covers: specled.triangulation.execution_reach_metric
   # covers: specled.triangulation.detector_unavailable_on_missing_coverage
   use ExUnit.Case, async: true
-  @moduletag spec: ["specled.triangulation.detector_unavailable_on_missing_coverage", "specled.triangulation.execution_reach_metric", "specled.triangulation.pure_function", "specled.triangulation.underspecified_realization", "specled.triangulation.untested_realization", "specled.triangulation.untethered_test", "specled.triangulation.untethered_test_opt_out"]
+
+  @moduletag spec: [
+               "specled.triangulation.detector_unavailable_on_missing_coverage",
+               "specled.triangulation.execution_reach_metric",
+               "specled.triangulation.pure_function",
+               "specled.triangulation.underspecified_realization",
+               "specled.triangulation.untested_realization",
+               "specled.triangulation.untethered_test",
+               "specled.triangulation.untethered_test_opt_out"
+             ]
 
   alias SpecLedEx.CoverageTriangulation
 
   describe "findings/3 — purity (specled.triangulation.pure_function)" do
     @tag spec: "specled.triangulation.pure_function"
     test "does not read the filesystem or start processes" do
-      before_procs = :erlang.processes() |> length()
-
       empty_closure = %{subjects: %{}}
       empty_tags = %{spec: %{}, opt_out: []}
 
-      assert CoverageTriangulation.findings([], empty_closure, empty_tags) == []
-      assert CoverageTriangulation.findings([], empty_closure, empty_tags) == []
-
-      after_procs = :erlang.processes() |> length()
-      # Processes can fluctuate by one or two due to unrelated VM activity;
-      # purity means we did not *intentionally* start any.
-      assert after_procs - before_procs <= 2
+      assert_no_impure_calls(fn ->
+        assert CoverageTriangulation.findings([], empty_closure, empty_tags) == []
+        assert CoverageTriangulation.findings([], empty_closure, empty_tags) == []
+      end)
     end
 
     @tag spec: "specled.triangulation.pure_function"
@@ -46,7 +50,11 @@ defmodule SpecLedEx.CoverageTriangulationTest do
     @tag spec: "specled.triangulation.detector_unavailable_on_missing_coverage"
     test "returns exactly one detector_unavailable finding on :no_coverage_artifact" do
       assert [finding] =
-               CoverageTriangulation.findings(:no_coverage_artifact, fixture_closure_map(), fixture_tag_index())
+               CoverageTriangulation.findings(
+                 :no_coverage_artifact,
+                 fixture_closure_map(),
+                 fixture_tag_index()
+               )
 
       assert finding["code"] == "detector_unavailable"
       assert finding["reason"] == "no_coverage_artifact"
@@ -55,11 +63,19 @@ defmodule SpecLedEx.CoverageTriangulationTest do
 
     @tag spec: "specled.triangulation.detector_unavailable_on_missing_coverage"
     test "emits no speculative triangulation findings on missing coverage" do
-      findings = CoverageTriangulation.findings(:no_coverage_artifact, fixture_closure_map(), fixture_tag_index())
+      findings =
+        CoverageTriangulation.findings(
+          :no_coverage_artifact,
+          fixture_closure_map(),
+          fixture_tag_index()
+        )
 
       refute Enum.any?(findings, fn f -> f["code"] == "branch_guard_untested_realization" end)
       refute Enum.any?(findings, fn f -> f["code"] == "branch_guard_untethered_test" end)
-      refute Enum.any?(findings, fn f -> f["code"] == "branch_guard_underspecified_realization" end)
+
+      refute Enum.any?(findings, fn f ->
+               f["code"] == "branch_guard_underspecified_realization"
+             end)
     end
   end
 
@@ -104,7 +120,12 @@ defmodule SpecLedEx.CoverageTriangulationTest do
           "subject_x" => %{
             owned_files: ["lib/x.ex"],
             requirements: [
-              %{id: "subject_x.unbound", binding_present?: false, closure_files: [], closure_mfas: []}
+              %{
+                id: "subject_x.unbound",
+                binding_present?: false,
+                closure_files: [],
+                closure_mfas: []
+              }
             ]
           }
         }
@@ -132,7 +153,9 @@ defmodule SpecLedEx.CoverageTriangulationTest do
         )
       ]
 
-      findings = CoverageTriangulation.findings(records, fixture_closure_map(), fixture_tag_index())
+      findings =
+        CoverageTriangulation.findings(records, fixture_closure_map(), fixture_tag_index())
+
       untethered = Enum.filter(findings, &(&1["code"] == "branch_guard_untethered_test"))
 
       assert [finding] = untethered
@@ -160,7 +183,9 @@ defmodule SpecLedEx.CoverageTriangulationTest do
         )
       ]
 
-      findings = CoverageTriangulation.findings(records, fixture_closure_map(), fixture_tag_index())
+      findings =
+        CoverageTriangulation.findings(records, fixture_closure_map(), fixture_tag_index())
+
       untethered = Enum.filter(findings, &(&1["code"] == "branch_guard_untethered_test"))
       assert untethered == []
     end
@@ -208,11 +233,13 @@ defmodule SpecLedEx.CoverageTriangulationTest do
         )
       ]
 
-      findings = CoverageTriangulation.findings(records, fixture_closure_map(), fixture_tag_index())
+      findings =
+        CoverageTriangulation.findings(records, fixture_closure_map(), fixture_tag_index())
 
       under_a =
         Enum.filter(findings, fn f ->
-          f["code"] == "branch_guard_underspecified_realization" and f["subject_id"] == "subject_a"
+          f["code"] == "branch_guard_underspecified_realization" and
+            f["subject_id"] == "subject_a"
         end)
 
       assert [finding] = under_a
@@ -231,9 +258,11 @@ defmodule SpecLedEx.CoverageTriangulationTest do
         )
       ]
 
-      findings = CoverageTriangulation.findings(records, fixture_closure_map(), fixture_tag_index())
+      findings =
+        CoverageTriangulation.findings(records, fixture_closure_map(), fixture_tag_index())
 
-      assert Enum.filter(findings, &(&1["code"] == "branch_guard_underspecified_realization")) == []
+      assert Enum.filter(findings, &(&1["code"] == "branch_guard_underspecified_realization")) ==
+               []
     end
   end
 
@@ -245,7 +274,8 @@ defmodule SpecLedEx.CoverageTriangulationTest do
         coverage_record(test_id: "A.t1", file: "lib/a.ex", lines_hit: [1])
       ]
 
-      findings = CoverageTriangulation.findings(records, fixture_closure_map(), fixture_tag_index())
+      findings =
+        CoverageTriangulation.findings(records, fixture_closure_map(), fixture_tag_index())
 
       untested_a_req2 =
         Enum.find(findings, fn f ->
@@ -337,5 +367,43 @@ defmodule SpecLedEx.CoverageTriangulationTest do
     }
 
     Enum.reduce(fields, defaults, fn {k, v}, acc -> Map.put(acc, k, v) end)
+  end
+
+  defp assert_no_impure_calls(fun) do
+    caller = self()
+
+    traced_file_calls = [
+      {File, :read, 1},
+      {File, :read!, 1},
+      {File, :regular?, 1},
+      {File, :exists?, 1},
+      {File, :ls, 1},
+      {File, :ls!, 1},
+      {File, :stream!, 1},
+      {Path, :wildcard, 1}
+    ]
+
+    :erlang.trace(caller, true, [:procs, :call])
+    Enum.each(traced_file_calls, &:erlang.trace_pattern(&1, true, [:local]))
+
+    try do
+      fun.()
+      assert collect_impure_trace_messages(caller) == []
+    after
+      Enum.each(traced_file_calls, &:erlang.trace_pattern(&1, false, [:local]))
+      :erlang.trace(caller, false, [:procs, :call])
+    end
+  end
+
+  defp collect_impure_trace_messages(caller, acc \\ []) do
+    receive do
+      {:trace, ^caller, :spawn, _pid, mfa} ->
+        collect_impure_trace_messages(caller, [{:spawn, mfa} | acc])
+
+      {:trace, ^caller, :call, mfa} ->
+        collect_impure_trace_messages(caller, [{:file_call, mfa} | acc])
+    after
+      0 -> Enum.reverse(acc)
+    end
   end
 end

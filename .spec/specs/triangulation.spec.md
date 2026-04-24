@@ -21,7 +21,7 @@ summary: >-
   Pure function over `(coverage_records, closures, tag_index)` returning new
   findings `branch_guard_untested_realization`, `branch_guard_untethered_test`,
   `branch_guard_underspecified_realization`, plus `detector_unavailable` on
-  missing inputs; `mix spec.triangle` prints per-subject diagnostics.
+  missing inputs; `mix spec.triangle` prints targeted or all-subject diagnostics.
 surface:
   - lib/specled_ex/coverage_triangulation.ex
   - lib/mix/tasks/spec.triangle.ex
@@ -101,10 +101,11 @@ realized_by:
   stability: evolving
 - id: specled.triangulation.spec_triangle_task
   statement: >-
-    mix spec.triangle `<subject.id>` shall print per-requirement
-    diagnostics: effective binding, closure MFAs, exercising tests,
-    execution_reach. It is a read-only diagnostic; it shall not mutate
-    state.json.
+    mix spec.triangle shall print per-requirement diagnostics for all
+    indexed subject specs by default or when passed `--all`, and for one
+    subject when passed `<subject.id>`. Diagnostics shall include effective
+    binding, closure MFAs, exercising tests, and execution_reach. It is a
+    read-only diagnostic; it shall not mutate state.json.
   priority: should
   stability: evolving
 ```
