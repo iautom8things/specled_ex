@@ -15,6 +15,8 @@ summary: Elixir package for Spec Led Development. Provides Mix tasks to scaffold
 surface:
   - README.md
   - CHANGELOG.md
+  - docs/adoption.md
+  - docs/concepts.md
   - mix.exs
   - lib/specled_ex.ex
   - test/test_helper.exs
@@ -54,6 +56,14 @@ decisions:
   statement: The package shall keep `.spec` declarative and current-state only, using ADRs for durable cross-cutting policy and Git history for change over time.
   priority: must
   stability: stable
+- id: specled.package.adoption_guide
+  statement: The package shall provide an adoption guide at `docs/adoption.md` that walks both the greenfield path (starting from `mix new`) and the brownfield path (bolting onto an existing tree), and that names the severity-graduation step where `branch_guard` and `guardrails` codes move from `:warning` to `:error`.
+  priority: must
+  stability: evolving
+- id: specled.package.concepts_guide
+  statement: The package shall provide a concepts document at `docs/concepts.md` that explains the spec triangle (specs ↔ code ↔ tests), the `realized_by` tiers, and the graceful-degrade rule that emits `detector_unavailable` instead of failing when a detector's prerequisites are missing.
+  priority: must
+  stability: evolving
 ```
 
 ## Verification
@@ -74,4 +84,12 @@ decisions:
   execute: true
   covers:
     - specled.package.mix_tasks
+- kind: source_file
+  target: docs/adoption.md
+  covers:
+    - specled.package.adoption_guide
+- kind: source_file
+  target: docs/concepts.md
+  covers:
+    - specled.package.concepts_guide
 ```
