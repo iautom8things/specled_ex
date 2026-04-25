@@ -1441,6 +1441,22 @@
       },
       {
         "file": ".spec/specs/package.spec.md",
+        "id": "specled.package.adoption_guide",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "The package shall provide an adoption guide at `docs/adoption.md` that walks both the greenfield path (starting from `mix new`) and the brownfield path (bolting onto an existing tree), and that names the severity-graduation step where `branch_guard` and `guardrails` codes move from `:warning` to `:error`.",
+        "subject_id": "specled.package"
+      },
+      {
+        "file": ".spec/specs/package.spec.md",
+        "id": "specled.package.concepts_guide",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "The package shall provide a concepts document at `docs/concepts.md` that explains the spec triangle (specs ↔ code ↔ tests), the `realized_by` tiers, and the graceful-degrade rule that emits `detector_unavailable` instead of failing when a detector's prerequisites are missing.",
+        "subject_id": "specled.package"
+      },
+      {
+        "file": ".spec/specs/package.spec.md",
         "id": "specled.package.declarative_governance",
         "priority": "must",
         "stability": "stable",
@@ -4999,6 +5015,8 @@
           "surface": [
             "README.md",
             "CHANGELOG.md",
+            "docs/adoption.md",
+            "docs/concepts.md",
             "mix.exs",
             "lib/specled_ex.ex",
             "test/test_helper.exs"
@@ -6043,6 +6061,24 @@
       },
       {
         "covers": [
+          "specled.package.adoption_guide"
+        ],
+        "file": ".spec/specs/package.spec.md",
+        "kind": "source_file",
+        "subject_id": "specled.package",
+        "target": "docs/adoption.md"
+      },
+      {
+        "covers": [
+          "specled.package.concepts_guide"
+        ],
+        "file": ".spec/specs/package.spec.md",
+        "kind": "source_file",
+        "subject_id": "specled.package",
+        "target": "docs/concepts.md"
+      },
+      {
+        "covers": [
           "specled.parser.standard_blocks",
           "specled.parser.title_extraction",
           "specled.parser.resilient_errors",
@@ -6504,10 +6540,10 @@
     "decisions": 24,
     "exceptions": 0,
     "findings": 0,
-    "requirements": 230,
+    "requirements": 232,
     "scenarios": 121,
     "subjects": 32,
-    "verifications": 71
+    "verifications": 73
   },
   "verification": {
     "claims": [
@@ -8393,6 +8429,28 @@
         "verification_index": 2
       },
       {
+        "cover_id": "specled.package.adoption_guide",
+        "file": ".spec/specs/package.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.package",
+        "target": "docs/adoption.md",
+        "verification_index": 3
+      },
+      {
+        "cover_id": "specled.package.concepts_guide",
+        "file": ".spec/specs/package.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.package",
+        "target": "docs/concepts.md",
+        "verification_index": 4
+      },
+      {
         "cover_id": "specled.parser.info_string_tokens",
         "file": ".spec/specs/parser.spec.md",
         "kind": "tagged_tests",
@@ -9399,7 +9457,7 @@
     "strength_summary": {
       "claimed": 2,
       "executed": 225,
-      "linked": 35
+      "linked": 37
     },
     "threshold_failures": 0
   },

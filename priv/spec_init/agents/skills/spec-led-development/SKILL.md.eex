@@ -1,43 +1,127 @@
 ---
 name: spec-led-development
-description: Help maintain the local `.spec/` workspace for Spec Led Development. Use when creating or revising subject specs, aligning specs with code, tests, and guides, adding or revising durable ADRs, fixing `mix spec.validate` or `mix spec.check` findings, or checking for drift in `.spec/specs/*.spec.md`.
+description: Help maintain the local `.spec/` workspace for Spec Led Development. Use when authoring or revising subject specs, declaring `realized_by` bindings, tagging tests with `@tag spec:`, capturing per-test coverage, fixing `mix spec.check` triangle findings, adding or revising durable ADRs, or onboarding a brownfield repo.
 ---
 
 # Spec Led Development
 
-Use this Skill when working on the local `.spec` workspace.
+Use this Skill whenever you touch the local `.spec/` workspace, or when you change code that subjects already point at.
 
-## Workflow
+## Mental Model: The Spec Triangle
 
-1. Run `mix spec.prime --base HEAD` when you are entering an existing repository or branch.
-2. Read `.spec/README.md`, `.spec/decisions/README.md`, and the current `.spec/specs/*.spec.md` files before editing.
-3. Keep one subject per file. Update an existing subject when the change fits its boundary. Add a new subject only when the behavior is distinct.
-4. Ground requirements and scenarios in repository evidence from `lib/`, `guides/`, and `test/`.
-5. Add or revise an ADR in `.spec/decisions/*.md` only when the rule is cross-cutting and should remain durable after the branch merges.
-6. Prefer YAML fenced blocks and stable lowercase ids. Write opening fences as ` ```yaml spec-meta ` (and likewise for other spec tags) so GitHub and editors highlight the YAML body.
-7. Choose the smallest reliable verification target.
-   - Prefer targeted command verifications for behavioral checks.
-   - Use file-backed targets only when the target can carry stable `covers:` markers for the ids it names.
-8. After changes run:
-   - `mix spec.next`
-   - `mix spec.check --base ...`
-   - `mix spec.validate --debug` when you need low-level verifier output
-   - `mix spec.status` when you need a coverage summary
-9. Fix warnings as well as errors.
+Three sides have to agree for a subject to be honestly verified:
+
+1. **Spec → Code** — `spec-meta.realized_by` tiers point at MFAs (`api_boundary`, `implementation`, `expanded_behavior`, `use`, `typespecs`).
+2. **Spec → Tests** — ExUnit tests carry `@tag spec: "<requirement.id>"`.
+3. **Tests → Code** — per-test coverage from `mix spec.cover.test` shows which MFAs each test actually exercised.
+
+`mix spec.check` cross-checks the three sides and emits a specific finding for each kind of disagreement (drift, dangling, untethered, untested, underspecified). When inputs are missing — no coverage artifact, umbrella project, etc. — a `detector_unavailable` finding fires instead of false positives.
+
+The older `spec-meta.surface` field still works as a fallback when no `realized_by` is declared, but `realized_by` is the destination — surface is filesystem-level, `realized_by` is compiler-level.
+
+## Daily Loop
+
+1. `mix spec.prime --base HEAD` — orient (workspace health, current-branch guidance, default loop).
+2. Make the code, test, or docs change.
+3. Add or tighten the smallest test that proves the behavior.
+4. Tag the test: `@tag spec: "<requirement.id>"`. Multiple ids: `@tag spec: ["a.one", "a.two"]`. Module-wide: `@moduletag spec: [...]`.
+5. If the change touched a new MFA on the public surface, add it to the subject's `realized_by` tier.
+6. `mix spec.next` — names what is missing (subject update, requirement, ADR, test tag).
+7. (Optional, but required for triangulation findings) `mix spec.cover.test` — captures per-test coverage to `.spec/_coverage/per_test.coverdata`. Skip for doc-only changes.
+8. `mix spec.check --base <ref>` — full gate. Triage findings by code (table below).
+
+For a regression: `mix spec.next --bugfix`. For one focused workset inside a long-lived branch: `mix spec.next --base main --since <checkpoint>`.
+
+## Authoring `realized_by`
+
+Each tier names what it *promises*, not the Elixir mechanism underneath:
+
+| Tier                | What it binds                                                                | When to declare                                                       |
+|---------------------|------------------------------------------------------------------------------|-----------------------------------------------------------------------|
+| `api_boundary`      | Public function heads (the contract callers see)                             | Always — cheapest tier, catches surface drift                         |
+| `implementation`    | Transitive call closure rooted at the binding, stopping at subject boundaries | When the subject has internal logic worth hashing as a unit          |
+| `expanded_behavior` | Post-macro-expansion AST from BEAM debug info                                | When macros materially shape the runtime behavior                     |
+| `use`               | Modules / MFAs introduced via `use Foo`                                      | When the subject is a `use`-able DSL whose consumers must stay in sync |
+| `typespecs`         | `@spec` and `@type` shapes                                                   | When type contracts are part of the subject's promise                 |
+
+Values are MFAs as strings (`"Mod.fun/arity"`) or module atoms. Requirement-level `realized_by` overrides the subject-level value tier-by-tier (tiers the requirement does not set fall through to the subject value).
+
+If a subject has no binding and you don't know where to start: `mix spec.suggest_binding` prints a proposed YAML block for unbound subjects (proposal-only — it does not write).
+
+## Triage Table — `mix spec.check` Findings
+
+| Code                                      | What it means                                                                                          | Fix                                                                                                                                |
+|-------------------------------------------|--------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| `branch_guard_realization_drift`          | A bound MFA's hash flipped vs. committed state                                                         | Expected if behavior changed; if cosmetic, check whether arity or arg pattern actually changed                                     |
+| `branch_guard_dangling_binding`           | An MFA in `realized_by` no longer exists                                                               | Rename, remove from binding, or restore the function                                                                               |
+| `branch_guard_untested_realization`       | The closure has MFAs but no test exercised any of them                                                 | Add a test and tag it                                                                                                              |
+| `branch_guard_untethered_test`            | Test tagged for subject A but its coverage hits only subject B                                         | Tag is wrong, or test belongs in another file; opt out with `@tag spec_triangulation: :indirect` if intentional                    |
+| `branch_guard_underspecified_realization` | Coverage hits subject A but no exercising test names A's requirements                                  | Add `@tag spec: "<a.req>"` to the test                                                                                             |
+| `detector_unavailable`                    | A detector's prerequisite is missing                                                                   | Run the prerequisite (e.g., `mix spec.cover.test` for `:no_coverage_artifact`); umbrella projects are not yet supported            |
+| `append_only/*`                           | A spec was deleted, downgraded, or weakened without authorization                                      | Restore, or add an ADR with `change_type: weakens \| narrows-scope \| adds-exception \| deprecates` and `affects: [<requirement>]` |
+| `overlap/duplicate_covers`                | Two scenarios in the same subject `cover` the same requirement                                         | Merge, or rename one                                                                                                               |
+| `overlap/must_stem_collision`             | Two `must` requirements in the same subject share the same MUST stem                                   | Rewrite one statement                                                                                                              |
+| `requirement_without_test_tag`            | A `must` requirement covered by a `tagged_tests` verification has no backing `@tag spec:` (when tag scanning is on) | Tag a test, or add a `spec-exceptions` entry                                                                            |
+| `verification_strength_below_minimum`     | A claim is below the configured minimum strength (`claimed` / `linked` / `executed`)                   | Add an executed verification, or lower `--min-strength`                                                                            |
+| `spec_requirement_too_short`              | Prose is below the threshold (default 40 chars / 6 words)                                              | Write a real statement                                                                                                             |
+
+## Severity Escape Hatches
+
+When a finding is right-but-not-actionable on this branch:
+
+- **`Spec-Drift:` commit trailer** — `Spec-Drift: refactor` (or `docs_only`, `test_only`, or `<code>=<severity>`). Trailers on any commit in the `<base>..HEAD` range apply to the whole range.
+- **`branch_guard.severities` and `guardrails.severities` in `.spec/config.yml`** — per-code overrides. `:off` is absorbing — it beats trailer overrides.
+- **`@tag spec_triangulation: :indirect`** — opt-out for an individual untethered test.
+- **`spec-exceptions`** — the principled way to mark a requirement intentionally unverified (carries `reason:`).
+
+Use these. Do not weaken the spec to silence the finding.
+
+## ADRs (`.spec/decisions/*.md`)
+
+Only for durable cross-cutting policy. Required structured fields when the ADR weakens, narrows, deprecates, or supersedes:
+
+- `change_type:` — `clarifies | weakens | narrows-scope | adds-exception | deprecates | reverses`
+- `affects:` — list of requirement ids the ADR authorizes change to
+- `reverses_what:` and `replaces:` — when the ADR overturns a prior one
+
+Append-only enforcement (`SpecLedEx.AppendOnly`) compares prior `state.json` against current and fires if a requirement was deleted, downgraded, or weakened without an authorizing ADR. Same-PR self-authorization is rejected.
+
+`mix spec.decision.new <id> --title "..."` scaffolds the file.
+
+## Brownfield Adoption Path
+
+When bolting `.spec/` onto an existing repo, the system is built to tolerate partial truth. Order of operations:
+
+1. `mix spec.init` — scaffolds `.spec/`, `.spec/decisions/README.md`, `.spec/config.yml`, this skill.
+2. Author subjects from largest blast-radius modules first. Use `surface:` to start; add `realized_by:` as you go.
+3. `mix spec.suggest_binding` — proposes `realized_by` from existing `surface:` for unbound subjects.
+4. Start with `test_tags.enforcement: warning` and most `branch_guard.severities` at `:info` so the loop runs without blocking.
+5. `mix spec.status` — shows the frontier (subjects with weakest verification, untagged tests, missing closures).
+6. Graduate finding codes to `:warning` then `:error` per code as coverage closes. Triangulation findings only fire once `mix spec.cover.test` is part of CI / your loop.
+
+## Diagnostic Tools
+
+- `mix spec.triangle` — print per-requirement triangle diagnostics for all subjects (default / `--all`) or one (`<subject.id>`): effective binding, closure MFAs, exercising tests, `execution_reach`. Read-only.
+- `mix spec.status` — coverage summary, weak spots, ADR usage. Read-only.
+- `mix spec.validate --debug` — low-level verifier output.
+- `mix spec.check --verbose` (or `SPECLED_SHOW_INFO=1`) — un-suppress `:info` findings on stdout. State.json always carries every finding.
 
 ## Local Inputs
 
-- `.spec/README.md`
-- `.spec/decisions/README.md`
-- `.spec/decisions/*.md`
+- `.spec/README.md`, `.spec/AGENTS.md`
+- `.spec/config.yml` (`test_tags`, `branch_guard`, `guardrails`, `prose`, `realization`)
+- `.spec/decisions/README.md`, `.spec/decisions/*.md`
 - `.spec/specs/*.spec.md`
-- `.spec/state.json` when present
+- `.spec/state.json` (canonical, generated)
+- `.spec/_coverage/per_test.coverdata` (generated by `mix spec.cover.test`)
 
 ## Authoring Reminders
 
-- Put normative statements in `spec-requirements`.
-- Use `spec-scenarios` only when `given` / `when` / `then` improves clarity.
-- Use `spec-meta.decisions` only for durable cross-cutting ADR references.
-- Keep verification targets repository-root-relative.
-- Avoid duplicate subjects for the same boundary.
-- Keep `.spec` declarative and current-state only. Use Git history for the timeline of change.
+- One subject per file. File name matches subject (`.spec/specs/parser.spec.md` → `specled.parser`).
+- YAML in fenced blocks: ` ```yaml spec-meta `, ` ```yaml spec-requirements `, etc. The `yaml` token gives editors syntax highlighting; the parser still recognizes the spec tag.
+- Stable lowercase ids matching `^[a-z0-9][a-z0-9._-]*$`.
+- Put normative statements in `spec-requirements`. Use `spec-scenarios` only when given/when/then improves clarity.
+- Prefer `kind: tagged_tests` verification over per-file `kind: command mix test ...` — `spec.check` aggregates every `tagged_tests` entry across subjects into one BEAM boot.
+- Repository-root-relative paths in verification `target`.
+- `.spec` is declarative and current-state only. Use Git history for the timeline of change.
+- Fix warnings as well as errors. `mix spec.check` is the gate.

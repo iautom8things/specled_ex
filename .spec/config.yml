@@ -2,4 +2,16 @@ test_tags:
   enabled: true
   paths:
     - test
-  enforcement: warning
+  enforcement: error
+
+guardrails:
+  severities:
+    append_only/requirement_deleted: error
+    append_only/scenario_regression: error
+    overlap/duplicate_covers: error
+
+branch_guard:
+  severities:
+    branch_guard_dangling_binding: error
+    branch_guard_realization_drift: error
+    branch_guard_untested_realization: warning # keep at warning a while longer
