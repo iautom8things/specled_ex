@@ -160,11 +160,59 @@ legible when one widely-referenced subject shifts.
 ## Finding vocabulary
 
 When the three sides disagree, the name of the disagreement tells you
-which side is wrong. The finding codes are the user interface — they are
-chosen to be diagnostic, not exhaustive. The full set is in the relevant
-spec files; these are the ones a maintainer needs to recognize.
+which side is wrong. The finding codes are the user interface — they
+are chosen to be diagnostic, not exhaustive. The full set is in the
+relevant spec files; these are the ones a maintainer needs to
+recognize.
 
-**Drift findings** (code-side disagreement):
+### Reading a finding
+
+Three meta-questions hover over every code in the catalog:
+
+- **Is something wrong?** Sometimes, but not always in the "the build
+  is broken" sense. A finding names a *gap* between two sides of the
+  triangle. The gap might be a coding bug, a stale spec, a missing
+  test, a deliberate weakening that needs an ADR, or a placeholder
+  that nobody got around to claiming. The finding does not prescribe
+  the reaction; it gives the reaction a name.
+- **How does an agent know what to do?** Every finding carries a
+  structured payload — subject id, tier, MFA(s), affected file(s),
+  test name when relevant — and a message that describes the gap in
+  plain English. The append-only and overlap finders additionally
+  emit a code-fenced `fix:` line listing the canonical remediation
+  paths for that code. For drift and triangulation findings the agent
+  reasons from the payload plus the diff: was this a refactor, a
+  behavior change, or a tagging mistake? The finding gives the agent
+  a vocabulary; the agent still has to think.
+- **Where does the surrounding tooling fit?** Each tool plays a
+  defined role:
+
+  - `mix spec.check` runs every detector and writes the unfiltered
+    set to `.spec/state.json`.
+  - `mix spec.next` orders unresolved findings into a single
+    recommended next step.
+  - `mix spec.validate` surfaces within-spec findings (overlap, prose
+    thresholds) without needing a base ref.
+  - `mix spec.cover.test` produces the per-test coverage artifact
+    triangulation reads; without it that tier degrades to
+    `detector_unavailable`.
+  - ADRs in `.spec/decisions/` authorize weakenings; `Spec-Drift:`
+    commit trailers signal author intent on a per-PR basis;
+    `.spec/config.yml` re-prices severities project-wide.
+
+  Severity is policy; the finding code is structural.
+
+The remedies below are *typical*, not exhaustive. Every finding can
+also be silenced by a matching `Spec-Drift:` trailer or downgraded
+via `.spec/config.yml` when the project has decided that, for now,
+this code is informational rather than a hard fail. Re-pricing a
+finding is a legitimate act; ignoring one without re-pricing it is
+how spec corpora rot.
+
+### Drift findings (code-side disagreement)
+
+These say: *the code moved, but the subject's snapshot did not move
+with it.*
 
 - `branch_guard_realization_drift` — For some `(subject, tier, MFA)`
   triple, the hash recomputed from current code does not match the
@@ -172,45 +220,203 @@ spec files; these are the ones a maintainer needs to recognize.
   absorbed cosmetic changes, so a drift finding means something the
   tier cares about actually moved — and the subject has not been
   updated to acknowledge it.
-- `branch_guard_dangling_binding` — A binding names an MFA that no longer
-  exists. Usually the symptom of a rename or removal that did not sweep
-  `realized_by`.
 
-**Coverage-side disagreement** (triangulation findings):
+  **Remedy paths** (distinguished by intent):
 
-- `branch_guard_untested_realization` — A requirement's binding closure
-  contains MFAs but no test's coverage records reach any of them. The
-  claim is unexercised.
-- `branch_guard_untethered_test` — A test carries `@tag spec: "A.req"` but
-  its coverage records exercise MFAs owned only by subject B. The tag is
-  wrong, or the test is structured around the wrong subject. Default
-  severity is `:info`, with an explicit per-test opt-out
+  - **Behavior intentionally changed.** Update the subject spec — add
+    a new requirement, revise the `must`, or amend the `realized_by:`
+    binding — and re-commit the hash so the next run is quiet.
+  - **Deliberate weakening.** Author an ADR in `.spec/decisions/`
+    whose `change_type` is one of `deprecates`, `weakens`,
+    `narrows-scope`, or `adds-exception`. The append-only governance
+    check authorizes the modal downgrade; the spec edit rides along.
+  - **Should have been canonical.** A rename, reordering, or
+    stylistic refactor that the canonicalizer failed to absorb. File
+    a defect against `SpecLedEx.Realization.Canonicalizer`; do not
+    weaken the spec to match. The `Spec-Drift: refactor` trailer
+    exists for the honest case where the author confirms the change
+    is behavior-preserving and the canonicalizer simply does not yet
+    see it; the trailer's claim is reviewable in the diff.
+
+  The wrong reaction is to silently re-commit the hash. That turns a
+  tracked behavior change into invisible drift, and the next reviewer
+  has no way to tell whether the subject still describes the system.
+
+- `branch_guard_dangling_binding` — A binding names an MFA that no
+  longer exists. Usually the symptom of a rename or removal that did
+  not sweep `realized_by`.
+
+  Almost always a bookkeeping fix: update the binding to the new
+  MFA, or delete the binding if the function genuinely went away.
+  `git log -S '<old name>'` finds the rename commit; if the function
+  was inlined or dissolved, drop that surface-level reference and
+  lean on the remaining MFAs in the closure. This finding is the
+  cheapest in the catalog — there is rarely an interpretive question,
+  just a stale pointer.
+
+### Triangulation findings (coverage-side disagreement)
+
+These say: *the spec, the code, and the tests are individually fine,
+but they do not line up.* All three depend on a fresh per-test
+coverage artifact from `mix spec.cover.test`; without that artifact
+the whole tier reports `detector_unavailable` and these findings do
+not run.
+
+- `branch_guard_untested_realization` — A requirement's binding
+  closure contains MFAs but no test's coverage records reach any of
+  them. The claim is unexercised.
+
+  **Remedy paths:**
+
+  - **Missing test.** Write one, tag it
+    `@tag spec: "<subject>.<req>"`, and re-run `mix spec.cover.test`
+    to refresh the coverage artifact.
+  - **Overstated binding.** An `implementation` tier closure can pull
+    in helpers that the requirement does not actually demand. Narrow
+    the binding — move the helpers under a different subject, or
+    attach a per-requirement `realized_by:` override — so the closure
+    matches the requirement's real scope.
+
+  The finding does not pick between these; the agent decides by
+  reading the requirement statement and asking whether each MFA in
+  the closure is part of *that* requirement's contract.
+
+- `branch_guard_untethered_test` — A test carries `@tag spec: "A.req"`
+  but its coverage records exercise MFAs owned only by subject B. The
+  tag is wrong, or the test is structured around the wrong subject.
+  Default severity is `:info`, with an explicit per-test opt-out
   (`@tag spec_triangulation: :indirect`) for intentional indirect
   coverage.
+
+  **Remedy paths:**
+
+  - **Tag is wrong.** Retag to a B-owned requirement.
+  - **Indirect coverage is intentional.** An integration-shaped test
+    reaches A only through B, but A's behavior is genuinely being
+    exercised end-to-end. Add `@tag spec_triangulation: :indirect`
+    so the opt-out is explicit and reviewable.
+  - **Test is structured wrong.** It claims to test A but never
+    touches A at all. Rewrite or split it.
+
+  The `:info` default exists because the indirect-coverage case is
+  common and noisy on first adoption; the explicit opt-out keeps
+  intentional indirect coverage from drifting into "everyone ignores
+  triangulation."
+
 - `branch_guard_underspecified_realization` — Coverage reaches an MFA
   owned by subject A, but the exercising test carries no `@tag spec:`
-  naming an A-owned requirement. Silent execution without a claim — some
-  behavior is happening that no requirement explicitly owns.
+  naming an A-owned requirement. Silent execution without a claim —
+  some behavior is happening that no requirement explicitly owns.
 
-**Spec-side disagreement** (within-spec consistency):
+  **Remedy paths:**
 
-- `overlap/duplicate_covers` — Two scenarios in the same subject cover
-  the same requirement id. Ambiguous provenance; the spec corpus rots.
+  - **Missing tag.** Read the test and add `@tag spec: "A.<req>"`
+    naming the A-owned requirement it actually exercises.
+  - **Missing requirement.** No requirement on A fits — the spec is
+    genuinely incomplete. Author a new requirement on A and have the
+    test claim it.
+  - **Overstated binding.** The MFA is incidental to A (a private
+    helper that should not be part of A's contract). Narrow A's
+    `realized_by:` so the MFA is no longer attributed to it.
+
+  This finding is the spec corpus's pressure to *name* behavior that
+  is happening anyway.
+
+### Spec-side disagreement (within-spec consistency)
+
+These say: *the spec corpus disagrees with itself, before any code or
+test is consulted.* `mix spec.validate` surfaces them without a base
+ref because they read only the current `.spec/` tree.
+
+- `overlap/duplicate_covers` — Two scenarios in the same subject
+  cover the same requirement id. Ambiguous provenance; the spec
+  corpus rots.
+
+  **Remedy paths:**
+
+  - **Merge.** Collapse the two scenarios into one.
+  - **Split the requirement.** Refactor it into two distinct ids the
+    scenarios can cover separately.
+
+  Two scenarios pointing at one requirement is sometimes legitimate
+  during transition — `mix spec.validate` accepts this when the
+  second scenario is marked as a replacement and the first is
+  `disabled:` with a `reason:` — but the steady state is one
+  requirement to many scenarios, not many scenarios to one
+  requirement.
+
 - `overlap/must_stem_collision` — Two `must` requirements in the same
-  subject share the same canonicalized MUST stem. Near-duplicates that
-  will drift apart.
-- `requirement_without_test_tag` / `branch_guard_requirement_without_test_tag`
-  — A `must` requirement covered by a `tagged_tests` verification has no
-  `@tag spec:` pointing at it. The test-side claim is missing.
+  subject share the same canonicalized MUST stem. Near-duplicates
+  that will drift apart.
 
-**Degradation** (not a disagreement, a missing side):
+  **Remedy paths:**
 
-- `detector_unavailable` — The input a detector needs is absent (no
-  coverage artifact, no debug info, umbrella project, non-git workspace).
-  The tier is skipped for this run. Adoption can proceed without it.
+  - **Merge.** Combine the two requirements under a single id.
+  - **Sharpen.** Edit one statement so the stems differ on
+    substantive content — not just stop-words and modal noise that
+    the canonicalizer strips.
 
-Reading a `mix spec.check` run is, roughly, reading which corners of the
-triangle are lit and which finding code names the gap.
+  If two stems collide after canonicalization, the underlying claims
+  are the same and one of them is doing nothing — keeping both
+  invites future authors to edit one and forget the other.
+
+- `requirement_without_test_tag` /
+  `branch_guard_requirement_without_test_tag` — A `must` requirement
+  covered by a `tagged_tests` verification has no `@tag spec:`
+  pointing at it. The test-side claim is missing.
+
+  **Remedy paths:**
+
+  - **Add the tag.** Tag an existing test that exercises the
+    requirement, or write a new tagged test if none does.
+  - **Change verification mode.** If the requirement is verified
+    another way — review-only, integration suite outside ExUnit,
+    deferred to a later PR — change the verification mode away from
+    `tagged_tests` so the spec advertises what it actually has.
+
+  Leaving a `tagged_tests` verification with no claimants is a
+  promise the spec cannot keep.
+
+### Degradation (not a disagreement, a missing side)
+
+`detector_unavailable` is structurally different from the
+disagreements above. Nothing is wrong — the system is being honest
+that it cannot run a check on this run because its input is absent
+(no coverage artifact, no debug info, umbrella project, non-git
+workspace). The tier is skipped, the finding is recorded with a
+reason, and adoption can proceed without it.
+
+Supplying the input re-enables the tier — running
+`mix spec.cover.test` to produce a coverage artifact, recompiling
+without `:no_debug_info`, moving off an umbrella — and the finding
+goes away on its own. The graceful-degrade rule from "The five
+tiers" is what surfaces this finding instead of guessing from
+partial data.
+
+### How agents work the catalog
+
+The pattern in practice:
+
+1. Run `mix spec.check`. Read the unresolved findings; `mix spec.next`
+   highlights the first one to address.
+2. For each finding, read the message and any `fix:` block, then look
+   at the surrounding context — the subject spec, the affected MFAs,
+   the relevant test, the recent diff. The cause matters more than
+   the symptom; a drift finding can mean three different things.
+3. Make the smallest change that closes the gap honestly: update the
+   spec, write the test, narrow the binding, or author the ADR. Do
+   not silence a finding by re-pricing it unless re-pricing is the
+   considered decision.
+4. Re-run `mix spec.check` to confirm the finding is gone (or that
+   the severity has been deliberately downgraded).
+5. Commit, with a `Spec-Drift:` trailer when the change is an
+   intentional refactor / docs-only / test-only sweep that the
+   trailer's domain covers. The trailer is the author's per-PR signal
+   to the next reviewer.
+
+The catalog is small on purpose. New findings should reuse existing
+codes or replace one rather than expand the surface — a finding
+agents do not recognize is a finding agents will work around.
 
 ## Supporting machinery
 
