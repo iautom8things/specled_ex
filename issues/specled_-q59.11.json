@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-04-28T10:23:53Z",
+  "description": "During Atlas adoption of feature/realized-by-triangle-closure, a proof conversion of search.keyword exposed a possible mismatch between SpecLedEx tagged_tests semantics and ExUnit filtering.\n\nObserved behavior:\n- A test tagged with @tag spec: [\"search.keyword.tsvector_search\", \"search.keyword.identifier_splitting\"] was not selected by a repeated ExUnit filter command like:\n  mix test --only spec:search.keyword.tsvector_search --only spec:search.keyword.identifier_splitting --only spec:search.keyword.batch_search --only spec:search.keyword.bulk_index\n- That run selected only 5 of the 6 intended proof tests.\n- Changing the test to a single literal tag, @tag spec: \"search.keyword.tsvector_search\", and relying on separate identifier-splitting tests made the same command select all 6 intended tests.\n\nInvestigation questions:\n- Should SpecLedEx support one test proving multiple requirement IDs through a list-valued @tag spec?\n- If yes, tagged_tests command generation may need to account for ExUnit list-valued tag matching semantics instead of assuming --only spec:\u003cid\u003e will match list membership.\n- If no, docs and validation should probably say that @tag spec: values must be single literal requirement IDs, or emit a warning/error for list-valued spec tags.\n\nExpected outcome:\n- Decide and document the supported tag shape.\n- Add a regression fixture/test for tagged_tests selection, either proving list-valued spec tags work or proving they produce an actionable validation finding.\n\nContext: Atlas commit ac2bbbe on atlas-r59.1/specled-tagged-tests used single literal tags as the safe migration pattern.",
+  "id": "specled_-q59.11",
+  "labels": [],
+  "parent": "specled_-q59",
+  "priority": 2,
+  "status": "open",
+  "title": "Investigate list-valued spec tags in tagged_tests verification",
+  "type": "bug",
+  "updated_at": "2026-04-28T10:23:53Z"
+}
