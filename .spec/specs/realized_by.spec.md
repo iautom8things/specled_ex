@@ -76,6 +76,17 @@ realized_by:
     not set fall through to the subject value.
   priority: must
   stability: evolving
+- id: specled.realized_by.effective_binding_accepts_subject_shape
+  statement: >-
+    EffectiveBinding.for_requirement/2 shall accept three input shapes
+    for the subject argument: a parsed schema struct, a plain map with a
+    top-level `:realized_by` / `"realized_by"` key, or a parsed-subject
+    map (the shape produced by `SpecLedEx.Parser`) where `realized_by`
+    lives under `meta.realized_by`. When both a top-level binding and a
+    nested `meta.realized_by` are present, the top-level value shall
+    win. See `specled.decision.effective_binding_subject_meta_extraction`.
+  priority: must
+  stability: evolving
 - id: specled.realized_by.existing_surface_coexists
   statement: >-
     The existing `spec-meta.surface` field shall continue to parse and
@@ -112,6 +123,17 @@ realized_by:
   covers:
     - specled.realized_by.requirement_override
     - specled.realized_by.effective_binding_requirement_replaces_tier
+- id: specled.realized_by.scenario.subject_shape_meta_nested
+  given:
+    - "a parsed-subject map with `meta.realized_by.implementation: [\"A.a/1\"]` and no top-level `realized_by`"
+    - "a requirement on that subject with no `realized_by` field"
+  when:
+    - EffectiveBinding.for_requirement/2 is called for that requirement
+  then:
+    - "the returned map has `implementation: [\"A.a/1\"]`"
+    - "no other tier keys are present"
+  covers:
+    - specled.realized_by.effective_binding_accepts_subject_shape
 - id: specled.realized_by.scenario.unknown_tier_rejected
   given:
     - "a subject with `realized_by.shenanigans: [\"Foo\"]`"
@@ -138,4 +160,5 @@ realized_by:
   covers:
     - specled.realized_by.effective_binding_inherits_subject
     - specled.realized_by.effective_binding_requirement_replaces_tier
+    - specled.realized_by.effective_binding_accepts_subject_shape
 ```
