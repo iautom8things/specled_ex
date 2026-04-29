@@ -39,7 +39,7 @@ defmodule SpecLedEx.MixProject do
   end
 
   defp bootstrap_tracer! do
-    ebin = Path.expand("_build/#{Mix.env()}/lib/spec_led_ex/ebin")
+    ebin = Path.join([Mix.Project.build_path(), "lib", "spec_led_ex", "ebin"])
     src = Path.expand(@tracer_source)
     beam = Path.join(ebin, "Elixir.SpecLedEx.Compiler.Tracer.beam")
 
@@ -59,13 +59,14 @@ defmodule SpecLedEx.MixProject do
       end
     end
 
+    Code.prepend_path(ebin)
     Code.ensure_loaded(SpecLedEx.Compiler.Tracer)
   end
 
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger, :yaml_elixir, :jason]
     ]
   end
 
