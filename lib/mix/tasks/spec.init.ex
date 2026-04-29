@@ -1,6 +1,8 @@
 defmodule Mix.Tasks.Spec.Init do
   use Mix.Task
 
+  @requirements ["app.config"]
+
   @shortdoc "Scaffolds a canonical .spec/ workspace"
   @templates [
     {"README.md.eex", "README.md"},
@@ -16,8 +18,10 @@ defmodule Mix.Tasks.Spec.Init do
   ]
   @local_skill_path ".agents/skills/spec-led-development/SKILL.md"
 
-  @impl true
+  @impl Mix.Task
   def run(args) do
+    SpecLedEx.MixRuntime.ensure_started!()
+
     {opts, rest, invalid} =
       OptionParser.parse(args,
         strict: [root: :string, force: :boolean],

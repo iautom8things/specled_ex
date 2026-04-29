@@ -20,6 +20,10 @@ surface:
   - lib/mix/tasks/spec.decision.new.ex
   - lib/mix/tasks/spec.index.ex
   - lib/mix/tasks/spec.validate.ex
+  - lib/mix/tasks/spec.cover.test.ex
+  - lib/mix/tasks/spec.suggest_binding.ex
+  - lib/mix/tasks/spec.triangle.ex
+  - lib/specled_ex/mix_runtime.ex
   - lib/specled_ex/prime.ex
   - priv/spec_init/agents/skills/spec-led-development/SKILL.md.eex
   - priv/spec_init/specs/spec_system.spec.md.eex
@@ -38,11 +42,13 @@ realized_by:
     - "Mix.Tasks.Spec.Decision.New.run/1"
     - "Mix.Tasks.Spec.Index.run/1"
     - "Mix.Tasks.Spec.Validate.run/1"
+    - "SpecLedEx.MixRuntime.ensure_started!/0"
 decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.local_skill_scaffold
   - specled.decision.guided_reconciliation_loop
   - specled.decision.no_app_start
+  - specled.decision.dep_runtime_bootstrap
   - specled.decision.configurable_test_tag_enforcement
 ```
 
@@ -97,6 +103,10 @@ decisions:
   statement: No mix spec.* task shall call Mix.Task.run("app.start") or otherwise require the host OTP application to be running, since spec tasks perform only file I/O, Git CLI calls, and in-memory parsing.
   priority: must
   stability: stable
+- id: specled.tasks.dep_runtime_bootstrap
+  statement: Every mix spec.* task shall call SpecLedEx.MixRuntime.ensure_started!/0 as the first line of run/1, so the BEAM applications specled depends on at runtime (currently :yaml_elixir and :jason) are started even when specled is consumed as a Hex dependency. The shared helper shall remain the single source of truth for the dep list. Tasks shall additionally declare `@requirements ["app.config"]` to load host config, except `spec.cover.test`, which runs inside child-BEAM fixtures whose code path Mix's `app.config` would purge before the helper module could be lazily loaded.
+  priority: must
+  stability: stable
 - id: specled.tasks.test_tags_flag
   statement: mix spec.check and mix spec.validate shall accept `--test-tags` and `--no-test-tags` flags that enable or disable test-tag scanning for that invocation, overriding the config default.
   priority: must
@@ -138,4 +148,10 @@ decisions:
   execute: true
   covers:
     - specled.tasks.check_verbose_flag
+- kind: command
+  target: >-
+    sh -c 'missing=$(grep -L "SpecLedEx.MixRuntime.ensure_started" lib/mix/tasks/*.ex); if [ -n "$missing" ]; then echo "tasks missing MixRuntime bootstrap:"; echo "$missing"; exit 1; fi'
+  execute: true
+  covers:
+    - specled.tasks.dep_runtime_bootstrap
 ```

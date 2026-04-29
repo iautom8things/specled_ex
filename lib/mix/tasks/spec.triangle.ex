@@ -2,6 +2,8 @@ defmodule Mix.Tasks.Spec.Triangle do
   # covers: specled.triangulation.spec_triangle_task
   use Mix.Task
 
+  @requirements ["app.config"]
+
   alias SpecLedEx.Compiler.Tracer
   alias SpecLedEx.Coverage.Store
   alias SpecLedEx.CoverageTriangulation
@@ -32,6 +34,8 @@ defmodule Mix.Tasks.Spec.Triangle do
 
   @impl Mix.Task
   def run(args) do
+    SpecLedEx.MixRuntime.ensure_started!()
+
     {opts, rest, invalid} =
       OptionParser.parse(args,
         strict: [root: :string, spec_dir: :string, artifact_path: :string, all: :boolean]

@@ -28,8 +28,16 @@ defmodule Mix.Tasks.Spec.Cover.Test do
 
   use Mix.Task
 
+  # Intentionally no `@requirements ["app.config"]`: this task is invoked inside
+  # child-BEAM test fixtures (test_support/specled_ex_integration_case.ex) that
+  # load the parent's spec_led_ex ebin via SPECLED_EX_EBIN. Mix's `app.config`
+  # rewrites the code path to declared deps only, evicting the parent ebin
+  # before `run/1` can lazily load SpecLedEx.MixRuntime.
+
   @impl Mix.Task
   def run(argv) do
+    SpecLedEx.MixRuntime.ensure_started!()
+
     Application.put_env(:ex_unit, :async, false)
     Application.ensure_all_started(:ex_unit)
     ExUnit.configure(async: false)

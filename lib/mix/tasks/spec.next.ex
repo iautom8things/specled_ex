@@ -1,10 +1,14 @@
 defmodule Mix.Tasks.Spec.Next do
   use Mix.Task
 
+  @requirements ["app.config"]
+
   @shortdoc "Guides the next current-truth update for the current Git change set"
 
-  @impl true
+  @impl Mix.Task
   def run(args) do
+    SpecLedEx.MixRuntime.ensure_started!()
+
     {opts, rest, invalid} =
       OptionParser.parse(
         args,

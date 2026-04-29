@@ -1,6 +1,8 @@
 defmodule Mix.Tasks.Spec.SuggestBinding do
   use Mix.Task
 
+  @requirements ["app.config"]
+
   @shortdoc "Prints proposed realized_by: blocks for subjects with no binding"
   @moduledoc """
   Prints a proposed `realized_by:` block for every subject that has no
@@ -24,6 +26,8 @@ defmodule Mix.Tasks.Spec.SuggestBinding do
 
   @impl Mix.Task
   def run(args) do
+    SpecLedEx.MixRuntime.ensure_started!()
+
     {opts, _rest, _invalid} =
       OptionParser.parse(
         args,

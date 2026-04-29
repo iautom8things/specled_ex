@@ -1,10 +1,14 @@
 defmodule Mix.Tasks.Spec.Index do
   use Mix.Task
 
+  @requirements ["app.config"]
+
   @shortdoc "Builds index state and writes .spec/state.json"
 
-  @impl true
+  @impl Mix.Task
   def run(args) do
+    SpecLedEx.MixRuntime.ensure_started!()
+
     {opts, rest, invalid} =
       OptionParser.parse(
         args,
