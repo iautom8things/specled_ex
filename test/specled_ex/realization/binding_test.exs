@@ -49,8 +49,8 @@ defmodule SpecLedEx.Realization.BindingTest do
     File.cd!(tmp_dir)
 
     try do
-      {:ok, _modules, _warnings} =
-        Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir)
+      {:ok, _modules, _diagnostics} =
+        Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir, return_diagnostics: true)
     after
       File.cd!(previous_cwd)
     end

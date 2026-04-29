@@ -50,7 +50,7 @@ defmodule SpecLedEx.Integration.ScenarioRefactorStableTest do
     source_path = Path.join(tmp_dir, "scenario_fixture.ex")
     File.write!(source_path, source)
 
-    {:ok, _mods, _warns} = Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir)
+    {:ok, _mods, _warns} = Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir, return_diagnostics: true)
     :code.add_patha(String.to_charlist(tmp_dir))
 
     for mod <- [

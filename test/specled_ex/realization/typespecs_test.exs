@@ -86,7 +86,7 @@ defmodule SpecLedEx.Realization.TypespecsTest do
     Code.put_compiler_option(:debug_info, true)
 
     try do
-      {:ok, _mods, _warns} = Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir)
+      {:ok, _mods, _warns} = Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir, return_diagnostics: true)
     after
       Code.put_compiler_option(:debug_info, previous)
     end

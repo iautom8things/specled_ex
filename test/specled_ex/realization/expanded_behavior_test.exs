@@ -103,7 +103,27 @@ defmodule SpecLedEx.Realization.ExpandedBehaviorTest do
   end
   """
 
+  @fixture_modules [
+    SpecLedEx.ExpBehTest.DSL,
+    SpecLedEx.ExpBehTest.Consumer,
+    SpecLedEx.ExpBehTest.Typed,
+    SpecLedEx.ExpBehTest.NoDebug
+  ]
+
   defp compile_fixture!(source, tag) do
+    # Purge any prior fixture modules and drop any previously-added fixture
+    # code paths, otherwise ParallelCompiler resolves `use SomeDSL` against
+    # the stale .beam still on the path and the new macro body never makes
+    # it into the recompiled BEAM.
+    for mod <- @fixture_modules do
+      :code.purge(mod)
+      :code.delete(mod)
+    end
+
+    for path <- Process.get(:specled_expbeh_fixture_paths, []) do
+      :code.del_path(String.to_charlist(path))
+    end
+
     tmp_dir =
       Path.join(
         System.tmp_dir!(),
@@ -121,12 +141,18 @@ defmodule SpecLedEx.Realization.ExpandedBehaviorTest do
     Code.put_compiler_option(:debug_info, true)
 
     try do
-      {:ok, _mods, _warns} = Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir)
+      {:ok, _mods, _diagnostics} =
+        Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir,
+          return_diagnostics: true
+        )
     after
       Code.put_compiler_option(:debug_info, previous)
     end
 
     :code.add_patha(String.to_charlist(tmp_dir))
+    Process.put(:specled_expbeh_fixture_paths, [
+      tmp_dir | Process.get(:specled_expbeh_fixture_paths, [])
+    ])
 
     tmp_dir
   end
