@@ -1,6 +1,8 @@
 defmodule Mix.Tasks.Spec.Validate do
   use Mix.Task
 
+  @requirements ["app.config"]
+
   alias SpecLedEx.Config
   alias SpecLedEx.Config.Prose
   alias SpecLedEx.VerificationStrength
@@ -18,8 +20,10 @@ defmodule Mix.Tasks.Spec.Validate do
       for this invocation, overriding `.spec/config.yml`
   """
 
-  @impl true
+  @impl Mix.Task
   def run(args) do
+    SpecLedEx.MixRuntime.ensure_started!()
+
     {opts, rest, invalid} =
       OptionParser.parse(
         args,

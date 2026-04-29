@@ -1,6 +1,8 @@
 defmodule Mix.Tasks.Spec.Check do
   use Mix.Task
 
+  @requirements ["app.config"]
+
   alias SpecLedEx.VerificationStrength
 
   @shortdoc "Runs the full local Spec Led gate"
@@ -23,8 +25,10 @@ defmodule Mix.Tasks.Spec.Check do
       has the same effect as `--verbose`.
   """
 
-  @impl true
+  @impl Mix.Task
   def run(args) do
+    SpecLedEx.MixRuntime.ensure_started!()
+
     {opts, rest, invalid} =
       OptionParser.parse(
         args,

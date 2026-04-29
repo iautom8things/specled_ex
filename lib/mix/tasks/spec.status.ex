@@ -1,6 +1,8 @@
 defmodule Mix.Tasks.Spec.Status do
   use Mix.Task
 
+  @requirements ["app.config"]
+
   alias SpecLedEx.VerificationStrength
 
   @shortdoc "Summarizes current-truth coverage, proof strength, and frontier gaps"
@@ -12,8 +14,10 @@ defmodule Mix.Tasks.Spec.Status do
   Use `--no-run-commands` to force a structural-only report for a given run.
   """
 
-  @impl true
+  @impl Mix.Task
   def run(args) do
+    SpecLedEx.MixRuntime.ensure_started!()
+
     {opts, rest, invalid} =
       OptionParser.parse(
         args,

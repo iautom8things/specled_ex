@@ -1,6 +1,8 @@
 defmodule Mix.Tasks.Spec.Prime do
   use Mix.Task
 
+  @requirements ["app.config"]
+
   alias SpecLedEx.VerificationStrength
 
   @shortdoc "Prints session-start context for agents and maintainers"
@@ -13,8 +15,10 @@ defmodule Mix.Tasks.Spec.Prime do
   summary.
   """
 
-  @impl true
+  @impl Mix.Task
   def run(args) do
+    SpecLedEx.MixRuntime.ensure_started!()
+
     {opts, rest, invalid} =
       OptionParser.parse(
         args,

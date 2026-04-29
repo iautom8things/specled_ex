@@ -128,6 +128,17 @@
       },
       {
         "affects": [
+          "specled.mix_tasks"
+        ],
+        "change_type": "clarifies",
+        "date": "2026-04-28",
+        "file": ".spec/decisions/specled.decision.dep_runtime_bootstrap.md",
+        "id": "specled.decision.dep_runtime_bootstrap",
+        "status": "accepted",
+        "title": "Spec Tasks Shall Bootstrap Their Own Dep Runtime"
+      },
+      {
+        "affects": [
           "specled.binding",
           "specled.api_boundary",
           "specled.implementation_tier",
@@ -1173,6 +1184,14 @@
         "priority": "should",
         "stability": "evolving",
         "statement": "mix spec.decision.new shall scaffold an ADR under .spec/decisions with the required frontmatter and body sections.",
+        "subject_id": "specled.mix_tasks"
+      },
+      {
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "id": "specled.tasks.dep_runtime_bootstrap",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "Every mix spec.* task shall call SpecLedEx.MixRuntime.ensure_started!/0 as the first line of run/1, so the BEAM applications specled depends on at runtime (currently :yaml_elixir and :jason) are started even when specled is consumed as a Hex dependency. The shared helper shall remain the single source of truth for the dep list. Tasks shall additionally declare `@requirements [\"app.config\"]` to load host config, except `spec.cover.test`, which runs inside child-BEAM fixtures whose code path Mix's `app.config` would purge before the helper module could be lazily loaded.",
         "subject_id": "specled.mix_tasks"
       },
       {
@@ -4857,6 +4876,7 @@
             "specled.decision.local_skill_scaffold",
             "specled.decision.guided_reconciliation_loop",
             "specled.decision.no_app_start",
+            "specled.decision.dep_runtime_bootstrap",
             "specled.decision.configurable_test_tag_enforcement"
           ],
           "id": "specled.mix_tasks",
@@ -4873,7 +4893,8 @@
               "Mix.Tasks.Spec.Status.run/1",
               "Mix.Tasks.Spec.Decision.New.run/1",
               "Mix.Tasks.Spec.Index.run/1",
-              "Mix.Tasks.Spec.Validate.run/1"
+              "Mix.Tasks.Spec.Validate.run/1",
+              "SpecLedEx.MixRuntime.ensure_started!/0"
             ]
           },
           "status": "active",
@@ -4887,6 +4908,10 @@
             "lib/mix/tasks/spec.decision.new.ex",
             "lib/mix/tasks/spec.index.ex",
             "lib/mix/tasks/spec.validate.ex",
+            "lib/mix/tasks/spec.cover.test.ex",
+            "lib/mix/tasks/spec.suggest_binding.ex",
+            "lib/mix/tasks/spec.triangle.ex",
+            "lib/specled_ex/mix_runtime.ex",
             "lib/specled_ex/prime.ex",
             "priv/spec_init/agents/skills/spec-led-development/SKILL.md.eex",
             "priv/spec_init/specs/spec_system.spec.md.eex",
@@ -5960,6 +5985,16 @@
       },
       {
         "covers": [
+          "specled.tasks.dep_runtime_bootstrap"
+        ],
+        "execute": true,
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "command",
+        "subject_id": "specled.mix_tasks",
+        "target": "sh -c 'missing=$(grep -L \"SpecLedEx.MixRuntime.ensure_started\" lib/mix/tasks/*.ex); if [ -n \"$missing\" ]; then echo \"tasks missing MixRuntime bootstrap:\"; echo \"$missing\"; exit 1; fi'"
+      },
+      {
+        "covers": [
           "specled.modal_class.classify_total",
           "specled.modal_class.classify_must",
           "specled.modal_class.classify_should",
@@ -6537,13 +6572,13 @@
   "specification_version": "1.0",
   "summary": {
     "decision_parse_errors": 0,
-    "decisions": 24,
+    "decisions": 25,
     "exceptions": 0,
     "findings": 0,
-    "requirements": 232,
+    "requirements": 233,
     "scenarios": 121,
     "subjects": 32,
-    "verifications": 73
+    "verifications": 74
   },
   "verification": {
     "claims": [
@@ -8099,6 +8134,17 @@
         "verification_index": 2
       },
       {
+        "cover_id": "specled.tasks.dep_runtime_bootstrap",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "sh -c 'missing=$(grep -L \"SpecLedEx.MixRuntime.ensure_started\" lib/mix/tasks/*.ex); if [ -n \"$missing\" ]; then echo \"tasks missing MixRuntime bootstrap:\"; echo \"$missing\"; exit 1; fi'",
+        "verification_index": 3
+      },
+      {
         "cover_id": "specled.modal_class.classify_case_and_punctuation_insensitive",
         "file": ".spec/specs/modal_class.spec.md",
         "kind": "tagged_tests",
@@ -9456,13 +9502,13 @@
     "default_minimum_strength": "claimed",
     "strength_summary": {
       "claimed": 2,
-      "executed": 225,
+      "executed": 226,
       "linked": 37
     },
     "threshold_failures": 0
   },
   "workspace": {
-    "decision_count": 24,
+    "decision_count": 25,
     "spec_count": 32
   }
 }
