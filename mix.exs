@@ -8,6 +8,7 @@ defmodule SpecLedEx.MixProject do
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       test_coverage: [summary: [threshold: 90]],
+      test_ignore_filters: [&String.starts_with?(&1, "test/fixtures/")],
       elixirc_paths: elixirc_paths(),
       elixirc_options: [tracers: tracers()],
       deps: deps()
@@ -53,7 +54,8 @@ defmodule SpecLedEx.MixProject do
 
       try do
         Code.put_compiler_option(:tracers, [])
-        {:ok, _modules, _warnings} = Kernel.ParallelCompiler.compile_to_path([src], ebin)
+        {:ok, _modules, _diagnostics} =
+          Kernel.ParallelCompiler.compile_to_path([src], ebin, return_diagnostics: true)
       after
         Code.put_compiler_option(:tracers, prev)
       end
