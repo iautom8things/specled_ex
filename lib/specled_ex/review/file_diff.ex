@@ -96,6 +96,37 @@ defmodule SpecLedEx.Review.FileDiff do
   defp consume_line("\\ " <> _ = line, {current, acc, lines}),
     do: {current, acc, [{:ctx, line} | lines]}
 
+  # git metadata lines that appear between "diff --git" and the first hunk
+  # (or between hunks for binary/empty files). Classify as file_header so
+  # the renderer can filter them out the same way it filters the diff
+  # banner lines.
+  defp consume_line("index " <> _ = line, {current, acc, lines}),
+    do: {current, acc, [{:file_header, line} | lines]}
+
+  defp consume_line("new file " <> _ = line, {current, acc, lines}),
+    do: {current, acc, [{:file_header, line} | lines]}
+
+  defp consume_line("deleted file " <> _ = line, {current, acc, lines}),
+    do: {current, acc, [{:file_header, line} | lines]}
+
+  defp consume_line("old mode " <> _ = line, {current, acc, lines}),
+    do: {current, acc, [{:file_header, line} | lines]}
+
+  defp consume_line("new mode " <> _ = line, {current, acc, lines}),
+    do: {current, acc, [{:file_header, line} | lines]}
+
+  defp consume_line("similarity index " <> _ = line, {current, acc, lines}),
+    do: {current, acc, [{:file_header, line} | lines]}
+
+  defp consume_line("rename " <> _ = line, {current, acc, lines}),
+    do: {current, acc, [{:file_header, line} | lines]}
+
+  defp consume_line("copy " <> _ = line, {current, acc, lines}),
+    do: {current, acc, [{:file_header, line} | lines]}
+
+  defp consume_line("Binary files " <> _ = line, {current, acc, lines}),
+    do: {current, acc, [{:file_header, line} | lines]}
+
   defp consume_line(line, {current, acc, lines}),
     do: {current, acc, [{:ctx, line} | lines]}
 
