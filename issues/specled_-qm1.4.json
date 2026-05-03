@@ -3,7 +3,9 @@
   "blocked_by": [
     "specled_-qm1.3"
   ],
-  "blocks": [],
+  "blocks": [
+    "specled_-qm1.5"
+  ],
   "created": "2026-05-03T11:41:39Z",
   "description": "Advances: specled.spec_review, specled.mix_tasks\n\nCreate lib/mix/tasks/spec.review.ex following the pattern of spec.next:\n- Flags: --base (default detected via ChangeAnalysis.detect_base_ref), --output (default _build/spec_review.html), --root, --open (boolean — open file in browser when local).\n- Pipeline: SpecLedEx.MixRuntime.ensure_started!, build index, call SpecLedEx.Review.build_view, call SpecLedEx.Review.Html.render, write to output path, optionally invoke open/xdg-open on the file.\n- Mirror option-parsing and error handling style of spec.next.ex.",
   "id": "specled_-qm1.4",
