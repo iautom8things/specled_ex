@@ -23,6 +23,7 @@ surface:
   - lib/mix/tasks/spec.cover.test.ex
   - lib/mix/tasks/spec.suggest_binding.ex
   - lib/mix/tasks/spec.triangle.ex
+  - lib/mix/tasks/spec.review.ex
   - lib/specled_ex/mix_runtime.ex
   - lib/specled_ex/prime.ex
   - priv/spec_init/agents/skills/spec-led-development/SKILL.md.eex
@@ -119,6 +120,10 @@ decisions:
   statement: mix spec.check shall accept a `--verbose` flag and honor `SPECLED_SHOW_INFO=1` that together govern stdout filtering; without either, findings whose resolved severity is `:info` shall be suppressed from stdout while still being written to `.spec/state.json` unchanged. With either flag or env var, every finding regardless of severity shall be printed.
   priority: must
   stability: evolving
+- id: specled.tasks.review_html_artifact
+  statement: mix spec.review shall produce a self-contained HTML artifact rendering the current Git change set as a spec-aware PR review surface, delegating the substantive contract to specled.spec_review.
+  priority: should
+  stability: evolving
 ```
 
 ## Verification
@@ -139,6 +144,7 @@ decisions:
     - specled.tasks.check_strict_gate
     - specled.tasks.status_summary
     - specled.tasks.no_app_start
+    - specled.tasks.review_html_artifact
 - kind: tagged_tests
   execute: true
   covers:
