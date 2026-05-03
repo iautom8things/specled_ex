@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
   "created": "2026-05-03T13:47:32Z",
@@ -8,8 +8,8 @@
   "labels": [],
   "parent": "specled_-qm1",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "Polish v3: file tree + collapsible diffs in Code tab and misc panel",
   "type": "task",
-  "updated_at": "2026-05-03T13:47:32Z"
+  "updated_at": "2026-05-03T13:47:42Z"
 }
