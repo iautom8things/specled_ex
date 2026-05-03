@@ -19,6 +19,7 @@ surface:
   - lib/specled_ex/review/file_diff.ex
   - lib/specled_ex/review/html.ex
   - lib/specled_ex/review/spec_diff.ex
+  - priv/spec_review_assets/*
   - test/specled_ex/review_test.exs
   - test/mix/tasks/spec_review_task_test.exs
 decisions:

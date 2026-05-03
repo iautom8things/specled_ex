@@ -10,6 +10,36 @@ defmodule SpecLedEx.Review.Html do
 
   require EEx
 
+  # Vendored Prism.js bundle for syntax highlighting in the diff view.
+  # Read at compile-time so the runtime artifact stays self-contained.
+  @prism_assets_dir Path.join([__DIR__, "..", "..", "..", "priv", "spec_review_assets"])
+                    |> Path.expand()
+
+  @prism_files [
+    "prism.min.js",
+    "prism-markup.min.js",
+    "prism-css.min.js",
+    "prism-erlang.min.js",
+    "prism-elixir.min.js",
+    "prism-json.min.js",
+    "prism-yaml.min.js",
+    "prism-markdown.min.js",
+    "prism-bash.min.js",
+    "prism-diff.min.js"
+  ]
+
+  for f <- @prism_files do
+    @external_resource Path.join(@prism_assets_dir, f)
+  end
+
+  @external_resource Path.join(@prism_assets_dir, "prism.css")
+
+  @prism_js Enum.map_join(@prism_files, "\n", fn f ->
+              File.read!(Path.join(@prism_assets_dir, f))
+            end)
+
+  @prism_css File.read!(Path.join(@prism_assets_dir, "prism.css"))
+
   # covers: specled.spec_review.html_artifact
   # All CSS and JS are embedded in the document; no <link> or <script src>
   # tags reach the network. The artifact renders identically offline.
@@ -31,6 +61,7 @@ defmodule SpecLedEx.Review.Html do
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Spec Review · <%= h(view.meta.head_ref) %></title>
+    <style><%= prism_css() %></style>
     <style><%= css %></style>
   </head>
   <body>
@@ -57,10 +88,16 @@ defmodule SpecLedEx.Review.Html do
     <footer class="page-footer">
       <span>specled_ex · spec.review</span>
     </footer>
+    <script><%= prism_js() %></script>
     <script><%= js %></script>
   </body>
   </html>
   """, [:view, :css, :js])
+
+  @doc false
+  def prism_js, do: @prism_js
+  @doc false
+  def prism_css, do: @prism_css
 
   defp render_toc(view) do
     [
@@ -522,7 +559,7 @@ defmodule SpecLedEx.Review.Html do
     [
       ~s|<h4 class="tab-heading">Spec file changes</h4>|,
       ~s|<div class="filename"><code>#{h(file)}</code></div>|,
-      render_diff_block(lines)
+      render_diff_block(lines, language_for(file))
     ]
   end
 
@@ -543,7 +580,7 @@ defmodule SpecLedEx.Review.Html do
         ~s"""
         <details class="code-change" id="#{anchor}" open>
           <summary class="filename"><code>#{h(file)}</code></summary>
-          #{IO.iodata_to_binary(render_diff_block(lines))}
+          #{IO.iodata_to_binary(render_diff_block(lines, language_for(file)))}
         </details>
         """
       end)
@@ -748,7 +785,7 @@ defmodule SpecLedEx.Review.Html do
         ~s"""
         <details class="code-change" id="#{anchor}" open>
           <summary class="filename"><code>#{h(file)}</code></summary>
-          #{IO.iodata_to_binary(render_diff_block(lines))}
+          #{IO.iodata_to_binary(render_diff_block(lines, language_for(file)))}
         </details>
         """
       end)
@@ -850,18 +887,116 @@ defmodule SpecLedEx.Review.Html do
     [~S|<ul class="tree">|, items, ~S|</ul>|]
   end
 
-  defp render_diff_block([]) do
+  defp render_diff_block([], _lang) do
     ~S|<p class="empty-tab">(no diff content)</p>|
   end
 
-  defp render_diff_block(lines) do
-    [
-      ~S|<pre class="diff"><code>|,
-      Enum.map(lines, fn {kind, text} ->
-        ~s|<span class="diff-line diff-#{kind}">#{h(text)}</span>\n|
-      end),
-      ~S|</code></pre>|
-    ]
+  defp render_diff_block(lines, lang) do
+    {rows, _state} =
+      Enum.flat_map_reduce(lines, %{old: 0, new: 0}, fn entry, state ->
+        render_diff_row(entry, state, lang)
+      end)
+
+    [~S|<div class="diff">|, rows, ~S|</div>|]
+  end
+
+  # File-header lines (`diff --git ...`, `--- a/...`, `+++ b/...`) are
+  # noise once the filename is shown in the disclosure summary above.
+  defp render_diff_row({:file_header, _text}, state, _lang), do: {[], state}
+
+  defp render_diff_row({:hunk_header, text}, _state, _lang) do
+    new_state = parse_hunk_header(text)
+
+    row =
+      ~s|<div class="diff-row diff-row-hunk"><span class="diff-lineno"></span><span class="diff-lineno"></span><span class="diff-marker"></span><span class="diff-content">#{h(text)}</span></div>|
+
+    {[row], new_state}
+  end
+
+  defp render_diff_row({:add, text}, %{new: n} = state, lang) do
+    new_no = n + 1
+    content = strip_diff_marker(text, "+")
+
+    row =
+      ~s|<div class="diff-row diff-row-add"><span class="diff-lineno"></span><span class="diff-lineno diff-lineno-new">#{new_no}</span><span class="diff-marker">+</span>#{render_diff_content(content, lang)}</div>|
+
+    {[row], %{state | new: new_no}}
+  end
+
+  defp render_diff_row({:del, text}, %{old: o} = state, lang) do
+    old_no = o + 1
+    content = strip_diff_marker(text, "-")
+
+    row =
+      ~s|<div class="diff-row diff-row-del"><span class="diff-lineno diff-lineno-old">#{old_no}</span><span class="diff-lineno"></span><span class="diff-marker">−</span>#{render_diff_content(content, lang)}</div>|
+
+    {[row], %{state | old: old_no}}
+  end
+
+  defp render_diff_row({:ctx, text}, %{old: o, new: n} = state, lang) do
+    old_no = o + 1
+    new_no = n + 1
+    content = strip_diff_marker(text, " ")
+
+    row =
+      ~s|<div class="diff-row diff-row-ctx"><span class="diff-lineno">#{old_no}</span><span class="diff-lineno">#{new_no}</span><span class="diff-marker"></span>#{render_diff_content(content, lang)}</div>|
+
+    {[row], %{state | old: old_no, new: new_no}}
+  end
+
+  defp render_diff_content(content, nil),
+    do: ~s|<span class="diff-content">#{h(content)}</span>|
+
+  defp render_diff_content(content, lang),
+    do: ~s|<code class="diff-content language-#{lang}">#{h(content)}</code>|
+
+  # Maps a file path to a Prism language class. Returns nil for files
+  # whose language we don't ship a lexer for; those render without
+  # syntax highlighting.
+  defp language_for(file) when is_binary(file) do
+    case file |> Path.extname() |> String.downcase() do
+      ".ex" -> "elixir"
+      ".exs" -> "elixir"
+      ".eex" -> "elixir"
+      ".heex" -> "elixir"
+      ".leex" -> "elixir"
+      ".erl" -> "erlang"
+      ".hrl" -> "erlang"
+      ".json" -> "json"
+      ".yaml" -> "yaml"
+      ".yml" -> "yaml"
+      ".md" -> "markdown"
+      ".markdown" -> "markdown"
+      ".css" -> "css"
+      ".scss" -> "css"
+      ".html" -> "markup"
+      ".htm" -> "markup"
+      ".xml" -> "markup"
+      ".svg" -> "markup"
+      ".sh" -> "bash"
+      ".bash" -> "bash"
+      ".diff" -> "diff"
+      ".patch" -> "diff"
+      _ -> nil
+    end
+  end
+
+  defp language_for(_), do: nil
+
+  defp strip_diff_marker(<<marker::utf8, rest::binary>>, expected) do
+    if <<marker::utf8>> == expected, do: rest, else: <<marker::utf8>> <> rest
+  end
+
+  defp strip_diff_marker(text, _), do: text
+
+  defp parse_hunk_header(text) do
+    case Regex.run(~r/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/, text) do
+      [_, old_start, new_start] ->
+        %{old: String.to_integer(old_start) - 1, new: String.to_integer(new_start) - 1}
+
+      _ ->
+        %{old: 0, new: 0}
+    end
   end
 
   # ----------------------------------------------------------------------
@@ -1775,22 +1910,76 @@ defmodule SpecLedEx.Review.Html do
     /* Diff */
     .diff {
       background: var(--card-bg);
-      border: 1px solid var(--border);
       border-radius: 0 0 4px 4px;
-      margin: 0;
-      padding: 8px 0;
       overflow-x: auto;
       font-family: var(--code-font);
       font-size: 12px;
-      line-height: 1.45;
+      line-height: 1.5;
     }
-    .diff code { display: block; }
-    .diff-line { display: block; padding: 0 12px; white-space: pre; }
-    .diff-add { background: var(--add-bg); color: var(--add-fg); }
-    .diff-del { background: var(--del-bg); color: var(--del-fg); }
-    .diff-hunk_header { background: var(--hunk-bg); color: var(--hunk-fg); font-weight: 500; padding-top: 4px; padding-bottom: 4px; }
-    .diff-file_header { color: var(--fg-faint); }
-    .diff-ctx { color: var(--fg); }
+    .diff-row {
+      display: grid;
+      grid-template-columns: 44px 44px 18px minmax(0, 1fr);
+      align-items: stretch;
+    }
+    .diff-lineno {
+      text-align: right;
+      padding: 0 6px 0 4px;
+      color: var(--fg-faint);
+      font-size: 11px;
+      user-select: none;
+      background: var(--bg);
+      white-space: pre;
+    }
+    .diff-marker {
+      user-select: none;
+      text-align: center;
+      padding: 0 2px;
+      color: var(--fg-faint);
+      font-weight: 500;
+    }
+    .diff-content {
+      padding: 0 8px;
+      white-space: pre;
+      color: var(--fg);
+      overflow-wrap: normal;
+    }
+    .diff-row-ctx { background: var(--card-bg); }
+    .diff-row-add { background: var(--add-bg); }
+    .diff-row-add .diff-lineno-new { background: #ccffd8; color: #1a7f37; }
+    .diff-row-add .diff-marker { color: #1a7f37; }
+    .diff-row-add .diff-content { color: #14532d; }
+    .diff-row-del { background: var(--del-bg); }
+    .diff-row-del .diff-lineno-old { background: #ffd1ce; color: #82071e; }
+    .diff-row-del .diff-marker { color: #82071e; }
+    .diff-row-del .diff-content { color: #6e0a17; }
+    .diff-row-hunk { background: var(--hunk-bg); color: var(--hunk-fg); }
+    .diff-row-hunk .diff-lineno { background: var(--hunk-bg); color: var(--hunk-fg); }
+    .diff-row-hunk .diff-content { padding: 4px 8px; font-weight: 500; color: var(--hunk-fg); }
+
+    /* Prism integration: keep our diff-row backgrounds + line styling
+       intact while letting Prism color the tokens inside .diff-content. */
+    code.diff-content {
+      display: inline;
+      background: transparent !important;
+      padding: 0 8px;
+      margin: 0;
+      border-radius: 0;
+      font-family: var(--code-font);
+      font-size: inherit;
+      color: inherit;
+      white-space: pre;
+      text-shadow: none;
+    }
+    code.diff-content[class*="language-"] { tab-size: 2; }
+    pre[class*="language-"], code[class*="language-"] {
+      text-shadow: none;
+      background: transparent;
+      box-shadow: none;
+    }
+    /* Tone Prism's token colors a touch so they read well on the soft
+       add/del backgrounds. */
+    .diff-row-add code .token.deleted,
+    .diff-row-del code .token.inserted { background: transparent; }
 
     /* Footer */
     .page-footer {
@@ -1872,6 +2061,18 @@ defmodule SpecLedEx.Review.Html do
         if (dy > 4) closeAllTrees();
       }, { passive: true });
     }, 600);
+
+    // Trigger Prism syntax highlighting once the DOM is ready. Each
+    // .diff-content with a `language-X` class gets tokenized and replaced
+    // with span-wrapped tokens. We avoid Prism's auto-loader by pre-loading
+    // the languages we ship.
+    if (typeof Prism !== 'undefined' && Prism.highlightAll) {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () { Prism.highlightAll(); });
+      } else {
+        Prism.highlightAll();
+      }
+    }
     """
   end
 end
