@@ -41,7 +41,7 @@ decisions:
 
 ```yaml spec-requirements
 - id: specled.package.mix_tasks
-  statement: The package shall provide mix spec.init, mix spec.prime, mix spec.next, mix spec.check, mix spec.status, mix spec.decision.new, mix spec.index, and mix spec.validate as user-facing commands.
+  statement: The package shall provide mix spec.init, mix spec.prime, mix spec.next, mix spec.check, mix spec.status, mix spec.decision.new, mix spec.index, mix spec.validate, and mix spec.review as user-facing commands.
   priority: must
   stability: stable
 - id: specled.package.default_local_loop
@@ -80,7 +80,7 @@ decisions:
     - specled.package.default_local_loop
 - kind: command
   target: >-
-    mix run -e 'Mix.Task.load_all(); Enum.each(~w(spec.init spec.prime spec.next spec.check spec.status spec.decision.new spec.index spec.validate), fn task -> Mix.Task.get(task) || raise("missing #{task}") end)'
+    mix run -e 'Mix.Task.load_all(); Enum.each(~w(spec.init spec.prime spec.next spec.check spec.status spec.decision.new spec.index spec.validate spec.review), fn task -> Mix.Task.get(task) || raise("missing #{task}") end)'
   execute: true
   covers:
     - specled.package.mix_tasks

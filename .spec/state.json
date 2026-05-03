@@ -88,6 +88,18 @@
       },
       {
         "affects": [
+          "specled.package",
+          "specled.mix_tasks",
+          "specled.spec_review"
+        ],
+        "date": "2026-05-03",
+        "file": ".spec/decisions/specled.decision.spec_review_html_viewer.md",
+        "id": "specled.decision.spec_review_html_viewer",
+        "status": "accepted",
+        "title": "Spec Review Surface Is A Self-Contained HTML Viewer"
+      },
+      {
+        "affects": [
           "specled.verification"
         ],
         "date": "2026-04-07",
@@ -98,15 +110,7 @@
       }
     ]
   },
-  "findings": [
-    {
-      "code": "verification_target_missing",
-      "entity_id": "specled.spec_review",
-      "file": ".spec/specs/spec_review.spec.md",
-      "level": "warning",
-      "message": "Verification target file does not exist: priv/spec_init/workflows/spec_review.yml.eex"
-    }
-  ],
+  "findings": [],
   "index": {
     "exceptions": [],
     "requirements": [
@@ -419,7 +423,7 @@
         "id": "specled.package.mix_tasks",
         "priority": "must",
         "stability": "stable",
-        "statement": "The package shall provide mix spec.init, mix spec.prime, mix spec.next, mix spec.check, mix spec.status, mix spec.decision.new, mix spec.index, and mix spec.validate as user-facing commands.",
+        "statement": "The package shall provide mix spec.init, mix spec.prime, mix spec.next, mix spec.check, mix spec.status, mix spec.decision.new, mix spec.index, mix spec.validate, and mix spec.review as user-facing commands.",
         "subject_id": "specled.package"
       },
       {
@@ -1107,7 +1111,9 @@
         "file": ".spec/specs/spec_review.spec.md",
         "id": "specled.spec_review",
         "meta": {
-          "decisions": null,
+          "decisions": [
+            "specled.decision.spec_review_html_viewer"
+          ],
           "id": "specled.spec_review",
           "kind": "workflow",
           "status": "active",
@@ -1358,7 +1364,7 @@
         "file": ".spec/specs/package.spec.md",
         "kind": "command",
         "subject_id": "specled.package",
-        "target": "mix run -e 'Mix.Task.load_all(); Enum.each(~w(spec.init spec.prime spec.next spec.check spec.status spec.decision.new spec.index spec.validate), fn task -> Mix.Task.get(task) || raise(\"missing #{task}\") end)'"
+        "target": "mix run -e 'Mix.Task.load_all(); Enum.each(~w(spec.init spec.prime spec.next spec.check spec.status spec.decision.new spec.index spec.validate spec.review), fn task -> Mix.Task.get(task) || raise(\"missing #{task}\") end)'"
       },
       {
         "covers": [
@@ -1478,9 +1484,9 @@
   "specification_version": "1.0",
   "summary": {
     "decision_parse_errors": 0,
-    "decisions": 7,
+    "decisions": 8,
     "exceptions": 0,
-    "findings": 1,
+    "findings": 0,
     "requirements": 66,
     "scenarios": 14,
     "subjects": 13,
@@ -1947,7 +1953,7 @@
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.package",
-        "target": "mix run -e 'Mix.Task.load_all(); Enum.each(~w(spec.init spec.prime spec.next spec.check spec.status spec.decision.new spec.index spec.validate), fn task -> Mix.Task.get(task) || raise(\"missing #{task}\") end)'",
+        "target": "mix run -e 'Mix.Task.load_all(); Enum.each(~w(spec.init spec.prime spec.next spec.check spec.status spec.decision.new spec.index spec.validate spec.review), fn task -> Mix.Task.get(task) || raise(\"missing #{task}\") end)'",
         "verification_index": 2
       },
       {
@@ -2220,7 +2226,7 @@
         "kind": "workflow_file",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "priv/spec_init/workflows/spec_review.yml.eex",
         "verification_index": 4
@@ -2350,14 +2356,14 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 3,
+      "claimed": 2,
       "executed": 58,
-      "linked": 17
+      "linked": 18
     },
     "threshold_failures": 0
   },
   "workspace": {
-    "decision_count": 7,
+    "decision_count": 8,
     "spec_count": 13
   }
 }

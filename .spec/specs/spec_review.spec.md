@@ -20,6 +20,8 @@ surface:
   - lib/specled_ex/review/html.ex
   - test/specled_ex/review_test.exs
   - test/mix/tasks/spec_review_task_test.exs
+decisions:
+  - specled.decision.spec_review_html_viewer
 ```
 
 ## Requirements

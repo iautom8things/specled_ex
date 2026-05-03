@@ -42,6 +42,12 @@ These are helpful, but they are not part of the default local loop:
 - `mix spec.decision.new`
   - scaffolds a durable ADR under `.spec/decisions/`
   - use it only when the change is durable and cross-cutting
+- `mix spec.review`
+  - renders the current Git change set as a self-contained HTML PR review surface
+  - spec-first navigation: each affected subject is a card with the prose statement headline + tabs for Spec / Code / Coverage / Decisions
+  - top triage panel for findings (collapses to a single confirmation row when clean), inline finding badges per subject, and a "outside the spec system" panel for unmapped changes
+  - same artifact runs locally and in CI; defaults to `_build/spec_review.html`
+  - see [CI Integration](#ci-integration) for the GitHub Actions + GitHub Pages workflow
 
 ## Advanced Commands
 
@@ -275,3 +281,25 @@ Use `.spec/decisions/*.md` only for durable cross-cutting ADRs. Do not add in-fl
 
 GitHub Actions runs the same command through [`scripts/check_specs.sh`](scripts/check_specs.sh)
 when `.spec/`, library code, or Mix configuration changes.
+
+## CI Integration
+
+`mix spec.review` is designed to render the same artifact in CI that you see locally. A copy-pastable GitHub Actions workflow is shipped in this package at:
+
+```
+priv/spec_init/workflows/spec_review.yml.eex
+```
+
+To adopt:
+
+1. Copy the file (it is plain YAML — the `.eex` extension is for consistency with other scaffolded templates) to `.github/workflows/spec-review.yml` in your repository.
+2. Enable GitHub Pages: Settings → Pages → "Deploy from a branch" → branch `gh-pages`, folder `/ (root)`.
+3. The default `GITHUB_TOKEN` already has the permissions the workflow declares (`contents: write`, `pull-requests: write`).
+
+On every PR open / push / reopen, the workflow:
+
+- runs `mix spec.review --base origin/<base_ref> --output spec_review.html`
+- deploys the rendered HTML to `gh-pages` under `/pr/<PR>/index.html`
+- posts (or updates, via a hidden marker comment) a PR comment linking to `https://<owner>.github.io/<repo>/pr/<PR>/`
+
+The workflow is hand-rolled with plain `git` and `gh` (no third-party Actions beyond `actions/checkout`, `erlef/setup-beam`, and `actions/cache`). Auto-cleanup of stale `/pr/<PR>/` paths after merge is intentionally not included in this version — add a separate cleanup job if your repository has many PRs.
