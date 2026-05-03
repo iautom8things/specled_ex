@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-05-03T14:39:17Z",
+  "description": "Advances: specled.spec_review\n\nDiff view feels clunky with too much line spacing and no syntax highlighting. Goals:\n1. Modern, tight, GitHub-like diff CSS (smaller line-height, better colors, optional line-number gutter).\n2. Syntax highlighting per file via Prism.js (vendored locally so the artifact stays self-contained — no CDN at view time).",
+  "id": "specled_-qm1.12",
+  "labels": [],
+  "parent": "specled_-qm1",
+  "priority": 2,
+  "status": "open",
+  "title": "Polish v6: modern diff styling + Prism syntax highlighting",
+  "type": "task",
+  "updated_at": "2026-05-03T14:39:17Z"
+}
