@@ -6,14 +6,15 @@
   "blocks": [
     "specled_-qm1.6"
   ],
+  "closed_at": "2026-05-03T12:05:22Z",
   "created": "2026-05-03T11:41:45Z",
   "description": "Advances: specled.spec_review\n\nRun `mix spec.review` on the specled_ex repo on the current feature branch. Open the HTML in a browser. Verify:\n- Triage panel renders with correct finding counts; collapses on a clean PR\n- Subject cards render with prose statement headlines\n- All four tabs (Spec / Code / Coverage / Decisions) switch and show appropriate content\n- Findings show as both top-of-page entries and inline badges\n- Misc panel shows unmapped files as flat diff\n- HTML is self-contained (test by viewing while offline)\n\nIterate on visual polish until well-crafted: spacing, typography, color, hierarchy. Add ExUnit tests (with @tag spec: covering specled.spec_review.* requirements) for the data-assembly layer; rendering can be smoke-tested by snapshotting key fragments.",
   "id": "specled_-qm1.5",
   "labels": [],
   "parent": "specled_-qm1",
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "End-to-end test + visual polish on specled_ex",
   "type": "task",
-  "updated_at": "2026-05-03T12:01:21Z"
+  "updated_at": "2026-05-03T12:05:22Z"
 }
