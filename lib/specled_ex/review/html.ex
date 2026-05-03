@@ -110,7 +110,7 @@ defmodule SpecLedEx.Review.Html do
         [
           ~S|<ul class="toc-sublist">|,
           Enum.map(view.triage.affected_subjects, fn s ->
-            ~s|<li><a href="#subject-#{slug(s.id)}"><code>#{h(s.id)}</code>#{render_toc_finding_badge(s)}</a></li>|
+            ~s|<li><a href="#subject-#{slug(s.id)}"><code>#{h(s.id)}</code><span class="toc-pips">#{render_toc_change_pip(s)}#{render_toc_finding_badge(s)}</span></a></li>|
           end),
           ~S|</ul>|
         ]
@@ -147,11 +147,21 @@ defmodule SpecLedEx.Review.Html do
 
   defp render_toc_finding_badge(%{by_severity: by_sev, findings_count: count}) do
     cond do
-      Map.get(by_sev, "error", 0) > 0 -> ~s| <span class="toc-pip toc-pip-error">#{count}</span>|
-      Map.get(by_sev, "warning", 0) > 0 -> ~s| <span class="toc-pip toc-pip-warning">#{count}</span>|
-      true -> ~s| <span class="toc-pip toc-pip-info">#{count}</span>|
+      Map.get(by_sev, "error", 0) > 0 -> ~s|<span class="toc-pip toc-pip-error">#{count}</span>|
+      Map.get(by_sev, "warning", 0) > 0 -> ~s|<span class="toc-pip toc-pip-warning">#{count}</span>|
+      true -> ~s|<span class="toc-pip toc-pip-info">#{count}</span>|
     end
   end
+
+  defp render_toc_change_pip(%{change_status: :new}),
+    do:
+      ~s|<span class="toc-pip toc-pip-new"#{title_attr(tooltip(:change, :new_subject))}>NEW</span>|
+
+  defp render_toc_change_pip(%{change_status: :edited}),
+    do:
+      ~s|<span class="toc-pip toc-pip-edited"#{title_attr(tooltip(:change, :spec_edited))}>EDITED</span>|
+
+  defp render_toc_change_pip(_), do: ""
 
   # covers: specled.spec_review.triage_panel
   # When clean? is true the panel collapses to a single confirmation row;
@@ -168,36 +178,68 @@ defmodule SpecLedEx.Review.Html do
   end
 
   defp render_triage(triage, findings) do
+    open_attr = if triage.findings_count > 0, do: " open", else: ""
+    summary = render_triage_summary(triage)
+
     [
-      ~S"""
-      <section id="triage" class="triage" aria-label="Triage summary">
-        <header class="triage-header">
-          <h2>Triage</h2>
-          <div class="triage-counts">
-      """,
-      render_severity_pill("error", Map.get(triage.by_severity, "error", 0)),
-      render_severity_pill("warning", Map.get(triage.by_severity, "warning", 0)),
-      render_severity_pill("info", Map.get(triage.by_severity, "info", 0)),
-      ~s"""
-            <span class="pill pill-neutral">#{triage.affected_subject_count} affected subjects</span>
-      """,
-      if triage.has_unmapped_changes? do
-        ~s"""
-              <span class="pill pill-neutral">unmapped changes present</span>
-        """
-      else
-        ""
-      end,
-      ~S"""
-          </div>
-        </header>
-      """,
+      ~s|<details id="triage" class="triage" aria-label="Triage"#{open_attr}>|,
+      ~s|<summary class="triage-summary-row">#{summary}</summary>|,
+      ~S|<div class="triage-body">|,
+      render_severity_pills_row(triage),
       render_triage_subjects(triage.affected_subjects),
       render_findings_list(findings),
       ~S"""
-      </section>
+      </div>
+      </details>
       """
     ]
+  end
+
+  defp render_triage_summary(triage) do
+    affected_chunk =
+      ~s|<span class="triage-summary-meta">#{triage.affected_subject_count} affected subject#{if triage.affected_subject_count == 1, do: "", else: "s"}</span>|
+
+    unmapped_chunk =
+      if triage.has_unmapped_changes? do
+        ~s|<span class="triage-summary-meta">unmapped changes present</span>|
+      end
+
+    [triage_summary_findings_chunk(triage), affected_chunk, unmapped_chunk]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(~s|<span class="triage-summary-sep">·</span>|)
+  end
+
+  defp triage_summary_findings_chunk(%{findings_count: 0}) do
+    ~S|<span class="triage-summary-pill triage-summary-clean">✓ no findings</span>|
+  end
+
+  defp triage_summary_findings_chunk(%{findings_count: n, by_severity: by_sev}) do
+    cond do
+      Map.get(by_sev, "error", 0) > 0 ->
+        ~s|<span class="triage-summary-pill triage-summary-error">#{n} finding#{if n == 1, do: "", else: "s"}</span>|
+
+      Map.get(by_sev, "warning", 0) > 0 ->
+        ~s|<span class="triage-summary-pill triage-summary-warning">#{n} finding#{if n == 1, do: "", else: "s"}</span>|
+
+      true ->
+        ~s|<span class="triage-summary-pill triage-summary-info">#{n} finding#{if n == 1, do: "", else: "s"}</span>|
+    end
+  end
+
+  defp render_severity_pills_row(triage) do
+    pills =
+      [
+        render_severity_pill("error", Map.get(triage.by_severity, "error", 0)),
+        render_severity_pill("warning", Map.get(triage.by_severity, "warning", 0)),
+        render_severity_pill("info", Map.get(triage.by_severity, "info", 0))
+      ]
+      |> Enum.reject(&(&1 == ""))
+
+    if pills == [] do
+      ""
+    else
+      [~S|<div class="triage-counts">|, pills, ~S|</div>|]
+    end
   end
 
   defp render_triage_subjects([]), do: ""
@@ -1390,13 +1432,16 @@ defmodule SpecLedEx.Review.Html do
     .toc-pip-error { background: var(--error-bg); color: var(--error); }
     .toc-pip-warning { background: var(--warning-bg); color: var(--warning); }
     .toc-pip-info { background: var(--info-bg); color: var(--info); }
+    .toc-pip-new { background: #d1fae5; color: #065f46; font-size: 9px; padding: 0 4px; min-width: 0; }
+    .toc-pip-edited { background: #ddd6fe; color: #5b21b6; font-size: 9px; padding: 0 4px; min-width: 0; }
+    .toc-pips { display: inline-flex; gap: 4px; align-items: center; }
 
     /* Triage */
     .triage {
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 20px 24px;
+      padding: 0;
     }
     .triage-clean {
       background: var(--success-bg);
@@ -1406,12 +1451,46 @@ defmodule SpecLedEx.Review.Html do
       align-items: center;
       gap: 12px;
       font-weight: 500;
+      padding: 16px 20px;
     }
     .triage-icon { font-size: 18px; font-weight: 700; }
     .triage-headline { font-size: 14px; }
-    .triage-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-    .triage-header h2 { margin: 0; font-size: 18px; font-weight: 600; }
-    .triage-counts { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .triage-summary-row {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 14px;
+    }
+    .triage-summary-row::-webkit-details-marker { display: none; }
+    .triage-summary-row::before {
+      content: "▸";
+      color: var(--fg-faint);
+      font-size: 11px;
+      width: 10px;
+      flex-shrink: 0;
+    }
+    .triage[open] .triage-summary-row::before { content: "▾"; }
+    .triage-summary-pill {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .triage-summary-clean { background: var(--success-bg); color: var(--success); }
+    .triage-summary-error { background: var(--error-bg); color: var(--error); }
+    .triage-summary-warning { background: var(--warning-bg); color: var(--warning); }
+    .triage-summary-info { background: var(--info-bg); color: var(--info); }
+    .triage-summary-meta { color: var(--fg-muted); font-size: 13px; }
+    .triage-summary-sep { color: var(--fg-faint); }
+
+    .triage-body { padding: 4px 20px 20px; border-top: 1px solid var(--border); }
+    .triage-counts { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 12px; }
 
     .triage-subjects {
       list-style: none;
