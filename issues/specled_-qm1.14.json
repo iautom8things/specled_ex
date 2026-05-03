@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-05-03T15:40:01Z",
+  "description": "Advances: specled.spec_review\n\nMake the Coverage tab self-explanatory:\n1. Tooltips (title attribute) on strength badges, priority pills, stability pills, verification kind pills, change-status chips, and execute/declared pills\n2. Demote the raw 'Verification entries' section to a collapsed \u003cdetails\u003e\n3. Add a 'How is requirement coverage computed?' collapsed disclosure at the top of the Coverage tab explaining the strength tiers and how to tighten",
+  "id": "specled_-qm1.14",
+  "labels": [],
+  "parent": "specled_-qm1",
+  "priority": 2,
+  "status": "open",
+  "title": "Polish v8: tooltips + collapse raw verification + how-computed disclosure",
+  "type": "task",
+  "updated_at": "2026-05-03T15:40:01Z"
+}
