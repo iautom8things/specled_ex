@@ -253,9 +253,11 @@ defmodule SpecLedEx.Review.Html do
         <ul>
       """,
       Enum.map(findings, fn f ->
+        sev = f["severity"] || ""
+
         ~s"""
-            <li class="finding-item finding-#{h(f["severity"])}">
-              <span class="finding-severity">#{h(f["severity"])}</span>
+            <li class="finding-item finding-#{h(sev)}">
+              <span class="finding-severity"#{title_attr(tooltip(:severity, sev))}>#{h(sev)}</span>
               <span class="finding-code">#{h(f["code"])}</span>
               #{render_subject_link(f["subject_id"])}
               <span class="finding-message">#{h(f["message"])}</span>
@@ -340,10 +342,12 @@ defmodule SpecLedEx.Review.Html do
 
   @doc false
   def render_subject_change_badge(%{base_existed?: false}),
-    do: ~S|<span class="chip chip-new">NEW SUBJECT</span>|
+    do:
+      ~s|<span class="chip chip-new"#{title_attr(tooltip(:change, :new_subject))}>NEW SUBJECT</span>|
 
   def render_subject_change_badge(%{file_changed?: true}),
-    do: ~S|<span class="chip chip-modified">SPEC EDITED</span>|
+    do:
+      ~s|<span class="chip chip-modified"#{title_attr(tooltip(:change, :spec_edited))}>SPEC EDITED</span>|
 
   def render_subject_change_badge(_), do: ""
 
@@ -452,8 +456,8 @@ defmodule SpecLedEx.Review.Html do
           <div class="requirement-header">
             #{render_change_chip(status)}
             <code class="requirement-id">#{h(id)}</code>
-            <span class="pill pill-priority pill-priority-#{h(priority)}">#{h(priority)}</span>
-            <span class="pill pill-neutral">#{h(stability)}</span>
+            <span class="pill pill-priority pill-priority-#{h(priority)}"#{title_attr(tooltip(:priority, priority))}>#{h(priority)}</span>
+            <span class="pill pill-neutral"#{title_attr(tooltip(:stability, stability))}>#{h(stability)}</span>
             #{render_requirement_finding_badge(req_findings)}
           </div>
           <p class="requirement-statement">#{h(statement)}</p>
@@ -464,8 +468,12 @@ defmodule SpecLedEx.Review.Html do
     ]
   end
 
-  defp render_change_chip(:new), do: ~S|<span class="chip chip-new">NEW</span>|
-  defp render_change_chip(:modified), do: ~S|<span class="chip chip-modified">MODIFIED</span>|
+  defp render_change_chip(:new),
+    do: ~s|<span class="chip chip-new"#{title_attr(tooltip(:change, :new))}>NEW</span>|
+
+  defp render_change_chip(:modified),
+    do: ~s|<span class="chip chip-modified"#{title_attr(tooltip(:change, :modified))}>MODIFIED</span>|
+
   defp render_change_chip(_), do: ""
 
   defp render_removed_items(_label, []), do: ""
@@ -481,7 +489,7 @@ defmodule SpecLedEx.Review.Html do
         ~s"""
         <li class="removed-item">
           <div class="removed-header">
-            <span class="chip chip-removed">REMOVED</span>
+            <span class="chip chip-removed"#{title_attr(tooltip(:change, :removed))}>REMOVED</span>
             <code class="requirement-id">#{h(id)}</code>
           </div>
           <p class="removed-statement">#{h(statement)}</p>
@@ -595,10 +603,34 @@ defmodule SpecLedEx.Review.Html do
   @doc false
   def render_coverage_tab(s) do
     [
+      render_coverage_help(),
       render_requirements_coverage(s.requirements, s.claims_by_req),
       render_bindings_section(s.bindings),
       render_verification_section(s.verification)
     ]
+  end
+
+  defp render_coverage_help do
+    ~S"""
+    <details class="coverage-help">
+      <summary class="coverage-help-summary"><span aria-hidden="true">ℹ</span> How is requirement coverage computed?</summary>
+      <div class="coverage-help-body">
+        <p>Each requirement is verified by one or more <code>spec-verification</code> entries that name it in their <code>covers:</code> list. The verifier inspects each entry and reports the <strong>strongest evidence</strong> it could find for the requirement.</p>
+        <dl class="coverage-help-tiers">
+          <dt><span class="strength-badge strength-executed">EXECUTED</span></dt>
+          <dd>A <code>kind: command</code> entry with <code>execute: true</code> ran and exited 0; or a <code>kind: tagged_tests</code> entry executed its matching test successfully. Requires <code>mix spec.check --run-commands</code> (or <code>mix spec.review --run-commands</code>).</dd>
+          <dt><span class="strength-badge strength-linked">LINKED</span></dt>
+          <dd>For a <em>file-kind</em> verification (<code>source_file</code>, <code>test_file</code>, <code>guide_file</code>, …) the target file exists <em>and</em> its content references the requirement id (typically a <code># covers:</code> comment or a literal mention). For <code>tagged_tests</code>, a test in the suite carries <code>@tag spec: "&lt;requirement_id&gt;"</code>.</dd>
+          <dt><span class="strength-badge strength-claimed">CLAIMED</span></dt>
+          <dd>The verification entry names the requirement in its <code>covers:</code> list. A textual claim only — nothing else has been checked yet.</dd>
+          <dt><span class="strength-badge strength-uncovered">UNCOVERED</span></dt>
+          <dd>No verification entry covers this requirement at all. Add one to <code>spec-verification</code>.</dd>
+        </dl>
+        <p><strong>Tightening the floor.</strong> Pass <code>--min-strength linked</code> (or <code>executed</code>) to <code>mix spec.check</code> to require every claim reach that tier or fail. Set <code>verification_minimum_strength: linked</code> in a subject's <code>spec-meta</code> to bake that floor into the spec itself.</p>
+        <p><strong>Priority</strong> (<code>must</code> / <code>should</code> / <code>may</code>) is the requirement author's RFC-2119 intent. <strong>Stability</strong> (<code>stable</code> / <code>evolving</code>) communicates whether the wording is settled or still being tightened. Hover any chip on this page for a one-line definition.</p>
+      </div>
+    </details>
+    """
   end
 
   defp render_requirements_coverage([], _), do: ""
@@ -617,7 +649,7 @@ defmodule SpecLedEx.Review.Html do
         <li class="cov-req cov-req-#{best_strength}">
           <div class="cov-req-header">
             <code class="requirement-id">#{h(id)}</code>
-            <span class="pill pill-priority pill-priority-#{h(priority)}">#{h(priority)}</span>
+            <span class="pill pill-priority pill-priority-#{h(priority)}"#{title_attr(tooltip(:priority, priority))}>#{h(priority)}</span>
             #{render_strength_badge(best_strength, claims, meets_minimum?)}
           </div>
           <p class="cov-req-statement">#{h(statement)}</p>
@@ -649,29 +681,33 @@ defmodule SpecLedEx.Review.Html do
   end
 
   defp render_strength_badge(:uncovered, _claims, _meets) do
-    ~S|<span class="strength-badge strength-uncovered">UNCOVERED</span>|
+    ~s|<span class="strength-badge strength-uncovered"#{title_attr(tooltip(:strength, "uncovered"))}>UNCOVERED</span>|
   end
 
   defp render_strength_badge(strength, claims, meets) do
-    label = strength |> to_string() |> String.upcase()
+    str = to_string(strength)
+    label = String.upcase(str)
     suffix = if length(claims) > 1, do: " · #{length(claims)} claims", else: ""
 
     warn =
-      if meets, do: "", else: ~S| <span class="strength-warn" title="below required strength">⚠</span>|
+      if meets,
+        do: "",
+        else:
+          ~S| <span class="strength-warn" title="Below the required strength for this requirement (see verification_minimum_strength or --min-strength)">⚠</span>|
 
-    ~s|<span class="strength-badge strength-#{strength}">#{label}#{suffix}</span>#{warn}|
+    ~s|<span class="strength-badge strength-#{str}"#{title_attr(tooltip(:strength, str))}>#{label}#{suffix}</span>#{warn}|
   end
 
   defp render_strength_legend do
-    ~S"""
+    ~s"""
     <div class="strength-legend" aria-label="Strength legend">
-      <span class="strength-badge strength-executed">EXECUTED</span>
+      <span class="strength-badge strength-executed"#{title_attr(tooltip(:strength, "executed"))}>EXECUTED</span>
       <span class="strength-legend-arrow">›</span>
-      <span class="strength-badge strength-linked">LINKED</span>
+      <span class="strength-badge strength-linked"#{title_attr(tooltip(:strength, "linked"))}>LINKED</span>
       <span class="strength-legend-arrow">›</span>
-      <span class="strength-badge strength-claimed">CLAIMED</span>
+      <span class="strength-badge strength-claimed"#{title_attr(tooltip(:strength, "claimed"))}>CLAIMED</span>
       <span class="strength-legend-arrow">›</span>
-      <span class="strength-badge strength-uncovered">UNCOVERED</span>
+      <span class="strength-badge strength-uncovered"#{title_attr(tooltip(:strength, "uncovered"))}>UNCOVERED</span>
       <span class="strength-legend-note">strongest evidence wins per requirement</span>
     </div>
     """
@@ -689,9 +725,9 @@ defmodule SpecLedEx.Review.Html do
 
         ~s"""
         <li class="claim">
-          <span class="pill pill-neutral">#{h(kind)}</span>
+          <span class="pill pill-neutral"#{title_attr(tooltip(:verification_kind, kind))}>#{h(kind)}</span>
           <code class="claim-target">#{h(target)}</code>
-          <span class="strength-badge strength-#{strength}">#{String.upcase(strength)}</span>
+          <span class="strength-badge strength-#{strength}"#{title_attr(tooltip(:strength, strength))}>#{String.upcase(strength)}</span>
         </li>
         """
       end),
@@ -724,7 +760,9 @@ defmodule SpecLedEx.Review.Html do
 
   defp render_verification_section(list) when is_list(list) do
     [
-      ~s|<h4 class="tab-heading">Verification entries (#{length(list)})</h4>|,
+      ~s|<details class="raw-verification">|,
+      ~s|<summary class="raw-verification-summary">Raw spec-verification block (#{length(list)} entr#{if length(list) == 1, do: "y", else: "ies"})</summary>|,
+      ~S|<p class="raw-verification-explainer">The author's declarations as written in the spec file. The per-requirement view above is computed from this.</p>|,
       ~S|<ul class="verification-list">|,
       Enum.map(list, fn v ->
         kind = field(v, :kind) || ""
@@ -735,9 +773,9 @@ defmodule SpecLedEx.Review.Html do
         ~s"""
         <li class="verification">
           <div class="verification-header">
-            <span class="pill pill-neutral">#{h(kind)}</span>
+            <span class="pill pill-neutral"#{title_attr(tooltip(:verification_kind, kind))}>#{h(kind)}</span>
             <code class="verification-target">#{h(target)}</code>
-            #{if execute, do: ~s|<span class="pill pill-success">executes</span>|, else: ~s|<span class="pill pill-muted">declared</span>|}
+            #{if execute, do: ~s|<span class="pill pill-success"#{title_attr(tooltip(:execute, true))}>executes</span>|, else: ~s|<span class="pill pill-muted"#{title_attr(tooltip(:execute, false))}>declared</span>|}
           </div>
           <div class="verification-covers">
             #{Enum.map_join(covers, " ", fn c -> ~s|<span class="pill pill-cover">#{h(c)}</span>| end)}
@@ -745,7 +783,8 @@ defmodule SpecLedEx.Review.Html do
         </li>
         """
       end),
-      ~S|</ul>|
+      ~S|</ul>|,
+      ~S|</details>|
     ]
   end
 
@@ -1105,6 +1144,74 @@ defmodule SpecLedEx.Review.Html do
   def h(nil), do: ""
   def h(value) when is_binary(value), do: html_escape(value)
   def h(value), do: value |> to_string() |> html_escape()
+
+  # Tooltip text by (category, value). Returns "" when nothing useful applies
+  # so the caller can render `title="..."` unconditionally.
+  defp tooltip(:strength, "executed"),
+    do: "Command verification ran and exited 0 (requires --run-commands)"
+
+  defp tooltip(:strength, "linked"),
+    do:
+      "File-kind verification: target file exists and contains the requirement id; or tagged_tests: a test in the suite carries @tag spec for the requirement"
+
+  defp tooltip(:strength, "claimed"),
+    do:
+      "A spec-verification entry names the requirement in its covers: list. Textual claim only — nothing else has been checked."
+
+  defp tooltip(:strength, "uncovered"),
+    do: "No spec-verification entry covers this requirement."
+
+  defp tooltip(:priority, "must"), do: "Required (RFC 2119)"
+
+  defp tooltip(:priority, "should"),
+    do: "Recommended; can be skipped with explicit justification (RFC 2119)"
+
+  defp tooltip(:priority, "may"), do: "Optional (RFC 2119)"
+
+  defp tooltip(:stability, "stable"), do: "Wording is settled; unlikely to change shape"
+
+  defp tooltip(:stability, "evolving"),
+    do: "Wording is being tightened or restructured; expect churn"
+
+  defp tooltip(:verification_kind, "command"),
+    do: "Runs an arbitrary command. Reaches EXECUTED when the command exits 0 with --run-commands."
+
+  defp tooltip(:verification_kind, "tagged_tests"),
+    do:
+      "Reaches LINKED when a test carries @tag spec for the requirement; EXECUTED when that test ran and passed."
+
+  defp tooltip(:verification_kind, kind)
+       when kind in ~w(file source_file test_file guide_file readme_file workflow_file test doc workflow contract) do
+    "Asserts the named #{String.replace(kind, "_", " ")} exists. Reaches LINKED when its content references the requirement id."
+  end
+
+  defp tooltip(:execute, true),
+    do: "execute: true — eligible to run during --run-commands"
+
+  defp tooltip(:execute, false),
+    do: "execute: false — declared only; will not run automatically"
+
+  defp tooltip(:change, :new), do: "Added in this change set"
+  defp tooltip(:change, :modified), do: "Modified in this change set"
+  defp tooltip(:change, :removed), do: "Removed in this change set"
+  defp tooltip(:change, :new_subject), do: "This subject's spec file did not exist on the base ref"
+  defp tooltip(:change, :spec_edited), do: "The subject's .spec.md file was edited in this change set"
+
+  defp tooltip(:severity, "error"),
+    do: "Error — blocks the gate. mix spec.check exits non-zero."
+
+  defp tooltip(:severity, "warning"),
+    do: "Warning — visible in the report but does not block the gate by default."
+
+  defp tooltip(:severity, "info"),
+    do: "Info — advisory; never blocks."
+
+  defp tooltip(_, _), do: ""
+
+  defp title_attr(text) when is_binary(text) and text != "",
+    do: ~s| title="#{html_escape(text)}"|
+
+  defp title_attr(_), do: ""
 
   defp html_escape(string) do
     string
@@ -1646,6 +1753,83 @@ defmodule SpecLedEx.Review.Html do
     .bindings dd { margin: 0; padding: 0; }
     .mfa-list { list-style: none; margin: 4px 0 12px 0; padding: 0; }
     .mfa-list li { font-family: var(--code-font); font-size: 12px; padding: 2px 0; }
+
+    /* Coverage tab — help disclosure */
+    .coverage-help {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+    .coverage-help-summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .coverage-help-summary::-webkit-details-marker { display: none; }
+    .coverage-help-summary::after {
+      content: "▸";
+      color: var(--fg-faint);
+      font-size: 10px;
+      margin-left: auto;
+    }
+    .coverage-help[open] .coverage-help-summary::after { content: "▾"; }
+    .coverage-help-body {
+      padding: 4px 18px 14px;
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--fg);
+    }
+    .coverage-help-body p { margin: 8px 0; }
+    .coverage-help-body code { font-family: var(--code-font); font-size: 12px; background: var(--neutral-bg); padding: 1px 5px; border-radius: 3px; }
+    .coverage-help-tiers {
+      margin: 8px 0;
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 8px 14px;
+      align-items: start;
+    }
+    .coverage-help-tiers dt { padding-top: 2px; }
+    .coverage-help-tiers dd { margin: 0; }
+
+    /* Raw verification (collapsed by default) */
+    .raw-verification {
+      margin-top: 24px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--bg);
+    }
+    .raw-verification-summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--fg-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .raw-verification-summary::-webkit-details-marker { display: none; }
+    .raw-verification-summary::before {
+      content: "▸";
+      color: var(--fg-faint);
+      font-size: 10px;
+    }
+    .raw-verification[open] .raw-verification-summary::before { content: "▾"; }
+    .raw-verification-explainer { padding: 0 14px; margin: 4px 0 12px; color: var(--fg-muted); font-size: 12px; font-style: italic; }
+    .raw-verification .verification-list { padding: 0 14px 14px; margin: 0; }
+
+    /* Help cursor on every titled chip so users discover hover content. */
+    [title] { cursor: help; }
+    a[title], button[title] { cursor: pointer; }
 
     /* Coverage tab — per-requirement strength */
     .strength-legend {
