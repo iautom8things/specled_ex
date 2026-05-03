@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-05-03T13:29:45Z",
+  "description": "Advances: specled.spec_review\n\nRequirements, scenarios, and ADRs all render identically today regardless of whether they're new in this PR, modified, unchanged, or deleted. Add diff-aware status to the view-model and chips/sections in the renderer so reviewers can spot what changed at a glance.\n\nPlan:\n1. New module SpecLedEx.Review.SpecDiff: given a base ref, a subject id, and the subject's spec file path, fetch the base-ref content via git show, parse it, and compute per-id change sets for requirements and scenarios (added / modified / removed / unchanged).\n2. In Review.build_view: for each affected subject whose .spec.md file is in changed_files, attach the change sets. Otherwise mark all items :unchanged.\n3. For ADRs: classify each ADR id as :new / :modified / :unchanged / :removed by comparing the ADR file's existence and content between base and HEAD.\n4. Renderer:\n   - Each requirement / scenario row shows a NEW or MODIFIED chip when applicable.\n   - Removed items appear in a dedicated 'Removed in this PR' section under the same tab.\n   - Each ADR disclosure summary shows a NEW or MODIFIED chip.\n   - Subject card header optionally shows a small 'changed spec' badge if the subject's spec file is in the diff.",
+  "id": "specled_-qm1.8",
+  "labels": [],
+  "parent": "specled_-qm1",
+  "priority": 2,
+  "status": "open",
+  "title": "Polish v2: change status chips on requirements, scenarios, ADRs",
+  "type": "task",
+  "updated_at": "2026-05-03T13:29:45Z"
+}
