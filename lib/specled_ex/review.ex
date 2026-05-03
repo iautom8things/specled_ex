@@ -268,7 +268,8 @@ defmodule SpecLedEx.Review do
         %{
           id: s.id,
           findings_count: length(s.findings),
-          by_severity: sev_counts
+          by_severity: sev_counts,
+          change_status: subject_change_status(s.spec_changes)
         }
       end)
 
@@ -281,6 +282,10 @@ defmodule SpecLedEx.Review do
       clean?: findings == [] and not has_unmapped? and affected_subjects == []
     }
   end
+
+  defp subject_change_status(%{base_existed?: false}), do: :new
+  defp subject_change_status(%{file_changed?: true}), do: :edited
+  defp subject_change_status(_), do: :code_only
 
   defp group_findings_by_subject(findings) do
     findings
