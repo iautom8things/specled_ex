@@ -1,0 +1,130 @@
+# covers: specled.spec_review.gh_pages_distribution
+#
+# Renders mix spec.review on every pull request, deploys the resulting
+# HTML to a per-PR path on the `gh-pages` branch, and posts/updates a PR
+# comment linking to it.
+#
+# To use:
+#   1. Copy this file to .github/workflows/spec-review.yml in your repo.
+#   2. Enable GitHub Pages for the repo, source = "Deploy from a branch",
+#      branch = `gh-pages`, folder = `/ (root)`.
+#   3. Ensure the workflow has `contents: write` and `pull-requests: write`
+#      permissions (set below).
+#
+# The artifact lands at:
+#   https://<owner>.github.io/<repo>/pr/<PR>/
+#
+# Stale per-PR paths are NOT auto-cleaned in this version. Add a separate
+# cleanup job if your repo has many PRs.
+
+name: Spec Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: spec-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR head with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          version-file: .tool-versions
+          version-type: strict
+
+      - name: Cache deps and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: spec-review-${{ runner.os }}-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            spec-review-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Render spec.review
+        run: |
+          mix spec.review \
+            --base origin/${{ github.base_ref }} \
+            --output spec_review.html
+
+      - name: Deploy to gh-pages under /pr/${{ github.event.pull_request.number }}/
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          PR_DIR="pr/${PR_NUMBER}"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Work in a sibling worktree so we don't disturb the PR checkout.
+          DEPLOY_DIR="$(mktemp -d)"
+          if git ls-remote --exit-code origin gh-pages >/dev/null 2>&1; then
+            git fetch origin gh-pages:gh-pages
+            git worktree add "$DEPLOY_DIR" gh-pages
+          else
+            git worktree add --orphan -b gh-pages "$DEPLOY_DIR"
+            (cd "$DEPLOY_DIR" && rm -rf ./* ./.* 2>/dev/null || true)
+            (cd "$DEPLOY_DIR" && touch .nojekyll)
+          fi
+
+          mkdir -p "$DEPLOY_DIR/$PR_DIR"
+          cp spec_review.html "$DEPLOY_DIR/$PR_DIR/index.html"
+
+          (
+            cd "$DEPLOY_DIR"
+            git add "$PR_DIR/index.html" .nojekyll 2>/dev/null || git add "$PR_DIR/index.html"
+            if git diff --cached --quiet; then
+              echo "No changes to deploy."
+            else
+              git commit -m "spec.review for PR #${PR_NUMBER} (${{ github.sha }})"
+              git push origin gh-pages
+            fi
+          )
+
+          git worktree remove --force "$DEPLOY_DIR"
+
+      - name: Post or update PR comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          OWNER="${REPO%/*}"
+          REPO_NAME="${REPO#*/}"
+          URL="https://${OWNER}.github.io/${REPO_NAME}/pr/${PR_NUMBER}/"
+          MARKER="<!-- spec-review-comment -->"
+          BODY=$(printf '%s\n\n📄 **Spec review** for this PR: %s\n\n_Rendered by `mix spec.review` from %s._\n' \
+            "$MARKER" "$URL" "${{ github.sha }}")
+
+          EXISTING=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq ".[] | select(.body | startswith(\"$MARKER\")) | .id" \
+            | head -n 1)
+
+          if [ -n "$EXISTING" ]; then
+            gh api --method PATCH "repos/${REPO}/issues/comments/${EXISTING}" \
+              -f body="$BODY" >/dev/null
+            echo "Updated comment $EXISTING"
+          else
+            gh pr comment "$PR_NUMBER" --body "$BODY"
+            echo "Posted new comment"
+          fi
