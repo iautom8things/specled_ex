@@ -118,13 +118,6 @@
       "entity_id": "specled.spec_review",
       "file": ".spec/specs/spec_review.spec.md",
       "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/review/html.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.spec_review",
-      "file": ".spec/specs/spec_review.spec.md",
-      "level": "warning",
       "message": "Surface entry does not exist: test/mix/tasks/spec_review_task_test.exs"
     },
     {
@@ -140,13 +133,6 @@
       "file": ".spec/specs/spec_review.spec.md",
       "level": "warning",
       "message": "Verification target file does not exist: lib/mix/tasks/spec.review.ex"
-    },
-    {
-      "code": "verification_target_missing",
-      "entity_id": "specled.spec_review",
-      "file": ".spec/specs/spec_review.spec.md",
-      "level": "warning",
-      "message": "Verification target file does not exist: lib/specled_ex/review/html.ex"
     },
     {
       "code": "verification_target_missing",
@@ -1529,7 +1515,7 @@
     "decision_parse_errors": 0,
     "decisions": 7,
     "exceptions": 0,
-    "findings": 8,
+    "findings": 6,
     "requirements": 66,
     "scenarios": 14,
     "subjects": 13,
@@ -2214,7 +2200,7 @@
         "kind": "source_file",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/specled_ex/review/html.ex",
         "verification_index": 3
@@ -2225,7 +2211,7 @@
         "kind": "source_file",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/specled_ex/review/html.ex",
         "verification_index": 3
@@ -2236,7 +2222,7 @@
         "kind": "source_file",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/specled_ex/review/html.ex",
         "verification_index": 3
@@ -2247,7 +2233,7 @@
         "kind": "source_file",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/specled_ex/review/html.ex",
         "verification_index": 3
@@ -2258,7 +2244,7 @@
         "kind": "source_file",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/specled_ex/review/html.ex",
         "verification_index": 3
@@ -2399,9 +2385,9 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 68,
+      "claimed": 63,
       "executed": 0,
-      "linked": 10
+      "linked": 15
     },
     "threshold_failures": 0
   },
