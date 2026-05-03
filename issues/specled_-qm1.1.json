@@ -1,7 +1,9 @@
 {
   "assignee": "",
   "blocked_by": [],
-  "blocks": [],
+  "blocks": [
+    "specled_-qm1.2"
+  ],
   "created": "2026-05-03T11:41:22Z",
   "description": "Advances: specled.spec_review (creates this subject)\n\nAuthor .spec/specs/spec_review.spec.md as a new subject. Includes:\n- spec-meta with id specled.spec_review, kind workflow, surface listing the new modules and the mix task\n- spec-requirements covering: spec-first navigation, prose-headlined subject cards, per-subject tabs (Spec/Code/Coverage/Decisions), top triage panel with collapsing-when-clean behavior, inline finding badges on subject cards, misc panel for unmapped changes, self-contained HTML (no CDN deps), same artifact local and CI, GitHub Pages deploy with PR comment link\n- spec-scenarios for: clean PR (triage collapses), PR with finding (triage shows + inline badge), PR with unmapped change (misc panel populated), local-only run (no network)\n- spec-verification entries (file kinds for module surfaces, tagged_tests for behavior)\n- realized_by bindings (filled in once modules exist; can stub initially)\n\nAlso add a requirement to specled.mix_tasks for `mix spec.review` and add `lib/mix/tasks/spec.review.ex` to its surface list.",
   "id": "specled_-qm1.1",
@@ -11,5 +13,5 @@
   "status": "open",
   "title": "Author specled.spec_review subject",
   "type": "task",
-  "updated_at": "2026-05-03T11:41:22Z"
+  "updated_at": "2026-05-03T11:42:01Z"
 }
