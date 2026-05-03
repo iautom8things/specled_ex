@@ -2,14 +2,15 @@
   "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-05-03T13:14:28Z",
   "created": "2026-05-03T12:59:09Z",
   "description": "Advances: specled.spec_review\n\nVisual polish for the v1 spec.review HTML based on first-pass user feedback:\n\n1. Triage panel currently says \"3 affected subjects\" without naming them. Add a clickable list of affected subject IDs (with their severity badges) directly in the triage panel, anchored to each subject card.\n\n2. Decisions tab currently shows just ADR IDs. Expand each referenced ADR inline with a \u003cdetails\u003e disclosure that reveals the ADR title, status, and body sections. Pull the ADR content from the index (already available in view-model assembly).\n\n3. Add a left-hand sticky TOC sidebar listing Triage → each affected subject → Decisions Changed → Outside the spec system. Each entry jumps to its anchor. Collapses on narrow screens.",
   "id": "specled_-qm1.7",
   "labels": [],
   "parent": "specled_-qm1",
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "Polish v1: triage subject list, inline ADR expansion, left-hand TOC",
   "type": "task",
-  "updated_at": "2026-05-03T12:59:15Z"
+  "updated_at": "2026-05-03T13:14:28Z"
 }
