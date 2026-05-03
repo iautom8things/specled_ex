@@ -2,14 +2,15 @@
   "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-05-03T13:51:47Z",
   "created": "2026-05-03T13:47:32Z",
   "description": "Advances: specled.spec_review\n\nCode sub-tab today renders a flat list of file diffs with no quick way to jump or skip. Two improvements:\n\n1. Mini-TOC at the top of each Code tab showing the touched files as a folder/file tree (folder structure visible). Each leaf links to that file's diff anchor.\n2. Each file diff wraps in \u003cdetails\u003e so reviewers can collapse files they've already read.\n\nApply the same treatment to the 'outside the spec system' misc panel since it has the same UX problem.",
   "id": "specled_-qm1.9",
   "labels": [],
   "parent": "specled_-qm1",
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "Polish v3: file tree + collapsible diffs in Code tab and misc panel",
   "type": "task",
-  "updated_at": "2026-05-03T13:47:42Z"
+  "updated_at": "2026-05-03T13:51:47Z"
 }
