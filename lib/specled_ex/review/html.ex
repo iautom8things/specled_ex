@@ -536,8 +536,7 @@ defmodule SpecLedEx.Review.Html do
     paths = Enum.map(changes, & &1.file)
     tree = build_path_tree(paths)
 
-    [
-      render_path_tree(tree, anchor_prefix, "Files (#{length(paths)})"),
+    diff_blocks =
       Enum.map(changes, fn %{file: file, lines: lines} ->
         anchor = anchor_prefix <> "-" <> slug(file)
 
@@ -548,7 +547,8 @@ defmodule SpecLedEx.Review.Html do
         </details>
         """
       end)
-    ]
+
+    render_files_section(tree, anchor_prefix, "Files (#{length(paths)})", diff_blocks)
   end
 
   @doc false
@@ -717,21 +717,23 @@ defmodule SpecLedEx.Review.Html do
     paths = Enum.map(changes, & &1.file)
     tree = build_path_tree(paths)
 
-    [
-      ~s|<section id="misc" class="misc" aria-label="Outside the spec system">|,
-      ~s|<h2 class="section-heading">Outside the spec system (#{length(changes)})</h2>|,
-      ~S|<p class="misc-explainer">These files changed but do not map to any spec subject. Triangulation does not apply here — review the diff directly.</p>|,
-      render_path_tree(tree, "misc", "Files (#{length(paths)})"),
+    diff_blocks =
       Enum.map(changes, fn %{file: file, lines: lines} ->
         anchor = "misc-" <> slug(file)
 
         ~s"""
-        <details class="misc-change" id="#{anchor}" open>
+        <details class="code-change" id="#{anchor}" open>
           <summary class="filename"><code>#{h(file)}</code></summary>
           #{IO.iodata_to_binary(render_diff_block(lines))}
         </details>
         """
-      end),
+      end)
+
+    [
+      ~s|<section id="misc" class="misc" aria-label="Outside the spec system">|,
+      ~s|<h2 class="section-heading">Outside the spec system (#{length(changes)})</h2>|,
+      ~S|<p class="misc-explainer">These files changed but do not map to any spec subject. Triangulation does not apply here — review the diff directly.</p>|,
+      render_files_section(tree, "misc", "Files (#{length(paths)})", diff_blocks),
       ~S|</section>|
     ]
   end
@@ -766,13 +768,26 @@ defmodule SpecLedEx.Review.Html do
     Map.put(tree, head, insert_path(sub, rest, full_path))
   end
 
-  defp render_path_tree(tree, anchor_prefix, heading) do
-    [
-      ~s|<details class="file-tree" open>|,
-      ~s|<summary class="file-tree-summary">#{h(heading)}</summary>|,
-      render_tree_nodes(tree, anchor_prefix),
-      ~S|</details>|
-    ]
+  defp render_files_section(tree, anchor_prefix, heading, diff_blocks) do
+    ~s"""
+    <div class="files-section" data-tree-section>
+      <button class="file-tree-handle" type="button" aria-label="Show file tree" data-tree-action="open">
+        <span class="file-tree-handle-icon" aria-hidden="true">▸</span>
+      </button>
+      <aside class="file-tree-panel" aria-label="File tree">
+        <header class="file-tree-header">
+          <span class="file-tree-title">#{h(heading)}</span>
+          <button class="file-tree-close" type="button" aria-label="Hide file tree" data-tree-action="close">×</button>
+        </header>
+        <div class="file-tree-scroll">
+          #{IO.iodata_to_binary(render_tree_nodes(tree, anchor_prefix))}
+        </div>
+      </aside>
+      <div class="files-list">
+        #{IO.iodata_to_binary(diff_blocks)}
+      </div>
+    </div>
+    """
   end
 
   defp render_tree_nodes(tree, anchor_prefix) do
@@ -791,15 +806,17 @@ defmodule SpecLedEx.Review.Html do
 
           ~s"""
           <li class="tree-leaf">
-            <a href="##{anchor}"><span class="tree-icon">└</span><code>#{h(name)}</code></a>
+            <a href="##{anchor}" data-tree-leaf><code>#{h(name)}</code></a>
           </li>
           """
 
         {name, sub_tree} when is_map(sub_tree) ->
           ~s"""
           <li class="tree-folder">
-            <span class="tree-folder-name"><span class="tree-icon">▾</span><code>#{h(name)}/</code></span>
-            #{IO.iodata_to_binary(render_tree_nodes(sub_tree, anchor_prefix))}
+            <details open>
+              <summary class="tree-folder-summary"><code>#{h(name)}/</code></summary>
+              #{IO.iodata_to_binary(render_tree_nodes(sub_tree, anchor_prefix))}
+            </details>
           </li>
           """
       end)
@@ -1491,51 +1508,147 @@ defmodule SpecLedEx.Review.Html do
       border-radius: 0 0 4px 4px;
     }
 
-    /* File tree (mini-TOC inside Code tab and misc panel) */
-    .file-tree {
+    /* Files section: slide-out file-tree drawer next to file diffs */
+    .files-section {
+      position: relative;
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr);
+      gap: 16px;
+      transition: grid-template-columns 0.25s ease;
+    }
+    .files-section.tree-collapsed { grid-template-columns: 24px minmax(0, 1fr); }
+
+    .file-tree-panel {
+      position: sticky;
+      top: 16px;
+      max-height: calc(100vh - 32px);
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 4px;
-      margin-bottom: 16px;
-      padding: 4px 0;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: translateX(0);
+      opacity: 1;
+      transition: transform 0.25s ease, opacity 0.2s ease;
+      z-index: 1;
     }
-    .file-tree-summary {
-      cursor: pointer;
-      list-style: none;
-      padding: 6px 12px;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--fg-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+    .files-section.tree-collapsed .file-tree-panel {
+      transform: translateX(calc(-100% - 16px));
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .file-tree-header {
       display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--card-bg);
     }
-    .file-tree-summary::-webkit-details-marker { display: none; }
-    .file-tree-summary::before {
+    .file-tree-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--fg-muted);
+    }
+    .file-tree-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      color: var(--fg-faint);
+      padding: 0 4px;
+      font-family: inherit;
+    }
+    .file-tree-close:hover { color: var(--fg); }
+    .file-tree-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .file-tree-handle {
+      position: sticky;
+      top: 16px;
+      align-self: start;
+      width: 24px;
+      height: 64px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 0 4px 4px 0;
+      border-left: none;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: var(--fg-muted);
+      font-size: 13px;
+      font-family: inherit;
+      padding: 0;
+      grid-column: 1;
+      grid-row: 1;
+      z-index: 2;
+    }
+    .file-tree-handle:hover { background: var(--neutral-bg); color: var(--fg); }
+    .files-section.tree-collapsed .file-tree-handle { display: flex; }
+    .file-tree-handle-icon { display: inline-block; }
+
+    .files-list { min-width: 0; grid-column: 2; }
+
+    .tree { list-style: none; margin: 0; padding: 0 12px; font-family: var(--code-font); font-size: 12px; }
+    .tree .tree { padding: 0 0 0 14px; margin-top: 2px; border-left: 1px dotted var(--border-strong); margin-left: 6px; }
+    .tree-folder { padding: 1px 0; color: var(--fg); }
+    .tree-folder > details > summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+    .tree-folder > details > summary:hover { background: var(--neutral-bg); }
+    .tree-folder > details > summary::-webkit-details-marker { display: none; }
+    .tree-folder > details > summary::before {
       content: "▾";
       color: var(--fg-faint);
-      font-size: 10px;
+      font-size: 9px;
       width: 10px;
+      display: inline-block;
     }
-    .file-tree:not([open]) .file-tree-summary::before { content: "▸"; }
-    .tree { list-style: none; margin: 0 0 4px 0; padding: 0 12px 4px; font-family: var(--code-font); font-size: 12px; }
-    .tree .tree { padding: 0 0 0 16px; border-left: 1px dotted var(--border-strong); margin-left: 4px; }
-    .tree-folder { padding: 2px 0; color: var(--fg); }
-    .tree-folder-name { display: flex; align-items: center; gap: 6px; }
+    .tree-folder > details:not([open]) > summary::before { content: "▸"; }
     .tree-leaf { padding: 1px 0; }
     .tree-leaf a {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       color: var(--accent);
       text-decoration: none;
       padding: 2px 4px;
+      padding-left: 14px;
       border-radius: 3px;
     }
     .tree-leaf a:hover { background: var(--neutral-bg); text-decoration: underline; }
-    .tree-icon { color: var(--fg-faint); display: inline-block; width: 10px; }
+
+    @media (max-width: 760px) {
+      .files-section, .files-section.tree-collapsed {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .file-tree-panel {
+        position: static;
+        max-height: 240px;
+        transform: none !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        margin-bottom: 12px;
+      }
+      .file-tree-handle { display: none !important; }
+      .files-list { grid-column: 1; }
+    }
 
     /* Diff */
     .diff {
@@ -1584,6 +1697,7 @@ defmodule SpecLedEx.Review.Html do
 
   defp js do
     """
+    // Tab switching inside subject cards.
     document.addEventListener('click', function (e) {
       var btn = e.target.closest('.tab');
       if (!btn) return;
@@ -1596,6 +1710,46 @@ defmodule SpecLedEx.Review.Html do
       var panel = subjectCard.querySelector('#' + CSS.escape(targetId));
       if (panel) panel.classList.add('active');
     });
+
+    // File-tree drawer: open / close / close-on-leaf-click.
+    function closeAllTrees() {
+      document.querySelectorAll('.files-section:not(.tree-collapsed)').forEach(function (s) {
+        s.classList.add('tree-collapsed');
+      });
+    }
+
+    document.addEventListener('click', function (e) {
+      var openHandle = e.target.closest('[data-tree-action=\\"open\\"]');
+      if (openHandle) {
+        var section = openHandle.closest('.files-section');
+        if (section) section.classList.remove('tree-collapsed');
+        return;
+      }
+      var closeBtn = e.target.closest('[data-tree-action=\\"close\\"]');
+      if (closeBtn) {
+        var section = closeBtn.closest('.files-section');
+        if (section) section.classList.add('tree-collapsed');
+        return;
+      }
+      var leaf = e.target.closest('[data-tree-leaf]');
+      if (leaf) {
+        var section = leaf.closest('.files-section');
+        if (section) section.classList.add('tree-collapsed');
+        // Let the anchor navigation proceed.
+      }
+    });
+
+    // Close drawers on user-initiated scroll. Wait briefly after load so the
+    // browser's own scroll-to-hash on initial load doesn't immediately close
+    // every drawer.
+    setTimeout(function () {
+      var lastY = window.scrollY;
+      window.addEventListener('scroll', function () {
+        var dy = Math.abs(window.scrollY - lastY);
+        lastY = window.scrollY;
+        if (dy > 4) closeAllTrees();
+      }, { passive: true });
+    }, 600);
     """
   end
 end
