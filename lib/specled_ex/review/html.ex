@@ -273,6 +273,7 @@ defmodule SpecLedEx.Review.Html do
           <%= if assigns[:s].file do %>
             <span class="subject-file"><%= SpecLedEx.Review.Html.h(assigns[:s].file) %></span>
           <% end %>
+          <%= SpecLedEx.Review.Html.render_subject_change_badge(assigns[:s].spec_changes) %>
           <%= SpecLedEx.Review.Html.render_subject_finding_badges(assigns[:s].findings) %>
         </div>
       </header>
@@ -301,6 +302,15 @@ defmodule SpecLedEx.Review.Html do
   end
 
   @doc false
+  def render_subject_change_badge(%{base_existed?: false}),
+    do: ~S|<span class="chip chip-new">NEW SUBJECT</span>|
+
+  def render_subject_change_badge(%{file_changed?: true}),
+    do: ~S|<span class="chip chip-modified">SPEC EDITED</span>|
+
+  def render_subject_change_badge(_), do: ""
+
+  @doc false
   def render_subject_finding_badges([]), do: ""
 
   def render_subject_finding_badges(findings) do
@@ -319,16 +329,74 @@ defmodule SpecLedEx.Review.Html do
 
   @doc false
   def render_spec_tab(s) do
+    req_status = id_status_lookup(s.spec_changes.requirements)
+    scenario_status = id_status_lookup(s.spec_changes.scenarios)
+    base_existed? = Map.get(s.spec_changes, :base_existed?, true)
+
     [
-      render_requirements(s.requirements, s.findings),
-      render_scenarios(s.scenarios),
+      render_spec_change_callout(s.spec_changes, base_existed?),
+      render_requirements(s.requirements, s.findings, req_status),
+      render_removed_items("Removed requirements", s.spec_changes.requirements.removed),
+      render_scenarios(s.scenarios, scenario_status),
+      render_removed_items("Removed scenarios", s.spec_changes.scenarios.removed),
       render_spec_diff(s.spec_diff)
     ]
   end
 
-  defp render_requirements([], _), do: ""
+  defp id_status_lookup(%{added: added, modified: modified}) do
+    added_ids = Enum.map(added, &item_id/1) |> Enum.reject(&(&1 == ""))
+    modified_ids = Enum.map(modified, &item_id/1) |> Enum.reject(&(&1 == ""))
 
-  defp render_requirements(requirements, findings) do
+    added_ids
+    |> Map.new(&{&1, :new})
+    |> Map.merge(Map.new(modified_ids, &{&1, :modified}))
+  end
+
+  defp id_status_lookup(_), do: %{}
+
+  defp item_id(item) do
+    cond do
+      is_struct(item) -> to_string(Map.get(item, :id) || "")
+      is_map(item) and Map.has_key?(item, :id) -> to_string(item.id)
+      is_map(item) and Map.has_key?(item, "id") -> to_string(item["id"])
+      true -> ""
+    end
+  end
+
+  defp render_spec_change_callout(_changes, false) do
+    ~S"""
+    <div class="spec-change-callout spec-change-new-subject">
+      <strong>NEW SUBJECT</strong> — this spec file did not exist on the base ref.
+    </div>
+    """
+  end
+
+  defp render_spec_change_callout(changes, true) do
+    counts = [
+      {length(changes.requirements.added) + length(changes.scenarios.added), "added"},
+      {length(changes.requirements.modified) + length(changes.scenarios.modified), "modified"},
+      {length(changes.requirements.removed) + length(changes.scenarios.removed), "removed"}
+    ]
+
+    if Enum.all?(counts, fn {n, _} -> n == 0 end) do
+      ""
+    else
+      summary =
+        counts
+        |> Enum.reject(fn {n, _} -> n == 0 end)
+        |> Enum.map_join(" · ", fn {n, label} -> "#{n} #{label}" end)
+
+      ~s"""
+      <div class="spec-change-callout">
+        <strong>Changes in this PR:</strong> #{summary}
+      </div>
+      """
+    end
+  end
+
+  defp render_requirements([], _, _), do: ""
+
+  defp render_requirements(requirements, findings, status_lookup) do
     findings_by_req = group_findings_by_requirement(findings)
 
     [
@@ -340,16 +408,46 @@ defmodule SpecLedEx.Review.Html do
         priority = field(req, :priority) || ""
         stability = field(req, :stability) || ""
         req_findings = Map.get(findings_by_req, id, [])
+        status = Map.get(status_lookup, id, :unchanged)
 
         ~s"""
-        <li class="requirement">
+        <li class="requirement requirement-#{status}">
           <div class="requirement-header">
+            #{render_change_chip(status)}
             <code class="requirement-id">#{h(id)}</code>
             <span class="pill pill-priority pill-priority-#{h(priority)}">#{h(priority)}</span>
             <span class="pill pill-neutral">#{h(stability)}</span>
             #{render_requirement_finding_badge(req_findings)}
           </div>
           <p class="requirement-statement">#{h(statement)}</p>
+        </li>
+        """
+      end),
+      ~S|</ul>|
+    ]
+  end
+
+  defp render_change_chip(:new), do: ~S|<span class="chip chip-new">NEW</span>|
+  defp render_change_chip(:modified), do: ~S|<span class="chip chip-modified">MODIFIED</span>|
+  defp render_change_chip(_), do: ""
+
+  defp render_removed_items(_label, []), do: ""
+
+  defp render_removed_items(label, items) do
+    [
+      ~s|<h4 class="tab-heading tab-heading-removed">#{h(label)} (#{length(items)})</h4>|,
+      ~S|<ul class="removed-list">|,
+      Enum.map(items, fn item ->
+        id = item_id(item)
+        statement = field(item, :statement) || field(item, :id) || ""
+
+        ~s"""
+        <li class="removed-item">
+          <div class="removed-header">
+            <span class="chip chip-removed">REMOVED</span>
+            <code class="requirement-id">#{h(id)}</code>
+          </div>
+          <p class="removed-statement">#{h(statement)}</p>
         </li>
         """
       end),
@@ -376,9 +474,9 @@ defmodule SpecLedEx.Review.Html do
     end)
   end
 
-  defp render_scenarios([]), do: ""
+  defp render_scenarios([], _), do: ""
 
-  defp render_scenarios(scenarios) do
+  defp render_scenarios(scenarios, status_lookup) do
     [
       ~s|<h4 class="tab-heading">Scenarios (#{length(scenarios)})</h4>|,
       ~S|<ul class="scenario-list">|,
@@ -388,10 +486,12 @@ defmodule SpecLedEx.Review.Html do
         when_ = field(sc, :when) || []
         then_ = field(sc, :then) || []
         covers = field(sc, :covers) || []
+        status = Map.get(status_lookup, id, :unchanged)
 
         ~s"""
-        <li class="scenario">
+        <li class="scenario scenario-#{status}">
           <div class="scenario-header">
+            #{render_change_chip(status)}
             <code class="scenario-id">#{h(id)}</code>
             #{Enum.map_join(covers, " ", fn c -> ~s|<span class="pill pill-cover">#{h(c)}</span>| end)}
           </div>
@@ -542,9 +642,18 @@ defmodule SpecLedEx.Review.Html do
         do: ~s|<span class="pill pill-cover">#{h(adr.change_type)}</span>|,
         else: ""
 
+    change_chip =
+      case Map.get(adr, :change_status) do
+        :new -> ~S|<span class="chip chip-new">NEW</span>|
+        :modified -> ~S|<span class="chip chip-modified">MODIFIED</span>|
+        :removed -> ~S|<span class="chip chip-removed">REMOVED</span>|
+        _ -> ""
+      end
+
     ~s"""
-    <details class="adr">
+    <details class="adr adr-#{Map.get(adr, :change_status, :unchanged)}">
       <summary class="adr-summary">
+        #{change_chip}
         <code class="adr-id">#{h(adr.id)}</code>
         <span class="adr-title">#{h(adr.title)}</span>
         #{status_pill}#{change_type_pill}#{date_chip}
@@ -853,6 +962,82 @@ defmodule SpecLedEx.Review.Html do
       border-color: var(--border);
     }
     .badge-clean { background: var(--success-bg); color: var(--success); }
+
+    /* Change-status chips */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 1px 7px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+      line-height: 1.5;
+    }
+    .chip-new { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+    .chip-modified { background: #ddd6fe; color: #5b21b6; border-color: #c4b5fd; }
+    .chip-removed { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+
+    /* Subject Spec-tab change callout */
+    .spec-change-callout {
+      background: var(--neutral-bg);
+      border-left: 3px solid var(--accent);
+      padding: 10px 14px;
+      border-radius: 4px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      color: var(--fg);
+    }
+    .spec-change-callout strong { font-weight: 600; }
+    .spec-change-new-subject {
+      background: #ecfdf5;
+      border-left-color: #10b981;
+      color: #065f46;
+    }
+
+    /* Per-row tinting for new/modified */
+    .requirement-new,
+    .scenario-new {
+      background: #ecfdf5;
+      border-left: 3px solid #10b981;
+      padding-left: 12px;
+      margin-left: -12px;
+      border-radius: 0 4px 4px 0;
+    }
+    .requirement-modified,
+    .scenario-modified {
+      background: #f5f3ff;
+      border-left: 3px solid #8b5cf6;
+      padding-left: 12px;
+      margin-left: -12px;
+      border-radius: 0 4px 4px 0;
+    }
+
+    /* Removed-items section */
+    .tab-heading-removed { color: var(--error); }
+    .removed-list { list-style: none; margin: 0 0 16px 0; padding: 0; }
+    .removed-item {
+      padding: 10px 12px;
+      background: #fef2f2;
+      border-left: 3px solid #ef4444;
+      border-radius: 0 4px 4px 0;
+      margin-bottom: 8px;
+    }
+    .removed-header {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+    .removed-statement { margin: 0; color: #7f1d1d; text-decoration: line-through; opacity: 0.85; }
+
+    /* ADR change-status accents */
+    .adr-new { border-left: 3px solid #10b981; }
+    .adr-modified { border-left: 3px solid #8b5cf6; }
+    .adr-removed { border-left: 3px solid #ef4444; }
 
     .pill {
       display: inline-block;

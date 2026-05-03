@@ -9,7 +9,7 @@ defmodule SpecLedEx.Review do
   """
 
   alias SpecLedEx.{ChangeAnalysis, Coverage, Verifier}
-  alias SpecLedEx.Review.FileDiff
+  alias SpecLedEx.Review.{FileDiff, SpecDiff}
 
   @doc """
   Builds the view-model for the current change set.
@@ -41,8 +41,11 @@ defmodule SpecLedEx.Review do
     affected_subjects =
       Enum.flat_map(affected_subject_ids, fn id ->
         case Map.get(subjects_by_id, id) do
-          nil -> []
-          subject -> [build_subject_view(id, subject, analysis, all_diffs, findings_by_subject)]
+          nil ->
+            []
+
+          subject ->
+            [build_subject_view(id, subject, analysis, all_diffs, findings_by_subject, root)]
         end
       end)
 
@@ -65,7 +68,7 @@ defmodule SpecLedEx.Review do
     decisions_changed = build_decisions_changed(analysis, index)
     findings = verifier_report["findings"] || []
     triage = build_triage(findings, affected_subjects, unmapped_changes != [])
-    adrs_by_id = build_adrs_by_id(index, root)
+    adrs_by_id = build_adrs_by_id(index, root, analysis.base)
 
     %{
       meta: %{
@@ -84,7 +87,7 @@ defmodule SpecLedEx.Review do
     }
   end
 
-  defp build_adrs_by_id(index, root) do
+  defp build_adrs_by_id(index, root, base_ref) do
     (index["decisions"] || [])
     |> Map.new(fn decision ->
       meta = decision["meta"]
@@ -102,7 +105,8 @@ defmodule SpecLedEx.Review do
         affects: meta_field(meta, :affects, []),
         superseded_by: meta_field(meta, :superseded_by, nil),
         replaces: meta_field(meta, :replaces, nil),
-        body_text: read_adr_body(root, file)
+        body_text: read_adr_body(root, file),
+        change_status: SpecDiff.adr_change_status(root, base_ref, file)
       }
 
       {id, data}
@@ -136,7 +140,7 @@ defmodule SpecLedEx.Review do
   # The view-model is keyed on subject id with the prose statement front and
   # center; the renderer treats each affected_subject entry as the primary
   # navigation unit, never the underlying file paths.
-  defp build_subject_view(id, subject, analysis, all_diffs, findings_by_subject) do
+  defp build_subject_view(id, subject, analysis, all_diffs, findings_by_subject, root) do
     meta = subject["meta"]
     statement = meta_field(meta, :summary, "")
     title = subject["title"] || id
@@ -154,11 +158,20 @@ defmodule SpecLedEx.Review do
         %{file: path, lines: Map.get(all_diffs, path, [])}
       end)
 
+    spec_file_changed? = is_binary(file) and file in analysis.changed_files
+
     spec_diff =
-      if file && file in changed_files do
+      if spec_file_changed? do
         %{file: file, lines: Map.get(all_diffs, file, [])}
       else
         nil
+      end
+
+    spec_changes =
+      if spec_file_changed? do
+        SpecDiff.compute(root, analysis.base, subject)
+      else
+        empty_spec_changes()
       end
 
     %{
@@ -173,8 +186,18 @@ defmodule SpecLedEx.Review do
       verification: subject["verification"] || [],
       code_changes: code_changes,
       spec_diff: spec_diff,
+      spec_changes: spec_changes,
       findings: Map.get(findings_by_subject, id, []),
       changed_files: changed_files
+    }
+  end
+
+  defp empty_spec_changes do
+    %{
+      file_changed?: false,
+      base_existed?: true,
+      requirements: %{added: [], modified: [], removed: [], unchanged_ids: MapSet.new()},
+      scenarios: %{added: [], modified: [], removed: [], unchanged_ids: MapSet.new()}
     }
   end
 
