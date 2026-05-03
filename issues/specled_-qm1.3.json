@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-qm1.2"
   ],
@@ -12,8 +12,8 @@
   "labels": [],
   "parent": "specled_-qm1",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "Build HTML renderer with embedded CSS/JS",
   "type": "task",
-  "updated_at": "2026-05-03T11:42:01Z"
+  "updated_at": "2026-05-03T11:54:47Z"
 }
