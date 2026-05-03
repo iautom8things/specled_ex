@@ -2,14 +2,15 @@
   "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-05-03T15:21:17Z",
   "created": "2026-05-03T15:17:44Z",
   "description": "Advances: specled.spec_review\n\nCoverage tab today shows declared bindings + raw verification entries but no actual coverage status per requirement. The Verifier already computes a claim strength (claimed / linked / executed) for each verification × requirement pair and reports it in verifier_report['verification']['claims']. Surface that per requirement in the Coverage tab with a strength badge and the list of verifications that cover it.",
   "id": "specled_-qm1.13",
   "labels": [],
   "parent": "specled_-qm1",
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "Polish v7: per-requirement claim strength in Coverage tab",
   "type": "task",
-  "updated_at": "2026-05-03T15:17:46Z"
+  "updated_at": "2026-05-03T15:21:17Z"
 }
