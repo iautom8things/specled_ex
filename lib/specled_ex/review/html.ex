@@ -594,65 +594,159 @@ defmodule SpecLedEx.Review.Html do
 
   @doc false
   def render_coverage_tab(s) do
-    bindings = s.bindings
+    [
+      render_requirements_coverage(s.requirements, s.claims_by_req),
+      render_bindings_section(s.bindings),
+      render_verification_section(s.verification)
+    ]
+  end
 
-    binding_section =
-      if bindings == %{} or bindings == nil do
-        ~S|<p class="empty-tab">No realized_by bindings declared on this subject.</p>|
-      else
+  defp render_requirements_coverage([], _), do: ""
+
+  defp render_requirements_coverage(requirements, claims_by_req) do
+    rows =
+      Enum.map(requirements, fn req ->
+        id = field(req, :id) || ""
+        statement = field(req, :statement) || ""
+        priority = field(req, :priority) || ""
+        claims = Map.get(claims_by_req, id, [])
+        best_strength = best_claim_strength(claims)
+        meets_minimum? = Enum.all?(claims, &(&1["meets_minimum"] != false))
+
+        ~s"""
+        <li class="cov-req cov-req-#{best_strength}">
+          <div class="cov-req-header">
+            <code class="requirement-id">#{h(id)}</code>
+            <span class="pill pill-priority pill-priority-#{h(priority)}">#{h(priority)}</span>
+            #{render_strength_badge(best_strength, claims, meets_minimum?)}
+          </div>
+          <p class="cov-req-statement">#{h(statement)}</p>
+          #{render_covering_claims(claims)}
+        </li>
+        """
+      end)
+
+    [
+      ~s|<h4 class="tab-heading">Requirement coverage (#{length(requirements)})</h4>|,
+      render_strength_legend(),
+      ~S|<ul class="cov-req-list">|,
+      rows,
+      ~S|</ul>|
+    ]
+  end
+
+  defp best_claim_strength([]), do: :uncovered
+
+  defp best_claim_strength(claims) do
+    strengths = Enum.map(claims, & &1["strength"])
+
+    cond do
+      "executed" in strengths -> :executed
+      "linked" in strengths -> :linked
+      "claimed" in strengths -> :claimed
+      true -> :uncovered
+    end
+  end
+
+  defp render_strength_badge(:uncovered, _claims, _meets) do
+    ~S|<span class="strength-badge strength-uncovered">UNCOVERED</span>|
+  end
+
+  defp render_strength_badge(strength, claims, meets) do
+    label = strength |> to_string() |> String.upcase()
+    suffix = if length(claims) > 1, do: " · #{length(claims)} claims", else: ""
+
+    warn =
+      if meets, do: "", else: ~S| <span class="strength-warn" title="below required strength">⚠</span>|
+
+    ~s|<span class="strength-badge strength-#{strength}">#{label}#{suffix}</span>#{warn}|
+  end
+
+  defp render_strength_legend do
+    ~S"""
+    <div class="strength-legend" aria-label="Strength legend">
+      <span class="strength-badge strength-executed">EXECUTED</span>
+      <span class="strength-legend-arrow">›</span>
+      <span class="strength-badge strength-linked">LINKED</span>
+      <span class="strength-legend-arrow">›</span>
+      <span class="strength-badge strength-claimed">CLAIMED</span>
+      <span class="strength-legend-arrow">›</span>
+      <span class="strength-badge strength-uncovered">UNCOVERED</span>
+      <span class="strength-legend-note">strongest evidence wins per requirement</span>
+    </div>
+    """
+  end
+
+  defp render_covering_claims([]), do: ""
+
+  defp render_covering_claims(claims) do
+    [
+      ~S|<ul class="claim-list">|,
+      Enum.map(claims, fn c ->
+        kind = c["kind"] || ""
+        target = c["target"] || ""
+        strength = c["strength"] || "claimed"
+
+        ~s"""
+        <li class="claim">
+          <span class="pill pill-neutral">#{h(kind)}</span>
+          <code class="claim-target">#{h(target)}</code>
+          <span class="strength-badge strength-#{strength}">#{String.upcase(strength)}</span>
+        </li>
+        """
+      end),
+      ~S|</ul>|
+    ]
+  end
+
+  defp render_bindings_section(bindings) when bindings == %{} or is_nil(bindings), do: ""
+
+  defp render_bindings_section(bindings) do
+    [
+      ~s|<h4 class="tab-heading">Bindings (realized_by)</h4>|,
+      ~S|<dl class="bindings">|,
+      Enum.map(bindings, fn {tier, mfas} ->
+        mfas = List.wrap(mfas)
+
         [
-          ~s|<h4 class="tab-heading">Bindings (realized_by)</h4>|,
-          ~S|<dl class="bindings">|,
-          Enum.map(bindings, fn {tier, mfas} ->
-            mfas = List.wrap(mfas)
-
-            [
-              ~s|<dt>#{h(to_string(tier))}</dt>|,
-              ~s|<dd><ul class="mfa-list">|,
-              Enum.map(mfas, fn mfa -> ~s|<li><code>#{h(mfa)}</code></li>| end),
-              ~S|</ul></dd>|
-            ]
-          end),
-          ~S|</dl>|
+          ~s|<dt>#{h(to_string(tier))}</dt>|,
+          ~s|<dd><ul class="mfa-list">|,
+          Enum.map(mfas, fn mfa -> ~s|<li><code>#{h(mfa)}</code></li>| end),
+          ~S|</ul></dd>|
         ]
-      end
+      end),
+      ~S|</dl>|
+    ]
+  end
 
-    verification_section =
-      case s.verification do
-        nil ->
-          ""
+  defp render_verification_section(nil), do: ""
+  defp render_verification_section([]), do: ""
 
-        [] ->
-          ""
+  defp render_verification_section(list) when is_list(list) do
+    [
+      ~s|<h4 class="tab-heading">Verification entries (#{length(list)})</h4>|,
+      ~S|<ul class="verification-list">|,
+      Enum.map(list, fn v ->
+        kind = field(v, :kind) || ""
+        target = field(v, :target) || ""
+        covers = field(v, :covers) || []
+        execute = field(v, :execute) || false
 
-        list when is_list(list) ->
-          [
-            ~s|<h4 class="tab-heading">Verification (#{length(list)})</h4>|,
-            ~S|<ul class="verification-list">|,
-            Enum.map(list, fn v ->
-              kind = field(v, :kind) || ""
-              target = field(v, :target) || ""
-              covers = field(v, :covers) || []
-              execute = field(v, :execute) || false
-
-              ~s"""
-              <li class="verification">
-                <div class="verification-header">
-                  <span class="pill pill-neutral">#{h(kind)}</span>
-                  <code class="verification-target">#{h(target)}</code>
-                  #{if execute, do: ~s|<span class="pill pill-success">executes</span>|, else: ~s|<span class="pill pill-muted">declared</span>|}
-                </div>
-                <div class="verification-covers">
-                  #{Enum.map_join(covers, " ", fn c -> ~s|<span class="pill pill-cover">#{h(c)}</span>| end)}
-                </div>
-              </li>
-              """
-            end),
-            ~S|</ul>|
-          ]
-      end
-
-    [binding_section, verification_section]
+        ~s"""
+        <li class="verification">
+          <div class="verification-header">
+            <span class="pill pill-neutral">#{h(kind)}</span>
+            <code class="verification-target">#{h(target)}</code>
+            #{if execute, do: ~s|<span class="pill pill-success">executes</span>|, else: ~s|<span class="pill pill-muted">declared</span>|}
+          </div>
+          <div class="verification-covers">
+            #{Enum.map_join(covers, " ", fn c -> ~s|<span class="pill pill-cover">#{h(c)}</span>| end)}
+          </div>
+        </li>
+        """
+      end),
+      ~S|</ul>|
+    ]
   end
 
   @doc false
@@ -1552,6 +1646,72 @@ defmodule SpecLedEx.Review.Html do
     .bindings dd { margin: 0; padding: 0; }
     .mfa-list { list-style: none; margin: 4px 0 12px 0; padding: 0; }
     .mfa-list li { font-family: var(--code-font); font-size: 12px; padding: 2px 0; }
+
+    /* Coverage tab — per-requirement strength */
+    .strength-legend {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      padding: 8px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      margin-bottom: 12px;
+      font-size: 11px;
+    }
+    .strength-legend-arrow { color: var(--fg-faint); font-weight: 600; }
+    .strength-legend-note { color: var(--fg-muted); margin-left: auto; font-style: italic; }
+    .strength-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border: 1px solid transparent;
+      line-height: 1.5;
+    }
+    .strength-executed { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+    .strength-linked { background: #fef3c7; color: #854d0e; border-color: #fde68a; }
+    .strength-claimed { background: #e5e7eb; color: #4b5563; border-color: #d1d5db; }
+    .strength-uncovered { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+    .strength-warn { color: var(--error); font-weight: 700; margin-left: 4px; }
+
+    .cov-req-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+    .cov-req {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--card-bg);
+      border-left-width: 3px;
+    }
+    .cov-req-executed { border-left-color: #10b981; }
+    .cov-req-linked { border-left-color: #d97706; }
+    .cov-req-claimed { border-left-color: #9ca3af; }
+    .cov-req-uncovered { border-left-color: #ef4444; background: #fef2f2; }
+    .cov-req-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+    .cov-req-statement { margin: 0 0 8px 0; color: var(--fg); font-size: 13px; line-height: 1.5; }
+
+    .claim-list { list-style: none; margin: 4px 0 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+    .claim {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 4px 8px;
+      background: var(--bg);
+      border-radius: 3px;
+      font-size: 12px;
+    }
+    .claim-target { font-family: var(--code-font); font-size: 11px; color: var(--fg-muted); flex: 1; min-width: 0; overflow-wrap: anywhere; }
 
     /* Verification */
     .verification-list { list-style: none; margin: 0; padding: 0; }

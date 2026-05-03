@@ -38,6 +38,8 @@ defmodule SpecLedEx.Review do
 
     all_diffs = FileDiff.for_files(root, analysis.base, analysis.changed_files)
 
+    claims_by_subject = group_claims_by_subject(verifier_report)
+
     affected_subjects =
       Enum.flat_map(affected_subject_ids, fn id ->
         case Map.get(subjects_by_id, id) do
@@ -45,7 +47,17 @@ defmodule SpecLedEx.Review do
             []
 
           subject ->
-            [build_subject_view(id, subject, analysis, all_diffs, findings_by_subject, root)]
+            [
+              build_subject_view(
+                id,
+                subject,
+                analysis,
+                all_diffs,
+                findings_by_subject,
+                root,
+                Map.get(claims_by_subject, id, %{})
+              )
+            ]
         end
       end)
 
@@ -140,7 +152,15 @@ defmodule SpecLedEx.Review do
   # The view-model is keyed on subject id with the prose statement front and
   # center; the renderer treats each affected_subject entry as the primary
   # navigation unit, never the underlying file paths.
-  defp build_subject_view(id, subject, analysis, all_diffs, findings_by_subject, root) do
+  defp build_subject_view(
+         id,
+         subject,
+         analysis,
+         all_diffs,
+         findings_by_subject,
+         root,
+         claims_by_req
+       ) do
     meta = subject["meta"]
     statement = meta_field(meta, :summary, "")
     title = subject["title"] || id
@@ -188,8 +208,23 @@ defmodule SpecLedEx.Review do
       spec_diff: spec_diff,
       spec_changes: spec_changes,
       findings: Map.get(findings_by_subject, id, []),
+      claims_by_req: claims_by_req,
       changed_files: changed_files
     }
+  end
+
+  defp group_claims_by_subject(verifier_report) do
+    claims =
+      verifier_report
+      |> Map.get("verification", %{})
+      |> Map.get("claims", [])
+
+    claims
+    |> Enum.group_by(& &1["subject_id"])
+    |> Map.new(fn {sid, sub_claims} ->
+      grouped = Enum.group_by(sub_claims, & &1["cover_id"])
+      {sid, grouped}
+    end)
   end
 
   defp empty_spec_changes do
