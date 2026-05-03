@@ -46,7 +46,7 @@ defmodule SpecLedEx.Index do
 
   defp maybe_add_tag_data(index, root, opts) do
     config = opts[:config] || Config.load(root)
-    test_tags = config.test_tags || %Config.TestTags{}
+    %Config.TestTags{} = test_tags = config.test_tags || %Config.TestTags{}
 
     enabled? =
       case Keyword.get(opts, :test_tags) do
@@ -55,7 +55,7 @@ defmodule SpecLedEx.Index do
       end
 
     if enabled? do
-      effective = %Config.TestTags{test_tags | enabled: true}
+      effective = %{test_tags | enabled: true}
       scan_paths = Enum.map(effective.paths, &expand_path(&1, root))
 
       {:ok, tag_map, parse_errors, dynamics} =
@@ -148,13 +148,17 @@ defmodule SpecLedEx.Index do
         end
       )
 
-    Enum.reduce(decisions, Map.merge(subject_summary, %{
+    Enum.reduce(
+      decisions,
+      Map.merge(subject_summary, %{
         "decisions" => 0,
         "decision_parse_errors" => 0
-      }), fn decision, acc ->
+      }),
+      fn decision, acc ->
         acc
         |> Map.update!("decisions", &(&1 + 1))
         |> Map.update!("decision_parse_errors", &(&1 + length(decision["parse_errors"] || [])))
-      end)
+      end
+    )
   end
 end
