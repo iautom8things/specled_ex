@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-05-03T14:27:12Z",
+  "description": "Advances: specled.spec_review\n\nADR bodies render as \u003cpre\u003e raw markdown. Render them as styled HTML similar to GitHub: headings, paragraphs, lists, inline code, code blocks, links, block quotes, tables.\n\nPlan: add Earmark dep, helper render_markdown/1 that strips the H1 (since the ADR title is already in the disclosure summary) and converts to HTML with safe defaults (escape inline HTML so a malicious ADR can't inject script tags). Add CSS for the .markdown-body elements.",
+  "id": "specled_-qm1.11",
+  "labels": [],
+  "parent": "specled_-qm1",
+  "priority": 2,
+  "status": "open",
+  "title": "Polish v5: render markdown bodies (ADRs etc.) GitHub-style",
+  "type": "task",
+  "updated_at": "2026-05-03T14:27:12Z"
+}
