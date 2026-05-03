@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-05-03T14:04:56Z",
+  "description": "Advances: specled.spec_review\n\nMake the Code-tab file tree a slide-out drawer instead of a panel above the diffs:\n- Drawer slides out from the LEFT of the Code-tab content area (not the page edge — must stay inside the second/main column).\n- Open by default; clicking a file link in the drawer or scrolling the page closes it.\n- When closed, a small tab on the left edge re-opens it on click.\n- Folders within the tree become individually collapsible (each is its own \u003cdetails\u003e).\n- Same treatment for the misc panel.",
+  "id": "specled_-qm1.10",
+  "labels": [],
+  "parent": "specled_-qm1",
+  "priority": 2,
+  "status": "open",
+  "title": "Polish v4: file tree as slide-out drawer + collapsible folders",
+  "type": "task",
+  "updated_at": "2026-05-03T14:04:56Z"
+}
