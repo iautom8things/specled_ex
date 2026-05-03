@@ -532,11 +532,11 @@ defmodule SpecLedEx.Review.Html do
             <code class="scenario-id">#{h(id)}</code>
             #{Enum.map_join(covers, " ", fn c -> ~s|<span class="pill pill-cover">#{h(c)}</span>| end)}
           </div>
-          <dl class="gherkin">
+          <div class="gherkin">
             #{render_gherkin_section("given", given)}
             #{render_gherkin_section("when", when_)}
             #{render_gherkin_section("then", then_)}
-          </dl>
+          </div>
         </li>
         """
       end),
@@ -547,10 +547,14 @@ defmodule SpecLedEx.Review.Html do
   defp render_gherkin_section(_, []), do: ""
 
   defp render_gherkin_section(label, items) do
-    [
-      ~s|<dt>#{label}</dt>|,
-      Enum.map(items, fn item -> ~s|<dd>#{h(item)}</dd>| end)
-    ]
+    ~s"""
+    <div class="gherkin-row">
+      <span class="gherkin-label">#{h(label)}</span>
+      <ul class="gherkin-items">
+    #{Enum.map_join(items, "\n", fn item -> ~s|    <li>#{h(item)}</li>| end)}
+      </ul>
+    </div>
+    """
   end
 
   defp render_spec_diff(nil), do: ""
@@ -1502,14 +1506,16 @@ defmodule SpecLedEx.Review.Html do
       padding: 2px 8px;
       border-radius: 4px;
     }
-    .gherkin {
-      margin: 0;
+    .gherkin { font-size: 14px; }
+    .gherkin-row {
       display: grid;
-      grid-template-columns: 60px 1fr;
+      grid-template-columns: 64px minmax(0, 1fr);
       gap: 4px 12px;
-      font-size: 14px;
+      align-items: start;
+      margin-bottom: 6px;
     }
-    .gherkin dt {
+    .gherkin-row:last-child { margin-bottom: 0; }
+    .gherkin-label {
       color: var(--fg-muted);
       font-weight: 600;
       text-transform: uppercase;
@@ -1517,7 +1523,19 @@ defmodule SpecLedEx.Review.Html do
       letter-spacing: 0.05em;
       padding-top: 3px;
     }
-    .gherkin dd { margin: 0; padding: 0; color: var(--fg); }
+    .gherkin-items {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      color: var(--fg);
+    }
+    .gherkin-items li { margin: 0; padding: 1px 0; line-height: 1.45; }
+    .gherkin-items li::before {
+      content: "•";
+      color: var(--fg-faint);
+      margin-right: 8px;
+      display: inline-block;
+    }
 
     /* Bindings */
     .bindings { margin: 0; }
