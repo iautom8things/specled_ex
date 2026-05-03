@@ -101,20 +101,6 @@
   "findings": [
     {
       "code": "surface_target_missing",
-      "entity_id": "specled.mix_tasks",
-      "file": ".spec/specs/mix_tasks.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/mix/tasks/spec.review.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.spec_review",
-      "file": ".spec/specs/spec_review.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/mix/tasks/spec.review.ex"
-    },
-    {
-      "code": "surface_target_missing",
       "entity_id": "specled.spec_review",
       "file": ".spec/specs/spec_review.spec.md",
       "level": "warning",
@@ -126,13 +112,6 @@
       "file": ".spec/specs/spec_review.spec.md",
       "level": "warning",
       "message": "Surface entry does not exist: test/specled_ex/review_test.exs"
-    },
-    {
-      "code": "verification_target_missing",
-      "entity_id": "specled.spec_review",
-      "file": ".spec/specs/spec_review.spec.md",
-      "level": "warning",
-      "message": "Verification target file does not exist: lib/mix/tasks/spec.review.ex"
     },
     {
       "code": "verification_target_missing",
@@ -1515,7 +1494,7 @@
     "decision_parse_errors": 0,
     "decisions": 7,
     "exceptions": 0,
-    "findings": 6,
+    "findings": 3,
     "requirements": 66,
     "scenarios": 14,
     "subjects": 13,
@@ -2156,7 +2135,7 @@
         "kind": "source_file",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/mix/tasks/spec.review.ex",
         "verification_index": 1
@@ -2167,7 +2146,7 @@
         "kind": "source_file",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/mix/tasks/spec.review.ex",
         "verification_index": 1
@@ -2385,9 +2364,9 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 63,
+      "claimed": 61,
       "executed": 0,
-      "linked": 15
+      "linked": 17
     },
     "threshold_failures": 0
   },
