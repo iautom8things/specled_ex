@@ -2,14 +2,15 @@
   "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-05-03T17:36:32Z",
   "created": "2026-05-03T17:32:27Z",
   "description": "Advances: specled.spec_review\n\nTwo improvements:\n1. Each subject in the left ToC needs a small change-status pip (NEW / EDITED) next to its id so reviewers can tell at a glance why that subject is in the affected list.\n\n2. Triage area is too prominent when there's nothing alarming to show. Wrap it in a \u003cdetails\u003e that opens by default only when there are findings; collapses to a one-line summary otherwise. Inside the disclosure, show what's possible: severity counts, per-subject finding badges (clean/N errors/N warnings), unmapped changes presence.",
   "id": "specled_-qm1.15",
   "labels": [],
   "parent": "specled_-qm1",
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "Polish v9: TOC change pills + collapsible triage",
   "type": "task",
-  "updated_at": "2026-05-03T17:32:31Z"
+  "updated_at": "2026-05-03T17:36:32Z"
 }
