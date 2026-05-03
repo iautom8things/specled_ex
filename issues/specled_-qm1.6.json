@@ -1,6 +1,8 @@
 {
   "assignee": "",
-  "blocked_by": [],
+  "blocked_by": [
+    "specled_-qm1.5"
+  ],
   "blocks": [],
   "created": "2026-05-03T11:41:50Z",
   "description": "Advances: specled.spec_review\n\nAdd a documented GitHub Actions workflow (template under priv/spec_init/workflows/spec_review.yml.eex or similar, plus a README section) that:\n- Runs `mix spec.review --output spec_review.html` on PR open/sync\n- Deploys the HTML to a per-PR path on a gh-pages-style branch (e.g., /pr/${PR}/index.html)\n- Posts/updates a PR comment with the link to https://\u003cowner\u003e.github.io/\u003crepo\u003e/pr/\u003cPR\u003e/\n\nAuto-cleanup of stale per-PR paths is explicitly deferred (noted as follow-up in the spec). Keep the workflow snippet copy-pastable; don't require GH App or hosted infra.",
@@ -11,5 +13,5 @@
   "status": "open",
   "title": "Document GH Action workflow for CI rendering",
   "type": "task",
-  "updated_at": "2026-05-03T11:41:50Z"
+  "updated_at": "2026-05-03T11:42:02Z"
 }
