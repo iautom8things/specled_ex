@@ -2,14 +2,13 @@
   "assignee": "",
   "blocked_by": [],
   "blocks": [],
-  "closed_at": "2026-05-03T15:21:17Z",
   "created": "2026-05-03T11:40:50Z",
   "description": "Advances: none (epic wrapper — children advance specled.spec_review, a new subject authored as first child task)\n\nSelf-contained HTML artifact rendered by a new `mix spec.review` task. Spec-first navigation: each affected subject is a card with the prose statement headline + tabs (Spec / Code / Coverage / Decisions). Top triage panel for findings (collapses to green check when clean). Misc panel for unmapped changes. Same artifact runs locally and in CI (deployed to gh-pages, linked from PR comment). v1 is pure viewer — acceptance state, persistent durability, and per-subject sign-off are explicit non-goals.\n\nApproved spec: ~/Documents/my-vault/LLMs/plans/-Users-mz-src-specled-ex/2026-05-03-spec-aware-pr-review/00-spec.md",
   "id": "specled_-qm1",
   "labels": [],
   "priority": 2,
-  "status": "closed",
+  "status": "open",
   "title": "[EPIC] spec-aware PR review (HTML viewer)",
   "type": "epic",
-  "updated_at": "2026-05-03T15:21:17Z"
+  "updated_at": "2026-05-03T15:40:01Z"
 }
