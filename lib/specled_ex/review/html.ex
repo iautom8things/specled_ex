@@ -771,18 +771,20 @@ defmodule SpecLedEx.Review.Html do
   defp render_files_section(tree, anchor_prefix, heading, diff_blocks) do
     ~s"""
     <div class="files-section" data-tree-section>
-      <button class="file-tree-handle" type="button" aria-label="Show file tree" data-tree-action="open">
-        <span class="file-tree-handle-icon" aria-hidden="true">▸</span>
-      </button>
-      <aside class="file-tree-panel" aria-label="File tree">
-        <header class="file-tree-header">
-          <span class="file-tree-title">#{h(heading)}</span>
-          <button class="file-tree-close" type="button" aria-label="Hide file tree" data-tree-action="close">×</button>
-        </header>
-        <div class="file-tree-scroll">
-          #{IO.iodata_to_binary(render_tree_nodes(tree, anchor_prefix))}
-        </div>
-      </aside>
+      <div class="file-tree-rail" aria-hidden="false">
+        <aside class="file-tree-panel" aria-label="File tree">
+          <header class="file-tree-header">
+            <span class="file-tree-title">#{h(heading)}</span>
+            <button class="file-tree-close" type="button" aria-label="Hide file tree" data-tree-action="close">×</button>
+          </header>
+          <div class="file-tree-scroll">
+            #{IO.iodata_to_binary(render_tree_nodes(tree, anchor_prefix))}
+          </div>
+        </aside>
+        <button class="file-tree-handle" type="button" aria-label="Show file tree" data-tree-action="open">
+          <span class="file-tree-handle-icon" aria-hidden="true">▸</span>
+        </button>
+      </div>
       <div class="files-list">
         #{IO.iodata_to_binary(diff_blocks)}
       </div>
@@ -1508,19 +1510,36 @@ defmodule SpecLedEx.Review.Html do
       border-radius: 0 0 4px 4px;
     }
 
-    /* Files section: slide-out file-tree drawer next to file diffs */
+    /* Files section: slide-out file-tree drawer next to file diffs.
+       The drawer/handle live in an absolutely-positioned rail so they
+       never claim vertical layout space — file diffs always start at
+       the top of the section. Sticky positioning inside the rail makes
+       both the panel and the handle follow the user's scroll. */
     .files-section {
       position: relative;
-      display: grid;
-      grid-template-columns: 240px minmax(0, 1fr);
-      gap: 16px;
-      transition: grid-template-columns 0.25s ease;
+      padding-left: 256px;
+      transition: padding-left 0.25s ease;
     }
-    .files-section.tree-collapsed { grid-template-columns: 24px minmax(0, 1fr); }
+    .files-section.tree-collapsed { padding-left: 32px; }
 
-    .file-tree-panel {
+    .file-tree-rail {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 240px;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .file-tree-panel,
+    .file-tree-handle {
+      pointer-events: auto;
       position: sticky;
       top: 16px;
+    }
+
+    .file-tree-panel {
+      width: 240px;
       max-height: calc(100vh - 32px);
       background: var(--bg);
       border: 1px solid var(--border);
@@ -1572,9 +1591,6 @@ defmodule SpecLedEx.Review.Html do
     }
 
     .file-tree-handle {
-      position: sticky;
-      top: 16px;
-      align-self: start;
       width: 24px;
       height: 64px;
       background: var(--card-bg);
@@ -1589,15 +1605,14 @@ defmodule SpecLedEx.Review.Html do
       font-size: 13px;
       font-family: inherit;
       padding: 0;
-      grid-column: 1;
-      grid-row: 1;
       z-index: 2;
     }
     .file-tree-handle:hover { background: var(--neutral-bg); color: var(--fg); }
     .files-section.tree-collapsed .file-tree-handle { display: flex; }
+    .files-section.tree-collapsed .file-tree-panel { display: none; }
     .file-tree-handle-icon { display: inline-block; }
 
-    .files-list { min-width: 0; grid-column: 2; }
+    .files-list { min-width: 0; }
 
     .tree { list-style: none; margin: 0; padding: 0 12px; font-family: var(--code-font); font-size: 12px; }
     .tree .tree { padding: 0 0 0 14px; margin-top: 2px; border-left: 1px dotted var(--border-strong); margin-left: 6px; }
@@ -1635,19 +1650,19 @@ defmodule SpecLedEx.Review.Html do
     .tree-leaf a:hover { background: var(--neutral-bg); text-decoration: underline; }
 
     @media (max-width: 760px) {
-      .files-section, .files-section.tree-collapsed {
-        grid-template-columns: minmax(0, 1fr);
-      }
+      .files-section, .files-section.tree-collapsed { padding-left: 0; }
+      .file-tree-rail { position: static; width: auto; height: auto; pointer-events: auto; }
       .file-tree-panel {
         position: static;
+        width: 100%;
         max-height: 240px;
         transform: none !important;
         opacity: 1 !important;
         pointer-events: auto !important;
         margin-bottom: 12px;
+        display: flex !important;
       }
       .file-tree-handle { display: none !important; }
-      .files-list { grid-column: 1; }
     }
 
     /* Diff */
