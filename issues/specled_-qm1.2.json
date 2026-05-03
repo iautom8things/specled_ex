@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-05-03T11:41:29Z",
+  "description": "Advances: specled.spec_review\n\nCreate lib/specled_ex/review.ex with build_view(index, root, opts) returning a structured view-model map ready for the renderer. Pulls from ChangeAnalysis.analyze (HEAD vs base), Verifier.verify (findings + claims), per-subject extraction of bindings via EffectiveBinding, code-changes grouped by subject (which files changed map to which subjects via Coverage.subject_file_map), unmapped files for the misc panel, decisions touched by the change.\n\nAlso create lib/specled_ex/review/file_diff.ex — a helper that shells out to `git diff` (unified format) for a given (base_ref, head_ref, paths) and parses hunks into structured form: %{file, hunks: [%{old_start, new_start, lines: [{:ctx | :add | :del, content}]}]}. Used by the renderer for both the misc panel and code-change tabs.",
+  "id": "specled_-qm1.2",
+  "labels": [],
+  "parent": "specled_-qm1",
+  "priority": 2,
+  "status": "open",
+  "title": "Build view-model assembly + file-diff helper",
+  "type": "task",
+  "updated_at": "2026-05-03T11:41:29Z"
+}
