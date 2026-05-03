@@ -3,7 +3,9 @@
   "blocked_by": [
     "specled_-qm1.2"
   ],
-  "blocks": [],
+  "blocks": [
+    "specled_-qm1.4"
+  ],
   "created": "2026-05-03T11:41:35Z",
   "description": "Advances: specled.spec_review\n\nCreate lib/specled_ex/review/html.ex with render(view_model) returning a self-contained HTML iolist/string. EEx templates (inline or under priv/templates/), all CSS embedded in \u003cstyle\u003e, minimal vanilla JS for tab switching and section collapse — no external CDN, no framework. Layout:\n\n- Top: triage panel — finding count + severity breakdown + affected subject count. When zero findings, collapses to a single green confirmation row.\n- Per-subject cards: prose statement headline; tabs for Spec / Code / Coverage / Decisions; inline finding badges where relevant\n- Bottom: \"Outside the spec system\" misc panel with file diffs for unmapped files\n\nVisual polish: clean typography, generous whitespace, color used purposefully for severity. Accessible (semantic HTML, sufficient contrast). Aim for \"well-crafted and beautiful\" — this is the user-facing surface and design quality matters.",
   "id": "specled_-qm1.3",
