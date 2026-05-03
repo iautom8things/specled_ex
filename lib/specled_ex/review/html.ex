@@ -531,15 +531,24 @@ defmodule SpecLedEx.Review.Html do
     ~S|<p class="empty-tab">No code files in this change set map to this subject.</p>|
   end
 
-  def render_code_tab(%{code_changes: changes}) do
-    Enum.map(changes, fn %{file: file, lines: lines} ->
-      [
-        ~s|<div class="code-change">|,
-        ~s|<div class="filename"><code>#{h(file)}</code></div>|,
-        render_diff_block(lines),
-        ~S|</div>|
-      ]
-    end)
+  def render_code_tab(%{code_changes: changes, id: id}) do
+    anchor_prefix = "code-" <> slug(id)
+    paths = Enum.map(changes, & &1.file)
+    tree = build_path_tree(paths)
+
+    [
+      render_path_tree(tree, anchor_prefix, "Files (#{length(paths)})"),
+      Enum.map(changes, fn %{file: file, lines: lines} ->
+        anchor = anchor_prefix <> "-" <> slug(file)
+
+        ~s"""
+        <details class="code-change" id="#{anchor}" open>
+          <summary class="filename"><code>#{h(file)}</code></summary>
+          #{IO.iodata_to_binary(render_diff_block(lines))}
+        </details>
+        """
+      end)
+    ]
   end
 
   @doc false
@@ -705,20 +714,97 @@ defmodule SpecLedEx.Review.Html do
   end
 
   defp render_unmapped(changes) do
+    paths = Enum.map(changes, & &1.file)
+    tree = build_path_tree(paths)
+
     [
       ~s|<section id="misc" class="misc" aria-label="Outside the spec system">|,
       ~s|<h2 class="section-heading">Outside the spec system (#{length(changes)})</h2>|,
       ~S|<p class="misc-explainer">These files changed but do not map to any spec subject. Triangulation does not apply here — review the diff directly.</p>|,
+      render_path_tree(tree, "misc", "Files (#{length(paths)})"),
       Enum.map(changes, fn %{file: file, lines: lines} ->
-        [
-          ~s|<div class="misc-change">|,
-          ~s|<div class="filename"><code>#{h(file)}</code></div>|,
-          render_diff_block(lines),
-          ~S|</div>|
-        ]
+        anchor = "misc-" <> slug(file)
+
+        ~s"""
+        <details class="misc-change" id="#{anchor}" open>
+          <summary class="filename"><code>#{h(file)}</code></summary>
+          #{IO.iodata_to_binary(render_diff_block(lines))}
+        </details>
+        """
       end),
       ~S|</section>|
     ]
+  end
+
+  # ----------------------------------------------------------------------
+  # Path tree
+  # ----------------------------------------------------------------------
+
+  # Builds a nested map representing a folder/file tree from a list of paths.
+  # Leaves are tagged {:file, full_path} for anchor linking.
+  defp build_path_tree(paths) do
+    Enum.reduce(paths, %{}, fn path, tree ->
+      parts = path |> String.split("/") |> Enum.reject(&(&1 == ""))
+      insert_path(tree, parts, path)
+    end)
+  end
+
+  defp insert_path(tree, [leaf], full_path) do
+    Map.put(tree, leaf, {:file, full_path})
+  end
+
+  defp insert_path(tree, [head | rest], full_path) do
+    sub =
+      case Map.get(tree, head) do
+        nil -> %{}
+        existing when is_map(existing) -> existing
+        # Should not happen unless a path collides with a directory name;
+        # treat as a fresh subtree.
+        _ -> %{}
+      end
+
+    Map.put(tree, head, insert_path(sub, rest, full_path))
+  end
+
+  defp render_path_tree(tree, anchor_prefix, heading) do
+    [
+      ~s|<details class="file-tree" open>|,
+      ~s|<summary class="file-tree-summary">#{h(heading)}</summary>|,
+      render_tree_nodes(tree, anchor_prefix),
+      ~S|</details>|
+    ]
+  end
+
+  defp render_tree_nodes(tree, anchor_prefix) do
+    items =
+      tree
+      |> Enum.sort_by(fn {name, value} ->
+        # Folders before files at the same level.
+        case value do
+          {:file, _} -> {1, name}
+          _ -> {0, name}
+        end
+      end)
+      |> Enum.map(fn
+        {name, {:file, full_path}} ->
+          anchor = anchor_prefix <> "-" <> slug(full_path)
+
+          ~s"""
+          <li class="tree-leaf">
+            <a href="##{anchor}"><span class="tree-icon">└</span><code>#{h(name)}</code></a>
+          </li>
+          """
+
+        {name, sub_tree} when is_map(sub_tree) ->
+          ~s"""
+          <li class="tree-folder">
+            <span class="tree-folder-name"><span class="tree-icon">▾</span><code>#{h(name)}/</code></span>
+            #{IO.iodata_to_binary(render_tree_nodes(sub_tree, anchor_prefix))}
+          </li>
+          """
+      end)
+
+    [~S|<ul class="tree">|, items, ~S|</ul>|]
   end
 
   defp render_diff_block([]) do
@@ -753,7 +839,13 @@ defmodule SpecLedEx.Review.Html do
     |> String.replace("'", "&#39;")
   end
 
-  defp slug(id) when is_binary(id), do: String.replace(id, ~r/[^a-z0-9]+/, "-")
+  defp slug(id) when is_binary(id) do
+    id
+    |> String.downcase()
+    |> String.replace(~r/[^a-z0-9]+/, "-")
+    |> String.trim("-")
+  end
+
   defp slug(_), do: "x"
 
   defp format_dt(%DateTime{} = dt), do: DateTime.to_iso8601(dt)
@@ -1361,19 +1453,89 @@ defmodule SpecLedEx.Review.Html do
       padding: 24px;
     }
     .misc-explainer { color: var(--fg-muted); margin: 0 0 16px 0; font-size: 13px; }
-    .misc-change { margin-bottom: 16px; }
-    .misc-change:last-child { margin-bottom: 0; }
-    .code-change { margin-bottom: 16px; }
-    .code-change:last-child { margin-bottom: 0; }
+    .misc-change, .code-change {
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--card-bg);
+      scroll-margin-top: 16px;
+    }
+    .misc-change:last-child, .code-change:last-child { margin-bottom: 0; }
     .filename {
       background: var(--neutral-bg);
-      padding: 6px 12px;
-      border-radius: 4px 4px 0 0;
+      padding: 8px 12px;
       font-size: 12px;
-      border: 1px solid var(--border);
-      border-bottom: none;
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 4px;
     }
+    .misc-change[open] > .filename, .code-change[open] > .filename {
+      border-radius: 4px 4px 0 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .filename::-webkit-details-marker { display: none; }
+    .filename::before {
+      content: "▾";
+      color: var(--fg-faint);
+      font-size: 10px;
+      width: 10px;
+    }
+    .misc-change:not([open]) > .filename::before,
+    .code-change:not([open]) > .filename::before { content: "▸"; }
     .filename code { font-family: var(--code-font); }
+    .misc-change > .diff, .code-change > .diff {
+      border: none;
+      border-radius: 0 0 4px 4px;
+    }
+
+    /* File tree (mini-TOC inside Code tab and misc panel) */
+    .file-tree {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      margin-bottom: 16px;
+      padding: 4px 0;
+    }
+    .file-tree-summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--fg-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .file-tree-summary::-webkit-details-marker { display: none; }
+    .file-tree-summary::before {
+      content: "▾";
+      color: var(--fg-faint);
+      font-size: 10px;
+      width: 10px;
+    }
+    .file-tree:not([open]) .file-tree-summary::before { content: "▸"; }
+    .tree { list-style: none; margin: 0 0 4px 0; padding: 0 12px 4px; font-family: var(--code-font); font-size: 12px; }
+    .tree .tree { padding: 0 0 0 16px; border-left: 1px dotted var(--border-strong); margin-left: 4px; }
+    .tree-folder { padding: 2px 0; color: var(--fg); }
+    .tree-folder-name { display: flex; align-items: center; gap: 6px; }
+    .tree-leaf { padding: 1px 0; }
+    .tree-leaf a {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+    .tree-leaf a:hover { background: var(--neutral-bg); text-decoration: underline; }
+    .tree-icon { color: var(--fg-faint); display: inline-block; width: 10px; }
 
     /* Diff */
     .diff {
