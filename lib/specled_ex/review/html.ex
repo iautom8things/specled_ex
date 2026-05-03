@@ -668,11 +668,35 @@ defmodule SpecLedEx.Review.Html do
         #{status_pill}#{change_type_pill}#{date_chip}
       </summary>
       <div class="adr-body-wrap">
-        <pre class="adr-body">#{h(adr.body_text)}</pre>
+        <div class="markdown-body">#{render_markdown(adr.body_text)}</div>
         #{if adr.file, do: ~s|<div class="adr-source"><code>#{h(adr.file)}</code></div>|, else: ""}
       </div>
     </details>
     """
+  end
+
+  # Renders a markdown string as HTML using Earmark with safe defaults.
+  # The leading H1 (the ADR title) is stripped because the title already
+  # appears in the disclosure summary, so duplicating it is noise.
+  defp render_markdown(text) when is_binary(text) do
+    stripped = strip_leading_h1(text)
+
+    case Earmark.as_html(stripped, escape: true, compact_output: false) do
+      {:ok, html, _} -> html
+      {:error, html, _messages} -> html
+    end
+  end
+
+  defp render_markdown(_), do: ""
+
+  defp strip_leading_h1(text) do
+    text
+    |> String.split("\n", parts: 2)
+    |> case do
+      ["# " <> _, rest] -> String.trim_leading(rest, "\n")
+      [first, rest] -> first <> "\n" <> rest
+      [single] -> single
+    end
   end
 
   defp render_decisions_changed([]) do
@@ -1428,22 +1452,100 @@ defmodule SpecLedEx.Review.Html do
     .adr-title-missing { color: var(--fg-faint); font-style: italic; flex: 1; }
     .adr-date { color: var(--fg-muted); font-size: 12px; font-family: var(--code-font); }
     .adr-body-wrap { padding: 0 14px 14px; }
-    .adr-body {
+    .adr-source { padding-top: 6px; font-size: 11px; color: var(--fg-faint); text-align: right; }
+
+    /* GitHub-style markdown rendering for ADR bodies. */
+    .markdown-body {
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 4px;
-      padding: 12px 14px;
-      margin: 0;
+      padding: 16px 20px;
       font-family: var(--body-font);
-      font-size: 13px;
-      line-height: 1.55;
+      font-size: 14px;
+      line-height: 1.6;
       color: var(--fg);
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      max-height: 480px;
+      max-height: 560px;
       overflow-y: auto;
+      word-wrap: break-word;
     }
-    .adr-source { padding-top: 6px; font-size: 11px; color: var(--fg-faint); text-align: right; }
+    .markdown-body > *:first-child { margin-top: 0; }
+    .markdown-body > *:last-child { margin-bottom: 0; }
+    .markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4, .markdown-body h5, .markdown-body h6 {
+      margin: 24px 0 12px;
+      font-weight: 600;
+      line-height: 1.25;
+      color: var(--fg);
+    }
+    .markdown-body h1 { font-size: 22px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .markdown-body h2 { font-size: 18px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+    .markdown-body h3 { font-size: 16px; }
+    .markdown-body h4 { font-size: 14px; }
+    .markdown-body h5 { font-size: 13px; color: var(--fg-muted); }
+    .markdown-body h6 { font-size: 12px; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .markdown-body p { margin: 0 0 12px; }
+    .markdown-body a { color: var(--accent); text-decoration: none; }
+    .markdown-body a:hover { text-decoration: underline; }
+    .markdown-body strong { font-weight: 600; }
+    .markdown-body em { font-style: italic; }
+    .markdown-body code {
+      font-family: var(--code-font);
+      font-size: 0.9em;
+      background: var(--neutral-bg);
+      border-radius: 3px;
+      padding: 1px 5px;
+      color: var(--fg);
+    }
+    .markdown-body pre {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 12px 14px;
+      overflow-x: auto;
+      font-size: 12px;
+      line-height: 1.45;
+      margin: 0 0 12px;
+    }
+    .markdown-body pre > code {
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      font-size: inherit;
+    }
+    .markdown-body ul, .markdown-body ol {
+      margin: 0 0 12px;
+      padding-left: 24px;
+    }
+    .markdown-body li { margin: 4px 0; }
+    .markdown-body li > p { margin: 4px 0; }
+    .markdown-body blockquote {
+      margin: 0 0 12px;
+      padding: 4px 12px;
+      color: var(--fg-muted);
+      border-left: 3px solid var(--border-strong);
+      background: var(--bg);
+    }
+    .markdown-body blockquote > :first-child { margin-top: 0; }
+    .markdown-body blockquote > :last-child { margin-bottom: 0; }
+    .markdown-body hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 16px 0;
+    }
+    .markdown-body table {
+      border-collapse: collapse;
+      margin: 0 0 12px;
+      font-size: 13px;
+      display: block;
+      overflow-x: auto;
+    }
+    .markdown-body table th, .markdown-body table td {
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      text-align: left;
+    }
+    .markdown-body table th { background: var(--neutral-bg); font-weight: 600; }
+    .markdown-body table tr:nth-child(2n) td { background: var(--bg); }
+    .markdown-body img { max-width: 100%; height: auto; }
 
     .decisions-changed {
       background: var(--card-bg);
@@ -1519,6 +1621,11 @@ defmodule SpecLedEx.Review.Html do
       position: relative;
       padding-left: 256px;
       transition: padding-left 0.25s ease;
+      /* Ensure the absolutely-positioned drawer rail (height:100% of this
+         section) always has room to render even when every file diff is
+         collapsed and the right column is tiny. Without this the parent
+         subject card's overflow:hidden clips the drawer. */
+      min-height: 320px;
     }
     .files-section.tree-collapsed { padding-left: 32px; }
 
