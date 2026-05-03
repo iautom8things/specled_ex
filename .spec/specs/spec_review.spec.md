@@ -139,7 +139,7 @@ surface:
 ```spec-verification
 - kind: command
   target: mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.spec_review.html_artifact
     - specled.spec_review.spec_first_navigation
