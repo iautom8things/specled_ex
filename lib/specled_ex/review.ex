@@ -64,7 +64,8 @@ defmodule SpecLedEx.Review do
 
     decisions_changed = build_decisions_changed(analysis, index)
     findings = verifier_report["findings"] || []
-    triage = build_triage(findings, length(affected_subjects), unmapped_changes != [])
+    triage = build_triage(findings, affected_subjects, unmapped_changes != [])
+    adrs_by_id = build_adrs_by_id(index, root)
 
     %{
       meta: %{
@@ -78,9 +79,53 @@ defmodule SpecLedEx.Review do
       affected_subjects: affected_subjects,
       unmapped_changes: unmapped_changes,
       decisions_changed: decisions_changed,
+      adrs_by_id: adrs_by_id,
       all_findings: findings
     }
   end
+
+  defp build_adrs_by_id(index, root) do
+    (index["decisions"] || [])
+    |> Map.new(fn decision ->
+      meta = decision["meta"]
+      id = meta_field(meta, :id, nil)
+      file = decision["file"]
+      title = decision["title"] || id
+
+      data = %{
+        id: id,
+        file: file,
+        title: title,
+        status: meta_field(meta, :status, nil),
+        date: meta_field(meta, :date, nil),
+        change_type: meta_field(meta, :change_type, nil),
+        affects: meta_field(meta, :affects, []),
+        superseded_by: meta_field(meta, :superseded_by, nil),
+        replaces: meta_field(meta, :replaces, nil),
+        body_text: read_adr_body(root, file)
+      }
+
+      {id, data}
+    end)
+  end
+
+  defp read_adr_body(root, file) when is_binary(file) do
+    case File.read(Path.join(root, file)) do
+      {:ok, content} -> strip_frontmatter(content)
+      _ -> ""
+    end
+  end
+
+  defp read_adr_body(_root, _file), do: ""
+
+  defp strip_frontmatter("---\n" <> rest) do
+    case String.split(rest, "\n---\n", parts: 2) do
+      [_frontmatter, body] -> String.trim_leading(body, "\n")
+      _ -> rest
+    end
+  end
+
+  defp strip_frontmatter(content), do: content
 
   defp subjects_by_id(index) do
     (index["subjects"] || [])
@@ -149,18 +194,33 @@ defmodule SpecLedEx.Review do
     String.starts_with?(path, ".spec/specs/") or String.starts_with?(path, ".spec/decisions/")
   end
 
-  defp build_triage(findings, affected_count, has_unmapped?) do
+  defp build_triage(findings, affected_subjects, has_unmapped?) do
     by_severity =
       findings
       |> Enum.group_by(& &1["severity"])
       |> Map.new(fn {sev, items} -> {sev, length(items)} end)
 
+    affected_summaries =
+      Enum.map(affected_subjects, fn s ->
+        sev_counts =
+          s.findings
+          |> Enum.group_by(& &1["severity"])
+          |> Map.new(fn {sev, items} -> {sev, length(items)} end)
+
+        %{
+          id: s.id,
+          findings_count: length(s.findings),
+          by_severity: sev_counts
+        }
+      end)
+
     %{
       findings_count: length(findings),
       by_severity: by_severity,
-      affected_subject_count: affected_count,
+      affected_subject_count: length(affected_subjects),
+      affected_subjects: affected_summaries,
       has_unmapped_changes?: has_unmapped?,
-      clean?: findings == [] and not has_unmapped? and affected_count == 0
+      clean?: findings == [] and not has_unmapped? and affected_subjects == []
     }
   end
 

@@ -43,12 +43,17 @@ defmodule SpecLedEx.Review.Html do
         </div>
       </div>
     </header>
-    <main>
-      <%= render_triage(view.triage, view.all_findings) %>
-      <%= render_subjects(view.affected_subjects) %>
-      <%= render_decisions_changed(view.decisions_changed) %>
-      <%= render_unmapped(view.unmapped_changes) %>
-    </main>
+    <div class="layout">
+      <aside class="toc" aria-label="Table of contents">
+        <%= render_toc(view) %>
+      </aside>
+      <main>
+        <%= render_triage(view.triage, view.all_findings) %>
+        <%= render_subjects(view.affected_subjects, view.adrs_by_id) %>
+        <%= render_decisions_changed(view.decisions_changed) %>
+        <%= render_unmapped(view.unmapped_changes) %>
+      </main>
+    </div>
     <footer class="page-footer">
       <span>specled_ex · spec.review</span>
     </footer>
@@ -57,13 +62,68 @@ defmodule SpecLedEx.Review.Html do
   </html>
   """, [:view, :css, :js])
 
+  defp render_toc(view) do
+    [
+      ~S|<nav><ul class="toc-list">|,
+      toc_item("triage", "Triage", triage_toc_badge(view.triage)),
+      ~s|<li class="toc-section"><a href="#subjects">Affected subjects (#{view.triage.affected_subject_count})</a>|,
+      if view.triage.affected_subjects == [] do
+        ""
+      else
+        [
+          ~S|<ul class="toc-sublist">|,
+          Enum.map(view.triage.affected_subjects, fn s ->
+            ~s|<li><a href="#subject-#{slug(s.id)}"><code>#{h(s.id)}</code>#{render_toc_finding_badge(s)}</a></li>|
+          end),
+          ~S|</ul>|
+        ]
+      end,
+      ~S|</li>|,
+      toc_item("decisions-changed", "Decisions changed (#{length(view.decisions_changed)})", ""),
+      toc_item("misc", "Outside the spec system (#{length(view.unmapped_changes)})", ""),
+      ~S|</ul></nav>|
+    ]
+  end
+
+  defp toc_item(anchor, label, badge) do
+    ~s|<li class="toc-section"><a href="##{anchor}">#{h(label)}#{badge}</a></li>|
+  end
+
+  defp triage_toc_badge(%{clean?: true}), do: ~s| <span class="toc-pip toc-pip-clean">✓</span>|
+
+  defp triage_toc_badge(%{findings_count: 0}), do: ""
+
+  defp triage_toc_badge(triage) do
+    cond do
+      Map.get(triage.by_severity, "error", 0) > 0 ->
+        ~s| <span class="toc-pip toc-pip-error">#{triage.findings_count}</span>|
+
+      Map.get(triage.by_severity, "warning", 0) > 0 ->
+        ~s| <span class="toc-pip toc-pip-warning">#{triage.findings_count}</span>|
+
+      true ->
+        ~s| <span class="toc-pip toc-pip-info">#{triage.findings_count}</span>|
+    end
+  end
+
+  defp render_toc_finding_badge(%{findings_count: 0}), do: ""
+
+  defp render_toc_finding_badge(%{by_severity: by_sev, findings_count: count}) do
+    cond do
+      Map.get(by_sev, "error", 0) > 0 -> ~s| <span class="toc-pip toc-pip-error">#{count}</span>|
+      Map.get(by_sev, "warning", 0) > 0 -> ~s| <span class="toc-pip toc-pip-warning">#{count}</span>|
+      true -> ~s| <span class="toc-pip toc-pip-info">#{count}</span>|
+    end
+  end
+
   # covers: specled.spec_review.triage_panel
   # When clean? is true the panel collapses to a single confirmation row;
   # otherwise it summarizes finding count + severity breakdown + affected
-  # subject count and exposes a list of all findings to jump to.
+  # subject count, lists each affected subject with its severity badge
+  # (anchored to its card), and exposes a full findings list.
   defp render_triage(%{clean?: true}, _findings) do
     ~S"""
-    <section class="triage triage-clean" aria-label="Triage summary">
+    <section id="triage" class="triage triage-clean" aria-label="Triage summary">
       <span class="triage-icon" aria-hidden="true">✓</span>
       <span class="triage-headline">No findings · no unmapped changes</span>
     </section>
@@ -73,7 +133,7 @@ defmodule SpecLedEx.Review.Html do
   defp render_triage(triage, findings) do
     [
       ~S"""
-      <section class="triage" aria-label="Triage summary">
+      <section id="triage" class="triage" aria-label="Triage summary">
         <header class="triage-header">
           <h2>Triage</h2>
           <div class="triage-counts">
@@ -95,12 +155,50 @@ defmodule SpecLedEx.Review.Html do
           </div>
         </header>
       """,
+      render_triage_subjects(triage.affected_subjects),
       render_findings_list(findings),
       ~S"""
       </section>
       """
     ]
   end
+
+  defp render_triage_subjects([]), do: ""
+
+  defp render_triage_subjects(subjects) do
+    [
+      ~S|<ul class="triage-subjects">|,
+      Enum.map(subjects, fn s ->
+        badge =
+          cond do
+            s.findings_count == 0 ->
+              ~S|<span class="badge badge-clean">clean</span>|
+
+            Map.get(s.by_severity, "error", 0) > 0 ->
+              ~s|<span class="badge badge-error">#{s.findings_count} #{maybe_plural(s.findings_count, "error")}</span>|
+
+            Map.get(s.by_severity, "warning", 0) > 0 ->
+              ~s|<span class="badge badge-warning">#{s.findings_count} #{maybe_plural(s.findings_count, "warning")}</span>|
+
+            true ->
+              ~s|<span class="badge badge-info">#{s.findings_count} #{maybe_plural(s.findings_count, "finding")}</span>|
+          end
+
+        ~s"""
+        <li>
+          <a class="triage-subject-link" href="#subject-#{slug(s.id)}">
+            <code class="subject-id">#{h(s.id)}</code>
+            #{badge}
+          </a>
+        </li>
+        """
+      end),
+      ~S|</ul>|
+    ]
+  end
+
+  defp maybe_plural(1, word), do: word
+  defp maybe_plural(_, word), do: word <> "s"
 
   defp render_severity_pill(_severity, 0), do: ""
 
@@ -140,20 +238,20 @@ defmodule SpecLedEx.Review.Html do
     ~s|<a class="finding-subject" href="#subject-#{slug(subject_id)}">#{h(subject_id)}</a>|
   end
 
-  defp render_subjects([]), do: ""
+  defp render_subjects([], _adrs), do: ""
 
-  defp render_subjects(subjects) do
+  defp render_subjects(subjects, adrs) do
     [
-      ~s|<section class="subjects" aria-label="Affected subjects">|,
+      ~s|<section id="subjects" class="subjects" aria-label="Affected subjects">|,
       ~s|<h2 class="section-heading">Affected subjects (#{length(subjects)})</h2>|,
-      Enum.map(subjects, &render_subject/1),
+      Enum.map(subjects, &render_subject(&1, adrs)),
       ~S|</section>|
     ]
   end
 
-  defp render_subject(subject) do
+  defp render_subject(subject, adrs) do
     EEx.eval_string(subject_template(),
-      assigns: [s: subject, slug: slug(subject.id)],
+      assigns: [s: subject, slug: slug(subject.id), adrs: adrs],
       trim: false
     )
   end
@@ -195,7 +293,7 @@ defmodule SpecLedEx.Review.Html do
           <%= SpecLedEx.Review.Html.render_coverage_tab(assigns[:s]) %>
         </section>
         <section class="tab-panel" id="decisions-<%= assigns[:slug] %>" role="tabpanel">
-          <%= SpecLedEx.Review.Html.render_decisions_tab(assigns[:s]) %>
+          <%= SpecLedEx.Review.Html.render_decisions_tab(assigns[:s], assigns[:adrs]) %>
         </section>
       </div>
     </article>
@@ -408,24 +506,69 @@ defmodule SpecLedEx.Review.Html do
   end
 
   @doc false
-  def render_decisions_tab(%{decision_refs: []}) do
+  def render_decisions_tab(%{decision_refs: []}, _adrs) do
     ~S|<p class="empty-tab">No ADRs referenced by this subject.</p>|
   end
 
-  def render_decisions_tab(%{decision_refs: refs}) do
+  def render_decisions_tab(%{decision_refs: refs}, adrs) do
     [
       ~s|<h4 class="tab-heading">ADRs referenced (#{length(refs)})</h4>|,
-      ~S|<ul class="decision-ref-list">|,
-      Enum.map(refs, fn id -> ~s|<li><code>#{h(id)}</code></li>| end),
-      ~S|</ul>|
+      ~S|<div class="adr-list">|,
+      Enum.map(refs, fn id -> render_adr_disclosure(id, Map.get(adrs || %{}, id)) end),
+      ~S|</div>|
     ]
   end
 
-  defp render_decisions_changed([]), do: ""
+  defp render_adr_disclosure(id, nil) do
+    ~s"""
+    <details class="adr">
+      <summary class="adr-summary">
+        <code class="adr-id">#{h(id)}</code>
+        <span class="adr-title-missing">unknown ADR (not found in index)</span>
+      </summary>
+    </details>
+    """
+  end
+
+  defp render_adr_disclosure(_id, adr) do
+    status_pill =
+      if adr.status, do: ~s|<span class="pill pill-neutral">#{h(adr.status)}</span>|, else: ""
+
+    date_chip =
+      if adr.date, do: ~s|<span class="adr-date">#{h(adr.date)}</span>|, else: ""
+
+    change_type_pill =
+      if adr.change_type,
+        do: ~s|<span class="pill pill-cover">#{h(adr.change_type)}</span>|,
+        else: ""
+
+    ~s"""
+    <details class="adr">
+      <summary class="adr-summary">
+        <code class="adr-id">#{h(adr.id)}</code>
+        <span class="adr-title">#{h(adr.title)}</span>
+        #{status_pill}#{change_type_pill}#{date_chip}
+      </summary>
+      <div class="adr-body-wrap">
+        <pre class="adr-body">#{h(adr.body_text)}</pre>
+        #{if adr.file, do: ~s|<div class="adr-source"><code>#{h(adr.file)}</code></div>|, else: ""}
+      </div>
+    </details>
+    """
+  end
+
+  defp render_decisions_changed([]) do
+    ~S"""
+    <section id="decisions-changed" class="decisions-changed" aria-label="Decisions changed">
+      <h2 class="section-heading">Decisions changed (0)</h2>
+      <p class="empty-tab">No ADR files changed in this change set.</p>
+    </section>
+    """
+  end
 
   defp render_decisions_changed(decisions) do
     [
-      ~s|<section class="decisions-changed" aria-label="Decisions changed">|,
+      ~s|<section id="decisions-changed" class="decisions-changed" aria-label="Decisions changed">|,
       ~s|<h2 class="section-heading">Decisions changed (#{length(decisions)})</h2>|,
       ~S|<ul class="decision-changed-list">|,
       Enum.map(decisions, fn d ->
@@ -445,7 +588,7 @@ defmodule SpecLedEx.Review.Html do
 
   defp render_unmapped([]) do
     ~S"""
-    <section class="misc" aria-label="Outside the spec system">
+    <section id="misc" class="misc" aria-label="Outside the spec system">
       <h2 class="section-heading">Outside the spec system (0)</h2>
       <p class="empty-tab">All file changes in this change set map to a spec subject.</p>
     </section>
@@ -454,7 +597,7 @@ defmodule SpecLedEx.Review.Html do
 
   defp render_unmapped(changes) do
     [
-      ~s|<section class="misc" aria-label="Outside the spec system">|,
+      ~s|<section id="misc" class="misc" aria-label="Outside the spec system">|,
       ~s|<h2 class="section-heading">Outside the spec system (#{length(changes)})</h2>|,
       ~S|<p class="misc-explainer">These files changed but do not map to any spec subject. Triangulation does not apply here — review the diff directly.</p>|,
       Enum.map(changes, fn %{file: file, lines: lines} ->
@@ -582,13 +725,21 @@ defmodule SpecLedEx.Review.Html do
     .ref { font-family: var(--code-font); font-size: 12px; }
     .ref-sep { color: var(--fg-faint); margin: 0 4px; }
 
-    main {
+    .layout {
       max-width: 1280px;
       margin: 0 auto;
       padding: 24px 32px 48px;
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr);
+      gap: 32px;
+      align-items: start;
+    }
+
+    main {
       display: flex;
       flex-direction: column;
       gap: 32px;
+      min-width: 0;
     }
 
     .section-heading {
@@ -599,6 +750,62 @@ defmodule SpecLedEx.Review.Html do
       color: var(--fg-muted);
       margin: 0 0 16px 0;
     }
+
+    /* TOC */
+    .toc {
+      position: sticky;
+      top: 16px;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 13px;
+    }
+    .toc-list, .toc-sublist { list-style: none; margin: 0; padding: 0; }
+    .toc-section { margin: 4px 0; }
+    .toc-section > a {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      color: var(--fg);
+      text-decoration: none;
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .toc-section > a:hover { background: var(--neutral-bg); }
+    .toc-sublist { margin-top: 4px; padding-left: 8px; border-left: 2px solid var(--border); }
+    .toc-sublist li { margin: 2px 0; }
+    .toc-sublist a {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      color: var(--fg-muted);
+      text-decoration: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: 400;
+    }
+    .toc-sublist a:hover { background: var(--neutral-bg); color: var(--fg); }
+    .toc-sublist code { font-size: 11px; }
+    .toc-pip {
+      display: inline-block;
+      min-width: 18px;
+      padding: 0 6px;
+      border-radius: 9px;
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      line-height: 16px;
+    }
+    .toc-pip-clean { background: var(--success-bg); color: var(--success); }
+    .toc-pip-error { background: var(--error-bg); color: var(--error); }
+    .toc-pip-warning { background: var(--warning-bg); color: var(--warning); }
+    .toc-pip-info { background: var(--info-bg); color: var(--info); }
 
     /* Triage */
     .triage {
@@ -621,6 +828,31 @@ defmodule SpecLedEx.Review.Html do
     .triage-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
     .triage-header h2 { margin: 0; font-size: 18px; font-weight: 600; }
     .triage-counts { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .triage-subjects {
+      list-style: none;
+      margin: 16px 0 0 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .triage-subject-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 6px 10px;
+      border-radius: 4px;
+      text-decoration: none;
+      color: var(--fg);
+      border: 1px solid transparent;
+    }
+    .triage-subject-link:hover {
+      background: var(--neutral-bg);
+      border-color: var(--border);
+    }
+    .badge-clean { background: var(--success-bg); color: var(--success); }
 
     .pill {
       display: inline-block;
@@ -869,6 +1101,54 @@ defmodule SpecLedEx.Review.Html do
     .decision-ref-list { list-style: none; margin: 0; padding: 0; }
     .decision-ref-list li { padding: 4px 0; font-family: var(--code-font); font-size: 13px; }
 
+    .adr-list { display: flex; flex-direction: column; gap: 8px; }
+    .adr {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+    }
+    .adr[open] { background: var(--card-bg); }
+    .adr-summary {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 10px 14px;
+      cursor: pointer;
+      list-style: none;
+      font-size: 13px;
+    }
+    .adr-summary::-webkit-details-marker { display: none; }
+    .adr-summary::before {
+      content: "▸";
+      color: var(--fg-faint);
+      font-size: 10px;
+      width: 10px;
+      transition: transform 0.1s ease;
+    }
+    .adr[open] .adr-summary::before { transform: rotate(90deg); }
+    .adr-id { font-family: var(--code-font); font-size: 12px; color: var(--fg); background: var(--neutral-bg); padding: 2px 8px; border-radius: 4px; }
+    .adr-title { color: var(--fg); flex: 1; min-width: 0; }
+    .adr-title-missing { color: var(--fg-faint); font-style: italic; flex: 1; }
+    .adr-date { color: var(--fg-muted); font-size: 12px; font-family: var(--code-font); }
+    .adr-body-wrap { padding: 0 14px 14px; }
+    .adr-body {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 12px 14px;
+      margin: 0;
+      font-family: var(--body-font);
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--fg);
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-height: 480px;
+      overflow-y: auto;
+    }
+    .adr-source { padding-top: 6px; font-size: 11px; color: var(--fg-faint); text-align: right; }
+
     .decisions-changed {
       background: var(--card-bg);
       border: 1px solid var(--border);
@@ -940,8 +1220,16 @@ defmodule SpecLedEx.Review.Html do
       text-align: right;
     }
 
+    /* Anchor scroll offsets so sticky headers don't cover the target */
+    #triage, #subjects, #decisions-changed, #misc, .subject { scroll-margin-top: 16px; }
+
+    @media (max-width: 960px) {
+      .layout { grid-template-columns: 1fr; }
+      .toc { position: static; max-height: none; }
+    }
+
     @media (max-width: 720px) {
-      .page-header, main, .page-footer { padding-left: 16px; padding-right: 16px; }
+      .page-header, .layout, .page-footer { padding-left: 16px; padding-right: 16px; }
       .finding-item { grid-template-columns: 1fr; gap: 4px; }
     }
     """
