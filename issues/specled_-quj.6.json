@@ -4,6 +4,7 @@
     "specled_-quj.2"
   ],
   "blocks": [],
+  "closed_at": "2026-05-04T16:43:33Z",
   "created": "2026-05-04T15:17:44Z",
   "description": "Advances: specled.spec_review\n\nThe Coverage tab shows tier badges (EXECUTED/LINKED/CLAIMED/UNCOVERED) but never opens the box: which MFAs in the requirement's binding closure were reached, and by which tests? That's the data the per-test coverdata artifact provides; without it surfaced, branch_guard_untested_realization is opaque.\n\nPer requirement, render: \"Closure: N MFAs. Reached: M (by tests T1, T2). Unreached: K.\" Source the closure from realization tier output; source per-test reach from .spec/_coverage/per_test.coverdata via the existing triangulation pipeline (lib/specled_ex/coverage_triangulation.ex).\n\nShould degrade to a clear \"coverage artifact unavailable\" message when the artifact is missing — leans on child #2's :degraded leg state.",
   "id": "specled_-quj.6",
@@ -24,7 +25,7 @@
     }
   ],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "Coverage tab: per-requirement bind-closure view",
   "type": "task",
   "updated_at": "2026-05-04T16:43:33Z"
