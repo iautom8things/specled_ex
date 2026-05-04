@@ -262,6 +262,7 @@ defmodule SpecLedEx.Review.Html do
 
     ~s"""
     <header class="sync-headline">
+      #{render_degraded_banner(triage)}
       <div class="sync-headline-row">
         <span class="sync-headline-icon #{icon_class}" aria-hidden="true">#{icon}</span>
         <div class="sync-headline-text">
@@ -272,6 +273,34 @@ defmodule SpecLedEx.Review.Html do
       #{render_sync_diagram(triage, in_sync?)}
     </header>
     """
+  end
+
+  # covers: specled.spec_review.degraded_leg_state
+  # When any triangle leg is degraded by a `detector_unavailable` finding
+  # the reviewer should see immediately that the report is partial — no
+  # amount of green ✓s on adjacent legs makes a missing leg "fine."
+  @doc false
+  def render_degraded_banner(triage) do
+    reasons =
+      triage
+      |> Map.get(:detector_unavailable_by_leg, %{})
+      |> Map.values()
+      |> Enum.flat_map(&Map.keys/1)
+      |> Enum.uniq()
+      |> Enum.sort()
+
+    case reasons do
+      [] ->
+        ""
+
+      reasons ->
+        formatted =
+          reasons
+          |> Enum.map(&"<code>#{h(&1)}</code>")
+          |> Enum.join(", ")
+
+        ~s|<div class="sync-degraded-banner" role="status"><span class="sync-degraded-icon" aria-hidden="true">?</span><span class="sync-degraded-text">Partial report — one or more triangle legs could not be checked on this run (#{formatted}). Re-run with the missing detector input to verify these legs.</span></div>|
+    end
   end
 
   # covers: specled.spec_review.triangle_code_classification
@@ -319,11 +348,26 @@ defmodule SpecLedEx.Review.Html do
         branch_guard_underspecified_realization
       )
 
+    detector_by_leg = Map.get(triage, :detector_unavailable_by_leg, %{})
+    spec_to_code_degraded = Map.get(detector_by_leg, :spec_to_code, %{})
+    spec_to_tests_degraded = Map.get(detector_by_leg, :spec_to_tests, %{})
+    tests_to_coverage_degraded = Map.get(detector_by_leg, :tests_to_coverage, %{})
+
     # Vacuous: the leg has nothing to verify on this PR. Reads as gray, not
     # green — vacuous truth should not look like a victory.
-    spec_to_code_state = leg_state(fbc, spec_to_code_codes, triage.binding_count == 0)
-    code_to_tests_state = leg_state(fbc, code_to_tests_codes, triage.binding_count == 0)
-    tests_to_coverage_state = leg_state(fbc, tests_to_coverage_codes, triage.verification_count == 0)
+    # Degraded: the leg has a `detector_unavailable` finding (debug_info
+    # stripped, umbrella unsupported, missing coverage artifact, …). Reads
+    # as gray-yellow with a `?` glyph — the system is being honest that it
+    # could not run the check.
+    spec_to_code_state =
+      leg_state(fbc, spec_to_code_codes, triage.binding_count == 0, map_size(spec_to_code_degraded) > 0)
+
+    code_to_tests_state =
+      leg_state(fbc, code_to_tests_codes, triage.binding_count == 0, map_size(spec_to_tests_degraded) > 0)
+
+    tests_to_coverage_state =
+      leg_state(fbc, tests_to_coverage_codes, triage.verification_count == 0,
+        map_size(tests_to_coverage_degraded) > 0)
 
     nodes = [
       {"SPEC", "#{triage.affected_subject_count} subj · #{triage.requirement_count} req#{maybe_s(triage.requirement_count)}",
@@ -342,11 +386,14 @@ defmodule SpecLedEx.Review.Html do
 
     edges = [
       {spec_to_code_state, "realized_by",
-       "Spec → Code · Each requirement names the code that realizes it via the `realized_by` block, and those MFAs must exist in the codebase."},
+       "Spec → Code · Each requirement names the code that realizes it via the `realized_by` block, and those MFAs must exist in the codebase." <>
+         degraded_tooltip_suffix(spec_to_code_degraded)},
       {code_to_tests_state, "@tag spec",
-       "Code → Tests · The realized code is exercised by tests carrying `@tag spec: \"<requirement_id>\"` so coverage can be linked back to the spec."},
+       "Code → Tests · The realized code is exercised by tests carrying `@tag spec: \"<requirement_id>\"` so coverage can be linked back to the spec." <>
+         degraded_tooltip_suffix(spec_to_tests_degraded)},
       {tests_to_coverage_state, "evidence",
-       "Tests → Coverage · Each verification entry produces evidence at the CLAIMED, LINKED, or EXECUTED tier; every requirement must reach its minimum strength."}
+       "Tests → Coverage · Each verification entry produces evidence at the CLAIMED, LINKED, or EXECUTED tier; every requirement must reach its minimum strength." <>
+         degraded_tooltip_suffix(tests_to_coverage_degraded)}
     ]
 
     rendered =
@@ -361,13 +408,20 @@ defmodule SpecLedEx.Review.Html do
     ~s|<div class="sync-diagram" role="img" aria-label="Triangulation chain">#{IO.iodata_to_binary(rendered)}</div>|
   end
 
-  # Tri-state per-leg evaluation. :vacuous means "nothing to verify on this
-  # leg" — we should not render that as ✓ since there is no positive
+  # Quad-state per-leg evaluation. :vacuous means "nothing to verify on
+  # this leg" — we should not render that as ✓ since there is no positive
   # evidence. :ok means "all relevant checks passed". :fail means "some
-  # finding hit one of this leg's codes".
-  defp leg_state(fbc, codes, vacuous?) do
+  # finding hit one of this leg's codes". :degraded means "the detector
+  # for this leg could not run (e.g. detector_unavailable: debug_info_
+  # stripped, umbrella_unsupported, no_coverage_artifact)" — neither
+  # positive nor negative evidence; the system is being honest that the
+  # check did not run. :fail wins over :degraded; :degraded wins over
+  # :vacuous and :ok.
+  # covers: specled.spec_review.degraded_leg_state
+  defp leg_state(fbc, codes, vacuous?, degraded?) do
     cond do
       Enum.any?(codes, fn c -> Map.get(fbc, c, 0) > 0 end) -> :fail
+      degraded? -> :degraded
       vacuous? -> :vacuous
       true -> :ok
     end
@@ -384,10 +438,27 @@ defmodule SpecLedEx.Review.Html do
       case state do
         :ok -> {"ok", "✓"}
         :fail -> {"fail", "✗"}
+        :degraded -> {"degraded", "?"}
         :vacuous -> {"vacuous", "—"}
       end
 
     ~s|<div class="sync-edge sync-edge-#{state_class}" title="#{html_escape(tooltip)}"><div class="sync-edge-line"></div><div class="sync-edge-label"><span class="sync-edge-icon">#{icon}</span> #{h(label)}</div></div>|
+  end
+
+  # Append a "Degraded: <reason>, <reason>" suffix to an edge tooltip when
+  # the leg carries detector_unavailable findings. Reasons are rendered
+  # verbatim (snake_case) since they're a fixed catalog the reviewer can
+  # look up in docs/concepts.md.
+  defp degraded_tooltip_suffix(reasons_map) when reasons_map == %{}, do: ""
+
+  defp degraded_tooltip_suffix(reasons_map) when is_map(reasons_map) do
+    reasons =
+      reasons_map
+      |> Map.keys()
+      |> Enum.sort()
+      |> Enum.join(", ")
+
+    " · Degraded: #{reasons}"
   end
 
   defp strength_diagram_summary(breakdown) when is_map(breakdown) and map_size(breakdown) > 0 do
@@ -429,14 +500,23 @@ defmodule SpecLedEx.Review.Html do
   defp render_sync_checklist(triage) do
     checks = build_sync_checks(triage)
     failed_count = Enum.count(checks, &(not &1.passed?))
-    vacuous_count = Enum.count(checks, &(&1.passed? and Map.get(&1, :vacuous?, false)))
-    passed_count = length(checks) - failed_count - vacuous_count
-    open_attr = if failed_count > 0, do: " open", else: ""
+    degraded_count = Enum.count(checks, &(&1.passed? and Map.get(&1, :degraded?, false)))
+
+    vacuous_count =
+      Enum.count(checks, fn c ->
+        c.passed? and Map.get(c, :vacuous?, false) and not Map.get(c, :degraded?, false)
+      end)
+
+    passed_count = length(checks) - failed_count - vacuous_count - degraded_count
+    open_attr = if failed_count > 0 or degraded_count > 0, do: " open", else: ""
 
     summary_text =
       cond do
         failed_count > 0 ->
           "More details — #{failed_count} of #{length(checks)} checks need attention"
+
+        degraded_count > 0 ->
+          "More details — #{passed_count} passed · #{degraded_count} could not be checked (detector unavailable)"
 
         vacuous_count > 0 ->
           "More details — #{passed_count} passed · #{vacuous_count} nothing to verify"
@@ -459,10 +539,12 @@ defmodule SpecLedEx.Review.Html do
   @doc false
   def build_sync_checks(triage) do
     fbc = triage.findings_by_code
+    detector_by_leg = Map.get(triage, :detector_unavailable_by_leg, %{})
 
     [
       %{
         leg: "Spec",
+        leg_key: :spec_well_formed,
         label: "The spec files themselves are well-formed",
         codes:
           ~w(
@@ -483,6 +565,7 @@ defmodule SpecLedEx.Review.Html do
       },
       %{
         leg: "Spec → Code",
+        leg_key: :spec_to_code,
         label: "Every <code>realized_by</code> surface and verification target file actually exists",
         codes: ~w(surface_target_missing verification_target_missing verification_target_missing_file),
         detail: detail_count("MFA", triage.binding_count),
@@ -490,6 +573,7 @@ defmodule SpecLedEx.Review.Html do
       },
       %{
         leg: "Spec → Code",
+        leg_key: :spec_to_code,
         label: "Each verification target file references the requirement id it claims to cover",
         codes: ~w(verification_target_missing_reference),
         detail: nil,
@@ -497,6 +581,7 @@ defmodule SpecLedEx.Review.Html do
       },
       %{
         leg: "Spec → Code",
+        leg_key: :spec_to_code,
         label: "Each <code>realized_by</code> binding still matches the live MFA closure",
         codes: ~w(branch_guard_realization_drift branch_guard_dangling_binding),
         detail: detail_count("MFA", triage.binding_count),
@@ -504,6 +589,7 @@ defmodule SpecLedEx.Review.Html do
       },
       %{
         leg: "Spec → Tests",
+        leg_key: :spec_to_tests,
         label: "Every requirement is named by at least one verification entry",
         codes: ~w(requirement_without_verification verification_unknown_cover),
         detail: detail_count("requirement", triage.requirement_count),
@@ -511,6 +597,7 @@ defmodule SpecLedEx.Review.Html do
       },
       %{
         leg: "Spec → Tests",
+        leg_key: :spec_to_tests,
         label: "Every <code>must</code> requirement under <code>tagged_tests</code> has a matching <code>@tag spec:</code>",
         codes: ~w(requirement_without_test_tag branch_guard_requirement_without_test_tag),
         detail: detail_count("requirement", triage.requirement_count),
@@ -518,6 +605,7 @@ defmodule SpecLedEx.Review.Html do
       },
       %{
         leg: "Spec → Tests",
+        leg_key: :spec_to_tests,
         label: "Every binding closure is exercised by at least one tagged test",
         codes: ~w(branch_guard_untested_realization),
         detail: detail_count("MFA", triage.binding_count),
@@ -525,6 +613,7 @@ defmodule SpecLedEx.Review.Html do
       },
       %{
         leg: "Tests → Coverage",
+        leg_key: :tests_to_coverage,
         label: "Verifications that ran exited successfully",
         codes: ~w(verification_command_failed),
         detail: nil,
@@ -532,6 +621,7 @@ defmodule SpecLedEx.Review.Html do
       },
       %{
         leg: "Code → Tests",
+        leg_key: :tests_to_coverage,
         label: "Tagged tests actually exercise the subject they claim",
         codes: ~w(branch_guard_untethered_test branch_guard_underspecified_realization),
         detail: nil,
@@ -539,6 +629,7 @@ defmodule SpecLedEx.Review.Html do
       },
       %{
         leg: "Coverage",
+        leg_key: :tests_to_coverage,
         label: "Every requirement reaches its minimum coverage strength",
         codes: ~w(verification_strength_below_minimum),
         detail: strength_summary_text(triage.strength_breakdown),
@@ -546,6 +637,7 @@ defmodule SpecLedEx.Review.Html do
       },
       %{
         leg: "Spec → Decisions",
+        leg_key: :spec_to_decisions,
         label: "Every ADR referenced by a subject resolves to an existing decision file",
         codes: ~w(decision_reference_unknown subject_unknown_decision_reference),
         detail: adr_detail(triage),
@@ -553,6 +645,7 @@ defmodule SpecLedEx.Review.Html do
       },
       %{
         leg: "Decisions / governance",
+        leg_key: :decisions_governance,
         label: "Every spec edit honors append-only governance and decision references",
         codes:
           ~w(
@@ -572,6 +665,7 @@ defmodule SpecLedEx.Review.Html do
       },
       %{
         leg: "Branch",
+        leg_key: :branch,
         label: "Files changed in this PR have matching spec or decision updates",
         codes: ~w(branch_guard_missing_subject_update branch_guard_missing_decision_update branch_guard_unmapped_change),
         detail: nil,
@@ -580,7 +674,14 @@ defmodule SpecLedEx.Review.Html do
     ]
     |> Enum.map(fn c ->
       count = Enum.sum(Enum.map(c.codes, &Map.get(fbc, &1, 0)))
-      Map.merge(c, %{count: count, passed?: count == 0})
+      degraded_reasons = Map.get(detector_by_leg, c.leg_key, %{})
+
+      Map.merge(c, %{
+        count: count,
+        passed?: count == 0,
+        degraded?: count == 0 and map_size(degraded_reasons) > 0,
+        degraded_reasons: degraded_reasons
+      })
     end)
   end
 
@@ -592,11 +693,13 @@ defmodule SpecLedEx.Review.Html do
   defp adr_detail(_), do: nil
 
   defp render_sync_check(check) do
-    vacuous? = Map.get(check, :vacuous?, false) and check.passed?
+    degraded? = Map.get(check, :degraded?, false) and check.passed?
+    vacuous? = Map.get(check, :vacuous?, false) and check.passed? and not degraded?
 
     {icon_class, icon} =
       cond do
         not check.passed? -> {"fail", "✗"}
+        degraded? -> {"degraded", "?"}
         vacuous? -> {"vacuous", "—"}
         true -> {"ok", "✓"}
       end
@@ -605,6 +708,16 @@ defmodule SpecLedEx.Review.Html do
       cond do
         not check.passed? ->
           ~s| <span class="sync-check-count">#{check.count} finding#{maybe_s(check.count)}</span>|
+
+        degraded? ->
+          reasons =
+            check
+            |> Map.get(:degraded_reasons, %{})
+            |> Map.keys()
+            |> Enum.sort()
+            |> Enum.join(", ")
+
+          ~s| <span class="sync-check-degraded-tag" title="Detector unavailable: #{h(reasons)}">detector unavailable</span>|
 
         vacuous? ->
           ~s| <span class="sync-check-vacuous-tag" title="No relevant claims on this PR — neither pass nor fail">nothing to verify</span>|
@@ -2428,6 +2541,13 @@ defmodule SpecLedEx.Review.Html do
     }
     .sync-edge-fail .sync-edge-line { background: #ea580c; }
     .sync-edge-fail .sync-edge-line::after { border-left-color: #ea580c; }
+    /* Degraded edge: detector_unavailable on this leg. Solid amber/gray
+       — neither a positive proof nor a failure; the system is being
+       honest that the detector could not run. */
+    .sync-edge-degraded .sync-edge-line { background: #d4a373; }
+    .sync-edge-degraded .sync-edge-line::after { border-left-color: #d4a373; }
+    .sync-edge-degraded .sync-edge-icon { color: #b45309; }
+    .sync-edge-degraded .sync-edge-label { color: #92400e; }
     /* Vacuous edge: nothing to verify on this leg. Dashed gray — neither
        a positive proof nor a failure. */
     .sync-edge-vacuous .sync-edge-line {
@@ -2518,10 +2638,12 @@ defmodule SpecLedEx.Review.Html do
     }
     .sync-check-ok { background: transparent; }
     .sync-check-fail { background: #fff7ed; border-left: 3px solid #ea580c; padding-left: 6px; }
+    .sync-check-degraded { background: #fffbeb; border-left: 3px solid #d4a373; padding-left: 6px; }
     .sync-check-vacuous { background: transparent; opacity: 0.7; }
     .sync-check-icon { font-weight: 700; font-size: 14px; text-align: center; }
     .sync-check-ok .sync-check-icon { color: #10b981; }
     .sync-check-fail .sync-check-icon { color: #c2410c; }
+    .sync-check-degraded .sync-check-icon { color: #b45309; }
     .sync-check-vacuous .sync-check-icon { color: var(--fg-faint); }
     .sync-check-vacuous .sync-check-label { color: var(--fg-muted); }
     .sync-check-vacuous-tag {
@@ -2532,6 +2654,43 @@ defmodule SpecLedEx.Review.Html do
       padding: 2px 8px;
       border-radius: 999px;
       white-space: nowrap;
+    }
+    .sync-check-degraded-tag {
+      font-size: 11px;
+      font-weight: 600;
+      color: #92400e;
+      background: #fef3c7;
+      padding: 2px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .sync-degraded-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      margin-bottom: 10px;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-left: 4px solid #d4a373;
+      border-radius: 4px;
+      color: #92400e;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .sync-degraded-icon {
+      font-weight: 700;
+      font-size: 16px;
+      color: #b45309;
+      flex-shrink: 0;
+    }
+    .sync-degraded-text code {
+      font-family: var(--code-font);
+      font-size: 11px;
+      background: rgba(180, 83, 9, 0.08);
+      color: #92400e;
+      padding: 1px 5px;
+      border-radius: 3px;
     }
     .sync-check-leg {
       font-family: var(--code-font);

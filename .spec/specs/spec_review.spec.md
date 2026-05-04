@@ -74,6 +74,10 @@ decisions:
   statement: The HTML artifact's sync diagram and sync checklist shall classify findings using the triangle vocabulary documented in docs/concepts.md. Specifically, findings carrying realization-side codes (`branch_guard_realization_drift`, `branch_guard_dangling_binding`) shall flip the SPEC ↔ CODE leg; findings carrying coverage-claim codes (`branch_guard_untested_realization`, `requirement_without_test_tag`, `branch_guard_requirement_without_test_tag`) shall flip the SPEC ↔ TESTS leg; findings carrying observed-coverage codes (`branch_guard_untethered_test`, `branch_guard_underspecified_realization`) shall flip the CODE ↔ TESTS leg; within-spec consistency findings (`overlap/duplicate_covers`, `overlap/must_stem_collision`) shall flip the "spec files are well-formed" checklist row; and `append_only/*` findings shall flip a dedicated "Decisions / governance" checklist row.
   priority: must
   stability: evolving
+- id: specled.spec_review.degraded_leg_state
+  statement: The sync diagram shall render a fourth per-leg state — `:degraded` — distinct from `:ok`, `:fail`, and `:vacuous`, used when a leg carries a `detector_unavailable` finding rather than a positive or negative verification. A degraded leg shall render with a `?` glyph (not `✓`) and a non-green color, and the leg's tooltip shall enumerate the distinct `detector_unavailable` reasons (`debug_info_stripped`, `umbrella_unsupported`, `no_coverage_artifact`, etc.) attributed to that leg. When any leg is degraded the artifact shall surface a top-of-page banner advertising that the report is partial. A `:fail` finding on the same leg supersedes `:degraded`; `:degraded` supersedes `:vacuous` and `:ok`.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -140,6 +144,17 @@ decisions:
     - file paths appear under each tier rather than as the primary organization
   covers:
     - specled.spec_review.per_subject_tabs
+- id: specled.spec_review.degraded_leg_renders_with_question_mark
+  given:
+    - a change set that produces a `detector_unavailable` finding with reason `:no_coverage_artifact`
+  when:
+    - mix spec.review renders the HTML artifact
+  then:
+    - the CODE ↔ TESTS evidence leg renders with a `?` glyph rather than `✓` or `✗`
+    - the leg's tooltip names the `no_coverage_artifact` reason
+    - a top-of-page banner advertises that the report is partial
+  covers:
+    - specled.spec_review.degraded_leg_state
 ```
 
 ## Verification
@@ -163,6 +178,7 @@ decisions:
   execute: true
   covers:
     - specled.spec_review.triangle_code_classification
+    - specled.spec_review.degraded_leg_state
 - kind: source_file
   target: lib/mix/tasks/spec.review.ex
   covers:
@@ -182,6 +198,7 @@ decisions:
     - specled.spec_review.inline_finding_badges
     - specled.spec_review.read_only_viewer
     - specled.spec_review.triangle_code_classification
+    - specled.spec_review.degraded_leg_state
 - kind: workflow_file
   target: priv/spec_init/workflows/spec_review.yml.eex
   covers:

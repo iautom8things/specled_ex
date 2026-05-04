@@ -1811,6 +1811,14 @@
       },
       {
         "file": ".spec/specs/spec_review.spec.md",
+        "id": "specled.spec_review.degraded_leg_state",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "The sync diagram shall render a fourth per-leg state — `:degraded` — distinct from `:ok`, `:fail`, and `:vacuous`, used when a leg carries a `detector_unavailable` finding rather than a positive or negative verification. A degraded leg shall render with a `?` glyph (not `✓`) and a non-green color, and the leg's tooltip shall enumerate the distinct `detector_unavailable` reasons (`debug_info_stripped`, `umbrella_unsupported`, `no_coverage_artifact`, etc.) attributed to that leg. When any leg is degraded the artifact shall surface a top-of-page banner advertising that the report is partial. A `:fail` finding on the same leg supersedes `:degraded`; `:degraded` supersedes `:vacuous` and `:ok`.",
+        "subject_id": "specled.spec_review"
+      },
+      {
+        "file": ".spec/specs/spec_review.spec.md",
         "id": "specled.spec_review.diff_against_base",
         "priority": "must",
         "stability": "evolving",
@@ -4005,6 +4013,25 @@
         ],
         "when": [
           "the reviewer opens subject S's Code tab in the rendered HTML artifact"
+        ]
+      },
+      {
+        "covers": [
+          "specled.spec_review.degraded_leg_state"
+        ],
+        "file": ".spec/specs/spec_review.spec.md",
+        "given": [
+          "a change set that produces a `detector_unavailable` finding with reason `:no_coverage_artifact`"
+        ],
+        "id": "specled.spec_review.degraded_leg_renders_with_question_mark",
+        "subject_id": "specled.spec_review",
+        "then": [
+          "the CODE ↔ TESTS evidence leg renders with a `?` glyph rather than `✓` or `✗`",
+          "the leg's tooltip names the `no_coverage_artifact` reason",
+          "a top-of-page banner advertises that the report is partial"
+        ],
+        "when": [
+          "mix spec.review renders the HTML artifact"
         ]
       },
       {
@@ -6522,7 +6549,8 @@
       },
       {
         "covers": [
-          "specled.spec_review.triangle_code_classification"
+          "specled.spec_review.triangle_code_classification",
+          "specled.spec_review.degraded_leg_state"
         ],
         "execute": true,
         "file": ".spec/specs/spec_review.spec.md",
@@ -6557,7 +6585,8 @@
           "specled.spec_review.triage_panel",
           "specled.spec_review.inline_finding_badges",
           "specled.spec_review.read_only_viewer",
-          "specled.spec_review.triangle_code_classification"
+          "specled.spec_review.triangle_code_classification",
+          "specled.spec_review.degraded_leg_state"
         ],
         "file": ".spec/specs/spec_review.spec.md",
         "kind": "source_file",
@@ -6931,8 +6960,8 @@
     "decisions": 27,
     "exceptions": 0,
     "findings": 0,
-    "requirements": 246,
-    "scenarios": 128,
+    "requirements": 247,
+    "scenarios": 129,
     "subjects": 33,
     "verifications": 80
   },
@@ -9337,6 +9366,17 @@
         "verification_index": 0
       },
       {
+        "cover_id": "specled.spec_review.degraded_leg_state",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review/html_test.exs",
+        "verification_index": 1
+      },
+      {
         "cover_id": "specled.spec_review.triangle_code_classification",
         "file": ".spec/specs/spec_review.spec.md",
         "kind": "command",
@@ -9390,6 +9430,17 @@
         "subject_id": "specled.spec_review",
         "target": "lib/specled_ex/review.ex",
         "verification_index": 3
+      },
+      {
+        "cover_id": "specled.spec_review.degraded_leg_state",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 4
       },
       {
         "cover_id": "specled.spec_review.html_artifact",
@@ -10111,8 +10162,8 @@
     "default_minimum_strength": "claimed",
     "strength_summary": {
       "claimed": 2,
-      "executed": 238,
-      "linked": 48
+      "executed": 239,
+      "linked": 49
     },
     "threshold_failures": 0
   },
