@@ -21,6 +21,7 @@ surface:
   - lib/specled_ex/review/spec_diff.ex
   - priv/spec_review_assets/*
   - test/specled_ex/review_test.exs
+  - test/specled_ex/review/html_test.exs
   - test/mix/tasks/spec_review_task_test.exs
 decisions:
   - specled.decision.spec_review_html_viewer
@@ -68,6 +69,10 @@ decisions:
 - id: specled.spec_review.gh_pages_distribution
   statement: A documented GitHub Actions workflow shall be provided that runs mix spec.review on PR open and synchronize, deploys the rendered HTML to a per-PR path on a GitHub Pages branch, and posts or updates a PR comment containing the link.
   priority: should
+  stability: evolving
+- id: specled.spec_review.triangle_code_classification
+  statement: The HTML artifact's sync diagram and sync checklist shall classify findings using the triangle vocabulary documented in docs/concepts.md. Specifically, findings carrying realization-side codes (`branch_guard_realization_drift`, `branch_guard_dangling_binding`) shall flip the SPEC ↔ CODE leg; findings carrying coverage-claim codes (`branch_guard_untested_realization`, `requirement_without_test_tag`, `branch_guard_requirement_without_test_tag`) shall flip the SPEC ↔ TESTS leg; findings carrying observed-coverage codes (`branch_guard_untethered_test`, `branch_guard_underspecified_realization`) shall flip the CODE ↔ TESTS leg; within-spec consistency findings (`overlap/duplicate_covers`, `overlap/must_stem_collision`) shall flip the "spec files are well-formed" checklist row; and `append_only/*` findings shall flip a dedicated "Decisions / governance" checklist row.
+  priority: must
   stability: evolving
 ```
 
@@ -153,6 +158,11 @@ decisions:
     - specled.spec_review.same_artifact_local_and_ci
     - specled.spec_review.diff_against_base
     - specled.spec_review.read_only_viewer
+- kind: command
+  target: mix test test/specled_ex/review/html_test.exs
+  execute: true
+  covers:
+    - specled.spec_review.triangle_code_classification
 - kind: source_file
   target: lib/mix/tasks/spec.review.ex
   covers:
@@ -171,6 +181,7 @@ decisions:
     - specled.spec_review.triage_panel
     - specled.spec_review.inline_finding_badges
     - specled.spec_review.read_only_viewer
+    - specled.spec_review.triangle_code_classification
 - kind: workflow_file
   target: priv/spec_init/workflows/spec_review.yml.eex
   covers:
