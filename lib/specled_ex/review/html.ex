@@ -682,32 +682,97 @@ defmodule SpecLedEx.Review.Html do
   defp render_requirements(requirements, findings, status_lookup) do
     findings_by_req = group_findings_by_requirement(findings)
 
+    {changed, unchanged} =
+      Enum.split_with(requirements, fn req ->
+        id = field(req, :id) || ""
+        Map.get(status_lookup, id, :unchanged) != :unchanged
+      end)
+
+    render_one = fn req ->
+      id = field(req, :id) || ""
+      statement = field(req, :statement) || ""
+      priority = field(req, :priority) || ""
+      stability = field(req, :stability) || ""
+      req_findings = Map.get(findings_by_req, id, [])
+      status = Map.get(status_lookup, id, :unchanged)
+
+      ~s"""
+      <li class="requirement requirement-#{status}">
+        <div class="requirement-header">
+          #{render_change_chip(status)}
+          <code class="requirement-id">#{h(id)}</code>
+          <span class="pill pill-priority pill-priority-#{h(priority)}"#{title_attr(tooltip(:priority, priority))}>#{h(priority)}</span>
+          <span class="pill pill-neutral"#{title_attr(tooltip(:stability, stability))}>#{h(stability)}</span>
+          #{render_requirement_finding_badge(req_findings)}
+        </div>
+        <p class="requirement-statement">#{h(statement)}</p>
+      </li>
+      """
+    end
+
     [
       ~s|<h4 class="tab-heading">Requirements (#{length(requirements)})</h4>|,
-      ~S|<ul class="requirement-list">|,
-      Enum.map(requirements, fn req ->
-        id = field(req, :id) || ""
-        statement = field(req, :statement) || ""
-        priority = field(req, :priority) || ""
-        stability = field(req, :stability) || ""
-        req_findings = Map.get(findings_by_req, id, [])
-        status = Map.get(status_lookup, id, :unchanged)
+      render_changed_then_unchanged("requirement", changed, unchanged, render_one)
+    ]
+  end
 
-        ~s"""
-        <li class="requirement requirement-#{status}">
-          <div class="requirement-header">
-            #{render_change_chip(status)}
-            <code class="requirement-id">#{h(id)}</code>
-            <span class="pill pill-priority pill-priority-#{h(priority)}"#{title_attr(tooltip(:priority, priority))}>#{h(priority)}</span>
-            <span class="pill pill-neutral"#{title_attr(tooltip(:stability, stability))}>#{h(stability)}</span>
-            #{render_requirement_finding_badge(req_findings)}
-          </div>
-          <p class="requirement-statement">#{h(statement)}</p>
-        </li>
-        """
-      end),
+  # Default-shows the changed (NEW/MODIFIED) items; tucks unchanged items
+  # behind a "Show N unchanged …" disclosure so the Spec tab focuses on
+  # what's actually moving in this PR. When nothing changed, the toggle
+  # is the only thing visible — clicking it reveals the full list.
+  defp render_changed_then_unchanged(_singular, [], [], _renderer), do: ""
+
+  defp render_changed_then_unchanged(_singular, changed, [], renderer) do
+    [
+      ~s|<ul class="#{change_list_class(changed)}">|,
+      Enum.map(changed, renderer),
       ~S|</ul>|
     ]
+  end
+
+  defp render_changed_then_unchanged(singular, [], unchanged, renderer) do
+    n = length(unchanged)
+
+    [
+      ~s|<details class="unchanged-disclosure">|,
+      ~s|<summary class="unchanged-summary">Show #{n} unchanged #{singular}#{maybe_s(n)}</summary>|,
+      ~s|<ul class="#{change_list_class(unchanged)}">|,
+      Enum.map(unchanged, renderer),
+      ~S|</ul>|,
+      ~S|</details>|
+    ]
+  end
+
+  defp render_changed_then_unchanged(singular, changed, unchanged, renderer) do
+    n = length(unchanged)
+
+    [
+      ~s|<ul class="#{change_list_class(changed)}">|,
+      Enum.map(changed, renderer),
+      ~S|</ul>|,
+      ~s|<details class="unchanged-disclosure">|,
+      ~s|<summary class="unchanged-summary">Show #{n} unchanged #{singular}#{maybe_s(n)}</summary>|,
+      ~s|<ul class="#{change_list_class(unchanged)}">|,
+      Enum.map(unchanged, renderer),
+      ~S|</ul>|,
+      ~S|</details>|
+    ]
+  end
+
+  # Pick the right CSS class so the disclosure-internal list matches the
+  # outer list's spacing and dividers.
+  defp change_list_class(items) do
+    case items do
+      [] -> "requirement-list"
+      [first | _] ->
+        cond do
+          # Heuristic: scenario items have :given/:when/:then structure;
+          # requirements have :statement/:priority. Cheapest probe is the
+          # presence of :statement at the top level.
+          field(first, :statement) -> "requirement-list"
+          true -> "scenario-list"
+        end
+    end
   end
 
   defp render_change_chip(:new),
@@ -764,33 +829,39 @@ defmodule SpecLedEx.Review.Html do
   defp render_scenarios([], _), do: ""
 
   defp render_scenarios(scenarios, status_lookup) do
+    {changed, unchanged} =
+      Enum.split_with(scenarios, fn sc ->
+        id = field(sc, :id) || ""
+        Map.get(status_lookup, id, :unchanged) != :unchanged
+      end)
+
+    render_one = fn sc ->
+      id = field(sc, :id) || ""
+      given = field(sc, :given) || []
+      when_ = field(sc, :when) || []
+      then_ = field(sc, :then) || []
+      covers = field(sc, :covers) || []
+      status = Map.get(status_lookup, id, :unchanged)
+
+      ~s"""
+      <li class="scenario scenario-#{status}">
+        <div class="scenario-header">
+          #{render_change_chip(status)}
+          <code class="scenario-id">#{h(id)}</code>
+          #{Enum.map_join(covers, " ", fn c -> ~s|<span class="pill pill-cover">#{h(c)}</span>| end)}
+        </div>
+        <div class="gherkin">
+          #{render_gherkin_section("given", given)}
+          #{render_gherkin_section("when", when_)}
+          #{render_gherkin_section("then", then_)}
+        </div>
+      </li>
+      """
+    end
+
     [
       ~s|<h4 class="tab-heading">Scenarios (#{length(scenarios)})</h4>|,
-      ~S|<ul class="scenario-list">|,
-      Enum.map(scenarios, fn sc ->
-        id = field(sc, :id) || ""
-        given = field(sc, :given) || []
-        when_ = field(sc, :when) || []
-        then_ = field(sc, :then) || []
-        covers = field(sc, :covers) || []
-        status = Map.get(status_lookup, id, :unchanged)
-
-        ~s"""
-        <li class="scenario scenario-#{status}">
-          <div class="scenario-header">
-            #{render_change_chip(status)}
-            <code class="scenario-id">#{h(id)}</code>
-            #{Enum.map_join(covers, " ", fn c -> ~s|<span class="pill pill-cover">#{h(c)}</span>| end)}
-          </div>
-          <div class="gherkin">
-            #{render_gherkin_section("given", given)}
-            #{render_gherkin_section("when", when_)}
-            #{render_gherkin_section("then", then_)}
-          </div>
-        </li>
-        """
-      end),
-      ~S|</ul>|
+      render_changed_then_unchanged("scenario", changed, unchanged, render_one)
     ]
   end
 
@@ -2142,6 +2213,39 @@ defmodule SpecLedEx.Review.Html do
       margin-left: -12px;
       border-radius: 0 4px 4px 0;
     }
+
+    /* Unchanged-items disclosure: collapses unchanged requirements/scenarios
+       beneath a "Show N unchanged …" toggle so the Spec tab leads with what
+       actually changed in this PR. */
+    .unchanged-disclosure {
+      margin-top: 16px;
+      border-top: 1px dashed var(--border);
+      padding-top: 12px;
+    }
+    .unchanged-summary {
+      cursor: pointer;
+      list-style: none;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--fg-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--neutral-bg);
+      border-radius: 999px;
+      user-select: none;
+    }
+    .unchanged-summary::-webkit-details-marker { display: none; }
+    .unchanged-summary::before {
+      content: "▸";
+      color: var(--fg-faint);
+      font-size: 10px;
+    }
+    .unchanged-disclosure[open] .unchanged-summary::before { content: "▾"; }
+    .unchanged-summary:hover { color: var(--fg); background: var(--border); }
+    .unchanged-disclosure[open] > .requirement-list,
+    .unchanged-disclosure[open] > .scenario-list { margin-top: 12px; }
 
     /* Removed-items section */
     .tab-heading-removed { color: var(--error); }
