@@ -1,6 +1,8 @@
 {
   "assignee": "",
-  "blocked_by": [],
+  "blocked_by": [
+    "specled_-quj.1"
+  ],
   "blocks": [],
   "created": "2026-05-04T15:16:43Z",
   "description": "Advances: specled.spec_review\n\nrender_findings_list (lib/specled_ex/review/html.ex:571-595) emits a flat \u003cul\u003e with no grouping. On a busy PR (5+ findings of mixed kinds) the reviewer has to mentally bin codes themselves.\n\nGroup by leg of the triangle (Spec well-formed / Spec↔Code / Spec↔Tests / Code↔Tests / Coverage / Decisions / Branch), then by severity within each group. Show counts per group as the heading. Reuse the existing tooltip(:severity, sev) mechanism to give each finding code a one-line \"what does this mean\" hover.\n\nDepends on the triangle-code classifier (child #1) so groups can be derived from the same code-to-leg mapping rather than duplicated.",
@@ -11,5 +13,5 @@
   "status": "open",
   "title": "Group global findings list by leg + severity",
   "type": "task",
-  "updated_at": "2026-05-04T15:16:43Z"
+  "updated_at": "2026-05-04T15:18:30Z"
 }
