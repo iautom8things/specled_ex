@@ -69,20 +69,38 @@ defmodule SpecLedEx.Review.Html do
       <div class="page-header-row">
         <h1>Spec Review</h1>
         <div class="page-header-meta">
+          <%= render_diff_stats(view.meta.stats) %>
           <span class="ref"><%= h(view.meta.base_ref) %><span class="ref-sep">…</span><%= h(view.meta.head_ref) %></span>
           <span class="generated"><%= h(format_dt(view.meta.generated_at)) %></span>
         </div>
       </div>
+      <div class="view-toggle-wrap">
+        <div class="view-toggle" role="tablist" aria-label="Review mode">
+          <button class="view-toggle-btn active" type="button" role="tab" data-view="spec" aria-selected="true">
+            <span class="view-toggle-label">Spec view</span>
+            <span class="view-toggle-hint">grouped by subject, with triangulation</span>
+          </button>
+          <button class="view-toggle-btn" type="button" role="tab" data-view="files" aria-selected="false">
+            <span class="view-toggle-label">Files view</span>
+            <span class="view-toggle-hint">flat diff of all changed files</span>
+          </button>
+        </div>
+      </div>
     </header>
-    <div class="layout">
+    <div class="layout" data-view-mode="spec">
       <aside class="toc" aria-label="Table of contents">
         <%= render_toc(view) %>
       </aside>
       <main>
-        <%= render_triage(view.triage, view.all_findings) %>
-        <%= render_subjects(view.affected_subjects, view.adrs_by_id) %>
-        <%= render_decisions_changed(view.decisions_changed) %>
-        <%= render_unmapped(view.unmapped_changes) %>
+        <section class="view-pane view-pane-spec active" data-view-pane="spec">
+          <%= render_triage(view.triage, view.all_findings) %>
+          <%= render_subjects(view.affected_subjects, view.adrs_by_id) %>
+          <%= render_decisions_changed(view.decisions_changed) %>
+          <%= render_unmapped(view.unmapped_changes) %>
+        </section>
+        <section class="view-pane view-pane-files" data-view-pane="files">
+          <%= render_files_view(view.all_changes, view.meta.stats) %>
+        </section>
       </main>
     </div>
     <footer class="page-footer">
@@ -978,6 +996,70 @@ defmodule SpecLedEx.Review.Html do
     ]
   end
 
+  @doc false
+  def render_diff_stats(%{files_changed: files, additions: adds, deletions: dels}) do
+    ~s|<span class="diffstat" title="#{files} file#{if files == 1, do: "", else: "s"} changed · +#{adds} −#{dels} lines"><span class="diffstat-files">#{files} file#{if files == 1, do: "", else: "s"}</span><span class="diffstat-add">+#{adds}</span><span class="diffstat-del">−#{dels}</span><span class="diffstat-bar" aria-hidden="true">#{render_diffstat_bar(adds, dels)}</span></span>|
+  end
+
+  def render_diff_stats(_), do: ""
+
+  # 5-block bar: green for adds, red for dels, grey filler — like GitHub's PR list.
+  defp render_diffstat_bar(adds, dels) do
+    total = adds + dels
+    {n_add, n_del} =
+      if total == 0 do
+        {0, 0}
+      else
+        a = round(adds * 5 / total)
+        d = round(dels * 5 / total)
+        # Force at least one block for non-zero side; cap total at 5.
+        a = if adds > 0 and a == 0, do: 1, else: a
+        d = if dels > 0 and d == 0, do: 1, else: d
+
+        cond do
+          a + d > 5 -> if a >= d, do: {5 - d, d}, else: {a, 5 - a}
+          true -> {a, d}
+        end
+      end
+
+    n_empty = 5 - n_add - n_del
+
+    String.duplicate(~S|<span class="diffstat-block diffstat-block-add"></span>|, n_add) <>
+      String.duplicate(~S|<span class="diffstat-block diffstat-block-del"></span>|, n_del) <>
+      String.duplicate(~S|<span class="diffstat-block diffstat-block-empty"></span>|, n_empty)
+  end
+
+  defp render_files_view([], _stats) do
+    ~S|<section class="files-view"><p class="empty-tab">No file changes in this change set.</p></section>|
+  end
+
+  defp render_files_view(all_changes, stats) do
+    paths = Enum.map(all_changes, & &1.file)
+    tree = build_path_tree(paths)
+
+    diff_blocks =
+      Enum.map(all_changes, fn %{file: file, lines: lines} ->
+        anchor = "files-" <> slug(file)
+
+        ~s"""
+        <details class="code-change" id="#{anchor}" open>
+          <summary class="filename"><code>#{h(file)}</code></summary>
+          #{IO.iodata_to_binary(render_diff_block(lines, language_for(file)))}
+        </details>
+        """
+      end)
+
+    heading = "Files (#{length(paths)}) · +#{stats.additions} −#{stats.deletions}"
+
+    [
+      ~s|<section class="files-view" aria-label="All changed files">|,
+      ~s|<h2 class="section-heading">All changed files (#{length(paths)})</h2>|,
+      ~s|<p class="files-view-explainer">Every file in the diff against the base ref, with no spec-subject grouping. This is what you'd see in a typical PR review.</p>|,
+      render_files_section(tree, "files", heading, diff_blocks),
+      ~S|</section>|
+    ]
+  end
+
   # ----------------------------------------------------------------------
   # Path tree
   # ----------------------------------------------------------------------
@@ -1350,6 +1432,86 @@ defmodule SpecLedEx.Review.Html do
     }
     .ref { font-family: var(--code-font); font-size: 12px; }
     .ref-sep { color: var(--fg-faint); margin: 0 4px; }
+
+    /* GitHub-style diff stats in the page header. */
+    .diffstat {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--code-font);
+      font-size: 12px;
+    }
+    .diffstat-files { color: var(--fg-muted); font-weight: 500; }
+    .diffstat-add { color: var(--add-fg); font-weight: 600; }
+    .diffstat-del { color: var(--del-fg); font-weight: 600; }
+    .diffstat-bar {
+      display: inline-flex;
+      gap: 2px;
+      margin-left: 2px;
+    }
+    .diffstat-block {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 1px;
+    }
+    .diffstat-block-add { background: var(--add-fg); }
+    .diffstat-block-del { background: var(--del-fg); }
+    .diffstat-block-empty { background: var(--border-strong); }
+
+    /* Top-level Spec / Files toggle. */
+    .view-toggle-wrap {
+      max-width: 1280px;
+      margin: 14px auto 0;
+    }
+    .view-toggle {
+      display: flex;
+      width: max-content;
+      gap: 4px;
+      padding: 4px;
+      background: var(--neutral-bg);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .view-toggle-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-family: inherit;
+      color: var(--fg-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1px;
+      text-align: left;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .view-toggle-btn:hover { color: var(--fg); }
+    .view-toggle-btn.active {
+      background: var(--card-bg);
+      color: var(--fg);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+    .view-toggle-label {
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .view-toggle-hint {
+      font-size: 11px;
+      color: var(--fg-faint);
+      font-weight: 400;
+    }
+
+    /* Spec vs Files view panes. The TOC on the left only makes sense for the
+       Spec pane, so it gets hidden when the Files pane is active. */
+    .view-pane { display: none; }
+    .view-pane.active { display: block; }
+    .layout[data-view-mode="files"] > .toc { display: none; }
+    .layout[data-view-mode="files"] { grid-template-columns: minmax(0, 1fr); }
+
+    .files-view-explainer { color: var(--fg-muted); margin: 0 0 16px 0; font-size: 13px; }
 
     .layout {
       max-width: 1280px;
@@ -2449,6 +2611,24 @@ defmodule SpecLedEx.Review.Html do
 
   defp js do
     """
+    // Top-level Spec / Files view toggle.
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('.view-toggle-btn');
+      if (!btn) return;
+      var mode = btn.getAttribute('data-view');
+      var layout = document.querySelector('.layout');
+      if (!layout) return;
+      layout.setAttribute('data-view-mode', mode);
+      document.querySelectorAll('.view-toggle-btn').forEach(function (b) {
+        var active = b.getAttribute('data-view') === mode;
+        b.classList.toggle('active', active);
+        b.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      document.querySelectorAll('.view-pane').forEach(function (p) {
+        p.classList.toggle('active', p.getAttribute('data-view-pane') === mode);
+      });
+    });
+
     // Tab switching inside subject cards.
     document.addEventListener('click', function (e) {
       var btn = e.target.closest('.tab');

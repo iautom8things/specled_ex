@@ -82,21 +82,49 @@ defmodule SpecLedEx.Review do
     triage = build_triage(findings, affected_subjects, unmapped_changes != [])
     adrs_by_id = build_adrs_by_id(index, root, analysis.base)
 
+    all_changes =
+      analysis.changed_files
+      |> Enum.sort()
+      |> Enum.map(fn path -> %{file: path, lines: Map.get(all_diffs, path, [])} end)
+
+    stats = compute_stats(all_changes)
+
     %{
       meta: %{
         base_ref: analysis.base,
         head_ref: head_ref(root),
         generated_at: DateTime.utc_now() |> DateTime.truncate(:second),
         verifier_status: verifier_report["status"],
-        repo_root: root
+        repo_root: root,
+        stats: stats
       },
       triage: triage,
       affected_subjects: affected_subjects,
       unmapped_changes: unmapped_changes,
       decisions_changed: decisions_changed,
       adrs_by_id: adrs_by_id,
-      all_findings: findings
+      all_findings: findings,
+      all_changes: all_changes
     }
+  end
+
+  defp compute_stats(all_changes) do
+    Enum.reduce(all_changes, %{files_changed: 0, additions: 0, deletions: 0}, fn %{lines: lines}, acc ->
+      {adds, dels} =
+        Enum.reduce(lines, {0, 0}, fn
+          {:add, _}, {a, d} -> {a + 1, d}
+          {:del, _}, {a, d} -> {a, d + 1}
+          _, acc2 -> acc2
+        end)
+
+      touched? = adds > 0 or dels > 0
+
+      %{
+        files_changed: acc.files_changed + if(touched?, do: 1, else: 0),
+        additions: acc.additions + adds,
+        deletions: acc.deletions + dels
+      }
+    end)
   end
 
   defp build_adrs_by_id(index, root, base_ref) do
