@@ -95,7 +95,7 @@ defmodule SpecLedEx.Review.Html do
         <section class="view-pane view-pane-spec active" data-view-pane="spec">
           <%= render_triage(view.triage, view.all_findings) %>
           <%= render_coverage_help_disclosure() %>
-          <%= render_decisions_changed(view.decisions_changed, view.adrs_by_id) %>
+          <%= render_decisions_changed(view.decisions_changed, view.adrs_by_id, view.all_findings) %>
           <%= render_subjects(view.affected_subjects, view.adrs_by_id) %>
           <%= render_unmapped(view.unmapped_changes, view.file_breakdown) %>
           <%= render_raw_verification_all(view.affected_subjects) %>
@@ -1560,30 +1560,114 @@ defmodule SpecLedEx.Review.Html do
     end
   end
 
-  defp render_decisions_changed([], _adrs_by_id) do
-    ~S"""
-    <section id="decisions-changed" class="decisions-changed" aria-label="Decisions changed">
-      <h2 class="section-heading">Decisions changed (0)</h2>
-      <p class="empty-tab">No ADR files changed in this change set.</p>
-    </section>
-    """
+  # covers: specled.spec_review.decisions_governance_inline
+  # The Decisions Changed panel is no longer purely descriptive. Append-only
+  # governance findings (`append_only/*`) ride into the same section so that
+  # an unauthorized requirement deletion or an ADR-bound violation surfaces
+  # *next to* the ADR record where the reviewer is already focused. Findings
+  # whose entity_id resolves to a present ADR render under that ADR's card;
+  # the rest land in a "Governance violations" subsection at the top of the
+  # panel so they are not silently dropped when no ADR file changed.
+  @doc false
+  def render_decisions_changed(decisions, adrs_by_id, findings \\ [])
+
+  def render_decisions_changed([], adrs_by_id, findings) do
+    governance = governance_findings(findings)
+    {orphan_findings, _by_adr} = partition_governance_findings(governance, adrs_by_id || %{})
+
+    case {governance, orphan_findings} do
+      {[], _} ->
+        ~S"""
+        <section id="decisions-changed" class="decisions-changed" aria-label="Decisions changed">
+          <h2 class="section-heading">Decisions changed (0)</h2>
+          <p class="empty-tab">No ADR files changed in this change set.</p>
+        </section>
+        """
+
+      _ ->
+        [
+          ~s|<section id="decisions-changed" class="decisions-changed" aria-label="Decisions changed">|,
+          ~s|<h2 class="section-heading">Decisions changed (0)</h2>|,
+          render_governance_orphans(orphan_findings),
+          ~s|<p class="empty-tab">No ADR files changed in this change set.</p>|,
+          ~S|</section>|
+        ]
+    end
   end
 
-  defp render_decisions_changed(decisions, adrs_by_id) do
+  def render_decisions_changed(decisions, adrs_by_id, findings) do
+    governance = governance_findings(findings)
+    adrs_by_id = adrs_by_id || %{}
+    {orphan_findings, by_adr} = partition_governance_findings(governance, adrs_by_id)
+
     [
       ~s|<section id="decisions-changed" class="decisions-changed" aria-label="Decisions changed">|,
       ~s|<h2 class="section-heading">Decisions changed (#{length(decisions)})</h2>|,
+      render_governance_orphans(orphan_findings),
       ~S|<div class="decision-changed-list">|,
-      Enum.map(decisions, &render_changed_decision(&1, adrs_by_id || %{})),
+      Enum.map(decisions, &render_changed_decision(&1, adrs_by_id, by_adr)),
       ~S|</div>|,
       ~S|</section>|
     ]
   end
 
-  defp render_changed_decision(d, adrs_by_id) do
-    case Map.get(adrs_by_id, d.id) do
-      nil -> render_changed_decision_minimal(d)
-      adr -> render_changed_decision_full(d, adr)
+  # An append_only/* finding tied to a known ADR id (e.g. adr_affects_widened
+  # naming an ADR that's in adrs_by_id) renders under that ADR's card. All
+  # other governance findings — unauthorized requirement deletions, decision
+  # deletions of ADRs no longer present, etc. — surface at the top of the
+  # panel as orphan governance violations.
+  defp partition_governance_findings(findings, adrs_by_id) do
+    Enum.reduce(findings, {[], %{}}, fn f, {orphans, by_adr} ->
+      entity_id = f["entity_id"]
+
+      cond do
+        is_binary(entity_id) and Map.has_key?(adrs_by_id, entity_id) ->
+          {orphans, Map.update(by_adr, entity_id, [f], &[f | &1])}
+
+        true ->
+          {[f | orphans], by_adr}
+      end
+    end)
+    |> then(fn {orphans, by_adr} ->
+      {Enum.reverse(orphans), Map.new(by_adr, fn {k, v} -> {k, Enum.reverse(v)} end)}
+    end)
+  end
+
+  defp governance_findings(findings) do
+    findings
+    |> List.wrap()
+    |> Enum.filter(fn f ->
+      code = f["code"] || ""
+      String.starts_with?(code, "append_only/")
+    end)
+  end
+
+  defp render_governance_orphans([]), do: ""
+
+  defp render_governance_orphans(findings) do
+    [
+      ~s|<details class="governance-orphans" open>|,
+      ~s|<summary class="governance-orphans-summary">Governance violations (#{length(findings)})</summary>|,
+      ~s|<p class="governance-orphans-explainer">These <code>append_only/*</code> findings are not authorized by any ADR in this change set. Each one is the spec system telling you a weakening landed without the decision trail it needs.</p>|,
+      ~s|<ul class="governance-finding-list">|,
+      Enum.map(findings, &render_governance_finding/1),
+      ~s|</ul>|,
+      ~s|</details>|
+    ]
+  end
+
+  defp render_changed_decision(d, adrs_by_id, governance_by_adr) do
+    findings = Map.get(governance_by_adr, d.id, [])
+
+    body =
+      case Map.get(adrs_by_id, d.id) do
+        nil -> render_changed_decision_minimal(d)
+        adr -> render_changed_decision_full(d, adr)
+      end
+
+    case findings do
+      [] -> body
+      _ -> [body, render_inline_governance_findings(findings)]
     end
   end
 
@@ -1635,6 +1719,54 @@ defmodule SpecLedEx.Review.Html do
     </details>
     """
   end
+
+  defp render_inline_governance_findings(findings) do
+    [
+      ~s|<div class="governance-finding-inline">|,
+      ~s|<p class="governance-finding-inline-label">Governance findings naming this ADR:</p>|,
+      ~s|<ul class="governance-finding-list">|,
+      Enum.map(findings, &render_governance_finding/1),
+      ~s|</ul>|,
+      ~s|</div>|
+    ]
+  end
+
+  defp render_governance_finding(f) do
+    sev = f["severity"] || "error"
+    code = f["code"] || ""
+    message = f["message"] || ""
+    {prose, fix_block} = split_fix_block(message)
+
+    fix_html =
+      case fix_block do
+        nil -> ""
+        text -> ~s|<pre class="governance-finding-fix"><code>#{h(text)}</code></pre>|
+      end
+
+    ~s"""
+    <li class="governance-finding finding-#{h(sev)}">
+      <div class="governance-finding-header">
+        <span class="finding-severity"#{title_attr(tooltip(:severity, sev))}>#{h(sev)}</span>
+        <span class="finding-code">#{h(code)}</span>
+        #{render_subject_link(f["subject_id"])}
+      </div>
+      <p class="governance-finding-message">#{h(prose)}</p>
+      #{fix_html}
+    </li>
+    """
+  end
+
+  # AppendOnly messages are produced by `finalize_message/2` as
+  # "<prose>\n\n```\nfix: ...\n```\n". We split them so the prose flows as
+  # readable text and the fix line keeps its monospace, code-fenced shape.
+  defp split_fix_block(message) when is_binary(message) do
+    case Regex.run(~r/^(.*?)\n*```\n(fix:[^\n]*(?:\n[^\n]*)*)\n```\s*$/s, message) do
+      [_, prose, fix_text] -> {String.trim_trailing(prose), String.trim(fix_text)}
+      _ -> {message, nil}
+    end
+  end
+
+  defp split_fix_block(other), do: {to_string(other), nil}
 
   defp render_decision_status_pill(nil), do: ""
 
@@ -3457,6 +3589,84 @@ defmodule SpecLedEx.Review.Html do
       gap: 12px;
     }
     .affects { color: var(--fg-muted); font-size: 12px; }
+
+    .governance-orphans {
+      border: 1px solid var(--error);
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin: 0 0 16px;
+      background: var(--error-bg, var(--neutral-bg));
+    }
+    .governance-orphans-summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--error);
+      font-size: 13px;
+    }
+    .governance-orphans-explainer {
+      margin: 8px 0 8px;
+      color: var(--fg-muted);
+      font-size: 12px;
+    }
+    .governance-finding-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .governance-finding {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+    }
+    .governance-finding.finding-error { border-color: var(--error); }
+    .governance-finding.finding-warning { border-color: var(--warning); }
+    .governance-finding.finding-info { border-color: var(--info); }
+    .governance-finding-header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: baseline;
+    }
+    .governance-finding-message {
+      margin: 0;
+      color: var(--fg);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .governance-finding-fix {
+      margin: 0;
+      padding: 8px 12px;
+      background: var(--neutral-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: var(--code-font);
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--fg);
+    }
+    .governance-finding-inline {
+      margin: 8px 0 4px;
+      padding: 12px;
+      border-left: 3px solid var(--error);
+      background: var(--neutral-bg);
+      border-radius: 0 6px 6px 0;
+    }
+    .governance-finding-inline-label {
+      margin: 0 0 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--error);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
 
     .decision-affects {
       padding: 8px 12px;
