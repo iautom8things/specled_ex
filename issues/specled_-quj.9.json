@@ -4,6 +4,7 @@
     "specled_-quj.2"
   ],
   "blocks": [],
+  "closed_at": "2026-05-04T16:43:33Z",
   "created": "2026-05-04T15:18:23Z",
   "description": "Advances: specled.spec_review (and possibly specled.realized_by — if a new detector_unavailable reason is added)\n\nA new affected subject with no realized_by declared looks identical in the report to a subject whose bindings simply weren't touched. The CODE diagram node tooltip (lib/specled_ex/review/html.ex:296) says \"0 MFAs means no realized_by — neither pass nor fail\" but that's tooltip-buried.\n\nTwo options, pick one:\n\nA. Emit a detector_unavailable finding with reason :no_realized_by from the realization pipeline when a subject has zero bindings. Then child #2's :degraded leg state surfaces it automatically.\n\nB. Inline advisory on the subject card header: \"this subject has no realized_by binding declared — SPEC↔CODE leg cannot be verified.\"\n\nOption A is more aligned with concepts.md's graceful-degrade rule (detector_unavailable is the right vocabulary for \"this tier cannot run on this subject\"). Option B is local-only.\n\nDepends on child #2.",
   "id": "specled_-quj.9",
@@ -16,7 +17,7 @@
     }
   ],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "No-realized_by advisory on subject cards",
   "type": "task",
   "updated_at": "2026-05-04T16:43:33Z"
