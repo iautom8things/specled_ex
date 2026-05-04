@@ -204,7 +204,6 @@ defmodule SpecLedEx.Review.Html do
       ~s|<section id="triage" class="sync-status sync-status-#{state}" aria-label="Sync status">|,
       render_sync_headline(triage, in_sync?),
       render_sync_checklist(triage),
-      render_sync_misc_note(triage),
       render_triage_subjects(triage.affected_subjects),
       render_findings_list(findings),
       ~S|</section>|
@@ -327,15 +326,6 @@ defmodule SpecLedEx.Review.Html do
   end
 
   defp strength_summary_text(_), do: ""
-
-  defp render_sync_misc_note(%{has_unmapped_changes?: false}), do: ""
-
-  defp render_sync_misc_note(_) do
-    ~S"""
-    <p class="sync-misc-note">Some files in this change set don't map to any spec subject. They appear in the
-    <a href="#misc">Outside the spec system</a> panel — triangulation does not apply to them.</p>
-    """
-  end
 
   defp render_sync_checklist(triage) do
     checks = build_sync_checks(triage)
@@ -2159,16 +2149,6 @@ defmodule SpecLedEx.Review.Html do
       border-radius: 3px;
     }
 
-    .sync-misc-note {
-      margin: 16px 0 0 0;
-      padding: 10px 14px;
-      background: var(--info-bg);
-      border-radius: 4px;
-      font-size: 13px;
-      color: var(--fg);
-    }
-    .sync-misc-note a { color: var(--accent); }
-
     /* Per-subject status list under the sync panel. */
     .triage-subjects {
       list-style: none;
@@ -3140,20 +3120,32 @@ defmodule SpecLedEx.Review.Html do
     .diff-row-hunk .diff-content { padding: 4px 8px; font-weight: 500; color: var(--hunk-fg); }
 
     /* Prism integration: keep our diff-row backgrounds + line styling
-       intact while letting Prism color the tokens inside .diff-content. */
-    code.diff-content {
+       intact while letting Prism color the tokens inside .diff-content.
+       Prism ships a rule:
+         :not(pre)>code[class*=language-]{padding:.1em;border-radius:.3em;
+                                         white-space:normal;background:#f5f2f0}
+       which would collapse our diff whitespace and add an inline pill
+       look. The override below has higher specificity (class + attribute
+       on the same element) plus !important on the load-bearing
+       properties so token highlighting still works but the layout
+       belongs to us. */
+    code.diff-content,
+    :not(pre) > code.diff-content[class*="language-"] {
       display: inline;
       background: transparent !important;
-      padding: 0 8px;
+      padding: 0 8px !important;
       margin: 0;
-      border-radius: 0;
+      border-radius: 0 !important;
       font-family: var(--code-font);
       font-size: inherit;
       color: inherit;
-      white-space: pre;
+      white-space: pre !important;
+      word-break: normal !important;
+      word-wrap: normal !important;
       text-shadow: none;
+      tab-size: 4;
+      -moz-tab-size: 4;
     }
-    code.diff-content[class*="language-"] { tab-size: 2; }
     pre[class*="language-"], code[class*="language-"] {
       text-shadow: none;
       background: transparent;
