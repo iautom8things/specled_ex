@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-05-04T15:18:09Z",
+  "description": "Advances: specled.spec_review\n\nThree small noise reductions. None are individually critical — bundle into one PR.\n\n1. The EXECUTED/LINKED/CLAIMED/UNCOVERED legend (lib/specled_ex/review/html.ex:1007-1028, coverage_help) currently re-renders inside every subject's Coverage tab. Move to a single page-level disclosure near the triage panel; subject tabs link to the anchor instead of duplicating.\n\n2. The \"Raw spec-verification\" disclosure (html.ex:1152-1183) is power-user noise on every Coverage tab. Move to a single page-level \"Raw verification (all subjects)\" disclosure near the bottom.\n\n3. The misc panel's file tree (render_unmapped, html.ex:1393-1427) is overkill when N≤3 unmapped files. Render as a flat list under N=3, tree above.\n\nNo semantic change; this is purely density work.",
+  "id": "specled_-quj.8",
+  "labels": [],
+  "parent": "specled_-quj",
+  "priority": 2,
+  "status": "open",
+  "title": "Trim repetition: legend, raw verification, misc tree",
+  "type": "task",
+  "updated_at": "2026-05-04T15:18:09Z"
+}
