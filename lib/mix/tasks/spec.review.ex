@@ -1,6 +1,8 @@
 defmodule Mix.Tasks.Spec.Review do
   use Mix.Task
 
+  @requirements ["app.config"]
+
   @shortdoc "Renders a spec-aware PR review HTML artifact for the current change set"
 
   # covers: specled.tasks.review_html_artifact
@@ -27,6 +29,8 @@ defmodule Mix.Tasks.Spec.Review do
 
   @impl Mix.Task
   def run(args) do
+    SpecLedEx.MixRuntime.ensure_started!()
+
     {opts, rest, invalid} =
       OptionParser.parse(
         args,
