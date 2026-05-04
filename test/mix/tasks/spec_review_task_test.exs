@@ -6,7 +6,7 @@ defmodule Mix.Tasks.SpecReviewTaskTest do
     :ok
   end
 
-  @tag spec: "specled.spec_review.html_artifact"
+  @tag spec: "specled.tasks.review_html_artifact"
   test "writes a self-contained HTML file with no external network references", %{root: root} do
     setup_repo(root)
 
