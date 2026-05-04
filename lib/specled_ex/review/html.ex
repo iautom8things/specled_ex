@@ -94,8 +94,8 @@ defmodule SpecLedEx.Review.Html do
       <main>
         <section class="view-pane view-pane-spec active" data-view-pane="spec">
           <%= render_triage(view.triage, view.all_findings) %>
-          <%= render_subjects(view.affected_subjects, view.adrs_by_id) %>
           <%= render_decisions_changed(view.decisions_changed, view.adrs_by_id) %>
+          <%= render_subjects(view.affected_subjects, view.adrs_by_id) %>
           <%= render_unmapped(view.unmapped_changes, view.file_breakdown) %>
         </section>
         <section class="view-pane view-pane-files" data-view-pane="files">
@@ -121,6 +121,7 @@ defmodule SpecLedEx.Review.Html do
     [
       ~S|<nav><ul class="toc-list">|,
       toc_item("triage", "Triage", triage_toc_badge(view.triage)),
+      render_toc_decisions(view.decisions_changed, view.adrs_by_id),
       ~s|<li class="toc-section"><a href="#subjects">Affected subjects (#{view.triage.affected_subject_count})</a>|,
       if view.triage.affected_subjects == [] do
         ""
@@ -134,10 +135,48 @@ defmodule SpecLedEx.Review.Html do
         ]
       end,
       ~S|</li>|,
-      toc_item("decisions-changed", "Decisions changed (#{length(view.decisions_changed)})", ""),
       toc_item("misc", "Outside the spec system (#{length(view.unmapped_changes)})", ""),
       ~S|</ul></nav>|
     ]
+  end
+
+  defp render_toc_decisions([], _adrs_by_id) do
+    ~s|<li class="toc-section"><a href="#decisions-changed">Decisions changed (0)</a></li>|
+  end
+
+  defp render_toc_decisions(decisions, adrs_by_id) do
+    [
+      ~s|<li class="toc-section"><a href="#decisions-changed">Decisions changed (#{length(decisions)})</a>|,
+      ~S|<ul class="toc-sublist">|,
+      Enum.map(decisions, fn d ->
+        adr = Map.get(adrs_by_id || %{}, d.id)
+        anchor = "adr-" <> slug(d.id || d.file)
+        pip = render_toc_adr_pip(adr)
+        label = d.id || Path.basename(d.file)
+
+        ~s|<li><a href="##{anchor}"><code>#{h(label)}</code><span class="toc-pips">#{pip}</span></a></li>|
+      end),
+      ~S|</ul>|,
+      ~S|</li>|
+    ]
+  end
+
+  defp render_toc_adr_pip(nil), do: ""
+
+  defp render_toc_adr_pip(adr) do
+    case Map.get(adr, :change_status) do
+      :new ->
+        ~s|<span class="toc-pip toc-pip-new"#{title_attr(tooltip(:change, :new))}>NEW</span>|
+
+      :modified ->
+        ~s|<span class="toc-pip toc-pip-edited"#{title_attr(tooltip(:change, :modified))}>EDITED</span>|
+
+      :removed ->
+        ~s|<span class="toc-pip toc-pip-error"#{title_attr(tooltip(:change, :removed))}>REM</span>|
+
+      _ ->
+        ""
+    end
   end
 
   defp toc_item(anchor, label, badge) do
@@ -1204,8 +1243,10 @@ defmodule SpecLedEx.Review.Html do
   end
 
   defp render_changed_decision_minimal(d) do
+    anchor = "adr-" <> slug(d.id || d.file)
+
     ~s"""
-    <details class="adr">
+    <details class="adr" id="#{anchor}">
       <summary class="adr-summary">
         <code class="adr-id">#{h(d.id || d.file)}</code>
         <span class="adr-title-missing">decision changed but no parsed ADR available</span>
@@ -1229,8 +1270,10 @@ defmodule SpecLedEx.Review.Html do
     date_chip =
       if adr.date, do: ~s|<span class="adr-date">#{h(adr.date)}</span>|, else: ""
 
+    anchor = "adr-" <> slug(adr.id || d.file)
+
     ~s"""
-    <details class="adr adr-#{Map.get(adr, :change_status, :unchanged)}" open>
+    <details class="adr adr-#{Map.get(adr, :change_status, :unchanged)}" id="#{anchor}" open>
       <summary class="adr-summary">
         #{change_chip}
         <code class="adr-id">#{h(adr.id)}</code>
@@ -1250,8 +1293,34 @@ defmodule SpecLedEx.Review.Html do
 
   defp render_decision_status_pill(nil), do: ""
 
-  defp render_decision_status_pill(status),
-    do: ~s|<span class="pill pill-neutral">#{h(status)}</span>|
+  defp render_decision_status_pill(status) do
+    class = decision_status_pill_class(status)
+    ~s|<span class="pill #{class}"#{title_attr(decision_status_tooltip(status))}>#{h(status)}</span>|
+  end
+
+  defp decision_status_pill_class(status) do
+    case String.downcase(to_string(status)) do
+      "accepted" -> "pill-status-accepted"
+      "proposed" -> "pill-status-proposed"
+      "deprecated" -> "pill-status-deprecated"
+      "superseded" -> "pill-status-superseded"
+      "rejected" -> "pill-status-rejected"
+      "draft" -> "pill-status-draft"
+      _ -> "pill-neutral"
+    end
+  end
+
+  defp decision_status_tooltip(status) do
+    case String.downcase(to_string(status)) do
+      "accepted" -> "The decision is in force."
+      "proposed" -> "Drafted but not yet ratified."
+      "deprecated" -> "No longer recommended; may still apply to existing code."
+      "superseded" -> "Replaced by a newer decision (see superseded_by)."
+      "rejected" -> "Considered and explicitly not adopted."
+      "draft" -> "Work-in-progress; expect changes before acceptance."
+      _ -> ""
+    end
+  end
 
   defp render_decision_change_type_pill(nil), do: ""
 
@@ -2369,6 +2438,15 @@ defmodule SpecLedEx.Review.Html do
     .pill-priority-must { background: #fee2e2; color: #b91c1c; font-weight: 600; }
     .pill-priority-should { background: #fef3c7; color: #92400e; }
     .pill-priority-may { background: #e0f2fe; color: #0369a1; }
+
+    /* ADR status pills — "accepted" should read affirmatively, not as
+       neutral chrome. Other statuses get colors that match their meaning. */
+    .pill-status-accepted { background: #d1fae5; color: #065f46; font-weight: 600; }
+    .pill-status-proposed { background: #e0f2fe; color: #075985; }
+    .pill-status-deprecated { background: #fef3c7; color: #92400e; }
+    .pill-status-superseded { background: #f3f4f6; color: #6b7280; text-decoration: line-through; }
+    .pill-status-rejected { background: #fee2e2; color: #991b1b; }
+    .pill-status-draft { background: #f3e8ff; color: #6b21a8; }
 
     .badge {
       display: inline-block;
