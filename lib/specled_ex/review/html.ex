@@ -943,16 +943,74 @@ defmodule SpecLedEx.Review.Html do
         <li class="finding-item finding-#{h(sev)}">
           <span class="finding-severity"#{title_attr(tooltip(:severity, sev))}>#{h(sev)}</span>
           <span class="finding-code">#{h(f["code"])}</span>
-          #{render_subject_link(f["subject_id"])}
+          #{render_subject_link(f)}
           <span class="finding-message">#{h(f["message"])}</span>
         </li>
     """
   end
 
+  # Render the subject anchor(s) shown in the All-findings row.
+  #
+  # For most finding codes the `subject_id` IS the subject the reviewer should
+  # follow, so we render a single anchor. For `branch_guard_untethered_test`,
+  # though, `subject_id` is the *claimed* subject (the one the test's `@tag
+  # spec:` named) while the test's coverage actually exercises a different
+  # subject — the `observed_owners` list. Linking only to the claimed subject
+  # sends the reviewer to a card with no evidence of the misalignment. We
+  # surface both: "claims A, hits B" with both names anchored, so the headline
+  # IS the misalignment.
   defp render_subject_link(nil), do: ""
 
-  defp render_subject_link(subject_id) do
+  defp render_subject_link(%{"code" => "branch_guard_untethered_test"} = finding) do
+    claimed = finding["subject_id"]
+    observed = List.wrap(finding["observed_owners"]) |> Enum.reject(&is_nil/1)
+
+    case {claimed, observed} do
+      {nil, []} ->
+        ""
+
+      {nil, _} ->
+        # No claimed subject (shouldn't happen in practice, but render safely).
+        render_subject_anchors(observed)
+
+      {_, []} ->
+        # No observed owners recorded — fall back to the single claimed link.
+        render_subject_anchor(claimed)
+
+      {_, _} ->
+        ~s|<span class="finding-subject-pair">| <>
+          ~s|<span class="finding-subject-label">claims</span> | <>
+          render_subject_anchor(claimed) <>
+          ~s|<span class="finding-subject-label">, hits</span> | <>
+          render_subject_anchors(observed) <>
+          ~s|</span>|
+    end
+  end
+
+  defp render_subject_link(%{"subject_id" => subject_id}), do: render_subject_link(subject_id)
+
+  defp render_subject_link(finding) when is_map(finding) do
+    render_subject_link(Map.get(finding, "subject_id"))
+  end
+
+  defp render_subject_link(subject_id) when is_binary(subject_id) do
+    render_subject_anchor(subject_id)
+  end
+
+  defp render_subject_link(_), do: ""
+
+  defp render_subject_anchor(subject_id) when is_binary(subject_id) do
     ~s|<a class="finding-subject" href="#subject-#{slug(subject_id)}">#{h(subject_id)}</a>|
+  end
+
+  defp render_subject_anchor(_), do: ""
+
+  defp render_subject_anchors(subject_ids) do
+    subject_ids
+    |> Enum.map(&render_subject_anchor/1)
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.intersperse(", ")
+    |> Enum.join("")
   end
 
   defp render_subjects([], _adrs), do: ""
@@ -3258,6 +3316,8 @@ defmodule SpecLedEx.Review.Html do
     .finding-code { font-family: var(--code-font); font-size: 12px; color: var(--fg-muted); }
     .finding-subject { font-family: var(--code-font); font-size: 12px; color: var(--accent); text-decoration: none; }
     .finding-subject:hover { text-decoration: underline; }
+    .finding-subject-pair { font-size: 12px; color: var(--fg-muted); display: inline; }
+    .finding-subject-label { font-family: var(--body-font); color: var(--fg-muted); }
     .finding-message { color: var(--fg); }
 
     /* Subject card */

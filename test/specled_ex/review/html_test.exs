@@ -838,4 +838,110 @@ defmodule SpecLedEx.Review.HtmlTest do
       refute html =~ "branch_guard_realization_drift"
     end
   end
+
+  defp render_findings(findings), do: IO.iodata_to_binary(Html.render_findings_list(findings))
+
+  defp untethered_finding(claimed, observed_owners, opts \\ []) do
+    %{
+      "code" => "branch_guard_untethered_test",
+      "severity" => Keyword.get(opts, :severity, "info"),
+      "subject_id" => claimed,
+      "observed_owners" => observed_owners,
+      "message" =>
+        Keyword.get(opts, :message, "test claims #{claimed} but hits #{Enum.join(observed_owners, ", ")}")
+    }
+  end
+
+  describe "render_findings_list — untethered_test claims/hits link" do
+    # A branch_guard_untethered_test finding's `subject_id` is the *claimed*
+    # subject (the one the test's `@tag spec:` named) while the test's
+    # coverage actually exercises a different subject — recorded in
+    # `observed_owners`. The reviewer needs both anchors so the misalignment
+    # IS the headline; linking only to the claimed subject sends them to a
+    # card with no evidence.
+
+    test "renders 'claims A, hits B' with anchors to both subjects when observed_owners present" do
+      html = render_findings([untethered_finding("subject.a", ["subject.b"], message: "...")])
+
+      assert html =~ "finding-subject-pair"
+      assert html =~ ~s|<span class="finding-subject-label">claims</span>|
+      assert html =~ ~s|<span class="finding-subject-label">, hits</span>|
+      assert html =~ ~s|href="#subject-subject-a"|
+      assert html =~ ~s|href="#subject-subject-b"|
+      assert html =~ ">subject.a<"
+      assert html =~ ">subject.b<"
+    end
+
+    test "preserves order: claimed appears before observed in the rendered string" do
+      html = render_findings([untethered_finding("subject.a", ["subject.b"])])
+
+      claimed_pos = :binary.match(html, "subject-subject-a") |> elem(0)
+      observed_pos = :binary.match(html, "subject-subject-b") |> elem(0)
+
+      assert claimed_pos < observed_pos,
+             "claimed subject should be rendered before observed owner"
+    end
+
+    test "renders multiple observed owners as comma-separated anchors" do
+      html = render_findings([untethered_finding("subject.a", ["subject.b", "subject.c"])])
+
+      assert html =~ ~s|href="#subject-subject-a"|
+      assert html =~ ~s|href="#subject-subject-b"|
+      assert html =~ ~s|href="#subject-subject-c"|
+    end
+
+    test "falls back to single claimed link when observed_owners is missing" do
+      finding = %{
+        "code" => "branch_guard_untethered_test",
+        "severity" => "info",
+        "subject_id" => "subject.a",
+        "message" => "..."
+      }
+
+      html = render_findings([finding])
+
+      assert html =~ ~s|href="#subject-subject-a"|
+      refute html =~ "finding-subject-pair"
+      refute html =~ "finding-subject-label"
+    end
+
+    test "falls back to single claimed link when observed_owners is empty list" do
+      html = render_findings([untethered_finding("subject.a", [], message: "...")])
+
+      assert html =~ ~s|href="#subject-subject-a"|
+      refute html =~ "finding-subject-pair"
+      refute html =~ "finding-subject-label"
+    end
+
+    test "non-untethered findings still render a single subject link" do
+      finding = %{
+        "code" => "branch_guard_untested_realization",
+        "severity" => "warning",
+        "subject_id" => "subject.a",
+        "observed_owners" => ["subject.b"],
+        "message" => "..."
+      }
+
+      html = render_findings([finding])
+
+      assert html =~ ~s|href="#subject-subject-a"|
+      refute html =~ ~s|href="#subject-subject-b"|
+      refute html =~ "finding-subject-pair"
+      refute html =~ "finding-subject-label"
+    end
+
+    test "untethered finding without subject_id still renders observed owners" do
+      finding = %{
+        "code" => "branch_guard_untethered_test",
+        "severity" => "info",
+        "subject_id" => nil,
+        "observed_owners" => ["subject.b"],
+        "message" => "..."
+      }
+
+      html = render_findings([finding])
+
+      assert html =~ ~s|href="#subject-subject-b"|
+    end
+  end
 end
