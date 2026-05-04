@@ -348,6 +348,8 @@ defmodule SpecLedEx.Review do
       |> Enum.group_by(& &1["code"])
       |> Map.new(fn {k, v} -> {k, length(v)} end)
 
+    detector_unavailable_by_leg = build_detector_unavailable_by_leg(findings)
+
     %{
       findings_count: length(findings),
       by_severity: by_severity,
@@ -361,9 +363,39 @@ defmodule SpecLedEx.Review do
       adr_ref_count: length(adr_refs),
       unresolved_adr_count: length(unresolved_adr_refs),
       strength_breakdown: strength_breakdown,
-      findings_by_code: findings_by_code
+      findings_by_code: findings_by_code,
+      detector_unavailable_by_leg: detector_unavailable_by_leg
     }
   end
+
+  # Aggregate `detector_unavailable` findings into the triangle leg they
+  # belong to, keyed by reason. Realization-tier detectors
+  # (`debug_info_stripped`, `umbrella_unsupported` from any realization
+  # tier) live on SPEC ↔ CODE; coverage triangulation's
+  # `no_coverage_artifact` lives on CODE ↔ TESTS (the evidence leg).
+  # Reasons we don't recognize land on `:unknown` so they aren't silently
+  # dropped — the renderer surfaces them under the closest leg.
+  defp build_detector_unavailable_by_leg(findings) do
+    findings
+    |> Enum.filter(&(&1["code"] == "detector_unavailable"))
+    |> Enum.reduce(%{}, fn finding, acc ->
+      reason = finding["reason"] || "unknown"
+      leg = detector_unavailable_leg(reason)
+
+      Map.update(acc, leg, %{reason => 1}, fn by_reason ->
+        Map.update(by_reason, reason, 1, &(&1 + 1))
+      end)
+    end)
+  end
+
+  # Reasons emitted by realization tiers (expanded_behavior, use_tier,
+  # typespecs, api_boundary, implementation) live on SPEC ↔ CODE — the
+  # `realized_by` leg. The coverage triangulation's `no_coverage_artifact`
+  # lives on CODE ↔ TESTS — the evidence leg.
+  defp detector_unavailable_leg("debug_info_stripped"), do: :spec_to_code
+  defp detector_unavailable_leg("umbrella_unsupported"), do: :spec_to_code
+  defp detector_unavailable_leg("no_coverage_artifact"), do: :tests_to_coverage
+  defp detector_unavailable_leg(_), do: :spec_to_code
 
   defp req_id(req) when is_struct(req), do: to_string(Map.get(req, :id) || "")
   defp req_id(req) when is_map(req), do: to_string(Map.get(req, :id) || Map.get(req, "id") || "")

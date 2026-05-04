@@ -21,7 +21,8 @@ defmodule SpecLedEx.Review.HtmlTest do
         verification_count: 1,
         adr_ref_count: 0,
         strength_breakdown: %{},
-        findings_by_code: findings_by_code
+        findings_by_code: findings_by_code,
+        detector_unavailable_by_leg: %{}
       },
       overrides
     )
@@ -293,6 +294,193 @@ defmodule SpecLedEx.Review.HtmlTest do
         assert labels_fail == [],
                "checklist-only code #{code} unexpectedly flipped a diagram edge"
       end
+    end
+  end
+
+  describe "render_sync_diagram leg classifier — :degraded for detector_unavailable" do
+    # covers: specled.spec_review.degraded_leg_state
+    test "no_coverage_artifact flips the evidence edge to degraded" do
+      degraded =
+        triage(%{}, %{
+          detector_unavailable_by_leg: %{tests_to_coverage: %{"no_coverage_artifact" => 1}}
+        })
+
+      html = IO.iodata_to_binary(Html.render_sync_diagram(degraded))
+
+      assert "evidence" in extract_labels(html, "degraded"),
+             "no_coverage_artifact should flip the evidence edge to :degraded"
+
+      refute "evidence" in extract_labels(html, "ok")
+      refute "evidence" in extract_labels(html, "fail")
+    end
+
+    test "debug_info_stripped flips the realized_by edge to degraded" do
+      degraded =
+        triage(%{}, %{
+          detector_unavailable_by_leg: %{spec_to_code: %{"debug_info_stripped" => 1}}
+        })
+
+      html = IO.iodata_to_binary(Html.render_sync_diagram(degraded))
+
+      assert "realized_by" in extract_labels(html, "degraded")
+      refute "realized_by" in extract_labels(html, "ok")
+    end
+
+    test "umbrella_unsupported flips the realized_by edge to degraded" do
+      degraded =
+        triage(%{}, %{
+          detector_unavailable_by_leg: %{spec_to_code: %{"umbrella_unsupported" => 1}}
+        })
+
+      html = IO.iodata_to_binary(Html.render_sync_diagram(degraded))
+
+      assert "realized_by" in extract_labels(html, "degraded")
+    end
+
+    test "a fail finding on the same leg supersedes a degraded reason" do
+      both =
+        triage(%{"branch_guard_realization_drift" => 1}, %{
+          detector_unavailable_by_leg: %{spec_to_code: %{"debug_info_stripped" => 1}}
+        })
+
+      html = IO.iodata_to_binary(Html.render_sync_diagram(both))
+
+      assert "realized_by" in extract_labels(html, "fail"),
+             "a real failure must outrank a detector_unavailable on the same leg"
+
+      refute "realized_by" in extract_labels(html, "degraded")
+    end
+
+    test "the degraded edge renders with a ? glyph (not ✓ or ✗)" do
+      degraded =
+        triage(%{}, %{
+          detector_unavailable_by_leg: %{tests_to_coverage: %{"no_coverage_artifact" => 1}}
+        })
+
+      html = IO.iodata_to_binary(Html.render_sync_diagram(degraded))
+
+      assert html =~ ~s|sync-edge sync-edge-degraded|
+
+      # Pull the icon span out of the degraded edge specifically.
+      assert Regex.match?(
+               ~r|sync-edge sync-edge-degraded.*?sync-edge-icon">\?</span>|s,
+               html
+             ),
+             "the degraded edge should render its glyph as ? (not ✓ or ✗)"
+    end
+
+    test "the degraded edge tooltip names every distinct reason on that leg" do
+      degraded =
+        triage(%{}, %{
+          detector_unavailable_by_leg: %{
+            spec_to_code: %{"debug_info_stripped" => 2, "umbrella_unsupported" => 1}
+          }
+        })
+
+      html = IO.iodata_to_binary(Html.render_sync_diagram(degraded))
+
+      [tooltip] =
+        Regex.run(
+          ~r|sync-edge sync-edge-degraded[^>]*title="([^"]+)"|,
+          html,
+          capture: :all_but_first
+        )
+
+      assert tooltip =~ "debug_info_stripped"
+      assert tooltip =~ "umbrella_unsupported"
+    end
+  end
+
+  describe "render_degraded_banner" do
+    # covers: specled.spec_review.degraded_leg_state
+    test "renders a banner when any leg carries a detector_unavailable finding" do
+      banner =
+        Html.render_degraded_banner(
+          triage(%{}, %{
+            detector_unavailable_by_leg: %{
+              tests_to_coverage: %{"no_coverage_artifact" => 1}
+            }
+          })
+        )
+
+      assert banner =~ ~s|class="sync-degraded-banner"|
+      assert banner =~ "no_coverage_artifact"
+      assert banner =~ "Partial report"
+    end
+
+    test "renders an empty string when no detector_unavailable findings exist" do
+      banner = Html.render_degraded_banner(triage(%{}))
+
+      assert banner == ""
+    end
+
+    test "the banner enumerates every distinct reason across legs" do
+      banner =
+        Html.render_degraded_banner(
+          triage(%{}, %{
+            detector_unavailable_by_leg: %{
+              spec_to_code: %{"debug_info_stripped" => 2, "umbrella_unsupported" => 1},
+              tests_to_coverage: %{"no_coverage_artifact" => 1}
+            }
+          })
+        )
+
+      assert banner =~ "debug_info_stripped"
+      assert banner =~ "umbrella_unsupported"
+      assert banner =~ "no_coverage_artifact"
+    end
+  end
+
+  describe "build_sync_checks — degraded rows" do
+    # covers: specled.spec_review.degraded_leg_state
+    test "a tests_to_coverage detector_unavailable marks tests/coverage rows as degraded" do
+      checks =
+        Html.build_sync_checks(
+          triage(%{}, %{
+            detector_unavailable_by_leg: %{tests_to_coverage: %{"no_coverage_artifact" => 1}}
+          })
+        )
+
+      coverage_check = Enum.find(checks, &(&1.leg == "Coverage"))
+
+      assert coverage_check
+      assert coverage_check.passed? == true
+      assert Map.get(coverage_check, :degraded?) == true
+      assert Map.get(coverage_check, :degraded_reasons) == %{"no_coverage_artifact" => 1}
+    end
+
+    test "rows on legs with no detector_unavailable are not marked degraded" do
+      checks =
+        Html.build_sync_checks(
+          triage(%{}, %{
+            detector_unavailable_by_leg: %{tests_to_coverage: %{"no_coverage_artifact" => 1}}
+          })
+        )
+
+      spec_well_formed = Enum.find(checks, &(&1.leg == "Spec"))
+
+      assert spec_well_formed
+      refute Map.get(spec_well_formed, :degraded?, false)
+    end
+
+    test "a failing finding on a degraded leg keeps the row failing, not degraded" do
+      checks =
+        Html.build_sync_checks(
+          triage(%{"branch_guard_realization_drift" => 1}, %{
+            detector_unavailable_by_leg: %{spec_to_code: %{"debug_info_stripped" => 1}}
+          })
+        )
+
+      drift_row =
+        Enum.find(checks, fn c ->
+          "branch_guard_realization_drift" in c.codes
+        end)
+
+      assert drift_row
+      assert drift_row.passed? == false
+      # degraded? requires passed? — when a real failure exists, the row
+      # is fail, not degraded.
+      refute Map.get(drift_row, :degraded?, false)
     end
   end
 end
