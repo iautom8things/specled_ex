@@ -7,9 +7,15 @@
   "id": "specled_-quj.4",
   "labels": [],
   "parent": "specled_-quj",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: 985e3e4e-1dd3-43de-8a05-67a8b7029e85\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/985e3e4e-1dd3-43de-8a05-67a8b7029e85.jsonl\n\nCommit: ae033ba\nFiles touched:\n- lib/specled_ex/review/html.ex (subject_template + new render_subject_binding_health/2 + tooltip variants + CSS rules)\n- test/specled_ex/review_test.exs (new describe blocks for the helper and the integration)\n\nTests added:\n- Html.render_subject_binding_health/2 — 7 unit tests (empty/nil bindings, all-valid plural+singular, dangling count, ignores non-dangling codes, single MFA value)\n- subject card binding-health badge integration — 1 end-to-end test through Review.build_view + Html.render\n\nVerification stubs flipped: none (the existing executed `mix test test/specled_ex/review_test.exs ...` stub already covers specled.spec_review.inline_finding_badges; the new tests are tagged `spec: \"specled.spec_review.inline_finding_badges\"` so they're picked up by tag-based coverage).\n\nSummary: subject_template now renders a third header chip via render_subject_binding_health/2, alongside the existing change and finding badges. The helper sums MFAs across realized_by tiers (List.wrap parity with render_bindings_section) and counts branch_guard_dangling_binding findings on the subject to pick one of three states: \"0 bindings (no realized_by declared)\", \"N bindings, K dangling\", or \"N bindings, all valid\". Adds matching CSS (badge-binding-empty/dangling/valid) and tooltip text for each state. mix spec.check stays clean; full test suite (572 tests + 2 properties) green.",
+      "timestamp": "2026-05-04T15:38:25Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Per-subject binding-health callout on subject card header",
   "type": "task",
-  "updated_at": "2026-05-04T15:29:39Z"
+  "updated_at": "2026-05-04T15:38:25Z"
 }
