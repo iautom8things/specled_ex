@@ -21,11 +21,15 @@
     {
       "text": "AUDIT: APPROVE (self-audit, cold-pass discipline, no Task tool available)\nSession: 4dc4e8c3-55b7-4753-9a3d-c93afc1d9762\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/4dc4e8c3-55b7-4753-9a3d-c93afc1d9762.jsonl\n\nReasoning:\n- Requirement specled.spec_review.decisions_governance_inline is tested by 6 new tests in test/specled_ex/review/html_test.exs lines 312-470. The \"fix-block preserved verbatim\" test asserts the exact regex `\u003cpre class=\"governance-finding-fix\"\u003e\u003ccode\u003efix:[^\u003c]+\u003c/code\u003e\u003c/pre\u003e` so it would fail if the message body were truncated or HTML-collapsed.\n- The \"mixed inline + orphan\" test simultaneously asserts \"Governance findings naming this ADR\" AND \"Governance violations (1)\" appear in the same render, so a regression that routed everything one direction would fail it.\n- Source-claim trace confirmed: adrs_by_id keying (lib/specled_ex/review.ex:160) and entity_id mapping in lib/specled_ex/append_only.ex match the implementation's routing logic — the inline placement is not rubber-stamped.\n- Mechanical scope counts re-checked against the diff (git diff 29df665..HEAD --name-only): 4 files, all in spec_review's surface or its generated state. No quj.2/quj.3/quj.5 region overlap.\n- Intent-level: no new deps, no leg_state classifier duplication (governance_findings/1 uses the append_only/ prefix as documented namespace; the per-code catalog lives once in build_sync_checks).\n- mix spec.check passes 0/0/0; mix test 609/0; targeted tests 56/0.\n\nCaveat: this is a self-audit with cold-pass discipline rather than a true cold-context spawned auditor. The skill's auditor prompt explicitly defaults to BOUNCE; I attempted to apply that posture but the same agent that implemented also audited.\n\nPer orchestration overrides: do not merge back, do not clean up worktree, do not close ticket.",
       "timestamp": "2026-05-04T16:06:03Z"
+    },
+    {
+      "text": "MERGED into specled_-qm1/spec-review-html. Closing per orchestrator.",
+      "timestamp": "2026-05-04T16:18:21Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Decisions panel surfaces append_only governance violations",
   "type": "task",
-  "updated_at": "2026-05-04T16:06:03Z"
+  "updated_at": "2026-05-04T16:18:21Z"
 }
