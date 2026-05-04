@@ -776,32 +776,177 @@ defmodule SpecLedEx.Review.Html do
   defp maybe_s(1), do: ""
   defp maybe_s(_), do: "s"
 
-  defp render_findings_list([]), do: ""
+  @doc false
+  def render_findings_list([]), do: ""
 
-  defp render_findings_list(findings) do
+  # covers: specled.spec_review.triage_panel
+  # Group findings by triangle leg, then by severity within each leg, so a
+  # busy PR's flat list becomes scannable. The leg classifier reuses the
+  # code-to-leg mapping that drives the sync checklist (build_sync_checks)
+  # rather than maintaining a parallel table.
+  def render_findings_list(findings) do
+    grouped = group_findings_by_leg(findings)
+    total = length(findings)
+
     [
-      ~S"""
-      <details class="findings-list" open>
-        <summary>All findings</summary>
-        <ul>
-      """,
-      Enum.map(findings, fn f ->
-        sev = f["severity"] || ""
-
-        ~s"""
-            <li class="finding-item finding-#{h(sev)}">
-              <span class="finding-severity"#{title_attr(tooltip(:severity, sev))}>#{h(sev)}</span>
-              <span class="finding-code">#{h(f["code"])}</span>
-              #{render_subject_link(f["subject_id"])}
-              <span class="finding-message">#{h(f["message"])}</span>
-            </li>
-        """
-      end),
-      ~S"""
-        </ul>
-      </details>
-      """
+      ~s|<details class="findings-list" open>|,
+      ~s|<summary>All findings (#{total})</summary>|,
+      Enum.map(grouped, &render_findings_group/1),
+      ~S|</details>|
     ]
+  end
+
+  # The canonical leg buckets for the global findings list. Order matters —
+  # this is the order groups appear in the rendered list.
+  @findings_leg_order [
+    "Spec well-formed",
+    "Spec ↔ Code",
+    "Spec ↔ Tests",
+    "Code ↔ Tests",
+    "Coverage",
+    "Decisions",
+    "Branch",
+    "Other"
+  ]
+
+  # Severity ordering within a group: errors first, warnings, info, then the
+  # rest. Findings without a severity sort to the end.
+  @severity_order ~w(error warning info)
+
+  @doc false
+  def group_findings_by_leg(findings) do
+    by_leg =
+      Enum.reduce(findings, %{}, fn f, acc ->
+        leg = leg_for_finding_code(f["code"])
+        Map.update(acc, leg, [f], &[f | &1])
+      end)
+
+    @findings_leg_order
+    |> Enum.flat_map(fn leg ->
+      case Map.get(by_leg, leg) do
+        nil -> []
+        items -> [{leg, sort_findings_by_severity(Enum.reverse(items))}]
+      end
+    end)
+  end
+
+  # covers: specled.spec_review.triangle_code_classification
+  # Map a finding code to its triangle leg by reusing the code-to-leg
+  # mapping that already lives in build_sync_checks (the sync checklist's
+  # source of truth, added by the triangle-code classifier work). Codes
+  # the checklist does not classify fall into the "Other" bucket, which
+  # still groups them at the bottom of the list.
+  @doc false
+  def leg_for_finding_code(code) when is_binary(code) do
+    Map.get(code_to_leg_lookup(), code, "Other")
+  end
+
+  def leg_for_finding_code(_), do: "Other"
+
+  # Walk build_sync_checks (with a zeroed triage — only `codes` and `leg`
+  # matter for the lookup) and project each row's code list onto its leg
+  # bucket. The first row to claim a code wins, which mirrors the order
+  # that build_sync_checks emits. The detailed sync-check `leg` labels
+  # ("Tests → Coverage", "Spec → Decisions", "Decisions / governance",
+  # ...) are normalized to the seven public buckets used by this list.
+  @doc false
+  def code_to_leg_lookup do
+    zeroed_triage = %{
+      findings_by_code: %{},
+      affected_subject_count: 0,
+      binding_count: 0,
+      requirement_count: 0,
+      verification_count: 0,
+      adr_ref_count: 0,
+      strength_breakdown: %{}
+    }
+
+    zeroed_triage
+    |> build_sync_checks()
+    |> Enum.flat_map(fn check ->
+      bucket = sync_check_leg_to_bucket(check.leg)
+      Enum.map(check.codes, fn code -> {code, bucket} end)
+    end)
+    |> Enum.reduce(%{}, fn {code, bucket}, acc ->
+      Map.put_new(acc, code, bucket)
+    end)
+  end
+
+  # Normalize the detailed sync-check leg labels to the seven public
+  # buckets used by the global findings list. This is the one place where
+  # the public group vocabulary differs from the internal sync-check
+  # vocabulary.
+  defp sync_check_leg_to_bucket("Spec"), do: "Spec well-formed"
+  defp sync_check_leg_to_bucket("Spec → Code"), do: "Spec ↔ Code"
+  defp sync_check_leg_to_bucket("Spec → Tests"), do: "Spec ↔ Tests"
+  defp sync_check_leg_to_bucket("Code → Tests"), do: "Code ↔ Tests"
+  defp sync_check_leg_to_bucket("Tests → Coverage"), do: "Coverage"
+  defp sync_check_leg_to_bucket("Coverage"), do: "Coverage"
+  defp sync_check_leg_to_bucket("Spec → Decisions"), do: "Decisions"
+  defp sync_check_leg_to_bucket("Decisions / governance"), do: "Decisions"
+  defp sync_check_leg_to_bucket("Branch"), do: "Branch"
+  defp sync_check_leg_to_bucket(_), do: "Other"
+
+  defp sort_findings_by_severity(findings) do
+    Enum.sort_by(findings, fn f ->
+      sev = f["severity"] || ""
+
+      case Enum.find_index(@severity_order, &(&1 == sev)) do
+        nil -> length(@severity_order)
+        idx -> idx
+      end
+    end)
+  end
+
+  defp render_findings_group({leg, findings}) do
+    counts = severity_counts(findings)
+    total = length(findings)
+
+    [
+      ~s|<div class="findings-group" data-leg="#{h(leg)}">|,
+      ~s|<h3 class="findings-group-heading">|,
+      ~s|<span class="findings-group-leg">#{h(leg)}</span>|,
+      ~s| <span class="findings-group-count">#{total} #{maybe_plural(total, "finding")}</span>|,
+      render_findings_group_severity_chips(counts),
+      ~S|</h3>|,
+      ~s|<ul class="findings-group-list">|,
+      Enum.map(findings, &render_finding_item/1),
+      ~S|</ul>|,
+      ~S|</div>|
+    ]
+  end
+
+  defp render_findings_group_severity_chips(counts) do
+    @severity_order
+    |> Enum.map(fn sev ->
+      case Map.get(counts, sev, 0) do
+        0 ->
+          ""
+
+        n ->
+          ~s| <span class="findings-group-sev findings-group-sev-#{h(sev)}"#{title_attr(tooltip(:severity, sev))}>#{n} #{h(sev)}</span>|
+      end
+    end)
+  end
+
+  defp severity_counts(findings) do
+    Enum.reduce(findings, %{}, fn f, acc ->
+      sev = f["severity"] || ""
+      Map.update(acc, sev, 1, &(&1 + 1))
+    end)
+  end
+
+  defp render_finding_item(f) do
+    sev = f["severity"] || ""
+
+    ~s"""
+        <li class="finding-item finding-#{h(sev)}">
+          <span class="finding-severity"#{title_attr(tooltip(:severity, sev))}>#{h(sev)}</span>
+          <span class="finding-code">#{h(f["code"])}</span>
+          #{render_subject_link(f["subject_id"])}
+          <span class="finding-message">#{h(f["message"])}</span>
+        </li>
+    """
   end
 
   defp render_subject_link(nil), do: ""
@@ -3066,6 +3211,37 @@ defmodule SpecLedEx.Review.Html do
       border-top: 1px solid var(--border);
     }
     .findings-list ul { list-style: none; margin: 0; padding: 0; }
+    .findings-group { margin-top: 12px; }
+    .findings-group:first-of-type { margin-top: 4px; }
+    .findings-group-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 8px;
+      margin: 0;
+      padding: 8px 0 4px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--fg-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .findings-group-leg { color: var(--fg); }
+    .findings-group-count { color: var(--fg-faint); font-weight: 500; text-transform: none; letter-spacing: 0; }
+    .findings-group-sev {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .findings-group-sev-error { background: var(--error-bg); color: var(--error); }
+    .findings-group-sev-warning { background: var(--warning-bg); color: var(--warning); }
+    .findings-group-sev-info { background: var(--info-bg); color: var(--info); }
+    .findings-group-list { list-style: none; margin: 0; padding: 0; }
     .finding-item {
       display: grid;
       grid-template-columns: 80px 220px 200px 1fr;
