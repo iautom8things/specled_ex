@@ -308,6 +308,89 @@ defmodule SpecLedEx.CoverageTriangulationTest do
     end
   end
 
+  # covers: specled.spec_review.coverage_tab_bind_closure
+  describe "per_requirement_reach/2" do
+    test "returns :no_coverage_artifact when given the sentinel" do
+      assert CoverageTriangulation.per_requirement_reach(:no_coverage_artifact, fixture_closure_map()) ==
+               :no_coverage_artifact
+    end
+
+    test "reports closure mfa+file counts for every requirement, even when no test reaches it" do
+      reach = CoverageTriangulation.per_requirement_reach([], fixture_closure_map())
+
+      a_req1 = reach[{"subject_a", "subject_a.req1"}]
+      assert a_req1.closure_mfa_count == 1
+      assert a_req1.closure_file_count == 1
+      assert a_req1.reached_files == []
+      assert a_req1.unreached_files == ["lib/a.ex"]
+      assert a_req1.reaching_tests == []
+    end
+
+    test "names the tests that reach each requirement's closure" do
+      records = [
+        coverage_record(
+          test_id: "A.t1",
+          file: "lib/a.ex",
+          lines_hit: [1],
+          tags: %{file: "test/a_test.exs", test: "covers req1"}
+        )
+      ]
+
+      reach = CoverageTriangulation.per_requirement_reach(records, fixture_closure_map())
+
+      a_req1 = reach[{"subject_a", "subject_a.req1"}]
+      assert a_req1.reached_files == ["lib/a.ex"]
+      assert a_req1.unreached_files == []
+      assert a_req1.reaching_tests == ["test/a_test.exs :: covers req1"]
+
+      # subject_a.req2's closure (lib/a_extra.ex) was not reached.
+      a_req2 = reach[{"subject_a", "subject_a.req2"}]
+      assert a_req2.reached_files == []
+      assert a_req2.unreached_files == ["lib/a_extra.ex"]
+      assert a_req2.reaching_tests == []
+    end
+
+    test "deduplicates and sorts test display names across multiple closure files" do
+      records = [
+        coverage_record(
+          test_id: "A.t1",
+          file: "lib/a.ex",
+          lines_hit: [1],
+          tags: %{file: "test/a_test.exs", test: "alpha"}
+        ),
+        coverage_record(
+          test_id: "B.t1",
+          file: "lib/a.ex",
+          lines_hit: [1],
+          tags: %{file: "test/b_test.exs", test: "beta"}
+        )
+      ]
+
+      reach = CoverageTriangulation.per_requirement_reach(records, fixture_closure_map())
+      a_req1 = reach[{"subject_a", "subject_a.req1"}]
+
+      assert a_req1.reaching_tests == [
+               "test/a_test.exs :: alpha",
+               "test/b_test.exs :: beta"
+             ]
+    end
+
+    test "skips records whose lines_hit is empty (no actual coverage)" do
+      records = [
+        coverage_record(
+          test_id: "A.t_empty",
+          file: "lib/a.ex",
+          lines_hit: [],
+          tags: %{file: "test/a_test.exs", test: "no-hits"}
+        )
+      ]
+
+      reach = CoverageTriangulation.per_requirement_reach(records, fixture_closure_map())
+      assert reach[{"subject_a", "subject_a.req1"}].reaching_tests == []
+      assert reach[{"subject_a", "subject_a.req1"}].reached_files == []
+    end
+  end
+
   # ---------------------------------------------------------------------------
   # Fixtures
   # ---------------------------------------------------------------------------

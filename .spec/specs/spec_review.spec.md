@@ -82,6 +82,21 @@ decisions:
   statement: The Decisions Changed section of the HTML artifact shall render `append_only/*` findings inline next to the ADR they should have authorized (matched by ADR id when the finding's `entity_id` resolves to a changed ADR), and shall surface findings that name no resolvable ADR — including unauthorized requirement deletions, modal downgrades, scenario regressions, and decision deletions — in a dedicated "Governance violations" subsection of the same panel. Each rendered finding shall preserve the code-fenced `fix:` block emitted by `SpecLedEx.AppendOnly.analyze` so reviewers see the remediation contract verbatim.
   priority: must
   stability: evolving
+- id: specled.spec_review.coverage_tab_bind_closure
+  statement: |
+    Each subject's Coverage tab shall render, per requirement, a one-line bind-closure
+    summary of the form "Closure: N MFAs. Reached: M (by tests T1, T2). Unreached: K." —
+    where N is the size of the requirement's realization closure (the same closure the
+    implementation tier hashes), and Reached plus the test list are computed from the
+    `.spec/_coverage/per_test.coverdata` per-test artifact via
+    `SpecLedEx.CoverageTriangulation`. When the per-test coverage artifact is missing
+    the tab shall render a single "Coverage artifact unavailable" banner in place of
+    the per-row summaries; when the compiler tracer manifest is missing the tab shall
+    render a single "Binding closure unavailable" banner. Both degraded states piggyback
+    the page-level `:degraded` leg state machinery rather than rendering empty closure
+    rows that would be misread as the absence of test coverage.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -184,6 +199,12 @@ decisions:
     - specled.spec_review.triangle_code_classification
     - specled.spec_review.degraded_leg_state
     - specled.spec_review.decisions_governance_inline
+    - specled.spec_review.coverage_tab_bind_closure
+- kind: command
+  target: mix test test/specled_ex/coverage_triangulation_test.exs
+  execute: true
+  covers:
+    - specled.spec_review.coverage_tab_bind_closure
 - kind: source_file
   target: lib/mix/tasks/spec.review.ex
   covers:
@@ -205,6 +226,15 @@ decisions:
     - specled.spec_review.triangle_code_classification
     - specled.spec_review.degraded_leg_state
     - specled.spec_review.decisions_governance_inline
+    - specled.spec_review.coverage_tab_bind_closure
+- kind: source_file
+  target: lib/specled_ex/review/coverage_closure.ex
+  covers:
+    - specled.spec_review.coverage_tab_bind_closure
+- kind: source_file
+  target: lib/specled_ex/coverage_triangulation.ex
+  covers:
+    - specled.spec_review.coverage_tab_bind_closure
 - kind: workflow_file
   target: priv/spec_init/workflows/spec_review.yml.eex
   covers:

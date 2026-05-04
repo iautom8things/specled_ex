@@ -215,6 +215,76 @@ defmodule SpecLedEx.ReviewTest do
     end
   end
 
+  # covers: specled.spec_review.coverage_tab_bind_closure
+  describe "Coverage tab bind-closure integration" do
+    alias SpecLedEx.Review.Html
+
+    test "build_view attaches closure_reach to each affected subject", %{root: root} do
+      setup_repo(root, "auth_subject", "Auth.")
+      change_subject_file(root, "auth_subject")
+
+      index = SpecLedEx.index(root)
+
+      view =
+        Review.build_view(index, root,
+          base: "main",
+          closure_reach_opts: [
+            tracer_edges: %{},
+            coverage_records: :no_coverage_artifact
+          ]
+        )
+
+      assert [subject] = view.affected_subjects
+      assert is_map(subject.closure_reach)
+      assert Map.has_key?(subject.closure_reach, :status)
+      assert Map.has_key?(subject.closure_reach, :by_requirement)
+    end
+
+    test "rendered Coverage tab degrades to a 'coverage artifact unavailable' banner when records are missing",
+         %{root: root} do
+      setup_repo(root, "auth_subject", "Auth.")
+      change_subject_file(root, "auth_subject")
+
+      index = SpecLedEx.index(root)
+
+      view =
+        Review.build_view(index, root,
+          base: "main",
+          closure_reach_opts: [
+            # An empty edges map degrades to :no_tracer_manifest first; pass
+            # a non-empty map so the coverage status path is exercised.
+            tracer_edges: %{{Auth, :login, 0} => []},
+            coverage_records: :no_coverage_artifact
+          ]
+        )
+
+      html = view |> Html.render() |> IO.iodata_to_binary()
+
+      assert html =~ "Coverage artifact unavailable"
+    end
+
+    test "rendered Coverage tab degrades to a 'binding closure unavailable' banner when tracer manifest is missing",
+         %{root: root} do
+      setup_repo(root, "auth_subject", "Auth.")
+      change_subject_file(root, "auth_subject")
+
+      index = SpecLedEx.index(root)
+
+      view =
+        Review.build_view(index, root,
+          base: "main",
+          closure_reach_opts: [
+            tracer_edges: %{},
+            coverage_records: []
+          ]
+        )
+
+      html = view |> Html.render() |> IO.iodata_to_binary()
+
+      assert html =~ "Binding closure unavailable"
+    end
+  end
+
   # ----------------------------------------------------------------------
   # helpers
   # ----------------------------------------------------------------------
