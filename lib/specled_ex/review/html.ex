@@ -182,82 +182,195 @@ defmodule SpecLedEx.Review.Html do
   defp render_toc_change_pip(_), do: ""
 
   # covers: specled.spec_review.triage_panel
-  # When clean? is true the panel collapses to a single confirmation row;
-  # otherwise it summarizes finding count + severity breakdown + affected
-  # subject count, lists each affected subject with its severity badge
-  # (anchored to its card), and exposes a full findings list.
-  defp render_triage(%{clean?: true}, _findings) do
-    ~S"""
-    <section id="triage" class="triage triage-clean" aria-label="Triage summary">
-      <span class="triage-icon" aria-hidden="true">✓</span>
-      <span class="triage-headline">No findings · no unmapped changes</span>
-    </section>
-    """
-  end
-
-  defp render_triage(triage, findings) do
-    open_attr = if triage.findings_count > 0, do: " open", else: ""
-    summary = render_triage_summary(triage)
-
+  # The sync-status panel headlines whether spec ↔ code ↔ tests ↔ coverage
+  # are in sync for this change set, then enumerates the specific checks
+  # that were performed (so a first-time reader can see what "no findings"
+  # actually means). Per-subject status badges and the full findings list
+  # remain available below.
+  defp render_triage(%{clean?: true} = triage, _findings) do
     [
-      ~s|<details id="triage" class="triage" aria-label="Triage"#{open_attr}>|,
-      ~s|<summary class="triage-summary-row">#{summary}</summary>|,
-      ~S|<div class="triage-body">|,
-      render_severity_pills_row(triage),
-      render_triage_subjects(triage.affected_subjects),
-      render_findings_list(findings),
-      ~S"""
-      </div>
-      </details>
-      """
+      ~s|<section id="triage" class="sync-status sync-status-in" aria-label="Sync status">|,
+      render_sync_headline(triage, true),
+      render_sync_checklist(triage),
+      ~S|</section>|
     ]
   end
 
-  defp render_triage_summary(triage) do
-    affected_chunk =
-      ~s|<span class="triage-summary-meta">#{triage.affected_subject_count} affected subject#{if triage.affected_subject_count == 1, do: "", else: "s"}</span>|
+  defp render_triage(triage, findings) do
+    in_sync? = triage.findings_count == 0
+    state = if in_sync?, do: "in", else: "out"
 
-    unmapped_chunk =
-      if triage.has_unmapped_changes? do
-        ~s|<span class="triage-summary-meta">unmapped changes present</span>|
+    [
+      ~s|<section id="triage" class="sync-status sync-status-#{state}" aria-label="Sync status">|,
+      render_sync_headline(triage, in_sync?),
+      render_sync_checklist(triage),
+      render_sync_misc_note(triage),
+      render_triage_subjects(triage.affected_subjects),
+      render_findings_list(findings),
+      ~S|</section>|
+    ]
+  end
+
+  defp render_sync_headline(triage, true) do
+    ~s"""
+    <header class="sync-headline">
+      <span class="sync-headline-icon sync-headline-icon-ok" aria-hidden="true">✓</span>
+      <div class="sync-headline-text">
+        <h2 class="sync-headline-title">In sync</h2>
+        <p class="sync-headline-chain">#{render_sync_chain(:ok)}</p>
+        <p class="sync-headline-meta">#{render_sync_meta(triage)}</p>
+      </div>
+    </header>
+    """
+  end
+
+  defp render_sync_headline(triage, false) do
+    ~s"""
+    <header class="sync-headline">
+      <span class="sync-headline-icon sync-headline-icon-fail" aria-hidden="true">⚠</span>
+      <div class="sync-headline-text">
+        <h2 class="sync-headline-title">Out of sync — #{triage.findings_count} finding#{maybe_s(triage.findings_count)}</h2>
+        <p class="sync-headline-chain">#{render_sync_chain(:fail)}</p>
+        <p class="sync-headline-meta">#{render_sync_meta(triage)}</p>
+      </div>
+    </header>
+    """
+  end
+
+  defp render_sync_chain(state) do
+    bond_class = if state == :ok, do: "sync-bond-ok", else: "sync-bond-fail"
+
+    ~s|<span class="sync-leg">spec</span><span class="sync-bond #{bond_class}">↔</span><span class="sync-leg">code</span><span class="sync-bond #{bond_class}">↔</span><span class="sync-leg">tests</span><span class="sync-bond #{bond_class}">↔</span><span class="sync-leg">coverage</span>|
+  end
+
+  defp render_sync_meta(triage) do
+    parts = [
+      "#{triage.affected_subject_count} subject#{maybe_s(triage.affected_subject_count)}",
+      "#{triage.requirement_count} requirement#{maybe_s(triage.requirement_count)}",
+      "#{triage.binding_count} binding#{maybe_s(triage.binding_count)}",
+      strength_summary_text(triage.strength_breakdown)
+    ]
+
+    parts
+    |> Enum.reject(&(&1 in [nil, ""]))
+    |> Enum.join(" · ")
+  end
+
+  defp strength_summary_text(breakdown) when is_map(breakdown) and map_size(breakdown) > 0 do
+    [:executed, :linked, :claimed, :uncovered]
+    |> Enum.map(fn k -> {k, Map.get(breakdown, k, 0)} end)
+    |> Enum.reject(fn {_, n} -> n == 0 end)
+    |> Enum.map_join(" · ", fn {k, n} -> "#{n} #{String.upcase(to_string(k))}" end)
+  end
+
+  defp strength_summary_text(_), do: ""
+
+  defp render_sync_misc_note(%{has_unmapped_changes?: false}), do: ""
+
+  defp render_sync_misc_note(_) do
+    ~S"""
+    <p class="sync-misc-note">Some files in this change set don't map to any spec subject. They appear in the
+    <a href="#misc">Outside the spec system</a> panel — triangulation does not apply to them.</p>
+    """
+  end
+
+  defp render_sync_checklist(triage) do
+    checks = build_sync_checks(triage)
+
+    ~s"""
+    <div class="sync-checklist">
+      <h3 class="sync-checklist-title">What was checked</h3>
+      <ul class="sync-check-list">
+        #{Enum.map_join(checks, "\n", &render_sync_check/1)}
+      </ul>
+      <p class="sync-checklist-footnote">Triangulation: every requirement should link to code (<code>realized_by</code>), be exercised by a tagged test, and reach a verification claim. Above is what was actually verified for this change set.</p>
+    </div>
+    """
+  end
+
+  defp build_sync_checks(triage) do
+    fbc = triage.findings_by_code
+
+    [
+      %{
+        leg: "Spec",
+        label: "The spec files themselves are well-formed",
+        codes: ~w(missing_meta_field missing_requirement_id missing_scenario_id verification_unknown_kind verification_kind_invalid verification_missing_target verification_missing_command scenario_unknown_cover scenario_cover_unknown),
+        detail: nil
+      },
+      %{
+        leg: "Spec → Code",
+        label: "Every <code>realized_by</code> surface and verification target file actually exists",
+        codes: ~w(surface_target_missing verification_target_missing verification_target_missing_file),
+        detail: detail_count("MFA", triage.binding_count)
+      },
+      %{
+        leg: "Spec → Code",
+        label: "Each verification target file references the requirement id it claims to cover",
+        codes: ~w(verification_target_missing_reference),
+        detail: nil
+      },
+      %{
+        leg: "Spec → Tests",
+        label: "Every requirement is named by at least one verification entry",
+        codes: ~w(requirement_without_verification verification_unknown_cover),
+        detail: detail_count("requirement", triage.requirement_count)
+      },
+      %{
+        leg: "Tests → Coverage",
+        label: "Verifications that ran exited successfully",
+        codes: ~w(verification_command_failed),
+        detail: nil
+      },
+      %{
+        leg: "Coverage",
+        label: "Every requirement reaches its minimum coverage strength",
+        codes: ~w(verification_strength_below_minimum),
+        detail: strength_summary_text(triage.strength_breakdown)
+      },
+      %{
+        leg: "Spec → Decisions",
+        label: "Every ADR referenced by a subject resolves to an existing decision file",
+        codes: ~w(decision_reference_unknown subject_unknown_decision_reference),
+        detail: adr_detail(triage)
+      },
+      %{
+        leg: "Branch",
+        label: "Files changed in this PR have matching spec or decision updates",
+        codes: ~w(branch_guard_missing_subject_update branch_guard_missing_decision_update branch_guard_unmapped_change),
+        detail: nil
+      }
+    ]
+    |> Enum.map(fn c ->
+      count = Enum.sum(Enum.map(c.codes, &Map.get(fbc, &1, 0)))
+      Map.merge(c, %{count: count, passed?: count == 0})
+    end)
+  end
+
+  defp detail_count(_label, 0), do: nil
+  defp detail_count(label, n), do: "#{n} #{label}#{maybe_s(n)} declared"
+
+  defp adr_detail(%{adr_ref_count: 0}), do: nil
+  defp adr_detail(%{adr_ref_count: n}), do: "#{n} reference#{maybe_s(n)}"
+  defp adr_detail(_), do: nil
+
+  defp render_sync_check(check) do
+    {icon_class, icon} = if check.passed?, do: {"ok", "✓"}, else: {"fail", "✗"}
+
+    count_text =
+      if check.passed?,
+        do: "",
+        else:
+          ~s| <span class="sync-check-count">#{check.count} finding#{maybe_s(check.count)}</span>|
+
+    detail_text =
+      case check.detail do
+        nil -> ""
+        "" -> ""
+        d -> ~s| <span class="sync-check-detail">#{h(d)}</span>|
       end
 
-    [triage_summary_findings_chunk(triage), affected_chunk, unmapped_chunk]
-    |> Enum.reject(&is_nil/1)
-    |> Enum.join(~s|<span class="triage-summary-sep">·</span>|)
-  end
-
-  defp triage_summary_findings_chunk(%{findings_count: 0}) do
-    ~S|<span class="triage-summary-pill triage-summary-clean">✓ no findings</span>|
-  end
-
-  defp triage_summary_findings_chunk(%{findings_count: n, by_severity: by_sev}) do
-    cond do
-      Map.get(by_sev, "error", 0) > 0 ->
-        ~s|<span class="triage-summary-pill triage-summary-error">#{n} finding#{if n == 1, do: "", else: "s"}</span>|
-
-      Map.get(by_sev, "warning", 0) > 0 ->
-        ~s|<span class="triage-summary-pill triage-summary-warning">#{n} finding#{if n == 1, do: "", else: "s"}</span>|
-
-      true ->
-        ~s|<span class="triage-summary-pill triage-summary-info">#{n} finding#{if n == 1, do: "", else: "s"}</span>|
-    end
-  end
-
-  defp render_severity_pills_row(triage) do
-    pills =
-      [
-        render_severity_pill("error", Map.get(triage.by_severity, "error", 0)),
-        render_severity_pill("warning", Map.get(triage.by_severity, "warning", 0)),
-        render_severity_pill("info", Map.get(triage.by_severity, "info", 0))
-      ]
-      |> Enum.reject(&(&1 == ""))
-
-    if pills == [] do
-      ""
-    else
-      [~S|<div class="triage-counts">|, pills, ~S|</div>|]
-    end
+    ~s|<li class="sync-check sync-check-#{icon_class}"><span class="sync-check-icon" aria-hidden="true">#{icon}</span><span class="sync-check-leg">#{h(check.leg)}</span><span class="sync-check-label">#{check.label}</span>#{count_text}#{detail_text}</li>|
   end
 
   defp render_triage_subjects([]), do: ""
@@ -297,11 +410,8 @@ defmodule SpecLedEx.Review.Html do
   defp maybe_plural(1, word), do: word
   defp maybe_plural(_, word), do: word <> "s"
 
-  defp render_severity_pill(_severity, 0), do: ""
-
-  defp render_severity_pill(severity, count) do
-    ~s|<span class="pill pill-#{severity}">#{count} #{severity}</span>|
-  end
+  defp maybe_s(1), do: ""
+  defp maybe_s(_), do: "s"
 
   defp render_findings_list([]), do: ""
 
@@ -1619,62 +1729,174 @@ defmodule SpecLedEx.Review.Html do
     .toc-pip-edited { background: #ddd6fe; color: #5b21b6; font-size: 9px; padding: 0 4px; min-width: 0; }
     .toc-pips { display: inline-flex; gap: 4px; align-items: center; }
 
-    /* Triage */
-    .triage {
+    /* Sync status panel — replaces the old triage panel.
+       Always shows what was checked so a first-time reader can see what
+       "no findings" actually means. Headline and chain switch from green
+       (in-sync) to amber/red (out-of-sync) based on findings. */
+    .sync-status {
       background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 0;
+      border-radius: 10px;
+      padding: 20px 24px;
     }
-    .triage-clean {
-      background: var(--success-bg);
-      border-color: #c8e6c9;
-      color: var(--success);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-weight: 500;
-      padding: 16px 20px;
+    .sync-status-in {
+      background: linear-gradient(180deg, #f0fdf4 0%, var(--card-bg) 60%);
+      border-color: #bbf7d0;
     }
-    .triage-icon { font-size: 18px; font-weight: 700; }
-    .triage-headline { font-size: 14px; }
+    .sync-status-out {
+      background: linear-gradient(180deg, #fff7ed 0%, var(--card-bg) 60%);
+      border-color: #fed7aa;
+    }
 
-    .triage-summary-row {
-      list-style: none;
-      cursor: pointer;
-      padding: 14px 20px;
+    .sync-headline {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sync-headline-icon {
+      font-size: 28px;
+      line-height: 1;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      font-size: 14px;
-    }
-    .triage-summary-row::-webkit-details-marker { display: none; }
-    .triage-summary-row::before {
-      content: "▸";
-      color: var(--fg-faint);
-      font-size: 11px;
-      width: 10px;
+      justify-content: center;
       flex-shrink: 0;
+      font-weight: 700;
     }
-    .triage[open] .triage-summary-row::before { content: "▾"; }
-    .triage-summary-pill {
-      display: inline-block;
-      padding: 3px 12px;
-      border-radius: 999px;
+    .sync-headline-icon-ok { background: #d1fae5; color: #065f46; }
+    .sync-headline-icon-fail { background: #fed7aa; color: #9a3412; }
+
+    .sync-headline-text { flex: 1; min-width: 0; }
+    .sync-headline-title {
+      margin: 0 0 4px 0;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .sync-status-in .sync-headline-title { color: #065f46; }
+    .sync-status-out .sync-headline-title { color: #9a3412; }
+
+    .sync-headline-chain {
+      margin: 0 0 6px 0;
+      font-family: var(--code-font);
+      font-size: 13px;
+      color: var(--fg);
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .sync-leg {
+      padding: 1px 8px;
+      border-radius: 4px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      font-weight: 500;
+    }
+    .sync-bond { font-size: 13px; }
+    .sync-bond-ok { color: #10b981; }
+    .sync-bond-fail { color: #ea580c; }
+
+    .sync-headline-meta {
+      margin: 0;
+      color: var(--fg-muted);
+      font-size: 13px;
+    }
+
+    .sync-checklist { padding-top: 14px; }
+    .sync-checklist-title {
+      margin: 0 0 8px 0;
       font-size: 12px;
       font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--fg-muted);
     }
-    .triage-summary-clean { background: var(--success-bg); color: var(--success); }
-    .triage-summary-error { background: var(--error-bg); color: var(--error); }
-    .triage-summary-warning { background: var(--warning-bg); color: var(--warning); }
-    .triage-summary-info { background: var(--info-bg); color: var(--info); }
-    .triage-summary-meta { color: var(--fg-muted); font-size: 13px; }
-    .triage-summary-sep { color: var(--fg-faint); }
+    .sync-check-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .sync-check {
+      display: grid;
+      grid-template-columns: 22px 110px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: baseline;
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .sync-check-ok { background: transparent; }
+    .sync-check-fail { background: #fff7ed; border-left: 3px solid #ea580c; padding-left: 6px; }
+    .sync-check-icon { font-weight: 700; font-size: 14px; text-align: center; }
+    .sync-check-ok .sync-check-icon { color: #10b981; }
+    .sync-check-fail .sync-check-icon { color: #c2410c; }
+    .sync-check-leg {
+      font-family: var(--code-font);
+      font-size: 11px;
+      color: var(--fg-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+    }
+    .sync-check-label { color: var(--fg); }
+    .sync-check-label code {
+      font-family: var(--code-font);
+      font-size: 11px;
+      background: var(--neutral-bg);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+    .sync-check-count {
+      font-size: 11px;
+      font-weight: 700;
+      color: #c2410c;
+      background: #ffedd5;
+      padding: 2px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .sync-check-detail {
+      font-size: 11px;
+      color: var(--fg-muted);
+      font-family: var(--code-font);
+      white-space: nowrap;
+    }
+    .sync-checklist-footnote {
+      margin: 14px 0 0 0;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--fg-muted);
+      line-height: 1.5;
+    }
+    .sync-checklist-footnote code {
+      font-family: var(--code-font);
+      font-size: 11px;
+      background: var(--neutral-bg);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
 
-    .triage-body { padding: 4px 20px 20px; border-top: 1px solid var(--border); }
-    .triage-counts { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 12px; }
+    .sync-misc-note {
+      margin: 16px 0 0 0;
+      padding: 10px 14px;
+      background: var(--info-bg);
+      border-radius: 4px;
+      font-size: 13px;
+      color: var(--fg);
+    }
+    .sync-misc-note a { color: var(--accent); }
 
+    /* Per-subject status list under the sync panel. */
     .triage-subjects {
       list-style: none;
       margin: 16px 0 0 0;
