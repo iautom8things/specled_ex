@@ -1456,12 +1456,47 @@ defmodule SpecLedEx.Review.Html do
 
   @doc false
   def render_coverage_tab(s) do
+    closure_reach = Map.get(s, :closure_reach, %{status: :ok, by_requirement: %{}})
+
     [
       render_coverage_help_link(),
-      render_requirements_coverage(s.requirements, s.claims_by_req),
+      render_closure_reach_status(closure_reach),
+      render_requirements_coverage(s.requirements, s.claims_by_req, closure_reach),
       render_bindings_section(s.bindings)
     ]
   end
+
+  # covers: specled.spec_review.coverage_tab_bind_closure
+  # When the tracer manifest or per-test coverage artifact is missing the
+  # bind-closure view collapses to a single banner above the requirements
+  # list. The top-of-page degraded banner already advertises that the
+  # whole report is partial; this status note explains the consequence
+  # for the closure summary specifically (so a reader doesn't read empty
+  # closure rows as "tests cover nothing").
+  @doc false
+  def render_closure_reach_status(%{status: :no_coverage_artifact}) do
+    ~S"""
+    <p class="cov-closure-unavailable" role="status">
+      <strong>Coverage artifact unavailable.</strong>
+      Per-requirement bind-closure reach cannot be computed without
+      <code>.spec/_coverage/per_test.coverdata</code>. Run
+      <code>mix spec.cover.test</code> to enable this view.
+    </p>
+    """
+  end
+
+  def render_closure_reach_status(%{status: :no_tracer_manifest}) do
+    ~S"""
+    <p class="cov-closure-unavailable" role="status">
+      <strong>Binding closure unavailable.</strong>
+      The compiler tracer manifest is missing, so the realization closure
+      cannot be walked. Recompile the project to regenerate the tracer
+      side-manifest.
+    </p>
+    """
+  end
+
+  def render_closure_reach_status(_), do: ""
 
   # Per-tab pointer back to the single page-level help disclosure. The full
   # legend used to re-render inside every Coverage tab; now there's exactly
@@ -1496,9 +1531,12 @@ defmodule SpecLedEx.Review.Html do
     """
   end
 
-  defp render_requirements_coverage([], _), do: ""
+  defp render_requirements_coverage([], _, _), do: ""
 
-  defp render_requirements_coverage(requirements, claims_by_req) do
+  defp render_requirements_coverage(requirements, claims_by_req, closure_reach) do
+    by_req = Map.get(closure_reach || %{}, :by_requirement, %{})
+    status = Map.get(closure_reach || %{}, :status, :ok)
+
     rows =
       Enum.map(requirements, fn req ->
         id = field(req, :id) || ""
@@ -1507,6 +1545,7 @@ defmodule SpecLedEx.Review.Html do
         claims = Map.get(claims_by_req, id, [])
         best_strength = best_claim_strength(claims)
         meets_minimum? = Enum.all?(claims, &(&1["meets_minimum"] != false))
+        reach = Map.get(by_req, id)
 
         ~s"""
         <li class="cov-req cov-req-#{best_strength}">
@@ -1516,6 +1555,7 @@ defmodule SpecLedEx.Review.Html do
             #{render_strength_badge(best_strength, claims, meets_minimum?)}
           </div>
           <p class="cov-req-statement">#{h(statement)}</p>
+          #{render_closure_reach(reach, status)}
           #{render_covering_claims(claims)}
         </li>
         """
@@ -1529,6 +1569,55 @@ defmodule SpecLedEx.Review.Html do
       ~S|</ul>|
     ]
   end
+
+  # covers: specled.spec_review.coverage_tab_bind_closure
+  # Per-requirement bind-closure summary rendered beneath each requirement
+  # in the Coverage tab. Format: "Closure: N MFAs. Reached: M (by tests
+  # T1, T2). Unreached: K." When the artifact is missing the renderer
+  # falls through to render_closure_reach_status/1 at the tab level and
+  # this helper renders nothing per-row to avoid duplicate noise.
+  defp render_closure_reach(_reach, :no_coverage_artifact), do: ""
+  defp render_closure_reach(_reach, :no_tracer_manifest), do: ""
+  defp render_closure_reach(nil, _), do: ""
+
+  defp render_closure_reach(%{closure_mfa_count: 0, closure_file_count: 0}, _) do
+    ~S|<p class="cov-closure" data-empty="true"><span class="cov-closure-label">Closure:</span> 0 MFAs.</p>|
+  end
+
+  defp render_closure_reach(reach, _) do
+    %{
+      closure_mfa_count: mfa_count,
+      reached_files: reached,
+      unreached_files: unreached,
+      reaching_tests: tests
+    } = reach
+
+    reached_count = length(reached)
+    unreached_count = length(unreached)
+
+    tests_segment =
+      case tests do
+        [] -> ""
+        list -> " (by tests #{render_reaching_tests(list)})"
+      end
+
+    ~s"""
+    <p class="cov-closure">
+      <span class="cov-closure-label">Closure:</span> #{mfa_count} MFA#{plural(mfa_count)}.
+      <span class="cov-closure-reached">Reached: #{reached_count}#{tests_segment}.</span>
+      <span class="cov-closure-unreached">Unreached: #{unreached_count}.</span>
+    </p>
+    """
+  end
+
+  defp render_reaching_tests(tests) do
+    tests
+    |> Enum.map(fn t -> ~s|<code class="cov-closure-test">#{h(t)}</code>| end)
+    |> Enum.join(", ")
+  end
+
+  defp plural(1), do: ""
+  defp plural(_), do: "s"
 
   defp best_claim_strength([]), do: :uncovered
 
@@ -3652,6 +3741,42 @@ defmodule SpecLedEx.Review.Html do
       margin-bottom: 4px;
     }
     .cov-req-statement { margin: 0 0 8px 0; color: var(--fg); font-size: 13px; line-height: 1.5; }
+
+    /* Coverage tab — per-requirement bind-closure summary */
+    .cov-closure {
+      margin: 4px 0 8px 0;
+      font-size: 12px;
+      color: var(--fg-muted);
+      line-height: 1.55;
+    }
+    .cov-closure-label { font-weight: 600; color: var(--fg); }
+    .cov-closure-reached { margin-left: 8px; }
+    .cov-closure-unreached { margin-left: 8px; }
+    .cov-closure-test {
+      font-family: var(--code-font);
+      font-size: 11px;
+      background: var(--neutral-bg);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+    .cov-closure-unavailable {
+      margin: 8px 0 12px 0;
+      padding: 8px 10px;
+      border: 1px dashed var(--border);
+      border-radius: 4px;
+      background: var(--neutral-bg);
+      color: var(--fg-muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .cov-closure-unavailable strong { color: var(--fg); }
+    .cov-closure-unavailable code {
+      font-family: var(--code-font);
+      font-size: 11px;
+      background: var(--bg);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
 
     .claim-list { list-style: none; margin: 4px 0 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
     .claim {

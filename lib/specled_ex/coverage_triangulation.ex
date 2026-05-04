@@ -159,6 +159,98 @@ defmodule SpecLedEx.CoverageTriangulation do
     execution_reach(subjects, per_test)
   end
 
+  # covers: specled.spec_review.coverage_tab_bind_closure
+  @doc """
+  Returns per-requirement bind-closure reach data, keyed by
+  `{subject_id, requirement_id}`.
+
+  Each entry is a map with:
+    * `:closure_mfa_count` — total MFAs in the requirement's realization
+      closure (length of `closure_mfas`).
+    * `:closure_file_count` — total distinct files in the closure.
+    * `:reached_files` — sorted list of closure files that any test
+      exercised.
+    * `:unreached_files` — sorted list of closure files that no test
+      exercised.
+    * `:reaching_tests` — sorted list of test display names
+      (`"<file> :: <name>"`) that exercised at least one closure file.
+
+  Pure: `coverage_records` is the same input contract as `findings/3`, but
+  this function does not branch on `:no_coverage_artifact` — pass the
+  sentinel and you'll get `:no_coverage_artifact` back so the caller can
+  render a "coverage artifact unavailable" message that piggybacks the
+  `:degraded` leg state machinery.
+  """
+  @spec per_requirement_reach(coverage_input(), closure_map()) ::
+          :no_coverage_artifact
+          | %{
+              optional({subject_id(), requirement_id()}) => %{
+                closure_mfa_count: non_neg_integer(),
+                closure_file_count: non_neg_integer(),
+                reached_files: [Path.t()],
+                unreached_files: [Path.t()],
+                reaching_tests: [String.t()]
+              }
+            }
+  def per_requirement_reach(:no_coverage_artifact, _closure_map), do: :no_coverage_artifact
+
+  def per_requirement_reach(records, closure_map)
+      when is_list(records) and is_map(closure_map) do
+    subjects = Map.get(closure_map, :subjects, %{})
+    per_test = group_records_by_test(records)
+
+    Enum.reduce(subjects, %{}, fn {subject_id, info}, acc ->
+      reqs = Map.get(info, :requirements, [])
+
+      Enum.reduce(reqs, acc, fn req, inner ->
+        closure_files = req |> Map.get(:closure_files, []) |> Enum.map(&normalize_path/1)
+        closure_mfa_count = req |> Map.get(:closure_mfas, []) |> length()
+        closure_set = MapSet.new(closure_files)
+
+        {reached_files, reaching_tests} =
+          Enum.reduce(per_test, {MapSet.new(), MapSet.new()}, fn t, {files_acc, tests_acc} ->
+            hit =
+              t.files
+              |> Enum.filter(&MapSet.member?(closure_set, &1))
+
+            case hit do
+              [] ->
+                {files_acc, tests_acc}
+
+              hits ->
+                {
+                  Enum.reduce(hits, files_acc, &MapSet.put(&2, &1)),
+                  MapSet.put(tests_acc, format_test_display(t))
+                }
+            end
+          end)
+
+        reached_sorted = reached_files |> MapSet.to_list() |> Enum.sort()
+        reaching_sorted = reaching_tests |> MapSet.to_list() |> Enum.sort()
+
+        unreached_sorted =
+          closure_files
+          |> Enum.uniq()
+          |> Enum.sort()
+          |> Enum.reject(&MapSet.member?(reached_files, &1))
+
+        Map.put(inner, {subject_id, req.id}, %{
+          closure_mfa_count: closure_mfa_count,
+          closure_file_count: closure_set |> MapSet.size(),
+          reached_files: reached_sorted,
+          unreached_files: unreached_sorted,
+          reaching_tests: reaching_sorted
+        })
+      end)
+    end)
+  end
+
+  defp format_test_display(%{test_file: file, test_name: name}) do
+    file = if file in [nil, ""], do: "(unknown)", else: file
+    name = if name in [nil, ""], do: "(anonymous)", else: name
+    "#{file} :: #{name}"
+  end
+
   # ---------------------------------------------------------------------------
   # Grouping + indexes
   # ---------------------------------------------------------------------------

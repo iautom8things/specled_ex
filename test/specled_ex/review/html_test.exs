@@ -944,4 +944,163 @@ defmodule SpecLedEx.Review.HtmlTest do
       assert html =~ ~s|href="#subject-subject-b"|
     end
   end
+
+  # covers: specled.spec_review.coverage_tab_bind_closure
+  describe "render_coverage_tab — per-requirement bind-closure view" do
+    defp coverage_subject(opts) do
+      %{
+        id: Keyword.get(opts, :id, "subj.a"),
+        bindings: Keyword.get(opts, :bindings, %{}),
+        requirements:
+          Keyword.get(opts, :requirements, [
+            %{
+              "id" => "subj.a.req1",
+              "statement" => "First requirement statement.",
+              "priority" => "must"
+            },
+            %{
+              "id" => "subj.a.req2",
+              "statement" => "Second requirement statement.",
+              "priority" => "must"
+            }
+          ]),
+        claims_by_req: Keyword.get(opts, :claims_by_req, %{}),
+        closure_reach: Keyword.get(opts, :closure_reach, %{status: :ok, by_requirement: %{}})
+      }
+    end
+
+    test "renders \"Closure: N MFAs. Reached: M (by tests …). Unreached: K.\" per requirement" do
+      reach = %{
+        status: :ok,
+        by_requirement: %{
+          "subj.a.req1" => %{
+            closure_mfa_count: 4,
+            closure_file_count: 2,
+            reached_files: ["lib/a.ex"],
+            unreached_files: ["lib/a_extra.ex"],
+            reaching_tests: ["test/a_test.exs :: alpha", "test/b_test.exs :: beta"]
+          },
+          "subj.a.req2" => %{
+            closure_mfa_count: 1,
+            closure_file_count: 1,
+            reached_files: [],
+            unreached_files: ["lib/x.ex"],
+            reaching_tests: []
+          }
+        }
+      }
+
+      html = IO.iodata_to_binary(Html.render_coverage_tab(coverage_subject(closure_reach: reach)))
+
+      # Both requirement rows render their closure summary line.
+      assert html =~ "Closure:</span> 4 MFAs."
+      assert html =~ "Reached: 1"
+      assert html =~ "test/a_test.exs :: alpha"
+      assert html =~ "test/b_test.exs :: beta"
+      assert html =~ "Unreached: 1."
+
+      # The unreached requirement renders Reached: 0 and no test list.
+      assert html =~ "Closure:</span> 1 MFA."
+    end
+
+    test "omits \"by tests …\" when no tests reach the requirement's closure" do
+      reach = %{
+        status: :ok,
+        by_requirement: %{
+          "subj.a.req1" => %{
+            closure_mfa_count: 2,
+            closure_file_count: 1,
+            reached_files: [],
+            unreached_files: ["lib/a.ex"],
+            reaching_tests: []
+          }
+        }
+      }
+
+      html =
+        IO.iodata_to_binary(
+          Html.render_coverage_tab(
+            coverage_subject(
+              closure_reach: reach,
+              requirements: [
+                %{"id" => "subj.a.req1", "statement" => "S", "priority" => "must"}
+              ]
+            )
+          )
+        )
+
+      assert html =~ "Reached: 0."
+      refute html =~ "by tests"
+    end
+
+    test "renders the empty-closure form when the requirement has no closure MFAs" do
+      reach = %{
+        status: :ok,
+        by_requirement: %{
+          "subj.a.req1" => %{
+            closure_mfa_count: 0,
+            closure_file_count: 0,
+            reached_files: [],
+            unreached_files: [],
+            reaching_tests: []
+          }
+        }
+      }
+
+      html =
+        IO.iodata_to_binary(
+          Html.render_coverage_tab(
+            coverage_subject(
+              closure_reach: reach,
+              requirements: [
+                %{"id" => "subj.a.req1", "statement" => "S", "priority" => "must"}
+              ]
+            )
+          )
+        )
+
+      assert html =~ ~s|class="cov-closure" data-empty="true"|
+      assert html =~ "Closure:</span> 0 MFAs."
+    end
+
+    test "renders the \"coverage artifact unavailable\" banner when status is :no_coverage_artifact" do
+      reach = %{status: :no_coverage_artifact, by_requirement: %{}}
+
+      html = IO.iodata_to_binary(Html.render_coverage_tab(coverage_subject(closure_reach: reach)))
+
+      assert html =~ "Coverage artifact unavailable"
+      assert html =~ "mix spec.cover.test"
+      # Per-row closure lines are suppressed when the artifact is missing —
+      # the page-level degraded banner already advertises the situation.
+      refute html =~ ~s|class="cov-closure"|
+    end
+
+    test "renders the \"binding closure unavailable\" banner when status is :no_tracer_manifest" do
+      reach = %{status: :no_tracer_manifest, by_requirement: %{}}
+
+      html = IO.iodata_to_binary(Html.render_coverage_tab(coverage_subject(closure_reach: reach)))
+
+      assert html =~ "Binding closure unavailable"
+      assert html =~ "tracer manifest"
+      refute html =~ ~s|class="cov-closure"|
+    end
+
+    test "is backwards-compatible when the subject view-model has no closure_reach key" do
+      subject = %{
+        id: "subj.a",
+        bindings: %{},
+        requirements: [
+          %{"id" => "subj.a.req1", "statement" => "S", "priority" => "must"}
+        ],
+        claims_by_req: %{}
+      }
+
+      # No raise; the requirement renders without a closure summary.
+      html = IO.iodata_to_binary(Html.render_coverage_tab(subject))
+
+      assert html =~ "subj.a.req1"
+      refute html =~ ~s|class="cov-closure"|
+      refute html =~ "Coverage artifact unavailable"
+    end
+  end
 end

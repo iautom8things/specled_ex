@@ -9,7 +9,7 @@ defmodule SpecLedEx.Review do
   """
 
   alias SpecLedEx.{ChangeAnalysis, Coverage, Verifier}
-  alias SpecLedEx.Review.{FileDiff, SpecDiff}
+  alias SpecLedEx.Review.{CoverageClosure, FileDiff, SpecDiff}
 
   @doc """
   Builds the view-model for the current change set.
@@ -22,7 +22,7 @@ defmodule SpecLedEx.Review do
   def build_view(index, root, opts \\ []) do
     base_opt = Keyword.get(opts, :base)
     analysis = ChangeAnalysis.analyze(index, root, base: base_opt)
-    verifier_opts = Keyword.drop(opts, [:base])
+    verifier_opts = Keyword.drop(opts, [:base, :closure_reach_opts])
     verifier_report = Verifier.verify(index, root, verifier_opts)
 
     subjects_by_id = subjects_by_id(index)
@@ -40,6 +40,14 @@ defmodule SpecLedEx.Review do
 
     claims_by_subject = group_claims_by_subject(verifier_report)
 
+    # covers: specled.spec_review.coverage_tab_bind_closure
+    # Per-requirement bind-closure reach: total MFAs, which closure files
+    # were reached, by which tests. Degrades to a status atom when the
+    # tracer manifest or coverage artifact is missing — the renderer
+    # surfaces that as a "coverage artifact unavailable" message.
+    closure_reach_opts = Keyword.get(opts, :closure_reach_opts, [])
+    closure_reach_by_subject = CoverageClosure.build(index, closure_reach_opts)
+
     affected_subjects =
       Enum.flat_map(affected_subject_ids, fn id ->
         case Map.get(subjects_by_id, id) do
@@ -55,7 +63,8 @@ defmodule SpecLedEx.Review do
                 all_diffs,
                 findings_by_subject,
                 root,
-                Map.get(claims_by_subject, id, %{})
+                Map.get(claims_by_subject, id, %{}),
+                Map.get(closure_reach_by_subject, id, %{status: :ok, by_requirement: %{}})
               )
             ]
         end
@@ -195,7 +204,8 @@ defmodule SpecLedEx.Review do
          all_diffs,
          findings_by_subject,
          root,
-         claims_by_req
+         claims_by_req,
+         closure_reach
        ) do
     meta = subject["meta"]
     statement = meta_field(meta, :summary, "")
@@ -245,6 +255,7 @@ defmodule SpecLedEx.Review do
       spec_changes: spec_changes,
       findings: Map.get(findings_by_subject, id, []),
       claims_by_req: claims_by_req,
+      closure_reach: closure_reach,
       changed_files: changed_files
     }
   end
