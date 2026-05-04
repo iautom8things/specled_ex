@@ -2,7 +2,8 @@
   "assignee": "",
   "blocked_by": [],
   "blocks": [
-    "specled_-quj.6"
+    "specled_-quj.6",
+    "specled_-quj.9"
   ],
   "created": "2026-05-04T15:16:37Z",
   "description": "Advances: specled.spec_review\n\nLoad-bearing fix #2. concepts.md treats graceful degrade as first-class: detector_unavailable means \"the system is being honest that it cannot run a check on this run.\" Today the renderer has no place for this — coverage-missing runs look identical to fully-verified ones.\n\nAdd a :degraded value to leg_state/3 (lib/specled_ex/review/html.ex:332-338) alongside :ok | :fail | :vacuous. Render as gray-or-yellow with a \"?\" glyph (not green ✓). Aggregate detector_unavailable findings by reason (`:debug_info_stripped`, `:umbrella_unsupported`, `:no_coverage_artifact`, etc.) and surface those reasons in the leg's tooltip.\n\nTouches: render_sync_diagram (html.ex:275-326), render_sync_check (html.ex:~496+), build_sync_checks (html.ex:423-489). May also want a top-of-page banner when any tier is degraded so the reviewer knows the report is partial.",
