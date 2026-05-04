@@ -23,11 +23,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: agent-a192afbe8a68a1e29 (stage-quj-1, child of 985e3e4e-1dd3-43de-8a05-67a8b7029e85)\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/985e3e4e-1dd3-43de-8a05-67a8b7029e85/subagents/agent-a192afbe8a68a1e29.jsonl\n\nReasoning: VERIFY reported PASS with full stub coverage, full\nrequirement coverage, zero mechanical or intent-level scope\nviolations, and passing project verification (mix spec.check + mix\ntest).\n\nCaveat: VERIFY was a self-verification by the implementer because\nthis stage runs as a nested sub-agent and cannot spawn a cold-context\nverifier. The orchestrator (parent session) may downgrade this auto-\napprove and re-run an external auditor before merging if the parallel\nwave warrants it. Per the orchestrator's Phase-0 override, the stage\nworktree at /Users/mz/src/specled_ex-quj.1 is left in place for the\norchestrator to handle the merge-back into specled_-qm1/spec-review-html.\n\nPer the orchestrator's instructions, this stage does NOT close the\nticket; closure is deferred to the orchestrator after merge.",
       "timestamp": "2026-05-04T15:47:12Z"
+    },
+    {
+      "text": "MERGED into specled_-qm1/spec-review-html (commit 3d8a68d). Closing per orchestrator.",
+      "timestamp": "2026-05-04T15:50:57Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Wire triangle finding codes into diagram + checklist legs",
   "type": "task",
-  "updated_at": "2026-05-04T15:47:12Z"
+  "updated_at": "2026-05-04T15:50:57Z"
 }
