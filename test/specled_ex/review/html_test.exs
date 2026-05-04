@@ -244,6 +244,194 @@ defmodule SpecLedEx.Review.HtmlTest do
     end
   end
 
+  describe "render_findings_list — leg + severity grouping" do
+    # The global findings list groups findings by triangle leg first, then
+    # by severity within each leg, with counts in each heading. The leg
+    # mapping reuses build_sync_checks (the sync checklist's source of
+    # truth) rather than maintaining a parallel table.
+
+    defp leg_finding(code, severity, opts \\ []) do
+      %{
+        "code" => code,
+        "severity" => severity,
+        "subject_id" => Keyword.get(opts, :subject_id),
+        "message" => Keyword.get(opts, :message, "msg for #{code}")
+      }
+    end
+
+    test "an empty list renders nothing" do
+      assert Html.render_findings_list([]) == ""
+    end
+
+    test "leg_for_finding_code reuses the sync-checklist code-to-leg mapping" do
+      # Each leg bucket has at least one canonical code that the existing
+      # sync checklist (build_sync_checks) already classifies. If those
+      # mappings ever drift, this test pins the contract.
+      assert Html.leg_for_finding_code("overlap/duplicate_covers") == "Spec well-formed"
+      assert Html.leg_for_finding_code("branch_guard_realization_drift") == "Spec ↔ Code"
+      assert Html.leg_for_finding_code("requirement_without_test_tag") == "Spec ↔ Tests"
+      assert Html.leg_for_finding_code("branch_guard_untethered_test") == "Code ↔ Tests"
+      assert Html.leg_for_finding_code("verification_strength_below_minimum") == "Coverage"
+      assert Html.leg_for_finding_code("append_only/requirement_deleted") == "Decisions"
+      assert Html.leg_for_finding_code("branch_guard_unmapped_change") == "Branch"
+    end
+
+    test "code_to_leg_lookup is sourced from build_sync_checks (no duplication)" do
+      # Walk the sync checklist directly and confirm every code it knows
+      # appears in the global-list lookup, mapped to a known bucket. This
+      # is the audit knob that prevents accidental drift between the two.
+      zeroed = %{
+        findings_by_code: %{},
+        affected_subject_count: 0,
+        binding_count: 0,
+        requirement_count: 0,
+        verification_count: 0,
+        adr_ref_count: 0,
+        strength_breakdown: %{}
+      }
+
+      lookup = Html.code_to_leg_lookup()
+
+      buckets = [
+        "Spec well-formed",
+        "Spec ↔ Code",
+        "Spec ↔ Tests",
+        "Code ↔ Tests",
+        "Coverage",
+        "Decisions",
+        "Branch"
+      ]
+
+      for check <- Html.build_sync_checks(zeroed),
+          code <- check.codes do
+        assert Map.has_key?(lookup, code),
+               "code #{code} from sync-check leg #{inspect(check.leg)} is not in code_to_leg_lookup"
+
+        assert Map.get(lookup, code) in buckets,
+               "code #{code} mapped to unexpected bucket #{inspect(Map.get(lookup, code))}"
+      end
+    end
+
+    test "an unknown code falls into the 'Other' bucket" do
+      assert Html.leg_for_finding_code("totally_made_up_code") == "Other"
+    end
+
+    test "groups appear in the canonical leg order" do
+      findings = [
+        leg_finding("branch_guard_unmapped_change", "warning"),
+        leg_finding("branch_guard_realization_drift", "error"),
+        leg_finding("overlap/duplicate_covers", "error"),
+        leg_finding("requirement_without_test_tag", "warning")
+      ]
+
+      html = IO.iodata_to_binary(Html.render_findings_list(findings))
+
+      # Index of each leg heading in the rendered HTML — must follow the
+      # canonical order: Spec well-formed, Spec ↔ Code, Spec ↔ Tests, ...
+      indices =
+        for leg <- ["Spec well-formed", "Spec ↔ Code", "Spec ↔ Tests", "Branch"] do
+          {leg, :binary.match(html, leg)}
+        end
+
+      Enum.each(indices, fn {leg, m} ->
+        refute m == :nomatch, "expected leg #{inspect(leg)} to render"
+      end)
+
+      offsets = Enum.map(indices, fn {_, {pos, _}} -> pos end)
+      assert offsets == Enum.sort(offsets), "groups did not render in canonical order"
+    end
+
+    test "each group heading shows total count and per-severity counts" do
+      findings = [
+        leg_finding("branch_guard_realization_drift", "error"),
+        leg_finding("branch_guard_realization_drift", "error"),
+        leg_finding("branch_guard_dangling_binding", "warning")
+      ]
+
+      html = IO.iodata_to_binary(Html.render_findings_list(findings))
+
+      assert html =~ ~s|<h3 class="findings-group-heading">|
+      assert html =~ ~s|<span class="findings-group-leg">Spec ↔ Code</span>|
+      assert html =~ "3 findings"
+      assert html =~ ~s|findings-group-sev-error|
+      assert html =~ "2 error"
+      assert html =~ ~s|findings-group-sev-warning|
+      assert html =~ "1 warning"
+    end
+
+    test "within a group, errors render before warnings before info" do
+      findings = [
+        leg_finding("branch_guard_realization_drift", "info", message: "info-finding"),
+        leg_finding("branch_guard_realization_drift", "warning", message: "warn-finding"),
+        leg_finding("branch_guard_realization_drift", "error", message: "err-finding")
+      ]
+
+      html = IO.iodata_to_binary(Html.render_findings_list(findings))
+
+      err_pos = :binary.match(html, "err-finding") |> elem(0)
+      warn_pos = :binary.match(html, "warn-finding") |> elem(0)
+      info_pos = :binary.match(html, "info-finding") |> elem(0)
+
+      assert err_pos < warn_pos
+      assert warn_pos < info_pos
+    end
+
+    test "each finding still uses the tooltip(:severity, sev) mechanism" do
+      findings = [leg_finding("branch_guard_realization_drift", "error")]
+      html = IO.iodata_to_binary(Html.render_findings_list(findings))
+
+      # The severity span must carry the tooltip text from
+      # tooltip(:severity, "error") — same mechanism the original list used.
+      assert html =~ "Error — blocks the gate"
+    end
+
+    test "the heading severity chip also carries the severity tooltip" do
+      findings = [leg_finding("branch_guard_realization_drift", "warning")]
+      html = IO.iodata_to_binary(Html.render_findings_list(findings))
+
+      # The "1 warning" chip in the group heading must carry the warning
+      # tooltip — the ticket calls out reusing tooltip(:severity, sev).
+      assert html =~ ~s|findings-group-sev-warning|
+      assert html =~ "Warning"
+    end
+
+    test "an unclassifiable code lands in the 'Other' bucket at the end" do
+      findings = [
+        leg_finding("not_a_known_code", "warning"),
+        leg_finding("branch_guard_realization_drift", "error")
+      ]
+
+      html = IO.iodata_to_binary(Html.render_findings_list(findings))
+
+      spec_code_pos = :binary.match(html, "Spec ↔ Code") |> elem(0)
+      other_pos = :binary.match(html, "Other") |> elem(0)
+
+      assert spec_code_pos < other_pos
+    end
+
+    test "the outer summary shows the total finding count" do
+      findings = [
+        leg_finding("branch_guard_realization_drift", "error"),
+        leg_finding("branch_guard_unmapped_change", "warning"),
+        leg_finding("requirement_without_test_tag", "warning")
+      ]
+
+      html = IO.iodata_to_binary(Html.render_findings_list(findings))
+
+      assert html =~ "All findings (3)"
+    end
+
+    test "groups with no findings do not render" do
+      findings = [leg_finding("branch_guard_realization_drift", "error")]
+      html = IO.iodata_to_binary(Html.render_findings_list(findings))
+
+      # Only the Spec ↔ Code group should be present; no Coverage / Branch / etc.
+      refute html =~ ~s|<span class="findings-group-leg">Coverage</span>|
+      refute html =~ ~s|<span class="findings-group-leg">Branch</span>|
+      refute html =~ ~s|<span class="findings-group-leg">Decisions</span>|
+    end
+  end
+
   describe "leg coverage parity with concepts.md vocabulary" do
     # This is a meta-check: every triangle code documented in concepts.md
     # is wired to at least one diagram leg or checklist row. If the spec
