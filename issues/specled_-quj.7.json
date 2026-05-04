@@ -9,9 +9,15 @@
   "id": "specled_-quj.7",
   "labels": [],
   "parent": "specled_-quj",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: 4dc4e8c3-55b7-4753-9a3d-c93afc1d9762\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/4dc4e8c3-55b7-4753-9a3d-c93afc1d9762.jsonl\n\nStage worktree: /Users/mz/src/specled_ex-quj.7\nBranch: specled_-quj.7/decisions-governance\nCommit: cba0db4\n\nFiles touched:\n- lib/specled_ex/review/html.ex\n- test/specled_ex/review/html_test.exs\n- .spec/specs/spec_review.spec.md\n- .spec/state.json\n\nTests added: 6 new tests under \"render_decisions_changed — append_only governance findings\" in test/specled_ex/review/html_test.exs covering: empty panel still renders; orphan governance subsection appears for unauthorized requirement deletion; the code-fenced fix block is preserved verbatim; entity_id matching renders inline under the ADR card; mixed inline+orphan placement; non-append_only findings ignored.\n\nVerification stubs flipped: existing mix test test/specled_ex/review/html_test.exs stub now also covers specled.spec_review.decisions_governance_inline.\n\nSpec change: added requirement specled.spec_review.decisions_governance_inline to .spec/specs/spec_review.spec.md and wired it into the html.ex source_file + html_test command verification stubs.\n\nSummary: When a PR weakens a spec without an authorizing ADR, the Decisions Changed section of mix spec.review now surfaces the append_only/* finding directly in that panel — inline next to the ADR it should have authorized when entity_id resolves, otherwise in a \"Governance violations\" subsection at the top of the panel. The original code-fenced `fix:` block from SpecLedEx.AppendOnly.analyze is rendered verbatim in a \u003cpre\u003e so the remediation contract is the same as the CLI surfaces.\n\nVerification: mix test (2 properties, 609 tests, 0 failures); mix spec.check (status=pass errors=0 warnings=0).",
+      "timestamp": "2026-05-04T16:03:32Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Decisions panel surfaces append_only governance violations",
   "type": "task",
-  "updated_at": "2026-05-04T15:52:26Z"
+  "updated_at": "2026-05-04T16:03:32Z"
 }
