@@ -732,6 +732,7 @@ defmodule SpecLedEx.Review.Html do
           <% end %>
           <%= SpecLedEx.Review.Html.render_subject_change_badge(assigns[:s].spec_changes) %>
           <%= SpecLedEx.Review.Html.render_subject_finding_badges(assigns[:s].findings) %>
+          <%= SpecLedEx.Review.Html.render_subject_binding_health(assigns[:s].bindings, assigns[:s].findings) %>
         </div>
       </header>
       <div class="tabs" role="tablist">
@@ -785,6 +786,52 @@ defmodule SpecLedEx.Review.Html do
       end)
     ]
   end
+
+  # covers: specled.spec_review.inline_finding_badges
+  # Surface per-subject binding health on the card header so triage does not
+  # require a tab-dive into Coverage. Three states:
+  #   * 0 bindings (no realized_by declared) — advisory chip
+  #   * N bindings, K dangling             — error chip when dangling > 0
+  #   * N bindings, all valid              — success chip when bindings > 0
+  # Dangling counts come from the per-subject findings list, so the badge stays
+  # in sync with the same `branch_guard_dangling_binding` finding rendered in
+  # the triage panel.
+  @doc false
+  def render_subject_binding_health(bindings, findings) do
+    total = count_bindings(bindings)
+    dangling = count_dangling_findings(findings)
+
+    cond do
+      total == 0 ->
+        ~s|<span class="badge badge-binding-health badge-binding-empty"#{title_attr(tooltip(:binding_health, :none))}>0 bindings (no realized_by declared)</span>|
+
+      dangling > 0 ->
+        ~s|<span class="badge badge-binding-health badge-binding-dangling"#{title_attr(tooltip(:binding_health, :dangling))}>#{total} #{maybe_plural(total, "binding")}, #{dangling} dangling</span>|
+
+      true ->
+        ~s|<span class="badge badge-binding-health badge-binding-valid"#{title_attr(tooltip(:binding_health, :valid))}>#{total} #{maybe_plural(total, "binding")}, all valid</span>|
+    end
+  end
+
+  defp count_bindings(nil), do: 0
+  defp count_bindings(bindings) when bindings == %{}, do: 0
+
+  defp count_bindings(bindings) when is_map(bindings) do
+    bindings
+    |> Map.values()
+    |> Enum.reduce(0, fn mfas, acc -> acc + length(List.wrap(mfas)) end)
+  end
+
+  defp count_bindings(_), do: 0
+
+  defp count_dangling_findings(findings) when is_list(findings) do
+    Enum.count(findings, fn f ->
+      Map.get(f, "code") == "branch_guard_dangling_binding" or
+        Map.get(f, :code) == "branch_guard_dangling_binding"
+    end)
+  end
+
+  defp count_dangling_findings(_), do: 0
 
   @doc false
   def render_spec_tab(s) do
@@ -1886,6 +1933,17 @@ defmodule SpecLedEx.Review.Html do
   defp tooltip(:severity, "info"),
     do: "Info — advisory; never blocks."
 
+  defp tooltip(:binding_health, :none),
+    do:
+      "No realized_by bindings declared on this subject. Coverage strength tops out at LINKED until bindings are added."
+
+  defp tooltip(:binding_health, :dangling),
+    do:
+      "One or more realized_by bindings could not be resolved to actual code. See the dangling-binding findings in the triage panel."
+
+  defp tooltip(:binding_health, :valid),
+    do: "All declared realized_by bindings resolve to actual code on this branch."
+
   defp tooltip(_, _), do: ""
 
   defp title_attr(text) when is_binary(text) and text != "",
@@ -2644,6 +2702,11 @@ defmodule SpecLedEx.Review.Html do
     .badge-error { background: var(--error-bg); color: var(--error); }
     .badge-warning { background: var(--warning-bg); color: var(--warning); }
     .badge-info { background: var(--info-bg); color: var(--info); }
+
+    .badge-binding-health { text-transform: none; letter-spacing: 0; }
+    .badge-binding-empty { background: #f3f4f6; color: var(--fg-muted); }
+    .badge-binding-dangling { background: var(--error-bg); color: var(--error); }
+    .badge-binding-valid { background: var(--success-bg); color: var(--success); }
 
     .findings-list { margin-top: 16px; }
     .findings-list summary {

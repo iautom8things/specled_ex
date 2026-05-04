@@ -106,6 +106,115 @@ defmodule SpecLedEx.ReviewTest do
     end
   end
 
+  describe "Html.render_subject_binding_health/2" do
+    alias SpecLedEx.Review.Html
+
+    @tag spec: "specled.spec_review.inline_finding_badges"
+    test "renders the no-realized_by chip when bindings is empty" do
+      html = IO.iodata_to_binary(Html.render_subject_binding_health(%{}, []))
+
+      assert html =~ "0 bindings (no realized_by declared)"
+      assert html =~ "badge-binding-empty"
+      refute html =~ "all valid"
+      refute html =~ "dangling"
+    end
+
+    @tag spec: "specled.spec_review.inline_finding_badges"
+    test "renders the no-realized_by chip when bindings is nil" do
+      html = IO.iodata_to_binary(Html.render_subject_binding_health(nil, []))
+
+      assert html =~ "0 bindings (no realized_by declared)"
+      assert html =~ "badge-binding-empty"
+    end
+
+    @tag spec: "specled.spec_review.inline_finding_badges"
+    test "renders the all-valid chip when bindings exist and no dangling findings are present" do
+      bindings = %{
+        "api_boundary" => ["MyApp.API.do_thing/1"],
+        "implementation" => ["MyApp.Impl"]
+      }
+
+      html = IO.iodata_to_binary(Html.render_subject_binding_health(bindings, []))
+
+      assert html =~ "2 bindings, all valid"
+      assert html =~ "badge-binding-valid"
+      refute html =~ "dangling"
+    end
+
+    @tag spec: "specled.spec_review.inline_finding_badges"
+    test "uses singular 'binding' when there is exactly one" do
+      bindings = %{"api_boundary" => ["MyApp.API.do_thing/1"]}
+
+      html = IO.iodata_to_binary(Html.render_subject_binding_health(bindings, []))
+
+      assert html =~ "1 binding, all valid"
+      refute html =~ "1 bindings"
+    end
+
+    @tag spec: "specled.spec_review.inline_finding_badges"
+    test "renders the dangling chip with the dangling count when dangling-binding findings exist" do
+      bindings = %{
+        "api_boundary" => ["MyApp.API.do_thing/1", "MyApp.API.other/0"],
+        "implementation" => ["MyApp.Impl"]
+      }
+
+      findings = [
+        %{"code" => "branch_guard_dangling_binding", "severity" => "error"},
+        %{"code" => "branch_guard_dangling_binding", "severity" => "error"},
+        %{"code" => "some_other_finding", "severity" => "warning"}
+      ]
+
+      html = IO.iodata_to_binary(Html.render_subject_binding_health(bindings, findings))
+
+      assert html =~ "3 bindings, 2 dangling"
+      assert html =~ "badge-binding-dangling"
+      refute html =~ "all valid"
+    end
+
+    @tag spec: "specled.spec_review.inline_finding_badges"
+    test "ignores findings whose code is not branch_guard_dangling_binding" do
+      bindings = %{"api_boundary" => ["MyApp.API.do_thing/1"]}
+
+      findings = [
+        %{"code" => "branch_guard_realization_drift", "severity" => "error"},
+        %{"code" => "overlap_subject", "severity" => "warning"}
+      ]
+
+      html = IO.iodata_to_binary(Html.render_subject_binding_health(bindings, findings))
+
+      assert html =~ "1 binding, all valid"
+      refute html =~ "dangling"
+    end
+
+    @tag spec: "specled.spec_review.inline_finding_badges"
+    test "treats a single non-list MFA value as one binding (List.wrap parity with bindings dl)" do
+      bindings = %{"implementation" => "MyApp.Impl"}
+
+      html = IO.iodata_to_binary(Html.render_subject_binding_health(bindings, []))
+
+      assert html =~ "1 binding, all valid"
+    end
+  end
+
+  describe "subject card binding-health badge integration" do
+    alias SpecLedEx.Review.Html
+
+    @tag spec: "specled.spec_review.inline_finding_badges"
+    test "rendered HTML carries a binding-health badge on each subject card", %{root: root} do
+      setup_repo(root, "auth_subject", "Auth.")
+      change_subject_file(root, "auth_subject")
+
+      index = SpecLedEx.index(root)
+      view = Review.build_view(index, root, base: "main")
+      html = view |> Html.render() |> IO.iodata_to_binary()
+
+      assert html =~ "badge-binding-health"
+      # The seed subject declares no realized_by, so it should land in the
+      # "no realized_by declared" state.
+      assert html =~ "0 bindings (no realized_by declared)"
+    end
+  end
+
   # ----------------------------------------------------------------------
   # helpers
   # ----------------------------------------------------------------------
