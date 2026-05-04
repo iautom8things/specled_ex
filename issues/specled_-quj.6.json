@@ -9,9 +9,15 @@
   "id": "specled_-quj.6",
   "labels": [],
   "parent": "specled_-quj",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: in-thread (Claude Code, opus-4-7[1m])\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/ (epic-shared)\n\nCommit: 1d71318\nStage worktree: /Users/mz/src/specled_ex-quj.6\nStage branch: specled_-quj.6/coverage-closure-view (off specled_-qm1/spec-review-html @ ca86682)\n\nFiles touched:\n- lib/specled_ex/coverage_triangulation.ex (added per_requirement_reach/2)\n- lib/specled_ex/review/coverage_closure.ex (new helper module)\n- lib/specled_ex/review.ex (wires closure_reach into the view-model)\n- lib/specled_ex/review/html.ex (renders closure summary + degraded banners + CSS)\n- .spec/specs/spec_review.spec.md (new must requirement coverage_tab_bind_closure)\n- test/specled_ex/coverage_triangulation_test.exs (per_requirement_reach tests)\n- test/specled_ex/review/html_test.exs (closure rendering + degraded banner tests)\n- test/specled_ex/review_test.exs (build_view integration tests)\n\nTests added:\n- CoverageTriangulationTest \"per_requirement_reach/2\" — 5 cases covering :no_coverage_artifact sentinel, empty reach, reaching tests dedup/sort, empty lines_hit\n- HtmlTest \"render_coverage_tab — per-requirement bind-closure view\" — 6 cases covering happy-path closure line, no-tests case, empty closure, both degraded banners, backwards-compat\n- ReviewTest \"Coverage tab bind-closure integration\" — 3 cases covering build_view plumbing + degraded paths\n\nVerification stubs flipped: existing html_test.exs entry now also covers specled.spec_review.coverage_tab_bind_closure; new entry for coverage_triangulation_test.exs added.\n\nSummary: Coverage tab now opens the box on each requirement's realization closure: \"Closure: N MFAs. Reached: M (by tests T1, T2). Unreached: K.\" Closure size comes from the realization-tier closure walk; reach comes from .spec/_coverage/per_test.coverdata via a new CoverageTriangulation.per_requirement_reach/2 function that mirrors execution_reach_map/2's input contract. Missing artifacts degrade to per-tab banners that piggyback quj.2's :degraded leg state.\n\nmix test: 654 tests + 2 properties, 0 failures\nmix spec.check: status=pass errors=0 warnings=0",
+      "timestamp": "2026-05-04T16:36:22Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Coverage tab: per-requirement bind-closure view",
   "type": "task",
-  "updated_at": "2026-05-04T16:19:37Z"
+  "updated_at": "2026-05-04T16:36:22Z"
 }
