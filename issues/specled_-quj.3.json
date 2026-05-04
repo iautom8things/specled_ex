@@ -17,11 +17,15 @@
     {
       "text": "VERIFY: PASS (cold-pass self-verify, no Task tool available per orchestration override)\nSession: 985e3e4e-1dd3-43de-8a05-67a8b7029e85\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/985e3e4e-1dd3-43de-8a05-67a8b7029e85.jsonl\n\nMechanical checks:\n- Files touched: 2\n- Files outside Allowed globs: 0 (lib/specled_ex/review/html.ex + test/specled_ex/review/html_test.exs both inside the spec_review surface)\n- Files matching Out-of-Scope globs: 0\n\nSemantic checks:\n- Spec stubs run: 2, passed: 2\n  - mix test test/specled_ex/review/html_test.exs (43 tests, 0 failures)\n  - mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs (19 tests, 0 failures)\n- Full mix test: 615 tests, 0 failures\n- Project verification (mix spec.check): pass — 0 findings, 0 errors, 0 warnings\n- Intent-level scope concerns: none (no new deps, no drive-by refactors, no other tabs touched)\n- Source-claim tracing: build_sync_checks/1 is the quj.1 classifier; code_to_leg_lookup/0 calls it directly with a zeroed triage and projects each row's codes onto a public bucket via sync_check_leg_to_bucket/1. leg_for_finding_code/1 -\u003e code_to_leg_lookup/0 -\u003e build_sync_checks/1 confirmed. Parity test pins the contract so adding a new code to any sync-check row classifies it in the global list automatically.\n\nVerdict: PASS",
       "timestamp": "2026-05-04T16:01:05Z"
+    },
+    {
+      "text": "AUDIT: APPROVE (cold-pass self-audit, no Task tool available per orchestration override)\nSession: 985e3e4e-1dd3-43de-8a05-67a8b7029e85\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/985e3e4e-1dd3-43de-8a05-67a8b7029e85.jsonl\n\nReasoning:\n- Leg-mapping non-duplication is enforced by test \"code_to_leg_lookup is sourced from build_sync_checks (no duplication)\" (test/specled_ex/review/html_test.exs:286-310): walks every code in build_sync_checks and asserts presence in the lookup with a known bucket. Drift is mechanically detectable.\n- Tooltip reuse is pinned by \"each finding still uses the tooltip(:severity, sev) mechanism\" (asserts literal \"Error — blocks the gate\" text from tooltip(:severity, \"error\")) and by the heading-chip tooltip test.\n- Group ordering is pinned by byte-offset sort assertion in \"groups appear in the canonical leg order\" — would fail under any reordering.\n- Severity ordering within group is pinned by byte-offset comparison of distinct message strings.\n- Mechanical scope is clean: only lib/specled_ex/review/html.ex (declared in spec_review.surface) and test/specled_ex/review/html_test.exs (declared in spec_review.surface) touched. No new deps, no refactor of adjacent legs, no other render_* helpers altered.\n- Out-of-Scope intent: no behavior change to render_sync_diagram, render_sync_checklist, or build_sync_checks themselves; the only API delta is render_findings_list/1 going from defp to def for testability, which is necessary scope.\n\nPer orchestration overrides: not merging back, not cleaning up worktree, not closing ticket.",
+      "timestamp": "2026-05-04T16:01:13Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Group global findings list by leg + severity",
   "type": "task",
-  "updated_at": "2026-05-04T16:01:05Z"
+  "updated_at": "2026-05-04T16:01:13Z"
 }
