@@ -9,9 +9,15 @@
   "id": "specled_-quj.9",
   "labels": [],
   "parent": "specled_-quj",
+  "comments": [
+    {
+      "text": "MERGED into specled_-qm1/spec-review-html. Closing per orchestrator.",
+      "timestamp": "2026-05-04T16:43:33Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "No-realized_by advisory on subject cards",
   "type": "task",
-  "updated_at": "2026-05-04T16:19:49Z"
+  "updated_at": "2026-05-04T16:43:33Z"
 }
