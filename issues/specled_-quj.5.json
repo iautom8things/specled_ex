@@ -9,9 +9,15 @@
   "id": "specled_-quj.5",
   "labels": [],
   "parent": "specled_-quj",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: \u003cclaude-code-session, uuid not directly accessible from agent\u003e\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/\u003csession-uuid\u003e.jsonl\nStage worktree: /Users/mz/src/specled_ex-quj.5\nStage branch: specled_-quj.5/untethered-actual-subject\nCommit: 75d87f17c31a0763bdae8be051e285ca35681d4f\n\nFiles touched:\n- lib/specled_ex/review/html.ex\n- test/specled_ex/review/html_test.exs\n\nTests added: 7 in SpecLedEx.Review.HtmlTest under \"render_findings_list — untethered_test claims/hits link\"\n- claims A / hits B anchors when observed_owners present\n- claimed subject precedes observed in rendered string\n- multiple observed owners render as comma-separated anchors\n- fallback to single link when observed_owners missing\n- fallback to single link when observed_owners is empty list\n- non-untethered findings still render single link (regression guard)\n- untethered finding without subject_id still renders observed owners\n\nVerification stubs flipped: none (existing stub mix test test/specled_ex/review/html_test.exs already executes; the new tests run under it).\n\nSummary: Verified the finding payload field name in lib/specled_ex/coverage_triangulation.ex:355 — it is observed_owners, a sorted list of subject ids (NOT actual_subject_id as the ticket guessed). render_findings_list now passes the full finding map to render_subject_link, which gains a clause for branch_guard_untethered_test that emits \"\u003cspan class=finding-subject-label\u003eclaims\u003c/span\u003e \u003ca\u003eA\u003c/a\u003e\u003cspan class=finding-subject-label\u003e, hits\u003c/span\u003e \u003ca\u003eB\u003c/a\u003e\" so the misalignment is the headline. Findings without observed_owners (or with an empty list) fall back to the prior single-anchor rendering. mix test (610 tests) and mix spec.check both pass on the stage worktree.",
+      "timestamp": "2026-05-04T16:04:13Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Untethered test finding links to actual subject, not just claimed",
   "type": "task",
-  "updated_at": "2026-05-04T15:52:23Z"
+  "updated_at": "2026-05-04T16:04:13Z"
 }
