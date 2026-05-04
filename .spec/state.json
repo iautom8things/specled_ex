@@ -6780,6 +6780,190 @@
       }
     ]
   },
+  "realization": {
+    "api_boundary": {
+      "SpecLedEx.verify/3": {
+        "hash": "60d51f65e071190cfc5d991d6228bef9622894d84abb098afbf6316197116cf5",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Compiler.Manifest.load/1": {
+        "hash": "ca79a7f675a710f7f24580b87a96563f3e0d443f0d960ae9dee000ecf5421a60",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Coverage.default_artifact_path/0": {
+        "hash": "3d3e62d00fd461b4d26859e968056caa1963a392f83ecae6c540823f3f1b27a1",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Realization.EffectiveBinding.for_requirement/2": {
+        "hash": "ead0de431cdc01fbcb9b92cd38bde428d91f0f358cb2e55af7e8f71eb6b6b359",
+        "hasher_version": 1
+      },
+      "SpecLedEx.DecisionParser.parse_file/4": {
+        "hash": "d43add190cd91dd47bc08aa113581b6ea59da8e5c7c6e24d08834e660cac8fe0",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Coverage.init/2": {
+        "hash": "e36bd35f1b2ba583a25ad57b519f45e5e320dc889f9192c84ec8271d34019fb6",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Realization.ApiBoundary.run/1": {
+        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
+        "hasher_version": 1
+      },
+      "SpecLedEx.detect_authored_dir/2": {
+        "hash": "661ba84ffb4085ed05eb4f005751657e4b200d62d76a0c80d0efa2be02c71c08",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Schema.RealizedBy.validate/1": {
+        "hash": "d71abeb2263360332d4fba5534095760adfbb6d447a44b327d000446c2820d25",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Config.load/2": {
+        "hash": "df0c26931fc8ecb913709a9a1cd0c988b0d2e0a8b8691fd99180852168bcc6b3",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Realization.Drift.dedupe/2": {
+        "hash": "6385d0df7ba2970ffbdc141f6e1b532b21e7198db099322256e2c67d6fe1ca26",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Config.defaults/0": {
+        "hash": "0a42bb538f416784220e75e793092b92f39aeb44f7f358d08db20ea4c9a733e8",
+        "hasher_version": 1
+      },
+      "Mix.Tasks.Spec.Status.run/1": {
+        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Compiler.Tracer.trace/2": {
+        "hash": "3f24116dc67314bc72a107f7385cfbccade37abcf085b6ff4bab118ab1648cac",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Coverage.Store.write/2": {
+        "hash": "61f7ef5859a691380eb601acd5e4fdfbaf3540339604bd9a1594c14c83e9c161",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Coverage.install/1": {
+        "hash": "9ba7d32a6bb73c09f79f89788bda80f1cd46c8e62863f7ad1b802b3d896368dd",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Realization.ApiBoundary.hash/2": {
+        "hash": "ffa599d793833673fef3531fe516f6ffaec6044f0a9894b95f073b9eeac15b43",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Realization.HashStore.read/2": {
+        "hash": "0860e21ba66d705b5ee76e70a943bad389fe961fb96a0125fdb9d38315d43063",
+        "hasher_version": 1
+      },
+      "SpecLedEx.DecisionParser.CrossField.validate/3": {
+        "hash": "3b7a8899bdf3a75c7b86b549cba511af77e2c39b37f67be3f051e63dea82a847",
+        "hasher_version": 1
+      },
+      "Mix.Tasks.Spec.Check.run/1": {
+        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Parser.parse_file/2": {
+        "hash": "1a5e894be452e4e383344f93a0d338d2778c3a5a658a8a72c7a23b835a6f3e71",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Realization.Orchestrator.run/2": {
+        "hash": "8c4359397823056862a65b01ec256a7a660c3a1ab5ed63fd6a5dd3bb39766518",
+        "hasher_version": 1
+      },
+      "SpecLedEx.write_state/4": {
+        "hash": "fe41f8e8500a85a24a2905211db8fd68b0d242beae1fd47b58efa057a6d23778",
+        "hasher_version": 1
+      },
+      "Mix.Tasks.Spec.Triangle.run/1": {
+        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
+        "hasher_version": 1
+      },
+      "SpecLedEx.build_index/2": {
+        "hash": "0ea09307db0e7de0dd467659435b4f121e5beae3d97ba3ea66466739c6d08ed9",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Compiler.Xref.load/1": {
+        "hash": "4a490e1e53c68b68ebe1fc46f808aff79d2e76af62e2facf1a7ddd9175f5d175",
+        "hasher_version": 1
+      },
+      "SpecLedEx.TagScanner.scan/2": {
+        "hash": "8c1c0ebb14dd9aed30db5382d138b33d836316ce9dc433aaf463c38fa0999954",
+        "hasher_version": 1
+      },
+      "SpecLedEx.report/3": {
+        "hash": "ddf5258e24f3b8e5ad08c516b92087aa49a39f5e7222cd2e65ed2551ccbfe567",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Realization.Binding.resolve/2": {
+        "hash": "b6a0e906aef4ee6bd8b322f1223d4ebd2cbf6fff85e143480d7ec9bf950f1671",
+        "hasher_version": 1
+      },
+      "Mix.Tasks.Spec.Prime.run/1": {
+        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
+        "hasher_version": 1
+      },
+      "SpecLedEx.detect_decision_dir/2": {
+        "hash": "974ab48228ce966515da6567cceaea6b035d522f999240c75decc19fbc168017",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Coverage.Store.read/1": {
+        "hash": "5c0bd736fe4fa34421c62f225eef3ec095e3ee4bed53dda2219f58d0c614890e",
+        "hasher_version": 1
+      },
+      "SpecLedEx.AppendOnly.analyze/4": {
+        "hash": "1cc572802bf101238ac9ab62432c00a156f20dc63463256f9627d71a8539f013",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Compiler.Context.load/1": {
+        "hash": "4a490e1e53c68b68ebe1fc46f808aff79d2e76af62e2facf1a7ddd9175f5d175",
+        "hasher_version": 1
+      },
+      "SpecLedEx.normalize_for_state/1": {
+        "hash": "3786668294c10d2e62cc95f83a9f25bb1c8e5b8bf4e45fe12f411837ac143c4c",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Schema.validate_block/2": {
+        "hash": "9067b5db5e4433a5d27c9b7be52a018cffbff5d920084b685ff2ec739491387f",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Realization.Canonical.hash/1": {
+        "hash": "7383119575f06e2e099e2a7f72d81d2edd4e0378a4c441f84fad56e50e65259b",
+        "hasher_version": 1
+      },
+      "Mix.Tasks.Spec.Cover.Test.run/1": {
+        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
+        "hasher_version": 1
+      },
+      "Mix.Tasks.Spec.Init.run/1": {
+        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
+        "hasher_version": 1
+      },
+      "Mix.Tasks.Spec.Next.run/1": {
+        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Compiler.Xref.parse/1": {
+        "hash": "84e7508ca24a05894feba8b980ee04579df2a991e9c2a401c34bc9d960c36e95",
+        "hasher_version": 1
+      },
+      "SpecLedEx.Compiler.Manifest.sources_for/2": {
+        "hash": "cf0bc3db1e0bbbdd80a88ceabf01f2c0ffc058813cd2062220e9acf662afa58e",
+        "hasher_version": 1
+      },
+      "SpecLedEx.detect_spec_dir/1": {
+        "hash": "68c33f54cf359a3e8f65528f132d66880cbdf898b0aa082b1a0721967caac129",
+        "hasher_version": 1
+      },
+      "SpecLedEx.next/3": {
+        "hash": "6f0e0294c600b041eb4a4a78735fc04647d60328452cfcb5dd360959e590be3d",
+        "hasher_version": 1
+      },
+      "SpecLedEx.TagScanner.scan_file/1": {
+        "hash": "79d39508c40083415cc0bf93fe802dff667156aad49b3e53be16d3eed0e33fe0",
+        "hasher_version": 1
+      }
+    }
+  },
   "specification_version": "1.0",
   "summary": {
     "decision_parse_errors": 0,
@@ -6790,6 +6974,3230 @@
     "scenarios": 129,
     "subjects": 33,
     "verifications": 80
+  },
+  "verification": {
+    "claims": [
+      {
+        "cover_id": "spec.workspace.readme_present",
+        "file": ".spec/specs/spec_system.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "spec.system",
+        "target": ".spec/README.md",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "spec.workspace.reconcile_loop",
+        "file": ".spec/specs/spec_system.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "spec.system",
+        "target": ".spec/README.md",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "spec.workspace.agent_prime_context",
+        "file": ".spec/specs/spec_system.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "spec.system",
+        "target": ".spec/AGENTS.md",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "spec.workspace.agents_present",
+        "file": ".spec/specs/spec_system.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "spec.system",
+        "target": ".spec/AGENTS.md",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "spec.workspace.reconcile_loop",
+        "file": ".spec/specs/spec_system.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "spec.system",
+        "target": ".spec/AGENTS.md",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "spec.workspace.decisions_readme_present",
+        "file": ".spec/specs/spec_system.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "spec.system",
+        "target": ".spec/decisions/README.md",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "spec.workspace.reconcile_loop",
+        "file": ".spec/specs/spec_system.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "spec.system",
+        "target": ".spec/decisions/README.md",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "spec.workspace.state_generated",
+        "file": ".spec/specs/spec_system.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "claimed",
+        "subject_id": "spec.system",
+        "target": "mix spec.index",
+        "verification_index": 3
+      },
+      {
+        "cover_id": "spec.workspace.state_generated",
+        "file": ".spec/specs/spec_system.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "claimed",
+        "subject_id": "spec.system",
+        "target": "mix spec.validate",
+        "verification_index": 4
+      },
+      {
+        "cover_id": "specled.api_boundary.dangling_finding_emitted",
+        "file": ".spec/specs/api_boundary.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.api_boundary",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.api_boundary.drift_finding_emitted",
+        "file": ".spec/specs/api_boundary.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.api_boundary",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.api_boundary.hash_function_head",
+        "file": ".spec/specs/api_boundary.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.api_boundary",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.api_boundary.umbrella_graceful_degrade",
+        "file": ".spec/specs/api_boundary.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.api_boundary",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.api_boundary.dedupe_cyclic_tiebreak",
+        "file": ".spec/specs/api_boundary.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.api_boundary",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.api_boundary.drift_dedupe_narrow",
+        "file": ".spec/specs/api_boundary.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.api_boundary",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.api_boundary.suggest_binding_proposal_only",
+        "file": ".spec/specs/api_boundary.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.api_boundary",
+        "target": "",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.append_only.adr_affects_widened",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.append_only",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.append_only.decision_deleted",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.append_only",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.append_only.disabled_without_reason",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.append_only",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.append_only.findings_sorted",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.append_only",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.append_only.fix_block_discipline",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.append_only",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.append_only.identity",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.append_only",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.append_only.missing_change_type",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.append_only",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.append_only.must_downgraded",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.append_only",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.append_only.negative_removed",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.append_only",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.append_only.no_baseline",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.append_only",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.append_only.requirement_deleted",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.append_only",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.append_only.requirement_deleted_authorized",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.append_only",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.append_only.same_pr_self_authorization",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.append_only",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.append_only.scenario_regression",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.append_only",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.append_only.adr_affects_widened",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.append_only",
+        "target": "lib/specled_ex/append_only.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.append_only.decision_deleted",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.append_only",
+        "target": "lib/specled_ex/append_only.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.append_only.disabled_without_reason",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.append_only",
+        "target": "lib/specled_ex/append_only.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.append_only.missing_change_type",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.append_only",
+        "target": "lib/specled_ex/append_only.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.append_only.must_downgraded",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.append_only",
+        "target": "lib/specled_ex/append_only.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.append_only.negative_removed",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.append_only",
+        "target": "lib/specled_ex/append_only.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.append_only.no_baseline",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.append_only",
+        "target": "lib/specled_ex/append_only.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.append_only.requirement_deleted",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.append_only",
+        "target": "lib/specled_ex/append_only.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.append_only.requirement_deleted_authorized",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.append_only",
+        "target": "lib/specled_ex/append_only.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.append_only.same_pr_self_authorization",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.append_only",
+        "target": "lib/specled_ex/append_only.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.append_only.scenario_regression",
+        "file": ".spec/specs/append_only.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.append_only",
+        "target": "lib/specled_ex/append_only.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.binding.dangling_reported",
+        "file": ".spec/specs/binding.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.binding",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.binding.resolve_beam_first",
+        "file": ".spec/specs/binding.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.binding",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.binding.resolve_sees_use_generated",
+        "file": ".spec/specs/binding.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.binding",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.binding.canonical_deterministic_bytes",
+        "file": ".spec/specs/binding.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.binding",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.binding.canonical_reserved_idents_preserved",
+        "file": ".spec/specs/binding.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.binding",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.binding.canonical_strips_positions",
+        "file": ".spec/specs/binding.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.binding",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.binding.hash_store_atomic",
+        "file": ".spec/specs/binding.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.binding",
+        "target": "",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.binding.hasher_version_internal",
+        "file": ".spec/specs/binding.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.binding",
+        "target": "",
+        "verification_index": 3
+      },
+      {
+        "cover_id": "specled.schema.block_structs",
+        "file": ".spec/specs/block_schema.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.block_schema",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.schema.meta_contract",
+        "file": ".spec/specs/block_schema.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.block_schema",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.schema.tagged_tests_kind",
+        "file": ".spec/specs/block_schema.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.block_schema",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.schema.validation_errors",
+        "file": ".spec/specs/block_schema.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.block_schema",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.branch_guard.cross_cutting_decision",
+        "file": ".spec/specs/branch_guard.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.branch_guard",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.branch_guard.guidance_output",
+        "file": ".spec/specs/branch_guard.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.branch_guard",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.branch_guard.plan_docs_excluded",
+        "file": ".spec/specs/branch_guard.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.branch_guard",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.branch_guard.subject_cochange",
+        "file": ".spec/specs/branch_guard.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.branch_guard",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.branch_guard.new_requirement_tag_warning",
+        "file": ".spec/specs/branch_guard.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.branch_guard",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.branch_guard.tag_findings_respect_enforcement",
+        "file": ".spec/specs/branch_guard.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.branch_guard",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.branch_guard.tier_dispatch_commits_hashes_on_clean",
+        "file": ".spec/specs/branch_guard.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.branch_guard",
+        "target": "mix test test/specled_ex/realization/orchestrator_test.exs",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.branch_guard.tier_dispatch_impl_opt_in",
+        "file": ".spec/specs/branch_guard.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.branch_guard",
+        "target": "mix test test/specled_ex/realization/orchestrator_test.exs",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.branch_guard.tier_dispatch_umbrella_degrades",
+        "file": ".spec/specs/branch_guard.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.branch_guard",
+        "target": "mix test test/specled_ex/realization/orchestrator_test.exs",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.branch_guard.tier_dispatch_wires_orchestrator",
+        "file": ".spec/specs/branch_guard.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.branch_guard",
+        "target": "mix test test/specled_ex/realization/orchestrator_test.exs",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.branch_guard.tier_dispatch_surfaces_dangling",
+        "file": ".spec/specs/branch_guard.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.branch_guard",
+        "target": "mix test test/integration/scenario_tier_dispatch_test.exs",
+        "verification_index": 3
+      },
+      {
+        "cover_id": "specled.branch_guard.tier_dispatch_surfaces_drift",
+        "file": ".spec/specs/branch_guard.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.branch_guard",
+        "target": "mix test test/integration/scenario_tier_dispatch_test.exs",
+        "verification_index": 3
+      },
+      {
+        "cover_id": "specled.branch_guard.tier_dispatch_wires_orchestrator",
+        "file": ".spec/specs/branch_guard.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.branch_guard",
+        "target": "mix test test/integration/scenario_tier_dispatch_test.exs",
+        "verification_index": 3
+      },
+      {
+        "cover_id": "specled.compiler_context.load_from_opts",
+        "file": ".spec/specs/compiler_context.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.compiler_context",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.compiler_context.manifest_wraps_stdlib",
+        "file": ".spec/specs/compiler_context.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.compiler_context",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.compiler_context.struct_shape",
+        "file": ".spec/specs/compiler_context.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.compiler_context",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.compiler_context.manifest_fixture_integration",
+        "file": ".spec/specs/compiler_context.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.compiler_context",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.compiler_context.orchestrators_take_context",
+        "file": ".spec/specs/compiler_context.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.compiler_context",
+        "target": "lib/specled_ex/realization/api_boundary.ex",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.compiler_tracer.captures_remote_calls",
+        "file": ".spec/specs/compiler_tracer.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.compiler_tracer",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.compiler_tracer.etf_read_direct",
+        "file": ".spec/specs/compiler_tracer.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.compiler_tracer",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.compiler_tracer.registered_in_mix_exs",
+        "file": ".spec/specs/compiler_tracer.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.compiler_tracer",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.compiler_tracer.xref_in_process",
+        "file": ".spec/specs/compiler_tracer.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.compiler_tracer",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.compiler_tracer.single_file_cap",
+        "file": ".spec/specs/compiler_tracer.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.compiler_tracer",
+        "target": "lib/specled_ex/compiler/tracer.ex",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.config.defaults_when_missing",
+        "file": ".spec/specs/config.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.config",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.config.guardrails_severities",
+        "file": ".spec/specs/config.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.config",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.config.init_scaffolds_config_yml",
+        "file": ".spec/specs/config.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.config",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.config.malformed_yaml_degrades",
+        "file": ".spec/specs/config.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.config",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.config.paths_filtered_to_strings",
+        "file": ".spec/specs/config.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.config",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.config.unknown_enforcement_warns",
+        "file": ".spec/specs/config.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.config",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.config.yaml_parses_known_fields",
+        "file": ".spec/specs/config.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.config",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.coverage_capture.anonymous_ets",
+        "file": ".spec/specs/coverage_capture.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.coverage_capture",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.coverage_capture.formatter_snapshot_fn_di",
+        "file": ".spec/specs/coverage_capture.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.coverage_capture",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.coverage_capture.keyed_by_test_pid",
+        "file": ".spec/specs/coverage_capture.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.coverage_capture",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.coverage_capture.artifact_path",
+        "file": ".spec/specs/coverage_capture.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.coverage_capture",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.coverage_capture.store_split",
+        "file": ".spec/specs/coverage_capture.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.coverage_capture",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.coverage_capture.integration_case",
+        "file": ".spec/specs/coverage_capture.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.coverage_capture",
+        "target": "",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.coverage_capture.serialized_run",
+        "file": ".spec/specs/coverage_capture.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.coverage_capture",
+        "target": "",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.decisions.change_type_enum",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.decisions",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.change_type_optional",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.decisions",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_adr_append_only",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.decisions",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_affects_non_empty",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.decisions",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_affects_resolve",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.decisions",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_idempotent",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.decisions",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_reverses_what",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.decisions",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_supersedes_replaces",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.decisions",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.frontmatter_contract",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.decisions",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.reference_validation",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.decisions",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.weakening_set",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.decisions",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_adr_append_only",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.decisions",
+        "target": "lib/specled_ex/decision_parser/cross_field.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_affects_non_empty",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.decisions",
+        "target": "lib/specled_ex/decision_parser/cross_field.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_affects_resolve",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.decisions",
+        "target": "lib/specled_ex/decision_parser/cross_field.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_idempotent",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.decisions",
+        "target": "lib/specled_ex/decision_parser/cross_field.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_reverses_what",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.decisions",
+        "target": "lib/specled_ex/decision_parser/cross_field.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.decisions.cross_field_supersedes_replaces",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.decisions",
+        "target": "lib/specled_ex/decision_parser/cross_field.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.decisions.change_type_enum",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.decisions",
+        "target": "lib/specled_ex/schema/decision.ex",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.decisions.weakening_set",
+        "file": ".spec/specs/decision_governance.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.decisions",
+        "target": "lib/specled_ex/schema/decision.ex",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.expanded_behavior_tier.hash_stable_on_refactor",
+        "file": ".spec/specs/expanded_behavior_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.expanded_behavior_tier",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.expanded_behavior_tier.no_debug_info_detector_unavailable",
+        "file": ".spec/specs/expanded_behavior_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.expanded_behavior_tier",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.expanded_behavior_tier.reads_beam_debug_info",
+        "file": ".spec/specs/expanded_behavior_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.expanded_behavior_tier",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.expanded_behavior_tier.typespecs_drift_finding",
+        "file": ".spec/specs/expanded_behavior_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.expanded_behavior_tier",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.expanded_behavior_tier.typespecs_hashes_spec_and_type",
+        "file": ".spec/specs/expanded_behavior_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.expanded_behavior_tier",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.expanded_behavior_tier.mixed_fixture_coverage",
+        "file": ".spec/specs/expanded_behavior_tier.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.expanded_behavior_tier",
+        "target": "test/fixtures/sample_project/lib/sample_project/no_debug.ex",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.implementation_tier.closure_walks_tracer_edges",
+        "file": ".spec/specs/implementation_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.implementation_tier",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.implementation_tier.hash_ref_composition",
+        "file": ".spec/specs/implementation_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.implementation_tier",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.implementation_tier.ownership_rule",
+        "file": ".spec/specs/implementation_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.implementation_tier",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.implementation_tier.shared_helper_accounting",
+        "file": ".spec/specs/implementation_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.implementation_tier",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.implementation_tier.closure_walks_tracer_edges",
+        "file": ".spec/specs/implementation_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.implementation_tier",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.implementation_tier.scenario_refactor_stable",
+        "file": ".spec/specs/implementation_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.implementation_tier",
+        "target": "",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.index.canonical_state_output",
+        "file": ".spec/specs/index_state.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.index_state",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.index.json_resilience",
+        "file": ".spec/specs/index_state.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.index_state",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.index.subject_and_decision_index",
+        "file": ".spec/specs/index_state.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.index_state",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.index.tag_data_absent_when_disabled",
+        "file": ".spec/specs/index_state.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.index_state",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.index.tag_data_conditional",
+        "file": ".spec/specs/index_state.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.index_state",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.tasks.check_strict_gate",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tasks.decision_new_scaffold",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tasks.index_writes_state",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tasks.init_local_skill",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tasks.init_scaffold",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tasks.next_guidance",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tasks.no_app_start",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tasks.prime_context",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tasks.prime_json",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tasks.review_html_artifact",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tasks.status_summary",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tasks.validate_exit_status",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tasks.validate_findings",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tasks.test_tags_flag",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.tasks.test_tags_precedence",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.tasks.check_verbose_flag",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.tasks.dep_runtime_bootstrap",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "sh -c 'missing=$(grep -L \"SpecLedEx.MixRuntime.ensure_started\" lib/mix/tasks/*.ex); if [ -n \"$missing\" ]; then echo \"tasks missing MixRuntime bootstrap:\"; echo \"$missing\"; exit 1; fi'",
+        "verification_index": 3
+      },
+      {
+        "cover_id": "specled.modal_class.classify_case_and_punctuation_insensitive",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.modal_class",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.modal_class.classify_deterministic",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.modal_class",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.modal_class.classify_must",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.modal_class",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.modal_class.classify_none",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.modal_class",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.modal_class.classify_should",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.modal_class",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.modal_class.classify_total",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.modal_class",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.modal_class.cross_polarity_negative_to_positive_is_not_downgrade",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.modal_class",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.modal_class.cross_polarity_positive_to_negative_is_downgrade",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.modal_class",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.modal_class.downgrade_monotonic",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.modal_class",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.modal_class.downgrade_must_to_weaker",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.modal_class",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.modal_class.downgrade_total",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.modal_class",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.modal_class.downgrade_weaker_to_stronger_is_false",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.modal_class",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.modal_class.classify_total",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.modal_class",
+        "target": "lib/specled_ex/modal_class.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.modal_class.downgrade_total",
+        "file": ".spec/specs/modal_class.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.modal_class",
+        "target": "lib/specled_ex/modal_class.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.next.bugfix_guidance",
+        "file": ".spec/specs/next.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.next",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.next.change_classification",
+        "file": ".spec/specs/next.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.next",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.next.read_only",
+        "file": ".spec/specs/next.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.next",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.next.reconciliation_status",
+        "file": ".spec/specs/next.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.next",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.overlap.duplicate_covers",
+        "file": ".spec/specs/overlap.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.overlap",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.overlap.findings_sorted",
+        "file": ".spec/specs/overlap.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.overlap",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.overlap.must_stem_collision",
+        "file": ".spec/specs/overlap.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.overlap",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.overlap.no_prior_state",
+        "file": ".spec/specs/overlap.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.overlap",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.overlap.within_subject_scope",
+        "file": ".spec/specs/overlap.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.overlap",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.overlap.duplicate_covers",
+        "file": ".spec/specs/overlap.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.overlap",
+        "target": "lib/specled_ex/overlap.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.overlap.must_stem_collision",
+        "file": ".spec/specs/overlap.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.overlap",
+        "target": "lib/specled_ex/overlap.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.overlap.within_subject_scope",
+        "file": ".spec/specs/overlap.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.overlap",
+        "target": "lib/specled_ex/overlap.ex",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.package.declarative_governance",
+        "file": ".spec/specs/package.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.package",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.package.index_and_state",
+        "file": ".spec/specs/package.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.package",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.package.default_local_loop",
+        "file": ".spec/specs/package.spec.md",
+        "kind": "readme_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.package",
+        "target": "README.md",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.package.mix_tasks",
+        "file": ".spec/specs/package.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.package",
+        "target": "mix run -e 'Mix.Task.load_all(); Enum.each(~w(spec.init spec.prime spec.next spec.check spec.status spec.decision.new spec.index spec.validate spec.review), fn task -> Mix.Task.get(task) || raise(\"missing #{task}\") end)'",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.package.adoption_guide",
+        "file": ".spec/specs/package.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.package",
+        "target": "docs/adoption.md",
+        "verification_index": 3
+      },
+      {
+        "cover_id": "specled.package.concepts_guide",
+        "file": ".spec/specs/package.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.package",
+        "target": "docs/concepts.md",
+        "verification_index": 4
+      },
+      {
+        "cover_id": "specled.parser.info_string_tokens",
+        "file": ".spec/specs/parser.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.parser",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.parser.resilient_errors",
+        "file": ".spec/specs/parser.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.parser",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.parser.resilient_on_decode_error",
+        "file": ".spec/specs/parser.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.parser",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.parser.resilient_on_duplicate_block",
+        "file": ".spec/specs/parser.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.parser",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.parser.standard_blocks",
+        "file": ".spec/specs/parser.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.parser",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.parser.title_extraction",
+        "file": ".spec/specs/parser.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.parser",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.policy_files.change_analysis_delegates",
+        "file": ".spec/specs/policy_files.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.policy_files",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.policy_files.classify_kinds",
+        "file": ".spec/specs/policy_files.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.policy_files",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.policy_files.co_change_rule_total",
+        "file": ".spec/specs/policy_files.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.policy_files",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.policy_files.plan_docs_excluded",
+        "file": ".spec/specs/policy_files.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.policy_files",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.policy_files.priv_defaults_to_lib",
+        "file": ".spec/specs/policy_files.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.policy_files",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.policy_files.priv_plts_is_generated",
+        "file": ".spec/specs/policy_files.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.policy_files",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.prime.command_execution_default",
+        "file": ".spec/specs/prime.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.prime",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.prime.machine_output",
+        "file": ".spec/specs/prime.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.prime",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.prime.session_context",
+        "file": ".spec/specs/prime.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.prime",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.prose_guard.config_thresholds",
+        "file": ".spec/specs/prose_guard.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.prose_guard",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.prose_guard.finding_emitted",
+        "file": ".spec/specs/prose_guard.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.prose_guard",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.prose_guard.non_must_exempt",
+        "file": ".spec/specs/prose_guard.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.prose_guard",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.prose_guard.severity_configurable",
+        "file": ".spec/specs/prose_guard.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.prose_guard",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.realized_by.existing_surface_coexists",
+        "file": ".spec/specs/realized_by.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.realized_by",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.realized_by.meta_field",
+        "file": ".spec/specs/realized_by.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.realized_by",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.realized_by.requirement_override",
+        "file": ".spec/specs/realized_by.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.realized_by",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.realized_by.schema_shape",
+        "file": ".spec/specs/realized_by.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.realized_by",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.realized_by.effective_binding_accepts_subject_shape",
+        "file": ".spec/specs/realized_by.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.realized_by",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.realized_by.effective_binding_inherits_subject",
+        "file": ".spec/specs/realized_by.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.realized_by",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.realized_by.effective_binding_requirement_replaces_tier",
+        "file": ".spec/specs/realized_by.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.realized_by",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.severity.known_values",
+        "file": ".spec/specs/severity.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.severity",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.severity.non_emitting",
+        "file": ".spec/specs/severity.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.severity",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.severity.off_is_absorbing",
+        "file": ".spec/specs/severity.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.severity",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.severity.resolve_precedence",
+        "file": ".spec/specs/severity.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.severity",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.spec_drift_trailer.parse_unknown_token_warns",
+        "file": ".spec/specs/spec_drift_trailer.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_drift_trailer",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.spec_drift_trailer.parse_vocabulary",
+        "file": ".spec/specs/spec_drift_trailer.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_drift_trailer",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.spec_drift_trailer.scans_base_to_head",
+        "file": ".spec/specs/spec_drift_trailer.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_drift_trailer",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.spec_drift_trailer.self_report_documented",
+        "file": ".spec/specs/spec_drift_trailer.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_drift_trailer",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.spec_review.diff_against_base",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.spec_review.html_artifact",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.spec_review.inline_finding_badges",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.spec_review.misc_panel",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.spec_review.per_subject_tabs",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.spec_review.read_only_viewer",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.spec_review.same_artifact_local_and_ci",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.spec_review.spec_first_navigation",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.spec_review.triage_panel",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.spec_review.decisions_governance_inline",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review/html_test.exs",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.spec_review.degraded_leg_state",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review/html_test.exs",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.spec_review.triangle_code_classification",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review/html_test.exs",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.spec_review.diff_against_base",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/mix/tasks/spec.review.ex",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.spec_review.same_artifact_local_and_ci",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/mix/tasks/spec.review.ex",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.spec_review.misc_panel",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review.ex",
+        "verification_index": 3
+      },
+      {
+        "cover_id": "specled.spec_review.spec_first_navigation",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review.ex",
+        "verification_index": 3
+      },
+      {
+        "cover_id": "specled.spec_review.decisions_governance_inline",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 4
+      },
+      {
+        "cover_id": "specled.spec_review.degraded_leg_state",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 4
+      },
+      {
+        "cover_id": "specled.spec_review.html_artifact",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 4
+      },
+      {
+        "cover_id": "specled.spec_review.inline_finding_badges",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 4
+      },
+      {
+        "cover_id": "specled.spec_review.per_subject_tabs",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 4
+      },
+      {
+        "cover_id": "specled.spec_review.read_only_viewer",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 4
+      },
+      {
+        "cover_id": "specled.spec_review.triage_panel",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 4
+      },
+      {
+        "cover_id": "specled.spec_review.triangle_code_classification",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 4
+      },
+      {
+        "cover_id": "specled.spec_review.gh_pages_distribution",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "workflow_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "priv/spec_init/workflows/spec_review.yml.eex",
+        "verification_index": 5
+      },
+      {
+        "cover_id": "specled.status.coverage_summary",
+        "file": ".spec/specs/status.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.status",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.status.decision_index",
+        "file": ".spec/specs/status.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.status",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.status.frontier_summary",
+        "file": ".spec/specs/status.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.status",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tag_scanning.deduplicated_matches",
+        "file": ".spec/specs/tag_scanning.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tag_scanning",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tag_scanning.describe_block_recursion",
+        "file": ".spec/specs/tag_scanning.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tag_scanning",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tag_scanning.dynamic_values_reported",
+        "file": ".spec/specs/tag_scanning.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tag_scanning",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tag_scanning.form_keyword_list",
+        "file": ".spec/specs/tag_scanning.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tag_scanning",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tag_scanning.form_list_of_ids",
+        "file": ".spec/specs/tag_scanning.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tag_scanning",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tag_scanning.form_string_literal",
+        "file": ".spec/specs/tag_scanning.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tag_scanning",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tag_scanning.ignored_non_spec_tags",
+        "file": ".spec/specs/tag_scanning.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tag_scanning",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tag_scanning.moduletag_applies_to_all_tests",
+        "file": ".spec/specs/tag_scanning.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tag_scanning",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tag_scanning.parse_errors_surfaced",
+        "file": ".spec/specs/tag_scanning.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tag_scanning",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tag_scanning.scan_aggregates_results",
+        "file": ".spec/specs/tag_scanning.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tag_scanning",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tag_scanning.supported_forms",
+        "file": ".spec/specs/tag_scanning.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tag_scanning",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.build_command",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.build_command_combines_backed_ids",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.build_command_drops_unbacked_ids",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.build_command_includes_integration_flag",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.build_command_no_tests_when_all_unbacked",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.collect_entries",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.merged_run_attribution",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.missing_tag_finding",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.strength_claimed_on_untagged_cover",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.strength_executed_on_green_run",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.tagged_tests.strength_progression",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.triangulation.detector_unavailable_on_missing_coverage",
+        "file": ".spec/specs/triangulation.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.triangulation",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.triangulation.execution_reach_metric",
+        "file": ".spec/specs/triangulation.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.triangulation",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.triangulation.pure_function",
+        "file": ".spec/specs/triangulation.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.triangulation",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.triangulation.underspecified_realization",
+        "file": ".spec/specs/triangulation.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.triangulation",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.triangulation.untested_realization",
+        "file": ".spec/specs/triangulation.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.triangulation",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.triangulation.untethered_test",
+        "file": ".spec/specs/triangulation.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.triangulation",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.triangulation.untethered_test_opt_out",
+        "file": ".spec/specs/triangulation.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.triangulation",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.triangulation.pure_function",
+        "file": ".spec/specs/triangulation.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.triangulation",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.triangulation.untethered_test",
+        "file": ".spec/specs/triangulation.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.triangulation",
+        "target": "",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.triangulation.untethered_test_opt_out",
+        "file": ".spec/specs/triangulation.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.triangulation",
+        "target": "",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.triangulation.spec_triangle_task",
+        "file": ".spec/specs/triangulation.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.triangulation",
+        "target": "",
+        "verification_index": 3
+      },
+      {
+        "cover_id": "specled.use_tier.enumerate_consumers",
+        "file": ".spec/specs/use_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.use_tier",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.use_tier.provider_hash_composes",
+        "file": ".spec/specs/use_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.use_tier",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.use_tier.hash_prefix_length",
+        "file": ".spec/specs/use_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.use_tier",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.use_tier.root_cause_dedupe",
+        "file": ".spec/specs/use_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.use_tier",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.use_tier.scenario_macro_provider_drift",
+        "file": ".spec/specs/use_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.use_tier",
+        "target": "",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.verify.command_execution_resilience",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.verify.command_exit_code_recorded",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.verify.command_output_via_tempfile",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.verify.command_timeout_enforced",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.verify.coverage_warnings",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.verify.decision_governance",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.verify.malformed_entries_nonfatal",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.verify.meta_required",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.verify.reference_checks",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.verify.strength_semantics",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.verify.target_existence",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "",
+        "verification_index": 0
+      },
+      {
+        "cover_id": "specled.verify.requirement_without_test_tag",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.verify.tag_dynamic_value_skipped",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.verify.tag_findings_respect_enforcement",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.verify.tag_findings_suppressed_when_disabled",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.verify.tag_scan_parse_error",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "",
+        "verification_index": 1
+      },
+      {
+        "cover_id": "specled.verify.verification_cover_untagged",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "",
+        "verification_index": 1
+      }
+    ],
+    "cli_minimum_strength": null,
+    "default_minimum_strength": "claimed",
+    "strength_summary": {
+      "claimed": 2,
+      "executed": 240,
+      "linked": 50
+    },
+    "threshold_failures": 0
   },
   "workspace": {
     "decision_count": 27,
