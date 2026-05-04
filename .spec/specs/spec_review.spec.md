@@ -78,6 +78,10 @@ decisions:
   statement: The sync diagram shall render a fourth per-leg state — `:degraded` — distinct from `:ok`, `:fail`, and `:vacuous`, used when a leg carries a `detector_unavailable` finding rather than a positive or negative verification. A degraded leg shall render with a `?` glyph (not `✓`) and a non-green color, and the leg's tooltip shall enumerate the distinct `detector_unavailable` reasons (`debug_info_stripped`, `umbrella_unsupported`, `no_coverage_artifact`, etc.) attributed to that leg. When any leg is degraded the artifact shall surface a top-of-page banner advertising that the report is partial. A `:fail` finding on the same leg supersedes `:degraded`; `:degraded` supersedes `:vacuous` and `:ok`.
   priority: must
   stability: evolving
+- id: specled.spec_review.decisions_governance_inline
+  statement: The Decisions Changed section of the HTML artifact shall render `append_only/*` findings inline next to the ADR they should have authorized (matched by ADR id when the finding's `entity_id` resolves to a changed ADR), and shall surface findings that name no resolvable ADR — including unauthorized requirement deletions, modal downgrades, scenario regressions, and decision deletions — in a dedicated "Governance violations" subsection of the same panel. Each rendered finding shall preserve the code-fenced `fix:` block emitted by `SpecLedEx.AppendOnly.analyze` so reviewers see the remediation contract verbatim.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -179,6 +183,7 @@ decisions:
   covers:
     - specled.spec_review.triangle_code_classification
     - specled.spec_review.degraded_leg_state
+    - specled.spec_review.decisions_governance_inline
 - kind: source_file
   target: lib/mix/tasks/spec.review.ex
   covers:
@@ -199,6 +204,7 @@ decisions:
     - specled.spec_review.read_only_viewer
     - specled.spec_review.triangle_code_classification
     - specled.spec_review.degraded_leg_state
+    - specled.spec_review.decisions_governance_inline
 - kind: workflow_file
   target: priv/spec_init/workflows/spec_review.yml.eex
   covers:

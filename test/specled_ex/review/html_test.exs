@@ -483,4 +483,171 @@ defmodule SpecLedEx.Review.HtmlTest do
       refute Map.get(drift_row, :degraded?, false)
     end
   end
+
+  # covers: specled.spec_review.decisions_governance_inline
+  describe "render_decisions_changed — append_only governance findings" do
+    defp finding(code, opts \\ []) do
+      %{
+        "code" => code,
+        "severity" => Keyword.get(opts, :severity, "error"),
+        "subject_id" => Keyword.get(opts, :subject_id, "x"),
+        "entity_id" => Keyword.get(opts, :entity_id, "x.req_a"),
+        "message" =>
+          Keyword.get(
+            opts,
+            :message,
+            """
+            Requirement `x.req_a` was present at base and is absent at head.
+
+            ```
+            fix: author an ADR with change_type in {deprecates, weakens, narrows-scope, adds-exception} and affects: [x.req_a] — or restore the requirement in its spec file.
+            ```
+            """
+          )
+      }
+    end
+
+    test "with no decisions and no findings, the panel still renders the empty message" do
+      html = IO.iodata_to_binary(Html.render_decisions_changed([], %{}, []))
+
+      assert html =~ "Decisions changed (0)"
+      assert html =~ "No ADR files changed"
+      refute html =~ "Governance violations"
+    end
+
+    test "an unauthorized requirement deletion surfaces in a Governance violations subsection even when no ADR file changed" do
+      html =
+        IO.iodata_to_binary(
+          Html.render_decisions_changed([], %{}, [finding("append_only/requirement_deleted")])
+        )
+
+      assert html =~ "Governance violations"
+      assert html =~ "append_only/requirement_deleted"
+
+      assert html =~
+               "Requirement `x.req_a` was present at base and is absent at head"
+
+      assert html =~ "governance-finding-fix"
+
+      assert html =~
+               "fix: author an ADR with change_type in {deprecates, weakens, narrows-scope, adds-exception}"
+    end
+
+    test "the rendered finding preserves the code-fenced fix block emitted by AppendOnly.analyze" do
+      html =
+        IO.iodata_to_binary(
+          Html.render_decisions_changed([], %{}, [finding("append_only/requirement_deleted")])
+        )
+
+      # The fix block lives inside <pre class="governance-finding-fix"><code>...</code></pre>
+      # and is the verbatim text that the finding generator wrote.
+      assert html =~ ~r|<pre class="governance-finding-fix"><code>fix:[^<]+</code></pre>|s
+    end
+
+    test "an append_only/* finding whose entity_id matches a present ADR renders inline under that ADR card" do
+      decision = %{
+        id: "specled.decision.adr_x",
+        file: ".spec/decisions/adr_x.md",
+        status: "accepted",
+        change_type: "weakens",
+        affects: ["x.req_a"]
+      }
+
+      adr = %{
+        id: "specled.decision.adr_x",
+        file: ".spec/decisions/adr_x.md",
+        title: "ADR X",
+        status: "accepted",
+        date: nil,
+        change_type: "weakens",
+        affects: ["x.req_a"],
+        body_text: "body",
+        change_status: :modified
+      }
+
+      finding =
+        finding("append_only/adr_affects_widened",
+          entity_id: "specled.decision.adr_x",
+          message:
+            "ADR `specled.decision.adr_x` was status: accepted at base but its structural fields changed at head.\n\n```\nfix: revert the field edit on the accepted ADR.\n```\n"
+        )
+
+      html =
+        IO.iodata_to_binary(
+          Html.render_decisions_changed(
+            [decision],
+            %{"specled.decision.adr_x" => adr},
+            [finding]
+          )
+        )
+
+      assert html =~ "Decisions changed (1)"
+      assert html =~ "Governance findings naming this ADR"
+      assert html =~ "append_only/adr_affects_widened"
+      # Inline rendering means the orphan subsection is NOT used for this one
+      refute html =~ "Governance violations (1)"
+    end
+
+    test "mixed: an inline-mapped finding and an orphan finding render in their respective places" do
+      decision = %{
+        id: "specled.decision.adr_x",
+        file: ".spec/decisions/adr_x.md",
+        status: "accepted",
+        change_type: "weakens",
+        affects: ["x.req_a"]
+      }
+
+      adr = %{
+        id: "specled.decision.adr_x",
+        file: ".spec/decisions/adr_x.md",
+        title: "ADR X",
+        status: "accepted",
+        date: nil,
+        change_type: "weakens",
+        affects: ["x.req_a"],
+        body_text: "body",
+        change_status: :modified
+      }
+
+      inline =
+        finding("append_only/adr_affects_widened",
+          entity_id: "specled.decision.adr_x",
+          message: "ADR widened.\n\n```\nfix: revert.\n```\n"
+        )
+
+      orphan = finding("append_only/requirement_deleted")
+
+      html =
+        IO.iodata_to_binary(
+          Html.render_decisions_changed(
+            [decision],
+            %{"specled.decision.adr_x" => adr},
+            [inline, orphan]
+          )
+        )
+
+      # Orphan in the top subsection
+      assert html =~ "Governance violations (1)"
+      assert html =~ "append_only/requirement_deleted"
+      # Inline under the ADR card
+      assert html =~ "Governance findings naming this ADR"
+      assert html =~ "append_only/adr_affects_widened"
+    end
+
+    test "non-append_only findings are ignored by the Decisions panel" do
+      noise = %{
+        "code" => "branch_guard_realization_drift",
+        "severity" => "error",
+        "subject_id" => "x",
+        "entity_id" => "x.req_a",
+        "message" => "drift"
+      }
+
+      html = IO.iodata_to_binary(Html.render_decisions_changed([], %{}, [noise]))
+
+      assert html =~ "Decisions changed (0)"
+      refute html =~ "Governance violations"
+      refute html =~ "branch_guard_realization_drift"
+    end
+  end
 end
