@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-05-04T15:17:58Z",
+  "description": "Advances: specled.spec_review\n\nThe Decisions Changed section (lib/specled_ex/review/html.ex:1270-1344) is purely descriptive: \"here are the ADRs that changed.\" But ADR governance is a first-class concept in docs/concepts.md — append_only/* findings (requirement_deletion_without_adr, modal_downgrade_without_adr, scenario_regression_without_adr, adr_deletion, same_pr_self_authorization, etc.) need a place to live.\n\nRender append_only/* findings inline in the Decisions panel, next to the ADR they should/should-not have authorized. When a requirement is deleted and no ADR with change_type ∈ {deprecates, weakens, narrows-scope, adds-exception} authorizes it, show \"this PR deletes requirement R but no ADR authorizes the weakening\" with a fix: hint reading the same code-fenced fix block the finding emits.\n\nDepends on child #1 (governance leg in the classifier).",
+  "id": "specled_-quj.7",
+  "labels": [],
+  "parent": "specled_-quj",
+  "priority": 2,
+  "status": "open",
+  "title": "Decisions panel surfaces append_only governance violations",
+  "type": "task",
+  "updated_at": "2026-05-04T15:17:58Z"
+}
