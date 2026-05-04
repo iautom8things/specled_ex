@@ -94,9 +94,11 @@ defmodule SpecLedEx.Review.Html do
       <main>
         <section class="view-pane view-pane-spec active" data-view-pane="spec">
           <%= render_triage(view.triage, view.all_findings) %>
+          <%= render_coverage_help_disclosure() %>
           <%= render_decisions_changed(view.decisions_changed, view.adrs_by_id) %>
           <%= render_subjects(view.affected_subjects, view.adrs_by_id) %>
           <%= render_unmapped(view.unmapped_changes, view.file_breakdown) %>
+          <%= render_raw_verification_all(view.affected_subjects) %>
         </section>
         <section class="view-pane view-pane-files" data-view-pane="files">
           <%= render_files_view(view.all_changes, view.meta.stats) %>
@@ -1139,16 +1141,25 @@ defmodule SpecLedEx.Review.Html do
   @doc false
   def render_coverage_tab(s) do
     [
-      render_coverage_help(),
+      render_coverage_help_link(),
       render_requirements_coverage(s.requirements, s.claims_by_req),
-      render_bindings_section(s.bindings),
-      render_verification_section(s.verification)
+      render_bindings_section(s.bindings)
     ]
   end
 
-  defp render_coverage_help do
+  # Per-tab pointer back to the single page-level help disclosure. The full
+  # legend used to re-render inside every Coverage tab; now there's exactly
+  # one copy near the triage panel and each tab links to it.
+  defp render_coverage_help_link do
+    ~S|<p class="coverage-help-link"><a href="#coverage-help">How is requirement coverage computed?</a></p>|
+  end
+
+  # covers: specled.spec_review.triage_panel
+  # The legend used to live inside every subject Coverage tab. It now renders
+  # once near the page-level triage panel; per-tab links point here.
+  defp render_coverage_help_disclosure do
     ~S"""
-    <details class="coverage-help">
+    <details class="coverage-help" id="coverage-help">
       <summary class="coverage-help-summary"><span aria-hidden="true">ℹ</span> How is requirement coverage computed?</summary>
       <div class="coverage-help-body">
         <p>Each requirement is verified by one or more <code>spec-verification</code> entries that name it in their <code>covers:</code> list. The verifier inspects each entry and reports the <strong>strongest evidence</strong> it could find for the requirement.</p>
@@ -1291,37 +1302,64 @@ defmodule SpecLedEx.Review.Html do
     ]
   end
 
-  defp render_verification_section(nil), do: ""
-  defp render_verification_section([]), do: ""
+  # Page-level aggregator. Renders a single "Raw verification (all subjects)"
+  # disclosure containing every spec-verification entry across affected
+  # subjects, grouped by subject. The per-subject Coverage tab no longer
+  # repeats this block — power-user noise is consolidated to one place.
+  defp render_raw_verification_all(subjects) do
+    grouped =
+      subjects
+      |> Enum.map(fn s -> {s, List.wrap(s.verification)} end)
+      |> Enum.reject(fn {_s, list} -> list == [] end)
 
-  defp render_verification_section(list) when is_list(list) do
+    case grouped do
+      [] ->
+        ""
+
+      _ ->
+        total = Enum.reduce(grouped, 0, fn {_s, list}, acc -> acc + length(list) end)
+
+        [
+          ~s|<section id="raw-verification" class="raw-verification-all" aria-label="Raw verification across subjects">|,
+          ~s|<details class="raw-verification">|,
+          ~s|<summary class="raw-verification-summary">Raw spec-verification (all subjects · #{total} entr#{if total == 1, do: "y", else: "ies"})</summary>|,
+          ~S|<p class="raw-verification-explainer">The author's declarations as written in each subject's spec file. The per-requirement Coverage views above are computed from these entries.</p>|,
+          Enum.map(grouped, fn {s, list} -> render_raw_verification_subject(s, list) end),
+          ~S|</details>|,
+          ~S|</section>|
+        ]
+    end
+  end
+
+  defp render_raw_verification_subject(subject, list) do
     [
-      ~s|<details class="raw-verification">|,
-      ~s|<summary class="raw-verification-summary">Raw spec-verification block (#{length(list)} entr#{if length(list) == 1, do: "y", else: "ies"})</summary>|,
-      ~S|<p class="raw-verification-explainer">The author's declarations as written in the spec file. The per-requirement view above is computed from this.</p>|,
+      ~s|<div class="raw-verification-subject">|,
+      ~s|<h4 class="raw-verification-subject-heading"><a href="#subject-#{slug(subject.id)}"><code>#{h(subject.id)}</code></a> <span class="raw-verification-subject-count">(#{length(list)})</span></h4>|,
       ~S|<ul class="verification-list">|,
-      Enum.map(list, fn v ->
-        kind = field(v, :kind) || ""
-        target = field(v, :target) || ""
-        covers = field(v, :covers) || []
-        execute = field(v, :execute) || false
-
-        ~s"""
-        <li class="verification">
-          <div class="verification-header">
-            <span class="pill pill-neutral"#{title_attr(tooltip(:verification_kind, kind))}>#{h(kind)}</span>
-            <code class="verification-target">#{h(target)}</code>
-            #{if execute, do: ~s|<span class="pill pill-success"#{title_attr(tooltip(:execute, true))}>executes</span>|, else: ~s|<span class="pill pill-muted"#{title_attr(tooltip(:execute, false))}>declared</span>|}
-          </div>
-          <div class="verification-covers">
-            #{Enum.map_join(covers, " ", fn c -> ~s|<span class="pill pill-cover">#{h(c)}</span>| end)}
-          </div>
-        </li>
-        """
-      end),
+      Enum.map(list, &render_verification_entry/1),
       ~S|</ul>|,
-      ~S|</details>|
+      ~S|</div>|
     ]
+  end
+
+  defp render_verification_entry(v) do
+    kind = field(v, :kind) || ""
+    target = field(v, :target) || ""
+    covers = field(v, :covers) || []
+    execute = field(v, :execute) || false
+
+    ~s"""
+    <li class="verification">
+      <div class="verification-header">
+        <span class="pill pill-neutral"#{title_attr(tooltip(:verification_kind, kind))}>#{h(kind)}</span>
+        <code class="verification-target">#{h(target)}</code>
+        #{if execute, do: ~s|<span class="pill pill-success"#{title_attr(tooltip(:execute, true))}>executes</span>|, else: ~s|<span class="pill pill-muted"#{title_attr(tooltip(:execute, false))}>declared</span>|}
+      </div>
+      <div class="verification-covers">
+        #{Enum.map_join(covers, " ", fn c -> ~s|<span class="pill pill-cover">#{h(c)}</span>| end)}
+      </div>
+    </li>
+    """
   end
 
   @doc false
@@ -1544,7 +1582,6 @@ defmodule SpecLedEx.Review.Html do
 
   defp render_unmapped(changes, breakdown) do
     paths = Enum.map(changes, & &1.file)
-    tree = build_path_tree(paths)
 
     diff_blocks =
       Enum.map(changes, fn %{file: file, lines: lines} ->
@@ -1563,9 +1600,29 @@ defmodule SpecLedEx.Review.Html do
       ~s|<h2 class="section-heading">Outside the spec system (#{length(changes)})</h2>|,
       render_misc_breakdown(breakdown),
       ~S|<p class="misc-explainer">These files changed but do not map to any spec subject. Triangulation does not apply here — review the diff directly.</p>|,
-      render_files_section(tree, "misc", "Files (#{length(paths)})", diff_blocks),
+      render_misc_files(paths, diff_blocks),
       ~S|</section>|
     ]
+  end
+
+  # When there are few unmapped files (<= 3), the file-tree rail is more
+  # chrome than signal — render the diff blocks flat. Above that threshold,
+  # fall back to the standard tree+files layout.
+  @misc_flat_threshold 3
+
+  defp render_misc_files(paths, diff_blocks) when length(paths) <= @misc_flat_threshold do
+    ~s"""
+    <div class="files-section files-section-flat">
+      <div class="files-list">
+        #{IO.iodata_to_binary(diff_blocks)}
+      </div>
+    </div>
+    """
+  end
+
+  defp render_misc_files(paths, diff_blocks) do
+    tree = build_path_tree(paths)
+    render_files_section(tree, "misc", "Files (#{length(paths)})", diff_blocks)
   end
 
   # Header breakdown so a reviewer can see all N changed files accounted
@@ -2984,6 +3041,33 @@ defmodule SpecLedEx.Review.Html do
     .raw-verification[open] .raw-verification-summary::before { content: "▾"; }
     .raw-verification-explainer { padding: 0 14px; margin: 4px 0 12px; color: var(--fg-muted); font-size: 12px; font-style: italic; }
     .raw-verification .verification-list { padding: 0 14px 14px; margin: 0; }
+    .raw-verification-all { margin-top: 32px; }
+    .raw-verification-subject { padding: 0 14px 4px; }
+    .raw-verification-subject-heading {
+      margin: 12px 0 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--fg-muted);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .raw-verification-subject-heading a { color: inherit; text-decoration: none; }
+    .raw-verification-subject-heading a:hover { text-decoration: underline; }
+    .raw-verification-subject-heading code { font-family: var(--code-font); font-size: 12px; }
+    .raw-verification-subject-count { color: var(--fg-faint); font-weight: 400; margin-left: 4px; }
+    .raw-verification-subject .verification-list { padding: 0; margin: 0 0 8px; }
+
+    /* Per-tab pointer back to the page-level coverage help disclosure. */
+    .coverage-help-link {
+      margin: 0 0 12px;
+      font-size: 12px;
+      color: var(--fg-muted);
+    }
+    .coverage-help-link a { color: var(--accent); text-decoration: none; }
+    .coverage-help-link a:hover { text-decoration: underline; }
+
+    /* Misc panel — flat-files variant (used when N <= threshold). */
+    .files-section-flat .files-list { margin: 0; }
 
     /* Help cursor on every titled chip so users discover hover content. */
     [title] { cursor: help; }
