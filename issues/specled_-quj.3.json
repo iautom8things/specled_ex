@@ -9,9 +9,15 @@
   "id": "specled_-quj.3",
   "labels": [],
   "parent": "specled_-quj",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: 985e3e4e-1dd3-43de-8a05-67a8b7029e85\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/985e3e4e-1dd3-43de-8a05-67a8b7029e85.jsonl\n\nCommit: 57ff99cec90d9e7059eb63bbebc6681c903cccae\nBranch: specled_-quj.3/findings-grouping\nWorktree: /Users/mz/src/specled_ex-quj.3\n\nFiles touched:\n- lib/specled_ex/review/html.ex\n- test/specled_ex/review/html_test.exs\n\nTests added (in SpecLedEx.Review.HtmlTest, \"render_findings_list — leg + severity grouping\" describe block):\n- \"an empty list renders nothing\"\n- \"leg_for_finding_code reuses the sync-checklist code-to-leg mapping\"\n- \"code_to_leg_lookup is sourced from build_sync_checks (no duplication)\"\n- \"an unknown code falls into the 'Other' bucket\"\n- \"groups appear in the canonical leg order\"\n- \"each group heading shows total count and per-severity counts\"\n- \"within a group, errors render before warnings before info\"\n- \"each finding still uses the tooltip(:severity, sev) mechanism\"\n- \"the heading severity chip also carries the severity tooltip\"\n- \"an unclassifiable code lands in the 'Other' bucket at the end\"\n- \"the outer summary shows the total finding count\"\n- \"groups with no findings do not render\"\n\nVerification stubs flipped: none new (stubs that cover spec_review.triage_panel + spec_review.triangle_code_classification were already execute: true).\n\nSummary: Refactored render_findings_list to group findings by triangle leg (Spec well-formed / Spec ↔ Code / Spec ↔ Tests / Code ↔ Tests / Coverage / Decisions / Branch / Other), then by severity within each group. The leg classifier is sourced from build_sync_checks via a new code_to_leg_lookup/0 helper — same source of truth quj.1 added, no duplication. Each group heading shows total count + severity chips; severity tooltip text reuses the existing tooltip(:severity, sev) call. mix test (615 tests, 0 failures) and mix spec.check (0 findings) both clean.",
+      "timestamp": "2026-05-04T16:00:20Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Group global findings list by leg + severity",
   "type": "task",
-  "updated_at": "2026-05-04T15:52:06Z"
+  "updated_at": "2026-05-04T16:00:20Z"
 }
