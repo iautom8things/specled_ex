@@ -79,8 +79,8 @@ defmodule SpecLedEx.Review do
 
     decisions_changed = build_decisions_changed(analysis, index)
     findings = verifier_report["findings"] || []
-    triage = build_triage(findings, affected_subjects, unmapped_changes != [])
     adrs_by_id = build_adrs_by_id(index, root, analysis.base)
+    triage = build_triage(findings, affected_subjects, unmapped_changes != [], adrs_by_id)
 
     all_changes =
       analysis.changed_files
@@ -280,7 +280,7 @@ defmodule SpecLedEx.Review do
     String.starts_with?(path, ".spec/specs/") or String.starts_with?(path, ".spec/decisions/")
   end
 
-  defp build_triage(findings, affected_subjects, has_unmapped?) do
+  defp build_triage(findings, affected_subjects, has_unmapped?, adrs_by_id) do
     by_severity =
       findings
       |> Enum.group_by(& &1["severity"])
@@ -301,14 +301,71 @@ defmodule SpecLedEx.Review do
         }
       end)
 
+    requirement_count =
+      affected_subjects
+      |> Enum.map(&length(&1.requirements))
+      |> Enum.sum()
+
+    binding_count =
+      affected_subjects
+      |> Enum.flat_map(fn s -> Map.values(s.bindings || %{}) end)
+      |> Enum.flat_map(&List.wrap/1)
+      |> length()
+
+    adr_refs =
+      affected_subjects
+      |> Enum.flat_map(& &1.decision_refs)
+      |> Enum.uniq()
+
+    unresolved_adr_refs = Enum.reject(adr_refs, &Map.has_key?(adrs_by_id, &1))
+
+    strength_breakdown =
+      affected_subjects
+      |> Enum.flat_map(fn s ->
+        Enum.map(s.requirements, fn req ->
+          id = req_id(req)
+          claims = Map.get(s.claims_by_req || %{}, id, [])
+          best_claim_strength(claims)
+        end)
+      end)
+      |> Enum.frequencies()
+
+    findings_by_code =
+      findings
+      |> Enum.group_by(& &1["code"])
+      |> Map.new(fn {k, v} -> {k, length(v)} end)
+
     %{
       findings_count: length(findings),
       by_severity: by_severity,
       affected_subject_count: length(affected_subjects),
       affected_subjects: affected_summaries,
       has_unmapped_changes?: has_unmapped?,
-      clean?: findings == [] and not has_unmapped? and affected_subjects == []
+      clean?: findings == [] and not has_unmapped? and affected_subjects == [],
+      requirement_count: requirement_count,
+      binding_count: binding_count,
+      adr_ref_count: length(adr_refs),
+      unresolved_adr_count: length(unresolved_adr_refs),
+      strength_breakdown: strength_breakdown,
+      findings_by_code: findings_by_code
     }
+  end
+
+  defp req_id(req) when is_struct(req), do: to_string(Map.get(req, :id) || "")
+  defp req_id(req) when is_map(req), do: to_string(Map.get(req, :id) || Map.get(req, "id") || "")
+  defp req_id(_), do: ""
+
+  defp best_claim_strength([]), do: :uncovered
+
+  defp best_claim_strength(claims) do
+    strengths = Enum.map(claims, & &1["strength"])
+
+    cond do
+      "executed" in strengths -> :executed
+      "linked" in strengths -> :linked
+      "claimed" in strengths -> :claimed
+      true -> :uncovered
+    end
   end
 
   defp subject_change_status(%{base_existed?: false}), do: :new
