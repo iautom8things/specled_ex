@@ -7,9 +7,15 @@
   "id": "specled_-quj.8",
   "labels": [],
   "parent": "specled_-quj",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: 985e3e4e-1dd3-43de-8a05-67a8b7029e85\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/985e3e4e-1dd3-43de-8a05-67a8b7029e85.jsonl\n\nCommit: 0a5dc532d75d7143a1cf3f429175416adbc09bdf\nFiles touched: lib/specled_ex/review/html.ex\nTests added: none — purely density work, no semantic change. Existing review_test.exs (8 tests) and spec_review_task_test.exs (3 tests) all pass.\nVerification stubs flipped: none\n\nSummary: Trimmed three sources of repetition in the spec.review HTML artifact.\n(1) Coverage legend (formerly defp render_coverage_help, lines 1007-1028) was duplicated inside every subject's Coverage tab. Now renders once at page level with anchor #coverage-help; per-tab help link points to it.\n(2) \"Raw spec-verification\" disclosure (formerly defp render_verification_section, lines 1152-1183) was duplicated per subject. Now a single page-level \"Raw verification (all subjects)\" section grouped by subject, anchored #raw-verification.\n(3) Misc panel (defp render_unmapped, lines 1393-1427) used the file-tree rail unconditionally. Now flat list when N \u003c= 3 unmapped files, tree above the threshold.\n\nPre-flight: mix spec.check passed (status=pass, errors=0, warnings=0, findings=0). Full mix test suite passed (564 tests, 0 failures). Generated artifact verified: legend appears 1× (was 33×), raw-verification details block appears 1× (was 33×), 33 per-tab help links point to the single anchor.",
+      "timestamp": "2026-05-04T15:41:15Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Trim repetition: legend, raw verification, misc tree",
   "type": "task",
-  "updated_at": "2026-05-04T15:30:01Z"
+  "updated_at": "2026-05-04T15:41:15Z"
 }
