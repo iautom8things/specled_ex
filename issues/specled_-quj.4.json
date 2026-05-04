@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-05-04T15:16:51Z",
+  "description": "Advances: specled.spec_review\n\nToday a subject's binding health is only inferable by clicking into Coverage and reading the bindings \u003cdl\u003e (lib/specled_ex/review/html.ex:1132-1150). Surface it on the subject card header (subject_template, html.ex:628-664) alongside the existing change/finding badges:\n\n- \"0 bindings (no realized_by declared)\"\n- \"N bindings, K dangling\"\n- \"N bindings, all valid\"\n\nPulls from subject.bindings + the dangling-binding finding count for that subject. This makes binding state visible during triage instead of forcing a tab-dive.",
+  "id": "specled_-quj.4",
+  "labels": [],
+  "parent": "specled_-quj",
+  "priority": 2,
+  "status": "open",
+  "title": "Per-subject binding-health callout on subject card header",
+  "type": "task",
+  "updated_at": "2026-05-04T15:16:51Z"
+}
