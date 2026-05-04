@@ -97,6 +97,23 @@ decisions:
     rows that would be misread as the absence of test coverage.
   priority: must
   stability: evolving
+- id: specled.spec_review.no_realized_by_degrades_spec_to_code
+  statement: >-
+    When an affected subject declares no `realized_by` bindings — the
+    subject-level meta `realized_by` is absent or empty AND no
+    requirement on that subject declares its own `realized_by` — the
+    view-model build shall synthesize a single `detector_unavailable`
+    finding per such subject with reason `no_realized_by` and severity
+    `info`, attribute it to that subject, and route it through the
+    `detector_unavailable_by_leg` aggregation under the SPEC ↔ CODE leg
+    so the sync diagram renders that leg as `:degraded` (per
+    `specled.spec_review.degraded_leg_state`) and the partial-report
+    banner enumerates `no_realized_by` as a distinct reason. A subject
+    that declares any non-empty tier in its subject-level or
+    requirement-level `realized_by` shall not produce this synthetic
+    finding.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -205,6 +222,11 @@ decisions:
   execute: true
   covers:
     - specled.spec_review.coverage_tab_bind_closure
+- kind: command
+  target: mix test test/specled_ex/review_test.exs
+  execute: true
+  covers:
+    - specled.spec_review.no_realized_by_degrades_spec_to_code
 - kind: source_file
   target: lib/mix/tasks/spec.review.ex
   covers:
@@ -215,6 +237,7 @@ decisions:
   covers:
     - specled.spec_review.spec_first_navigation
     - specled.spec_review.misc_panel
+    - specled.spec_review.no_realized_by_degrades_spec_to_code
 - kind: source_file
   target: lib/specled_ex/review/html.ex
   covers:
