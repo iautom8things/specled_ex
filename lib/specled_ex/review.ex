@@ -312,6 +312,11 @@ defmodule SpecLedEx.Review do
       |> Enum.flat_map(&List.wrap/1)
       |> length()
 
+    verification_count =
+      affected_subjects
+      |> Enum.map(&length(&1.verification || []))
+      |> Enum.sum()
+
     adr_refs =
       affected_subjects
       |> Enum.flat_map(& &1.decision_refs)
@@ -344,6 +349,7 @@ defmodule SpecLedEx.Review do
       clean?: findings == [] and not has_unmapped? and affected_subjects == [],
       requirement_count: requirement_count,
       binding_count: binding_count,
+      verification_count: verification_count,
       adr_ref_count: length(adr_refs),
       unresolved_adr_count: length(unresolved_adr_refs),
       strength_breakdown: strength_breakdown,

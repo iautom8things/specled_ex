@@ -211,37 +211,100 @@ defmodule SpecLedEx.Review.Html do
     ]
   end
 
-  defp render_sync_headline(triage, true) do
+  defp render_sync_headline(triage, in_sync?) do
+    {icon, icon_class, title} =
+      if in_sync? do
+        {"✓", "sync-headline-icon-ok", "In sync"}
+      else
+        {"⚠", "sync-headline-icon-fail",
+         "Out of sync — #{triage.findings_count} finding#{maybe_s(triage.findings_count)}"}
+      end
+
     ~s"""
     <header class="sync-headline">
-      <span class="sync-headline-icon sync-headline-icon-ok" aria-hidden="true">✓</span>
-      <div class="sync-headline-text">
-        <h2 class="sync-headline-title">In sync</h2>
-        <p class="sync-headline-chain">#{render_sync_chain(:ok)}</p>
-        <p class="sync-headline-meta">#{render_sync_meta(triage)}</p>
+      <div class="sync-headline-row">
+        <span class="sync-headline-icon #{icon_class}" aria-hidden="true">#{icon}</span>
+        <div class="sync-headline-text">
+          <h2 class="sync-headline-title">#{h(title)}</h2>
+          <p class="sync-headline-meta">#{render_sync_meta(triage)}</p>
+        </div>
       </div>
+      #{render_sync_diagram(triage, in_sync?)}
     </header>
     """
   end
 
-  defp render_sync_headline(triage, false) do
-    ~s"""
-    <header class="sync-headline">
-      <span class="sync-headline-icon sync-headline-icon-fail" aria-hidden="true">⚠</span>
-      <div class="sync-headline-text">
-        <h2 class="sync-headline-title">Out of sync — #{triage.findings_count} finding#{maybe_s(triage.findings_count)}</h2>
-        <p class="sync-headline-chain">#{render_sync_chain(:fail)}</p>
-        <p class="sync-headline-meta">#{render_sync_meta(triage)}</p>
-      </div>
-    </header>
-    """
+  defp render_sync_diagram(triage, in_sync?) do
+    fbc = triage.findings_by_code
+
+    spec_to_code_codes = ~w(surface_target_missing verification_target_missing verification_target_missing_file verification_target_missing_reference)
+    code_to_tests_codes = ~w(verification_command_failed)
+    tests_to_coverage_codes = ~w(verification_strength_below_minimum requirement_without_verification verification_unknown_cover)
+
+    spec_to_code_ok? = leg_clean?(fbc, spec_to_code_codes) and in_sync?
+    code_to_tests_ok? = leg_clean?(fbc, code_to_tests_codes) and in_sync?
+    tests_to_coverage_ok? = leg_clean?(fbc, tests_to_coverage_codes) and in_sync?
+
+    nodes = [
+      {"SPEC", "#{triage.affected_subject_count} subj · #{triage.requirement_count} req#{maybe_s(triage.requirement_count)}",
+       "Requirements declared in your subject .spec.md files. Each is a normative claim the rest of the chain must back up."},
+      {"CODE", "#{triage.binding_count} MFA#{maybe_s(triage.binding_count)}",
+       "Functions named in each subject's realized_by block. Specled checks they actually exist as exported functions in the codebase."},
+      {"TESTS", "#{triage.verification_count} verif#{if triage.verification_count == 1, do: "", else: "s"}",
+       "Verification entries: tagged tests, file-existence checks, or commands that prove a requirement holds."},
+      {"COVERAGE", strength_diagram_summary(triage.strength_breakdown),
+       "The strongest evidence collected per requirement: EXECUTED > LINKED > CLAIMED. The verifier picks the highest tier each requirement reaches."}
+    ]
+
+    edges = [
+      {spec_to_code_ok?, "realized_by",
+       "Spec → Code · Each requirement names the code that realizes it via the `realized_by` block, and those MFAs must exist in the codebase."},
+      {code_to_tests_ok?, "@tag spec",
+       "Code → Tests · The realized code is exercised by tests carrying `@tag spec: \"<requirement_id>\"` so coverage can be linked back to the spec."},
+      {tests_to_coverage_ok?, "evidence",
+       "Tests → Coverage · Each verification entry produces evidence at the CLAIMED, LINKED, or EXECUTED tier; every requirement must reach its minimum strength."}
+    ]
+
+    rendered =
+      [render_diagram_node(Enum.at(nodes, 0))] ++
+        Enum.flat_map(0..2, fn i ->
+          [
+            render_diagram_edge(Enum.at(edges, i)),
+            render_diagram_node(Enum.at(nodes, i + 1))
+          ]
+        end)
+
+    ~s|<div class="sync-diagram" role="img" aria-label="Triangulation chain">#{IO.iodata_to_binary(rendered)}</div>|
   end
 
-  defp render_sync_chain(state) do
-    bond_class = if state == :ok, do: "sync-bond-ok", else: "sync-bond-fail"
-
-    ~s|<span class="sync-leg">spec</span><span class="sync-bond #{bond_class}">↔</span><span class="sync-leg">code</span><span class="sync-bond #{bond_class}">↔</span><span class="sync-leg">tests</span><span class="sync-bond #{bond_class}">↔</span><span class="sync-leg">coverage</span>|
+  defp leg_clean?(fbc, codes) do
+    Enum.all?(codes, fn c -> Map.get(fbc, c, 0) == 0 end)
   end
+
+  defp render_diagram_node({title, stat, tooltip}) do
+    ~s|<div class="sync-node" title="#{html_escape(tooltip)}"><div class="sync-node-title">#{h(title)}</div><div class="sync-node-stat">#{h(stat)}</div></div>|
+  end
+
+  defp render_diagram_edge({ok?, label, tooltip}) do
+    state = if ok?, do: "ok", else: "fail"
+    icon = if ok?, do: "✓", else: "✗"
+
+    ~s|<div class="sync-edge sync-edge-#{state}" title="#{html_escape(tooltip)}"><div class="sync-edge-line"></div><div class="sync-edge-label"><span class="sync-edge-icon">#{icon}</span> #{h(label)}</div></div>|
+  end
+
+  defp strength_diagram_summary(breakdown) when is_map(breakdown) and map_size(breakdown) > 0 do
+    [:executed, :linked, :claimed, :uncovered]
+    |> Enum.map(fn k -> {k, Map.get(breakdown, k, 0)} end)
+    |> Enum.reject(fn {_, n} -> n == 0 end)
+    |> Enum.map_join(" · ", fn {k, n} -> "#{n}#{strength_short(k)}" end)
+  end
+
+  defp strength_diagram_summary(_), do: "—"
+
+  defp strength_short(:executed), do: "E"
+  defp strength_short(:linked), do: "L"
+  defp strength_short(:claimed), do: "C"
+  defp strength_short(:uncovered), do: "U"
 
   defp render_sync_meta(triage) do
     parts = [
@@ -276,15 +339,24 @@ defmodule SpecLedEx.Review.Html do
 
   defp render_sync_checklist(triage) do
     checks = build_sync_checks(triage)
+    failed_count = Enum.count(checks, &(not &1.passed?))
+    open_attr = if failed_count > 0, do: " open", else: ""
+
+    summary_text =
+      if failed_count == 0 do
+        "More details — what was checked (#{length(checks)} checks, all passed)"
+      else
+        "More details — #{failed_count} of #{length(checks)} checks need attention"
+      end
 
     ~s"""
-    <div class="sync-checklist">
-      <h3 class="sync-checklist-title">What was checked</h3>
+    <details class="sync-checklist"#{open_attr}>
+      <summary class="sync-checklist-summary">#{h(summary_text)}</summary>
       <ul class="sync-check-list">
         #{Enum.map_join(checks, "\n", &render_sync_check/1)}
       </ul>
       <p class="sync-checklist-footnote">Triangulation: every requirement should link to code (<code>realized_by</code>), be exercised by a tagged test, and reach a verification claim. Above is what was actually verified for this change set.</p>
-    </div>
+    </details>
     """
   end
 
@@ -1749,11 +1821,13 @@ defmodule SpecLedEx.Review.Html do
     }
 
     .sync-headline {
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sync-headline-row {
       display: flex;
       gap: 16px;
       align-items: flex-start;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--border);
     }
     .sync-headline-icon {
       font-size: 28px;
@@ -1780,42 +1854,137 @@ defmodule SpecLedEx.Review.Html do
     .sync-status-in .sync-headline-title { color: #065f46; }
     .sync-status-out .sync-headline-title { color: #9a3412; }
 
-    .sync-headline-chain {
-      margin: 0 0 6px 0;
-      font-family: var(--code-font);
-      font-size: 13px;
-      color: var(--fg);
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .sync-leg {
-      padding: 1px 8px;
-      border-radius: 4px;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      font-weight: 500;
-    }
-    .sync-bond { font-size: 13px; }
-    .sync-bond-ok { color: #10b981; }
-    .sync-bond-fail { color: #ea580c; }
-
     .sync-headline-meta {
       margin: 0;
       color: var(--fg-muted);
       font-size: 13px;
     }
 
+    /* Triangulation diagram: 4 nodes (SPEC / CODE / TESTS / COVERAGE) wired
+       by 3 edges. Each edge has a hover tooltip explaining the claim it
+       represents. Edge color flips green ↔ amber based on whether any
+       findings touched that leg. */
+    .sync-diagram {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 8px;
+      margin: 14px 0 0;
+    }
+    .sync-node {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 8px;
+      text-align: center;
+      cursor: help;
+      transition: border-color 0.12s ease, transform 0.12s ease;
+    }
+    .sync-node:hover { border-color: var(--accent); transform: translateY(-1px); }
+    .sync-node-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--fg-muted);
+      margin: 0 0 4px;
+    }
+    .sync-node-stat {
+      font-size: 12px;
+      color: var(--fg);
+      font-family: var(--code-font);
+      line-height: 1.3;
+    }
+
+    .sync-edge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      cursor: help;
+      padding: 0 4px;
+      min-width: 80px;
+    }
+    .sync-edge-line {
+      height: 2px;
+      width: 100%;
+      border-radius: 1px;
+      background: #10b981;
+      position: relative;
+    }
+    .sync-edge-line::after {
+      content: "";
+      position: absolute;
+      right: -6px;
+      top: -3px;
+      width: 0;
+      height: 0;
+      border-left: 6px solid #10b981;
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+    }
+    .sync-edge-fail .sync-edge-line { background: #ea580c; }
+    .sync-edge-fail .sync-edge-line::after { border-left-color: #ea580c; }
+    .sync-edge-label {
+      font-size: 10px;
+      color: var(--fg-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+    .sync-edge-icon {
+      font-weight: 700;
+      margin-right: 2px;
+    }
+    .sync-edge-ok .sync-edge-icon { color: #10b981; }
+    .sync-edge-fail .sync-edge-icon { color: #c2410c; }
+    .sync-edge:hover .sync-edge-line { height: 3px; }
+
+    @media (max-width: 720px) {
+      .sync-diagram {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+      .sync-edge { min-width: 0; padding: 4px 0; }
+      .sync-edge-line { width: 2px; height: 24px; }
+      .sync-edge-line::after {
+        right: -3px;
+        top: auto;
+        bottom: -6px;
+        left: -3px;
+        border-left: 4px solid transparent;
+        border-right: 4px solid transparent;
+        border-top: 6px solid;
+        border-bottom: none;
+      }
+      .sync-edge-fail .sync-edge-line::after { border-top-color: #ea580c; border-left-color: transparent; }
+      .sync-edge-line::after { border-left-color: transparent; border-top-color: #10b981; }
+    }
+
     .sync-checklist { padding-top: 14px; }
-    .sync-checklist-title {
-      margin: 0 0 8px 0;
+    .sync-checklist-summary {
+      cursor: pointer;
+      list-style: none;
       font-size: 12px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       color: var(--fg-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 0 10px;
     }
+    .sync-checklist-summary::-webkit-details-marker { display: none; }
+    .sync-checklist-summary::before {
+      content: "▸";
+      color: var(--fg-faint);
+      font-size: 10px;
+      width: 10px;
+    }
+    .sync-checklist[open] .sync-checklist-summary::before { content: "▾"; }
+    .sync-checklist-summary:hover { color: var(--fg); }
     .sync-check-list {
       list-style: none;
       margin: 0;
