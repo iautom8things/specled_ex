@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-05-04T15:17:31Z",
+  "description": "Advances: specled.spec_review\n\nbranch_guard_untethered_test means \"test tags subject A but coverage records exercise MFAs owned only by subject B\" (concepts.md). Today the finding's subject_id is the *claimed* subject, so render_subject_link (lib/specled_ex/review/html.ex:600) badges the wrong card. The reviewer follows the badge to subject A and finds nothing.\n\nRender a second link to the *actual* subject (B) when the finding payload carries an actual_subject_id (or equivalent — verify the field name in lib/specled_ex/coverage_triangulation.ex:348). Display as \"claims A, hits B\" so the misalignment is the headline.",
+  "id": "specled_-quj.5",
+  "labels": [],
+  "parent": "specled_-quj",
+  "priority": 2,
+  "status": "open",
+  "title": "Untethered test finding links to actual subject, not just claimed",
+  "type": "task",
+  "updated_at": "2026-05-04T15:17:31Z"
+}
