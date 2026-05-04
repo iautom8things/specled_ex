@@ -96,7 +96,7 @@ defmodule SpecLedEx.Review.Html do
           <%= render_triage(view.triage, view.all_findings) %>
           <%= render_subjects(view.affected_subjects, view.adrs_by_id) %>
           <%= render_decisions_changed(view.decisions_changed) %>
-          <%= render_unmapped(view.unmapped_changes) %>
+          <%= render_unmapped(view.unmapped_changes, view.file_breakdown) %>
         </section>
         <section class="view-pane view-pane-files" data-view-pane="files">
           <%= render_files_view(view.all_changes, view.meta.stats) %>
@@ -1215,16 +1215,17 @@ defmodule SpecLedEx.Review.Html do
     ]
   end
 
-  defp render_unmapped([]) do
-    ~S"""
-    <section id="misc" class="misc" aria-label="Outside the spec system">
-      <h2 class="section-heading">Outside the spec system (0)</h2>
-      <p class="empty-tab">All file changes in this change set map to a spec subject.</p>
-    </section>
-    """
+  defp render_unmapped([], breakdown) do
+    [
+      ~s|<section id="misc" class="misc" aria-label="Outside the spec system">|,
+      ~s|<h2 class="section-heading">Outside the spec system (0)</h2>|,
+      render_misc_breakdown(breakdown),
+      ~s|<p class="empty-tab">All file changes in this change set map to a spec subject or a policy file.</p>|,
+      ~S|</section>|
+    ]
   end
 
-  defp render_unmapped(changes) do
+  defp render_unmapped(changes, breakdown) do
     paths = Enum.map(changes, & &1.file)
     tree = build_path_tree(paths)
 
@@ -1243,10 +1244,42 @@ defmodule SpecLedEx.Review.Html do
     [
       ~s|<section id="misc" class="misc" aria-label="Outside the spec system">|,
       ~s|<h2 class="section-heading">Outside the spec system (#{length(changes)})</h2>|,
+      render_misc_breakdown(breakdown),
       ~S|<p class="misc-explainer">These files changed but do not map to any spec subject. Triangulation does not apply here — review the diff directly.</p>|,
       render_files_section(tree, "misc", "Files (#{length(paths)})", diff_blocks),
       ~S|</section>|
     ]
+  end
+
+  # Header breakdown so a reviewer can see all N changed files accounted
+  # for: how many landed in subjects (visible in their Code tabs above),
+  # how many are spec/decision policy files (visible in their Spec tabs
+  # or in "Decisions changed"), and how many are listed below.
+  defp render_misc_breakdown(nil), do: ""
+
+  defp render_misc_breakdown(%{total: 0}), do: ""
+
+  defp render_misc_breakdown(%{total: total, mapped: mapped, policy: policy, unmapped: unmapped}) do
+    ~s"""
+    <div class="misc-breakdown" role="note">
+      <span class="misc-breakdown-label">Of #{total} changed file#{maybe_s(total)} in this PR:</span>
+      <ul class="misc-breakdown-list">
+        #{misc_breakdown_row(mapped, "map to a spec subject", "see the subject's Code tab above", "#subjects")}
+        #{misc_breakdown_row(policy, "are spec/decision files", "see the Spec tab on the affected subject(s) or the Decisions changed section", "#decisions-changed")}
+        #{misc_breakdown_row(unmapped, "have no spec mapping", "listed below", nil)}
+      </ul>
+    </div>
+    """
+  end
+
+  defp misc_breakdown_row(0, _label, _detail, _anchor), do: ""
+
+  defp misc_breakdown_row(n, label, detail, nil) do
+    ~s|<li><strong>#{n}</strong> #{h(label)} <span class="misc-breakdown-detail">— #{h(detail)}</span></li>|
+  end
+
+  defp misc_breakdown_row(n, label, detail, anchor) do
+    ~s|<li><strong>#{n}</strong> #{h(label)} <span class="misc-breakdown-detail">— <a href="#{anchor}">#{h(detail)}</a></span></li>|
   end
 
   @doc false
@@ -2828,6 +2861,37 @@ defmodule SpecLedEx.Review.Html do
       padding: 24px;
     }
     .misc-explainer { color: var(--fg-muted); margin: 0 0 16px 0; font-size: 13px; }
+    .misc-breakdown {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      padding: 12px 14px;
+      margin: 0 0 16px;
+    }
+    .misc-breakdown-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--fg-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .misc-breakdown-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 13px;
+      color: var(--fg);
+    }
+    .misc-breakdown-list strong { font-family: var(--code-font); font-weight: 700; }
+    .misc-breakdown-detail { color: var(--fg-muted); font-size: 12px; }
+    .misc-breakdown-detail a { color: var(--accent); text-decoration: none; }
+    .misc-breakdown-detail a:hover { text-decoration: underline; }
     .misc-change, .code-change {
       margin-bottom: 12px;
       border: 1px solid var(--border);

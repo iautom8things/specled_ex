@@ -77,6 +77,13 @@ defmodule SpecLedEx.Review do
         %{file: path, lines: Map.get(all_diffs, path, [])}
       end)
 
+    file_breakdown = %{
+      total: length(analysis.changed_files),
+      mapped: MapSet.size(mapped_files),
+      policy: Enum.count(analysis.changed_files, &policy_file?/1),
+      unmapped: length(unmapped_files)
+    }
+
     decisions_changed = build_decisions_changed(analysis, index)
     findings = verifier_report["findings"] || []
     adrs_by_id = build_adrs_by_id(index, root, analysis.base)
@@ -104,7 +111,8 @@ defmodule SpecLedEx.Review do
       decisions_changed: decisions_changed,
       adrs_by_id: adrs_by_id,
       all_findings: findings,
-      all_changes: all_changes
+      all_changes: all_changes,
+      file_breakdown: file_breakdown
     }
   end
 
