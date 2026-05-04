@@ -272,16 +272,50 @@ defmodule SpecLedEx.Review.Html do
     """
   end
 
-  defp render_sync_diagram(triage, _in_sync?) do
+  # covers: specled.spec_review.triangle_code_classification
+  # Triangle leg vocabulary mapped to the three sides of the spec/code/test
+  # triangle described in docs/concepts.md. The diagram and the checklist
+  # both feed off `findings_by_code`; together they advertise which side of
+  # the triangle a finding lives on.
+  @doc false
+  def render_sync_diagram(triage, _in_sync? \\ false) do
     fbc = triage.findings_by_code
 
+    # Triangle leg vocabulary, per docs/concepts.md:
+    #   * SPEC ↔ CODE   — realized_by binding integrity (surfaces exist,
+    #     hashes match, bindings point at live MFAs).
+    #   * SPEC ↔ TESTS  — @tag spec claim integrity (every covered
+    #     requirement is named by a test, every binding closure is
+    #     exercised by some tagged test, and verification commands run).
+    #   * CODE ↔ TESTS  — observed-coverage integrity (tests exercise the
+    #     code their tag claims, MFAs aren't silently executed without an
+    #     owning requirement, and strength minimums are met).
     spec_to_code_codes =
-      ~w(surface_target_missing verification_target_missing verification_target_missing_file verification_target_missing_reference)
+      ~w(
+        surface_target_missing
+        verification_target_missing
+        verification_target_missing_file
+        verification_target_missing_reference
+        branch_guard_realization_drift
+        branch_guard_dangling_binding
+      )
 
-    code_to_tests_codes = ~w(verification_command_failed)
+    code_to_tests_codes =
+      ~w(
+        verification_command_failed
+        branch_guard_untested_realization
+        requirement_without_test_tag
+        branch_guard_requirement_without_test_tag
+      )
 
     tests_to_coverage_codes =
-      ~w(verification_strength_below_minimum requirement_without_verification verification_unknown_cover)
+      ~w(
+        verification_strength_below_minimum
+        requirement_without_verification
+        verification_unknown_cover
+        branch_guard_untethered_test
+        branch_guard_underspecified_realization
+      )
 
     # Vacuous: the leg has nothing to verify on this PR. Reads as gray, not
     # green — vacuous truth should not look like a victory.
@@ -420,14 +454,28 @@ defmodule SpecLedEx.Review.Html do
     """
   end
 
-  defp build_sync_checks(triage) do
+  @doc false
+  def build_sync_checks(triage) do
     fbc = triage.findings_by_code
 
     [
       %{
         leg: "Spec",
         label: "The spec files themselves are well-formed",
-        codes: ~w(missing_meta_field missing_requirement_id missing_scenario_id verification_unknown_kind verification_kind_invalid verification_missing_target verification_missing_command scenario_unknown_cover scenario_cover_unknown),
+        codes:
+          ~w(
+            missing_meta_field
+            missing_requirement_id
+            missing_scenario_id
+            verification_unknown_kind
+            verification_kind_invalid
+            verification_missing_target
+            verification_missing_command
+            scenario_unknown_cover
+            scenario_cover_unknown
+            overlap/duplicate_covers
+            overlap/must_stem_collision
+          ),
         detail: nil,
         vacuous?: triage.affected_subject_count == 0
       },
@@ -446,6 +494,13 @@ defmodule SpecLedEx.Review.Html do
         vacuous?: triage.verification_count == 0
       },
       %{
+        leg: "Spec → Code",
+        label: "Each <code>realized_by</code> binding still matches the live MFA closure",
+        codes: ~w(branch_guard_realization_drift branch_guard_dangling_binding),
+        detail: detail_count("MFA", triage.binding_count),
+        vacuous?: triage.binding_count == 0
+      },
+      %{
         leg: "Spec → Tests",
         label: "Every requirement is named by at least one verification entry",
         codes: ~w(requirement_without_verification verification_unknown_cover),
@@ -453,11 +508,32 @@ defmodule SpecLedEx.Review.Html do
         vacuous?: triage.requirement_count == 0
       },
       %{
+        leg: "Spec → Tests",
+        label: "Every <code>must</code> requirement under <code>tagged_tests</code> has a matching <code>@tag spec:</code>",
+        codes: ~w(requirement_without_test_tag branch_guard_requirement_without_test_tag),
+        detail: detail_count("requirement", triage.requirement_count),
+        vacuous?: triage.requirement_count == 0
+      },
+      %{
+        leg: "Spec → Tests",
+        label: "Every binding closure is exercised by at least one tagged test",
+        codes: ~w(branch_guard_untested_realization),
+        detail: detail_count("MFA", triage.binding_count),
+        vacuous?: triage.binding_count == 0
+      },
+      %{
         leg: "Tests → Coverage",
         label: "Verifications that ran exited successfully",
         codes: ~w(verification_command_failed),
         detail: nil,
         vacuous?: triage.verification_count == 0
+      },
+      %{
+        leg: "Code → Tests",
+        label: "Tagged tests actually exercise the subject they claim",
+        codes: ~w(branch_guard_untethered_test branch_guard_underspecified_realization),
+        detail: nil,
+        vacuous?: triage.binding_count == 0
       },
       %{
         leg: "Coverage",
@@ -472,6 +548,25 @@ defmodule SpecLedEx.Review.Html do
         codes: ~w(decision_reference_unknown subject_unknown_decision_reference),
         detail: adr_detail(triage),
         vacuous?: triage.adr_ref_count == 0
+      },
+      %{
+        leg: "Decisions / governance",
+        label: "Every spec edit honors append-only governance and decision references",
+        codes:
+          ~w(
+            append_only/requirement_deleted
+            append_only/must_downgraded
+            append_only/scenario_regression
+            append_only/negative_removed
+            append_only/disabled_without_reason
+            append_only/no_baseline
+            append_only/adr_affects_widened
+            append_only/same_pr_self_authorization
+            append_only/missing_change_type
+            append_only/decision_deleted
+          ),
+        detail: nil,
+        vacuous?: triage.affected_subject_count == 0
       },
       %{
         leg: "Branch",
