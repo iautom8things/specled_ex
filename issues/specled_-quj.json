@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-05-04T15:16:15Z",
+  "description": "Advances: none (epic wrapper — children advance specled.spec_review)\n\nFollow-up to specled_-qm1. The mix spec.review HTML report has a working layout and spec-first navigation, but the diagram + sync-checklist leg classifier in lib/specled_ex/review/html.ex (lines 278-283, 423-489) is wired to a spec-validate / co-change vocabulary, not the triangle vocabulary documented in docs/concepts.md.\n\nResult: branch_guard_realization_drift, branch_guard_dangling_binding, branch_guard_untested_realization, branch_guard_untethered_test, branch_guard_underspecified_realization, overlap/*, append_only/*, and detector_unavailable currently land only in the flat \"All findings\" list (with a subject badge). The diagram can read \"in sync\" while a triangle-stressing PR is sideways — the eye trusts the diagram first.\n\nThis epic re-aligns the report's classification engine with the triangle described in docs/concepts.md, fills first-class gaps (detector_unavailable, no-realized_by advisory), and trims redundancy. v1 (specled_-qm1) was layout polish; v2 is conceptual alignment.\n\nChildren are ranked. #1 and #2 are load-bearing — the rest assume a triangle-aware classifier exists.\n\nReference analysis: conversation with the user 2026-05-04 walking the rendered _build/spec_review.html against the branch-guard scenario list.",
+  "id": "specled_-quj",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "[EPIC] spec.review v2: triangle-aligned classification",
+  "type": "epic",
+  "updated_at": "2026-05-04T15:16:15Z"
+}
