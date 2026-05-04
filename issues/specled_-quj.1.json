@@ -3,7 +3,8 @@
   "blocked_by": [],
   "blocks": [
     "specled_-quj.3",
-    "specled_-quj.5"
+    "specled_-quj.5",
+    "specled_-quj.7"
   ],
   "created": "2026-05-04T15:16:31Z",
   "description": "Advances: specled.spec_review (extending its requirements; consider adding a triangle_code_classification requirement)\n\nLoad-bearing fix #1. Today the leg classifier in lib/specled_ex/review/html.ex:278-283 (sync diagram) and :423-489 (sync checklist) only knows spec-validate codes and a few branch_guard_missing_* codes. Wire the actual triangle vocabulary so the diagram and checklist reflect what concepts.md says they reflect:\n\n- SPEC↔CODE leg: add branch_guard_realization_drift, branch_guard_dangling_binding\n- SPEC↔TESTS leg: add branch_guard_untested_realization, requirement_without_test_tag, branch_guard_requirement_without_test_tag\n- CODE↔TESTS leg: add branch_guard_untethered_test, branch_guard_underspecified_realization\n- Spec well-formed leg (build_sync_checks first row): add overlap/duplicate_covers, overlap/must_stem_collision\n- Add a new \"Decisions / governance\" check row covering append_only/* family\n\nAcceptance: a fixture PR that emits one of each code class flips the corresponding leg/check from green to amber. Verify against existing tests in test/specled_ex/review_test.exs (extend if needed).",
