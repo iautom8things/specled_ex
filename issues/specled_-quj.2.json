@@ -10,9 +10,15 @@
   "id": "specled_-quj.2",
   "labels": [],
   "parent": "specled_-quj",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: 4dc4e8c3-55b7-4753-9a3d-c93afc1d9762\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/4dc4e8c3-55b7-4753-9a3d-c93afc1d9762.jsonl\n\nCommit: 57a7f46\nFiles touched:\n  - .spec/specs/spec_review.spec.md (added degraded_leg_state requirement + scenario; wired covers)\n  - lib/specled_ex/review.ex (build_triage now aggregates detector_unavailable findings into :detector_unavailable_by_leg by reason → triangle leg)\n  - lib/specled_ex/review/html.ex (leg_state/4 with :degraded; render_diagram_edge handles :degraded as `?`; render_degraded_banner; build_sync_checks exposes :degraded?/:degraded_reasons; render_sync_check renders the detector-unavailable tag; CSS for sync-edge-degraded, sync-check-degraded, sync-degraded-banner)\n  - test/specled_ex/review/html_test.exs (12 new tests: degraded leg classifier, fail-supersedes-degraded, ? glyph, tooltip reasons, banner content, build_sync_checks degraded rows)\n\nTests added:\n  - SpecLedEx.Review.HtmlTest \"render_sync_diagram leg classifier — :degraded for detector_unavailable\" (5 tests)\n  - SpecLedEx.Review.HtmlTest \"render_degraded_banner\" (3 tests)\n  - SpecLedEx.Review.HtmlTest \"build_sync_checks — degraded rows\" (3 tests)\n\nVerification stubs flipped: spec_review.degraded_leg_state is covered by the existing `mix test test/specled_ex/review/html_test.exs` stub (added to its covers); spec.check passes 0 findings.\n\nSummary: detector_unavailable findings now have a first-class home in the spec.review HTML. The classifier maps realization-tier reasons (debug_info_stripped, umbrella_unsupported) to SPEC↔CODE and coverage triangulation's no_coverage_artifact to CODE↔TESTS. The diagram leg flips to :degraded (gray-amber, `?` glyph), the leg tooltip enumerates distinct reasons, the matching checklist row is marked \"detector unavailable\", and a top-of-page banner advertises that the report is partial. A real failure on the same leg supersedes :degraded so genuine drift remains visible.",
+      "timestamp": "2026-05-04T16:04:56Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Render detector_unavailable as a :degraded leg state",
   "type": "task",
-  "updated_at": "2026-05-04T15:51:56Z"
+  "updated_at": "2026-05-04T16:04:56Z"
 }
