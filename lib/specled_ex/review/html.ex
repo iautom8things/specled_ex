@@ -1513,6 +1513,27 @@ defmodule SpecLedEx.Review.Html do
 
     .files-view-explainer { color: var(--fg-muted); margin: 0 0 16px 0; font-size: 13px; }
 
+    /* In Files view we have the horizontal room to keep the picker pinned
+       open. The slide-out behavior used by the Spec view's per-subject
+       drawers is overridden so the tree panel stays put — no animation,
+       no auto-close on scroll, no handle. */
+    .files-view .files-section,
+    .files-view .files-section.tree-collapsed {
+      padding-left: 256px;
+      transition: none;
+      min-height: 0;
+    }
+    .files-view .file-tree-panel,
+    .files-view .files-section.tree-collapsed .file-tree-panel {
+      transform: none !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      transition: none !important;
+      display: flex !important;
+    }
+    .files-view .file-tree-handle,
+    .files-view .file-tree-close { display: none !important; }
+
     .layout {
       max-width: 1280px;
       margin: 0 auto;
@@ -2644,8 +2665,14 @@ defmodule SpecLedEx.Review.Html do
     });
 
     // File-tree drawer: open / close / close-on-leaf-click.
+    // Sections inside the Files view are pinned open and exempt.
+    function isPinned(section) {
+      return !!(section && section.closest('.files-view'));
+    }
+
     function closeAllTrees() {
       document.querySelectorAll('.files-section:not(.tree-collapsed)').forEach(function (s) {
+        if (isPinned(s)) return;
         s.classList.add('tree-collapsed');
       });
     }
@@ -2654,19 +2681,19 @@ defmodule SpecLedEx.Review.Html do
       var openHandle = e.target.closest('[data-tree-action=\\"open\\"]');
       if (openHandle) {
         var section = openHandle.closest('.files-section');
-        if (section) section.classList.remove('tree-collapsed');
+        if (section && !isPinned(section)) section.classList.remove('tree-collapsed');
         return;
       }
       var closeBtn = e.target.closest('[data-tree-action=\\"close\\"]');
       if (closeBtn) {
         var section = closeBtn.closest('.files-section');
-        if (section) section.classList.add('tree-collapsed');
+        if (section && !isPinned(section)) section.classList.add('tree-collapsed');
         return;
       }
       var leaf = e.target.closest('[data-tree-leaf]');
       if (leaf) {
         var section = leaf.closest('.files-section');
-        if (section) section.classList.add('tree-collapsed');
+        if (section && !isPinned(section)) section.classList.add('tree-collapsed');
         // Let the anchor navigation proceed.
       }
     });
