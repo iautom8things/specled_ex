@@ -95,7 +95,7 @@ defmodule SpecLedEx.Review.Html do
         <section class="view-pane view-pane-spec active" data-view-pane="spec">
           <%= render_triage(view.triage, view.all_findings) %>
           <%= render_subjects(view.affected_subjects, view.adrs_by_id) %>
-          <%= render_decisions_changed(view.decisions_changed) %>
+          <%= render_decisions_changed(view.decisions_changed, view.adrs_by_id) %>
           <%= render_unmapped(view.unmapped_changes, view.file_breakdown) %>
         </section>
         <section class="view-pane view-pane-files" data-view-pane="files">
@@ -1176,7 +1176,7 @@ defmodule SpecLedEx.Review.Html do
     end
   end
 
-  defp render_decisions_changed([]) do
+  defp render_decisions_changed([], _adrs_by_id) do
     ~S"""
     <section id="decisions-changed" class="decisions-changed" aria-label="Decisions changed">
       <h2 class="section-heading">Decisions changed (0)</h2>
@@ -1185,24 +1185,88 @@ defmodule SpecLedEx.Review.Html do
     """
   end
 
-  defp render_decisions_changed(decisions) do
+  defp render_decisions_changed(decisions, adrs_by_id) do
     [
       ~s|<section id="decisions-changed" class="decisions-changed" aria-label="Decisions changed">|,
       ~s|<h2 class="section-heading">Decisions changed (#{length(decisions)})</h2>|,
-      ~S|<ul class="decision-changed-list">|,
-      Enum.map(decisions, fn d ->
-        ~s"""
-        <li>
-          <code>#{h(d.id || d.file)}</code>
-          #{if d.status, do: ~s|<span class="pill pill-neutral">#{h(d.status)}</span>|, else: ""}
-          #{if d.change_type, do: ~s|<span class="pill pill-neutral">#{h(d.change_type)}</span>|, else: ""}
-          #{if d.affects != [], do: ~s|<span class="affects">affects: #{Enum.map_join(d.affects, ", ", &h/1)}</span>|, else: ""}
-        </li>
-        """
-      end),
-      ~S|</ul>|,
+      ~S|<div class="decision-changed-list">|,
+      Enum.map(decisions, &render_changed_decision(&1, adrs_by_id || %{})),
+      ~S|</div>|,
       ~S|</section>|
     ]
+  end
+
+  defp render_changed_decision(d, adrs_by_id) do
+    case Map.get(adrs_by_id, d.id) do
+      nil -> render_changed_decision_minimal(d)
+      adr -> render_changed_decision_full(d, adr)
+    end
+  end
+
+  defp render_changed_decision_minimal(d) do
+    ~s"""
+    <details class="adr">
+      <summary class="adr-summary">
+        <code class="adr-id">#{h(d.id || d.file)}</code>
+        <span class="adr-title-missing">decision changed but no parsed ADR available</span>
+        #{render_decision_status_pill(d.status)}
+        #{render_decision_change_type_pill(d.change_type)}
+      </summary>
+      #{render_decision_affects_block(d.affects)}
+    </details>
+    """
+  end
+
+  defp render_changed_decision_full(d, adr) do
+    change_chip =
+      case Map.get(adr, :change_status) do
+        :new -> ~S|<span class="chip chip-new">NEW</span>|
+        :modified -> ~S|<span class="chip chip-modified">MODIFIED</span>|
+        :removed -> ~S|<span class="chip chip-removed">REMOVED</span>|
+        _ -> ""
+      end
+
+    date_chip =
+      if adr.date, do: ~s|<span class="adr-date">#{h(adr.date)}</span>|, else: ""
+
+    ~s"""
+    <details class="adr adr-#{Map.get(adr, :change_status, :unchanged)}" open>
+      <summary class="adr-summary">
+        #{change_chip}
+        <code class="adr-id">#{h(adr.id)}</code>
+        <span class="adr-title">#{h(adr.title)}</span>
+        #{render_decision_status_pill(adr.status)}
+        #{render_decision_change_type_pill(d.change_type || adr.change_type)}
+        #{date_chip}
+      </summary>
+      <div class="adr-body-wrap">
+        #{render_decision_affects_block(d.affects)}
+        <div class="markdown-body">#{render_markdown(adr.body_text)}</div>
+        #{if adr.file, do: ~s|<div class="adr-source"><code>#{h(adr.file)}</code></div>|, else: ""}
+      </div>
+    </details>
+    """
+  end
+
+  defp render_decision_status_pill(nil), do: ""
+
+  defp render_decision_status_pill(status),
+    do: ~s|<span class="pill pill-neutral">#{h(status)}</span>|
+
+  defp render_decision_change_type_pill(nil), do: ""
+
+  defp render_decision_change_type_pill(ct),
+    do: ~s|<span class="pill pill-cover">#{h(ct)}</span>|
+
+  defp render_decision_affects_block([]), do: ""
+
+  defp render_decision_affects_block(affects) do
+    links =
+      Enum.map_join(affects, "", fn id ->
+        ~s|<a class="decision-affects-link" href="#subject-#{slug(id)}"><code>#{h(id)}</code></a>|
+      end)
+
+    ~s|<div class="decision-affects"><span class="decision-affects-label">Affects:</span> #{links}</div>|
   end
 
   defp render_unmapped([], breakdown) do
@@ -2820,18 +2884,45 @@ defmodule SpecLedEx.Review.Html do
       border-radius: 8px;
       padding: 24px;
     }
-    .decision-changed-list { list-style: none; margin: 0; padding: 0; }
-    .decision-changed-list li {
-      padding: 8px 0;
+    .decision-changed-list {
       display: flex;
-      gap: 8px;
-      align-items: center;
-      flex-wrap: wrap;
-      border-top: 1px solid var(--border);
-      font-size: 13px;
+      flex-direction: column;
+      gap: 12px;
     }
-    .decision-changed-list li:first-child { border-top: none; }
     .affects { color: var(--fg-muted); font-size: 12px; }
+
+    .decision-affects {
+      padding: 8px 12px;
+      margin: 0 0 12px;
+      background: var(--neutral-bg);
+      border-radius: 4px;
+      font-size: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: baseline;
+    }
+    .decision-affects-label {
+      font-weight: 600;
+      color: var(--fg-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 11px;
+    }
+    .decision-affects-link {
+      font-family: var(--code-font);
+      color: var(--accent);
+      text-decoration: none;
+      padding: 1px 6px;
+      border-radius: 3px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+    }
+    .decision-affects-link:hover {
+      background: var(--info-bg);
+      border-color: var(--info);
+    }
+    .decision-affects-link code { font-size: 11px; }
 
     /* Misc panel */
     .misc {
