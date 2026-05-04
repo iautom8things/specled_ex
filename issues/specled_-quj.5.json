@@ -21,11 +21,15 @@
     {
       "text": "AUDIT: APPROVE (self-audit, cold pass)\nSession: \u003cmain-thread, no Task tool available\u003e\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/\u003csession-uuid\u003e.jsonl\n\nReasoning: Direct rendering inspection (mix run) produces:\n  \u003cspan class=\"finding-subject-pair\"\u003e\n    \u003cspan class=\"finding-subject-label\"\u003eclaims\u003c/span\u003e\n    \u003ca class=\"finding-subject\" href=\"#subject-subject-a\"\u003esubject.a\u003c/a\u003e\n    \u003cspan class=\"finding-subject-label\"\u003e, hits\u003c/span\u003e\n    \u003ca class=\"finding-subject\" href=\"#subject-subject-b\"\u003esubject.b\u003c/a\u003e\n  \u003c/span\u003e\n\nBoth anchors are present, claimed precedes observed, and both link to the\nright subject cards. This is the spec's intended behavior — reviewer\nfollows either link and lands on a card that has the actual evidence.\n\nProvenance trace verified: coverage_triangulation.ex:355 emits\nobserved_owners (sorted list of subject ids). Html.render_findings_list\npasses the finding map to render_subject_link which reads\nobserved_owners. Field name is observed_owners, NOT actual_subject_id —\nticket guess was wrong, implementer correctly verified the source.\n\nPattern-match ordering: the branch_guard_untethered_test clause comes\nbefore the generic %{\"subject_id\" =\u003e _} clause; the regression test\n\"non-untethered findings still render a single subject link\" pins this.\nCSS var --body-font verified declared at html.ex:2135.\n\nMechanical scope: 2 files (lib/specled_ex/review/html.ex,\ntest/specled_ex/review/html_test.exs), both within\n.spec/specs/spec_review.spec.md surface. Zero out-of-scope.\n\nmix test (610 tests) and mix spec.check both pass on the stage worktree.\n\nCaveat: self-audit (no Task tool to spawn an independent cold-context\nagent). Per orchestration override #5, ticket is not closed; merge-back\nis also deferred per override #3.",
       "timestamp": "2026-05-04T16:06:43Z"
+    },
+    {
+      "text": "MERGED into specled_-qm1/spec-review-html. Closing per orchestrator.",
+      "timestamp": "2026-05-04T16:18:21Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Untethered test finding links to actual subject, not just claimed",
   "type": "task",
-  "updated_at": "2026-05-04T16:06:43Z"
+  "updated_at": "2026-05-04T16:18:21Z"
 }
