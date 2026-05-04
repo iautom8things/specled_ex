@@ -285,6 +285,121 @@ defmodule SpecLedEx.ReviewTest do
     end
   end
 
+  describe "no_realized_by detector_unavailable synthesis" do
+    alias SpecLedEx.Review.Html
+
+    @tag spec: "specled.spec_review.no_realized_by_degrades_spec_to_code"
+    test "synthesizes a detector_unavailable finding for affected subjects with no realized_by",
+         %{root: root} do
+      setup_repo(root, "auth_subject", "Auth.")
+      change_subject_file(root, "auth_subject")
+
+      index = SpecLedEx.index(root)
+      view = Review.build_view(index, root, base: "main")
+
+      assert [synth] =
+               view.all_findings
+               |> Enum.filter(fn f ->
+                 f["code"] == "detector_unavailable" and f["reason"] == "no_realized_by"
+               end)
+
+      assert synth["subject_id"] == "auth.subject"
+      assert synth["severity"] == "info"
+
+      assert synth["message"] =~ "no `realized_by`" or synth["message"] =~ "no realized_by"
+
+      # The triage's leg aggregation must place the synthesized reason on
+      # SPEC ↔ CODE so the diagram surfaces the leg as :degraded.
+      assert get_in(view.triage.detector_unavailable_by_leg, [:spec_to_code, "no_realized_by"]) ==
+               1
+    end
+
+    @tag spec: "specled.spec_review.no_realized_by_degrades_spec_to_code"
+    test "does not synthesize a finding when the subject declares any non-empty realized_by tier",
+         %{root: root} do
+      setup_repo_with_realized_by(root, "auth_subject", "Auth.", %{
+        "api_boundary" => ["MyApp.API.do_thing/1"]
+      })
+
+      change_subject_file(root, "auth_subject")
+
+      index = SpecLedEx.index(root)
+      view = Review.build_view(index, root, base: "main")
+
+      synth =
+        Enum.filter(view.all_findings, fn f ->
+          f["code"] == "detector_unavailable" and f["reason"] == "no_realized_by"
+        end)
+
+      assert synth == []
+
+      assert get_in(view.triage.detector_unavailable_by_leg, [:spec_to_code, "no_realized_by"]) ==
+               nil
+    end
+
+    @tag spec: "specled.spec_review.no_realized_by_degrades_spec_to_code"
+    test "does not synthesize a finding when only a requirement declares realized_by",
+         %{root: root} do
+      init_git_repo(root)
+
+      write_subject_spec(
+        root,
+        "auth_subject",
+        meta: %{
+          "id" => "auth.subject",
+          "kind" => "module",
+          "status" => "active",
+          "summary" => "Auth.",
+          "surface" => ["lib/auth.ex"]
+        },
+        requirements: [
+          %{
+            "id" => "auth.subject.do_thing",
+            "statement" => "Auth.do_thing/1 logs the caller.",
+            "priority" => "must",
+            "stability" => "evolving",
+            "realized_by" => %{"api_boundary" => ["MyApp.API.do_thing/1"]}
+          }
+        ]
+      )
+
+      write_files(root, %{"lib/auth.ex" => "defmodule Auth do\nend\n"})
+      commit_all(root, "initial")
+
+      change_subject_file(root, "auth_subject")
+
+      index = SpecLedEx.index(root)
+      view = Review.build_view(index, root, base: "main")
+
+      synth =
+        Enum.filter(view.all_findings, fn f ->
+          f["code"] == "detector_unavailable" and f["reason"] == "no_realized_by"
+        end)
+
+      assert synth == [],
+             "expected no synthesized finding when a requirement declares realized_by"
+    end
+
+    @tag spec: "specled.spec_review.no_realized_by_degrades_spec_to_code"
+    test "rendered HTML degrades the realized_by leg and surfaces the partial-report banner with the no_realized_by reason",
+         %{root: root} do
+      setup_repo(root, "auth_subject", "Auth.")
+      change_subject_file(root, "auth_subject")
+
+      index = SpecLedEx.index(root)
+      view = Review.build_view(index, root, base: "main")
+      html = view |> Html.render() |> IO.iodata_to_binary()
+
+      # Diagram leg is :degraded with a `?` glyph.
+      assert html =~ "sync-edge sync-edge-degraded"
+
+      # Partial-report banner enumerates `no_realized_by` as a reason.
+      assert html =~ "sync-degraded-banner"
+      assert html =~ "no_realized_by"
+      assert html =~ "Partial report"
+    end
+  end
+
   # ----------------------------------------------------------------------
   # helpers
   # ----------------------------------------------------------------------
@@ -301,6 +416,26 @@ defmodule SpecLedEx.ReviewTest do
         "status" => "active",
         "summary" => statement,
         "surface" => ["lib/auth.ex"]
+      }
+    )
+
+    write_files(root, %{"lib/auth.ex" => "defmodule Auth do\nend\n"})
+    commit_all(root, "initial")
+  end
+
+  defp setup_repo_with_realized_by(root, name, statement, realized_by) do
+    init_git_repo(root)
+
+    write_subject_spec(
+      root,
+      name,
+      meta: %{
+        "id" => "auth.subject",
+        "kind" => "module",
+        "status" => "active",
+        "summary" => statement,
+        "surface" => ["lib/auth.ex"],
+        "realized_by" => realized_by
       }
     )
 

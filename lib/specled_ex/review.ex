@@ -26,7 +26,6 @@ defmodule SpecLedEx.Review do
     verifier_report = Verifier.verify(index, root, verifier_opts)
 
     subjects_by_id = subjects_by_id(index)
-    findings_by_subject = group_findings_by_subject(verifier_report["findings"])
 
     affected_subject_ids =
       MapSet.union(
@@ -35,6 +34,19 @@ defmodule SpecLedEx.Review do
       )
       |> MapSet.to_list()
       |> Enum.sort()
+
+    # covers: specled.spec_review.no_realized_by_degrades_spec_to_code
+    # An affected subject with zero `realized_by` bindings produces a
+    # synthetic `detector_unavailable` finding (reason `:no_realized_by`)
+    # so the SPEC ↔ CODE leg renders as :degraded rather than silently ✓.
+    # The same triangle-leg rendering pipeline (build_detector_unavailable_by_leg)
+    # picks the synthetic findings up alongside tier-emitted ones.
+    no_realized_by_findings =
+      build_no_realized_by_findings(affected_subject_ids, subjects_by_id)
+
+    raw_findings = verifier_report["findings"] || []
+    findings = raw_findings ++ no_realized_by_findings
+    findings_by_subject = group_findings_by_subject(findings)
 
     all_diffs = FileDiff.for_files(root, analysis.base, analysis.changed_files)
 
@@ -94,7 +106,6 @@ defmodule SpecLedEx.Review do
     }
 
     decisions_changed = build_decisions_changed(analysis, index)
-    findings = verifier_report["findings"] || []
     adrs_by_id = build_adrs_by_id(index, root, analysis.base)
     triage = build_triage(findings, affected_subjects, unmapped_changes != [], adrs_by_id)
 
@@ -402,11 +413,89 @@ defmodule SpecLedEx.Review do
   # Reasons emitted by realization tiers (expanded_behavior, use_tier,
   # typespecs, api_boundary, implementation) live on SPEC ↔ CODE — the
   # `realized_by` leg. The coverage triangulation's `no_coverage_artifact`
-  # lives on CODE ↔ TESTS — the evidence leg.
+  # lives on CODE ↔ TESTS — the evidence leg. `no_realized_by` (synthesized
+  # by `build_no_realized_by_findings/2`) is the absence of any binding at
+  # all, which lives on SPEC ↔ CODE for the same reason as the tier-level
+  # reasons: there is nothing the realization detectors can verify.
   defp detector_unavailable_leg("debug_info_stripped"), do: :spec_to_code
   defp detector_unavailable_leg("umbrella_unsupported"), do: :spec_to_code
+  defp detector_unavailable_leg("no_realized_by"), do: :spec_to_code
   defp detector_unavailable_leg("no_coverage_artifact"), do: :tests_to_coverage
   defp detector_unavailable_leg(_), do: :spec_to_code
+
+  # covers: specled.spec_review.no_realized_by_degrades_spec_to_code
+  # Synthesize one `detector_unavailable` finding (reason `no_realized_by`)
+  # per affected subject whose `spec-meta.realized_by` declares no bindings.
+  # These findings flow through the same plumbing as tier-emitted detector
+  # unavailables: they group per-subject, contribute to the triage panel's
+  # `detector_unavailable_by_leg` aggregation, and surface the SPEC ↔ CODE
+  # leg as :degraded with a reviewer-visible reason.
+  defp build_no_realized_by_findings(affected_subject_ids, subjects_by_id) do
+    Enum.flat_map(affected_subject_ids, fn id ->
+      case Map.get(subjects_by_id, id) do
+        nil ->
+          []
+
+        subject ->
+          if subject_has_realized_by?(subject) do
+            []
+          else
+            [no_realized_by_finding(id, subject_file(subject))]
+          end
+      end
+    end)
+  end
+
+  defp subject_has_realized_by?(subject) do
+    meta = subject["meta"] || Map.get(subject, :meta) || %{}
+    subject_rb = realized_by_map(meta)
+
+    if realized_by_has_binding?(subject_rb) do
+      true
+    else
+      reqs = subject["requirements"] || Map.get(subject, :requirements, []) || []
+
+      Enum.any?(List.wrap(reqs), fn req ->
+        req |> realized_by_map() |> realized_by_has_binding?()
+      end)
+    end
+  end
+
+  defp realized_by_map(nil), do: %{}
+
+  defp realized_by_map(container) when is_map(container) do
+    case Map.get(container, :realized_by) || Map.get(container, "realized_by") do
+      %{} = rb -> rb
+      _ -> %{}
+    end
+  end
+
+  defp realized_by_map(_), do: %{}
+
+  defp realized_by_has_binding?(rb) when is_map(rb) and map_size(rb) == 0, do: false
+
+  defp realized_by_has_binding?(rb) when is_map(rb) do
+    rb
+    |> Map.values()
+    |> Enum.any?(fn v -> v |> List.wrap() |> Enum.any?(&(&1 not in [nil, ""])) end)
+  end
+
+  defp realized_by_has_binding?(_), do: false
+
+  defp subject_file(subject), do: subject["file"] || Map.get(subject, :file)
+
+  defp no_realized_by_finding(subject_id, file) do
+    base = %{
+      "code" => "detector_unavailable",
+      "severity" => "info",
+      "reason" => "no_realized_by",
+      "subject_id" => subject_id,
+      "message" =>
+        "This subject declares no `realized_by` bindings — the SPEC ↔ CODE leg cannot be verified. Add a `realized_by:` block under `spec-meta` or on individual requirements to enable realization checks."
+    }
+
+    if is_binary(file), do: Map.put(base, "file", file), else: base
+  end
 
   defp req_id(req) when is_struct(req), do: to_string(Map.get(req, :id) || "")
   defp req_id(req) when is_map(req), do: to_string(Map.get(req, :id) || Map.get(req, "id") || "")
