@@ -93,7 +93,6 @@ decisions:
     - the top-of-page triage panel lists the finding with its severity
     - subject S's card carries an inline badge for the finding
   covers:
-    - specled.spec_review.triage_panel
     - specled.spec_review.inline_finding_badges
 - id: specled.spec_review.unmapped_change_in_misc_panel
   given:
