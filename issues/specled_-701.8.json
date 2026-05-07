@@ -1,7 +1,9 @@
 {
   "assignee": "",
   "blocked_by": [],
-  "blocks": [],
+  "blocks": [
+    "specled_-701.9"
+  ],
   "created": "2026-05-07T23:57:10Z",
   "description": "Advances: specled.realized_by\n\nDeliverable:\nAdd SpecLedEx.Validator.RealizedByDedupe (single source of truth for duplicate detection) at lib/specled_ex/validator/realized_by_dedupe.ex with duplicates(subject) returning [{tier_pair, entry}]. Trim entries before intersection. Add SpecLedEx.Validator.RealizedByDedupCheck.findings(index, severity \\\\ 'warning') at lib/specled_ex/validator/realized_by_dedup_check.ex emitting realized_by_redundant_dup with per-form message text (MFA-form vs bare-module-form). Wire into Mix.Tasks.Spec.Validate via with_validator_findings (or rename with_prose_findings to with_validator_findings).\n\nVerification:\n- Tests to pass: new test/specled_ex/validator/realized_by_dedup_check_test.exs covers the shared seam + finding shape + per-form message variants. Integration via mix spec.validate end-to-end with a crafted fixture spec containing a duplication.\n- Behaviors to demonstrate: spec requirements specled.realized_by.redundant_dup_warning, dedup_check_shared_seam.\n\nOut of Scope (files):\n- lib/mix/tasks/spec.dedup_realized_by.ex (S8)\n- lib/specled_ex/realization/** (already shipped in S1-S5)\n- .spec/**\nAllowed touches:\n- lib/specled_ex/validator/realized_by_dedupe.ex (new)\n- lib/specled_ex/validator/realized_by_dedup_check.ex (new)\n- lib/mix/tasks/spec.validate.ex (only to wire the new check)\n- test/specled_ex/validator/realized_by_dedup_check_test.exs (new)\n- test/specled_ex/mix/tasks/spec_validate_test.exs (only to add the integration test for the new code)\n\nOut of Scope (intent):\n- Severity hardcoded :warning; do NOT add config plumbing for the new code.\n- Do NOT alter the existing prose check or other validator findings.\n- Do NOT emit a finding from the future dedup task; findings flow through mix spec.validate only.\n\nMerge gate:\n- [ ] Code compiles cleanly\n- [ ] Tests listed above pass\n- [ ] Spec verification passes\n- [ ] Scope check: diff touches only Allowed globs (mechanical)\n- [ ] Auditor APPROVE comment on the ticket",
   "id": "specled_-701.8",
@@ -11,5 +13,5 @@
   "status": "open",
   "title": "S7: Validator dedup check (RealizedByDedupe + RealizedByDedupCheck)",
   "type": "task",
-  "updated_at": "2026-05-07T23:57:10Z"
+  "updated_at": "2026-05-07T23:57:21Z"
 }
