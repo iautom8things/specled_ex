@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-05-07T23:57:11Z",
+  "description": "Advances: specled.mix_tasks\n\nDeliverable:\nAdd lib/mix/tasks/spec.dedup_realized_by.ex (module Mix.Tasks.Spec.DedupRealizedBy). Mirrors mix spec.suggest_binding ergonomics. Flags: --root, --fail-on-dups. NO --write flag. Loads specs via SpecLedEx.detect_spec_dir/1 + SpecLedEx.index/2. Computes duplicates via the shared SpecLedEx.Validator.RealizedByDedupe.duplicates/1 helper. Prints proposal blocks per subject including a '# already implied by implementation' comment on each removal. Exit code: 0 by default; non-zero with --fail-on-dups when any subject has duplicates.\n\nVerification:\n- Tests to pass: new test/specled_ex/mix/tasks/spec_dedup_realized_by_test.exs covers proposal block format (single subject, multi-subject ordering), --fail-on-dups semantics, no-dups-clean-exit, '# already implied by implementation' comment present, no --write flag exists.\n- Behaviors to demonstrate: spec requirements specled.tasks.dedup_realized_by_proposal, dedup_realized_by_no_write, dedup_realized_by_exit_code, dedup_realized_by_shared_seam.\n\nOut of Scope (files):\n- lib/specled_ex/validator/** (S7)\n- lib/specled_ex/realization/** (already shipped)\n- lib/mix/tasks/spec.validate.ex (S7)\n- .spec/**\nAllowed touches:\n- lib/mix/tasks/spec.dedup_realized_by.ex (new)\n- test/specled_ex/mix/tasks/spec_dedup_realized_by_test.exs (new)\n\nOut of Scope (intent):\n- Do NOT add a --write flag.\n- Do NOT emit findings from the task itself; the validator handles findings.\n- Do NOT duplicate the duplicate-detection logic; call RealizedByDedupe.duplicates/1.\n\nMerge gate:\n- [ ] Code compiles cleanly\n- [ ] Tests listed above pass\n- [ ] Spec verification passes\n- [ ] Scope check: diff touches only Allowed globs (mechanical)\n- [ ] Auditor APPROVE comment on the ticket",
+  "id": "specled_-701.9",
+  "labels": [],
+  "parent": "specled_-701",
+  "priority": 2,
+  "status": "open",
+  "title": "S8: mix spec.dedup_realized_by task",
+  "type": "task",
+  "updated_at": "2026-05-07T23:57:11Z"
+}
