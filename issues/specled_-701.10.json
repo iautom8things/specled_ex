@@ -1,6 +1,8 @@
 {
   "assignee": "",
-  "blocked_by": [],
+  "blocked_by": [
+    "specled_-701.6"
+  ],
   "blocks": [],
   "created": "2026-05-07T23:57:11Z",
   "description": "Advances: specled.realized_by, specled.mix_tasks\n\nDeliverable:\nThe ADR was authored at distill time (.spec/decisions/specled.decision.realized_by_tier_implication.md exists). The spec edits to realized_by.spec.md and mix_tasks.spec.md were also authored at distill time. This stage performs the author-side dedup demonstrating spec scenario 2:\n- Edit .spec/specs/binding.spec.md to remove SpecLedEx.Realization.Binding.resolve/2, SpecLedEx.Realization.Canonical.hash/1, and SpecLedEx.Realization.HashStore.read/2 from realized_by.api_boundary (they remain under realized_by.implementation; the implication keeps tracking).\n- Edit .spec/specs/mix_tasks.spec.md to remove Mix.Tasks.Spec.Check.run/1 from realized_by.api_boundary.\nAfter these edits, run mix spec.validate (no realized_by_redundant_dup warnings should remain) and mix spec.check (no drift findings should fire from the dedup itself, because the implication continues to track).\n\nVerification:\n- Tests to pass: mix spec.validate is clean (no realized_by_redundant_dup warnings).\n- Tests to pass: mix spec.check is clean (no drift findings introduced by the dedup).\n- Behaviors to demonstrate: spec scenario specled.realized_by.scenario.existing_duplication_validator_warns end-to-end (warning fires before edit, gone after edit).\n\nOut of Scope (files):\n- lib/** (no production code changes)\n- test/** (no test changes)\nAllowed touches:\n- .spec/specs/binding.spec.md\n- .spec/specs/mix_tasks.spec.md\n\nOut of Scope (intent):\n- Do NOT touch realized_by.spec.md (it was extended at distill time and stays).\n- Do NOT touch the new ADR (it was authored at distill time).\n- Do NOT add new requirements in this stage; this is purely the visible-effect-of-the-feature edit.\n\nMerge gate:\n- [ ] Code compiles cleanly\n- [ ] Tests listed above pass\n- [ ] Spec verification passes\n- [ ] Scope check: diff touches only Allowed globs (mechanical)\n- [ ] Auditor APPROVE comment on the ticket",
@@ -11,5 +13,5 @@
   "status": "open",
   "title": "S9: ADR + spec doc updates + author-side dedup",
   "type": "task",
-  "updated_at": "2026-05-07T23:57:11Z"
+  "updated_at": "2026-05-07T23:57:21Z"
 }
