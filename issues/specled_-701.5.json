@@ -1,6 +1,8 @@
 {
   "assignee": "",
-  "blocked_by": [],
+  "blocked_by": [
+    "specled_-701.4"
+  ],
   "blocks": [],
   "created": "2026-05-07T23:56:27Z",
   "description": "Advances: specled.realized_by\n\nDeliverable:\nWire bare-module union hashing into both detectors. ApiBoundary.check_binding/3 and Implementation.check_subject/5 (or equivalent) recognize bare-module entries and call Canonical.hash_module_head_union/2 or hash_module_full_union/2 respectively. Add inferred? boolean field to the binding_ref shape (default false). ApiBoundary.check_binding/3's {:error, :not_found, ...} arm consults inferred? and returns [] when inferred? is true. Implementation tier is unchanged for inferred? — it still emits its own dangling. The flag does NOT appear on any finding map.\n\nVerification:\n- Tests to pass: api_boundary_test.exs and implementation_test.exs cover (a) bare-module entry resolves to Canonical hash; (b) inferred?: true + :not_found returns []; (c) inferred?: false + :not_found returns the dangling; (d) property test asserting no finding contains :inferred? or 'inferred?'.\n- Behaviors to demonstrate: spec requirements specled.realized_by.bare_module_api_boundary_hash (detector wiring), bare_module_implementation_hash (detector wiring), implication_dangling_once (suppression), binding_ref_inferred_no_leak.\n\nOut of Scope (files):\n- lib/specled_ex/realization/orchestrator.ex (S5)\n- lib/specled_ex/realization/effective_binding.ex (S2)\n- lib/specled_ex/realization/canonical.ex (S3)\n- lib/specled_ex/realization/closure.ex (no closure walk from bare modules)\n- .spec/**\nAllowed touches:\n- lib/specled_ex/realization/api_boundary.ex\n- lib/specled_ex/realization/implementation.ex\n- test/specled_ex/realization/api_boundary_test.exs\n- test/specled_ex/realization/implementation_test.exs\n\nOut of Scope (intent):\n- Do NOT seed the closure walker from bare-module entries.\n- Do NOT add inferred?-related logic to the implementation tier (the impl tier's own dangling is the surviving finding).\n- Do NOT change the public shape of finding maps. The inferred? flag is orchestrator-internal only.\n\nMerge gate:\n- [ ] Code compiles cleanly\n- [ ] Tests listed above pass\n- [ ] Spec verification passes\n- [ ] Scope check: diff touches only Allowed globs (mechanical)\n- [ ] Auditor APPROVE comment on the ticket",
@@ -11,5 +13,5 @@
   "status": "open",
   "title": "S4: ApiBoundary + Implementation bare-module + inferred?",
   "type": "task",
-  "updated_at": "2026-05-07T23:56:27Z"
+  "updated_at": "2026-05-07T23:57:20Z"
 }
