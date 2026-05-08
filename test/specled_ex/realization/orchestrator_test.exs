@@ -1,7 +1,7 @@
 defmodule SpecLedEx.Realization.OrchestratorTest do
   use ExUnit.Case, async: false
 
-  alias SpecLedEx.Realization.{ApiBoundary, Binding, HashStore, Orchestrator}
+  alias SpecLedEx.Realization.{ApiBoundary, Binding, Canonical, HashStore, Orchestrator}
 
   # ---------------------------------------------------------------------------
   # Compiled fixtures on disk so the tiers can resolve them via beam + AST.
@@ -338,6 +338,480 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
     test "returns the four flat-binding tiers in a stable order (impl is opt-in)" do
       assert Orchestrator.default_tiers() ==
                [:api_boundary, :expanded_behavior, :typespecs, :use]
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # S5 — expand_implications wired per-layer (subject + per-requirement)
+  # ---------------------------------------------------------------------------
+  describe "run/2 — expand_implications applied per-layer" do
+    @tag spec: "specled.realized_by.implication_invoked_per_layer"
+    test "subject impl entry is amplified into api_boundary tier on the same run",
+         %{root: root} do
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+
+      # Seed a wrong api_boundary hash for the MFA so the implication-induced
+      # api_boundary entry produces a drift finding (proving the implication
+      # was wired into accumulate_tier).
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "wrong"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      # Subject lists the MFA only under implementation; api_boundary is empty.
+      subject = subject("impl.amp.subject", %{"implementation" => [mfa]}, [])
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      drifts =
+        Enum.filter(findings, &(&1["code"] == "branch_guard_realization_drift"))
+
+      assert length(drifts) == 1
+      [d] = drifts
+      assert d["tier"] == "api_boundary"
+      assert d["mfa"] == mfa
+    end
+
+    @tag spec: "specled.realized_by.implication_invoked_per_layer"
+    test "requirement-layer impl entry is amplified into api_boundary tier",
+         %{root: root} do
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "wrong"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      # Subject has no realized_by; requirement carries the implementation entry.
+      subject =
+        subject(
+          "req.amp.subject",
+          %{},
+          [
+            %{
+              id: "req.amp.req",
+              priority: "must",
+              realized_by: %{"implementation" => [mfa]}
+            }
+          ]
+        )
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      drifts = Enum.filter(findings, &(&1["code"] == "branch_guard_realization_drift"))
+      assert length(drifts) == 1
+      [d] = drifts
+      assert d["tier"] == "api_boundary"
+      assert d["mfa"] == mfa
+      assert d["requirement_id"] == "req.amp.req"
+    end
+
+    @tag spec: "specled.realized_by.implication_invoked_per_layer"
+    test "implication-inferred dangling entry suppresses api_boundary dangling, keeps impl-tier dangling",
+         %{root: root} do
+      # Bare MFA that does not resolve. Listed only under implementation.
+      mfa = "SpecLedEx.Nonexistent.Inferred.nope/0"
+
+      subject = subject("inf.dangle.subject", %{"implementation" => [mfa]}, [])
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary, :implementation],
+          commit_hashes?: false
+        )
+
+      api_dangling =
+        Enum.filter(findings, fn f ->
+          f["code"] == "branch_guard_dangling_binding" and f["tier"] == "api_boundary"
+        end)
+
+      impl_dangling =
+        Enum.filter(findings, fn f ->
+          f["code"] == "branch_guard_dangling_binding" and f["tier"] == "implementation"
+        end)
+
+      # The api_boundary tier suppresses dangling for inferred entries; impl
+      # tier (where the author wrote it) emits the surviving dangling.
+      assert api_dangling == []
+      assert length(impl_dangling) == 1
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # S5 — post-concat dedup on api_boundary tier (amplification)
+  # ---------------------------------------------------------------------------
+  describe "run/2 — post-concat dedup on api_boundary tier" do
+    @tag spec: "specled.realized_by.implication_amplification_dedup"
+    test "subject + requirement both list the same impl MFA → exactly one api_boundary drift",
+         %{root: root} do
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "wrong"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      # Same MFA listed under implementation at BOTH layers. Without the
+      # post-concat dedup, the api_boundary tier would receive two binding_refs
+      # for the same MFA and emit two drift findings.
+      subject =
+        subject(
+          "amp.subject",
+          %{"implementation" => [mfa]},
+          [
+            %{
+              id: "amp.req",
+              priority: "must",
+              realized_by: %{"implementation" => [mfa]}
+            }
+          ]
+        )
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      drifts = Enum.filter(findings, &(&1["code"] == "branch_guard_realization_drift"))
+      assert length(drifts) == 1
+      [d] = drifts
+      # Subject-layer entries precede requirement-layer entries, so the
+      # surviving requirement_id is nil (subject layer's first-seen entry wins).
+      assert d["requirement_id"] == nil
+      assert d["mfa"] == mfa
+    end
+
+    @tag spec: "specled.realized_by.implication_amplification_dedup"
+    test "implementation tier does NOT collapse subject + requirement entries (subject impl_bindings still aggregates)",
+         %{root: root} do
+      # The dedup is api_boundary-only by spec
+      # (specled.realized_by.implication_amplification_dedup). The
+      # implementation tier accumulates a single subject_map per subject; its
+      # impl_bindings list is the *uniq* concat of subject + requirement-layer
+      # entries. Listing the same dangling MFA at both layers produces exactly
+      # ONE dangling finding from the impl tier (deduplication is by
+      # `Enum.uniq` inside accumulate_tier(:implementation, ...)), distinct
+      # from the api_boundary post-concat uniq_by — both tiers ultimately emit
+      # one finding per unique MFA, but via different mechanisms.
+      mfa = "SpecLedEx.Nonexistent.Impl.dup/0"
+
+      subject =
+        subject(
+          "impl.dup.subject",
+          %{"implementation" => [mfa]},
+          [
+            %{
+              id: "impl.dup.req",
+              priority: "must",
+              realized_by: %{"implementation" => [mfa]}
+            }
+          ]
+        )
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:implementation],
+          commit_hashes?: false
+        )
+
+      impl_dangling =
+        Enum.filter(findings, fn f ->
+          f["code"] == "branch_guard_dangling_binding" and f["tier"] == "implementation" and
+            f["mfa"] == mfa
+        end)
+
+      assert length(impl_dangling) == 1
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # S5 — silent seed pass writes uncommitted hashes via HashStore.merge/2
+  # ---------------------------------------------------------------------------
+  describe "run/2 — silent seed pass" do
+    @tag spec: ["specled.realized_by.silent_seed", "specled.realized_by.silent_seed_uses_merge"]
+    test "writes api_boundary baseline for a never-seeded MFA and emits no drift",
+         %{root: root} do
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+      subject = subject("seed.subject", %{"api_boundary" => [mfa]}, [])
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary]
+        )
+
+      assert findings == []
+
+      store = HashStore.read(root)
+      assert is_map(get_in(store, ["api_boundary", mfa]))
+
+      {:ok, ast} = Binding.resolve(mfa)
+      current = ApiBoundary.hash(ast)
+      assert HashStore.fetch(store, "api_boundary", mfa) == current
+    end
+
+    @tag spec: ["specled.realized_by.silent_seed", "specled.realized_by.silent_seed_uses_merge"]
+    test "seed pass uses merge/2 (preserves a sibling entry in the same tier when drift halts the post-run refresh)",
+         %{root: root} do
+      # Two entries in api_boundary: one previously committed (drift seeded
+      # against), one never committed (will be silently seeded). When drift
+      # is detected, the tail-end refresh_and_commit_hashes/3 does NOT run
+      # (gated by `not has_drift?(findings)`). That isolates the seed pass:
+      # if the seed pass had used write/2 (replacement), the previously
+      # committed drift-bearing entry would be clobbered. With merge/2 it
+      # survives.
+      drift_mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+      seed_mfa = "SpecLedEx.OrchestratorFixtures.Mod.baz/1"
+      wrong = :crypto.hash(:sha256, "wrong")
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            drift_mfa => %{
+              "hash" => Base.encode16(wrong, case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      subject =
+        subject(
+          "merge.subject",
+          %{"api_boundary" => [drift_mfa, seed_mfa]},
+          []
+        )
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary]
+        )
+
+      assert Enum.any?(findings, &(&1["code"] == "branch_guard_realization_drift"))
+
+      store = HashStore.read(root)
+
+      # The previously-committed (wrong) entry survives — proving the seed
+      # pass merged on top of existing state rather than replacing it.
+      assert HashStore.fetch(store, "api_boundary", drift_mfa) == wrong
+
+      # The never-committed entry was silently seeded.
+      {:ok, ast} = Binding.resolve(seed_mfa)
+      assert HashStore.fetch(store, "api_boundary", seed_mfa) == ApiBoundary.hash(ast)
+    end
+
+    @tag spec: ["specled.realized_by.silent_seed", "specled.realized_by.silent_seed_uses_merge"]
+    test "seeds bare-module entries under api_boundary (head-union) and implementation (full-union)",
+         %{root: root} do
+      bare = "SpecLedEx.OrchestratorFixtures.Mod"
+
+      subject =
+        subject(
+          "bare.seed.subject",
+          %{"implementation" => [bare]},
+          []
+        )
+
+      _findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary, :implementation]
+        )
+
+      store = HashStore.read(root)
+
+      # Implementation tier seeds the bare module under its module string.
+      mod = SpecLedEx.OrchestratorFixtures.Mod
+      {:ok, full_hash} = Canonical.hash_module_full_union(mod)
+      assert HashStore.fetch(store, "implementation", bare) == full_hash
+
+      # Implication-amplified bare module is seeded under api_boundary too,
+      # using the head-union envelope (distinct envelope tag from full-union).
+      {:ok, head_hash} = Canonical.hash_module_head_union(mod)
+      assert HashStore.fetch(store, "api_boundary", bare) == head_hash
+      refute head_hash == full_hash
+    end
+
+    @tag spec: ["specled.realized_by.silent_seed", "specled.realized_by.silent_seed_uses_merge"]
+    test "seeds implementation closure subject under subject.id when no committed hash",
+         %{root: root} do
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+      subject = subject("closure.seed.subject", %{"implementation" => [mfa]}, [])
+
+      _findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:implementation],
+          context: nil
+        )
+
+      store = HashStore.read(root)
+
+      # The closure hash is keyed by subject.id under the implementation tier.
+      assert is_map(get_in(store, ["implementation", "closure.seed.subject"])),
+             "expected closure-hash seed for closure.seed.subject, got #{inspect(store)}"
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # S5 — silent seed gating
+  # ---------------------------------------------------------------------------
+  describe "run/2 — seed gating" do
+    @tag spec: "specled.realized_by.silent_seed"
+    test "commit_hashes?: false disables the seed pass (state.json remains empty)",
+         %{root: root} do
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+      subject = subject("nogate.subject", %{"api_boundary" => [mfa]}, [])
+
+      _ =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      store = HashStore.read(root)
+      # No seed should have been written because commit_hashes? is false.
+      assert get_in(store, ["api_boundary", mfa]) == nil
+    end
+
+    @tag spec: "specled.realized_by.silent_seed"
+    test "umbrella?: true skips the seed pass",
+         %{root: root} do
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+      subject = subject("umbrella.subject", %{"api_boundary" => [mfa]}, [])
+
+      _ =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary],
+          umbrella?: true
+        )
+
+      store = HashStore.read(root)
+      assert get_in(store, ["api_boundary", mfa]) == nil
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # S5 — dangling entries are not seeded
+  # ---------------------------------------------------------------------------
+  describe "run/2 — dangling entries are not seeded" do
+    @tag spec: "specled.realized_by.silent_seed"
+    test "dangling MFA does not seed and surfaces a dangling finding",
+         %{root: root} do
+      mfa = "SpecLedEx.Truly.Nonexistent.dangle/2"
+      subject = subject("dangle.seed.subject", %{"api_boundary" => [mfa]}, [])
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary]
+        )
+
+      # Detector emits dangling on the same run.
+      assert Enum.any?(findings, fn f ->
+               f["code"] == "branch_guard_dangling_binding" and f["mfa"] == mfa
+             end)
+
+      # And the seed pass MUST NOT have planted a hash for the dangling MFA.
+      store = HashStore.read(root)
+      assert get_in(store, ["api_boundary", mfa]) == nil
+    end
+
+    @tag spec: "specled.realized_by.silent_seed"
+    test "dangling MFA inside an implementation closure does not seed the subject",
+         %{root: root} do
+      subject =
+        subject(
+          "dangle.impl.subject",
+          %{"implementation" => ["SpecLedEx.Truly.Missing.thing/0"]},
+          []
+        )
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:implementation]
+        )
+
+      assert Enum.any?(findings, &(&1["code"] == "branch_guard_dangling_binding"))
+
+      store = HashStore.read(root)
+      assert get_in(store, ["implementation", "dangle.impl.subject"]) == nil
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # S5 — inferred? does not leak onto findings (regression)
+  # ---------------------------------------------------------------------------
+  describe "run/2 — inferred? flag does not leak onto findings" do
+    @tag spec: "specled.realized_by.binding_ref_inferred_no_leak"
+    test "no finding map carries an inferred? key (atom or string)",
+         %{root: root} do
+      # A run that exercises both authored and inferred entries and produces
+      # both drift and dangling findings.
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+      missing = "SpecLedEx.Nonexistent.Inferred.nope/0"
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "wrong"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      subject =
+        subject(
+          "inferred.leak.subject",
+          %{"implementation" => [mfa, missing]},
+          []
+        )
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary, :implementation],
+          commit_hashes?: false
+        )
+
+      assert findings != []
+
+      assert Enum.all?(findings, fn f ->
+               not Map.has_key?(f, :inferred?) and not Map.has_key?(f, "inferred?")
+             end)
     end
   end
 

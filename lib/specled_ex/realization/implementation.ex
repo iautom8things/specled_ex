@@ -108,6 +108,38 @@ defmodule SpecLedEx.Realization.Implementation do
     end
   end
 
+  # covers: specled.realized_by.silent_seed
+  #
+  # Builds the implementation-tier world via the existing private
+  # `build_world/3` and returns `%{subject.id => hash_bin}` for every subject
+  # whose closure hash resolved successfully. Subjects with dangling MFA
+  # bindings (or zero MFA-form bindings) are silently dropped from the
+  # returned map — the orchestrator's silent-seed pass leaves dangling
+  # entries unseeded so the detector can emit `branch_guard_dangling_binding`
+  # on the same run.
+  #
+  # Orchestrator-internal (`@doc false`): kept off the public surface but
+  # exposed so the orchestrator can seed implementation hashes without
+  # duplicating the world-builder. See
+  # `specled.decision.realized_by_tier_implication`.
+  @doc false
+  @spec hashes_for_seeding([subject()], Context.t() | nil, keyword()) ::
+          %{String.t() => binary()}
+  def hashes_for_seeding(subjects, context \\ nil, opts \\ []) when is_list(subjects) do
+    world = build_world(subjects, context, opts)
+    sorted = Enum.sort_by(subjects, & &1.id)
+
+    {result, _cache} =
+      Enum.reduce(sorted, {%{}, %{}}, fn subject, {acc, cache} ->
+        case compute_hash(subject, world, context, cache) do
+          {:ok, hash, cache} -> {Map.put(acc, subject.id, hash), cache}
+          {:error, _reason, cache} -> {acc, cache}
+        end
+      end)
+
+    result
+  end
+
   # ---------------------------------------------------------------------------
   # Per-subject check
   # ---------------------------------------------------------------------------

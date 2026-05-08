@@ -57,7 +57,9 @@ defmodule SpecLedEx.Realization.Orchestrator do
   alias SpecLedEx.Realization.{
     ApiBoundary,
     Binding,
+    Canonical,
     Drift,
+    EffectiveBinding,
     ExpandedBehavior,
     HashStore,
     Implementation,
@@ -103,6 +105,10 @@ defmodule SpecLedEx.Realization.Orchestrator do
     tier_opts = [root: root, umbrella?: umbrella?]
     bindings_by_tier = collect_bindings(index, enabled)
 
+    if commit_hashes? and not umbrella? do
+      seed_uncommitted_hashes(bindings_by_tier, context, root)
+    end
+
     findings =
       Enum.flat_map(enabled, fn tier ->
         dispatch(tier, Map.get(bindings_by_tier, tier, []), context, tier_opts, umbrella?)
@@ -121,30 +127,76 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # Binding collection
   # ---------------------------------------------------------------------------
 
+  # covers: specled.realized_by.implication_invoked_per_layer
+  # covers: specled.realized_by.implication_amplification_dedup
   defp collect_bindings(index, enabled) do
     subjects = index |> Map.get("subjects", []) |> List.wrap()
     init = Map.new(enabled, &{&1, []})
 
-    Enum.reduce(subjects, init, fn subject, acc ->
-      sid = subject_id(subject)
-      surface = subject_surface(subject)
-      subj_rb = extract_realized_by(subject_meta(subject))
-      reqs = Map.get(subject, "requirements", []) |> List.wrap()
+    bindings =
+      Enum.reduce(subjects, init, fn subject, acc ->
+        sid = subject_id(subject)
+        surface = subject_surface(subject)
+        {subj_rb, subj_inferred} = expand_with_inferred(extract_realized_by(subject_meta(subject)))
+        reqs = Map.get(subject, "requirements", []) |> List.wrap()
 
-      req_bindings =
-        Enum.map(reqs, fn r -> {requirement_id(r), extract_realized_by(r)} end)
+        req_bindings =
+          Enum.map(reqs, fn r ->
+            {expanded, inferred} = expand_with_inferred(extract_realized_by(r))
+            {requirement_id(r), expanded, inferred}
+          end)
 
-      Enum.reduce(enabled, acc, fn tier, acc ->
-        accumulate_tier(acc, tier, sid, surface, subj_rb, req_bindings)
+        Enum.reduce(enabled, acc, fn tier, acc ->
+          accumulate_tier(acc, tier, sid, surface, subj_rb, subj_inferred, req_bindings)
+        end)
       end)
-    end)
+
+    # Post-concat dedup: api_boundary tier only. The implication amplifies
+    # bindings across layers (subject impl + requirement impl both inflate the
+    # api_boundary list with the same MFA). Stable order means subject-layer
+    # entries precede requirement-layer entries; uniq_by keeps the first-seen.
+    # Other tiers are intentionally untouched — drift findings on the same
+    # MFA from independent requirement_ids still convey distinct provenance.
+    if Map.has_key?(bindings, :api_boundary) do
+      Map.update!(bindings, :api_boundary, &Enum.uniq_by(&1, fn entry -> entry.mfa end))
+    else
+      bindings
+    end
   end
 
-  defp accumulate_tier(acc, :implementation, sid, surface, subj_rb, req_bindings) do
+  # Apply the one-way `implementation ⟹ api_boundary` implication to a
+  # single binding map (per-layer) and return the expanded map plus the set
+  # of api_boundary entries that were synthesized by the expansion (i.e.
+  # were not already authored under api_boundary in the input). The inferred
+  # set is consumed by accumulate_tier/7 to mark binding_refs with
+  # `inferred?: true`, which the api_boundary detector uses to suppress
+  # dangling findings (see `specled.realized_by.binding_ref_inferred_no_leak`).
+  defp expand_with_inferred(rb) when is_map(rb) do
+    original_api =
+      rb
+      |> Map.get("api_boundary", [])
+      |> List.wrap()
+      |> MapSet.new()
+
+    expanded = EffectiveBinding.expand_implications(rb)
+
+    inferred =
+      expanded
+      |> Map.get("api_boundary", [])
+      |> List.wrap()
+      |> MapSet.new()
+      |> MapSet.difference(original_api)
+
+    {expanded, inferred}
+  end
+
+  defp expand_with_inferred(_), do: {%{}, MapSet.new()}
+
+  defp accumulate_tier(acc, :implementation, sid, surface, subj_rb, _subj_inferred, req_bindings) do
     subj_mfas = Map.get(subj_rb, "implementation", [])
 
     req_mfas =
-      Enum.flat_map(req_bindings, fn {_rid, rb} ->
+      Enum.flat_map(req_bindings, fn {_rid, rb, _inferred} ->
         Map.get(rb, "implementation", [])
       end)
 
@@ -158,19 +210,32 @@ defmodule SpecLedEx.Realization.Orchestrator do
     end
   end
 
-  defp accumulate_tier(acc, tier, sid, _surface, subj_rb, req_bindings)
+  defp accumulate_tier(acc, tier, sid, _surface, subj_rb, subj_inferred, req_bindings)
        when tier in @flat_tiers do
     tier_key = Atom.to_string(tier)
+    inferred_supported? = tier == :api_boundary
 
     subj_entries =
       Enum.map(Map.get(subj_rb, tier_key, []), fn mfa ->
-        %{subject_id: sid, requirement_id: nil, mfa: mfa}
+        entry = %{subject_id: sid, requirement_id: nil, mfa: mfa}
+
+        if inferred_supported? and MapSet.member?(subj_inferred, mfa) do
+          Map.put(entry, :inferred?, true)
+        else
+          entry
+        end
       end)
 
     req_entries =
-      Enum.flat_map(req_bindings, fn {rid, rb} ->
+      Enum.flat_map(req_bindings, fn {rid, rb, inferred} ->
         Enum.map(Map.get(rb, tier_key, []), fn mfa ->
-          %{subject_id: sid, requirement_id: rid, mfa: mfa}
+          entry = %{subject_id: sid, requirement_id: rid, mfa: mfa}
+
+          if inferred_supported? and MapSet.member?(inferred, mfa) do
+            Map.put(entry, :inferred?, true)
+          else
+            entry
+          end
         end)
       end)
 
@@ -183,7 +248,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
     end
   end
 
-  defp accumulate_tier(acc, _other, _sid, _surface, _subj_rb, _reqs), do: acc
+  defp accumulate_tier(acc, _other, _sid, _surface, _subj_rb, _subj_inferred, _reqs), do: acc
 
   # ---------------------------------------------------------------------------
   # Tier dispatch
@@ -281,6 +346,192 @@ defmodule SpecLedEx.Realization.Orchestrator do
         code == "branch_guard_dangling_binding"
     end)
   end
+
+  # covers: specled.realized_by.silent_seed
+  # covers: specled.realized_by.silent_seed_uses_merge
+  #
+  # Pre-dispatch silent-seed pass. For each tracked entry that lacks a
+  # committed hash in `<root>/.spec/state.json`, compute the current hash
+  # and persist it via `HashStore.merge/2`. The detectors then read the
+  # committed-by-this-pass hash on entry, see `committed == current`, and
+  # emit no drift finding for that entry on the seeding run.
+  #
+  # Gated by the same `commit_hashes? != false` and `umbrella? == false`
+  # conditions that gate `refresh_and_commit_hashes/3`. Dangling entries
+  # (MFAs that don't resolve, bare modules that aren't loadable, impl
+  # subjects with dangling closure bindings) are NOT seeded — they continue
+  # to surface as dangling findings on this run.
+  #
+  # The seed pass is silent: no findings are emitted from this code path.
+  # The post-run `refresh_and_commit_hashes/3` is unaffected; it still runs
+  # under the same gate when no drift is detected and uses `write/2`'s
+  # replacement semantics for the full realization map.
+  defp seed_uncommitted_hashes(bindings_by_tier, context, root) do
+    store = HashStore.read(root)
+
+    flat_seeds =
+      Enum.reduce(@flat_tiers, %{}, fn tier, acc ->
+        tier_key = Atom.to_string(tier)
+        committed = Map.get(store, tier_key, %{})
+        bindings = Map.get(bindings_by_tier, tier, [])
+
+        uncommitted =
+          Enum.reject(bindings, fn %{mfa: mfa} -> Map.has_key?(committed, mfa) end)
+
+        case compute_seed_hashes(tier, uncommitted, context) do
+          empty when empty == %{} -> acc
+          tier_seeds -> Map.put(acc, tier_key, tier_seeds)
+        end
+      end)
+
+    impl_seeds =
+      seed_implementation_subjects(
+        Map.get(bindings_by_tier, :implementation, []),
+        Map.get(store, "implementation", %{}),
+        context,
+        root
+      )
+
+    seeds =
+      if impl_seeds == %{} do
+        flat_seeds
+      else
+        Map.put(flat_seeds, "implementation", impl_seeds)
+      end
+
+    if seeds != %{} do
+      HashStore.merge(root, seeds)
+    end
+
+    :ok
+  end
+
+  defp compute_seed_hashes(:api_boundary, bindings, context) do
+    Enum.reduce(bindings, %{}, fn %{mfa: mfa}, acc ->
+      case Binding.resolve(mfa, context) do
+        {:ok, {:module, mod}} ->
+          # Bare module under api_boundary — head-union envelope.
+          case Canonical.hash_module_head_union(mod) do
+            {:ok, hash_bin} -> Map.put(acc, mfa, hash_entry(hash_bin))
+            _ -> acc
+          end
+
+        {:ok, ast} ->
+          hash_bin = ApiBoundary.hash(ast)
+          Map.put(acc, mfa, hash_entry(hash_bin))
+
+        _ ->
+          # Dangling: do not seed. Detector will emit dangling on the run.
+          acc
+      end
+    end)
+  end
+
+  defp compute_seed_hashes(:expanded_behavior, bindings, _context) do
+    dedupe_by_mfa(bindings, fn mfa ->
+      case ExpandedBehavior.hash(mfa) do
+        {:ok, hash_bin} -> {:ok, hash_bin}
+        _ -> :skip
+      end
+    end)
+  end
+
+  defp compute_seed_hashes(:typespecs, bindings, _context) do
+    dedupe_by_mfa(bindings, fn mfa ->
+      case Typespecs.hash(mfa) do
+        {:ok, hash_bin} -> {:ok, hash_bin}
+        _ -> :skip
+      end
+    end)
+  end
+
+  defp compute_seed_hashes(:use, bindings, _context) do
+    dedupe_by_mfa(bindings, fn provider ->
+      case Use.hash(provider) do
+        {:ok, hash_bin} -> {:ok, hash_bin}
+        _ -> :skip
+      end
+    end)
+  end
+
+  defp compute_seed_hashes(_tier, _bindings, _context), do: %{}
+
+  # Implementation tier seeding: subjects carry a mixed `impl_bindings` list
+  # (MFA-form for closure walk, bare-module-form for per-module hashing).
+  # Each closure subject is keyed by `subject.id`; each bare module is keyed
+  # by the module string. Both go under `realization.implementation`. Subjects
+  # whose MFAs all dangle drop out of the closure-hash result; bare modules
+  # that fail to load are skipped (the detector emits dangling separately).
+  defp seed_implementation_subjects(subjects, committed, context, root) do
+    Enum.reduce(subjects, %{}, fn subject, acc ->
+      acc
+      |> seed_impl_closure(subject, committed, context, root)
+      |> seed_impl_bare_modules(subject, committed)
+    end)
+  end
+
+  defp seed_impl_closure(acc, subject, committed, context, root) do
+    if Map.has_key?(committed, subject.id) do
+      acc
+    else
+      mfa_bindings =
+        subject
+        |> Map.get(:impl_bindings, [])
+        |> Enum.reject(&bare_module_binding?/1)
+
+      case mfa_bindings do
+        [] ->
+          acc
+
+        bindings ->
+          subject_for_seeding = Map.put(subject, :impl_bindings, bindings)
+
+          case Implementation.hashes_for_seeding([subject_for_seeding], context, root: root) do
+            map when map_size(map) == 0 ->
+              acc
+
+            map ->
+              case Map.fetch(map, subject.id) do
+                {:ok, hash_bin} -> Map.put(acc, subject.id, hash_entry(hash_bin))
+                :error -> acc
+              end
+          end
+      end
+    end
+  end
+
+  defp seed_impl_bare_modules(acc, subject, committed) do
+    subject
+    |> Map.get(:impl_bindings, [])
+    |> Enum.filter(&bare_module_binding?/1)
+    |> Enum.reduce(acc, fn module_string, inner_acc ->
+      cond do
+        Map.has_key?(committed, module_string) ->
+          inner_acc
+
+        true ->
+          case Binding.parse(module_string) do
+            {:ok, {:module, mod}} ->
+              case Canonical.hash_module_full_union(mod) do
+                {:ok, hash_bin} -> Map.put(inner_acc, module_string, hash_entry(hash_bin))
+                _ -> inner_acc
+              end
+
+            _ ->
+              inner_acc
+          end
+      end
+    end)
+  end
+
+  defp bare_module_binding?(binding) when is_binary(binding) do
+    case Binding.parse(binding) do
+      {:ok, {:module, _}} -> true
+      _ -> false
+    end
+  end
+
+  defp bare_module_binding?(_), do: false
 
   defp refresh_and_commit_hashes(bindings_by_tier, context, root) do
     realization =
