@@ -3,12 +3,12 @@
   "blocked_by": [],
   "blocks": [],
   "created": "2026-05-07T23:54:47Z",
-  "description": "Advances: specled.realized_by, specled.mix_tasks\n\nJira: N/A (specled is OSS / personal project)\nPlan epic: think-o9t (closed) | Implementation epic: think-50c (bw-plan, closed at end of distill)\nSpec dir: .spec/\nRefined plan: ~/Documents/my-vault/LLMs/plans/-Users-mz-src-specled-ex/2026-05-07-realized-by-tier-implication/runs/20260507-160103-claude/05-refined-plan.md\n\nEstablishes a one-way implication implementation -\u003e api_boundary for realized_by entries, plus bare-module union hashing in both tiers, plus silent seed for newly-tracked entries, plus a validator warning realized_by_redundant_dup, plus a new mix spec.dedup_realized_by task. Includes one ADR.",
+  "description": "Advances: specled.realized_by, specled.mix_tasks\n\nWorktree: /Users/mz/src/specled_ex-701\nEpic-branch: specled_-701/realized-by-tier-implication\n\nJira: N/A (specled is OSS / personal project)\nPlan epic: think-o9t (closed) | Implementation epic: think-50c (bw-plan, closed at end of distill)\nSpec dir: .spec/\nRefined plan: ~/Documents/my-vault/LLMs/plans/-Users-mz-src-specled-ex/2026-05-07-realized-by-tier-implication/runs/20260507-160103-claude/05-refined-plan.md\n\nEstablishes a one-way implication implementation -\u003e api_boundary for realized_by entries, plus bare-module union hashing in both tiers, plus silent seed for newly-tracked entries, plus a validator warning realized_by_redundant_dup, plus a new mix spec.dedup_realized_by task. Includes one ADR.",
   "id": "specled_-701",
   "labels": [],
   "priority": 2,
   "status": "open",
   "title": "realized-by tier implication + module hashing",
   "type": "epic",
-  "updated_at": "2026-05-07T23:54:47Z"
+  "updated_at": "2026-05-08T00:43:30Z"
 }
