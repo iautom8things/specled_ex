@@ -16,6 +16,18 @@ defmodule SpecLedEx.Realization.Canonical do
   `hash/1` serializes a normalized AST with `:erlang.term_to_binary/2` using
   `[:deterministic, minor_version: 2]` per the
   `specled.decision.deterministic_hashing` ADR, then SHA-256's the bytes.
+
+  ## Bare-module union hashing
+
+  `hash_module_head_union/2` and `hash_module_full_union/2` produce a single
+  hash over the union of a module's public exports — used by api_boundary and
+  implementation tier detectors when a `realized_by` entry names a module
+  rather than an MFA. See `specled.decision.realized_by_tier_implication`.
+
+  Discovery is **runtime-only** (`Module.__info__/1`). When the target
+  module fails to load, both functions return `{:error, :not_loadable}` —
+  the detector translates this to `branch_guard_dangling_binding` rather
+  than seeding a stale source-AST hash.
   """
 
   @reserved_idents [
@@ -135,4 +147,194 @@ defmodule SpecLedEx.Realization.Canonical do
   end
 
   defp rename_node(other, acc), do: {other, acc}
+
+  # ---------------------------------------------------------------------------
+  # Bare-module union hashing
+  # ---------------------------------------------------------------------------
+
+  @doc """
+  Hashes the union of a module's public function and macro **heads**.
+
+  Used by the api_boundary detector when a `realized_by` entry names a module
+  rather than an MFA. The hash input is the canonical envelope
+
+      {:__module_head_union__, mod, sorted_exports}
+
+  where `sorted_exports` is the list of `{kind, name, arity, head_ast}` tuples
+  for every public function and macro on the module, sorted lexicographically
+  by `{kind, name, arity}`. `head_ast` is a per-clause list of
+  `{arg_pattern, guards}` extracted from BEAM debug_info and passed through
+  `normalize/1` for stability under cosmetic refactors.
+
+  `module_info/0` and `module_info/1` are excluded (BEAM-injected, not author
+  surface). `__struct__/0` and `__struct__/1` (from `defstruct`) are included.
+
+  Returns `{:ok, <sha256 binary>}` on success; `{:error, :not_loadable}` when
+  the module cannot be loaded.
+  """
+  @spec hash_module_head_union(module(), keyword()) :: {:ok, binary()} | {:error, term()}
+  def hash_module_head_union(mod, opts \\ []) when is_atom(mod) do
+    with {:ok, exports} <- discover_module_exports(mod, opts) do
+      entries =
+        Enum.map(exports, fn {kind, name, arity} ->
+          head_ast = head_ast_for_export(mod, kind, name, arity)
+          {kind, name, arity, head_ast}
+        end)
+
+      envelope = {:__module_head_union__, mod, entries}
+      {:ok, hash(envelope)}
+    end
+  end
+
+  @doc """
+  Hashes the union of a module's public function and macro **full** ASTs
+  (head + guards + body).
+
+  Used by the implementation detector when a `realized_by` entry names a
+  module rather than an MFA. The hash input is the canonical envelope
+
+      {:__module_full_union__, mod, sorted_exports}
+
+  where each entry is `{kind, name, arity, full_ast}`. The envelope tag
+  differs from the head-union tag, guaranteeing the head-union and full-union
+  hashes for the same module are distinct bytes even on a degenerate
+  module (e.g. one with no public exports).
+
+  `module_info/0|1` are excluded; `__struct__/0|1` are included.
+
+  Returns `{:ok, <sha256 binary>}` on success; `{:error, :not_loadable}` when
+  the module cannot be loaded.
+
+  Note: the closure walker does NOT seed from bare-module entries; helpers
+  reachable only through a bare-module entry do not flow into this hash.
+  """
+  @spec hash_module_full_union(module(), keyword()) :: {:ok, binary()} | {:error, term()}
+  def hash_module_full_union(mod, opts \\ []) when is_atom(mod) do
+    with {:ok, exports} <- discover_module_exports(mod, opts) do
+      entries =
+        Enum.map(exports, fn {kind, name, arity} ->
+          full_ast = full_ast_for_export(mod, kind, name, arity)
+          {kind, name, arity, full_ast}
+        end)
+
+      envelope = {:__module_full_union__, mod, entries}
+      {:ok, hash(envelope)}
+    end
+  end
+
+  # Runtime-only export discovery via Module.__info__/1.
+  #
+  # Returns `{:ok, sorted_exports}` where each entry is `{kind, name, arity}`
+  # with `kind` one of `:function | :macro`. Excludes `module_info/0|1`;
+  # includes `__struct__/0|1`. Source-AST fallback is deliberately NOT used
+  # — see `specled.decision.realized_by_tier_implication`.
+  defp discover_module_exports(mod, _opts) when is_atom(mod) do
+    case Code.ensure_loaded(mod) do
+      {:module, ^mod} ->
+        functions =
+          mod.__info__(:functions)
+          |> Enum.reject(fn {name, arity} ->
+            name == :module_info and arity in [0, 1]
+          end)
+          |> Enum.map(fn {name, arity} -> {:function, name, arity} end)
+
+        macros =
+          mod.__info__(:macros)
+          |> Enum.map(fn {name, arity} -> {:macro, name, arity} end)
+
+        exports =
+          (functions ++ macros)
+          |> Enum.sort_by(fn {kind, name, arity} -> {kind, name, arity} end)
+
+        {:ok, exports}
+
+      _ ->
+        {:error, :not_loadable}
+    end
+  end
+
+  # Per-export head AST.
+  #
+  # Returns a per-clause list of normalized `{args, guards}` tuples — body is
+  # excluded so that cosmetic body changes do not change the api_boundary
+  # hash. If clause extraction from BEAM debug_info fails (e.g. function is
+  # auto-generated with no debug entry), falls back to the export tuple
+  # itself, which still flips the hash on arity / kind / name changes.
+  defp head_ast_for_export(mod, kind, name, arity) do
+    case extract_clauses(mod, kind, name, arity) do
+      {:ok, clauses} ->
+        clauses
+        |> Enum.map(fn {args, guards, _body} ->
+          {normalize(args), normalize(guards)}
+        end)
+
+      :error ->
+        :no_debug_info
+    end
+  end
+
+  # Per-export full AST. Includes args, guards, and body — body changes
+  # flip the implementation hash. Same fallback as the head path.
+  defp full_ast_for_export(mod, kind, name, arity) do
+    case extract_clauses(mod, kind, name, arity) do
+      {:ok, clauses} ->
+        clauses
+        |> Enum.map(fn {args, guards, body} ->
+          {normalize(args), normalize(guards), normalize(body)}
+        end)
+
+      :error ->
+        :no_debug_info
+    end
+  end
+
+  # Pulls the list of `{args, guards, body}` clauses for an exported
+  # function or macro from BEAM debug_info. Macros are stored in
+  # debug_info under `:"MACRO-<name>"` with `arity + 1` (the implicit
+  # `__CALLER__` arg).
+  defp extract_clauses(mod, kind, name, arity) do
+    {beam_name, beam_arity} =
+      case kind do
+        :macro -> {:"MACRO-#{name}", arity + 1}
+        :function -> {name, arity}
+      end
+
+    with {:ok, binary} <- beam_binary_for(mod),
+         {:ok, {^mod, chunks}} <- :beam_lib.chunks(binary, [:debug_info]),
+         {:debug_info, {:debug_info_v1, backend, data}} <-
+           List.keyfind(chunks, :debug_info, 0),
+         {:ok, module_map} when is_map(module_map) <-
+           backend.debug_info(:elixir_v1, mod, data, []) do
+      case Map.fetch(module_map, :definitions) do
+        {:ok, definitions} ->
+          Enum.find_value(definitions, :error, fn
+            {{^beam_name, ^beam_arity}, _kind, _meta, raw_clauses} when raw_clauses != [] ->
+              {:ok,
+               Enum.map(raw_clauses, fn {_meta, args, guards, body} -> {args, guards, body} end)}
+
+            _ ->
+              nil
+          end)
+
+        :error ->
+          :error
+      end
+    else
+      _ -> :error
+    end
+  end
+
+  defp beam_binary_for(mod) do
+    case :code.get_object_code(mod) do
+      {^mod, binary, _filename} ->
+        {:ok, binary}
+
+      :error ->
+        case :code.which(mod) do
+          path when is_list(path) -> File.read(List.to_string(path))
+          path when is_binary(path) -> File.read(path)
+          _ -> :error
+        end
+    end
+  end
 end
