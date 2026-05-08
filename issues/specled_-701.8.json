@@ -10,9 +10,15 @@
   "id": "specled_-701.8",
   "labels": [],
   "parent": "specled_-701",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: eeca2123-30e1-430c-90c1-08dd23adf991\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/eeca2123-30e1-430c-90c1-08dd23adf991.jsonl\n\nCommit: 418be73\nStage branch: specled_-701.8/validator-dedup-check\nStage worktree: /Users/mz/src/specled_ex-701.8 (rebased on epic HEAD b743e26)\n\nFiles touched:\n- lib/specled_ex/validator/realized_by_dedupe.ex (new)\n- lib/specled_ex/validator/realized_by_dedup_check.ex (new)\n- lib/mix/tasks/spec.validate.ex (renamed with_prose_findings -\u003e with_validator_findings; added RealizedByDedupCheck call)\n- test/specled_ex/validator/realized_by_dedup_check_test.exs (new)\n- test/specled_ex/mix/tasks/spec_validate_test.exs (new)\n\nTests added:\n- SpecLedEx.Validator.RealizedByDedupCheckTest (19 tests covering shared seam: trim/sort/uniq/atom-keys/orthogonal-tiers/malformed; finding shape: severity/code/subject_id/message/multi-subject; per-form messages: MFA strict-subset vs bare-module head-union/full-union; remediation pointer)\n- Mix.Tasks.Spec.Validate.RealizedByDedupTest (3 tests: end-to-end mix spec.validate with MFA dup, bare-module dup, no-dup negative)\n\nVerification stubs flipped: none. The realized_by.spec.md verification block for redundant_dup_warning + dedup_check_shared_seam stays at execute: false because `.spec/**` is Out of Scope for this ticket; the flip is owned by S9 (701.10) which performs the author-side dedup demonstrating the scenario end-to-end.\n\nLocal sanity:\n- mix compile --warnings-as-errors clean\n- new tests: 22/22 pass\n- full suite: 715 tests + 2 properties, 0 failures\n\nNote: running mix spec.validate on the project itself now surfaces a real realized_by_redundant_dup warning on .spec/specs/realized_by.spec.md (which lists EffectiveBinding.expand_implications/1 under both tiers). This is the intended catch — S9 is the ticket that author-side-dedupes the existing specs.\n\nSummary: Adds the shared duplicate-detection seam (RealizedByDedupe.duplicates/1, single source of truth for the validator and the future mix spec.dedup_realized_by task) plus the validator finding emitter (RealizedByDedupCheck.findings/2) and wires them into mix spec.validate alongside the existing prose-rot check. Severity is hardcoded :warning per Decision 7 of specled.decision.realized_by_tier_implication; per-form message text differs between MFA-form (strict-subset framing) and bare-module-form (head-union vs full-union framing) duplicates per the spec requirement.",
+      "timestamp": "2026-05-08T01:23:29Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "S7: Validator dedup check (RealizedByDedupe + RealizedByDedupCheck)",
   "type": "task",
-  "updated_at": "2026-05-08T01:09:27Z"
+  "updated_at": "2026-05-08T01:23:29Z"
 }
