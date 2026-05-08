@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-701.1",
     "specled_-701.6"
@@ -13,8 +13,8 @@
   "labels": [],
   "parent": "specled_-701",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "S6: Integration scenarios 1-5",
   "type": "task",
-  "updated_at": "2026-05-07T23:57:21Z"
+  "updated_at": "2026-05-08T02:06:56Z"
 }
