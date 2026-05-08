@@ -4,6 +4,7 @@
   "blocks": [
     "specled_-701.5"
   ],
+  "closed_at": "2026-05-08T01:14:34Z",
   "created": "2026-05-07T23:55:40Z",
   "description": "Advances: specled.realized_by\n\nDeliverable:\nAdd SpecLedEx.Realization.Canonical.hash_module_head_union/2 and hash_module_full_union/2 (both return {:ok, binary} | {:error, term}). Add private discover_module_exports/2 that uses Module.__info__/1 (runtime). Exclude module_info/0|1 from exports; include __struct__/0|1. Sort exports by {kind, name, arity}. Wrap in distinct envelopes ({:__module_head_union__, mod, sorted} vs {:__module_full_union__, mod, sorted}) before hashing. Source-AST fallback is NOT implemented (cold-load failures yield {:error, :not_loadable}).\n\nVerification:\n- Tests to pass: canonical_test.exs covers function-only module, function+macro module, struct module (__struct__ included), reorder-stability, envelope-tag distinction (head-union != full-union for same module), empty-public-export module deterministic, :not_loadable case, repeat-N byte-equality determinism probe.\n- Behaviors to demonstrate: spec requirements specled.realized_by.bare_module_api_boundary_hash, bare_module_implementation_hash, bare_module_runtime_only_discovery, bare_module_export_filtering.\n\nOut of Scope (files):\n- lib/specled_ex/realization/api_boundary.ex (S4)\n- lib/specled_ex/realization/implementation.ex (S4/S5)\n- lib/specled_ex/realization/orchestrator.ex (S5)\n- lib/specled_ex/realization/closure.ex (no closure walk from bare modules)\n- .spec/**\nAllowed touches:\n- lib/specled_ex/realization/canonical.ex\n- test/specled_ex/realization/canonical_test.exs\n\nOut of Scope (intent):\n- Do NOT modify the existing Canonical.hash/1 entrypoint.\n- Do NOT add source-AST fallback for bare-module discovery.\n- Do NOT add private functions or behaviors that invite future closure-walking from bare modules.\n\nMerge gate:\n- [ ] Code compiles cleanly\n- [ ] Tests listed above pass\n- [ ] Spec verification passes\n- [ ] Scope check: diff touches only Allowed globs (mechanical)\n- [ ] Auditor APPROVE comment on the ticket",
   "id": "specled_-701.4",
@@ -28,7 +29,7 @@
     }
   ],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "S3: Canonical module-union hashing",
   "type": "task",
   "updated_at": "2026-05-08T01:14:34Z"
