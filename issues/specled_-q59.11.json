@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
   "created": "2026-04-28T10:23:53Z",
@@ -8,8 +8,8 @@
   "labels": [],
   "parent": "specled_-q59",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "Investigate list-valued spec tags in tagged_tests verification",
   "type": "bug",
-  "updated_at": "2026-04-28T10:23:53Z"
+  "updated_at": "2026-05-08T15:35:26Z"
 }
