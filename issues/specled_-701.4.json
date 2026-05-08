@@ -9,9 +9,15 @@
   "id": "specled_-701.4",
   "labels": [],
   "parent": "specled_-701",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: eeca2123-30e1-430c-90c1-08dd23adf991\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/eeca2123-30e1-430c-90c1-08dd23adf991.jsonl\n\nCommit: 4f19e21133fec92d9a93a6ef90cf14cdba97f784\nStage branch: specled_-701.4/canonical-module-union-hashing\nStage worktree: /Users/mz/src/specled_ex-701.4\n\nFiles touched:\n- lib/specled_ex/realization/canonical.ex (+202 / -0)\n- test/specled_ex/realization/canonical_test.exs (+228 / -1)\n\nTests added (in SpecLedEx.Realization.CanonicalTest, describe \"hash_module_head_union/2 and hash_module_full_union/2\"):\n- function-only module produces a deterministic head-union hash\n- function-only module produces a deterministic full-union hash\n- function+macro module: both kinds contribute to the hash\n- struct module: __struct__/0 and __struct__/1 are included in the export set\n- reorder-stability: source declaration order does not affect the hash\n- envelope-tag distinction: head-union != full-union for the same module\n- envelope-tag distinction holds even on a degenerate (empty-export) module\n- empty-public-export module: hash is deterministic\n- :not_loadable: cold-load failure surfaces as {:error, :not_loadable}\n- repeat-N determinism probe: byte-equal hashes across repeated calls\n- module_info/0 and module_info/1 are excluded from exports\n- envelope shape: head entries are {kind, name, arity, head_ast}, sorted\n\nVerification stubs flipped: none (.spec/** is Out of Scope for this ticket; the\nrealized_by spec verification block stays at execute: false until a later stage\nwhere touching .spec is allowed).\n\nLocal sanity:\n- mix compile --warnings-as-errors --force: clean\n- mix test: 670 tests, 0 failures (full suite)\n- mix test test/specled_ex/realization/canonical_test.exs: 18 tests, 0 failures\n\nSummary: Adds Canonical.hash_module_head_union/2 and hash_module_full_union/2.\nDiscovery is runtime-only via Module.__info__/1 (functions + macros), with\nmodule_info/0|1 filtered out and __struct__/0|1 retained. Cold-load yields\n{:error, :not_loadable}. Distinct envelope tags (:__module_head_union__ vs\n:__module_full_union__) keep head/full hashes byte-distinct even on empty-\nexport modules. Per-export AST is pulled from BEAM debug_info and\nCanonical.normalize/1-stabilized; head entries omit body, full entries\ninclude args+guards+body. No source-AST fallback for bare modules per\nspecled.decision.realized_by_tier_implication. Existing Canonical.hash/1\nentrypoint is unchanged. Diff touches only Allowed globs\n(lib/specled_ex/realization/canonical.ex, test/specled_ex/realization/canonical_test.exs).",
+      "timestamp": "2026-05-08T00:54:38Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "S3: Canonical module-union hashing",
   "type": "task",
-  "updated_at": "2026-05-08T00:44:34Z"
+  "updated_at": "2026-05-08T00:54:38Z"
 }
