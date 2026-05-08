@@ -9,6 +9,7 @@
     "specled_-701.10",
     "specled_-701.7"
   ],
+  "closed_at": "2026-05-08T02:06:26Z",
   "created": "2026-05-07T23:56:27Z",
   "description": "Advances: specled.realized_by\n\nDeliverable:\nThree orchestrator changes: (a) wire EffectiveBinding.expand_implications/1 into collect_bindings at the per-layer extract_realized_by/1 site (subject layer + each requirement layer); (b) add post-concat dedup on the api_boundary tier flat list (Enum.uniq_by(\u0026 \u00261.mfa)) inside accumulate_tier; (c) add private seed_uncommitted_hashes/3 that runs before tier dispatch when commit_hashes? != false and umbrella? == false, computes hashes for tracked entries lacking committed hashes, and persists via HashStore.merge/2. Add Implementation.hashes_for_seeding/3 (@doc false) that builds the world via the existing private build_world/3 and returns %{subject.id =\u003e hash_bin} for non-dangling subjects.\n\nVerification:\n- Tests to pass: orchestrator_test.exs gains tests for (a) expand_implications wired per-layer; (b) post-concat dedup collapses subject+requirement duplicate impl entries into one api_boundary entry; (c) seed pass writes uncommitted hashes via merge/2; (d) gating respected (commit_hashes?: false skips seed); (e) dangling entries are not seeded.\n- Behaviors to demonstrate: spec requirements specled.realized_by.implication_invoked_per_layer, implication_amplification_dedup, silent_seed.\n\nOut of Scope (files):\n- lib/specled_ex/realization/effective_binding.ex (S2; do not modify it here)\n- lib/specled_ex/realization/canonical.ex (S3)\n- lib/specled_ex/realization/api_boundary.ex (S4)\n- lib/specled_ex/realization/hash_store.ex (S1; do not change merge/2 here)\n- .spec/**\nAllowed touches:\n- lib/specled_ex/realization/orchestrator.ex\n- lib/specled_ex/realization/implementation.ex (only to add hashes_for_seeding/3)\n- test/specled_ex/realization/orchestrator_test.exs\n\nOut of Scope (intent):\n- Do NOT change Orchestrator.run/2's return shape (courtesy summary deferred per Q2).\n- Do NOT introduce a run_with_metadata/2 wrapper.\n- Do NOT add a finding code; the seed pass is silent on the seeding run.\n- The post-concat dedup applies to api_boundary ONLY; impl/expanded_behavior/use/typespecs are untouched.\n\nMerge gate:\n- [ ] Code compiles cleanly\n- [ ] Tests listed above pass\n- [ ] Spec verification passes\n- [ ] Scope check: diff touches only Allowed globs (mechanical)\n- [ ] Auditor APPROVE comment on the ticket",
   "id": "specled_-701.6",
@@ -33,8 +34,8 @@
     }
   ],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "S5: Orchestrator wiring (expand_implications + silent seed)",
   "type": "task",
-  "updated_at": "2026-05-08T02:06:25Z"
+  "updated_at": "2026-05-08T02:06:26Z"
 }
