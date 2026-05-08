@@ -9,7 +9,7 @@ defmodule SpecLedEx.MixProject do
       start_permanent: Mix.env() == :prod,
       test_coverage: [summary: [threshold: 90]],
       test_ignore_filters: [&String.starts_with?(&1, "test/fixtures/")],
-      elixirc_paths: elixirc_paths(),
+      elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: [tracers: tracers()],
       deps: deps()
     ]
@@ -23,7 +23,10 @@ defmodule SpecLedEx.MixProject do
   # `Tracer.trace/2` is seen as "not available". We therefore compile tracer.ex
   # on its own (see `bootstrap_tracer!/0`) into the project's ebin before Mix's
   # main compile starts, and we keep Mix's elixirc compiler out of that file.
-  defp elixirc_paths do
+  defp elixirc_paths(:test), do: lib_paths() ++ ["test/test_support"]
+  defp elixirc_paths(_), do: lib_paths()
+
+  defp lib_paths do
     Path.wildcard("lib/**/*.ex") |> Enum.reject(&(&1 == @tracer_source))
   end
 
