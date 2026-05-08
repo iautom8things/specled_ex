@@ -33,8 +33,6 @@ surface:
   - skills/write-spec-led-specs/references/authoring-reference.md
   - test_support/specled_ex_case.ex
 realized_by:
-  api_boundary:
-    - "Mix.Tasks.Spec.Check.run/1"
   implementation:
     - "Mix.Tasks.Spec.Init.run/1"
     - "Mix.Tasks.Spec.Prime.run/1"
@@ -196,7 +194,7 @@ decisions:
   covers:
     - specled.tasks.dep_runtime_bootstrap
 - kind: tagged_tests
-  execute: false
+  execute: true
   covers:
     - specled.tasks.dedup_realized_by_proposal
     - specled.tasks.dedup_realized_by_no_write

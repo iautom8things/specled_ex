@@ -383,277 +383,11 @@
   },
   "findings": [
     {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.mix_tasks",
-      "file": ".spec/specs/mix_tasks.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.tasks.dedup_realized_by_exit_code"
-    },
-    {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.mix_tasks",
-      "file": ".spec/specs/mix_tasks.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.tasks.dedup_realized_by_no_write"
-    },
-    {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.mix_tasks",
-      "file": ".spec/specs/mix_tasks.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.tasks.dedup_realized_by_proposal"
-    },
-    {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.mix_tasks",
-      "file": ".spec/specs/mix_tasks.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.tasks.dedup_realized_by_shared_seam"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.mix_tasks",
-      "file": ".spec/specs/mix_tasks.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/mix/tasks/spec.dedup_realized_by.ex"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.mix_tasks",
-      "file": ".spec/specs/mix_tasks.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.tasks.dedup_realized_by_exit_code but no test carries @tag spec: specled.tasks.dedup_realized_by_exit_code"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.mix_tasks",
-      "file": ".spec/specs/mix_tasks.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.tasks.dedup_realized_by_no_write but no test carries @tag spec: specled.tasks.dedup_realized_by_no_write"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.mix_tasks",
-      "file": ".spec/specs/mix_tasks.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.tasks.dedup_realized_by_proposal but no test carries @tag spec: specled.tasks.dedup_realized_by_proposal"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.mix_tasks",
-      "file": ".spec/specs/mix_tasks.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.tasks.dedup_realized_by_shared_seam but no test carries @tag spec: specled.tasks.dedup_realized_by_shared_seam"
-    },
-    {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.realized_by.bare_module_api_boundary_hash"
-    },
-    {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.realized_by.bare_module_export_filtering"
-    },
-    {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.realized_by.bare_module_implementation_hash"
-    },
-    {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.realized_by.bare_module_no_closure_walk"
-    },
-    {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.realized_by.bare_module_runtime_only_discovery"
-    },
-    {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.realized_by.binding_ref_inferred_no_leak"
-    },
-    {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.realized_by.dedup_check_shared_seam"
-    },
-    {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.realized_by.implication_amplification_dedup"
-    },
-    {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.realized_by.implication_dangling_once"
-    },
-    {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.realized_by.implication_drift_both_tiers"
-    },
-    {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.realized_by.implication_invoked_per_layer"
-    },
-    {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.realized_by.implication_one_way"
-    },
-    {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.realized_by.redundant_dup_warning"
-    },
-    {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.realized_by.silent_seed"
-    },
-    {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.realized_by.silent_seed_uses_merge"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
+      "code": "realized_by_redundant_dup",
       "entity_id": "specled.realized_by",
       "file": ".spec/specs/realized_by.spec.md",
       "level": "warning",
-      "message": "tagged_tests verification covers specled.realized_by.bare_module_api_boundary_hash but no test carries @tag spec: specled.realized_by.bare_module_api_boundary_hash"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.realized_by.bare_module_export_filtering but no test carries @tag spec: specled.realized_by.bare_module_export_filtering"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.realized_by.bare_module_implementation_hash but no test carries @tag spec: specled.realized_by.bare_module_implementation_hash"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.realized_by.bare_module_no_closure_walk but no test carries @tag spec: specled.realized_by.bare_module_no_closure_walk"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.realized_by.bare_module_runtime_only_discovery but no test carries @tag spec: specled.realized_by.bare_module_runtime_only_discovery"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.realized_by.binding_ref_inferred_no_leak but no test carries @tag spec: specled.realized_by.binding_ref_inferred_no_leak"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.realized_by.dedup_check_shared_seam but no test carries @tag spec: specled.realized_by.dedup_check_shared_seam"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.realized_by.implication_amplification_dedup but no test carries @tag spec: specled.realized_by.implication_amplification_dedup"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.realized_by.implication_dangling_once but no test carries @tag spec: specled.realized_by.implication_dangling_once"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.realized_by.implication_drift_both_tiers but no test carries @tag spec: specled.realized_by.implication_drift_both_tiers"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.realized_by.implication_invoked_per_layer but no test carries @tag spec: specled.realized_by.implication_invoked_per_layer"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.realized_by.implication_one_way but no test carries @tag spec: specled.realized_by.implication_one_way"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.realized_by.redundant_dup_warning but no test carries @tag spec: specled.realized_by.redundant_dup_warning"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.realized_by.silent_seed but no test carries @tag spec: specled.realized_by.silent_seed"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.realized_by.silent_seed_uses_merge but no test carries @tag spec: specled.realized_by.silent_seed_uses_merge"
+      "message": "realized_by entry \"SpecLedEx.Realization.EffectiveBinding.expand_implications/1\" on subject specled.realized_by appears in both api_boundary and implementation; the api_boundary hash is a strict subset of implementation's, so the api_boundary line is redundant (implication still tracks it). run mix spec.dedup_realized_by to remove the redundant api_boundary line."
     }
   ],
   "index": {
@@ -5456,11 +5190,6 @@
           "id": "specled.binding",
           "kind": "module",
           "realized_by": {
-            "api_boundary": [
-              "SpecLedEx.Realization.Binding.resolve/2",
-              "SpecLedEx.Realization.Canonical.hash/1",
-              "SpecLedEx.Realization.HashStore.read/2"
-            ],
             "implementation": [
               "SpecLedEx.Realization.Binding.resolve/2",
               "SpecLedEx.Realization.Canonical.normalize/1",
@@ -5831,9 +5560,6 @@
           "id": "specled.mix_tasks",
           "kind": "workflow",
           "realized_by": {
-            "api_boundary": [
-              "Mix.Tasks.Spec.Check.run/1"
-            ],
             "implementation": [
               "Mix.Tasks.Spec.Init.run/1",
               "Mix.Tasks.Spec.Prime.run/1",
@@ -6989,7 +6715,7 @@
           "specled.tasks.dedup_realized_by_exit_code",
           "specled.tasks.dedup_realized_by_shared_seam"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/mix_tasks.spec.md",
         "kind": "tagged_tests",
         "subject_id": "specled.mix_tasks",
@@ -7569,7 +7295,7 @@
     "decision_parse_errors": 0,
     "decisions": 28,
     "exceptions": 0,
-    "findings": 39,
+    "findings": 1,
     "requirements": 269,
     "scenarios": 139,
     "subjects": 33,
@@ -9156,7 +8882,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 4
@@ -9167,7 +8893,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 4
@@ -9178,7 +8904,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 4
@@ -9189,7 +8915,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 4
@@ -9838,7 +9564,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 2
@@ -9849,7 +9575,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 2
@@ -9860,7 +9586,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 2
@@ -9871,7 +9597,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 2
@@ -9882,7 +9608,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 2
@@ -9893,7 +9619,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 3
@@ -9904,7 +9630,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 3
@@ -9915,7 +9641,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 3
@@ -9926,7 +9652,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 3
@@ -9937,7 +9663,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 3
@@ -9948,7 +9674,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 4
@@ -9959,7 +9685,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 4
@@ -9970,7 +9696,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 5
@@ -9981,7 +9707,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 5
@@ -9992,7 +9718,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 6
@@ -11079,9 +10805,9 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 45,
+      "claimed": 26,
       "executed": 0,
-      "linked": 273
+      "linked": 292
     },
     "threshold_failures": 0
   },
