@@ -11,9 +11,15 @@
   "id": "specled_-701.2",
   "labels": [],
   "parent": "specled_-701",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: eeca2123-30e1-430c-90c1-08dd23adf991\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/eeca2123-30e1-430c-90c1-08dd23adf991.jsonl\n\nCommit: 13cc0840deed896285593a59537cceb3e5dc4c1d\nStage branch: specled_-701.2/hash-store-merge\nStage worktree: /Users/mz/src/specled_ex-701.2\n\nFiles touched:\n- lib/specled_ex/realization/hash_store.ex\n- test/specled_ex/realization/hash_store_test.exs\n\nTests added (in SpecLedEx.Realization.HashStoreTest, describe \"merge/2\"):\n- \"merges into empty state.json — creates the realization key\"\n- \"preserves non-seeded tier entries (different tier untouched)\"\n- \"preserves non-seeded entries within the same tier\"\n- \"replaces a same-key entry within a tier\"\n- \"stamps hasher_version on seed entries that lack it\"\n- \"preserves unrelated top-level keys in state.json\"\n- \"atomic write — state.json.tmp is removed after merge\"\n- \"write/2 retains replacement semantics — non-seeded tier entries are gone after write/2\"\n\nAll eight tests carry @tag spec: [\"specled.realized_by.silent_seed_uses_merge\"].\n\nVerification stubs flipped: none — the spec-verification block (.spec/**) was Out of Scope. The existing tagged_tests stub covering specled.realized_by.silent_seed (also covers specled.realized_by.silent_seed_uses_merge) remains execute: false because silent_seed itself depends on the orchestrator wiring (S5/specled_-701.6). The new @tag bindings still satisfy the requirement_without_test_tag validator for silent_seed_uses_merge specifically (mix spec.check baseline drops from 27 to 25 findings on this branch — the silent_seed_uses_merge ERROR + WARNING are gone).\n\nSummary: Adds HashStore.merge/2 — a deep-merge per-tier seed write that preserves non-seeded entries while reusing the existing atomic write_atomic path and ensure_version/1 stamping. write/2 is unchanged byte-for-byte (replacement semantics); a regression-guard test asserts write/2 still wipes non-seeded keys. The new function is the persistence half of the silent-seed pass that S5 (specled_-701.6) will wire into the orchestrator.\n\nSanity:\n- mix compile: clean\n- mix test test/specled_ex/realization/hash_store_test.exs: 16/16 pass\n- mix test (full suite): 701 tests, 0 failures\n- mix spec.check: silent_seed_uses_merge findings cleared (other open S2-S9 findings remain pre-existing)\n- diff scope: only Allowed touches (lib/specled_ex/realization/hash_store.ex, test/specled_ex/realization/hash_store_test.exs)",
+      "timestamp": "2026-05-08T01:26:15Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "S1: HashStore.merge/2",
   "type": "task",
-  "updated_at": "2026-05-08T01:07:20Z"
+  "updated_at": "2026-05-08T01:26:15Z"
 }
