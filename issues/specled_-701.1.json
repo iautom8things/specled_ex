@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [
     "specled_-701.2",
@@ -11,8 +11,8 @@
   "labels": [],
   "parent": "specled_-701",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "S0: test_support StateJsonFixture",
   "type": "task",
-  "updated_at": "2026-05-07T23:57:21Z"
+  "updated_at": "2026-05-08T00:45:16Z"
 }
