@@ -103,6 +103,159 @@ defmodule SpecLedEx.Realization.HashStoreTest do
     end
   end
 
+  describe "merge/2" do
+    @tag spec: ["specled.realized_by.silent_seed_uses_merge"]
+    test "merges into empty state.json — creates the realization key", %{root: root} do
+      :ok =
+        HashStore.merge(root, %{
+          "api_boundary" => %{
+            "Foo.bar/1" => %{"hash" => "a1", "hasher_version" => HashStore.hasher_version()}
+          }
+        })
+
+      path = Path.join([root, ".spec", "state.json"])
+      decoded = Jason.decode!(File.read!(path))
+
+      assert decoded["realization"]["api_boundary"]["Foo.bar/1"]["hash"] == "a1"
+
+      read = HashStore.read(root)
+      assert read["api_boundary"]["Foo.bar/1"]["hash"] == "a1"
+    end
+
+    @tag spec: ["specled.realized_by.silent_seed_uses_merge"]
+    test "preserves non-seeded tier entries (different tier untouched)", %{root: root} do
+      SpecLedEx.StateJsonFixture.seed(root, %{
+        "api_boundary" => %{"Foo.bar/1" => :crypto.hash(:sha256, "kept-api")},
+        "implementation" => %{"Foo.bar/1" => :crypto.hash(:sha256, "kept-impl")}
+      })
+
+      # Seed only api_boundary with a NEW key — implementation tier must be untouched.
+      :ok =
+        HashStore.merge(root, %{
+          "api_boundary" => %{
+            "New.entry/0" => %{"hash" => "n1", "hasher_version" => HashStore.hasher_version()}
+          }
+        })
+
+      read = HashStore.read(root)
+
+      assert read["api_boundary"]["Foo.bar/1"]["hash"] ==
+               Base.encode16(:crypto.hash(:sha256, "kept-api"), case: :lower)
+
+      assert read["api_boundary"]["New.entry/0"]["hash"] == "n1"
+
+      assert read["implementation"]["Foo.bar/1"]["hash"] ==
+               Base.encode16(:crypto.hash(:sha256, "kept-impl"), case: :lower)
+    end
+
+    @tag spec: ["specled.realized_by.silent_seed_uses_merge"]
+    test "preserves non-seeded entries within the same tier", %{root: root} do
+      SpecLedEx.StateJsonFixture.seed(root, %{
+        "api_boundary" => %{
+          "Keep.me/0" => :crypto.hash(:sha256, "kept"),
+          "Replace.me/0" => :crypto.hash(:sha256, "old")
+        }
+      })
+
+      :ok =
+        HashStore.merge(root, %{
+          "api_boundary" => %{
+            "Add.me/0" => %{"hash" => "added", "hasher_version" => HashStore.hasher_version()}
+          }
+        })
+
+      read = HashStore.read(root)
+
+      assert Map.keys(read["api_boundary"]) |> Enum.sort() ==
+               ["Add.me/0", "Keep.me/0", "Replace.me/0"]
+
+      assert read["api_boundary"]["Keep.me/0"]["hash"] ==
+               Base.encode16(:crypto.hash(:sha256, "kept"), case: :lower)
+    end
+
+    @tag spec: ["specled.realized_by.silent_seed_uses_merge"]
+    test "replaces a same-key entry within a tier", %{root: root} do
+      SpecLedEx.StateJsonFixture.seed(root, %{
+        "api_boundary" => %{"Foo.bar/1" => :crypto.hash(:sha256, "old")}
+      })
+
+      :ok =
+        HashStore.merge(root, %{
+          "api_boundary" => %{
+            "Foo.bar/1" => %{"hash" => "new-hex", "hasher_version" => HashStore.hasher_version()}
+          }
+        })
+
+      read = HashStore.read(root)
+      assert read["api_boundary"]["Foo.bar/1"]["hash"] == "new-hex"
+    end
+
+    @tag spec: ["specled.realized_by.silent_seed_uses_merge"]
+    test "stamps hasher_version on seed entries that lack it", %{root: root} do
+      :ok =
+        HashStore.merge(root, %{
+          "api_boundary" => %{"Foo.bar/1" => %{"hash" => "abc"}}
+        })
+
+      read = HashStore.read(root)
+      assert read["api_boundary"]["Foo.bar/1"]["hasher_version"] == HashStore.hasher_version()
+      assert read["api_boundary"]["Foo.bar/1"]["hash"] == "abc"
+    end
+
+    @tag spec: ["specled.realized_by.silent_seed_uses_merge"]
+    test "preserves unrelated top-level keys in state.json", %{root: root} do
+      path = Path.join([root, ".spec", "state.json"])
+      File.write!(path, Jason.encode!(%{"other_section" => %{"kept" => true}}))
+
+      :ok =
+        HashStore.merge(root, %{
+          "api_boundary" => %{
+            "Foo.bar/1" => %{"hash" => "a1", "hasher_version" => HashStore.hasher_version()}
+          }
+        })
+
+      decoded = Jason.decode!(File.read!(path))
+
+      assert decoded["other_section"] == %{"kept" => true}
+      assert decoded["realization"]["api_boundary"]["Foo.bar/1"]["hash"] == "a1"
+    end
+
+    @tag spec: ["specled.realized_by.silent_seed_uses_merge"]
+    test "atomic write — state.json.tmp is removed after merge", %{root: root} do
+      :ok =
+        HashStore.merge(root, %{
+          "api_boundary" => %{
+            "Foo.bar/1" => %{"hash" => "a1", "hasher_version" => HashStore.hasher_version()}
+          }
+        })
+
+      path = Path.join([root, ".spec", "state.json"])
+      assert File.regular?(path)
+      refute File.exists?(path <> ".tmp")
+    end
+
+    @tag spec: ["specled.realized_by.silent_seed_uses_merge"]
+    test "write/2 retains replacement semantics — non-seeded tier entries are gone after write/2",
+         %{root: root} do
+      # Confirms write/2 was not changed to merge semantics. This is the
+      # complement to merge/2 preserving non-seeded entries.
+      SpecLedEx.StateJsonFixture.seed(root, %{
+        "api_boundary" => %{"Old.entry/0" => :crypto.hash(:sha256, "old")}
+      })
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            "New.entry/0" => %{"hash" => "n1", "hasher_version" => HashStore.hasher_version()}
+          }
+        })
+
+      read = HashStore.read(root)
+      refute Map.has_key?(read["api_boundary"], "Old.entry/0")
+      assert read["api_boundary"]["New.entry/0"]["hash"] == "n1"
+    end
+  end
+
   describe "fetch/3" do
     test "returns nil for unknown tier or mfa", %{root: root} do
       :ok = HashStore.write(root, %{})

@@ -75,6 +75,54 @@ defmodule SpecLedEx.Realization.HashStore do
   end
 
   @doc """
+  Deep-merges `seed` per-tier entries into the existing realization map and
+  atomically rewrites `<root>/.spec/state.json`.
+
+  Unlike `write/2` (which replaces the entire realization section), `merge/2`
+  preserves non-seeded tier entries: for each tier in `seed`, the seed's
+  entries are merged on top of the existing tier's entries; tiers absent from
+  `seed` are left untouched. Same-key collisions resolve to the seed value
+  (the seeding caller already computed the current hash).
+
+  Entries lacking a `"hasher_version"` are stamped with the current
+  `@hasher_version` via `ensure_version/1`. Non-realization top-level sections
+  in state.json are preserved.
+
+  Used by the orchestrator's silent-seed pass for newly-tracked entries.
+  `write/2` keeps its existing replacement semantics for the post-run
+  `refresh_and_commit_hashes/3` path.
+  """
+  @spec merge(Path.t(), map()) :: :ok
+  def merge(root, seed) when is_map(seed) do
+    path = state_path(root)
+    tmp = path <> ".tmp"
+    File.mkdir_p!(Path.dirname(path))
+
+    {existing_top, existing_realization} = read_top_and_realization(path)
+
+    stamped_seed =
+      Map.new(seed, fn {tier, entries} ->
+        stamped_entries =
+          Map.new(entries, fn {mfa, entry} -> {mfa, ensure_version(entry)} end)
+
+        {tier, stamped_entries}
+      end)
+
+    merged_realization =
+      Enum.reduce(stamped_seed, existing_realization, fn {tier, entries}, acc ->
+        Map.update(acc, tier, entries, fn current -> Map.merge(current, entries) end)
+      end)
+
+    payload =
+      existing_top
+      |> Map.put(@realization_key, merged_realization)
+      |> Jason.encode!(pretty: true)
+
+    write_atomic(tmp, path, payload)
+    :ok
+  end
+
+  @doc """
   Writes the realization hash map atomically.
 
   Writes to `<path>.tmp`, fsyncs the tmp file, then renames over the target.
@@ -139,6 +187,24 @@ defmodule SpecLedEx.Realization.HashStore do
   end
 
   defp state_path(root), do: Path.join(root, @state_rel)
+
+  defp read_top_and_realization(path) do
+    case File.read(path) do
+      {:ok, binary} ->
+        case Jason.decode(binary) do
+          {:ok, %{} = decoded} ->
+            realization = Map.get(decoded, @realization_key, %{})
+            realization = if is_map(realization), do: realization, else: %{}
+            {decoded, realization}
+
+          _ ->
+            {%{}, %{}}
+        end
+
+      {:error, _} ->
+        {%{}, %{}}
+    end
+  end
 
   defp split_by_version(realization) do
     Enum.reduce(realization, {%{}, %{}}, fn {tier, entries}, {live, stale} ->
