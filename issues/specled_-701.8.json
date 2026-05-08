@@ -22,11 +22,15 @@
     {
       "text": "AUDIT: APPROVE\nSession: agent-af43dda0637d2c815\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/eeca2123-30e1-430c-90c1-08dd23adf991/subagents/agent-af43dda0637d2c815.jsonl\n\nReasoning: Mechanical scope clean (5 files, all in Allowed; no stale `with_prose_findings` refs anywhere in lib/ or test/). Both must-requirements have mutation-resistant tests: `redundant_dup_warning` is pinned by test/specled_ex/validator/realized_by_dedup_check_test.exs lines 159-167 (code/severity/subject/entry/remediation) and 247-295 (per-form messages assert presence AND refute the other variant — swapping cases would fail both); `dedup_check_shared_seam` exercises `RealizedByDedupe.duplicates/1` directly across 9 edge cases (lines 12-137) and the consumer wiring is at lib/specled_ex/validator/realized_by_dedup_check.ex:64. Severity is hardcoded `:warning` (default arg at realized_by_dedup_check.ex:56; spec.validate.ex:147 omits the severity arg — no config plumbing). Exit-code semantics confirmed at lib/mix/tasks/spec.validate.ex:159 (`fail? = errors \u003e 0 or (strict? and warnings \u003e 0)`) — warnings alone do not block in non-strict runs; the project's current non-zero exit comes from pre-existing `requirement_without_test_tag` errors (19→11; the 8 resolved are the ones now backed by S7's tests). End-to-end run produces exactly 5 net-new `realized_by_redundant_dup` warnings (specled.binding x3, specled.mix_tasks x1, specled.realized_by x1) as expected; these are S9's remediation domain. New tests 22/22 pass.",
       "timestamp": "2026-05-08T01:34:03Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-701/realized-by-tier-implication. Closing per orchestrator sign-off.",
+      "timestamp": "2026-05-08T01:40:17Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "S7: Validator dedup check (RealizedByDedupe + RealizedByDedupCheck)",
   "type": "task",
-  "updated_at": "2026-05-08T01:34:03Z"
+  "updated_at": "2026-05-08T01:40:17Z"
 }
