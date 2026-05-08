@@ -5,6 +5,7 @@ defmodule Mix.Tasks.Spec.Validate do
 
   alias SpecLedEx.Config
   alias SpecLedEx.Config.Prose
+  alias SpecLedEx.Validator.RealizedByDedupCheck
   alias SpecLedEx.VerificationStrength
 
   @shortdoc "Validates authored specs and writes .spec/state.json"
@@ -64,7 +65,7 @@ defmodule Mix.Tasks.Spec.Validate do
         run_commands: run_commands?,
         min_strength: min_strength
       )
-      |> with_prose_findings(index, root, strict?)
+      |> with_validator_findings(index, root, strict?)
 
     path = SpecLedEx.write_state(index, report, root, output)
 
@@ -132,10 +133,18 @@ defmodule Mix.Tasks.Spec.Validate do
     end
   end
 
-  defp with_prose_findings(report, index, root, strict?) do
+  # Runs validator-time finding sources (prose-rot, realized_by dedup) and
+  # merges any findings into the report. The dedup check has its severity
+  # hardcoded to `:warning` per the requirement; the prose check resolves
+  # severity via config. Both flow through the same merge so the report
+  # status, error/warning counts, and finding sort order stay consistent.
+  defp with_validator_findings(report, index, root, strict?) do
     config = Config.load(root)
     severities = config.branch_guard.severities
-    new_findings = Prose.findings(index, config.prose, severities)
+
+    new_findings =
+      Prose.findings(index, config.prose, severities) ++
+        RealizedByDedupCheck.findings(index)
 
     case new_findings do
       [] ->
