@@ -24,6 +24,7 @@ surface:
   - lib/mix/tasks/spec.suggest_binding.ex
   - lib/mix/tasks/spec.triangle.ex
   - lib/mix/tasks/spec.review.ex
+  - lib/mix/tasks/spec.dedup_realized_by.ex
   - lib/specled_ex/mix_runtime.ex
   - lib/specled_ex/prime.ex
   - priv/spec_init/agents/skills/spec-led-development/SKILL.md.eex
@@ -43,6 +44,7 @@ realized_by:
     - "Mix.Tasks.Spec.Decision.New.run/1"
     - "Mix.Tasks.Spec.Index.run/1"
     - "Mix.Tasks.Spec.Validate.run/1"
+    - "Mix.Tasks.Spec.DedupRealizedBy.run/1"
     - "SpecLedEx.MixRuntime.ensure_started!/0"
 decisions:
   - specled.decision.declarative_current_truth
@@ -51,6 +53,7 @@ decisions:
   - specled.decision.no_app_start
   - specled.decision.dep_runtime_bootstrap
   - specled.decision.configurable_test_tag_enforcement
+  - specled.decision.realized_by_tier_implication
 ```
 
 ## Requirements
@@ -124,6 +127,38 @@ decisions:
   statement: mix spec.review shall produce a self-contained HTML artifact rendering the current Git change set as a spec-aware PR review surface, delegating the substantive contract to specled.spec_review.
   priority: should
   stability: evolving
+- id: specled.tasks.dedup_realized_by_proposal
+  statement: >-
+    mix spec.dedup_realized_by shall print proposed YAML edits removing
+    the redundant `api_boundary` line for every entry already listed
+    under `implementation`, grouped by subject. Each proposal block
+    shall include a `# already implied by implementation` comment on
+    the removal so the diff is self-documenting.
+  priority: must
+  stability: evolving
+- id: specled.tasks.dedup_realized_by_no_write
+  statement: >-
+    mix spec.dedup_realized_by shall not accept a `--write` flag. The
+    task is a proposal renderer only; agents apply edits via their own
+    tooling, mirroring the contract of mix spec.suggest_binding.
+  priority: must
+  stability: evolving
+- id: specled.tasks.dedup_realized_by_exit_code
+  statement: >-
+    mix spec.dedup_realized_by shall exit 0 by default whether or not
+    duplications were found. With `--fail-on-dups`, the task shall exit
+    non-zero whenever any subject has at least one duplication.
+  priority: must
+  stability: evolving
+- id: specled.tasks.dedup_realized_by_shared_seam
+  statement: >-
+    mix spec.dedup_realized_by shall compute duplications via
+    `SpecLedEx.Validator.RealizedByDedupe.duplicates/1`, the same
+    helper used by the `mix spec.validate` `realized_by_redundant_dup`
+    check, so that the proposal output and the validator finding
+    cannot disagree.
+  priority: must
+  stability: evolving
 ```
 
 ## Verification
@@ -160,4 +195,11 @@ decisions:
   execute: true
   covers:
     - specled.tasks.dep_runtime_bootstrap
+- kind: tagged_tests
+  execute: false
+  covers:
+    - specled.tasks.dedup_realized_by_proposal
+    - specled.tasks.dedup_realized_by_no_write
+    - specled.tasks.dedup_realized_by_exit_code
+    - specled.tasks.dedup_realized_by_shared_seam
 ```
