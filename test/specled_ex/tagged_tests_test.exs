@@ -5,6 +5,7 @@ defmodule SpecLedEx.TaggedTestsTest do
                "specled.tagged_tests.build_command",
                "specled.tagged_tests.build_command_combines_backed_ids",
                "specled.tagged_tests.build_command_drops_unbacked_ids",
+               "specled.tagged_tests.build_command_file_selectors_for_list_tags",
                "specled.tagged_tests.build_command_includes_integration_flag",
                "specled.tagged_tests.build_command_no_tests_when_all_unbacked",
                "specled.tagged_tests.collect_entries"
@@ -28,7 +29,12 @@ defmodule SpecLedEx.TaggedTestsTest do
           "subject.two",
           ".spec/specs/two.spec.md",
           [
-            %{"kind" => "command", "target" => "mix test", "covers" => ["b.one"], "execute" => true},
+            %{
+              "kind" => "command",
+              "target" => "mix test",
+              "covers" => ["b.one"],
+              "execute" => true
+            },
             %{"kind" => "tagged_tests", "covers" => ["b.two"], "execute" => true}
           ]
         )
@@ -58,19 +64,17 @@ defmodule SpecLedEx.TaggedTestsTest do
 
   describe "build_command/2" do
     @tag spec: "specled.tagged_tests.build_command"
-    test "combines all covered ids into a single mix test invocation" do
+    test "combines all covered ids into a single mix test invocation using test files" do
       tag_map = %{
-        "a.one" => [%{file: "test/a_test.exs", line: 3, test_name: "t1"}],
-        "a.two" => [%{file: "test/a_test.exs", line: 9, test_name: "t2"}],
-        "b.one" => [%{file: "test/b_test.exs", line: 4, test_name: "b1"}]
+        "a.one" => [%{file: "test/a_test.exs", line: 3, test_line: 4, test_name: "t1"}],
+        "a.two" => [%{file: "test/a_test.exs", line: 9, test_line: 10, test_name: "t2"}],
+        "b.one" => [%{file: "test/b_test.exs", line: 4, test_line: 5, test_name: "b1"}]
       }
 
       assert {:ok, command} = TaggedTests.build_command(["a.one", "a.two", "b.one"], tag_map)
 
       assert command =~ "mix test"
-      assert command =~ "--only spec:a.one"
-      assert command =~ "--only spec:a.two"
-      assert command =~ "--only spec:b.one"
+      refute command =~ "--only spec:"
       assert command =~ "test/a_test.exs"
       assert command =~ "test/b_test.exs"
 
@@ -79,11 +83,11 @@ defmodule SpecLedEx.TaggedTestsTest do
 
     @tag spec: "specled.tagged_tests.build_command"
     test "drops cover ids that have no tag entry but keeps the others" do
-      tag_map = %{"a.one" => [%{file: "test/a_test.exs", line: 3, test_name: "t1"}]}
+      tag_map = %{"a.one" => [%{file: "test/a_test.exs", line: 3, test_line: 4, test_name: "t1"}]}
 
       assert {:ok, command} = TaggedTests.build_command(["a.one", "missing.id"], tag_map)
 
-      assert command =~ "--only spec:a.one"
+      assert command =~ "test/a_test.exs"
       refute command =~ "missing.id"
     end
 
@@ -94,17 +98,17 @@ defmodule SpecLedEx.TaggedTestsTest do
 
     @tag spec: "specled.tagged_tests.build_command"
     test "accepts string-keyed tag entries (as serialized from state.json)" do
-      tag_map = %{"a.one" => [%{"file" => "test/a_test.exs"}]}
+      tag_map = %{"a.one" => [%{"file" => "test/a_test.exs", "test_line" => 4}]}
 
       assert {:ok, command} = TaggedTests.build_command(["a.one"], tag_map)
       assert command =~ "test/a_test.exs"
     end
 
     @tag spec: "specled.tagged_tests.build_command_includes_integration_flag"
-    test "appends --include integration after the --only flags and before the files" do
+    test "appends --include integration before the test files" do
       tag_map = %{
-        "a.one" => [%{file: "test/a_test.exs", line: 3, test_name: "t1"}],
-        "b.one" => [%{file: "test/b_test.exs", line: 5, test_name: "t2"}]
+        "a.one" => [%{file: "test/a_test.exs", line: 3, test_line: 4, test_name: "t1"}],
+        "b.one" => [%{file: "test/b_test.exs", line: 5, test_line: 6, test_name: "t2"}]
       }
 
       assert {:ok, command} = TaggedTests.build_command(["a.one", "b.one"], tag_map)
@@ -112,11 +116,42 @@ defmodule SpecLedEx.TaggedTestsTest do
       assert command =~ "--include integration"
 
       include_idx = index_of(command, "--include integration")
-      only_idx = index_of(command, "--only spec:")
+      base_idx = index_of(command, "mix test")
       file_idx = index_of(command, "test/a_test.exs")
 
-      assert only_idx < include_idx
+      assert base_idx < include_idx
       assert include_idx < file_idx
+    end
+
+    @tag spec: "specled.tagged_tests.build_command_file_selectors_for_list_tags"
+    test "uses test files so list-valued spec tags execute under mix test", %{root: root} do
+      path =
+        write_test_file(root, "test/list_filter_test.exs", """
+        defmodule ListFilterTest do
+          use ExUnit.Case
+
+          @tag spec: ["a.one", "a.two"]
+          test "list tagged" do
+            assert true
+          end
+
+          @tag spec: "a.one"
+          test "scalar tagged" do
+            assert true
+          end
+        end
+        """)
+
+      assert {:ok, tags} = SpecLedEx.TagScanner.scan_file(path)
+      tag_map = Enum.group_by(tags, & &1.id)
+
+      assert {:ok, command} = TaggedTests.build_command(["a.two"], tag_map)
+
+      refute command =~ "--only spec:a.two"
+      assert command =~ path
+
+      assert {_output, 0} =
+               System.cmd("sh", ["-c", command], cd: File.cwd!(), stderr_to_stdout: true)
     end
   end
 
@@ -133,5 +168,12 @@ defmodule SpecLedEx.TaggedTestsTest do
       "meta" => %{"id" => id, "kind" => "module", "status" => "active"},
       "verification" => verifications
     }
+  end
+
+  defp write_test_file(root, relative, content) do
+    path = Path.join(root, relative)
+    File.mkdir_p!(Path.dirname(path))
+    File.write!(path, content)
+    path
   end
 end

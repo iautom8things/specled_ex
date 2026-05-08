@@ -179,6 +179,8 @@ running the suite. Adoption is opt-in per-workspace.
 
 ### Supported Annotation Shapes
 
+<!-- covers: specled.package.test_tag_annotation_docs -->
+
 ```elixir
 # single id (string)
 @tag spec: "auth.login"
@@ -195,10 +197,15 @@ test "covers both", do: ...
 # module-wide tag (attaches to every test in the module)
 defmodule DomainTest do
   use ExUnit.Case
-  @moduletag spec: "domain.root"
+  @moduletag spec: ["domain.root", "domain.shared"]
 
   test "one", do: ...
-  test "two", do: ...
+
+  describe "authorization" do
+    @describetag spec: ["domain.auth", "domain.audit"]
+
+    test "two", do: ...
+  end
 end
 ```
 

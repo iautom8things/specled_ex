@@ -46,7 +46,9 @@ decisions:
     ADR frontmatter shall accept an optional `change_type:` field whose
     value is one of `deprecates`, `weakens`, `narrows-scope`,
     `adds-exception`, `supersedes`, `clarifies`, or `refines`; values
-    outside this set shall be rejected at schema parse.
+    outside this set shall be rejected at schema parse. `refines` shall be
+    available for accepted ADRs that sharpen an existing policy without
+    weakening prior current truth.
   priority: must
   stability: stable
 - id: specled.decisions.weakening_set

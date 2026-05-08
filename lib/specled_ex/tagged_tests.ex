@@ -73,8 +73,6 @@ defmodule SpecLedEx.TaggedTests do
         :no_tests
 
       _ ->
-        only_flags = Enum.map(resolved, &"--only spec:#{&1}")
-
         files =
           resolved
           |> Enum.flat_map(fn id ->
@@ -89,7 +87,7 @@ defmodule SpecLedEx.TaggedTests do
           |> Enum.reject(&is_nil/1)
           |> Enum.uniq()
 
-        command_parts = [@base_command | only_flags] ++ [@include_integration_flag] ++ files
+        command_parts = [@base_command, @include_integration_flag] ++ files
 
         {:ok, Enum.join(command_parts, " ")}
     end

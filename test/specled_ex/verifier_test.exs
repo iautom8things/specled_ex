@@ -1,6 +1,30 @@
 defmodule SpecLedEx.VerifierTest do
   use SpecLedEx.Case
-  @moduletag spec: ["specled.decisions.change_type_enum", "specled.decisions.change_type_optional", "specled.decisions.cross_field_adr_append_only", "specled.decisions.cross_field_affects_non_empty", "specled.decisions.cross_field_affects_resolve", "specled.decisions.cross_field_idempotent", "specled.decisions.cross_field_reverses_what", "specled.decisions.cross_field_supersedes_replaces", "specled.decisions.frontmatter_contract", "specled.decisions.reference_validation", "specled.decisions.weakening_set", "specled.verify.command_execution_resilience", "specled.verify.command_exit_code_recorded", "specled.verify.command_output_via_tempfile", "specled.verify.command_timeout_enforced", "specled.verify.coverage_warnings", "specled.verify.decision_governance", "specled.verify.malformed_entries_nonfatal", "specled.verify.meta_required", "specled.verify.reference_checks", "specled.verify.strength_semantics", "specled.verify.target_existence"]
+
+  @moduletag spec: [
+               "specled.decisions.change_type_enum",
+               "specled.decisions.change_type_optional",
+               "specled.decisions.cross_field_adr_append_only",
+               "specled.decisions.cross_field_affects_non_empty",
+               "specled.decisions.cross_field_affects_resolve",
+               "specled.decisions.cross_field_idempotent",
+               "specled.decisions.cross_field_reverses_what",
+               "specled.decisions.cross_field_supersedes_replaces",
+               "specled.decisions.frontmatter_contract",
+               "specled.decisions.reference_validation",
+               "specled.decisions.weakening_set",
+               "specled.verify.command_execution_resilience",
+               "specled.verify.command_exit_code_recorded",
+               "specled.verify.command_output_via_tempfile",
+               "specled.verify.command_timeout_enforced",
+               "specled.verify.coverage_warnings",
+               "specled.verify.decision_governance",
+               "specled.verify.malformed_entries_nonfatal",
+               "specled.verify.meta_required",
+               "specled.verify.reference_checks",
+               "specled.verify.strength_semantics",
+               "specled.verify.target_existence"
+             ]
 
   alias SpecLedEx.Verifier
 
@@ -502,7 +526,10 @@ defmodule SpecLedEx.VerifierTest do
     report = verify_subjects(root, [subject_a, subject_b], debug: true)
 
     cross_subject_checks =
-      Enum.filter(checks(report, "verification_cover_valid"), &String.contains?(&1["message"], "cross-subject"))
+      Enum.filter(
+        checks(report, "verification_cover_valid"),
+        &String.contains?(&1["message"], "cross-subject")
+      )
 
     assert length(cross_subject_checks) == 1
     assert hd(cross_subject_checks)["message"] =~ "req.from_a"
@@ -1029,7 +1056,7 @@ defmodule SpecLedEx.VerifierTest do
     marker = Path.join(root, "tagged_tests_calls.txt")
 
     # Build a fake `mix` on PATH that appends its args to a marker file and
-    # exits 0 — the merged command is `mix test --only spec:<id>... <files>`.
+    # exits 0. The merged command selects scanner-backed test files.
     shim_dir = Path.join(root, "bin")
     File.mkdir_p!(shim_dir)
     shim_path = Path.join(shim_dir, "mix")
@@ -1068,8 +1095,12 @@ defmodule SpecLedEx.VerifierTest do
               })
             ],
             "test_tags" => %{
-              "req.alpha" => [%{file: "test/alpha_test.exs", line: 3, test_name: "t1"}],
-              "req.beta" => [%{file: "test/beta_test.exs", line: 4, test_name: "t2"}]
+              "req.alpha" => [
+                %{file: "test/alpha_test.exs", line: 3, test_line: 5, test_name: "t1"}
+              ],
+              "req.beta" => [
+                %{file: "test/beta_test.exs", line: 4, test_line: 6, test_name: "t2"}
+              ]
             }
           },
           root,
@@ -1083,8 +1114,7 @@ defmodule SpecLedEx.VerifierTest do
 
       [call] = calls
       assert call =~ "test"
-      assert call =~ "--only spec:req.alpha"
-      assert call =~ "--only spec:req.beta"
+      refute call =~ "--only spec:"
       assert call =~ "test/alpha_test.exs"
       assert call =~ "test/beta_test.exs"
 

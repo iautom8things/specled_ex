@@ -131,8 +131,15 @@ decisions:
     When the head of an implication-bearing MFA changes,
     `mix spec.check` shall emit two `branch_guard_realization_drift`
     findings for the same MFA — one with `tier=api_boundary` and one
-    with `tier=implementation`. Body-only changes shall emit only the
-    `tier=implementation` drift finding.
+    with `tier=implementation`.
+  priority: must
+  stability: evolving
+- id: specled.realized_by.implication_body_only_drift
+  statement: >-
+    When only the body of an implication-bearing MFA changes and its
+    public head is unchanged, `mix spec.check` shall emit only the
+    `tier=implementation` drift finding and shall not emit a
+    `tier=api_boundary` drift finding for that MFA.
   priority: must
   stability: evolving
 - id: specled.realized_by.implication_dangling_once
@@ -176,6 +183,23 @@ decisions:
     The envelope tag differs from the head-union tag so api_boundary
     and implementation hashes for the same module are distinct bytes
     even on a degenerate module.
+  priority: must
+  stability: evolving
+- id: specled.realized_by.bare_module_drift_after_seed
+  statement: >-
+    After bare-module hashes have been silently seeded, a subsequent
+    body-only change inside the module shall emit exactly one
+    `branch_guard_realization_drift` finding with `tier=implementation`
+    and shall not emit an api_boundary drift finding for that body-only
+    change.
+  priority: must
+  stability: evolving
+- id: specled.realized_by.bare_module_export_drift
+  statement: >-
+    After bare-module hashes have been committed, adding a new public
+    export shall change both the head-union and full-union hashes and
+    shall emit drift findings on both the api_boundary and
+    implementation tiers.
   priority: must
   stability: evolving
 - id: specled.realized_by.bare_module_no_closure_walk
@@ -333,7 +357,7 @@ decisions:
     - "the finding has `tier=implementation`"
     - "no `tier=api_boundary` drift finding fires for `Foo.bar/1`"
   covers:
-    - specled.realized_by.implication_drift_both_tiers
+    - specled.realized_by.implication_body_only_drift
 - id: specled.realized_by.scenario.existing_duplication_validator_warns
   given:
     - "a subject lists `MyMod.foo/1` under both `realized_by.api_boundary` and `realized_by.implementation`"
@@ -356,8 +380,6 @@ decisions:
     - "`Canonical.hash_module_head_union(SpecLedEx.Coverage)` is computed and persisted under `api_boundary` via the implication"
     - "no drift findings are emitted for `SpecLedEx.Coverage`"
   covers:
-    - specled.realized_by.bare_module_implementation_hash
-    - specled.realized_by.bare_module_api_boundary_hash
     - specled.realized_by.silent_seed
     - specled.realized_by.silent_seed_uses_merge
 - id: specled.realized_by.scenario.bare_module_drift_after_seed
@@ -370,9 +392,7 @@ decisions:
     - "a `branch_guard_realization_drift` finding fires with `tier=implementation` naming `SpecLedEx.Coverage`"
     - "if the change touched a function head, an additional `tier=api_boundary` drift finding fires; otherwise only the implementation drift fires"
   covers:
-    - specled.realized_by.bare_module_implementation_hash
-    - specled.realized_by.bare_module_api_boundary_hash
-    - specled.realized_by.implication_drift_both_tiers
+    - specled.realized_by.bare_module_drift_after_seed
 - id: specled.realized_by.scenario.bare_module_export_added
   given:
     - "a subject lists `SomeMod` (bare module) under `realized_by.implementation`"
@@ -383,8 +403,7 @@ decisions:
   then:
     - "drift findings fire on both tiers (the union changed because the export set grew)"
   covers:
-    - specled.realized_by.bare_module_api_boundary_hash
-    - specled.realized_by.bare_module_implementation_hash
+    - specled.realized_by.bare_module_export_drift
 - id: specled.realized_by.scenario.dangling_implication_once
   given:
     - "a subject lists `Foo.bar/1` only under `realized_by.implementation`"
@@ -452,6 +471,7 @@ decisions:
     - specled.realized_by.implication_one_way
     - specled.realized_by.implication_invoked_per_layer
     - specled.realized_by.implication_drift_both_tiers
+    - specled.realized_by.implication_body_only_drift
     - specled.realized_by.implication_dangling_once
     - specled.realized_by.implication_amplification_dedup
 - kind: tagged_tests
@@ -459,6 +479,8 @@ decisions:
   covers:
     - specled.realized_by.bare_module_api_boundary_hash
     - specled.realized_by.bare_module_implementation_hash
+    - specled.realized_by.bare_module_drift_after_seed
+    - specled.realized_by.bare_module_export_drift
     - specled.realized_by.bare_module_no_closure_walk
     - specled.realized_by.bare_module_runtime_only_discovery
     - specled.realized_by.bare_module_export_filtering

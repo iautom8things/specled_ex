@@ -1,5 +1,6 @@
 defmodule SpecLedEx.TagScannerTest do
   use SpecLedEx.Case
+
   @moduletag spec: [
                "specled.tag_scanning.deduplicated_matches",
                "specled.tag_scanning.describe_block_recursion",
@@ -43,6 +44,12 @@ defmodule SpecLedEx.TagScannerTest do
       {:ok, ast} = Code.string_to_quoted(~S|@moduletag spec: "domain.root"|)
 
       assert {:@, _, [{:moduletag, _, [[{:spec, "domain.root"}]]}]} = ast
+    end
+
+    test "@describetag spec: <string> uses describetag/1" do
+      {:ok, ast} = Code.string_to_quoted(~S|@describetag spec: "domain.group"|)
+
+      assert {:@, _, [{:describetag, _, [[{:spec, "domain.group"}]]}]} = ast
     end
 
     test "@tag :slow carries an atom arg, no keyword" do
@@ -145,6 +152,28 @@ defmodule SpecLedEx.TagScannerTest do
       assert names == ["first", "second"]
       assert Enum.all?(tags, &(&1.id == "domain.root"))
     end
+
+    @tag spec: "specled.tag_scanning.moduletag_applies_to_all_tests"
+    test "extracts every id from a list-valued module tag", %{root: root} do
+      path =
+        write_test_file(root, "test/example_test.exs", """
+        defmodule ExampleTest do
+          use ExUnit.Case
+
+          @moduletag spec: ["domain.root", "domain.shared"]
+
+          test "first" do
+            assert true
+          end
+        end
+        """)
+
+      assert {:ok, tags} = TagScanner.scan_file(path)
+      ids = Enum.map(tags, & &1.id) |> Enum.sort()
+      assert ids == ["domain.root", "domain.shared"]
+      assert Enum.all?(tags, &(&1.test_name == "first"))
+      assert Enum.all?(tags, &is_integer(&1.test_line))
+    end
   end
 
   describe "scan_file/1 — dynamic values" do
@@ -232,6 +261,55 @@ defmodule SpecLedEx.TagScannerTest do
       assert {:ok, tags} = TagScanner.scan_file(path)
 
       assert [%{id: "auth.group", test_name: "nested"}] = tags
+    end
+
+    @tag spec: "specled.tag_scanning.describetag_applies_to_describe_tests"
+    test "@describetag spec attaches to tests in the describe block", %{root: root} do
+      path =
+        write_test_file(root, "test/example_test.exs", """
+        defmodule ExampleTest do
+          use ExUnit.Case
+
+          describe "group" do
+            @describetag spec: "auth.group"
+
+            test "nested" do
+              assert true
+            end
+          end
+        end
+        """)
+
+      assert {:ok, tags} = TagScanner.scan_file(path)
+
+      assert [%{id: "auth.group", test_name: "nested"}] = tags
+    end
+
+    @tag spec: "specled.tag_scanning.describetag_applies_to_describe_tests"
+    test "@describetag spec accepts a list of ids", %{root: root} do
+      path =
+        write_test_file(root, "test/example_test.exs", """
+        defmodule ExampleTest do
+          use ExUnit.Case
+
+          @moduletag spec: "domain.root"
+
+          describe "group" do
+            @describetag spec: ["auth.group", "auth.shared"]
+
+            @tag spec: "auth.test"
+            test "nested" do
+              assert true
+            end
+          end
+        end
+        """)
+
+      assert {:ok, tags} = TagScanner.scan_file(path)
+
+      ids = Enum.map(tags, & &1.id) |> Enum.sort()
+      assert ids == ["auth.group", "auth.shared", "auth.test", "domain.root"]
+      assert Enum.all?(tags, &(&1.test_name == "nested"))
     end
   end
 

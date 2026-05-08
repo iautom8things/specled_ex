@@ -30,6 +30,7 @@ realized_by:
 decisions:
   - specled.decision.ast_tag_scanning
   - specled.decision.configurable_test_tag_enforcement
+  - specled.decision.tagged_tests_file_selectors
 ```
 
 ## Requirements
@@ -37,10 +38,10 @@ decisions:
 ```yaml spec-requirements
 - id: specled.tag_scanning.supported_forms
   statement: >-
-    The tag scanner shall extract requirement ids from the four supported forms
+    The tag scanner shall extract requirement ids from the supported forms
     (`@tag spec` with a string, `@tag` with a keyword list containing a `spec`
-    entry, `@tag spec` with a list of strings, and `@moduletag spec`) without
-    compiling the test files.
+    entry, `@tag spec` with a list of strings, `@moduletag spec`, and
+    `@describetag spec`) without compiling the test files.
   priority: must
   stability: evolving
 - id: specled.tag_scanning.form_string_literal
@@ -88,8 +89,15 @@ decisions:
   stability: evolving
 - id: specled.tag_scanning.moduletag_applies_to_all_tests
   statement: >-
-    A `@moduletag spec` annotation shall attach its requirement id to every
-    test defined in that module.
+    A `@moduletag spec` annotation shall attach its string or list-of-strings
+    requirement ids to every test defined in that module.
+  priority: must
+  stability: evolving
+- id: specled.tag_scanning.describetag_applies_to_describe_tests
+  statement: >-
+    A `@describetag spec` annotation inside a `describe/2` block shall attach
+    its string or list-of-strings requirement ids to every test defined in that
+    describe block.
   priority: must
   stability: evolving
 - id: specled.tag_scanning.ignored_non_spec_tags
@@ -109,9 +117,9 @@ decisions:
   statement: >-
     The tag scanner shall walk into `describe/2` bodies so that `test/2`
     definitions nested inside `describe` blocks inherit the module's
-    `@moduletag spec` ids and pick up `@tag spec` annotations declared
-    within that describe block, matching the behaviour for top-level
-    tests.
+    `@moduletag spec` ids, inherit the describe block's `@describetag spec`
+    ids, and pick up `@tag spec` annotations declared within that describe
+    block, matching the behaviour for top-level tests.
   priority: must
   stability: evolving
 ```
@@ -149,14 +157,25 @@ decisions:
     - specled.tag_scanning.form_list_of_ids
 - id: specled.tag_scanning.scenario.moduletag_attaches_to_every_test
   given:
-    - a test file declaring a `@moduletag spec` annotation with id `domain.root` at the top
+    - a test file declaring a `@moduletag spec` annotation with ids `domain.root` and `domain.shared` at the top
     - the module contains two `test/2` blocks
   when:
     - SpecLedEx.TagScanner.scan_file/1 runs on that file
   then:
-    - `domain.root` is linked to both test names
+    - both module tag ids are linked to both test names
   covers:
     - specled.tag_scanning.moduletag_applies_to_all_tests
+- id: specled.tag_scanning.scenario.describetag_attaches_to_describe_tests
+  given:
+    - a test file declaring `@describetag spec` inside a `describe/2` block
+    - the describetag value is a list containing `auth.group` and `auth.shared`
+    - the describe block contains a nested `test/2` definition
+  when:
+    - SpecLedEx.TagScanner.scan_file/1 runs on that file
+  then:
+    - both describe tag ids are linked to the nested test name
+  covers:
+    - specled.tag_scanning.describetag_applies_to_describe_tests
 - id: specled.tag_scanning.scenario.non_literal_value_reported
   given:
     - a test file containing an `@tag spec` annotation whose value is a module attribute reference
@@ -221,6 +240,7 @@ decisions:
     - specled.tag_scanning.parse_errors_surfaced
     - specled.tag_scanning.dynamic_values_reported
     - specled.tag_scanning.moduletag_applies_to_all_tests
+    - specled.tag_scanning.describetag_applies_to_describe_tests
     - specled.tag_scanning.ignored_non_spec_tags
     - specled.tag_scanning.deduplicated_matches
     - specled.tag_scanning.describe_block_recursion

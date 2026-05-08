@@ -71,7 +71,9 @@ defmodule SpecLedEx.Realization.ImplicationIntegrationTest do
     """)
 
     {:ok, _mods, _warns} =
-      Kernel.ParallelCompiler.compile_to_path([stable_path], fixture_dir, return_diagnostics: true)
+      Kernel.ParallelCompiler.compile_to_path([stable_path], fixture_dir,
+        return_diagnostics: true
+      )
 
     :code.add_patha(String.to_charlist(fixture_dir))
 
@@ -112,6 +114,7 @@ defmodule SpecLedEx.Realization.ImplicationIntegrationTest do
     @tag spec: [
            "specled.realized_by.scenario.implication_drift_both_tiers",
            "specled.realized_by.implication_drift_both_tiers",
+           "specled.realized_by.implication_body_only_drift",
            "specled.realized_by.implication_one_way"
          ]
     test "hard-coupled MFA listed only under implementation: head change drifts both tiers, body-only change drifts implementation only",
@@ -122,11 +125,16 @@ defmodule SpecLedEx.Realization.ImplicationIntegrationTest do
       subject_id = mod_name <> ".subject"
 
       # Compile the head-and-body baseline.
-      compile_module!(fixture_dir, "hard_coupled1.ex", """
-      defmodule #{mod_name} do
-        def bar(x), do: x + 1
-      end
-      """, [mod])
+      compile_module!(
+        fixture_dir,
+        "hard_coupled1.ex",
+        """
+        defmodule #{mod_name} do
+          def bar(x), do: x + 1
+        end
+        """,
+        [mod]
+      )
 
       # Compute current api_boundary hash (head-only) and implementation
       # closure hash (full AST) directly. We seed both tiers via
@@ -162,11 +170,16 @@ defmodule SpecLedEx.Realization.ImplicationIntegrationTest do
       subject = subject(subject_id, %{"implementation" => [mfa]}, [])
 
       # ---- HEAD CHANGE: argument pattern alteration ----
-      compile_module!(fixture_dir, "hard_coupled1.ex", """
-      defmodule #{mod_name} do
-        def bar({x}), do: x + 1
-      end
-      """, [mod])
+      compile_module!(
+        fixture_dir,
+        "hard_coupled1.ex",
+        """
+        defmodule #{mod_name} do
+          def bar({x}), do: x + 1
+        end
+        """,
+        [mod]
+      )
 
       findings_head =
         Orchestrator.run(%{"subjects" => [subject]},
@@ -198,11 +211,16 @@ defmodule SpecLedEx.Realization.ImplicationIntegrationTest do
       # Re-seed the baseline against the head-only ground state, then mutate
       # only the body so we can observe drift on the body change in
       # isolation.
-      compile_module!(fixture_dir, "hard_coupled1.ex", """
-      defmodule #{mod_name} do
-        def bar(x), do: x + 1
-      end
-      """, [mod])
+      compile_module!(
+        fixture_dir,
+        "hard_coupled1.ex",
+        """
+        defmodule #{mod_name} do
+          def bar(x), do: x + 1
+        end
+        """,
+        [mod]
+      )
 
       {:ok, ast2} = SpecLedEx.Realization.Binding.resolve(mfa)
       head_hash2 = SpecLedEx.Realization.ApiBoundary.hash(ast2)
@@ -220,11 +238,16 @@ defmodule SpecLedEx.Realization.ImplicationIntegrationTest do
           "implementation" => %{subject_id => impl_hash2}
         })
 
-      compile_module!(fixture_dir, "hard_coupled1.ex", """
-      defmodule #{mod_name} do
-        def bar(x), do: x * 99
-      end
-      """, [mod])
+      compile_module!(
+        fixture_dir,
+        "hard_coupled1.ex",
+        """
+        defmodule #{mod_name} do
+          def bar(x), do: x * 99
+        end
+        """,
+        [mod]
+      )
 
       findings_body =
         Orchestrator.run(%{"subjects" => [subject]},
@@ -334,6 +357,7 @@ defmodule SpecLedEx.Realization.ImplicationIntegrationTest do
     @tag spec: [
            "specled.realized_by.scenario.bare_module_first_run_silent_seed",
            "specled.realized_by.scenario.bare_module_drift_after_seed",
+           "specled.realized_by.bare_module_drift_after_seed",
            "specled.realized_by.bare_module_implementation_hash",
            "specled.realized_by.bare_module_api_boundary_hash",
            "specled.realized_by.silent_seed",
@@ -345,11 +369,16 @@ defmodule SpecLedEx.Realization.ImplicationIntegrationTest do
       bare = mod_name
       mod = String.to_atom("Elixir.#{mod_name}")
 
-      compile_module!(fixture_dir, "bare_seed3.ex", """
-      defmodule #{mod_name} do
-        def alpha, do: :a
-      end
-      """, [mod])
+      compile_module!(
+        fixture_dir,
+        "bare_seed3.ex",
+        """
+        defmodule #{mod_name} do
+          def alpha, do: :a
+        end
+        """,
+        [mod]
+      )
 
       # Cold trajectory: state.json missing entirely.
       assert HashStore.read(root) == %{}
@@ -376,6 +405,7 @@ defmodule SpecLedEx.Realization.ImplicationIntegrationTest do
       #   * implementation tier: full-union hash for the bare module
       #   * api_boundary tier:  head-union hash (via implication)
       seeded = StateJsonFixture.read(root)
+
       assert is_map(get_in(seeded, ["implementation", bare])),
              "expected implementation seed for #{bare}, got: #{inspect(seeded)}"
 
@@ -401,11 +431,16 @@ defmodule SpecLedEx.Realization.ImplicationIntegrationTest do
       # but a different body; the spec scenario only requires "a public
       # function ... is changed (head or body)". Add an inner branch that
       # mutates the body without changing the head's pattern.
-      compile_module!(fixture_dir, "bare_seed3.ex", """
-      defmodule #{mod_name} do
-        def alpha, do: :alpha_changed
-      end
-      """, [mod])
+      compile_module!(
+        fixture_dir,
+        "bare_seed3.ex",
+        """
+        defmodule #{mod_name} do
+          def alpha, do: :alpha_changed
+        end
+        """,
+        [mod]
+      )
 
       findings_drift =
         Orchestrator.run(%{"subjects" => [subject]},
@@ -448,6 +483,7 @@ defmodule SpecLedEx.Realization.ImplicationIntegrationTest do
   describe "scenario.bare_module_export_added" do
     @tag spec: [
            "specled.realized_by.scenario.bare_module_export_added",
+           "specled.realized_by.bare_module_export_drift",
            "specled.realized_by.bare_module_api_boundary_hash",
            "specled.realized_by.bare_module_implementation_hash"
          ]
@@ -458,11 +494,16 @@ defmodule SpecLedEx.Realization.ImplicationIntegrationTest do
       mod = String.to_atom("Elixir.#{mod_name}")
 
       # Baseline: one public function.
-      compile_module!(fixture_dir, "bare_export4.ex", """
-      defmodule #{mod_name} do
-        def alpha, do: :a
-      end
-      """, [mod])
+      compile_module!(
+        fixture_dir,
+        "bare_export4.ex",
+        """
+        defmodule #{mod_name} do
+          def alpha, do: :a
+        end
+        """,
+        [mod]
+      )
 
       subject = subject("bare.export.subject", %{"implementation" => [bare]}, [])
 
@@ -478,12 +519,17 @@ defmodule SpecLedEx.Realization.ImplicationIntegrationTest do
       assert is_binary(HashStore.fetch(seeded, "implementation", bare))
 
       # ---- Add a new public export ----
-      compile_module!(fixture_dir, "bare_export4.ex", """
-      defmodule #{mod_name} do
-        def alpha, do: :a
-        def new_thing, do: :new
-      end
-      """, [mod])
+      compile_module!(
+        fixture_dir,
+        "bare_export4.ex",
+        """
+        defmodule #{mod_name} do
+          def alpha, do: :a
+          def new_thing, do: :new
+        end
+        """,
+        [mod]
+      )
 
       findings =
         Orchestrator.run(%{"subjects" => [subject]},
@@ -638,11 +684,16 @@ defmodule SpecLedEx.Realization.ImplicationIntegrationTest do
       missing_bare = "SpecLedEx.NoLeak.MissingBare.Imaginary"
       bare = "SpecLedEx.ImplicationFixtures.BareTarget"
 
-      compile_module!(fixture_dir, "no_leak7.ex", """
-      defmodule #{mod_name} do
-        def bar(x), do: x + 1
-      end
-      """, [mod])
+      compile_module!(
+        fixture_dir,
+        "no_leak7.ex",
+        """
+        defmodule #{mod_name} do
+          def bar(x), do: x + 1
+        end
+        """,
+        [mod]
+      )
 
       # Seed the MFA hash so we can flip it to wrong below.
       _ =
@@ -653,11 +704,16 @@ defmodule SpecLedEx.Realization.ImplicationIntegrationTest do
         )
 
       # Now mutate the head so drift fires on both tiers.
-      compile_module!(fixture_dir, "no_leak7.ex", """
-      defmodule #{mod_name} do
-        def bar({x}), do: x + 1
-      end
-      """, [mod])
+      compile_module!(
+        fixture_dir,
+        "no_leak7.ex",
+        """
+        defmodule #{mod_name} do
+          def bar({x}), do: x + 1
+        end
+        """,
+        [mod]
+      )
 
       subject =
         subject(

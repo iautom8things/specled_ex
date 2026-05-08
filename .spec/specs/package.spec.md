@@ -48,6 +48,10 @@ decisions:
   statement: The package README shall teach mix spec.prime as the session-start context command, a default local loop centered on mix spec.next and mix spec.check that includes a step to annotate new tests with `@tag spec:` when test-tag scanning is enabled, explain the ready-for-check decision, reserve ADRs for durable cross-cutting policy, and present mix spec.status as occasional plus mix spec.index and mix spec.validate as advanced plumbing.
   priority: should
   stability: evolving
+- id: specled.package.test_tag_annotation_docs
+  statement: The package README shall document the supported ExUnit test-tag annotation shapes for scanner-backed verification, including scalar and list-valued `@tag spec`, `@moduletag spec`, and `@describetag spec`.
+  priority: should
+  stability: evolving
 - id: specled.package.index_and_state
   statement: The package shall index authored subject specs, index durable ADRs, and write derived state to .spec/state.json.
   priority: must
@@ -78,6 +82,7 @@ decisions:
   target: README.md
   covers:
     - specled.package.default_local_loop
+    - specled.package.test_tag_annotation_docs
 - kind: command
   target: >-
     mix run -e 'Mix.Task.load_all(); Enum.each(~w(spec.init spec.prime spec.next spec.check spec.status spec.decision.new spec.index spec.validate spec.review), fn task -> Mix.Task.get(task) || raise("missing #{task}") end)'

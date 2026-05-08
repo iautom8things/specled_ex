@@ -1,7 +1,13 @@
 defmodule SpecLedEx.TagScanner do
   @moduledoc false
 
-  @type tag_entry :: %{id: String.t(), file: String.t(), line: non_neg_integer(), test_name: String.t()}
+  @type tag_entry :: %{
+          id: String.t(),
+          file: String.t(),
+          line: non_neg_integer(),
+          test_line: non_neg_integer(),
+          test_name: String.t()
+        }
   @type dynamic_entry :: %{file: String.t(), line: non_neg_integer(), test_name: String.t() | nil}
   @type parse_error :: %{file: String.t(), reason: term()}
 
@@ -86,9 +92,9 @@ defmodule SpecLedEx.TagScanner do
   end
 
   # Walk the AST collecting (tags, dynamics). We traverse modules and their
-  # `do` blocks, tracking pending @tag attributes and module-wide @moduletag
-  # attributes, emitting tag entries when we hit a `test/2` or `test/3`
-  # definition.
+  # `do` blocks, tracking pending @tag attributes plus module-wide
+  # @moduletag and describe-wide @describetag attributes, emitting tag entries
+  # when we hit a `test/2` or `test/3` definition.
   defp extract(ast, file) do
     modules = collect_modules(ast)
 
@@ -136,7 +142,12 @@ defmodule SpecLedEx.TagScanner do
     end)
   end
 
-  defp process_statement({:@, _, [{:tag, meta, [arg]}]}, _file, _moduletag_ids, {pending, pending_dyn, tags, dynamics}) do
+  defp process_statement(
+         {:@, _, [{:tag, meta, [arg]}]},
+         _file,
+         _moduletag_ids,
+         {pending, pending_dyn, tags, dynamics}
+       ) do
     line = Keyword.get(meta, :line, 0)
 
     case extract_spec_from_arg(arg) do
@@ -151,18 +162,23 @@ defmodule SpecLedEx.TagScanner do
     end
   end
 
-  defp process_statement({:test, meta, args}, file, moduletag_ids, {pending, pending_dyn, tags, dynamics}) do
+  defp process_statement(
+         {:test, meta, args},
+         file,
+         moduletag_ids,
+         {pending, pending_dyn, tags, dynamics}
+       ) do
     line = Keyword.get(meta, :line, 0)
     test_name = test_name_from_args(args)
 
     module_entries =
       Enum.map(moduletag_ids, fn id ->
-        %{id: id, file: file, line: line, test_name: test_name}
+        %{id: id, file: file, line: line, test_line: line, test_name: test_name}
       end)
 
     pending_entries =
       Enum.map(pending, fn {id, tag_line} ->
-        %{id: id, file: file, line: tag_line, test_name: test_name}
+        %{id: id, file: file, line: tag_line, test_line: line, test_name: test_name}
       end)
 
     dyn_entries =
@@ -176,8 +192,14 @@ defmodule SpecLedEx.TagScanner do
   # Recurse into `describe "...", do: ... end` bodies. Pending @tag/@moduletag
   # accumulators reset at the describe boundary: tags declared outside a
   # describe do not leak into its tests, and tags declared inside do not
-  # leak back out. Moduletag ids remain visible to nested tests.
-  defp process_statement({:describe, _meta, args}, file, moduletag_ids, {pending, pending_dyn, tags, dynamics}) do
+  # leak back out. Moduletag ids remain visible to nested tests, and
+  # @describetag spec values apply to tests in that describe block.
+  defp process_statement(
+         {:describe, _meta, args},
+         file,
+         moduletag_ids,
+         {pending, pending_dyn, tags, dynamics}
+       ) do
     describe_body = describe_body_from_args(args)
 
     inner_statements =
@@ -187,15 +209,34 @@ defmodule SpecLedEx.TagScanner do
         other -> [other]
       end
 
+    {describe_ids, describe_dyn_lines} = collect_describetags(inner_statements)
+    scoped_ids = moduletag_ids ++ describe_ids
+
     {_inner_pending, _inner_dyn, inner_tags, inner_dynamics} =
-      Enum.reduce(inner_statements, {[], [], [], []}, fn stmt, acc ->
-        process_statement(stmt, file, moduletag_ids, acc)
+      Enum.reduce(inner_statements, {[], describe_dyn_lines, [], []}, fn stmt, acc ->
+        process_statement(stmt, file, scoped_ids, acc)
       end)
 
     {pending, pending_dyn, tags ++ inner_tags, dynamics ++ inner_dynamics}
   end
 
   defp process_statement(_other, _file, _moduletag_ids, acc), do: acc
+
+  defp collect_describetags(statements) do
+    Enum.reduce(statements, {[], []}, fn
+      {:@, _, [{:describetag, meta, [arg]}]}, {ids, dyn} ->
+        line = Keyword.get(meta, :line, 0)
+
+        case extract_spec_from_arg(arg) do
+          {:ok, new_ids} -> {ids ++ new_ids, dyn}
+          :not_spec -> {ids, dyn}
+          {:dynamic, _line} -> {ids, dyn ++ [line]}
+        end
+
+      _, acc ->
+        acc
+    end)
+  end
 
   defp describe_body_from_args(args) when is_list(args) do
     Enum.reduce_while(args, nil, fn
