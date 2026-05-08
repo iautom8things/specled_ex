@@ -12,9 +12,15 @@
   "id": "specled_-701.10",
   "labels": [],
   "parent": "specled_-701",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\n\nStage: specled_-701.10/spec-doc-updates-author-dedup\nWorktree: /Users/mz/src/specled_ex-701-10\nCommit: c248a40 specled_-701.10: author-side dedup of redundant api_boundary entries\n\nEdits (allowed touches only):\n- .spec/specs/binding.spec.md — removed 3 MFAs (Binding.resolve/2, Canonical.hash/1, HashStore.read/2) from realized_by.api_boundary; the api_boundary tier was the only consumer so the empty key was dropped. Implication still tracks them via implementation.\n- .spec/specs/mix_tasks.spec.md — removed Mix.Tasks.Spec.Check.run/1 from realized_by.api_boundary (also dropped the now-empty api_boundary key). Implication still tracks it via implementation. Also flipped the dedup_realized_by_* tagged_tests verification stub from execute: false to execute: true (the corresponding tests already exist and pass).\n\nVerification:\n- mix spec.validate: status=pass errors=0 warnings=1. The four redundant_dup warnings on this stage's subjects (3 on specled.binding + 1 on specled.mix_tasks) are gone. The 1 residual warning is on specled.realized_by where expand_implications/1 self-demonstrates the dup at distill time — realized_by.spec.md is explicitly out of scope for this stage.\n- mix spec.check: branch findings (16) are pre-existing epic-wide branch_guard / overlap drift unrelated to this stage's edits. Pre-edit baseline was 20 findings; the dedup actually cleared 4 (the redundant_dup warnings). No new drift findings (no branch_guard_realization_drift, no branch_guard_dangling_binding) were introduced — the implication continues to track the dedup'd entries.\n- mix test test/specled_ex/mix/tasks/spec_dedup_realized_by_test.exs: 11 tests, 0 failures (confirms the verification-stub flip is sound).\n\nBehavior demonstrated end-to-end: specled.realized_by.scenario.existing_duplication_validator_warns — warnings fired before edit (5 total), gone for the dedup'd entries after edit (4 cleared).",
+      "timestamp": "2026-05-08T02:53:51Z"
+    }
+  ],
   "priority": 2,
   "status": "open",
   "title": "S9: ADR + spec doc updates + author-side dedup",
   "type": "task",
-  "updated_at": "2026-05-07T23:57:21Z"
+  "updated_at": "2026-05-08T02:53:51Z"
 }
