@@ -5,6 +5,7 @@
     "specled_-701.2",
     "specled_-701.7"
   ],
+  "closed_at": "2026-05-08T01:06:25Z",
   "created": "2026-05-07T23:55:04Z",
   "description": "Advances: specled.realized_by\n\nDeliverable:\nAdd test/test_support/state_json_fixture.ex with helpers seed/2, read/1, assert_state_contains/3 to drive multi-trajectory state.json fixtures (cold/warm/seeded/dangling). Wire test/test_support into mix.exs elixirc_paths (test env only) and into test_helper.exs.\n\nVerification:\n- Tests to pass: existing test/specled_ex/realization/hash_store_test.exs continues to pass.\n- Behaviors to demonstrate: at least one new test in hash_store_test.exs (or a smoke test in a new test file) uses StateJsonFixture to seed and read state.json contents in a tmp root.\n\nOut of Scope (files):\n- lib/**\n- .spec/**\n- priv/**\nAllowed touches:\n- test/test_support/state_json_fixture.ex\n- mix.exs (elixirc_paths only)\n- test/test_helper.exs\n\nOut of Scope (intent):\n- No production code changes.\n- No modification of HashStore semantics (that's S1).\n- No modification of existing test fixtures.\n\nMerge gate:\n- [ ] Code compiles cleanly\n- [ ] Tests listed above pass\n- [ ] Spec verification passes\n- [ ] Scope check: diff touches only Allowed globs (mechanical)\n- [ ] Auditor APPROVE comment on the ticket",
   "id": "specled_-701.1",
@@ -29,7 +30,7 @@
     }
   ],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "S0: test_support StateJsonFixture",
   "type": "task",
   "updated_at": "2026-05-08T01:06:25Z"
