@@ -28,11 +28,15 @@
     {
       "text": "AUDIT: APPROVE\nSession: ab6a7bedd0c2947fe\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/eeca2123-30e1-430c-90c1-08dd23adf991/subagents/agent-ab6a7bedd0c2947fe.jsonl\n\nReasoning:\n(a) Scenario 1's dual-tier StateJsonFixture seed is justified. The clobber path is documented at lib/specled_ex/realization/orchestrator.ex:24-33 (moduledoc: \"implementation tier is excluded from hash commit ... follow-up work is expected to expose an implementation hash-refresh helper\") plus lib/specled_ex/realization/hash_store.ex:81-93 (write/2 has replacement semantics). refresh_and_commit_hashes/3 (orchestrator.ex:536-555) only iterates @flat_tiers and then calls HashStore.write/2, which atomically replaces the realization map and would erase any silent-seed impl entry on a no-drift run. The test still demonstrates the spec scenario's then-clause: implication_integration_test.exs:190-191 asserts length(api_drift) == 1 AND length(impl_drift) == 1 on head mutation; lines 239-243 assert impl drift fires AND no api_boundary drift on body-only mutation. Cardinality + tier-set both rigorous.\n\n(b) hash_module_head_union/2 is genuinely body-insensitive on this fixture. canonical.ex:263-274 head_ast_for_export/4 maps clauses to {normalize(args), normalize(guards)} - body is structurally absent from the envelope. The fixture mutates `def alpha, do: :a` -\u003e `def alpha, do: :alpha_changed` (same single clause, zero args, no guards, only body literal differs), so api_boundary hash is provably invariant. Test (implication_integration_test.exs:417-438) asserts length(impl_drift) == 1 AND api_drift == [] - pass cannot be for orthogonal reasons.\n\n(c) Scenario 2's split-call proxy is fit-for-purpose. The spec scenario specled.realized_by.scenario.existing_duplication_validator_warns (.spec/specs/realized_by.spec.md:337-347) has three then-clauses: (1) one redundant_dup warning, (2) names MFA + points to dedup task, (3) drift behavior unchanged because implication still tracks under api_boundary. The test asserts all three at implication_integration_test.exs:282-289 (cardinality + MFA-form text + dedup-task pointer) and lines 296-322 (one api_boundary drift after wrong-hash committed via HashStore.write/2 - proves the implication-amplified entry coexists with the explicit listing without double-firing). The spec scenario does not require an end-to-end mix spec.check roundtrip nor an after-cleanup re-run; the verifier's flag was over-cautious.\n\nMechanical: 1 file touched (test/specled_ex/realization/implication_integration_test.exs), 0 outside Allowed globs, 0 in Out-of-Scope globs, 7 describes / 7 @tag spec / 7/7 green via mix test on the file.",
       "timestamp": "2026-05-08T02:42:40Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-701/realized-by-tier-implication. Closing per orchestrator sign-off.",
+      "timestamp": "2026-05-08T02:44:37Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "S6: Integration scenarios 1-5",
   "type": "task",
-  "updated_at": "2026-05-08T02:42:40Z"
+  "updated_at": "2026-05-08T02:44:37Z"
 }
