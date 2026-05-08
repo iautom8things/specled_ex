@@ -29,6 +29,51 @@ defmodule SpecLedEx.Realization.EffectiveBinding do
     Map.merge(subject_binding, requirement_binding)
   end
 
+  # covers: specled.realized_by.implication_one_way
+  # covers: specled.realized_by.implication_invoked_per_layer
+  @doc """
+  Applies the one-way `implementation ⟹ api_boundary` implication to a single
+  binding map.
+
+  For every entry (MFA string or bare-module string) listed under
+  `"implementation"`, the same entry is ensured in `"api_boundary"`. The
+  resulting `"api_boundary"` list is deduplicated and sorted lexicographically.
+  Tiers other than `"api_boundary"` and `"implementation"` are returned
+  untouched. The implication is one-way: entries that exist only under
+  `"api_boundary"` do not seed `"implementation"`.
+
+  The function is pure and idempotent — calling it twice produces the same
+  result. See `specled.decision.realized_by_tier_implication` and the
+  `specled.realized_by.implication_one_way` /
+  `specled.realized_by.implication_invoked_per_layer` requirements.
+
+  Accepts an empty map and binding maps that omit either tier. Atom keys at
+  the tier level are tolerated (normalized to strings) for callers that
+  haven't run the result of `for_requirement/2` through normalization yet.
+  """
+  @spec expand_implications(map()) :: %{String.t() => [String.t()]}
+  def expand_implications(binding) when is_map(binding) do
+    normalized = normalize_keys(binding)
+
+    impl_entries = normalized |> Map.get("implementation", []) |> List.wrap()
+    api_entries = normalized |> Map.get("api_boundary", []) |> List.wrap()
+
+    case impl_entries do
+      [] ->
+        normalized
+
+      _ ->
+        merged_api =
+          (api_entries ++ impl_entries)
+          |> Enum.uniq()
+          |> Enum.sort()
+
+        Map.put(normalized, "api_boundary", merged_api)
+    end
+  end
+
+  def expand_implications(other), do: other
+
   defp extract_binding(nil), do: %{}
 
   defp extract_binding(map) when is_map(map) do
