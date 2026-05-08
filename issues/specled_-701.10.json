@@ -24,11 +24,15 @@
     {
       "text": "AUDIT: APPROVE\nSession: agent-a960a40815bfc4d2e (subagent of orchestrator session eeca2123-30e1-430c-90c1-08dd23adf991)\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/eeca2123-30e1-430c-90c1-08dd23adf991/subagents/agent-a960a40815bfc4d2e.jsonl\n\nReasoning: Diff against e0c9585 is exactly the two allowed-touch spec.md files plus a regenerated .spec/state.json. The two spec edits (.spec/specs/binding.spec.md L27-33, .spec/specs/mix_tasks.spec.md L35-46) drop the api_boundary key entirely and keep all 4 MFAs (Binding.resolve/2, Canonical.hash/1, HashStore.read/2, Mix.Tasks.Spec.Check.run/1) under implementation, so the implication continues to track them — verified by `mix spec.check` showing zero `branch_guard_realization_drift` / zero `branch_guard_dangling_binding` for any dedup'd MFA (the 16 branch findings are all pre-existing epic-wide branch_guard / overlap drift). The .spec/state.json delta is purely regeneration: -19 requirement_without_test_tag + -19 tagged_tests_cover_missing_tag + -1 surface_target_missing (cleared as S6/S7/S8/S9 surfaces and tagged tests came in upstream) and +1 realized_by_redundant_dup for the realized_by.spec.md self-dup that's intentionally retained — no edit-related artifacts that should have been a separate decision. End-to-end demonstration of specled.realized_by.scenario.existing_duplication_validator_warns is sound: pre-edit (git show e0c9585b:.spec/specs/{binding,mix_tasks}.spec.md) has all 4 MFAs duplicated under api_boundary+implementation triggering 4 net-new realized_by_redundant_dup warnings; post-edit `mix spec.validate` returns status=pass, errors=0, warnings=1 with the lone residual being EffectiveBinding.expand_implications/1 on specled.realized_by (out-of-scope per the ticket's intent carve-out and kept as live in-spec demo). Stub flip (mix_tasks.spec.md L196-202 execute: false → true) is justified: `mix test test/specled_ex/mix/tasks/spec_dedup_realized_by_test.exs` runs 11/0, full suite 768/0.",
       "timestamp": "2026-05-08T03:06:23Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-701/realized-by-tier-implication. Closing per orchestrator sign-off.",
+      "timestamp": "2026-05-08T03:08:05Z"
     }
   ],
   "priority": 2,
   "status": "open",
   "title": "S9: ADR + spec doc updates + author-side dedup",
   "type": "task",
-  "updated_at": "2026-05-08T03:06:23Z"
+  "updated_at": "2026-05-08T03:08:05Z"
 }
