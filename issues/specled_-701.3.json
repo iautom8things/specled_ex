@@ -9,9 +9,15 @@
   "id": "specled_-701.3",
   "labels": [],
   "parent": "specled_-701",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: eeca2123-30e1-430c-90c1-08dd23adf991\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/eeca2123-30e1-430c-90c1-08dd23adf991.jsonl\n\nCommit: 61abf2cb037dbe57f5b6b7c5d87298e7c0e8c62c\nBranch: specled_-701.3/effective-binding-expand-implications\nWorktree: /Users/mz/src/specled_ex-701.3\n\nFiles touched:\n- lib/specled_ex/realization/effective_binding.ex\n- test/specled_ex/realization/effective_binding_test.exs\n\nTests added (in SpecLedEx.Realization.EffectiveBindingTest, \"expand_implications/1\" describe block):\n- \"every implementation entry also appears under api_boundary\"\n- \"api_boundary-only entries do NOT seed implementation (one-way)\"\n- \"is idempotent: calling twice produces the same result\"\n- \"deduplicates api_boundary when subject already lists implementation entry there\"\n- \"api_boundary list is sorted lexicographically\"\n- \"empty input returns an empty map\"\n- \"no implementation tier leaves api_boundary untouched (no sort, no dedup forced)\"\n- \"no api_boundary tier yet but implementation present seeds api_boundary\"\n- \"tiers other than api_boundary and implementation are untouched\"\n- \"both tiers populated: api_boundary becomes the union, sorted and deduped\"\n- \"atom tier keys are normalized to strings\"\n- \"bare-module entries flow through the implication identically to MFA strings\"\n\nVerification stubs flipped: none.\nThe verification block in .spec/specs/realized_by.spec.md grouping `implication_one_way` + `implication_invoked_per_layer` also covers `implication_drift_both_tiers`, `implication_dangling_once`, and `implication_amplification_dedup` — those belong to S4/S5. Flipping the stub now would falsely promise tests for those ids. The ticket also lists `.spec/**` under Out of Scope (files), so the stub flip is deferred to whichever stage finishes coverage of that block (S5 per the plan).\n\nSummary: Added pure idempotent `EffectiveBinding.expand_implications/1` that takes a string-keyed binding map and ensures every entry under `\"implementation\"` also appears under `\"api_boundary\"`, deduplicated and sorted lexicographically. Implementation is one-way: api_boundary-only entries are not seeded into implementation. Other tiers (`expanded_behavior`, `use`, `typespecs`) pass through untouched. `for_requirement/2`'s signature and behavior are unchanged. No detector or orchestrator wiring (S5's job).\n\nLocal checks:\n- `mix compile`: clean\n- `mix test test/specled_ex/realization/effective_binding_test.exs`: 19 tests, 0 failures (7 pre-existing + 12 new)\n- `mix test` (full suite): 2 properties, 670 tests, 0 failures\n- `mix spec.validate`: 35 findings (down from 39 on epic base; remaining belong to other stages)\n- Diff scope check: only `lib/specled_ex/realization/effective_binding.ex` and `test/specled_ex/realization/effective_binding_test.exs` touched (both in Allowed touches; nothing under .spec/**, orchestrator, canonical, api_boundary, or implementation tiers).",
+      "timestamp": "2026-05-08T00:49:04Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "S2: EffectiveBinding.expand_implications/1",
   "type": "task",
-  "updated_at": "2026-05-08T00:44:34Z"
+  "updated_at": "2026-05-08T00:49:04Z"
 }
