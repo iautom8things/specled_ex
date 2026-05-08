@@ -21,11 +21,15 @@
     {
       "text": "AUDIT: APPROVE\nSession: a26339887a3e06af0\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/eeca2123-30e1-430c-90c1-08dd23adf991/subagents/agent-a26339887a3e06af0.jsonl\n\nReasoning: Diff vs base abeee1e is 2 files, both in Allowed globs, purely additive (zero deletions; existing Canonical.hash/1 is genuinely untouched). All four S3 requirements are tagged on the @moduletag (canonical_test.exs L1-L10) and each has at least one test that fails under its primary mutation: not_loadable path (canonical.ex L232/L252) covered by the cold-module test; struct inclusion covered by struct_hash != empty_hash; head/full envelope-tag distinction covered by the degenerate-empty-module assertion (canonical.ex L172 vs L220 tags). Discovery is Module.__info__/1 only (canonical.ex L235/L242) sorted by {kind,name,arity} (L247); the BEAM debug_info read in extract_clauses is post-expansion canonical form per the ADR, NOT source-AST fallback, and no private helper walks callees from a bare module. Independent mix spec.check confirms 31 findings on stage and 39 on the abeee1e base — the 8-finding delta is exactly the four 701.4 requirements (one error + one warning each) clearing; ZERO new findings introduced. None of bare_module_api_boundary_hash, bare_module_implementation_hash, bare_module_runtime_only_discovery, bare_module_export_filtering appear in the post-stage findings. mix test on canonical_test.exs: 18/18 pass.",
       "timestamp": "2026-05-08T01:08:13Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-701/realized-by-tier-implication. Closing per orchestrator sign-off.",
+      "timestamp": "2026-05-08T01:14:34Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "S3: Canonical module-union hashing",
   "type": "task",
-  "updated_at": "2026-05-08T01:08:13Z"
+  "updated_at": "2026-05-08T01:14:34Z"
 }
