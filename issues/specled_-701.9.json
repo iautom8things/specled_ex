@@ -23,11 +23,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit, orchestrated)\nSession: eeca2123-30e1-430c-90c1-08dd23adf991\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/eeca2123-30e1-430c-90c1-08dd23adf991.jsonl\n\nReasoning: VERIFY reported PASS with full mechanical-scope cleanliness (2 files Allowed, 0 Out-of-Scope), 4/4 must-requirements covered by mutation-resistant tests, all intent-level concerns met (no --write flag in OptionParser strict list; no findings emitted by the task; duplicate detection delegated to RealizedByDedupe.duplicates/1 at line 70). Project verification: mix test 747/0; task runs end-to-end emitting 3 well-formed proposal blocks with deterministic ordering and exits non-zero on --fail-on-dups. Selective-audit fast path applied — verifier traced sources, ran the task itself, and confirmed no regressions.",
       "timestamp": "2026-05-08T01:52:06Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-701/realized-by-tier-implication. Closing per orchestrator sign-off.",
+      "timestamp": "2026-05-08T01:53:36Z"
     }
   ],
   "priority": 2,
   "status": "open",
   "title": "S8: mix spec.dedup_realized_by task",
   "type": "task",
-  "updated_at": "2026-05-08T01:52:06Z"
+  "updated_at": "2026-05-08T01:53:36Z"
 }
