@@ -11,9 +11,15 @@
   "id": "specled_-701.9",
   "labels": [],
   "parent": "specled_-701",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: eeca2123-30e1-430c-90c1-08dd23adf991\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/eeca2123-30e1-430c-90c1-08dd23adf991.jsonl\n\nCommit: e9a0c71c289905278c6261d71299cc96867cfaca\nStage branch: specled_-701.9/mix-spec-dedup-realized-by (off epic specled_-701/realized-by-tier-implication)\nStage worktree: /Users/mz/src/specled_ex-701.9\n\nFiles touched:\n- lib/mix/tasks/spec.dedup_realized_by.ex (new)\n- test/specled_ex/mix/tasks/spec_dedup_realized_by_test.exs (new)\n\nTests added (test/specled_ex/mix/tasks/spec_dedup_realized_by_test.exs, 11 tests):\n- proposal block format: subject id, realized_by:/api_boundary: scaffold, entries\n- proposal block format: each removal line carries `# already implied by implementation`\n- multi-subject ordering (sorted by subject id, deterministic)\n- exit-code: default exit 0 even when dups present\n- exit-code: clean-exit message when no dups (\"No realized_by duplications found.\")\n- exit-code: --fail-on-dups raises Mix.Error when any subject has dups\n- exit-code: --fail-on-dups still exits 0 when no subject has dups\n- no --write: source does not declare a `write:` OptionParser key\n- no --write: task writes nothing to disk (file set unchanged before/after)\n- shared seam: source calls `RealizedByDedupe.duplicates`\n- shared seam: end-to-end agreement — validator findings and task output report\n  the same entry set on the same fixture\n\nVerification stubs flipped: NONE in this ticket. The four spec-verification\ncovers entries for these requirements remain `execute: false` in\n.spec/specs/mix_tasks.spec.md because the ticket lists `.spec/**` under\nOut of Scope (S9 owns the spec/ADR doc updates per the epic DAG).\n\nSmoke check (end-to-end): `mix spec.dedup_realized_by` on this repo\nprints proposal blocks for the 5 subjects with cross-tier duplicates\nvisible from `mix spec.validate`'s `realized_by_redundant_dup` warnings;\nexit 0 by default, exit 1 with `--fail-on-dups`.\n\nTest suite: `mix test` — 2 properties, 747 tests, 0 failures.\n`mix spec.validate`: 11 pre-existing findings (binding/realized_by/mix_tasks\ndups + 3 missing-tag errors on realized_by spec), all reproducible on the\nbare epic-branch HEAD before this ticket's changes — no regressions\nintroduced; the Out of Scope (.spec/**, validator/**, realization/**,\nspec.validate.ex) was honored.\n\nSummary: Adds `Mix.Tasks.Spec.DedupRealizedBy.run/1` that loads the spec\nindex, computes cross-tier duplicates per subject via the shared\n`SpecLedEx.Validator.RealizedByDedupe.duplicates/1` helper, and prints a\ndeterministic per-subject YAML proposal block annotating each removal\nwith `# already implied by implementation`. No `--write` flag exists; agents\napply edits via their own tooling, mirroring `mix spec.suggest_binding`.",
+      "timestamp": "2026-05-08T01:47:29Z"
+    }
+  ],
   "priority": 2,
   "status": "open",
   "title": "S8: mix spec.dedup_realized_by task",
   "type": "task",
-  "updated_at": "2026-05-07T23:57:21Z"
+  "updated_at": "2026-05-08T01:47:29Z"
 }
