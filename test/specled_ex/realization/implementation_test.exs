@@ -354,4 +354,245 @@ defmodule SpecLedEx.Realization.ImplementationTest do
       assert finding["reason"] == "umbrella_unsupported"
     end
   end
+
+  # covers: specled.realized_by.bare_module_implementation_hash
+  # covers: specled.realized_by.bare_module_no_closure_walk
+  describe "run/4 — bare-module entries hash via Canonical.hash_module_full_union/2" do
+    @tag spec: ["specled.realized_by.bare_module_implementation_hash"]
+    test "no drift when committed bare-module hash matches current full-union", %{root: root} do
+      module_string = "SpecLedEx.ImplFixtures.Helpers"
+
+      {:ok, current} =
+        SpecLedEx.Realization.Canonical.hash_module_full_union(SpecLedEx.ImplFixtures.Helpers)
+
+      :ok =
+        HashStore.write(root, %{
+          "implementation" => %{
+            module_string => %{
+              "hash" => Base.encode16(current, case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      subject = %{
+        id: "BareOnly",
+        surface: [],
+        impl_bindings: [module_string]
+      }
+
+      world = %{subjects: [subject], tracer_edges: %{}, in_project?: fn _ -> true end}
+
+      findings = Implementation.run([subject], world, nil, root: root)
+
+      refute Enum.any?(findings, &(&1["code"] == "branch_guard_realization_drift"))
+    end
+
+    @tag spec: ["specled.realized_by.bare_module_implementation_hash"]
+    test "drift fires when committed bare-module hash differs", %{root: root} do
+      module_string = "SpecLedEx.ImplFixtures.Helpers"
+
+      :ok =
+        HashStore.write(root, %{
+          "implementation" => %{
+            module_string => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "wrong"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      subject = %{
+        id: "BareOnly",
+        surface: [],
+        impl_bindings: [module_string]
+      }
+
+      world = %{subjects: [subject], tracer_edges: %{}, in_project?: fn _ -> true end}
+
+      findings = Implementation.run([subject], world, nil, root: root)
+
+      drift =
+        Enum.find(findings, fn f ->
+          f["code"] == "branch_guard_realization_drift" and f["mfa"] == module_string
+        end)
+
+      assert drift != nil, "expected drift finding for bare module, got: #{inspect(findings)}"
+      assert drift["tier"] == "implementation"
+      assert drift["subject_id"] == "BareOnly"
+    end
+
+    @tag spec: ["specled.realized_by.bare_module_no_closure_walk"]
+    test "bare-module bindings do NOT seed the closure walk (no MFA → no subject hash)",
+         %{root: root} do
+      # Subject lists ONLY a bare module. No MFA-form binding exists, so the
+      # closure walker has nothing to seed. The subject's per-subject hash
+      # entry must be absent — the only entries produced are the per-module
+      # bare-module entries.
+      module_string = "SpecLedEx.ImplFixtures.Helpers"
+
+      subject = %{
+        id: "BareOnly",
+        surface: [],
+        impl_bindings: [module_string]
+      }
+
+      world = %{subjects: [subject], tracer_edges: %{}, in_project?: fn _ -> true end}
+
+      # No committed hashes for either the subject id or the bare module —
+      # first run should be silent (per silent_seed semantics handled in S5;
+      # here we assert "no drift findings").
+      findings = Implementation.run([subject], world, nil, root: root)
+      refute Enum.any?(findings, &(&1["code"] == "branch_guard_realization_drift"))
+      refute Enum.any?(findings, &(&1["code"] == "branch_guard_dangling_binding"))
+    end
+
+    @tag spec: ["specled.realized_by.bare_module_implementation_hash"]
+    test "MFA bindings and bare-module bindings coexist in the same subject", %{root: root} do
+      # Mix one MFA binding (drives the closure-walk subject hash) and one
+      # bare-module binding (drives a per-module hash). Both should be
+      # checked independently.
+      module_string = "SpecLedEx.ImplFixtures.Helpers"
+      mfa = "SpecLedEx.ImplFixtures.A.foo/1"
+
+      subject = %{
+        id: "Mixed",
+        surface: [],
+        impl_bindings: [mfa, module_string]
+      }
+
+      edges = %{
+        {SpecLedEx.ImplFixtures.A, :foo, 1} => [{SpecLedEx.ImplFixtures.B, :bar, 1}]
+      }
+
+      world = %{
+        subjects: [subject],
+        tracer_edges: edges,
+        in_project?: fn mod ->
+          mod in [SpecLedEx.ImplFixtures.A, SpecLedEx.ImplFixtures.B]
+        end
+      }
+
+      # Compute the subject's MFA-only hash by stripping the bare module.
+      {:ok, mfa_only_hash} =
+        Implementation.hash_for_subject(
+          %{subject | impl_bindings: [mfa]},
+          world
+        )
+
+      {:ok, bare_hash} =
+        SpecLedEx.Realization.Canonical.hash_module_full_union(SpecLedEx.ImplFixtures.Helpers)
+
+      :ok =
+        HashStore.write(root, %{
+          "implementation" => %{
+            "Mixed" => %{
+              "hash" => Base.encode16(mfa_only_hash, case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            },
+            module_string => %{
+              "hash" => Base.encode16(bare_hash, case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      findings = Implementation.run([subject], world, nil, root: root)
+      refute Enum.any?(findings, &(&1["code"] == "branch_guard_realization_drift")),
+             "expected zero drift, got: #{inspect(findings)}"
+    end
+  end
+
+  # covers: specled.realized_by.bare_module_runtime_only_discovery
+  describe "run/4 — bare module not loadable → dangling" do
+    @tag spec: ["specled.realized_by.bare_module_runtime_only_discovery"]
+    test "emits branch_guard_dangling_binding when the bare module fails to load",
+         %{root: root} do
+      module_string = "SpecLedEx.NotLoadable.Module.Imaginary"
+
+      subject = %{
+        id: "Ghost",
+        surface: [],
+        impl_bindings: [module_string]
+      }
+
+      world = %{subjects: [subject], tracer_edges: %{}, in_project?: fn _ -> true end}
+
+      findings = Implementation.run([subject], world, nil, root: root)
+
+      dangling =
+        Enum.find(findings, fn f ->
+          f["code"] == "branch_guard_dangling_binding" and f["mfa"] == module_string
+        end)
+
+      assert dangling != nil,
+             "expected dangling finding for bare module, got: #{inspect(findings)}"
+
+      assert dangling["tier"] == "implementation"
+    end
+  end
+
+  # covers: specled.realized_by.binding_ref_inferred_no_leak
+  describe "run/4 — inferred? never leaks into finding maps" do
+    @tag spec: ["specled.realized_by.binding_ref_inferred_no_leak"]
+    test "implementation findings never carry :inferred? or \"inferred?\" keys",
+         %{root: root} do
+      # Drive every implementation-tier path that produces findings:
+      # - subject-level MFA drift
+      # - subject-level MFA dangling
+      # - bare-module drift
+      # - bare-module not-loadable dangling
+      module_string = "SpecLedEx.ImplFixtures.Helpers"
+
+      :ok =
+        HashStore.write(root, %{
+          "implementation" => %{
+            "DriftSubject" => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "wrong-subj"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            },
+            module_string => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "wrong-bare"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      drift_subject = %{
+        id: "DriftSubject",
+        surface: [],
+        impl_bindings: ["SpecLedEx.ImplFixtures.A.foo/1", module_string]
+      }
+
+      ghost = %{
+        id: "Ghost",
+        surface: [],
+        impl_bindings: [
+          "SpecLedEx.ImplFixtures.DoesNotExist.nope/0",
+          "SpecLedEx.NotLoadable.Module.Imaginary"
+        ]
+      }
+
+      edges = %{
+        {SpecLedEx.ImplFixtures.A, :foo, 1} => [{SpecLedEx.ImplFixtures.B, :bar, 1}]
+      }
+
+      world = %{
+        subjects: [drift_subject, ghost],
+        tracer_edges: edges,
+        in_project?: fn _ -> true end
+      }
+
+      findings = Implementation.run([drift_subject, ghost], world, nil, root: root)
+      refute findings == [], "expected at least one finding to enforce the property"
+
+      Enum.each(findings, fn f ->
+        refute Map.has_key?(f, :inferred?),
+               "finding map leaked :inferred? key: #{inspect(f)}"
+
+        refute Map.has_key?(f, "inferred?"),
+               "finding map leaked \"inferred?\" key: #{inspect(f)}"
+      end)
+    end
+  end
 end

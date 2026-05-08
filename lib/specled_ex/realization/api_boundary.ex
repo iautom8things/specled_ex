@@ -20,17 +20,29 @@ defmodule SpecLedEx.Realization.ApiBoundary do
   """
 
   alias SpecLedEx.Compiler.Context
-  alias SpecLedEx.Realization.{Binding, HashStore}
+  alias SpecLedEx.Realization.{Binding, Canonical, HashStore}
 
   @tier "api_boundary"
   @drift_code "branch_guard_realization_drift"
   @dangling_code "branch_guard_dangling_binding"
   @detector_unavailable_code "detector_unavailable"
 
+  @typedoc """
+  A binding reference passed to `run/3`.
+
+  The `inferred?` field is orchestrator-internal: when true, the entry was
+  added to the api_boundary tier via `EffectiveBinding.expand_implications/1`
+  rather than authored directly. The api_boundary detector suppresses
+  `branch_guard_dangling_binding` findings for inferred entries so the
+  implementation tier's authored finding survives without amplification.
+  The flag does NOT appear on any finding map. See
+  `specled.realized_by.binding_ref_inferred_no_leak`.
+  """
   @type binding_ref :: %{
-          subject_id: String.t(),
-          requirement_id: String.t() | nil,
-          mfa: String.t()
+          required(:subject_id) => String.t(),
+          required(:requirement_id) => String.t() | nil,
+          required(:mfa) => String.t(),
+          optional(:inferred?) => boolean()
         }
 
   @doc """
@@ -82,8 +94,10 @@ defmodule SpecLedEx.Realization.ApiBoundary do
 
   defp check_binding(%{mfa: mfa} = binding, context, store) do
     case Binding.resolve(mfa, context) do
-      {:ok, {:module, _}} ->
-        []
+      {:ok, {:module, mod}} ->
+        # Bare-module entry: hash via the module head-union envelope.
+        # See `specled.realized_by.bare_module_api_boundary_hash`.
+        check_bare_module(binding, mod, store)
 
       {:ok, ast} ->
         current = hash(ast)
@@ -111,19 +125,78 @@ defmodule SpecLedEx.Realization.ApiBoundary do
         end
 
       {:error, :not_found, details} ->
-        [
-          %{
-            "code" => @dangling_code,
-            "tier" => @tier,
-            "subject_id" => binding.subject_id,
-            "requirement_id" => Map.get(binding, :requirement_id),
-            "mfa" => mfa,
-            "message" =>
-              "Declared binding #{mfa} is not defined (subject=#{binding.subject_id}, " <>
-                "tier=#{@tier}). Update realized_by or restore the function. " <>
-                "Searched: #{inspect(Map.get(details, :searched, []))}"
-          }
-        ]
+        # Implication-inferred entries suppress their own dangling finding so
+        # the implementation tier's authored finding survives once.
+        # See `specled.realized_by.implication_dangling_once` and
+        # `specled.realized_by.binding_ref_inferred_no_leak`.
+        if Map.get(binding, :inferred?, false) do
+          []
+        else
+          [
+            %{
+              "code" => @dangling_code,
+              "tier" => @tier,
+              "subject_id" => binding.subject_id,
+              "requirement_id" => Map.get(binding, :requirement_id),
+              "mfa" => mfa,
+              "message" =>
+                "Declared binding #{mfa} is not defined (subject=#{binding.subject_id}, " <>
+                  "tier=#{@tier}). Update realized_by or restore the function. " <>
+                  "Searched: #{inspect(Map.get(details, :searched, []))}"
+            }
+          ]
+        end
+    end
+  end
+
+  # Bare-module entry: hash via `Canonical.hash_module_head_union/2`. When the
+  # module fails to load, `inferred?` decides whether to emit dangling — an
+  # authored bare-module entry under api_boundary still emits dangling, but an
+  # entry inferred from `implementation` is suppressed so the implementation
+  # tier emits the single surviving finding.
+  defp check_bare_module(%{mfa: mfa} = binding, mod, store) do
+    case Canonical.hash_module_head_union(mod) do
+      {:ok, current} ->
+        case HashStore.fetch(store, @tier, mfa) do
+          nil ->
+            []
+
+          committed when committed == current ->
+            []
+
+          _committed ->
+            [
+              %{
+                "code" => @drift_code,
+                "tier" => @tier,
+                "subject_id" => binding.subject_id,
+                "requirement_id" => Map.get(binding, :requirement_id),
+                "mfa" => mfa,
+                "message" =>
+                  "api_boundary hash for #{mfa} differs from committed value " <>
+                    "(subject=#{binding.subject_id})"
+              }
+            ]
+        end
+
+      {:error, :not_loadable} ->
+        if Map.get(binding, :inferred?, false) do
+          []
+        else
+          [
+            %{
+              "code" => @dangling_code,
+              "tier" => @tier,
+              "subject_id" => binding.subject_id,
+              "requirement_id" => Map.get(binding, :requirement_id),
+              "mfa" => mfa,
+              "message" =>
+                "Declared bare-module binding #{mfa} is not loadable " <>
+                  "(subject=#{binding.subject_id}, tier=#{@tier}). " <>
+                  "Update realized_by or ensure the module compiles."
+            }
+          ]
+        end
     end
   end
 

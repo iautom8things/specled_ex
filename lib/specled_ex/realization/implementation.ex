@@ -39,6 +39,21 @@ defmodule SpecLedEx.Realization.Implementation do
   @type subject :: Closure.subject()
   @type world :: Closure.world()
 
+  @typedoc """
+  Subject-level binding entry passed by the orchestrator. The optional
+  `inferred?` boolean is consulted by the api_boundary detector only — it
+  is recorded here as part of the binding_ref shape contract documented in
+  `specled.realized_by.binding_ref_inferred_no_leak`. The implementation
+  tier ignores `inferred?`: its own dangling finding is the surviving
+  finding regardless of the flag's value.
+  """
+  @type binding_ref :: %{
+          required(:subject_id) => String.t(),
+          required(:requirement_id) => String.t() | nil,
+          required(:mfa) => String.t(),
+          optional(:inferred?) => boolean()
+        }
+
   @doc """
   Runs the implementation tier for a list of subjects.
 
@@ -98,22 +113,121 @@ defmodule SpecLedEx.Realization.Implementation do
   # ---------------------------------------------------------------------------
 
   defp check_subject(subject, world, context, store, cache) do
-    case compute_hash(subject, world, context, cache) do
-      {:ok, hash, cache} ->
-        committed = HashStore.fetch(store, @tier, subject.id)
+    {mfa_subject, bare_modules} = partition_bare_modules(subject)
 
-        findings =
-          cond do
-            committed == nil -> []
-            committed == hash -> []
-            true -> [drift_finding(subject, hash, committed)]
-          end
+    bare_findings = check_bare_modules(subject, bare_modules, store)
 
-        {findings, cache}
+    case mfa_subject do
+      nil ->
+        # Subject contained only bare-module entries — no closure hash to
+        # compute. Bare-module findings stand on their own.
+        {bare_findings, cache}
 
-      {:error, {:dangling_bindings, bindings}, cache} ->
-        {Enum.map(bindings, &dangling_finding(subject, &1)), cache}
+      mfa_subject ->
+        case compute_hash(mfa_subject, world, context, cache) do
+          {:ok, hash, cache} ->
+            committed = HashStore.fetch(store, @tier, subject.id)
+
+            mfa_findings =
+              cond do
+                committed == nil -> []
+                committed == hash -> []
+                true -> [drift_finding(subject, hash, committed)]
+              end
+
+            {bare_findings ++ mfa_findings, cache}
+
+          {:error, {:dangling_bindings, bindings}, cache} ->
+            mfa_findings = Enum.map(bindings, &dangling_finding(subject, &1))
+            {bare_findings ++ mfa_findings, cache}
+        end
     end
+  end
+
+  # Partition the subject's `impl_bindings` into MFA-form (for the closure
+  # walk) and bare-module-form (for per-module union hashing). Returns
+  # `{mfa_subject_or_nil, bare_module_strings}`. The `mfa_subject` carries
+  # only the MFA bindings so the closure walker is not seeded by bare-module
+  # entries (`specled.realized_by.bare_module_no_closure_walk`). When the
+  # subject has no MFA bindings, returns `nil` to signal the caller can skip
+  # the closure-hash path entirely.
+  defp partition_bare_modules(subject) do
+    bindings = Map.get(subject, :impl_bindings, [])
+
+    {mfa_bindings, bare_modules} =
+      Enum.split_with(bindings, fn binding ->
+        case Binding.parse(binding) do
+          {:ok, {:module, _mod}} -> false
+          _ -> true
+        end
+      end)
+
+    mfa_subject =
+      if mfa_bindings == [] do
+        nil
+      else
+        Map.put(subject, :impl_bindings, mfa_bindings)
+      end
+
+    {mfa_subject, bare_modules}
+  end
+
+  # Per-bare-module hashing. Each bare module produces its own
+  # drift / dangling finding keyed by the bare-module string (not the
+  # subject id). See `specled.realized_by.bare_module_implementation_hash`
+  # and `specled.realized_by.bare_module_runtime_only_discovery`.
+  defp check_bare_modules(subject, bare_modules, store) do
+    Enum.flat_map(bare_modules, fn module_string ->
+      case Binding.parse(module_string) do
+        {:ok, {:module, mod}} ->
+          check_bare_module(subject, module_string, mod, store)
+
+        _ ->
+          # Defensive: partition guarantees this shape; handle gracefully.
+          [bare_module_dangling(subject, module_string)]
+      end
+    end)
+  end
+
+  defp check_bare_module(subject, module_string, mod, store) do
+    case Canonical.hash_module_full_union(mod) do
+      {:ok, current} ->
+        case HashStore.fetch(store, @tier, module_string) do
+          nil -> []
+          committed when committed == current -> []
+          _committed -> [bare_module_drift_finding(subject, module_string)]
+        end
+
+      {:error, :not_loadable} ->
+        [bare_module_dangling(subject, module_string)]
+    end
+  end
+
+  defp bare_module_drift_finding(subject, module_string) do
+    %{
+      "code" => @drift_code,
+      "tier" => @tier,
+      "subject_id" => subject.id,
+      "requirement_id" => nil,
+      "mfa" => module_string,
+      "message" =>
+        "implementation hash for bare module #{module_string} differs from " <>
+          "committed value (subject=#{subject.id})"
+    }
+  end
+
+  defp bare_module_dangling(subject, module_string) do
+    %{
+      "code" => @dangling_code,
+      "tier" => @tier,
+      "subject_id" => subject.id,
+      "requirement_id" => nil,
+      "mfa" => module_string,
+      "message" =>
+        "Declared bare-module binding #{module_string} is not loadable " <>
+          "(subject=#{subject.id}, tier=#{@tier}). " <>
+          "Update realized_by or ensure the module compiles."
+    }
   end
 
   defp drift_finding(subject, current, _committed) do
