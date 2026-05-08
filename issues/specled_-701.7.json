@@ -16,11 +16,15 @@
     {
       "text": "IMPLEMENTED\nSession: eeca2123-30e1-430c-90c1-08dd23adf991\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/eeca2123-30e1-430c-90c1-08dd23adf991.jsonl\n\nCommit: e0c9585\nFiles touched:\n- test/specled_ex/realization/implication_integration_test.exs (new, 762 lines)\n\nTests added (7, all green):\n- scenario.implication_drift_both_tiers — hard-coupled MFA: head vs body-only drift\n- scenario.existing_duplication_validator_warns — validator + drift coexistence\n- scenario.bare_module_first_run_silent_seed + bare_module_drift_after_seed — seed then drift\n- scenario.bare_module_export_added — public function added fires both tiers\n- scenario.dangling_implication_once — exactly one dangling, tier=implementation\n- scenario.bare_module_not_loadable_dangles — unloadable bare module path\n- scenario.inferred_flag_does_not_leak — cross-cutting regression\n\nVerification stubs flipped:\n- (none — the four spec-verification blocks for these scenarios are still\n  `execute: false` in .spec/specs/realized_by.spec.md. Per the ticket's\n  Out-of-Scope (.spec/**) and the explicit S9 (701.10) plan, the\n  spec-verification flips and dup-cover cleanup land in 701.10.)\n\nMechanical scope check:\n- Files touched: 1\n- Files outside Allowed globs: 0 (matches Allowed: test/specled_ex/realization/implication_integration_test.exs)\n- Files matching Out-of-Scope globs: 0\n- No production code changes; no .spec/** edits.\n\nLocal sanity:\n- Compile: clean\n- Full mix test: 768 tests, 0 failures\n- New file in isolation, multiple seeds (0, 1, 100, 1000, 99999): all green\n\nSummary: Added one integration test file with seven describe blocks, one\nper spec scenario id. Each test drives Orchestrator.run/2 against\ncompile-on-disk fixture modules and a per-test tmp \u003croot\u003e/.spec/state.json\nseeded via StateJsonFixture. Scenario 1 (hard-coupled MFA) seeds both\ntiers directly via Implementation.hashes_for_seeding/3 + StateJsonFixture\nto avoid the post-run HashStore.write/2 path clobbering impl-tier seeds\n(a known orchestrator nuance documented in\nlib/specled_ex/realization/orchestrator.ex moduledoc — out of scope for\nthis ticket per \"no production code changes\"). Bare-module scenarios\nexercise the silent-seed merge path. The compile_module! helper purges\nbefore and after each recompile and forces debug_info on so\n:code.get_object_code/1 reads the new BEAM rather than the previously\nloaded copy.",
       "timestamp": "2026-05-08T02:29:45Z"
+    },
+    {
+      "text": "-m",
+      "timestamp": "2026-05-08T02:37:46Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "S6: Integration scenarios 1-5",
   "type": "task",
-  "updated_at": "2026-05-08T02:29:45Z"
+  "updated_at": "2026-05-08T02:37:46Z"
 }
