@@ -955,12 +955,12 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
     end
 
     @tag spec: "specled.realized_by.orchestrator_publishes_attestations"
-    test "tagged-tests expansion is NOT performed yet — only production paths appear",
+    test "production attestation appears even when a tagged_tests verification covers the requirement",
          %{root: root} do
-      # Even when the subject carries a `kind: tagged_tests` verification block
-      # covering this requirement, this iteration must NOT bounce its production
-      # attestation into a test-file attestation. The attestation map should
-      # contain ONLY the production source path.
+      # Production-code attestation always lands regardless of whether the
+      # subject has a `kind: tagged_tests` verification block. Tagged-tests
+      # expansion runs on top of production attestation (see the dedicated
+      # describe block below), but the production entry must remain.
       mfa = "SpecLedEx.Coverage.default_artifact_path/0"
 
       subject =
@@ -1005,9 +1005,370 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
 
       assert Map.has_key?(inner, "lib/specled_ex/coverage.ex"),
              "expected production-code attestation, got: #{inspect(inner)}"
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  # S7 — tagged-tests attestation expansion
+  # ---------------------------------------------------------------------------
+  describe "run_with_attestations/2 + attestations/2 — tagged_tests expansion" do
+    @tag spec: "specled.realized_by.attestation_tagged_tests_expansion"
+    test "requirement-level binding that attests clean expands tagged_tests covers into test-file attestations",
+         %{root: root} do
+      # `scenario.attestation_tagged_tests_expand`: a subject has a requirement
+      # `req.a` whose `realized_by.api_boundary` lists a clean MFA, and the
+      # subject has a `kind: tagged_tests` verification covering `req.a`. The
+      # tag-scan index registers `test/coverage_test.exs` for `req.a`. The
+      # attestation map must contain a test-file entry with the same MFA list.
+      mfa = "SpecLedEx.Coverage.default_artifact_path/0"
+
+      subject = %{
+        "file" => ".spec/specs/tt.expand.subject.spec.md",
+        "meta" => %SpecLedEx.Schema.Meta{
+          id: "tt.expand.subject",
+          status: "active",
+          kind: "module",
+          realized_by: %{},
+          surface: ["lib/specled_ex/coverage.ex"]
+        },
+        "requirements" => [
+          struct(SpecLedEx.Schema.Requirement, %{
+            id: "tt.expand.req.a",
+            priority: "must",
+            realized_by: %{"api_boundary" => [mfa]}
+          })
+        ],
+        "verification" => [
+          %{
+            "kind" => "tagged_tests",
+            "execute" => true,
+            "covers" => ["tt.expand.req.a"]
+          }
+        ]
+      }
+
+      atts =
+        Orchestrator.attestations(
+          %{
+            "subjects" => [subject],
+            "test_tags" => %{
+              "tt.expand.req.a" => [%{file: "test/coverage_test.exs"}]
+            }
+          },
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      inner = Map.get(atts, "tt.expand.subject", %{})
+
+      # Production attestation still present.
+      assert Map.get(inner, "lib/specled_ex/coverage.ex") ==
+               {:attested_clean, [mfa]}
+
+      # Test file attestation carries the same MFA list as the production
+      # attestation.
+      assert Map.get(inner, "test/coverage_test.exs") ==
+               {:attested_clean, [mfa]}
+    end
+
+    @tag spec: "specled.realized_by.attestation_tagged_tests_expansion"
+    test "tag entries with string-keyed file shape are also recognized",
+         %{root: root} do
+      # The orchestrator should tolerate `%{file: ...}` and `%{"file" => ...}`
+      # equally — both shapes appear in practice (normalize_file_entry preserves
+      # whatever shape TagScanner produced; hand-built test indexes may use
+      # either form).
+      mfa = "SpecLedEx.Coverage.default_artifact_path/0"
+
+      subject = %{
+        "file" => ".spec/specs/tt.expand.string.subject.spec.md",
+        "meta" => %SpecLedEx.Schema.Meta{
+          id: "tt.expand.string.subject",
+          status: "active",
+          kind: "module",
+          realized_by: %{},
+          surface: ["lib/specled_ex/coverage.ex"]
+        },
+        "requirements" => [
+          struct(SpecLedEx.Schema.Requirement, %{
+            id: "tt.expand.string.req",
+            priority: "must",
+            realized_by: %{"api_boundary" => [mfa]}
+          })
+        ],
+        "verification" => [
+          %{
+            "kind" => "tagged_tests",
+            "execute" => true,
+            "covers" => ["tt.expand.string.req"]
+          }
+        ]
+      }
+
+      atts =
+        Orchestrator.attestations(
+          %{
+            "subjects" => [subject],
+            "test_tags" => %{
+              "tt.expand.string.req" => [%{"file" => "test/coverage_test.exs"}]
+            }
+          },
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      inner = Map.get(atts, "tt.expand.string.subject", %{})
+
+      assert Map.get(inner, "test/coverage_test.exs") ==
+               {:attested_clean, [mfa]}
+    end
+
+    @tag spec: "specled.realized_by.attestation_tagged_tests_expansion"
+    test "requirement whose binding drifted produces no test-file attestation",
+         %{root: root} do
+      # `scenario.attestation_tagged_tests_drifted_requirement_no_expand`:
+      # same subject and tagged_tests verification as the prior scenario, but
+      # the requirement's binding drifted. The drift filters out both the
+      # production-code attestation AND the tagged-tests expansion for that
+      # requirement.
+      mfa = "SpecLedEx.Coverage.default_artifact_path/0"
+
+      # Seed a wrong hash to force a drift finding for this MFA.
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "wrong"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      subject = %{
+        "file" => ".spec/specs/tt.drift.subject.spec.md",
+        "meta" => %SpecLedEx.Schema.Meta{
+          id: "tt.drift.subject",
+          status: "active",
+          kind: "module",
+          realized_by: %{},
+          surface: ["lib/specled_ex/coverage.ex"]
+        },
+        "requirements" => [
+          struct(SpecLedEx.Schema.Requirement, %{
+            id: "tt.drift.req",
+            priority: "must",
+            realized_by: %{"api_boundary" => [mfa]}
+          })
+        ],
+        "verification" => [
+          %{
+            "kind" => "tagged_tests",
+            "execute" => true,
+            "covers" => ["tt.drift.req"]
+          }
+        ]
+      }
+
+      {findings, atts} =
+        Orchestrator.run_with_attestations(
+          %{
+            "subjects" => [subject],
+            "test_tags" => %{
+              "tt.drift.req" => [%{file: "test/coverage_test.exs"}]
+            }
+          },
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      # Drift finding for the binding was emitted.
+      assert Enum.any?(findings, fn f ->
+               f["code"] == "branch_guard_realization_drift" and f["mfa"] == mfa
+             end)
+
+      inner = Map.get(atts, "tt.drift.subject", %{})
 
       refute Map.has_key?(inner, "test/coverage_test.exs"),
-             "tagged-tests expansion must wait for the next ticket; got: #{inspect(inner)}"
+             "drifted requirement must not produce a test-file attestation; got: #{inspect(inner)}"
+
+      refute Map.has_key?(inner, "lib/specled_ex/coverage.ex"),
+             "drifted binding must not produce a production-code attestation; got: #{inspect(inner)}"
+    end
+
+    @tag spec: "specled.realized_by.attestation_tagged_tests_expansion"
+    test "non-tagged_tests verification kinds do not trigger expansion",
+         %{root: root} do
+      # The expansion is gated on `kind: tagged_tests`. A `kind: source_file`
+      # verification (or any other kind) covering the same requirement must
+      # NOT cause test-file entries to be bounced into the attestation map.
+      mfa = "SpecLedEx.Coverage.default_artifact_path/0"
+
+      subject = %{
+        "file" => ".spec/specs/tt.other.subject.spec.md",
+        "meta" => %SpecLedEx.Schema.Meta{
+          id: "tt.other.subject",
+          status: "active",
+          kind: "module",
+          realized_by: %{},
+          surface: ["lib/specled_ex/coverage.ex"]
+        },
+        "requirements" => [
+          struct(SpecLedEx.Schema.Requirement, %{
+            id: "tt.other.req",
+            priority: "must",
+            realized_by: %{"api_boundary" => [mfa]}
+          })
+        ],
+        "verification" => [
+          %{
+            "kind" => "source_file",
+            "execute" => true,
+            "covers" => ["tt.other.req"],
+            "target" => "lib/specled_ex/coverage.ex"
+          }
+        ]
+      }
+
+      atts =
+        Orchestrator.attestations(
+          %{
+            "subjects" => [subject],
+            "test_tags" => %{
+              "tt.other.req" => [%{file: "test/coverage_test.exs"}]
+            }
+          },
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      inner = Map.get(atts, "tt.other.subject", %{})
+
+      assert Map.has_key?(inner, "lib/specled_ex/coverage.ex"),
+             "production attestation must remain unchanged"
+
+      refute Map.has_key?(inner, "test/coverage_test.exs"),
+             "non-tagged_tests verifications must not expand: got #{inspect(inner)}"
+    end
+
+    @tag spec: "specled.realized_by.attestation_tagged_tests_expansion"
+    test "tagged_tests covering a requirement with no realized_by binding does not expand",
+         %{root: root} do
+      # If a requirement has no realized_by tiers and no production binding
+      # attests clean for it, there's nothing to expand. The orchestrator must
+      # leave such requirements alone — no test-file entries materialize.
+      mfa = "SpecLedEx.Coverage.default_artifact_path/0"
+
+      subject = %{
+        "file" => ".spec/specs/tt.norealized.subject.spec.md",
+        "meta" => %SpecLedEx.Schema.Meta{
+          id: "tt.norealized.subject",
+          status: "active",
+          kind: "module",
+          realized_by: %{},
+          surface: ["lib/specled_ex/coverage.ex"]
+        },
+        "requirements" => [
+          struct(SpecLedEx.Schema.Requirement, %{
+            id: "tt.norealized.req.bound",
+            priority: "must",
+            realized_by: %{"api_boundary" => [mfa]}
+          }),
+          struct(SpecLedEx.Schema.Requirement, %{
+            id: "tt.norealized.req.bare",
+            priority: "must"
+          })
+        ],
+        "verification" => [
+          %{
+            "kind" => "tagged_tests",
+            "execute" => true,
+            "covers" => ["tt.norealized.req.bound", "tt.norealized.req.bare"]
+          }
+        ]
+      }
+
+      atts =
+        Orchestrator.attestations(
+          %{
+            "subjects" => [subject],
+            "test_tags" => %{
+              "tt.norealized.req.bound" => [%{file: "test/bound_test.exs"}],
+              "tt.norealized.req.bare" => [%{file: "test/bare_test.exs"}]
+            }
+          },
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      inner = Map.get(atts, "tt.norealized.subject", %{})
+
+      # The bound requirement expanded.
+      assert Map.get(inner, "test/bound_test.exs") ==
+               {:attested_clean, [mfa]}
+
+      # The unbound requirement contributed nothing to expand.
+      refute Map.has_key?(inner, "test/bare_test.exs"),
+             "requirement without realized_by must not expand: got #{inspect(inner)}"
+    end
+
+    @tag spec: "specled.realized_by.attestation_tagged_tests_expansion"
+    test "tagged_tests covering a requirement whose test_tag entry is missing yields no test attestation",
+         %{root: root} do
+      # The expansion uses `index["test_tags"][requirement_id]` as the source
+      # of test files. If a requirement isn't present in the tag map, there
+      # are no test files to attest — and production attestation remains.
+      mfa = "SpecLedEx.Coverage.default_artifact_path/0"
+
+      subject = %{
+        "file" => ".spec/specs/tt.notag.subject.spec.md",
+        "meta" => %SpecLedEx.Schema.Meta{
+          id: "tt.notag.subject",
+          status: "active",
+          kind: "module",
+          realized_by: %{},
+          surface: ["lib/specled_ex/coverage.ex"]
+        },
+        "requirements" => [
+          struct(SpecLedEx.Schema.Requirement, %{
+            id: "tt.notag.req",
+            priority: "must",
+            realized_by: %{"api_boundary" => [mfa]}
+          })
+        ],
+        "verification" => [
+          %{
+            "kind" => "tagged_tests",
+            "execute" => true,
+            "covers" => ["tt.notag.req"]
+          }
+        ]
+      }
+
+      atts =
+        Orchestrator.attestations(
+          %{
+            "subjects" => [subject],
+            # test_tags is present but the requirement is absent from it.
+            "test_tags" => %{}
+          },
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      inner = Map.get(atts, "tt.notag.subject", %{})
+
+      assert Map.get(inner, "lib/specled_ex/coverage.ex") ==
+               {:attested_clean, [mfa]},
+             "production attestation must still appear"
+
+      # Only the production entry — no other keys.
+      assert Map.keys(inner) == ["lib/specled_ex/coverage.ex"]
     end
   end
 

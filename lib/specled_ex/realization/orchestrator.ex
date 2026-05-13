@@ -117,17 +117,21 @@ defmodule SpecLedEx.Realization.Orchestrator do
     * the path is normalized against `opts[:root]` via `Path.relative_to/2` so
       it matches the form used by `analysis.policy_files` keys.
 
-  Test-file expansion (driven by `kind: tagged_tests` verification blocks) is
-  intentionally out of scope for this iteration. Production-code attestations
-  only. See `specled.realized_by.attestation_tagged_tests_expansion` for the
-  follow-on requirement.
+  In addition, for each subject's `verification` blocks of `kind: tagged_tests`,
+  every requirement listed under `covers:` whose `realized_by` bindings produced
+  attestations on this run is expanded into the subject's attestation map: the
+  requirement's test files (looked up via `index["test_tags"][requirement_id]`)
+  receive an `{:attested_clean, [mfa]}` entry carrying the same MFA list as the
+  production-code attestation produced by those bindings. Requirements whose
+  bindings drifted or were dangling do not produce test-file attestations. See
+  `specled.realized_by.attestation_tagged_tests_expansion`.
 
   Options match `run/2`.
   """
   @spec run_with_attestations(map(), keyword()) :: {[map()], %{String.t() => map()}}
   def run_with_attestations(index, opts \\ []) when is_map(index) do
     {findings, bindings_by_tier, ctx} = do_run(index, opts)
-    attestations = build_attestations(findings, bindings_by_tier, ctx)
+    attestations = build_attestations(findings, bindings_by_tier, ctx, index)
     {findings, attestations}
   end
 
@@ -184,9 +188,13 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # ---------------------------------------------------------------------------
 
   # covers: specled.realized_by.orchestrator_publishes_attestations
+  # covers: specled.realized_by.attestation_tagged_tests_expansion
   #
-  # Build the per-(subject, file) attestation map for production-code bindings.
+  # Build the per-(subject, file) attestation map for production-code bindings,
+  # then expand `kind: tagged_tests` verification blocks into test-file
+  # attestations.
   #
+  # Phase 1 — production-code attestations.
   # For every binding the orchestrator collected across all flat tiers and the
   # implementation tier, we:
   #
@@ -200,60 +208,163 @@ defmodule SpecLedEx.Realization.Orchestrator do
   #   4. Accumulate `(subject_id, normalized_path) => {:attested_clean, [mfa]}`
   #      with MFAs collected in stable subject-then-requirement order, dedup'd.
   #
-  # Tagged-tests expansion (walking subject `verification` blocks of
-  # `kind: tagged_tests` and bouncing each requirement's `index["test_tags"]`
-  # files into the same attestation map) is intentionally NOT implemented here.
-  # See `specled.realized_by.attestation_tagged_tests_expansion` for the
-  # follow-on requirement.
-  defp build_attestations(findings, bindings_by_tier, ctx) do
+  # While walking the bindings, we also track, per `(subject_id, requirement_id)`,
+  # which MFAs attested clean. That per-requirement bucket drives the tagged-
+  # tests expansion below.
+  #
+  # Phase 2 — tagged-tests expansion.
+  # For each subject's `verification` blocks of `kind: tagged_tests`, for each
+  # requirement listed under `covers:` whose bucket from Phase 1 is non-empty,
+  # we look up `index["test_tags"][requirement_id]` to get test files, then
+  # add a `(subject_id, test_file_path) => {:attested_clean, [mfas...]}`
+  # entry carrying the same MFAs the requirement contributed. Requirements
+  # whose bindings drifted or were dangling have empty buckets and so don't
+  # produce test-file attestations.
+  defp build_attestations(findings, bindings_by_tier, ctx, index) do
     drift_set = drift_dangling_pairs(findings)
 
-    bindings_by_tier
-    |> all_subject_mfa_pairs()
-    |> Enum.reduce(%{}, fn {subject_id, mfa}, acc ->
-      cond do
-        MapSet.member?(drift_set, {subject_id, mfa}) ->
-          acc
+    {production_acc, req_clean_mfas} =
+      bindings_by_tier
+      |> all_subject_requirement_mfa_triples()
+      |> Enum.reduce({%{}, %{}}, fn {subject_id, requirement_id, mfa}, {acc, req_acc} ->
+        cond do
+          MapSet.member?(drift_set, {subject_id, mfa}) ->
+            {acc, req_acc}
 
-        true ->
-          case Binding.resolve_with_source(mfa, ctx.context) do
-            {:ok, _ast, nil} ->
-              acc
+          true ->
+            case Binding.resolve_with_source(mfa, ctx.context) do
+              {:ok, _ast, nil} ->
+                {acc, req_acc}
 
-            {:ok, _ast, path} when is_binary(path) ->
-              normalized = normalize_attestation_path(path, ctx.root)
-              put_attestation(acc, subject_id, normalized, mfa)
+              {:ok, _ast, path} when is_binary(path) ->
+                normalized = normalize_attestation_path(path, ctx.root)
+                acc2 = put_attestation(acc, subject_id, normalized, mfa)
+                req_acc2 = track_clean_mfa(req_acc, subject_id, requirement_id, mfa)
+                {acc2, req_acc2}
 
-            _ ->
-              acc
-          end
-      end
+              _ ->
+                {acc, req_acc}
+            end
+        end
+      end)
+
+    expand_tagged_tests(production_acc, req_clean_mfas, index, ctx.root)
+  end
+
+  # Track which MFAs attested clean for each (subject, requirement) pair. Only
+  # requirement-level bindings (requirement_id != nil) participate — subject-
+  # layer bindings don't tie to any specific requirement, so they can't drive
+  # tagged_tests expansion on their own. (A subject-layer MFA does of course
+  # still contribute to the subject's production attestation map above.)
+  defp track_clean_mfa(req_acc, _subject_id, nil, _mfa), do: req_acc
+
+  defp track_clean_mfa(req_acc, subject_id, requirement_id, mfa) do
+    Map.update(
+      req_acc,
+      {subject_id, requirement_id},
+      [mfa],
+      fn existing -> if mfa in existing, do: existing, else: existing ++ [mfa] end
+    )
+  end
+
+  # For each subject's tagged_tests verification blocks, expand each covered
+  # requirement whose Phase-1 bucket has any clean MFAs into the test files
+  # registered for that requirement under `index["test_tags"]`. The test-file
+  # entry carries the same MFA list the requirement contributed.
+  defp expand_tagged_tests(acc, req_clean_mfas, index, root) when is_map(index) do
+    test_tags = Map.get(index, "test_tags") || %{}
+    subjects = index |> Map.get("subjects", []) |> List.wrap()
+
+    Enum.reduce(subjects, acc, fn subject, acc ->
+      subject_id = subject_id(subject)
+
+      subject
+      |> tagged_tests_verifications()
+      |> Enum.flat_map(&verification_covers/1)
+      |> Enum.uniq()
+      |> Enum.reduce(acc, fn requirement_id, acc ->
+        case Map.get(req_clean_mfas, {subject_id, requirement_id}) do
+          nil ->
+            acc
+
+          [] ->
+            acc
+
+          mfas ->
+            test_tags
+            |> Map.get(requirement_id, [])
+            |> List.wrap()
+            |> Enum.map(&tag_entry_file/1)
+            |> Enum.reject(&is_nil/1)
+            |> Enum.uniq()
+            |> Enum.reduce(acc, fn test_file, acc ->
+              normalized = normalize_attestation_path(test_file, root)
+
+              Enum.reduce(mfas, acc, fn mfa, acc ->
+                put_attestation(acc, subject_id, normalized, mfa)
+              end)
+            end)
+        end
+      end)
     end)
   end
 
-  # Flatten the bindings_by_tier map into a stream of `{subject_id, mfa}` pairs.
-  # Subject-layer entries precede requirement-layer entries (the same order
-  # accumulate_tier/7 produced) so the resulting MFA list per (subject, path)
-  # is deterministic. Implementation-tier subjects carry an `impl_bindings`
-  # list of MFAs/bare-modules — each contributes its own pair under that
-  # subject.
-  defp all_subject_mfa_pairs(bindings_by_tier) do
-    flat_pairs =
+  defp expand_tagged_tests(acc, _req_clean_mfas, _index, _root), do: acc
+
+  # Filter a subject's verification list down to the `kind: tagged_tests`
+  # blocks, tolerating both string- and atom-keyed shapes.
+  defp tagged_tests_verifications(subject) do
+    subject
+    |> Map.get("verification", Map.get(subject, :verification, []))
+    |> List.wrap()
+    |> Enum.filter(&is_map/1)
+    |> Enum.filter(fn v ->
+      kind = Map.get(v, "kind", Map.get(v, :kind))
+      kind == "tagged_tests"
+    end)
+  end
+
+  defp verification_covers(verification) do
+    verification
+    |> Map.get("covers", Map.get(verification, :covers, []))
+    |> List.wrap()
+    |> Enum.filter(&is_binary/1)
+  end
+
+  defp tag_entry_file(entry) when is_map(entry),
+    do: Map.get(entry, :file) || Map.get(entry, "file")
+
+  defp tag_entry_file(entry) when is_binary(entry), do: entry
+  defp tag_entry_file(_), do: nil
+
+  # Flatten the bindings_by_tier map into a stream of
+  # `{subject_id, requirement_id_or_nil, mfa}` triples. Subject-layer entries
+  # precede requirement-layer entries (the same order accumulate_tier/7
+  # produced) so the resulting MFA list per (subject, path) is deterministic.
+  # Implementation-tier subjects carry an `impl_bindings` list of
+  # MFAs/bare-modules — each contributes its own triple under that subject
+  # with `requirement_id == nil` (the implementation tier aggregates subject-
+  # and requirement-level impl bindings into a single per-subject list before
+  # this point, so the requirement provenance is not preserved for impl).
+  defp all_subject_requirement_mfa_triples(bindings_by_tier) do
+    flat_triples =
       @flat_tiers
       |> Enum.flat_map(fn tier ->
         bindings_by_tier
         |> Map.get(tier, [])
-        |> Enum.map(fn %{subject_id: sid, mfa: mfa} -> {sid, mfa} end)
+        |> Enum.map(fn %{subject_id: sid, mfa: mfa} = entry ->
+          {sid, Map.get(entry, :requirement_id), mfa}
+        end)
       end)
 
-    impl_pairs =
+    impl_triples =
       bindings_by_tier
       |> Map.get(:implementation, [])
       |> Enum.flat_map(fn %{id: sid, impl_bindings: mfas} ->
-        Enum.map(mfas, fn mfa -> {sid, mfa} end)
+        Enum.map(mfas, fn mfa -> {sid, nil, mfa} end)
       end)
 
-    Enum.uniq(flat_pairs ++ impl_pairs)
+    Enum.uniq(flat_triples ++ impl_triples)
   end
 
   defp drift_dangling_pairs(findings) do

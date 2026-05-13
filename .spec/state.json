@@ -476,20 +476,6 @@
       "file": ".spec/specs/branch_guard.spec.md",
       "level": "warning",
       "message": "tagged_tests verification covers specled.branch_guard.file_touch_yields_to_attested_file but no test carries @tag spec: specled.branch_guard.file_touch_yields_to_attested_file"
-    },
-    {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.realized_by.attestation_tagged_tests_expansion"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.realized_by.attestation_tagged_tests_expansion but no test carries @tag spec: specled.realized_by.attestation_tagged_tests_expansion"
     }
   ],
   "index": {
@@ -7583,7 +7569,7 @@
         "covers": [
           "specled.realized_by.attestation_tagged_tests_expansion"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/realized_by.spec.md",
         "kind": "tagged_tests",
         "subject_id": "specled.realized_by",
@@ -7906,7 +7892,7 @@
     "decision_parse_errors": 0,
     "decisions": 30,
     "exceptions": 0,
-    "findings": 12,
+    "findings": 10,
     "requirements": 285,
     "scenarios": 156,
     "subjects": 33,
@@ -10483,7 +10469,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 8
@@ -11592,8 +11578,8 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 8,
-      "executed": 253,
+      "claimed": 7,
+      "executed": 254,
       "linked": 73
     },
     "threshold_failures": 0

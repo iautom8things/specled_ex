@@ -574,7 +574,7 @@ decisions:
   covers:
     - specled.realized_by.orchestrator_publishes_attestations
 - kind: tagged_tests
-  execute: false
+  execute: true
   covers:
     - specled.realized_by.attestation_tagged_tests_expansion
 ```
