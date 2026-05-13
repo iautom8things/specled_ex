@@ -1,7 +1,9 @@
 {
   "assignee": "",
   "blocked_by": [],
-  "blocks": [],
+  "blocks": [
+    "specled_-3rs.2"
+  ],
   "created": "2026-05-13T00:52:11Z",
   "description": "Advances: specled.binding\n\nDeliverable:\nAdd a path-aware sibling to `SpecLedEx.Realization.Binding.resolve/2` that returns the resolved AST (or `{:module, mod}` for bare-module bindings) alongside the source file path that defines the binding. Promote the existing private `locate_source/2` to public. The path is derived from `Module.module_info(:compile)[:source]` (beam-path) or the source-fallback path, normalized so it can be compared against repository-relative file paths via `Path.relative_to/2`. The path may be `nil` when neither lookup yields one (e.g. hot-reloaded modules); callers treat `nil` as 'no attestation possible.'\n\nThe existing `resolve/2` signature does NOT change — its three callers (api_boundary check_binding, implementation resolve_owned_mfas / resolve_shared_mfas, orchestrator compute_seed_hashes) stay untouched.\n\nVerification:\n- Tests to pass: tagged_tests for specled.binding.resolve_with_source_returns_path, specled.binding.resolve_with_source_handles_use_generated, specled.binding.locate_source_public in test/specled_ex/realization/binding_test.exs. Flip those entries' execute: false to execute: true in .spec/specs/binding.spec.md.\n- Behaviors to demonstrate: scenarios specled.binding.scenario.resolve_with_source_beam_path, specled.binding.scenario.resolve_with_source_use_generated, specled.binding.scenario.resolve_with_source_path_unknown, specled.binding.scenario.locate_source_public_callable.\n\nOut of Scope (files):\n- lib/specled_ex/branch_check.ex\n- lib/specled_ex/realization/orchestrator.ex\n- lib/specled_ex/realization/api_boundary.ex\n- lib/specled_ex/realization/implementation.ex\n- .spec/specs/branch_guard.spec.md\n- .spec/specs/realized_by.spec.md\n\nAllowed touches (this ticket may modify):\n- lib/specled_ex/realization/binding.ex\n- test/specled_ex/realization/binding_test.exs\n- .spec/specs/binding.spec.md (only to flip execute: false → execute: true on the three new requirements)\n\nOut of Scope (intent):\n- Do NOT change `resolve/2`'s public signature. Adding a new function and exposing locate_source/2 are the only API changes.\n- Do NOT propagate the source path into existing callers (api_boundary, implementation, orchestrator drift checks). Those callers continue to use `resolve/2` as today; the new function is for attestation only.\n- Do NOT introduce any caching layer. `Code.ensure_loaded/1` is already paid for elsewhere; premature optimization is out of scope.\n\nMerge gate:\n- [ ] Code compiles cleanly (mix compile --warnings-as-errors)\n- [ ] Tests listed above pass\n- [ ] Spec verification entries flipped to execute: true\n- [ ] Scope check: diff touches only Allowed globs (mechanical)\n- [ ] Auditor APPROVE comment on the ticket",
   "id": "specled_-3rs.1",
@@ -11,5 +13,5 @@
   "status": "open",
   "title": "Path-aware binding resolver",
   "type": "task",
-  "updated_at": "2026-05-13T00:52:11Z"
+  "updated_at": "2026-05-13T00:53:10Z"
 }
