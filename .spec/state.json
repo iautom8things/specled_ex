@@ -7827,7 +7827,7 @@
         "hasher_version": 1
       },
       "SpecLedEx.Schema.validate_block/2": {
-        "hash": "9067b5db5e4433a5d27c9b7be52a018cffbff5d920084b685ff2ec739491387f",
+        "hash": "51035afab9d2de682f513d7a3c31562ffec89f6ce8685faebecb99e1b1621526",
         "hasher_version": 1
       },
       "SpecLedEx.PolicyFiles.classify/1": {
