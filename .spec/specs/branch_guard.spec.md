@@ -34,6 +34,7 @@ decisions:
   - specled.decision.guided_reconciliation_loop
   - specled.decision.no_app_start
   - specled.decision.configurable_test_tag_enforcement
+  - specled.decision.file_touch_yields_to_realization
 ```
 
 ## Requirements
@@ -131,6 +132,65 @@ decisions:
     two call sites so the impl tier can be enabled by default.
   priority: must
   stability: evolving
+- id: specled.branch_guard.file_touch_yields_to_attested_file
+  statement: >-
+    `SpecLedEx.BranchCheck.run/3` shall, for each
+    `branch_guard_missing_subject_update` candidate `(file, subject)` pair,
+    consult the realization tier's attestation map. When the pair is
+    `:attested_clean` (i.e. at least one of the subject's `realized_by`
+    bindings resolves to `file` and is not in this run's drift/dangling
+    finding set), the finding shall be emitted with the call-site default
+    severity `:info` and a distinctive message naming the attesting
+    binding(s). When the pair is not attested clean (no resolving binding
+    names this file, the binding drifted, or the detector was unavailable),
+    the finding shall be emitted with the call-site default severity
+    `:error` and the original message. The finding code remains
+    `branch_guard_missing_subject_update` in both branches.
+  priority: must
+  stability: evolving
+- id: specled.branch_guard.file_touch_per_subject_independence
+  statement: >-
+    When a single changed file impacts multiple subjects, the attestation
+    decision for each subject's `branch_guard_missing_subject_update`
+    finding shall be made independently per-subject. One file impacting
+    subject A (attested clean) and subject B (no `realized_by` or drifted)
+    shall produce two findings in the same run — one at the attested
+    default `:info` naming A, one at the strict default `:error` naming B.
+  priority: must
+  stability: evolving
+- id: specled.branch_guard.file_touch_severity_config_wins
+  statement: >-
+    The attested-default downgrade shall flow through
+    `SpecLedEx.BranchCheck.Severity.resolve/3` as the `default` argument.
+    A project-level severity override pinning
+    `branch_guard_missing_subject_update` to `:error` (or any other level)
+    in `branch_guard.severities` shall win over the attested default, and
+    `:off` shall continue to absorb both trailer overrides and the
+    relaxation.
+  priority: must
+  stability: evolving
+- id: specled.branch_guard.file_touch_tagged_tests_attested
+  statement: >-
+    When a subject's `verification` block contains a `kind: tagged_tests`
+    entry whose `covers:` list points at requirements with `realized_by`
+    bindings that attest clean on this run, the test files looked up via
+    `index["test_tags"][requirement_id]` shall participate in attestation
+    for that subject under the same predicate as production-code files
+    (path equality after normalization, binding not in drift/dangling set).
+    The attestation reason names the same binding(s) that attested the
+    covered requirement.
+  priority: must
+  stability: evolving
+- id: specled.branch_guard.file_touch_detector_failure_strict
+  statement: >-
+    When the realization tier emits `detector_unavailable` for the tier
+    providing a binding (or the path-aware resolver returns no source path
+    for that binding), the resulting attestation entry shall be absent
+    from the attestation map for the affected `(subject, file)` pair, and
+    the file-touch guard shall fall back to the strict `:error` default.
+    Detector failure shall not silently relax the guard.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -158,6 +218,96 @@ decisions:
     - mix spec.check exits non-zero
   covers:
     - specled.branch_guard.tag_findings_respect_enforcement
+- id: specled.branch_guard.scenario.file_touch_attested_clean_downgrades
+  given:
+    - "a subject `voyd_config.component` with `realized_by.api_boundary: [\"VoydConfig.Component.new/2\"]`"
+    - "the binding's committed hash matches the current canonical AST"
+    - "the author makes a comment-only edit inside `def new/2` in `lib/voyd_config/component/component.ex`"
+    - "the spec.md file for `voyd_config.component` is not co-changed"
+  when:
+    - "mix spec.check runs"
+  then:
+    - "a `branch_guard_missing_subject_update` finding fires at severity `info`"
+    - "the finding message names the attesting binding `VoydConfig.Component.new/2`"
+    - "mix spec.check exits zero"
+  covers:
+    - specled.branch_guard.file_touch_yields_to_attested_file
+- id: specled.branch_guard.scenario.file_touch_drift_no_relaxation
+  given:
+    - "the same subject and binding as above"
+    - "the author edits `def new/2` in a way that changes the canonical AST (e.g. adds a new clause)"
+    - "the spec.md is not co-changed"
+  when:
+    - "mix spec.check runs"
+  then:
+    - "a `branch_guard_realization_drift` finding fires for `VoydConfig.Component.new/2`"
+    - "the `branch_guard_missing_subject_update` finding fires at severity `error` with the original message"
+    - "mix spec.check exits non-zero"
+  covers:
+    - specled.branch_guard.file_touch_yields_to_attested_file
+- id: specled.branch_guard.scenario.file_touch_surface_only_unbound_stays_strict
+  given:
+    - "a subject with `surface: [\"lib/voyd_config/component/\"]` (directory glob)"
+    - "the subject has `realized_by.api_boundary` naming `VoydConfig.Component.new/2` only"
+    - "the author edits `lib/voyd_config/component/internal_helpers.ex` (in the surface glob, not in any binding)"
+    - "the spec.md is not co-changed"
+  when:
+    - "mix spec.check runs"
+  then:
+    - "a `branch_guard_missing_subject_update` finding fires at severity `error` with the original message"
+    - "mix spec.check exits non-zero"
+  covers:
+    - specled.branch_guard.file_touch_yields_to_attested_file
+- id: specled.branch_guard.scenario.file_touch_multi_subject_partial_attestation
+  given:
+    - "a file `lib/shared/util.ex` that maps to subjects `subj_a` and `subj_b`"
+    - "`subj_a` has a clean `realized_by` binding naming `Shared.Util.run/1` in `lib/shared/util.ex`"
+    - "`subj_b` has no `realized_by` bindings"
+    - "the author edits `lib/shared/util.ex` and does not touch either spec.md"
+  when:
+    - "mix spec.check runs"
+  then:
+    - "two `branch_guard_missing_subject_update` findings fire"
+    - "the finding naming `subj_a` is at severity `info` and names binding `Shared.Util.run/1`"
+    - "the finding naming `subj_b` is at severity `error` with the original message"
+    - "mix spec.check exits non-zero (because of `subj_b`)"
+  covers:
+    - specled.branch_guard.file_touch_per_subject_independence
+- id: specled.branch_guard.scenario.file_touch_severity_pin_overrides_attestation
+  given:
+    - "the same attested-clean comment-only edit as `file_touch_attested_clean_downgrades`"
+    - "a project config that sets `branch_guard.severities.branch_guard_missing_subject_update: :error`"
+  when:
+    - "mix spec.check runs"
+  then:
+    - "the `branch_guard_missing_subject_update` finding fires at severity `error` regardless of attestation"
+    - "mix spec.check exits non-zero"
+  covers:
+    - specled.branch_guard.file_touch_severity_config_wins
+- id: specled.branch_guard.scenario.file_touch_tagged_test_attested
+  given:
+    - "a subject with a requirement `req.a` carrying `realized_by.api_boundary: [\"Mod.f/1\"]` that attests clean"
+    - "the subject has a `kind: tagged_tests` verification with `covers: [req.a]`"
+    - "`index[\"test_tags\"][\"req.a\"]` resolves to `[%{file: \"test/mod_test.exs\"}]`"
+    - "the author makes a comment-only edit to `test/mod_test.exs` and does not touch spec.md"
+  when:
+    - "mix spec.check runs"
+  then:
+    - "the `branch_guard_missing_subject_update` finding for the test file fires at severity `info`"
+    - "the finding names the attesting binding `Mod.f/1`"
+  covers:
+    - specled.branch_guard.file_touch_tagged_tests_attested
+- id: specled.branch_guard.scenario.file_touch_detector_failure_falls_back_strict
+  given:
+    - "a subject whose `realized_by` bindings would otherwise attest a changed file as clean"
+    - "the realization run produces a `detector_unavailable` finding for the tier that owns those bindings"
+  when:
+    - "mix spec.check runs"
+  then:
+    - "the `branch_guard_missing_subject_update` finding fires at severity `error` with the original message"
+    - "the `detector_unavailable` finding is also present"
+  covers:
+    - specled.branch_guard.file_touch_detector_failure_strict
 ```
 
 ## Verification
@@ -190,4 +340,12 @@ decisions:
     - specled.branch_guard.tier_dispatch_wires_orchestrator
     - specled.branch_guard.tier_dispatch_surfaces_drift
     - specled.branch_guard.tier_dispatch_surfaces_dangling
+- kind: tagged_tests
+  execute: false
+  covers:
+    - specled.branch_guard.file_touch_yields_to_attested_file
+    - specled.branch_guard.file_touch_per_subject_independence
+    - specled.branch_guard.file_touch_severity_config_wins
+    - specled.branch_guard.file_touch_tagged_tests_attested
+    - specled.branch_guard.file_touch_detector_failure_strict
 ```

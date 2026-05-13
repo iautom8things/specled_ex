@@ -40,6 +40,7 @@ realized_by:
     - "SpecLedEx.Validator.RealizedByDedupCheck.findings/2"
 decisions:
   - specled.decision.realized_by_tier_implication
+  - specled.decision.file_touch_yields_to_realization
 ```
 
 ## Requirements
@@ -284,6 +285,34 @@ decisions:
     any detector.
   priority: must
   stability: evolving
+- id: specled.realized_by.orchestrator_publishes_attestations
+  statement: >-
+    `SpecLedEx.Realization.Orchestrator` shall expose a function that
+    returns both the run's findings and a per-(subject, file)
+    attestation map of shape
+    `%{subject_id => %{normalized_path => {:attested_clean, [mfa]}}}`.
+    The map shall contain an entry for `(subject_id, path)` only when
+    at least one of the subject's `realized_by` bindings resolved to
+    `path` (via a path-aware binding resolver) and the binding's MFA
+    does not appear in the run's `branch_guard_realization_drift` or
+    `branch_guard_dangling_binding` findings. The existing `run/2`
+    return shape (a flat list of findings) shall continue to work for
+    callers that do not need attestations.
+  priority: must
+  stability: evolving
+- id: specled.realized_by.attestation_tagged_tests_expansion
+  statement: >-
+    When constructing the attestation map, the orchestrator shall walk
+    each subject's `verification` blocks of `kind: tagged_tests`. For
+    every requirement listed under `covers:` whose `realized_by`
+    bindings produced attestations on this run, the orchestrator shall
+    expand the requirement's test files (looked up via
+    `index["test_tags"][requirement_id]`) into the subject's
+    attestation map carrying the same MFA list as the production-code
+    attestation. Requirements whose bindings drifted or were dangling
+    shall not produce test-file attestations.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -447,6 +476,48 @@ decisions:
     - "no finding map contains a key `inferred?` or `\"inferred?\"`"
   covers:
     - specled.realized_by.binding_ref_inferred_no_leak
+- id: specled.realized_by.scenario.attestation_clean_binding_appears
+  given:
+    - "a subject `subj` with `realized_by.api_boundary: [\"Mod.f/2\"]`"
+    - "`Mod.f/2` is defined in `lib/mod.ex` and its committed hash matches its current canonical AST"
+  when:
+    - "the orchestrator builds the attestation map"
+  then:
+    - "the map contains `attestations[\"subj\"][\"lib/mod.ex\"] == {:attested_clean, [\"Mod.f/2\"]}`"
+  covers:
+    - specled.realized_by.orchestrator_publishes_attestations
+- id: specled.realized_by.scenario.attestation_drifted_binding_absent
+  given:
+    - "a subject `subj` with `realized_by.api_boundary: [\"Mod.f/2\"]`"
+    - "`Mod.f/2`'s current canonical AST differs from its committed hash (the binding drifted on this run)"
+  when:
+    - "the orchestrator builds the attestation map"
+  then:
+    - "the map contains no entry for `(\"subj\", \"lib/mod.ex\")`"
+    - "a `branch_guard_realization_drift` finding for `Mod.f/2` is present in the findings list"
+  covers:
+    - specled.realized_by.orchestrator_publishes_attestations
+- id: specled.realized_by.scenario.attestation_tagged_tests_expand
+  given:
+    - "a subject `subj` with a requirement `req.a` carrying `realized_by.api_boundary: [\"Mod.f/2\"]` that attests clean"
+    - "the subject has a `kind: tagged_tests` verification covering `req.a`"
+    - "`index[\"test_tags\"][\"req.a\"]` resolves to `[%{file: \"test/mod_test.exs\"}]`"
+  when:
+    - "the orchestrator builds the attestation map"
+  then:
+    - "the map contains `attestations[\"subj\"][\"test/mod_test.exs\"] == {:attested_clean, [\"Mod.f/2\"]}`"
+  covers:
+    - specled.realized_by.attestation_tagged_tests_expansion
+- id: specled.realized_by.scenario.attestation_tagged_tests_drifted_requirement_no_expand
+  given:
+    - "the same subject and tagged_tests verification as the prior scenario"
+    - "but `Mod.f/2` drifted on this run"
+  when:
+    - "the orchestrator builds the attestation map"
+  then:
+    - "the map contains no entry for `(\"subj\", \"test/mod_test.exs\")`"
+  covers:
+    - specled.realized_by.attestation_tagged_tests_expansion
 ```
 
 ## Verification
@@ -498,4 +569,9 @@ decisions:
   execute: false
   covers:
     - specled.realized_by.binding_ref_inferred_no_leak
+- kind: tagged_tests
+  execute: false
+  covers:
+    - specled.realized_by.orchestrator_publishes_attestations
+    - specled.realized_by.attestation_tagged_tests_expansion
 ```

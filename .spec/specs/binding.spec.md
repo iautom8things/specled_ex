@@ -34,6 +34,7 @@ realized_by:
 decisions:
   - specled.decision.beam_first_binding_resolution
   - specled.decision.deterministic_hashing
+  - specled.decision.file_touch_yields_to_realization
 ```
 
 ## Requirements
@@ -106,6 +107,42 @@ decisions:
     not be exposed as a user-config key. When a read encounters an
     older `hasher_version`, HashStore shall rehash silently (debug log
     only) and update state. No user-visible finding is produced.
+  priority: must
+  stability: evolving
+- id: specled.binding.resolve_with_source_returns_path
+  statement: >-
+    `SpecLedEx.Realization.Binding` shall expose a path-aware resolver
+    sibling that returns the resolved AST (or `{:module, mod}` for
+    bare-module bindings) alongside the source file path that defines
+    the binding. The path shall be derived from
+    `Module.module_info(:compile)[:source]` (beam-path) or the
+    `locate_source/2` source-fallback path, normalized so it can be
+    compared against repository-relative file paths via
+    `Path.relative_to/2`. The path may be `nil` when neither lookup
+    yields one (e.g. hot-reloaded modules without `:source` in
+    `module_info`); callers shall treat `nil` as "no attestation
+    possible." The existing `resolve/2` signature shall not change.
+  priority: must
+  stability: evolving
+- id: specled.binding.resolve_with_source_handles_use_generated
+  statement: >-
+    The path-aware resolver shall, for functions injected by `use`-
+    based macros, return the path of the module that invoked `use`
+    (per `Module.module_info(:compile)[:source]`'s native behaviour
+    for compiled macro-generated code). This shall match the
+    user-editable file for that code, even though the function did
+    not appear lexically in that file's source.
+  priority: must
+  stability: evolving
+- id: specled.binding.locate_source_public
+  statement: >-
+    `SpecLedEx.Realization.Binding.locate_source/2` shall be a public
+    function (promoted from its prior private form). It shall accept
+    a module atom and an optional `SpecLedEx.Compiler.Context` and
+    return `{:ok, path}` for a resolvable source file or `:error`
+    otherwise. The function is needed independently of the path-aware
+    resolver for tagged-tests target lookups where there is no MFA
+    binding to resolve.
   priority: must
   stability: evolving
 ```
@@ -185,6 +222,45 @@ decisions:
     - a debug log names the rehash
   covers:
     - specled.binding.hasher_version_internal
+- id: specled.binding.scenario.resolve_with_source_beam_path
+  given:
+    - "a compiled module `MyMod` defining `f/2` in `lib/my_mod.ex`"
+    - "a binding `\"MyMod.f/2\"`"
+  when:
+    - "the path-aware resolver is called with the binding"
+  then:
+    - "the result is `{:ok, ast, \"lib/my_mod.ex\"}` (after normalization)"
+  covers:
+    - specled.binding.resolve_with_source_returns_path
+- id: specled.binding.scenario.resolve_with_source_use_generated
+  given:
+    - "a module `Consumer` in `lib/consumer.ex` that emits `handle_event/2` via `use SomeDSL`"
+    - "a binding `\"Consumer.handle_event/2\"`"
+  when:
+    - "the path-aware resolver is called"
+  then:
+    - "the result names the file `lib/consumer.ex` (the user-editable site, not the DSL module's file)"
+  covers:
+    - specled.binding.resolve_with_source_handles_use_generated
+- id: specled.binding.scenario.resolve_with_source_path_unknown
+  given:
+    - "a hot-reloaded module whose `module_info(:compile)` does not contain `:source`"
+  when:
+    - "the path-aware resolver is called for a function in that module"
+  then:
+    - "the result returns a `nil` (or absent) source path"
+    - "callers treat this as `not attested`"
+  covers:
+    - specled.binding.resolve_with_source_returns_path
+- id: specled.binding.scenario.locate_source_public_callable
+  given:
+    - "a compiled module `MyMod` in `lib/my_mod.ex`"
+  when:
+    - "`SpecLedEx.Realization.Binding.locate_source/2` is called with `MyMod` and `nil` context"
+  then:
+    - "the result is `{:ok, \"lib/my_mod.ex\"}` (normalized to the project root)"
+  covers:
+    - specled.binding.locate_source_public
 ```
 
 ## Verification
@@ -210,4 +286,10 @@ decisions:
   execute: true
   covers:
     - specled.binding.hasher_version_internal
+- kind: tagged_tests
+  execute: false
+  covers:
+    - specled.binding.resolve_with_source_returns_path
+    - specled.binding.resolve_with_source_handles_use_generated
+    - specled.binding.locate_source_public
 ```
