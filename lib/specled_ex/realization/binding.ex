@@ -26,6 +26,10 @@ defmodule SpecLedEx.Realization.Binding do
           {:ok, Macro.t()}
           | {:ok, {:module, module()}}
           | {:error, :not_found, map()}
+  @type path_aware_resolution ::
+          {:ok, Macro.t(), Path.t() | nil}
+          | {:ok, {:module, module()}, Path.t() | nil}
+          | {:error, :not_found, map()}
 
   @doc """
   Parses an MFA string.
@@ -113,6 +117,105 @@ defmodule SpecLedEx.Realization.Binding do
 
       {:error, :invalid_mfa, mfa} ->
         {:error, :not_found, %{mfa: mfa, reason: :invalid_mfa, searched: []}}
+    end
+  end
+
+  @doc """
+  Path-aware sibling of `resolve/2`.
+
+  Returns the resolved AST (or `{:module, mod}` for bare-module bindings)
+  alongside the source file path that defines the binding. The path is
+  normalized against the project root via `Path.relative_to/2`, so callers can
+  compare it to repository-relative paths produced by git or compile manifests.
+
+  The path may be `nil` when neither the beam-path
+  (`Module.module_info(:compile)[:source]`) nor the source-fallback
+  (`locate_source/2`) yields one — for example a module hot-reloaded after a
+  REPL edit that lacks `:source` in its `module_info(:compile)` listing.
+  Callers shall treat a `nil` path as "no attestation possible."
+
+  Errors mirror `resolve/2`: `{:error, :not_found, details}` when the MFA
+  cannot be located.
+
+  Note: this is a separate entry point from `resolve/2`. The existing
+  `resolve/2` callers (api_boundary, implementation, orchestrator drift) are
+  not affected.
+  """
+  @spec resolve_with_source(String.t(), Context.t() | nil) :: path_aware_resolution()
+  def resolve_with_source(binding_str, context \\ nil) do
+    case parse(binding_str) do
+      {:ok, {mod, fun, arity}} ->
+        case beam_or_source(binding_str, mod, fun, arity, context) do
+          {:ok, ast} ->
+            {:ok, ast, source_path_for(mod, context)}
+
+          {:error, _, _} = err ->
+            err
+        end
+
+      {:ok, {:module, mod}} ->
+        case Code.ensure_loaded(mod) do
+          {:module, ^mod} ->
+            {:ok, {:module, mod}, source_path_for(mod, context)}
+
+          _ ->
+            {:error, :not_found, %{mfa: binding_str, searched: [:beam]}}
+        end
+
+      {:error, :invalid_mfa, mfa} ->
+        {:error, :not_found, %{mfa: mfa, reason: :invalid_mfa, searched: []}}
+    end
+  end
+
+  # Returns a normalized (project-root-relative) source path for `mod`, or
+  # `nil` when neither the beam lookup nor the source-fallback yields one.
+  defp source_path_for(mod, context) do
+    case beam_compile_source(mod) do
+      {:ok, path} ->
+        normalize_path(path)
+
+      :error ->
+        case locate_source(mod, context) do
+          {:ok, path} -> path
+          :error -> nil
+        end
+    end
+  end
+
+  defp beam_compile_source(mod) do
+    case Code.ensure_loaded(mod) do
+      {:module, ^mod} ->
+        case mod.module_info(:compile)[:source] do
+          source when is_list(source) -> nonfile_or_ok(List.to_string(source))
+          source when is_binary(source) -> nonfile_or_ok(source)
+          _ -> :error
+        end
+
+      _ ->
+        :error
+    end
+  rescue
+    _ -> :error
+  end
+
+  # Treats the sentinel "nofile" — emitted by `Code.compile_string/2`,
+  # `Code.compile_quoted/2`, and similar dynamic-compilation paths — as
+  # "no real source." This mirrors what happens for hot-reloaded modules
+  # whose `module_info(:compile)` lists a synthetic source.
+  defp nonfile_or_ok(path) do
+    if Path.basename(path) == "nofile", do: :error, else: {:ok, path}
+  end
+
+  defp normalize_path(path) when is_binary(path) do
+    cwd =
+      case File.cwd() do
+        {:ok, dir} -> dir
+        _ -> nil
+      end
+
+    cond do
+      is_nil(cwd) -> path
+      true -> Path.relative_to(path, cwd)
     end
   end
 
@@ -230,20 +333,53 @@ defmodule SpecLedEx.Realization.Binding do
     end
   end
 
-  defp locate_source(mod, %Context{manifest: manifest}) when is_map(manifest) do
+  @doc """
+  Locates the source file that defines `mod`, returning a path normalized
+  against the project root (`File.cwd!/0`).
+
+  Resolution precedence:
+
+    1. If a `%Context{manifest: manifest}` is given and the manifest names a
+       source for `mod`, that path is used (manifest paths are repo-relative).
+    2. Otherwise the path is read from `Module.module_info(:compile)[:source]`
+       on the loaded module and normalized via `Path.relative_to/2`.
+
+  Returns `{:ok, path}` on success or `:error` when neither source can be
+  determined (e.g. hot-reloaded modules whose `module_info(:compile)` no
+  longer carries `:source`).
+
+  Promoted from private form to support tagged-tests attestation lookups
+  that need a source path without going through MFA resolution.
+  """
+  @spec locate_source(module(), Context.t() | nil) :: {:ok, Path.t()} | :error
+  def locate_source(mod, context \\ nil)
+
+  def locate_source(mod, %Context{manifest: manifest}) when is_map(manifest) do
     case Manifest.sources_for(manifest, mod) |> List.first() do
-      nil -> infer_source_path(mod)
-      path -> {:ok, path}
+      nil ->
+        case infer_source_path(mod) do
+          {:ok, path} -> {:ok, normalize_path(path)}
+          :error -> :error
+        end
+
+      path ->
+        {:ok, normalize_path(path)}
     end
   end
 
-  defp locate_source(mod, _), do: infer_source_path(mod)
+  def locate_source(mod, _) do
+    case infer_source_path(mod) do
+      {:ok, path} -> {:ok, normalize_path(path)}
+      :error -> :error
+    end
+  end
 
   defp infer_source_path(mod) do
     case Code.ensure_loaded(mod) do
       {:module, ^mod} ->
         case mod.module_info(:compile)[:source] do
-          source when is_list(source) -> {:ok, List.to_string(source)}
+          source when is_list(source) -> nonfile_or_ok(List.to_string(source))
+          source when is_binary(source) -> nonfile_or_ok(source)
           _ -> :error
         end
 

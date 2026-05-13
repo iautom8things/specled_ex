@@ -287,7 +287,7 @@ decisions:
   covers:
     - specled.binding.hasher_version_internal
 - kind: tagged_tests
-  execute: false
+  execute: true
   covers:
     - specled.binding.resolve_with_source_returns_path
     - specled.binding.resolve_with_source_handles_use_generated

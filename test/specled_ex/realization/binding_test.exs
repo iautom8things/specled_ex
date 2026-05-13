@@ -8,6 +8,7 @@ defmodule SpecLedEx.Realization.BindingTest do
              ]
 
   alias SpecLedEx.Realization.Binding
+  alias SpecLedEx.Compiler.Context
 
   # ---------------------------------------------------------------------------
   # Beam-accessible fixtures
@@ -86,7 +87,7 @@ defmodule SpecLedEx.Realization.BindingTest do
       File.rm_rf!(tmp_dir)
     end)
 
-    {:ok, tmp_dir: tmp_dir}
+    {:ok, fixtures_dir: tmp_dir}
   end
 
   describe "parse/1" do
@@ -141,6 +142,183 @@ defmodule SpecLedEx.Realization.BindingTest do
                Binding.resolve("Absolutely.Nothing.Here.missing/1")
 
       assert details.mfa == "Absolutely.Nothing.Here.missing/1"
+    end
+  end
+
+  describe "resolve_with_source/2" do
+    @describetag spec: "specled.binding.resolve_with_source_returns_path"
+
+    test "returns {:ok, ast, path} where path is the beam-derived source file",
+         %{fixtures_dir: fixtures_dir} do
+      assert {:ok, ast, path} =
+               Binding.resolve_with_source(
+                 "SpecLedEx.BindingFixtures.SampleHandler.handle_request/3"
+               )
+
+      refute is_nil(ast)
+      refute is_nil(path), "expected a non-nil source path from module_info(:compile)[:source]"
+      assert is_binary(path)
+
+      # The fixture compiled to `tmp_dir/fixtures.ex`. The path-aware resolver
+      # normalizes via `Path.relative_to(_, File.cwd!())`. The tmp dir lives
+      # outside the project root, so the absolute path is returned unchanged.
+      expected_source = Path.join(fixtures_dir, "fixtures.ex")
+      assert Path.expand(path) == Path.expand(expected_source)
+    end
+
+    @tag spec: "specled.binding.resolve_with_source_returns_path"
+    test "returns {:ok, {:module, mod}, path} for bare-module bindings" do
+      assert {:ok, {:module, SpecLedEx.BindingFixtures.SampleHandler}, path} =
+               Binding.resolve_with_source("SpecLedEx.BindingFixtures.SampleHandler")
+
+      refute is_nil(path)
+      assert is_binary(path)
+    end
+
+    @tag spec: "specled.binding.resolve_with_source_returns_path"
+    test "normalizes a project-root path against the current working directory" do
+      # SpecLedEx.Realization.Binding itself is part of the project — its
+      # beam-source resolves under `lib/` of the current worktree. After
+      # normalization via `Path.relative_to(_, File.cwd!())`, the returned
+      # path should be repository-relative (no leading slash).
+      assert {:ok, _ast, path} =
+               Binding.resolve_with_source("SpecLedEx.Realization.Binding.parse/1")
+
+      refute is_nil(path)
+
+      refute String.starts_with?(path, "/"),
+             "expected project-relative path after Path.relative_to, got: #{inspect(path)}"
+
+      assert path =~ "lib/specled_ex/realization/binding.ex"
+    end
+
+    @tag spec: "specled.binding.resolve_with_source_returns_path"
+    test "returns {:error, :not_found, _} when the MFA cannot be located" do
+      assert {:error, :not_found, _details} =
+               Binding.resolve_with_source(
+                 "SpecLedEx.BindingFixtures.SampleHandler.missing_fun/0"
+               )
+    end
+
+    @tag spec: "specled.binding.resolve_with_source_returns_path"
+    test "returns a nil source path for a module compiled without a real source file",
+         %{fixtures_dir: fixtures_dir} do
+      # `Code.compile_string/2` emits modules whose
+      # `module_info(:compile)[:source]` is the sentinel "nofile" —
+      # the same shape a hot-reloaded REPL module exhibits. The
+      # path-aware resolver treats this as "no attestation possible"
+      # and returns a nil path. The function still resolves via beam
+      # debug_info (we drop the .beam into the code path so
+      # `:code.get_object_code/1` finds it).
+      uniq = :erlang.unique_integer([:positive])
+      mod_str = "SpecLedEx.BindingTest.HotReloadedDummy#{uniq}"
+      mod = Module.concat([mod_str])
+
+      prior_opts = Code.compiler_options()
+      Code.put_compiler_option(:debug_info, true)
+
+      [{^mod, binary}] =
+        try do
+          Code.compile_string("""
+          defmodule #{mod_str} do
+            def f, do: :ok
+          end
+          """)
+        after
+          Code.put_compiler_option(:debug_info, prior_opts[:debug_info])
+        end
+
+      beam_path = Path.join(fixtures_dir, Atom.to_string(mod) <> ".beam")
+      File.write!(beam_path, binary)
+
+      # Load from disk so `:code.get_object_code/1` can locate the binary
+      # for `extract_from_beam`. The source is still "nofile" in the beam.
+      :code.purge(mod)
+      :code.delete(mod)
+      {:module, ^mod} = :code.load_file(mod)
+
+      try do
+        # Sanity: the module is loaded and its source is "nofile".
+        assert mod.module_info(:compile)[:source] |> List.to_string() |> Path.basename() ==
+                 "nofile"
+
+        assert {:ok, ast, nil} = Binding.resolve_with_source("#{mod_str}.f/0")
+        refute is_nil(ast)
+      after
+        :code.purge(mod)
+        :code.delete(mod)
+        File.rm(beam_path)
+      end
+    end
+  end
+
+  describe "resolve_with_source/2 — use-generated functions" do
+    @describetag spec: "specled.binding.resolve_with_source_handles_use_generated"
+
+    test "returns the path of the module that invoked `use`, not the DSL module's file",
+         %{fixtures_dir: fixtures_dir} do
+      # `PhoenixLikeConsumer` and `SomeDSL` were compiled into the same
+      # fixtures file in this test. `Module.module_info(:compile)[:source]`
+      # for the consumer points at the file where `use` was invoked — which
+      # is the user-editable site for the generated `handle_event/2`.
+      assert {:ok, ast, path} =
+               Binding.resolve_with_source(
+                 "SpecLedEx.BindingFixtures.PhoenixLikeConsumer.handle_event/2"
+               )
+
+      refute is_nil(ast)
+      refute is_nil(path)
+
+      expected_source = Path.join(fixtures_dir, "fixtures.ex")
+
+      assert Path.expand(path) == Path.expand(expected_source),
+             "expected the consumer's source (where `use` was invoked) — got #{inspect(path)}"
+    end
+  end
+
+  describe "locate_source/2 — public" do
+    @describetag spec: "specled.binding.locate_source_public"
+
+    test "is publicly callable and returns {:ok, path} for a loaded module" do
+      # The public locate_source/2 must be invokable directly (no MFA
+      # parsing). This covers tagged-tests target lookups where there is
+      # no MFA binding to resolve.
+      assert {:ok, path} = Binding.locate_source(SpecLedEx.Realization.Binding)
+
+      refute is_nil(path)
+      assert is_binary(path)
+      assert path =~ "lib/specled_ex/realization/binding.ex"
+    end
+
+    @tag spec: "specled.binding.locate_source_public"
+    test "accepts a nil context and a %Context{} interchangeably" do
+      {:ok, path_no_ctx} = Binding.locate_source(SpecLedEx.Realization.Binding, nil)
+
+      {:ok, path_with_ctx} =
+        Binding.locate_source(SpecLedEx.Realization.Binding, %Context{manifest: %{}})
+
+      assert path_no_ctx == path_with_ctx
+    end
+
+    @tag spec: "specled.binding.locate_source_public"
+    test "returns :error when neither the manifest nor module_info yields a real source" do
+      # Same hot-reload-style fixture: a module compiled via Code.compile_string
+      # carries no real source path. locate_source must surface :error.
+      mod_name =
+        :"Elixir.SpecLedEx.BindingTest.LocateSourceMiss#{:erlang.unique_integer([:positive])}"
+
+      Code.compile_string("""
+      defmodule #{Atom.to_string(mod_name) |> String.replace_prefix("Elixir.", "")} do
+        def f, do: :ok
+      end
+      """)
+
+      try do
+        assert :error = Binding.locate_source(mod_name)
+      after
+        :code.purge(mod_name)
+        :code.delete(mod_name)
+      end
     end
   end
 end
