@@ -2,13 +2,14 @@
   "assignee": "",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-05-13T09:31:26Z",
   "created": "2026-05-13T00:51:32Z",
   "description": "Advances: specled.branch_guard, specled.realized_by, specled.binding\n\nDistilled from /mega-plan via /distill on 2026-05-12.\n\nPlan: /Users/mz/.claude-personal/plans/do-a-mega-plan-iridescent-bunny.md\nSpec: ~/Documents/my-vault/LLMs/plans/-Users-mz-src-specled-ex/2026-05-12-relax-branch-check-on-realization-green/00-spec.md\nDecision: .spec/decisions/specled.decision.file_touch_yields_to_realization.md\nBranch: feature/file-touch-yields-to-realization\n\nWhen realization attests a (file, subject) pair as clean for the current run, downgrade the file-touch finding (branch_guard_missing_subject_update) from :error to :info with a distinctive message naming the attesting bindings. File-level grain, per-subject independence, user severity config still wins, detector failure falls back to strict. Same finding code, different severity and message.\n\nSubject specs advanced by this epic:\n- specled.branch_guard (5 new requirements)\n- specled.realized_by (2 new requirements)\n- specled.binding (3 new requirements)",
   "id": "specled_-3rs",
   "labels": [],
   "priority": 2,
-  "status": "open",
+  "status": "closed",
   "title": "Relax branch_check file-touch guard when realization attests",
   "type": "epic",
-  "updated_at": "2026-05-13T00:51:32Z"
+  "updated_at": "2026-05-13T09:31:26Z"
 }
