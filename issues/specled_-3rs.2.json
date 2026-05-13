@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-05-13T00:52:26Z",
+  "description": "Advances: specled.realized_by\n\nDeliverable:\nAdd `SpecLedEx.Realization.Orchestrator.attestations/2` and `run_with_attestations/2`. The former returns a per-(subject, file) attestation map of shape `%{subject_id =\u003e %{normalized_path =\u003e {:attested_clean, [mfa]}}}` covering production-code `realized_by` bindings only (test-file expansion lands in the next ticket). The latter returns `{findings, attestations}` for callers that need both.\n\nInternals: factor a private `do_run/2` so `run/2` and `run_with_attestations/2` share work without re-computing bindings. Use the new `Binding.resolve_with_source/2` for each binding's MFA. An entry is included only when (a) resolve_with_source returns a non-nil path, (b) the binding's MFA does not appear in this run's `branch_guard_realization_drift` or `branch_guard_dangling_binding` findings, and (c) the path normalizes to the same form as `analysis.policy_files` keys (via `Path.relative_to/2`).\n\n`run/2`'s existing return shape (a flat list of findings) is unchanged — three existing callers (BranchCheck, scenario tests, internal references) continue to work.\n\nVerification:\n- Tests to pass: tagged_tests for specled.realized_by.orchestrator_publishes_attestations in test/specled_ex/realization/orchestrator_test.exs. Flip the corresponding verification entry to execute: true (covering only that requirement; the tagged-tests-expansion requirement remains execute: false until the next ticket).\n- Behaviors to demonstrate: scenarios specled.realized_by.scenario.attestation_clean_binding_appears, specled.realized_by.scenario.attestation_drifted_binding_absent.\n\nOut of Scope (files):\n- lib/specled_ex/realization/binding.ex\n- lib/specled_ex/branch_check.ex\n- .spec/specs/branch_guard.spec.md\n- .spec/specs/binding.spec.md\n\nAllowed touches:\n- lib/specled_ex/realization/orchestrator.ex\n- test/specled_ex/realization/orchestrator_test.exs\n- .spec/specs/realized_by.spec.md (only to flip execute: false → execute: true on specled.realized_by.orchestrator_publishes_attestations)\n\nOut of Scope (intent):\n- Do NOT implement tagged-tests expansion in this ticket — that lands separately. Production-code MFAs only.\n- Do NOT change `run/2`'s return shape. Existing callers must continue to work.\n- Do NOT consume the attestation map in branch_check yet. The map is published; consumption is the next ticket after tagged-tests expansion.\n- Do NOT add a hot-path cache. `Code.ensure_loaded/1` is already paid for during tier dispatch.\n\nMerge gate:\n- [ ] Code compiles cleanly\n- [ ] Tests listed above pass\n- [ ] Spec verification entry flipped to execute: true (only the production-code requirement)\n- [ ] Scope check: diff touches only Allowed globs\n- [ ] Auditor APPROVE comment on the ticket",
+  "id": "specled_-3rs.2",
+  "labels": [],
+  "parent": "specled_-3rs",
+  "priority": 2,
+  "status": "open",
+  "title": "Orchestrator attestations map (production-code bindings)",
+  "type": "task",
+  "updated_at": "2026-05-13T00:52:26Z"
+}
