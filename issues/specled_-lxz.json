@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-05-13T10:38:16Z",
+  "description": "Advances: specled.binding, specled.branch_guard, specled.realized_by, specled.append_only, specled.severity\n\nFix 5 mix spec.check findings on the epic branch feature/file-touch-yields-to-realization (at /Users/mz/src/specled_ex-file-touch-yields-to-realization). These must be resolved before the epic PR to main.\n\n1. overlap/duplicate_covers (4 findings) — each requirement may only appear in one scenario covers: field. Remove the redundant entry from secondary scenarios (keep in the most representative one):\n   - specled.binding.resolve_with_source_returns_path: in resolve_with_source_beam_path AND resolve_with_source_path_unknown — remove from resolve_with_source_path_unknown, keep in resolve_with_source_beam_path\n   - specled.branch_guard.file_touch_yields_to_attested_file: in file_touch_attested_clean_downgrades, file_touch_drift_no_relaxation, file_touch_surface_only_unbound_stays_strict — remove from drift_no_relaxation and surface_only_unbound, keep in attested_clean_downgrades\n   - specled.realized_by.attestation_tagged_tests_expansion: in attestation_tagged_tests_drifted_requirement_no_expand AND attestation_tagged_tests_expand — remove from drifted_requirement_no_expand, keep in attestation_tagged_tests_expand\n   - specled.realized_by.orchestrator_publishes_attestations: in attestation_clean_binding_appears AND attestation_drifted_binding_absent — remove from attestation_drifted_binding_absent, keep in attestation_clean_binding_appears\n\n2. branch_guard_missing_subject_update (1 finding) — test/specled_ex/branch_check_test.exs was changed and impacts specled.append_only and specled.severity, but those specs were not co-updated. Fix by adding requirement-level realized_by bindings to the relevant requirements in .spec/specs/append_only.spec.md and .spec/specs/severity.spec.md that map to the test file.\n\nAllowed touches:\n- .spec/specs/binding.spec.md (covers: field edits in scenarios only)\n- .spec/specs/branch_guard.spec.md (covers: field edits in scenarios only)\n- .spec/specs/realized_by.spec.md (covers: field edits in scenarios only)\n- .spec/specs/append_only.spec.md (realized_by additions at requirement level)\n- .spec/specs/severity.spec.md (realized_by additions at requirement level)\n\nNo code changes. No test changes.\n\nVerification:\n- GIT_CONFIG_GLOBAL=/dev/null mix spec.check exits 0 on the epic branch\n- GIT_CONFIG_GLOBAL=/dev/null mix test passes (802 tests)\n- mix compile --warnings-as-errors clean\n\nWork from a worktree based on feature/file-touch-yields-to-realization. The epic worktree is at /Users/mz/src/specled_ex-file-touch-yields-to-realization.",
+  "id": "specled_-lxz",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Fix mix spec.check findings on epic branch",
+  "type": "task",
+  "updated_at": "2026-05-13T10:38:16Z"
+}
