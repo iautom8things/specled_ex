@@ -822,6 +822,196 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
   end
 
   # ---------------------------------------------------------------------------
+  # S6 — orchestrator publishes per-(subject, file) attestation map
+  # (production-code bindings only; tagged-tests expansion is a later ticket)
+  # ---------------------------------------------------------------------------
+  describe "run_with_attestations/2 + attestations/2 — production bindings" do
+    @tag spec: "specled.realized_by.orchestrator_publishes_attestations"
+    test "clean api_boundary binding produces an attestation under its source path",
+         %{root: root} do
+      # Use a real, stable lib/ module so resolve_with_source returns a known
+      # repo-relative source path. `SpecLedEx.Coverage.default_artifact_path/0`
+      # lives at `lib/specled_ex/coverage.ex`.
+      mfa = "SpecLedEx.Coverage.default_artifact_path/0"
+      subject = subject("attest.clean.subject", %{"api_boundary" => [mfa]}, [])
+
+      {findings, attestations} =
+        Orchestrator.run_with_attestations(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      assert Enum.empty?(findings),
+             "expected clean run, got: #{inspect(findings)}"
+
+      assert get_in(attestations, ["attest.clean.subject", "lib/specled_ex/coverage.ex"]) ==
+               {:attested_clean, [mfa]}
+    end
+
+    @tag spec: "specled.realized_by.orchestrator_publishes_attestations"
+    test "drifted binding does not appear in the attestation map", %{root: root} do
+      mfa = "SpecLedEx.Coverage.default_artifact_path/0"
+
+      # Seed a wrong hash to force a drift finding for this MFA on this run.
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "wrong"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      subject = subject("attest.drift.subject", %{"api_boundary" => [mfa]}, [])
+
+      {findings, attestations} =
+        Orchestrator.run_with_attestations(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      # Drift finding present in findings list.
+      assert Enum.any?(findings, fn f ->
+               f["code"] == "branch_guard_realization_drift" and f["mfa"] == mfa
+             end)
+
+      # And no attestation entry for this (subject, file) pair.
+      assert Map.get(attestations, "attest.drift.subject", %{}) == %{}
+    end
+
+    @tag spec: "specled.realized_by.orchestrator_publishes_attestations"
+    test "dangling binding does not appear in the attestation map", %{root: root} do
+      mfa = "SpecLedEx.Truly.Nonexistent.gone/0"
+
+      subject = subject("attest.dangle.subject", %{"api_boundary" => [mfa]}, [])
+
+      {findings, attestations} =
+        Orchestrator.run_with_attestations(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      assert Enum.any?(findings, fn f ->
+               f["code"] == "branch_guard_dangling_binding" and f["mfa"] == mfa
+             end)
+
+      assert Map.get(attestations, "attest.dangle.subject", %{}) == %{}
+    end
+
+    @tag spec: "specled.realized_by.orchestrator_publishes_attestations"
+    test "multiple clean bindings for the same subject group under their source paths",
+         %{root: root} do
+      mfa_a = "SpecLedEx.Coverage.default_artifact_path/0"
+      mfa_b = "SpecLedEx.Coverage.cover_modules_safe/0"
+
+      subject =
+        subject("attest.multi.subject", %{"api_boundary" => [mfa_a, mfa_b]}, [])
+
+      {findings, attestations} =
+        Orchestrator.run_with_attestations(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      assert Enum.empty?(findings)
+
+      # Both MFAs live in the same file — single attestation entry with both
+      # MFAs in stable subject-then-requirement order.
+      assert {:attested_clean, mfas} =
+               get_in(attestations, ["attest.multi.subject", "lib/specled_ex/coverage.ex"])
+
+      assert Enum.sort(mfas) == Enum.sort([mfa_a, mfa_b])
+    end
+
+    @tag spec: "specled.realized_by.orchestrator_publishes_attestations"
+    test "attestations/2 returns just the map; run/2's flat-list shape is unchanged",
+         %{root: root} do
+      mfa = "SpecLedEx.Coverage.default_artifact_path/0"
+      subject = subject("attest.shape.subject", %{"api_boundary" => [mfa]}, [])
+      index = %{"subjects" => [subject]}
+      opts = [root: root, enabled_tiers: [:api_boundary], commit_hashes?: false]
+
+      # attestations/2 is the convenience form.
+      atts = Orchestrator.attestations(index, opts)
+      assert is_map(atts)
+
+      assert get_in(atts, ["attest.shape.subject", "lib/specled_ex/coverage.ex"]) ==
+               {:attested_clean, [mfa]}
+
+      # run/2 still returns a flat list of findings (existing callers untouched).
+      findings = Orchestrator.run(index, opts)
+      assert is_list(findings)
+      assert Enum.empty?(findings)
+
+      # run_with_attestations/2 returns both halves.
+      {findings2, atts2} = Orchestrator.run_with_attestations(index, opts)
+      assert findings2 == findings
+      assert atts2 == atts
+    end
+
+    @tag spec: "specled.realized_by.orchestrator_publishes_attestations"
+    test "tagged-tests expansion is NOT performed yet — only production paths appear",
+         %{root: root} do
+      # Even when the subject carries a `kind: tagged_tests` verification block
+      # covering this requirement, this iteration must NOT bounce its production
+      # attestation into a test-file attestation. The attestation map should
+      # contain ONLY the production source path.
+      mfa = "SpecLedEx.Coverage.default_artifact_path/0"
+
+      subject =
+        %{
+          "file" => ".spec/specs/attest.taggedtests.subject.spec.md",
+          "meta" => %SpecLedEx.Schema.Meta{
+            id: "attest.taggedtests.subject",
+            status: "active",
+            kind: "module",
+            realized_by: %{"api_boundary" => [mfa]},
+            surface: ["lib/specled_ex/coverage.ex"]
+          },
+          "requirements" => [
+            struct(SpecLedEx.Schema.Requirement, %{
+              id: "attest.taggedtests.req",
+              priority: "must"
+            })
+          ],
+          "verification" => [
+            %{
+              "kind" => "tagged_tests",
+              "execute" => true,
+              "covers" => ["attest.taggedtests.req"]
+            }
+          ]
+        }
+
+      atts =
+        Orchestrator.attestations(
+          %{
+            "subjects" => [subject],
+            "test_tags" => %{
+              "attest.taggedtests.req" => [%{"file" => "test/coverage_test.exs"}]
+            }
+          },
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      inner = Map.get(atts, "attest.taggedtests.subject", %{})
+
+      assert Map.has_key?(inner, "lib/specled_ex/coverage.ex"),
+             "expected production-code attestation, got: #{inspect(inner)}"
+
+      refute Map.has_key?(inner, "test/coverage_test.exs"),
+             "tagged-tests expansion must wait for the next ticket; got: #{inspect(inner)}"
+    end
+  end
+
+  # ---------------------------------------------------------------------------
   # Helpers
   # ---------------------------------------------------------------------------
 

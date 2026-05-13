@@ -96,6 +96,62 @@ defmodule SpecLedEx.Realization.Orchestrator do
   """
   @spec run(map(), keyword()) :: [map()]
   def run(index, opts \\ []) when is_map(index) do
+    {findings, _bindings_by_tier, _ctx} = do_run(index, opts)
+    findings
+  end
+
+  @doc """
+  Runs enabled realization tiers and returns `{findings, attestations}`.
+
+  `findings` matches `run/2`'s return shape (a flat list of string-keyed maps).
+  `attestations` is a per-`(subject_id, file)` map of shape
+  `%{subject_id => %{normalized_path => {:attested_clean, [mfa]}}}`. It contains
+  an entry for `(subject_id, path)` only when:
+
+    * at least one of the subject's `realized_by` bindings resolves to `path`
+      via `Binding.resolve_with_source/2`,
+    * the resolved path is non-nil,
+    * the binding's MFA does NOT appear in this run's
+      `branch_guard_realization_drift` or `branch_guard_dangling_binding`
+      findings, and
+    * the path is normalized against `opts[:root]` via `Path.relative_to/2` so
+      it matches the form used by `analysis.policy_files` keys.
+
+  Test-file expansion (driven by `kind: tagged_tests` verification blocks) is
+  intentionally out of scope for this iteration. Production-code attestations
+  only. See `specled.realized_by.attestation_tagged_tests_expansion` for the
+  follow-on requirement.
+
+  Options match `run/2`.
+  """
+  @spec run_with_attestations(map(), keyword()) :: {[map()], %{String.t() => map()}}
+  def run_with_attestations(index, opts \\ []) when is_map(index) do
+    {findings, bindings_by_tier, ctx} = do_run(index, opts)
+    attestations = build_attestations(findings, bindings_by_tier, ctx)
+    {findings, attestations}
+  end
+
+  @doc """
+  Returns the per-`(subject_id, file)` attestation map for this run.
+
+  Equivalent to `elem(run_with_attestations(index, opts), 1)`. Use this when the
+  caller only needs the attestation map and is not interested in the findings.
+  """
+  @spec attestations(map(), keyword()) :: %{String.t() => map()}
+  def attestations(index, opts \\ []) when is_map(index) do
+    {_findings, attestations} = run_with_attestations(index, opts)
+    attestations
+  end
+
+  # ---------------------------------------------------------------------------
+  # Shared run pipeline. Both `run/2` and `run_with_attestations/2` go through
+  # here so bindings are collected, tiers dispatched, and hashes committed
+  # exactly once per call regardless of which public entry-point was used.
+  # The third element returned is a small "ctx" map carrying the root, context,
+  # and umbrella flag so the attestation builder can re-resolve binding sources
+  # without re-deriving option defaults.
+  # ---------------------------------------------------------------------------
+  defp do_run(index, opts) do
     enabled = Keyword.get(opts, :enabled_tiers, @default_tiers)
     root = Keyword.get(opts, :root, File.cwd!())
     context = Keyword.get(opts, :context)
@@ -120,7 +176,134 @@ defmodule SpecLedEx.Realization.Orchestrator do
       refresh_and_commit_hashes(bindings_by_tier, context, root)
     end
 
-    findings
+    {findings, bindings_by_tier, %{root: root, context: context, umbrella?: umbrella?}}
+  end
+
+  # ---------------------------------------------------------------------------
+  # Attestation map
+  # ---------------------------------------------------------------------------
+
+  # covers: specled.realized_by.orchestrator_publishes_attestations
+  #
+  # Build the per-(subject, file) attestation map for production-code bindings.
+  #
+  # For every binding the orchestrator collected across all flat tiers and the
+  # implementation tier, we:
+  #
+  #   1. Check whether the `(subject_id, mfa)` pair appears in this run's
+  #      drift/dangling finding set. If so, the binding is NOT clean — skip.
+  #   2. Otherwise resolve the binding through `Binding.resolve_with_source/2`
+  #      to get a source path. If the path is `nil` (e.g. hot-reloaded module
+  #      without a recoverable `:source`), there's nothing to attest — skip.
+  #   3. Normalize the path against the run's `root` opt via `Path.relative_to/2`
+  #      so it matches the form `analysis.policy_files` uses.
+  #   4. Accumulate `(subject_id, normalized_path) => {:attested_clean, [mfa]}`
+  #      with MFAs collected in stable subject-then-requirement order, dedup'd.
+  #
+  # Tagged-tests expansion (walking subject `verification` blocks of
+  # `kind: tagged_tests` and bouncing each requirement's `index["test_tags"]`
+  # files into the same attestation map) is intentionally NOT implemented here.
+  # See `specled.realized_by.attestation_tagged_tests_expansion` for the
+  # follow-on requirement.
+  defp build_attestations(findings, bindings_by_tier, ctx) do
+    drift_set = drift_dangling_pairs(findings)
+
+    bindings_by_tier
+    |> all_subject_mfa_pairs()
+    |> Enum.reduce(%{}, fn {subject_id, mfa}, acc ->
+      cond do
+        MapSet.member?(drift_set, {subject_id, mfa}) ->
+          acc
+
+        true ->
+          case Binding.resolve_with_source(mfa, ctx.context) do
+            {:ok, _ast, nil} ->
+              acc
+
+            {:ok, _ast, path} when is_binary(path) ->
+              normalized = normalize_attestation_path(path, ctx.root)
+              put_attestation(acc, subject_id, normalized, mfa)
+
+            _ ->
+              acc
+          end
+      end
+    end)
+  end
+
+  # Flatten the bindings_by_tier map into a stream of `{subject_id, mfa}` pairs.
+  # Subject-layer entries precede requirement-layer entries (the same order
+  # accumulate_tier/7 produced) so the resulting MFA list per (subject, path)
+  # is deterministic. Implementation-tier subjects carry an `impl_bindings`
+  # list of MFAs/bare-modules — each contributes its own pair under that
+  # subject.
+  defp all_subject_mfa_pairs(bindings_by_tier) do
+    flat_pairs =
+      @flat_tiers
+      |> Enum.flat_map(fn tier ->
+        bindings_by_tier
+        |> Map.get(tier, [])
+        |> Enum.map(fn %{subject_id: sid, mfa: mfa} -> {sid, mfa} end)
+      end)
+
+    impl_pairs =
+      bindings_by_tier
+      |> Map.get(:implementation, [])
+      |> Enum.flat_map(fn %{id: sid, impl_bindings: mfas} ->
+        Enum.map(mfas, fn mfa -> {sid, mfa} end)
+      end)
+
+    Enum.uniq(flat_pairs ++ impl_pairs)
+  end
+
+  defp drift_dangling_pairs(findings) do
+    Enum.reduce(findings, MapSet.new(), fn finding, acc ->
+      code = Map.get(finding, "code") || Map.get(finding, :code)
+
+      if code == "branch_guard_realization_drift" or code == "branch_guard_dangling_binding" do
+        sid = Map.get(finding, "subject_id") || Map.get(finding, :subject_id)
+        mfa = Map.get(finding, "mfa") || Map.get(finding, :mfa)
+
+        if is_binary(sid) and is_binary(mfa) do
+          MapSet.put(acc, {sid, mfa})
+        else
+          acc
+        end
+      else
+        acc
+      end
+    end)
+  end
+
+  defp normalize_attestation_path(path, root) when is_binary(path) and is_binary(root) do
+    # `resolve_with_source` already normalized against `File.cwd!/0`. When the
+    # caller's root differs from cwd (test setups, umbrella sub-apps), we want
+    # the attestation path to match the form `policy_files` keys use, which is
+    # relative to the run's root. `Path.relative_to/2` on an already-relative
+    # path is a no-op; on an absolute path it strips the root prefix when the
+    # path lives under it and leaves the path unchanged otherwise.
+    path
+    |> Path.expand(root)
+    |> Path.relative_to(root)
+  end
+
+  defp put_attestation(acc, subject_id, path, mfa) do
+    inner = Map.get(acc, subject_id, %{})
+
+    updated_inner =
+      case Map.get(inner, path) do
+        nil ->
+          Map.put(inner, path, {:attested_clean, [mfa]})
+
+        {:attested_clean, mfas} ->
+          if mfa in mfas do
+            inner
+          else
+            Map.put(inner, path, {:attested_clean, mfas ++ [mfa]})
+          end
+      end
+
+    Map.put(acc, subject_id, updated_inner)
   end
 
   # ---------------------------------------------------------------------------

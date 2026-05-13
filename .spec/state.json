@@ -485,25 +485,11 @@
       "message": "Requirement has no backing @tag spec annotation in the test suite: specled.realized_by.attestation_tagged_tests_expansion"
     },
     {
-      "code": "requirement_without_test_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "error",
-      "message": "Requirement has no backing @tag spec annotation in the test suite: specled.realized_by.orchestrator_publishes_attestations"
-    },
-    {
       "code": "tagged_tests_cover_missing_tag",
       "entity_id": "specled.realized_by",
       "file": ".spec/specs/realized_by.spec.md",
       "level": "warning",
       "message": "tagged_tests verification covers specled.realized_by.attestation_tagged_tests_expansion but no test carries @tag spec: specled.realized_by.attestation_tagged_tests_expansion"
-    },
-    {
-      "code": "tagged_tests_cover_missing_tag",
-      "entity_id": "specled.realized_by",
-      "file": ".spec/specs/realized_by.spec.md",
-      "level": "warning",
-      "message": "tagged_tests verification covers specled.realized_by.orchestrator_publishes_attestations but no test carries @tag spec: specled.realized_by.orchestrator_publishes_attestations"
     }
   ],
   "index": {
@@ -7585,7 +7571,16 @@
       },
       {
         "covers": [
-          "specled.realized_by.orchestrator_publishes_attestations",
+          "specled.realized_by.orchestrator_publishes_attestations"
+        ],
+        "execute": true,
+        "file": ".spec/specs/realized_by.spec.md",
+        "kind": "tagged_tests",
+        "subject_id": "specled.realized_by",
+        "target": ""
+      },
+      {
+        "covers": [
           "specled.realized_by.attestation_tagged_tests_expansion"
         ],
         "execute": false,
@@ -7911,11 +7906,11 @@
     "decision_parse_errors": 0,
     "decisions": 30,
     "exceptions": 0,
-    "findings": 14,
+    "findings": 12,
     "requirements": 285,
     "scenarios": 156,
     "subjects": 33,
-    "verifications": 93
+    "verifications": 94
   },
   "verification": {
     "claims": [
@@ -10472,6 +10467,17 @@
         "verification_index": 6
       },
       {
+        "cover_id": "specled.realized_by.orchestrator_publishes_attestations",
+        "file": ".spec/specs/realized_by.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.realized_by",
+        "target": "",
+        "verification_index": 7
+      },
+      {
         "cover_id": "specled.realized_by.attestation_tagged_tests_expansion",
         "file": ".spec/specs/realized_by.spec.md",
         "kind": "tagged_tests",
@@ -10480,18 +10486,7 @@
         "strength": "claimed",
         "subject_id": "specled.realized_by",
         "target": "",
-        "verification_index": 7
-      },
-      {
-        "cover_id": "specled.realized_by.orchestrator_publishes_attestations",
-        "file": ".spec/specs/realized_by.spec.md",
-        "kind": "tagged_tests",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "claimed",
-        "subject_id": "specled.realized_by",
-        "target": "",
-        "verification_index": 7
+        "verification_index": 8
       },
       {
         "cover_id": "specled.severity.known_values",
@@ -11597,8 +11592,8 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 9,
-      "executed": 252,
+      "claimed": 8,
+      "executed": 253,
       "linked": 73
     },
     "threshold_failures": 0

@@ -570,8 +570,11 @@ decisions:
   covers:
     - specled.realized_by.binding_ref_inferred_no_leak
 - kind: tagged_tests
-  execute: false
+  execute: true
   covers:
     - specled.realized_by.orchestrator_publishes_attestations
+- kind: tagged_tests
+  execute: false
+  covers:
     - specled.realized_by.attestation_tagged_tests_expansion
 ```
