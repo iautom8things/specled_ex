@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-05-13T10:37:58Z",
+  "description": "Advances: N/A (formatter-only, no spec subject)\n\nThe project has widespread mix format --check-formatted failures on both main and the epic branch feature/file-touch-yields-to-realization. Run mix format from the repo root and commit the result. No logic changes — formatter-only diff.\n\nVerification:\n- mix format --check-formatted exits 0\n- mix compile --warnings-as-errors clean\n- mix test passes\n\nWork from a worktree based on main.",
+  "id": "specled_-cm2",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Fix mix format --check-formatted failures",
+  "type": "task",
+  "updated_at": "2026-05-13T10:37:58Z"
+}
