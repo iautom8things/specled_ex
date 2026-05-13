@@ -1,6 +1,10 @@
 defmodule SpecLedEx.BranchCheckTest do
   use SpecLedEx.Case
-  @moduletag spec: ["specled.branch_guard.new_requirement_tag_warning", "specled.branch_guard.tag_findings_respect_enforcement"]
+
+  @moduletag spec: [
+               "specled.branch_guard.new_requirement_tag_warning",
+               "specled.branch_guard.tag_findings_respect_enforcement"
+             ]
 
   alias SpecLedEx.{BranchCheck, Index}
 
@@ -52,7 +56,10 @@ defmodule SpecLedEx.BranchCheckTest do
     report = BranchCheck.run(index, root, base: "HEAD")
 
     findings =
-      Enum.filter(report["findings"], &(&1["code"] == "branch_guard_requirement_without_test_tag"))
+      Enum.filter(
+        report["findings"],
+        &(&1["code"] == "branch_guard_requirement_without_test_tag")
+      )
 
     assert length(findings) == 1
     assert hd(findings)["severity"] == "warning"
@@ -210,7 +217,10 @@ defmodule SpecLedEx.BranchCheckTest do
     report = BranchCheck.run(index, root, base: "HEAD")
 
     findings =
-      Enum.filter(report["findings"], &(&1["code"] == "branch_guard_requirement_without_test_tag"))
+      Enum.filter(
+        report["findings"],
+        &(&1["code"] == "branch_guard_requirement_without_test_tag")
+      )
 
     assert length(findings) == 1
     assert hd(findings)["severity"] == "error"

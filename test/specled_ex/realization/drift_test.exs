@@ -2,7 +2,13 @@ defmodule SpecLedEx.Realization.DriftTest do
   # covers: specled.use_tier.root_cause_dedupe
   # covers: specled.use_tier.hash_prefix_length
   use ExUnit.Case, async: true
-  @moduletag spec: ["specled.api_boundary.dedupe_cyclic_tiebreak", "specled.api_boundary.drift_dedupe_narrow", "specled.use_tier.hash_prefix_length", "specled.use_tier.root_cause_dedupe"]
+
+  @moduletag spec: [
+               "specled.api_boundary.dedupe_cyclic_tiebreak",
+               "specled.api_boundary.drift_dedupe_narrow",
+               "specled.use_tier.hash_prefix_length",
+               "specled.use_tier.root_cause_dedupe"
+             ]
 
   alias SpecLedEx.Realization.Drift
 
@@ -96,7 +102,11 @@ defmodule SpecLedEx.Realization.DriftTest do
         provider_mfa: {provider_mod, :__using__, 1},
         hash_prefix_before: "abc12345",
         hash_prefix_after: "def67890",
-        consumers: [SpecLedEx.MacroFixture.C1, SpecLedEx.MacroFixture.C2, SpecLedEx.MacroFixture.C3]
+        consumers: [
+          SpecLedEx.MacroFixture.C1,
+          SpecLedEx.MacroFixture.C2,
+          SpecLedEx.MacroFixture.C3
+        ]
       }
 
       consumer_deltas =

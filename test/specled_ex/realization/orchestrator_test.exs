@@ -31,7 +31,9 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
     end
     """)
 
-    {:ok, _mods, _warns} = Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir, return_diagnostics: true)
+    {:ok, _mods, _warns} =
+      Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir, return_diagnostics: true)
+
     :code.add_patha(String.to_charlist(tmp_dir))
 
     for mod <- [
@@ -213,8 +215,12 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
         |> Enum.filter(&(&1["code"] == "detector_unavailable"))
         |> Enum.map(&(&1["reason"] || Map.get(&1, :reason)))
 
-      assert by_tier == ["umbrella_unsupported", "umbrella_unsupported",
-                         "umbrella_unsupported", "umbrella_unsupported"]
+      assert by_tier == [
+               "umbrella_unsupported",
+               "umbrella_unsupported",
+               "umbrella_unsupported",
+               "umbrella_unsupported"
+             ]
     end
   end
 

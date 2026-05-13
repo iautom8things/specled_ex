@@ -1,6 +1,19 @@
 defmodule SpecLedEx.DecisionParser.CrossFieldTest do
   use SpecLedEx.Case
-  @moduletag spec: ["specled.decisions.change_type_enum", "specled.decisions.change_type_optional", "specled.decisions.cross_field_adr_append_only", "specled.decisions.cross_field_affects_non_empty", "specled.decisions.cross_field_affects_resolve", "specled.decisions.cross_field_idempotent", "specled.decisions.cross_field_reverses_what", "specled.decisions.cross_field_supersedes_replaces", "specled.decisions.frontmatter_contract", "specled.decisions.reference_validation", "specled.decisions.weakening_set"]
+
+  @moduletag spec: [
+               "specled.decisions.change_type_enum",
+               "specled.decisions.change_type_optional",
+               "specled.decisions.cross_field_adr_append_only",
+               "specled.decisions.cross_field_affects_non_empty",
+               "specled.decisions.cross_field_affects_resolve",
+               "specled.decisions.cross_field_idempotent",
+               "specled.decisions.cross_field_reverses_what",
+               "specled.decisions.cross_field_supersedes_replaces",
+               "specled.decisions.frontmatter_contract",
+               "specled.decisions.reference_validation",
+               "specled.decisions.weakening_set"
+             ]
 
   alias SpecLedEx.DecisionParser.CrossField
 
@@ -210,38 +223,65 @@ defmodule SpecLedEx.DecisionParser.CrossFieldTest do
     end
 
     test "passes for an unchanged accepted ADR", %{base_meta: meta, prior: prior} do
-      errors = CrossField.validate(decision(meta), index(subjects: ["subj.x"]), prior_decisions: prior)
+      errors =
+        CrossField.validate(decision(meta), index(subjects: ["subj.x"]), prior_decisions: prior)
+
       refute "cross_field/adr_field_drift" in codes_in(errors)
       refute "cross_field/adr_status_regression" in codes_in(errors)
     end
 
     test "detects drift on affects", %{base_meta: meta, prior: prior} do
       changed = %{meta | "affects" => ["subj.x", "subj.y"]}
-      errors = CrossField.validate(decision(changed), index(subjects: ["subj.x", "subj.y"]), prior_decisions: prior)
+
+      errors =
+        CrossField.validate(decision(changed), index(subjects: ["subj.x", "subj.y"]),
+          prior_decisions: prior
+        )
+
       assert "cross_field/adr_field_drift" in codes_in(errors)
     end
 
     test "detects drift on change_type", %{base_meta: meta, prior: prior} do
       changed = %{meta | "change_type" => "narrows-scope"}
-      errors = CrossField.validate(decision(changed), index(subjects: ["subj.x"]), prior_decisions: prior)
+
+      errors =
+        CrossField.validate(decision(changed), index(subjects: ["subj.x"]),
+          prior_decisions: prior
+        )
+
       assert "cross_field/adr_field_drift" in codes_in(errors)
     end
 
     test "detects drift on reverses_what", %{base_meta: meta, prior: prior} do
       changed = %{meta | "reverses_what" => "something else"}
-      errors = CrossField.validate(decision(changed), index(subjects: ["subj.x"]), prior_decisions: prior)
+
+      errors =
+        CrossField.validate(decision(changed), index(subjects: ["subj.x"]),
+          prior_decisions: prior
+        )
+
       assert "cross_field/adr_field_drift" in codes_in(errors)
     end
 
     test "accepts accepted -> deprecated status transition", %{base_meta: meta, prior: prior} do
       changed = %{meta | "status" => "deprecated"}
-      errors = CrossField.validate(decision(changed), index(subjects: ["subj.x"]), prior_decisions: prior)
+
+      errors =
+        CrossField.validate(decision(changed), index(subjects: ["subj.x"]),
+          prior_decisions: prior
+        )
+
       refute "cross_field/adr_status_regression" in codes_in(errors)
     end
 
     test "accepts accepted -> superseded status transition", %{base_meta: meta, prior: prior} do
       changed = %{meta | "status" => "superseded"}
-      errors = CrossField.validate(decision(changed), index(subjects: ["subj.x"]), prior_decisions: prior)
+
+      errors =
+        CrossField.validate(decision(changed), index(subjects: ["subj.x"]),
+          prior_decisions: prior
+        )
+
       refute "cross_field/adr_status_regression" in codes_in(errors)
     end
 
@@ -257,7 +297,9 @@ defmodule SpecLedEx.DecisionParser.CrossFieldTest do
       head = %{base | "status" => "accepted"}
       prior = [%{"meta" => base}]
 
-      errors = CrossField.validate(decision(head), index(subjects: ["subj.x"]), prior_decisions: prior)
+      errors =
+        CrossField.validate(decision(head), index(subjects: ["subj.x"]), prior_decisions: prior)
+
       assert "cross_field/adr_status_regression" in codes_in(errors)
     end
 

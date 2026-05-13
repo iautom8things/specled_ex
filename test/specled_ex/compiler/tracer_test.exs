@@ -1,6 +1,11 @@
 defmodule SpecLedEx.Compiler.TracerTest do
   use ExUnit.Case, async: false
-  @moduletag spec: ["specled.compiler_tracer.captures_remote_calls", "specled.compiler_tracer.etf_read_direct", "specled.compiler_tracer.registered_in_mix_exs"]
+
+  @moduletag spec: [
+               "specled.compiler_tracer.captures_remote_calls",
+               "specled.compiler_tracer.etf_read_direct",
+               "specled.compiler_tracer.registered_in_mix_exs"
+             ]
 
   alias SpecLedEx.Compiler.Tracer
 

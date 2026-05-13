@@ -1,6 +1,11 @@
 defmodule SpecLedEx.Coverage.FormatterTest do
   use ExUnit.Case, async: true
-  @moduletag spec: ["specled.coverage_capture.anonymous_ets", "specled.coverage_capture.formatter_snapshot_fn_di", "specled.coverage_capture.keyed_by_test_pid"]
+
+  @moduletag spec: [
+               "specled.coverage_capture.anonymous_ets",
+               "specled.coverage_capture.formatter_snapshot_fn_di",
+               "specled.coverage_capture.keyed_by_test_pid"
+             ]
 
   alias SpecLedEx.Coverage
   alias SpecLedEx.Coverage.Formatter
@@ -98,8 +103,7 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       {:ok, state} = Formatter.init(snapshot_fn: stub_fn)
 
       event =
-        {:test_finished,
-         %ExUnit.Test{module: M, name: :"test t", tags: %{file: "x.exs"}}}
+        {:test_finished, %ExUnit.Test{module: M, name: :"test t", tags: %{file: "x.exs"}}}
 
       {:noreply, ^state} = Formatter.handle_cast(event, state)
 
@@ -112,7 +116,9 @@ defmodule SpecLedEx.Coverage.FormatterTest do
 
   describe "suite_finished — flush" do
     test "writes per-file records derived from accumulated state" do
-      tmp_path = Path.join(System.tmp_dir!(), "fmt_flush_#{System.unique_integer([:positive])}.coverdata")
+      tmp_path =
+        Path.join(System.tmp_dir!(), "fmt_flush_#{System.unique_integer([:positive])}.coverdata")
+
       on_exit(fn -> File.rm_rf!(tmp_path) end)
 
       stub_fn = fn _ -> {:result, [], []} end
@@ -127,8 +133,7 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       tags = %{file: "test/abc_test.exs", test_pid: pid}
 
       event =
-        {:test_finished,
-         %ExUnit.Test{module: AbcTest, name: :"test x", tags: tags}}
+        {:test_finished, %ExUnit.Test{module: AbcTest, name: :"test x", tags: tags}}
 
       {:noreply, ^state} = Formatter.handle_cast(event, state)
       {:noreply, ^state} = Formatter.handle_cast({:suite_finished, %{}}, state)

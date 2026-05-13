@@ -2,7 +2,11 @@ Code.require_file("../../../test_support/specled_ex_integration_case.ex", __DIR_
 
 defmodule Mix.Tasks.Spec.Cover.TestTest do
   use SpecLedEx.IntegrationCase
-  @moduletag spec: ["specled.coverage_capture.integration_case", "specled.coverage_capture.serialized_run"]
+
+  @moduletag spec: [
+               "specled.coverage_capture.integration_case",
+               "specled.coverage_capture.serialized_run"
+             ]
 
   alias SpecLedEx.Coverage.Store
 
@@ -33,7 +37,9 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
       assert records != [], "expected at least one record per test"
 
       test_ids = records |> Enum.map(& &1.test_id) |> Enum.uniq()
-      assert length(test_ids) >= 2, "expected records for both fixture tests, got: #{inspect(test_ids)}"
+
+      assert length(test_ids) >= 2,
+             "expected records for both fixture tests, got: #{inspect(test_ids)}"
 
       Enum.each(records, fn rec ->
         assert is_binary(rec.test_id)

@@ -52,9 +52,15 @@ defmodule SpecLedEx.Review.SpecDiff do
     head_exists? = File.exists?(head_path)
 
     case {base, head_exists?} do
-      {:error, true} -> :new
-      {:error, false} -> :unchanged
-      {{:ok, _}, false} -> :removed
+      {:error, true} ->
+        :new
+
+      {:error, false} ->
+        :unchanged
+
+      {{:ok, _}, false} ->
+        :removed
+
       {{:ok, base_content}, true} ->
         case File.read(head_path) do
           {:ok, head_content} when head_content == base_content -> :unchanged

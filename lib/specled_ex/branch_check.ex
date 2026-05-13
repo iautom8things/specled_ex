@@ -234,8 +234,7 @@ defmodule SpecLedEx.BranchCheck do
     requirements = get_in(current_state, ["index", "requirements"]) || []
     overlap_raw = Overlap.analyze(subjects, requirements)
 
-    {render_findings(append_only_raw, severity_opts),
-     render_findings(overlap_raw, severity_opts)}
+    {render_findings(append_only_raw, severity_opts), render_findings(overlap_raw, severity_opts)}
   end
 
   defp append_only_applicable?(_root, nil), do: false

@@ -3,7 +3,11 @@ defmodule SpecLedEx.Integration.ScenarioMistaggedTestTest do
   # covers: specled.triangulation.scenario.untethered_test_flagged
   # covers: specled.triangulation.scenario.opt_out_tag_suppresses
   use ExUnit.Case, async: true
-  @moduletag spec: ["specled.triangulation.untethered_test", "specled.triangulation.untethered_test_opt_out"]
+
+  @moduletag spec: [
+               "specled.triangulation.untethered_test",
+               "specled.triangulation.untethered_test_opt_out"
+             ]
 
   @moduletag :integration
 
@@ -78,7 +82,8 @@ defmodule SpecLedEx.Integration.ScenarioMistaggedTestTest do
 
     untethered = Enum.filter(findings, &(&1["code"] == "branch_guard_untethered_test"))
 
-    assert [finding] = untethered, "expected a single untethered finding, got: #{inspect(untethered)}"
+    assert [finding] = untethered,
+           "expected a single untethered finding, got: #{inspect(untethered)}"
 
     assert finding["severity"] == "info"
     assert finding["subject_id"] == "subject_a"

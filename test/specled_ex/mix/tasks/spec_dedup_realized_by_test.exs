@@ -132,6 +132,7 @@ defmodule Mix.Tasks.Spec.DedupRealizedByTest do
       assert :ok = Mix.Tasks.Spec.DedupRealizedBy.run(["--root", root])
 
       joined = drain_shell_messages() |> Enum.join("\n")
+
       assert String.contains?(joined, "No realized_by duplications found."),
              "expected clean-exit message, got:\n#{joined}"
     end

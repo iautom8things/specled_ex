@@ -57,6 +57,7 @@ defmodule SpecLedEx.MixProject do
 
       try do
         Code.put_compiler_option(:tracers, [])
+
         {:ok, _modules, _diagnostics} =
           Kernel.ParallelCompiler.compile_to_path([src], ebin, return_diagnostics: true)
       after

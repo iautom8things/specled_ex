@@ -1,6 +1,16 @@
 defmodule SpecLedEx.IndexStateTest do
   use SpecLedEx.Case
-  @moduletag spec: ["specled.index.canonical_state_output", "specled.index.json_resilience", "specled.index.subject_and_decision_index", "specled.package.declarative_governance", "specled.package.index_and_state", "specled.status.coverage_summary", "specled.status.decision_index", "specled.status.frontier_summary"]
+
+  @moduletag spec: [
+               "specled.index.canonical_state_output",
+               "specled.index.json_resilience",
+               "specled.index.subject_and_decision_index",
+               "specled.package.declarative_governance",
+               "specled.package.index_and_state",
+               "specled.status.coverage_summary",
+               "specled.status.decision_index",
+               "specled.status.frontier_summary"
+             ]
 
   alias SpecLedEx.Index
 
@@ -184,15 +194,27 @@ defmodule SpecLedEx.IndexStateTest do
           title: "Zeta",
           requirements: [%{"id" => "zeta.requirement", "statement" => "Zeta"}],
           verification: [
-            %{"kind" => "source_file", "target" => "lib/zeta.ex", "covers" => ["zeta.requirement"]},
-            %{"kind" => "source_file", "target" => "lib/zeta_2.ex", "covers" => ["zeta.requirement"]}
+            %{
+              "kind" => "source_file",
+              "target" => "lib/zeta.ex",
+              "covers" => ["zeta.requirement"]
+            },
+            %{
+              "kind" => "source_file",
+              "target" => "lib/zeta_2.ex",
+              "covers" => ["zeta.requirement"]
+            }
           ]
         ),
         state_subject("alpha.subject", ".spec/specs/alpha.spec.md",
           title: "Alpha",
           requirements: [%{"id" => "alpha.requirement", "statement" => "Alpha"}],
           verification: [
-            %{"kind" => "source_file", "target" => "lib/alpha.ex", "covers" => ["alpha.requirement"]}
+            %{
+              "kind" => "source_file",
+              "target" => "lib/alpha.ex",
+              "covers" => ["alpha.requirement"]
+            }
           ]
         )
       ],
@@ -246,13 +268,16 @@ defmodule SpecLedEx.IndexStateTest do
     state = read_state(root)
 
     assert Enum.map(state["index"]["subjects"], & &1["id"]) == ["alpha.subject", "zeta.subject"]
+
     assert Enum.map(state["index"]["verifications"], & &1["target"]) == [
              "lib/alpha.ex",
              "lib/zeta.ex",
              "lib/zeta_2.ex"
            ]
+
     assert Enum.map(state["findings"], & &1["code"]) == ["alpha_error", "zeta_warning"]
     assert state["verification"]["cli_minimum_strength"] == "linked"
+
     assert Enum.map(state["verification"]["claims"], & &1["cover_id"]) == [
              "alpha.requirement",
              "zeta.requirement"

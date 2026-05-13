@@ -1,6 +1,14 @@
 defmodule SpecLedEx.TagFindingsTest do
   use SpecLedEx.Case
-  @moduletag spec: ["specled.verify.requirement_without_test_tag", "specled.verify.tag_dynamic_value_skipped", "specled.verify.tag_findings_respect_enforcement", "specled.verify.tag_findings_suppressed_when_disabled", "specled.verify.tag_scan_parse_error", "specled.verify.verification_cover_untagged"]
+
+  @moduletag spec: [
+               "specled.verify.requirement_without_test_tag",
+               "specled.verify.tag_dynamic_value_skipped",
+               "specled.verify.tag_findings_respect_enforcement",
+               "specled.verify.tag_findings_suppressed_when_disabled",
+               "specled.verify.tag_scan_parse_error",
+               "specled.verify.verification_cover_untagged"
+             ]
 
   alias SpecLedEx.Verifier
 

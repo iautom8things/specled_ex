@@ -383,10 +383,13 @@ defmodule SpecLedEx.CoverageTriangulation do
       |> Map.get(:requirements, [])
       |> Enum.filter(fn req ->
         req.binding_present? and req.closure_files != [] and
-          not Enum.any?(Enum.map(req.closure_files, &normalize_path/1), &MapSet.member?(
-            exercised_files,
-            &1
-          ))
+          not Enum.any?(
+            Enum.map(req.closure_files, &normalize_path/1),
+            &MapSet.member?(
+              exercised_files,
+              &1
+            )
+          )
       end)
       |> Enum.map(fn req ->
         %{
@@ -409,7 +412,14 @@ defmodule SpecLedEx.CoverageTriangulation do
   # Untethered test
   # ---------------------------------------------------------------------------
 
-  defp untethered_findings(per_test, _spec_tags, opt_out_set, req_to_subject, file_to_subjects, reach) do
+  defp untethered_findings(
+         per_test,
+         _spec_tags,
+         opt_out_set,
+         req_to_subject,
+         file_to_subjects,
+         reach
+       ) do
     per_test
     |> Enum.reject(& &1.opt_out?)
     |> Enum.reject(fn test -> MapSet.member?(opt_out_set, {test.test_file, test.test_name}) end)

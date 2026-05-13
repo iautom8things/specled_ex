@@ -189,7 +189,8 @@ defmodule SpecLedEx.Review.HtmlTest do
 
         binding_check =
           Enum.find(checks, fn c ->
-            c.leg == "Spec → Code" and c.codes == ~w(branch_guard_realization_drift branch_guard_dangling_binding)
+            c.leg == "Spec → Code" and
+              c.codes == ~w(branch_guard_realization_drift branch_guard_dangling_binding)
           end)
 
         assert binding_check, "expected a Spec → Code row covering the realization-drift codes"
@@ -848,7 +849,11 @@ defmodule SpecLedEx.Review.HtmlTest do
       "subject_id" => claimed,
       "observed_owners" => observed_owners,
       "message" =>
-        Keyword.get(opts, :message, "test claims #{claimed} but hits #{Enum.join(observed_owners, ", ")}")
+        Keyword.get(
+          opts,
+          :message,
+          "test claims #{claimed} but hits #{Enum.join(observed_owners, ", ")}"
+        )
     }
   end
 

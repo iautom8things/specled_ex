@@ -88,7 +88,10 @@ defmodule SpecLedEx.BranchCheck.SeverityIntegrationTest do
       report = BranchCheck.run(index, root, base: "HEAD")
 
       tag_findings =
-        Enum.filter(report["findings"], &(&1["code"] == "branch_guard_requirement_without_test_tag"))
+        Enum.filter(
+          report["findings"],
+          &(&1["code"] == "branch_guard_requirement_without_test_tag")
+        )
 
       assert length(tag_findings) == 1
       assert hd(tag_findings)["severity"] == "error"

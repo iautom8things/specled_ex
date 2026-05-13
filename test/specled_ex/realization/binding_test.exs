@@ -1,6 +1,11 @@
 defmodule SpecLedEx.Realization.BindingTest do
   use ExUnit.Case, async: false
-  @moduletag spec: ["specled.binding.dangling_reported", "specled.binding.resolve_beam_first", "specled.binding.resolve_sees_use_generated"]
+
+  @moduletag spec: [
+               "specled.binding.dangling_reported",
+               "specled.binding.resolve_beam_first",
+               "specled.binding.resolve_sees_use_generated"
+             ]
 
   alias SpecLedEx.Realization.Binding
 

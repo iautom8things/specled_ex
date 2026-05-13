@@ -1,6 +1,11 @@
 defmodule SpecLedEx.Compiler.ManifestTest do
   use ExUnit.Case, async: true
-  @moduletag spec: ["specled.compiler_context.load_from_opts", "specled.compiler_context.manifest_wraps_stdlib", "specled.compiler_context.struct_shape"]
+
+  @moduletag spec: [
+               "specled.compiler_context.load_from_opts",
+               "specled.compiler_context.manifest_wraps_stdlib",
+               "specled.compiler_context.struct_shape"
+             ]
 
   alias SpecLedEx.Compiler.{Context, Manifest}
 
@@ -23,8 +28,7 @@ defmodule SpecLedEx.Compiler.ManifestTest do
 
     test "pulls the first list-of-binaries field from a manifest tuple" do
       manifest = %{
-        MyApp.Foo =>
-          {:module, :elixir, ["lib/my_app/foo.ex"], :other, :more, :extras, :last}
+        MyApp.Foo => {:module, :elixir, ["lib/my_app/foo.ex"], :other, :more, :extras, :last}
       }
 
       assert Manifest.sources_for(manifest, MyApp.Foo) == ["lib/my_app/foo.ex"]

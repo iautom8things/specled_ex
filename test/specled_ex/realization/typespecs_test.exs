@@ -3,7 +3,11 @@ defmodule SpecLedEx.Realization.TypespecsTest do
   # covers: specled.expanded_behavior_tier.typespecs_drift_finding
   # covers: specled.expanded_behavior_tier.scenario.typespec_arg_change_drifts
   use ExUnit.Case, async: false
-  @moduletag spec: ["specled.expanded_behavior_tier.typespecs_drift_finding", "specled.expanded_behavior_tier.typespecs_hashes_spec_and_type"]
+
+  @moduletag spec: [
+               "specled.expanded_behavior_tier.typespecs_drift_finding",
+               "specled.expanded_behavior_tier.typespecs_hashes_spec_and_type"
+             ]
 
   alias SpecLedEx.Realization.{HashStore, Typespecs}
 
@@ -86,7 +90,8 @@ defmodule SpecLedEx.Realization.TypespecsTest do
     Code.put_compiler_option(:debug_info, true)
 
     try do
-      {:ok, _mods, _warns} = Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir, return_diagnostics: true)
+      {:ok, _mods, _warns} =
+        Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir, return_diagnostics: true)
     after
       Code.put_compiler_option(:debug_info, previous)
     end

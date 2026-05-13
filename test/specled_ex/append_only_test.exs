@@ -1,7 +1,23 @@
 defmodule SpecLedEx.AppendOnlyTest do
   # covers: specled.append_only.requirement_deleted specled.append_only.must_downgraded specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
   use ExUnit.Case, async: true
-  @moduletag spec: ["specled.append_only.adr_affects_widened", "specled.append_only.decision_deleted", "specled.append_only.disabled_without_reason", "specled.append_only.findings_sorted", "specled.append_only.fix_block_discipline", "specled.append_only.identity", "specled.append_only.missing_change_type", "specled.append_only.must_downgraded", "specled.append_only.negative_removed", "specled.append_only.no_baseline", "specled.append_only.requirement_deleted", "specled.append_only.requirement_deleted_authorized", "specled.append_only.same_pr_self_authorization", "specled.append_only.scenario_regression"]
+
+  @moduletag spec: [
+               "specled.append_only.adr_affects_widened",
+               "specled.append_only.decision_deleted",
+               "specled.append_only.disabled_without_reason",
+               "specled.append_only.findings_sorted",
+               "specled.append_only.fix_block_discipline",
+               "specled.append_only.identity",
+               "specled.append_only.missing_change_type",
+               "specled.append_only.must_downgraded",
+               "specled.append_only.negative_removed",
+               "specled.append_only.no_baseline",
+               "specled.append_only.requirement_deleted",
+               "specled.append_only.requirement_deleted_authorized",
+               "specled.append_only.same_pr_self_authorization",
+               "specled.append_only.scenario_regression"
+             ]
   use ExUnitProperties
 
   import SpecLedEx.AppendOnlyFixtures
@@ -31,8 +47,14 @@ defmodule SpecLedEx.AppendOnlyTest do
         state_fixture(
           subject: "x",
           requirements: [requirement("x.req_a", "The system MUST reject invalid input.")],
-          decisions: [adr(id: "d1", affects: ["x.req_a"], change_type: "deprecates",
-                          reverses_what: "Legacy anti-spam guard retired.")]
+          decisions: [
+            adr(
+              id: "d1",
+              affects: ["x.req_a"],
+              change_type: "deprecates",
+              reverses_what: "Legacy anti-spam guard retired."
+            )
+          ]
         )
 
       current = state_fixture(subject: "x", requirements: [], decisions: [])
@@ -44,13 +66,24 @@ defmodule SpecLedEx.AppendOnlyTest do
         state_fixture(
           subject: "x",
           requirements: [],
-          decisions: [adr(id: "d1", affects: ["x.req_a"], change_type: "deprecates",
-                          reverses_what: "Legacy anti-spam guard retired.")]
+          decisions: [
+            adr(
+              id: "d1",
+              affects: ["x.req_a"],
+              change_type: "deprecates",
+              reverses_what: "Legacy anti-spam guard retired."
+            )
+          ]
         )
 
       head_decisions = [
-        adr(id: "d1", affects: ["x.req_a"], change_type: "deprecates",
-            reverses_what: "Legacy anti-spam guard retired.", form: :parsed)
+        adr(
+          id: "d1",
+          affects: ["x.req_a"],
+          change_type: "deprecates",
+          reverses_what: "Legacy anti-spam guard retired.",
+          form: :parsed
+        )
       ]
 
       # Authorized path: no requirement_deleted finding.
@@ -151,9 +184,13 @@ defmodule SpecLedEx.AppendOnlyTest do
         )
 
       head_decisions = [
-        adr(id: "d1", affects: ["x.req_a"], change_type: "weakens",
-            reverses_what: "SLAs lowered to industry baseline for v1.",
-            form: :parsed)
+        adr(
+          id: "d1",
+          affects: ["x.req_a"],
+          change_type: "weakens",
+          reverses_what: "SLAs lowered to industry baseline for v1.",
+          form: :parsed
+        )
       ]
 
       refute Enum.any?(
@@ -248,9 +285,13 @@ defmodule SpecLedEx.AppendOnlyTest do
         )
 
       head_decisions = [
-        adr(id: "d1", affects: ["x.req_a"], change_type: "narrows-scope",
-            reverses_what: "Outer-loop scenario dropped; replacement covers primary path.",
-            form: :parsed)
+        adr(
+          id: "d1",
+          affects: ["x.req_a"],
+          change_type: "narrows-scope",
+          reverses_what: "Outer-loop scenario dropped; replacement covers primary path.",
+          form: :parsed
+        )
       ]
 
       assert [] == AppendOnly.analyze(prior, current, head_decisions)
@@ -263,7 +304,9 @@ defmodule SpecLedEx.AppendOnlyTest do
         state_fixture(
           subject: "x",
           requirements: [
-            requirement("x.req_a", "The system MUST NOT leak session tokens.", polarity: "negative")
+            requirement("x.req_a", "The system MUST NOT leak session tokens.",
+              polarity: "negative"
+            )
           ]
         )
 
@@ -303,7 +346,9 @@ defmodule SpecLedEx.AppendOnlyTest do
         state_fixture(
           subject: "x",
           requirements: [
-            requirement("x.req_a", "The system MUST NOT leak session tokens.", polarity: "negative")
+            requirement("x.req_a", "The system MUST NOT leak session tokens.",
+              polarity: "negative"
+            )
           ]
         )
 
@@ -314,9 +359,13 @@ defmodule SpecLedEx.AppendOnlyTest do
         )
 
       head_decisions = [
-        adr(id: "d1", affects: ["x.req_a"], change_type: "adds-exception",
-            reverses_what: "Session-token exception added for the debug flow.",
-            form: :parsed)
+        adr(
+          id: "d1",
+          affects: ["x.req_a"],
+          change_type: "adds-exception",
+          reverses_what: "Session-token exception added for the debug flow.",
+          form: :parsed
+        )
       ]
 
       refute Enum.any?(
@@ -395,7 +444,9 @@ defmodule SpecLedEx.AppendOnlyTest do
       assert [first_run] = AppendOnly.analyze(:missing, current, [])
       assert first_run.message =~ "first-run bootstrap"
 
-      assert [shallow] = AppendOnly.analyze(:missing, current, [], baseline_variant: :shallow_clone)
+      assert [shallow] =
+               AppendOnly.analyze(:missing, current, [], baseline_variant: :shallow_clone)
+
       assert shallow.message =~ "shallow-clone"
 
       assert [bad] = AppendOnly.analyze(:missing, current, [], baseline_variant: :bad_ref)
@@ -408,8 +459,9 @@ defmodule SpecLedEx.AppendOnlyTest do
         state_fixture(
           subject: "x",
           scenarios: [scenario(id: "x.scenario.one", covers: ["x.req_a"], execute: false)],
-          decisions: [adr(id: "d1", affects: ["nope"], change_type: "weakens",
-                          reverses_what: "nope")]
+          decisions: [
+            adr(id: "d1", affects: ["nope"], change_type: "weakens", reverses_what: "nope")
+          ]
         )
 
       findings = AppendOnly.analyze(:missing, current, [])
@@ -420,11 +472,23 @@ defmodule SpecLedEx.AppendOnlyTest do
 
   describe "adr_affects_widened" do
     test "affects list changes on an accepted ADR emits error" do
-      d1_prior = adr(id: "d1", status: "accepted", affects: ["x.req_a"],
-                     change_type: "weakens", reverses_what: "Old reason.")
+      d1_prior =
+        adr(
+          id: "d1",
+          status: "accepted",
+          affects: ["x.req_a"],
+          change_type: "weakens",
+          reverses_what: "Old reason."
+        )
 
-      d1_current = adr(id: "d1", status: "accepted", affects: ["x.req_a", "x.req_b"],
-                       change_type: "weakens", reverses_what: "Old reason.")
+      d1_current =
+        adr(
+          id: "d1",
+          status: "accepted",
+          affects: ["x.req_a", "x.req_b"],
+          change_type: "weakens",
+          reverses_what: "Old reason."
+        )
 
       prior = state_fixture(subject: "x", decisions: [d1_prior])
       current = state_fixture(subject: "x", decisions: [d1_current])
@@ -437,11 +501,23 @@ defmodule SpecLedEx.AppendOnlyTest do
     end
 
     test "change_type change on an accepted ADR emits the finding" do
-      d1_prior = adr(id: "d1", status: "accepted", affects: ["x.req_a"],
-                     change_type: "weakens", reverses_what: "Reason.")
+      d1_prior =
+        adr(
+          id: "d1",
+          status: "accepted",
+          affects: ["x.req_a"],
+          change_type: "weakens",
+          reverses_what: "Reason."
+        )
 
-      d1_current = adr(id: "d1", status: "accepted", affects: ["x.req_a"],
-                       change_type: "narrows-scope", reverses_what: "Reason.")
+      d1_current =
+        adr(
+          id: "d1",
+          status: "accepted",
+          affects: ["x.req_a"],
+          change_type: "narrows-scope",
+          reverses_what: "Reason."
+        )
 
       prior = state_fixture(subject: "x", decisions: [d1_prior])
       current = state_fixture(subject: "x", decisions: [d1_current])
@@ -453,11 +529,23 @@ defmodule SpecLedEx.AppendOnlyTest do
     end
 
     test "non-accepted ADR (e.g. deprecated) can drift without emitting" do
-      d1_prior = adr(id: "d1", status: "deprecated", affects: ["x.req_a"],
-                     change_type: "deprecates", reverses_what: "Reason.")
+      d1_prior =
+        adr(
+          id: "d1",
+          status: "deprecated",
+          affects: ["x.req_a"],
+          change_type: "deprecates",
+          reverses_what: "Reason."
+        )
 
-      d1_current = adr(id: "d1", status: "deprecated", affects: ["x.req_a", "x.req_b"],
-                       change_type: "deprecates", reverses_what: "Reason.")
+      d1_current =
+        adr(
+          id: "d1",
+          status: "deprecated",
+          affects: ["x.req_a", "x.req_b"],
+          change_type: "deprecates",
+          reverses_what: "Reason."
+        )
 
       prior = state_fixture(subject: "x", decisions: [d1_prior])
       current = state_fixture(subject: "x", decisions: [d1_current])
@@ -482,20 +570,32 @@ defmodule SpecLedEx.AppendOnlyTest do
           subject: "x",
           requirements: [],
           decisions: [
-            adr(id: "d1", affects: ["x.req_a"], change_type: "deprecates",
-                reverses_what: "Requirement retired for v2.")
+            adr(
+              id: "d1",
+              affects: ["x.req_a"],
+              change_type: "deprecates",
+              reverses_what: "Requirement retired for v2."
+            )
           ]
         )
 
       head_decisions = [
-        adr(id: "d1", affects: ["x.req_a"], change_type: "deprecates",
-            reverses_what: "Requirement retired for v2.", form: :parsed)
+        adr(
+          id: "d1",
+          affects: ["x.req_a"],
+          change_type: "deprecates",
+          reverses_what: "Requirement retired for v2.",
+          form: :parsed
+        )
       ]
 
       findings = AppendOnly.analyze(prior, current, head_decisions)
 
       refute Enum.any?(findings, &(&1.code == "append_only/requirement_deleted"))
-      assert [warning] = Enum.filter(findings, &(&1.code == "append_only/same_pr_self_authorization"))
+
+      assert [warning] =
+               Enum.filter(findings, &(&1.code == "append_only/same_pr_self_authorization"))
+
       assert warning.severity == :warning
       assert warning.entity_id == "d1"
       assert fix_block_present?(warning.message)
@@ -517,8 +617,13 @@ defmodule SpecLedEx.AppendOnlyTest do
 
       # affects includes x.req_b which was NOT removed → not exact match → no warning.
       head_decisions = [
-        adr(id: "d1", affects: ["x.req_a", "x.req_b"], change_type: "deprecates",
-            reverses_what: "Multi-id retirement", form: :parsed)
+        adr(
+          id: "d1",
+          affects: ["x.req_a", "x.req_b"],
+          change_type: "deprecates",
+          reverses_what: "Multi-id retirement",
+          form: :parsed
+        )
       ]
 
       findings = AppendOnly.analyze(prior, current, head_decisions)
@@ -578,8 +683,14 @@ defmodule SpecLedEx.AppendOnlyTest do
 
   describe "decision_deleted" do
     test "prior ADR id absent from current state emits error" do
-      d1 = adr(id: "d1", status: "accepted", affects: ["x.req_a"],
-               change_type: "weakens", reverses_what: "Reason.")
+      d1 =
+        adr(
+          id: "d1",
+          status: "accepted",
+          affects: ["x.req_a"],
+          change_type: "weakens",
+          reverses_what: "Reason."
+        )
 
       prior = state_fixture(subject: "x", decisions: [d1])
       current = state_fixture(subject: "x", decisions: [])
@@ -592,8 +703,14 @@ defmodule SpecLedEx.AppendOnlyTest do
     end
 
     test "ADR present in both is fine" do
-      d1 = adr(id: "d1", status: "accepted", affects: ["x.req_a"],
-               change_type: "weakens", reverses_what: "Reason.")
+      d1 =
+        adr(
+          id: "d1",
+          status: "accepted",
+          affects: ["x.req_a"],
+          change_type: "weakens",
+          reverses_what: "Reason."
+        )
 
       state = state_fixture(subject: "x", decisions: [d1])
       assert [] == AppendOnly.analyze(state, state, [])
@@ -614,8 +731,13 @@ defmodule SpecLedEx.AppendOnlyTest do
             scenario(id: "x.scenario.two", covers: ["x.req_b"])
           ],
           decisions: [
-            adr(id: "d1", status: "accepted", affects: ["x.req_a"],
-                change_type: "weakens", reverses_what: "Reason.")
+            adr(
+              id: "d1",
+              status: "accepted",
+              affects: ["x.req_a"],
+              change_type: "weakens",
+              reverses_what: "Reason."
+            )
           ]
         )
 
@@ -657,8 +779,18 @@ defmodule SpecLedEx.AppendOnlyTest do
             requirement("b.req_c", "The system MUST baz.", subject_id: "b")
           ],
           subjects: [
-            %{"id" => "a", "file" => ".spec/specs/a.spec.md", "title" => "A", "meta" => %{"id" => "a"}},
-            %{"id" => "b", "file" => ".spec/specs/b.spec.md", "title" => "B", "meta" => %{"id" => "b"}}
+            %{
+              "id" => "a",
+              "file" => ".spec/specs/a.spec.md",
+              "title" => "A",
+              "meta" => %{"id" => "a"}
+            },
+            %{
+              "id" => "b",
+              "file" => ".spec/specs/b.spec.md",
+              "title" => "B",
+              "meta" => %{"id" => "b"}
+            }
           ]
         )
 
@@ -690,8 +822,13 @@ defmodule SpecLedEx.AppendOnlyTest do
             scenario(id: "x.scenario.two", covers: ["x.req_a"])
           ],
           decisions: [
-            adr(id: "d1", status: "accepted", affects: ["x.req_a"],
-                change_type: "weakens", reverses_what: "Old reason.")
+            adr(
+              id: "d1",
+              status: "accepted",
+              affects: ["x.req_a"],
+              change_type: "weakens",
+              reverses_what: "Old reason."
+            )
           ]
         )
 
@@ -707,8 +844,13 @@ defmodule SpecLedEx.AppendOnlyTest do
             scenario(id: "x.scenario.three", covers: ["x.req_a"], execute: false)
           ],
           decisions: [
-            adr(id: "d1", status: "accepted", affects: ["x.req_a", "x.req_z"],
-                change_type: "weakens", reverses_what: "Old reason.")
+            adr(
+              id: "d1",
+              status: "accepted",
+              affects: ["x.req_a", "x.req_z"],
+              change_type: "weakens",
+              reverses_what: "Old reason."
+            )
           ]
         )
 

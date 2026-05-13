@@ -137,7 +137,8 @@ defmodule SpecLedEx.Review do
   end
 
   defp compute_stats(all_changes) do
-    Enum.reduce(all_changes, %{files_changed: 0, additions: 0, deletions: 0}, fn %{lines: lines}, acc ->
+    Enum.reduce(all_changes, %{files_changed: 0, additions: 0, deletions: 0}, fn %{lines: lines},
+                                                                                 acc ->
       {adds, dels} =
         Enum.reduce(lines, {0, 0}, fn
           {:add, _}, {a, d} -> {a + 1, d}
@@ -296,6 +297,7 @@ defmodule SpecLedEx.Review do
 
   defp meta_field(nil, _key, default), do: default
   defp meta_field(meta, key, default) when is_struct(meta), do: Map.get(meta, key) || default
+
   defp meta_field(meta, key, default) when is_map(meta) do
     Map.get(meta, key) || Map.get(meta, Atom.to_string(key)) || default
   end

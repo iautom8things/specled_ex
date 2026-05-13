@@ -103,6 +103,9 @@ defmodule SpecLedEx.Integration.MixedDebugInfoFixtureTest do
     assert ts["reason"] == "debug_info_stripped"
     assert ts["tier"] == "typespecs"
 
-    refute Enum.any?(exp_findings ++ ts_findings, &(&1["code"] == "branch_guard_realization_drift"))
+    refute Enum.any?(
+             exp_findings ++ ts_findings,
+             &(&1["code"] == "branch_guard_realization_drift")
+           )
   end
 end

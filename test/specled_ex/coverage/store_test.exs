@@ -1,6 +1,10 @@
 defmodule SpecLedEx.Coverage.StoreTest do
   use ExUnit.Case, async: true
-  @moduletag spec: ["specled.coverage_capture.artifact_path", "specled.coverage_capture.store_split"]
+
+  @moduletag spec: [
+               "specled.coverage_capture.artifact_path",
+               "specled.coverage_capture.store_split"
+             ]
 
   alias SpecLedEx.Coverage.Store
 
@@ -39,6 +43,7 @@ defmodule SpecLedEx.Coverage.StoreTest do
     test "preserves order across many entries" do
       pid = self()
       input = for n <- 1..5, do: record(n, pid)
+
       assert Enum.map(Store.build_records(input), & &1.test_id) ==
                Enum.map(input, & &1.test_id)
     end
@@ -51,7 +56,9 @@ defmodule SpecLedEx.Coverage.StoreTest do
 
   describe "store_round_trip scenario" do
     test "write then read returns input records byte-equal, order preserved" do
-      tmp_path = Path.join(System.tmp_dir!(), "store_rt_#{System.unique_integer([:positive])}.coverdata")
+      tmp_path =
+        Path.join(System.tmp_dir!(), "store_rt_#{System.unique_integer([:positive])}.coverdata")
+
       on_exit(fn -> File.rm_rf!(tmp_path) end)
 
       pid = self()

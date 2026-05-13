@@ -137,7 +137,10 @@ defmodule SpecLedEx.Realization.Orchestrator do
       Enum.reduce(subjects, init, fn subject, acc ->
         sid = subject_id(subject)
         surface = subject_surface(subject)
-        {subj_rb, subj_inferred} = expand_with_inferred(extract_realized_by(subject_meta(subject)))
+
+        {subj_rb, subj_inferred} =
+          expand_with_inferred(extract_realized_by(subject_meta(subject)))
+
         reqs = Map.get(subject, "requirements", []) |> List.wrap()
 
         req_bindings =
@@ -291,7 +294,8 @@ defmodule SpecLedEx.Realization.Orchestrator do
   defp normalize_use_findings(findings) do
     {use_drifts, others} =
       Enum.split_with(findings, fn f ->
-        is_map(f) and Map.get(f, :tier) == :use and Map.get(f, :code) == "branch_guard_realization_drift"
+        is_map(f) and Map.get(f, :tier) == :use and
+          Map.get(f, :code) == "branch_guard_realization_drift"
       end)
 
     if use_drifts == [] do

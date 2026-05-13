@@ -157,7 +157,8 @@ defmodule SpecLedEx.StateJsonFixture do
         raise ExUnit.AssertionError,
           message:
             "expected state.json to contain tier #{inspect(tier)}, " <>
-              "but state has only tiers: " <> inspect(Map.keys(realization)) <>
+              "but state has only tiers: " <>
+              inspect(Map.keys(realization)) <>
               " (state.json path: " <> Path.join(root, @state_rel) <> ")"
     end
   end

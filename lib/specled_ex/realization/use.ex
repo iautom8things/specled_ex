@@ -96,8 +96,7 @@ defmodule SpecLedEx.Realization.Use do
         {:error, {:not_found, details}}
 
       {:error, :invalid_module} ->
-        {:error,
-         {:not_found, %{module: provider_module_string, reason: :invalid_module}}}
+        {:error, {:not_found, %{module: provider_module_string, reason: :invalid_module}}}
     end
   end
 

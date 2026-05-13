@@ -5,7 +5,12 @@ defmodule SpecLedEx.Realization.ExpandedBehaviorTest do
   # covers: specled.expanded_behavior_tier.scenario.expanded_hash_stable_on_rename
   # covers: specled.expanded_behavior_tier.scenario.no_debug_info_degrades
   use ExUnit.Case, async: false
-  @moduletag spec: ["specled.expanded_behavior_tier.hash_stable_on_refactor", "specled.expanded_behavior_tier.no_debug_info_detector_unavailable", "specled.expanded_behavior_tier.reads_beam_debug_info"]
+
+  @moduletag spec: [
+               "specled.expanded_behavior_tier.hash_stable_on_refactor",
+               "specled.expanded_behavior_tier.no_debug_info_detector_unavailable",
+               "specled.expanded_behavior_tier.reads_beam_debug_info"
+             ]
 
   alias SpecLedEx.Realization.{ExpandedBehavior, HashStore}
 
@@ -142,14 +147,13 @@ defmodule SpecLedEx.Realization.ExpandedBehaviorTest do
 
     try do
       {:ok, _mods, _diagnostics} =
-        Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir,
-          return_diagnostics: true
-        )
+        Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir, return_diagnostics: true)
     after
       Code.put_compiler_option(:debug_info, previous)
     end
 
     :code.add_patha(String.to_charlist(tmp_dir))
+
     Process.put(:specled_expbeh_fixture_paths, [
       tmp_dir | Process.get(:specled_expbeh_fixture_paths, [])
     ])

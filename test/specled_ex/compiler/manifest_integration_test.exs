@@ -42,7 +42,9 @@ defmodule SpecLedEx.Compiler.ManifestIntegrationTest do
     end
 
     @tag :integration
-    test "Context.load/1 populates manifest from the fixture build path", %{build_path: build_path} do
+    test "Context.load/1 populates manifest from the fixture build path", %{
+      build_path: build_path
+    } do
       context =
         Context.load(
           app: :sample_project,

@@ -67,7 +67,8 @@ defmodule SpecLedEx.Integration.ScenarioMacroProviderDriftTest do
     Code.put_compiler_option(:debug_info, true)
 
     try do
-      {:ok, _mods, _warns} = Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir, return_diagnostics: true)
+      {:ok, _mods, _warns} =
+        Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir, return_diagnostics: true)
     after
       Code.put_compiler_option(:debug_info, previous)
     end
@@ -89,12 +90,15 @@ defmodule SpecLedEx.Integration.ScenarioMacroProviderDriftTest do
   } do
     # Pretend tracer captured 3 consumers using the provider.
     edges = %{
-      {SpecLedEx.MacroScenario.C1, :__MODULE__, 0} =>
-        [{SpecLedEx.MacroScenario.Provider, :__using__, 1}],
-      {SpecLedEx.MacroScenario.C2, :__MODULE__, 0} =>
-        [{SpecLedEx.MacroScenario.Provider, :__using__, 1}],
-      {SpecLedEx.MacroScenario.C3, :__MODULE__, 0} =>
-        [{SpecLedEx.MacroScenario.Provider, :__using__, 1}]
+      {SpecLedEx.MacroScenario.C1, :__MODULE__, 0} => [
+        {SpecLedEx.MacroScenario.Provider, :__using__, 1}
+      ],
+      {SpecLedEx.MacroScenario.C2, :__MODULE__, 0} => [
+        {SpecLedEx.MacroScenario.Provider, :__using__, 1}
+      ],
+      {SpecLedEx.MacroScenario.C3, :__MODULE__, 0} => [
+        {SpecLedEx.MacroScenario.Provider, :__using__, 1}
+      ]
     }
 
     # Step 1 — commit baseline use-tier hash for P.
@@ -183,6 +187,7 @@ defmodule SpecLedEx.Integration.ScenarioMacroProviderDriftTest do
     # 8-char hex prefixes for hash diff (specled.use_tier.hash_prefix_length).
     assert String.length(final.root_cause.hash_prefix_before) == 8
     assert String.length(final.root_cause.hash_prefix_after) == 8
+
     refute final.root_cause.hash_prefix_before == final.root_cause.hash_prefix_after,
            "hash prefixes must differ when the provider expansion changes"
   end

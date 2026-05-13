@@ -319,10 +319,27 @@ defmodule SpecLedEx.Verifier do
       acc
       |> add_verification_kind_findings(verification, subject_id, file)
       |> add_verification_target_findings(verification, root, subject_id, file)
-      |> add_verification_cover_findings(verification, local_claim_ids, global_claim_ids, subject_id, file)
+      |> add_verification_cover_findings(
+        verification,
+        local_claim_ids,
+        global_claim_ids,
+        subject_id,
+        file
+      )
       |> add_verification_target_content_findings(verification, root, subject_id, file)
-      |> add_verification_command_runtime_findings(verification, entry.command_result, subject_id, file)
-      |> add_tagged_tests_cover_findings(verification, tag_map, tag_scan_enabled?, subject_id, file)
+      |> add_verification_command_runtime_findings(
+        verification,
+        entry.command_result,
+        subject_id,
+        file
+      )
+      |> add_tagged_tests_cover_findings(
+        verification,
+        tag_map,
+        tag_scan_enabled?,
+        subject_id,
+        file
+      )
     end)
   end
 
@@ -393,7 +410,14 @@ defmodule SpecLedEx.Verifier do
     end
   end
 
-  defp add_tagged_tests_cover_findings(findings, verification, tag_map, tag_scan_enabled?, subject_id, file) do
+  defp add_tagged_tests_cover_findings(
+         findings,
+         verification,
+         tag_map,
+         tag_scan_enabled?,
+         subject_id,
+         file
+       ) do
     if tag_scan_enabled? and string_field(verification, "kind") == @tagged_tests_kind do
       verification
       |> valid_cover_ids()
@@ -461,7 +485,14 @@ defmodule SpecLedEx.Verifier do
     end
   end
 
-  defp add_verification_cover_findings(findings, verification, local_claim_ids, global_claim_ids, subject_id, file) do
+  defp add_verification_cover_findings(
+         findings,
+         verification,
+         local_claim_ids,
+         global_claim_ids,
+         subject_id,
+         file
+       ) do
     covers = list_field(verification, "covers")
 
     Enum.reduce(covers, findings, fn cover_id, acc ->
@@ -639,7 +670,9 @@ defmodule SpecLedEx.Verifier do
 
     decision_checks =
       decisions
-      |> Enum.flat_map(&build_decision_debug_checks(&1, subject_ids, decision_ids, global_claim_ids))
+      |> Enum.flat_map(
+        &build_decision_debug_checks(&1, subject_ids, decision_ids, global_claim_ids)
+      )
 
     global_checks =
       []
@@ -1277,7 +1310,16 @@ defmodule SpecLedEx.Verifier do
     status = string_field(meta, "status")
 
     if status in ~w(accepted superseded) do
-      [check("pass", "decision_status_valid", "Decision status valid: #{status}", decision_id, file) | checks]
+      [
+        check(
+          "pass",
+          "decision_status_valid",
+          "Decision status valid: #{status}",
+          decision_id,
+          file
+        )
+        | checks
+      ]
     else
       [
         check(
@@ -1296,7 +1338,10 @@ defmodule SpecLedEx.Verifier do
     date = string_field(meta, "date")
 
     if valid_iso_date?(date) do
-      [check("pass", "decision_date_valid", "Decision date valid: #{date}", decision_id, file) | checks]
+      [
+        check("pass", "decision_date_valid", "Decision date valid: #{date}", decision_id, file)
+        | checks
+      ]
     else
       [
         check(
@@ -1313,7 +1358,10 @@ defmodule SpecLedEx.Verifier do
 
   defp add_decision_parse_debug_checks(checks, parse_errors, decision_id, file) do
     if parse_errors == [] do
-      [check("pass", "decision_parse", "Decision parsed successfully", decision_id, file) | checks]
+      [
+        check("pass", "decision_parse", "Decision parsed successfully", decision_id, file)
+        | checks
+      ]
     else
       Enum.reduce(parse_errors, checks, fn message, acc ->
         [check("error", "decision_parse", message, decision_id, file) | acc]
@@ -1325,12 +1373,24 @@ defmodule SpecLedEx.Verifier do
     Enum.reduce(SpecLedEx.DecisionParser.required_sections(), checks, fn section, acc ->
       if section in sections do
         [
-          check("pass", "decision_section_present", "Decision section present: #{section}", decision_id, file)
+          check(
+            "pass",
+            "decision_section_present",
+            "Decision section present: #{section}",
+            decision_id,
+            file
+          )
           | acc
         ]
       else
         [
-          check("error", "decision_section_missing", "Decision section missing: #{section}", decision_id, file)
+          check(
+            "error",
+            "decision_section_missing",
+            "Decision section missing: #{section}",
+            decision_id,
+            file
+          )
           | acc
         ]
       end
@@ -1340,9 +1400,27 @@ defmodule SpecLedEx.Verifier do
   defp add_decision_affects_debug_checks(checks, meta, subject_ids, claim_ids, decision_id, file) do
     Enum.reduce(list_field(meta, "affects"), checks, fn affect, acc ->
       if valid_decision_affect?(affect, subject_ids, claim_ids) do
-        [check("pass", "decision_affect_valid", "Decision affect valid: #{affect}", decision_id, file) | acc]
+        [
+          check(
+            "pass",
+            "decision_affect_valid",
+            "Decision affect valid: #{affect}",
+            decision_id,
+            file
+          )
+          | acc
+        ]
       else
-        [check("error", "decision_affect_invalid", "Decision affect invalid: #{affect}", decision_id, file) | acc]
+        [
+          check(
+            "error",
+            "decision_affect_invalid",
+            "Decision affect invalid: #{affect}",
+            decision_id,
+            file
+          )
+          | acc
+        ]
       end
     end)
   end
@@ -1881,7 +1959,15 @@ defmodule SpecLedEx.Verifier do
     end)
   end
 
-  defp build_entry_claims(entry, root, subject_id, file, global_claim_ids, tag_map, minimum_strength) do
+  defp build_entry_claims(
+         entry,
+         root,
+         subject_id,
+         file,
+         global_claim_ids,
+         tag_map,
+         minimum_strength
+       ) do
     verification = entry.item
     kind = string_field(verification, "kind")
 
@@ -1897,7 +1983,8 @@ defmodule SpecLedEx.Verifier do
           "kind" => kind,
           "target" => string_field(verification, "target"),
           "cover_id" => cover_id,
-          "strength" => claim_strength(verification, entry.command_result, root, tag_map, cover_id),
+          "strength" =>
+            claim_strength(verification, entry.command_result, root, tag_map, cover_id),
           "required_strength" => minimum_strength
         }
       end)
@@ -1933,7 +2020,8 @@ defmodule SpecLedEx.Verifier do
       kind == @command_kind and executable_command_succeeded?(verification, command_result) ->
         "executed"
 
-      kind == @tagged_tests_kind and tagged_tests_executed?(verification, command_result, tag_map, cover_id) ->
+      kind == @tagged_tests_kind and
+          tagged_tests_executed?(verification, command_result, tag_map, cover_id) ->
         "executed"
 
       kind == @tagged_tests_kind and Map.has_key?(tag_map, cover_id) ->

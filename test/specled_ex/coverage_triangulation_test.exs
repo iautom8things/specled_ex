@@ -311,7 +311,10 @@ defmodule SpecLedEx.CoverageTriangulationTest do
   # covers: specled.spec_review.coverage_tab_bind_closure
   describe "per_requirement_reach/2" do
     test "returns :no_coverage_artifact when given the sentinel" do
-      assert CoverageTriangulation.per_requirement_reach(:no_coverage_artifact, fixture_closure_map()) ==
+      assert CoverageTriangulation.per_requirement_reach(
+               :no_coverage_artifact,
+               fixture_closure_map()
+             ) ==
                :no_coverage_artifact
     end
 

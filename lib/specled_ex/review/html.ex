@@ -55,64 +55,69 @@ defmodule SpecLedEx.Review.Html do
     ]
   end
 
-  EEx.function_from_string(:defp, :page, ~S"""
-  <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Spec Review · <%= h(view.meta.head_ref) %></title>
-    <style><%= prism_css() %></style>
-    <style><%= css %></style>
-  </head>
-  <body>
-    <header class="page-header">
-      <div class="page-header-row">
-        <h1>Spec Review</h1>
-        <div class="page-header-meta">
-          <%= render_diff_stats(view.meta.stats) %>
-          <span class="ref"><%= h(view.meta.base_ref) %><span class="ref-sep">…</span><%= h(view.meta.head_ref) %></span>
-          <span class="generated"><%= h(format_dt(view.meta.generated_at)) %></span>
+  EEx.function_from_string(
+    :defp,
+    :page,
+    ~S"""
+    <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Spec Review · <%= h(view.meta.head_ref) %></title>
+      <style><%= prism_css() %></style>
+      <style><%= css %></style>
+    </head>
+    <body>
+      <header class="page-header">
+        <div class="page-header-row">
+          <h1>Spec Review</h1>
+          <div class="page-header-meta">
+            <%= render_diff_stats(view.meta.stats) %>
+            <span class="ref"><%= h(view.meta.base_ref) %><span class="ref-sep">…</span><%= h(view.meta.head_ref) %></span>
+            <span class="generated"><%= h(format_dt(view.meta.generated_at)) %></span>
+          </div>
         </div>
-      </div>
-      <div class="view-toggle-wrap">
-        <div class="view-toggle" role="tablist" aria-label="Review mode">
-          <button class="view-toggle-btn active" type="button" role="tab" data-view="spec" aria-selected="true">
-            <span class="view-toggle-label">Spec view</span>
-            <span class="view-toggle-hint">grouped by subject, with triangulation</span>
-          </button>
-          <button class="view-toggle-btn" type="button" role="tab" data-view="files" aria-selected="false">
-            <span class="view-toggle-label">Files view</span>
-            <span class="view-toggle-hint">flat diff of all changed files</span>
-          </button>
+        <div class="view-toggle-wrap">
+          <div class="view-toggle" role="tablist" aria-label="Review mode">
+            <button class="view-toggle-btn active" type="button" role="tab" data-view="spec" aria-selected="true">
+              <span class="view-toggle-label">Spec view</span>
+              <span class="view-toggle-hint">grouped by subject, with triangulation</span>
+            </button>
+            <button class="view-toggle-btn" type="button" role="tab" data-view="files" aria-selected="false">
+              <span class="view-toggle-label">Files view</span>
+              <span class="view-toggle-hint">flat diff of all changed files</span>
+            </button>
+          </div>
         </div>
+      </header>
+      <div class="layout" data-view-mode="spec">
+        <aside class="toc" aria-label="Table of contents">
+          <%= render_toc(view) %>
+        </aside>
+        <main>
+          <section class="view-pane view-pane-spec active" data-view-pane="spec">
+            <%= render_triage(view.triage, view.all_findings) %>
+            <%= render_coverage_help_disclosure() %>
+            <%= render_decisions_changed(view.decisions_changed, view.adrs_by_id, view.all_findings) %>
+            <%= render_subjects(view.affected_subjects, view.adrs_by_id) %>
+            <%= render_unmapped(view.unmapped_changes, view.file_breakdown) %>
+            <%= render_raw_verification_all(view.affected_subjects) %>
+          </section>
+          <section class="view-pane view-pane-files" data-view-pane="files">
+            <%= render_files_view(view.all_changes, view.meta.stats) %>
+          </section>
+        </main>
       </div>
-    </header>
-    <div class="layout" data-view-mode="spec">
-      <aside class="toc" aria-label="Table of contents">
-        <%= render_toc(view) %>
-      </aside>
-      <main>
-        <section class="view-pane view-pane-spec active" data-view-pane="spec">
-          <%= render_triage(view.triage, view.all_findings) %>
-          <%= render_coverage_help_disclosure() %>
-          <%= render_decisions_changed(view.decisions_changed, view.adrs_by_id, view.all_findings) %>
-          <%= render_subjects(view.affected_subjects, view.adrs_by_id) %>
-          <%= render_unmapped(view.unmapped_changes, view.file_breakdown) %>
-          <%= render_raw_verification_all(view.affected_subjects) %>
-        </section>
-        <section class="view-pane view-pane-files" data-view-pane="files">
-          <%= render_files_view(view.all_changes, view.meta.stats) %>
-        </section>
-      </main>
-    </div>
-    <footer class="page-footer">
-      <span>specled_ex · spec.review</span>
-    </footer>
-    <script><%= prism_js() %></script>
-    <script><%= js %></script>
-  </body>
-  </html>
-  """, [:view, :css, :js])
+      <footer class="page-footer">
+        <span>specled_ex · spec.review</span>
+      </footer>
+      <script><%= prism_js() %></script>
+      <script><%= js %></script>
+    </body>
+    </html>
+    """,
+    [:view, :css, :js]
+  )
 
   @doc false
   def prism_js, do: @prism_js
@@ -206,9 +211,14 @@ defmodule SpecLedEx.Review.Html do
 
   defp render_toc_finding_badge(%{by_severity: by_sev, findings_count: count}) do
     cond do
-      Map.get(by_sev, "error", 0) > 0 -> ~s|<span class="toc-pip toc-pip-error">#{count}</span>|
-      Map.get(by_sev, "warning", 0) > 0 -> ~s|<span class="toc-pip toc-pip-warning">#{count}</span>|
-      true -> ~s|<span class="toc-pip toc-pip-info">#{count}</span>|
+      Map.get(by_sev, "error", 0) > 0 ->
+        ~s|<span class="toc-pip toc-pip-error">#{count}</span>|
+
+      Map.get(by_sev, "warning", 0) > 0 ->
+        ~s|<span class="toc-pip toc-pip-warning">#{count}</span>|
+
+      true ->
+        ~s|<span class="toc-pip toc-pip-info">#{count}</span>|
     end
   end
 
@@ -360,23 +370,39 @@ defmodule SpecLedEx.Review.Html do
     # as gray-yellow with a `?` glyph — the system is being honest that it
     # could not run the check.
     spec_to_code_state =
-      leg_state(fbc, spec_to_code_codes, triage.binding_count == 0, map_size(spec_to_code_degraded) > 0)
+      leg_state(
+        fbc,
+        spec_to_code_codes,
+        triage.binding_count == 0,
+        map_size(spec_to_code_degraded) > 0
+      )
 
     code_to_tests_state =
-      leg_state(fbc, code_to_tests_codes, triage.binding_count == 0, map_size(spec_to_tests_degraded) > 0)
+      leg_state(
+        fbc,
+        code_to_tests_codes,
+        triage.binding_count == 0,
+        map_size(spec_to_tests_degraded) > 0
+      )
 
     tests_to_coverage_state =
-      leg_state(fbc, tests_to_coverage_codes, triage.verification_count == 0,
-        map_size(tests_to_coverage_degraded) > 0)
+      leg_state(
+        fbc,
+        tests_to_coverage_codes,
+        triage.verification_count == 0,
+        map_size(tests_to_coverage_degraded) > 0
+      )
 
     nodes = [
-      {"SPEC", "#{triage.affected_subject_count} subj · #{triage.requirement_count} req#{maybe_s(triage.requirement_count)}",
+      {"SPEC",
+       "#{triage.affected_subject_count} subj · #{triage.requirement_count} req#{maybe_s(triage.requirement_count)}",
        triage.requirement_count == 0,
        "Requirements declared in your subject .spec.md files. Each is a normative claim the rest of the chain must back up."},
       {"CODE", "#{triage.binding_count} MFA#{maybe_s(triage.binding_count)}",
        triage.binding_count == 0,
        "Functions named in each subject's realized_by block. Specled checks they actually exist as exported functions in the codebase. \"0 MFAs\" means no affected subject declared a realized_by — there's nothing to verify on this leg, neither pass nor fail."},
-      {"TESTS", "#{triage.verification_count} verif#{if triage.verification_count == 1, do: "", else: "s"}",
+      {"TESTS",
+       "#{triage.verification_count} verif#{if triage.verification_count == 1, do: "", else: "s"}",
        triage.verification_count == 0,
        "Verification entries: tagged tests, file-existence checks, or commands that prove a requirement holds."},
       {"COVERAGE", strength_diagram_summary(triage.strength_breakdown),
@@ -546,8 +572,7 @@ defmodule SpecLedEx.Review.Html do
         leg: "Spec",
         leg_key: :spec_well_formed,
         label: "The spec files themselves are well-formed",
-        codes:
-          ~w(
+        codes: ~w(
             missing_meta_field
             missing_requirement_id
             missing_scenario_id
@@ -566,8 +591,10 @@ defmodule SpecLedEx.Review.Html do
       %{
         leg: "Spec → Code",
         leg_key: :spec_to_code,
-        label: "Every <code>realized_by</code> surface and verification target file actually exists",
-        codes: ~w(surface_target_missing verification_target_missing verification_target_missing_file),
+        label:
+          "Every <code>realized_by</code> surface and verification target file actually exists",
+        codes:
+          ~w(surface_target_missing verification_target_missing verification_target_missing_file),
         detail: detail_count("MFA", triage.binding_count),
         vacuous?: triage.binding_count == 0 and triage.verification_count == 0
       },
@@ -598,7 +625,8 @@ defmodule SpecLedEx.Review.Html do
       %{
         leg: "Spec → Tests",
         leg_key: :spec_to_tests,
-        label: "Every <code>must</code> requirement under <code>tagged_tests</code> has a matching <code>@tag spec:</code>",
+        label:
+          "Every <code>must</code> requirement under <code>tagged_tests</code> has a matching <code>@tag spec:</code>",
         codes: ~w(requirement_without_test_tag branch_guard_requirement_without_test_tag),
         detail: detail_count("requirement", triage.requirement_count),
         vacuous?: triage.requirement_count == 0
@@ -647,8 +675,7 @@ defmodule SpecLedEx.Review.Html do
         leg: "Decisions / governance",
         leg_key: :decisions_governance,
         label: "Every spec edit honors append-only governance and decision references",
-        codes:
-          ~w(
+        codes: ~w(
             append_only/requirement_deleted
             append_only/must_downgraded
             append_only/scenario_regression
@@ -667,7 +694,8 @@ defmodule SpecLedEx.Review.Html do
         leg: "Branch",
         leg_key: :branch,
         label: "Files changed in this PR have matching spec or decision updates",
-        codes: ~w(branch_guard_missing_subject_update branch_guard_missing_decision_update branch_guard_unmapped_change),
+        codes:
+          ~w(branch_guard_missing_subject_update branch_guard_missing_decision_update branch_guard_unmapped_change),
         detail: nil,
         vacuous?: false
       }
@@ -1304,7 +1332,9 @@ defmodule SpecLedEx.Review.Html do
   # outer list's spacing and dividers.
   defp change_list_class(items) do
     case items do
-      [] -> "requirement-list"
+      [] ->
+        "requirement-list"
+
       [first | _] ->
         cond do
           # Heuristic: scenario items have :given/:when/:then structure;
@@ -1320,7 +1350,8 @@ defmodule SpecLedEx.Review.Html do
     do: ~s|<span class="chip chip-new"#{title_attr(tooltip(:change, :new))}>NEW</span>|
 
   defp render_change_chip(:modified),
-    do: ~s|<span class="chip chip-modified"#{title_attr(tooltip(:change, :modified))}>MODIFIED</span>|
+    do:
+      ~s|<span class="chip chip-modified"#{title_attr(tooltip(:change, :modified))}>MODIFIED</span>|
 
   defp render_change_chip(_), do: ""
 
@@ -2064,6 +2095,7 @@ defmodule SpecLedEx.Review.Html do
 
   defp render_decision_status_pill(status) do
     class = decision_status_pill_class(status)
+
     ~s|<span class="pill #{class}"#{title_attr(decision_status_tooltip(status))}>#{h(status)}</span>|
   end
 
@@ -2203,6 +2235,7 @@ defmodule SpecLedEx.Review.Html do
   # 5-block bar: green for adds, red for dels, grey filler — like GitHub's PR list.
   defp render_diffstat_bar(adds, dels) do
     total = adds + dels
+
     {n_add, n_del} =
       if total == 0 do
         {0, 0}
@@ -2495,7 +2528,8 @@ defmodule SpecLedEx.Review.Html do
     do: "Wording is being tightened or restructured; expect churn"
 
   defp tooltip(:verification_kind, "command"),
-    do: "Runs an arbitrary command. Reaches EXECUTED when the command exits 0 with --run-commands."
+    do:
+      "Runs an arbitrary command. Reaches EXECUTED when the command exits 0 with --run-commands."
 
   defp tooltip(:verification_kind, "tagged_tests"),
     do:
@@ -2515,8 +2549,12 @@ defmodule SpecLedEx.Review.Html do
   defp tooltip(:change, :new), do: "Added in this change set"
   defp tooltip(:change, :modified), do: "Modified in this change set"
   defp tooltip(:change, :removed), do: "Removed in this change set"
-  defp tooltip(:change, :new_subject), do: "This subject's spec file did not exist on the base ref"
-  defp tooltip(:change, :spec_edited), do: "The subject's .spec.md file was edited in this change set"
+
+  defp tooltip(:change, :new_subject),
+    do: "This subject's spec file did not exist on the base ref"
+
+  defp tooltip(:change, :spec_edited),
+    do: "The subject's .spec.md file was edited in this change set"
 
   defp tooltip(:severity, "error"),
     do: "Error — blocks the gate. mix spec.check exits non-zero."

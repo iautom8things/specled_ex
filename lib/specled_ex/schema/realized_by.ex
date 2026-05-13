@@ -31,8 +31,7 @@ defmodule SpecLedEx.Schema.RealizedBy do
 
     cond do
       unknown != [] ->
-        {:error,
-         "unknown realized_by tier(s): #{unknown |> Enum.sort() |> Enum.join(", ")}"}
+        {:error, "unknown realized_by tier(s): #{unknown |> Enum.sort() |> Enum.join(", ")}"}
 
       true ->
         validate_tier_values(normalized)

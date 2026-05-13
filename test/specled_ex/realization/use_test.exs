@@ -3,7 +3,11 @@ defmodule SpecLedEx.Realization.UseTest do
   # covers: specled.use_tier.provider_hash_composes
   # covers: specled.use_tier.scenario.consumers_current_not_persisted
   use ExUnit.Case, async: false
-  @moduletag spec: ["specled.use_tier.enumerate_consumers", "specled.use_tier.provider_hash_composes"]
+
+  @moduletag spec: [
+               "specled.use_tier.enumerate_consumers",
+               "specled.use_tier.provider_hash_composes"
+             ]
 
   alias SpecLedEx.Realization.Use
 
@@ -53,7 +57,8 @@ defmodule SpecLedEx.Realization.UseTest do
     Code.put_compiler_option(:debug_info, true)
 
     try do
-      {:ok, _mods, _warns} = Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir, return_diagnostics: true)
+      {:ok, _mods, _warns} =
+        Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir, return_diagnostics: true)
     after
       Code.put_compiler_option(:debug_info, previous)
     end
@@ -169,18 +174,21 @@ defmodule SpecLedEx.Realization.UseTest do
       {:ok, hash_a} =
         Use.hash(provider_str,
           tracer_edges: %{
-            {SpecLedEx.UseTest.X1, :__MODULE__, 0} =>
-              [{SpecLedEx.UseTest.Provider, :__using__, 1}]
+            {SpecLedEx.UseTest.X1, :__MODULE__, 0} => [
+              {SpecLedEx.UseTest.Provider, :__using__, 1}
+            ]
           }
         )
 
       {:ok, hash_b} =
         Use.hash(provider_str,
           tracer_edges: %{
-            {SpecLedEx.UseTest.X1, :__MODULE__, 0} =>
-              [{SpecLedEx.UseTest.Provider, :__using__, 1}],
-            {SpecLedEx.UseTest.X2, :__MODULE__, 0} =>
-              [{SpecLedEx.UseTest.Provider, :__using__, 1}]
+            {SpecLedEx.UseTest.X1, :__MODULE__, 0} => [
+              {SpecLedEx.UseTest.Provider, :__using__, 1}
+            ],
+            {SpecLedEx.UseTest.X2, :__MODULE__, 0} => [
+              {SpecLedEx.UseTest.Provider, :__using__, 1}
+            ]
           }
         )
 

@@ -80,9 +80,7 @@ defmodule Mix.Tasks.Spec.DedupRealizedBy do
     end
 
     if fail_on_dups? and subjects_with_dups != [] do
-      Mix.raise(
-        "#{length(subjects_with_dups)} subject(s) have realized_by duplications"
-      )
+      Mix.raise("#{length(subjects_with_dups)} subject(s) have realized_by duplications")
     end
 
     :ok

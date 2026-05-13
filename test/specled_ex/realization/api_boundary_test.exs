@@ -1,6 +1,12 @@
 defmodule SpecLedEx.Realization.ApiBoundaryTest do
   use ExUnit.Case, async: false
-  @moduletag spec: ["specled.api_boundary.dangling_finding_emitted", "specled.api_boundary.drift_finding_emitted", "specled.api_boundary.hash_function_head", "specled.api_boundary.umbrella_graceful_degrade"]
+
+  @moduletag spec: [
+               "specled.api_boundary.dangling_finding_emitted",
+               "specled.api_boundary.drift_finding_emitted",
+               "specled.api_boundary.hash_function_head",
+               "specled.api_boundary.umbrella_graceful_degrade"
+             ]
 
   alias SpecLedEx.Realization.{ApiBoundary, Binding, HashStore}
 
@@ -34,7 +40,9 @@ defmodule SpecLedEx.Realization.ApiBoundaryTest do
     end
     """)
 
-    {:ok, _mods, _warns} = Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir, return_diagnostics: true)
+    {:ok, _mods, _warns} =
+      Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir, return_diagnostics: true)
+
     :code.add_patha(String.to_charlist(tmp_dir))
 
     for mod <- [
@@ -213,6 +221,7 @@ defmodule SpecLedEx.Realization.ApiBoundaryTest do
       root: root
     } do
       module_string = "SpecLedEx.ApiBoundaryFixtures.Stable"
+
       {:ok, current} =
         SpecLedEx.Realization.Canonical.hash_module_head_union(
           SpecLedEx.ApiBoundaryFixtures.Stable

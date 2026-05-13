@@ -5,7 +5,9 @@ defmodule SpecLedEx.Realization.HashStoreTest do
   alias SpecLedEx.Realization.HashStore
 
   setup do
-    root = Path.join(System.tmp_dir!(), "specled_hashstore_#{:erlang.unique_integer([:positive])}")
+    root =
+      Path.join(System.tmp_dir!(), "specled_hashstore_#{:erlang.unique_integer([:positive])}")
+
     File.mkdir_p!(Path.join(root, ".spec"))
     on_exit(fn -> File.rm_rf!(root) end)
     {:ok, root: root}
@@ -64,7 +66,10 @@ defmodule SpecLedEx.Realization.HashStoreTest do
         Jason.encode!(%{
           "realization" => %{
             "api_boundary" => %{
-              "Foo.bar/1" => %{"hash" => "original", "hasher_version" => HashStore.hasher_version()}
+              "Foo.bar/1" => %{
+                "hash" => "original",
+                "hasher_version" => HashStore.hasher_version()
+              }
             }
           }
         })

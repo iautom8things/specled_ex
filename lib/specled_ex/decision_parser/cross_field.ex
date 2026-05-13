@@ -79,12 +79,22 @@ defmodule SpecLedEx.DecisionParser.CrossField do
 
       cond do
         replaces == [] ->
-          error(1, "cross_field/supersedes_missing_replaces", :error, id,
-            "change_type `supersedes` requires a non-empty `replaces:` list")
+          error(
+            1,
+            "cross_field/supersedes_missing_replaces",
+            :error,
+            id,
+            "change_type `supersedes` requires a non-empty `replaces:` list"
+          )
 
         unresolved = first_unresolved(replaces, resolvable_ids) ->
-          error(1, "cross_field/supersedes_unresolved_replaces", :error, id,
-            "`replaces:` id #{inspect(unresolved)} does not resolve in current index")
+          error(
+            1,
+            "cross_field/supersedes_unresolved_replaces",
+            :error,
+            id,
+            "`replaces:` id #{inspect(unresolved)} does not resolve in current index"
+          )
 
         true ->
           nil
@@ -102,8 +112,13 @@ defmodule SpecLedEx.DecisionParser.CrossField do
       rw = meta |> Map.get("reverses_what", "") |> to_string() |> String.trim()
 
       if rw == "" do
-        error(2, "cross_field/reverses_what_missing", :error, id,
-          "change_type `#{ct}` requires a non-empty `reverses_what:` statement")
+        error(
+          2,
+          "cross_field/reverses_what_missing",
+          :error,
+          id,
+          "change_type `#{ct}` requires a non-empty `reverses_what:` statement"
+        )
       end
     end
   end
@@ -116,8 +131,13 @@ defmodule SpecLedEx.DecisionParser.CrossField do
     affects = list_field(meta, "affects")
 
     if ct != nil and ct != "clarifies" and affects == [] do
-      error(3, "cross_field/affects_empty", :error, id,
-        "change_type `#{ct}` requires a non-empty `affects:` list")
+      error(
+        3,
+        "cross_field/affects_empty",
+        :error,
+        id,
+        "change_type `#{ct}` requires a non-empty `affects:` list"
+      )
     end
   end
 
@@ -138,8 +158,13 @@ defmodule SpecLedEx.DecisionParser.CrossField do
         nil
 
       unresolved = first_unresolved(affects, resolvable) ->
-        error(4, "cross_field/affects_unresolved", :error, id,
-          "`affects:` id #{inspect(unresolved)} does not resolve in current index")
+        error(
+          4,
+          "cross_field/affects_unresolved",
+          :error,
+          id,
+          "`affects:` id #{inspect(unresolved)} does not resolve in current index"
+        )
 
       true ->
         nil
@@ -152,8 +177,13 @@ defmodule SpecLedEx.DecisionParser.CrossField do
     meta = meta(decision)
 
     if change_type(meta) == nil do
-      error(7, "cross_field/missing_change_type", :warning, id,
-        "ADR `#{id || "<unknown>"}` has no `change_type:` field; v1 will emit a warning at authorization lookup")
+      error(
+        7,
+        "cross_field/missing_change_type",
+        :warning,
+        id,
+        "ADR `#{id || "<unknown>"}` has no `change_type:` field; v1 will emit a warning at authorization lookup"
+      )
     end
   end
 
@@ -170,6 +200,7 @@ defmodule SpecLedEx.DecisionParser.CrossField do
 
       prior ->
         prior_meta = meta(prior)
+
         []
         |> maybe_r5_field_drift(id, meta, prior_meta, "affects")
         |> maybe_r5_field_drift(id, meta, prior_meta, "change_type")

@@ -49,7 +49,9 @@ defmodule SpecLedEx.ReviewTest do
     end
 
     @tag spec: "specled.spec_review.triage_panel"
-    test "summarizes findings with severity counts and surfaces them in all_findings", %{root: root} do
+    test "summarizes findings with severity counts and surfaces them in all_findings", %{
+      root: root
+    } do
       setup_repo(root, "auth_subject", "Auth.")
       add_unknown_decision_reference(root, "auth_subject")
 
