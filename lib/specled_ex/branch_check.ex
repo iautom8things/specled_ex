@@ -1,5 +1,5 @@
 defmodule SpecLedEx.BranchCheck do
-  # covers: specled.branch_guard.subject_cochange specled.branch_guard.cross_cutting_decision specled.branch_guard.guidance_output specled.branch_guard.plan_docs_excluded specled.branch_guard.new_requirement_tag_warning specled.branch_guard.tag_findings_respect_enforcement
+  # covers: specled.branch_guard.subject_cochange specled.branch_guard.cross_cutting_decision specled.branch_guard.guidance_output specled.branch_guard.plan_docs_excluded specled.branch_guard.new_requirement_tag_warning specled.branch_guard.tag_findings_respect_enforcement specled.branch_guard.file_touch_yields_to_attested_file specled.branch_guard.file_touch_per_subject_independence specled.branch_guard.file_touch_severity_config_wins specled.branch_guard.file_touch_tagged_tests_attested specled.branch_guard.file_touch_detector_failure_strict
   @moduledoc false
 
   alias SpecLedEx.AppendOnly
@@ -43,6 +43,12 @@ defmodule SpecLedEx.BranchCheck do
     changed_subject_ids = MapSet.new(analysis.changed_subject_ids)
     severity_opts = severity_opts(root, analysis.base)
 
+    # Hoist the realization run so its attestation map is available to the
+    # file-touch loop below. The same raw findings flow through
+    # `realization_findings/2` (severity resolution + emit) so we don't run
+    # the orchestrator twice.
+    {realization_raw, attestations} = run_realization(index, root, opts)
+
     file_findings =
       Enum.flat_map(analysis.policy_files, fn path ->
         impacted_subjects = Map.get(analysis.impacted_by_file, path, []) |> MapSet.new()
@@ -67,16 +73,12 @@ defmodule SpecLedEx.BranchCheck do
               |> MapSet.to_list()
               |> Enum.sort()
 
-            if missing_subject_ids == [] do
-              []
-            else
-              emit(
-                severity_opts,
-                "branch_guard_missing_subject_update",
-                "Changed file #{path} impacts subject specs that were not updated: #{Enum.join(missing_subject_ids, ", ")}",
-                path
-              )
-            end
+            missing_subject_update_findings(
+              missing_subject_ids,
+              path,
+              attestations,
+              severity_opts
+            )
         end
       end)
 
@@ -100,7 +102,7 @@ defmodule SpecLedEx.BranchCheck do
     {append_only_findings, overlap_findings} =
       contract_findings(index, root, analysis.base, severity_opts)
 
-    realization_findings = realization_findings(index, root, severity_opts, opts)
+    realization_findings = realization_findings(realization_raw, severity_opts)
 
     findings =
       Enum.sort_by(
@@ -186,15 +188,21 @@ defmodule SpecLedEx.BranchCheck do
     end
   end
 
-  defp realization_findings(index, root, severity_opts, opts) do
-    raw =
-      Orchestrator.run(index,
-        root: root,
-        umbrella?: Keyword.get(opts, :umbrella?, false),
-        context: Keyword.get(opts, :context),
-        commit_hashes?: Keyword.get(opts, :commit_realization_hashes?, true)
-      )
+  # Run the realization orchestrator once for this branch check, returning
+  # `{raw_findings, attestations}`. The raw findings flow into
+  # `realization_findings/2` for severity resolution; the attestation map
+  # drives the file-touch attested/unattested partition (see
+  # `missing_subject_update_findings/4`).
+  defp run_realization(index, root, opts) do
+    Orchestrator.run_with_attestations(index,
+      root: root,
+      umbrella?: Keyword.get(opts, :umbrella?, false),
+      context: Keyword.get(opts, :context),
+      commit_hashes?: Keyword.get(opts, :commit_realization_hashes?, true)
+    )
+  end
 
+  defp realization_findings(raw, severity_opts) do
     Enum.flat_map(raw, fn finding ->
       code = Map.get(finding, "code")
       default = Map.get(@per_code_defaults, code, :warning)
@@ -207,6 +215,88 @@ defmodule SpecLedEx.BranchCheck do
           [Map.put(finding, "severity", Atom.to_string(severity))]
       end
     end)
+  end
+
+  # covers: specled.branch_guard.file_touch_yields_to_attested_file
+  # covers: specled.branch_guard.file_touch_per_subject_independence
+  # covers: specled.branch_guard.file_touch_severity_config_wins
+  # covers: specled.branch_guard.file_touch_tagged_tests_attested
+  # covers: specled.branch_guard.file_touch_detector_failure_strict
+  #
+  # Partition the missing-subject ids for a given changed `path` into the
+  # attested-clean and unattested halves, then emit one
+  # `branch_guard_missing_subject_update` finding per non-empty half:
+  #
+  #   * Attested half: default severity `:info`, distinctive message naming
+  #     the attesting binding(s) extracted from the attestation value tuple.
+  #   * Unattested half: default severity `:error`, original message.
+  #
+  # The finding code remains `branch_guard_missing_subject_update` in both
+  # halves; the downgrade flows through `Severity.resolve/3` as the `default`
+  # argument so user severity overrides (config or trailer) still win, and
+  # `:off` absorbs both.
+  #
+  # The three-condition attestation predicate (binding's source path returned
+  # + path equals the changed file + MFA not in this run's drift/dangling
+  # finding set) is enforced upstream in
+  # `Orchestrator.run_with_attestations/2`. Here we only consult the resulting
+  # map: presence of `path` under `subject_id` in `attestations` means all
+  # three held for at least one binding of that subject. Detector failures
+  # (path == nil, or a tier-wide `detector_unavailable` that prevented binding
+  # collection) leave the entry absent and fall through to the strict
+  # `:error` branch.
+  defp missing_subject_update_findings([], _path, _attestations, _severity_opts), do: []
+
+  defp missing_subject_update_findings(missing_subject_ids, path, attestations, severity_opts) do
+    {attested, unattested} =
+      Enum.split_with(missing_subject_ids, fn sid ->
+        attestations
+        |> Map.get(sid, %{})
+        |> Map.has_key?(path)
+      end)
+
+    attested_findings =
+      Enum.flat_map(attested, fn sid ->
+        bindings = attesting_bindings(attestations, sid, path)
+        message = attested_missing_subject_update_message(path, sid, bindings)
+
+        emit(
+          severity_opts,
+          "branch_guard_missing_subject_update",
+          message,
+          path,
+          nil,
+          :info
+        )
+      end)
+
+    unattested_findings =
+      if unattested == [] do
+        []
+      else
+        emit(
+          severity_opts,
+          "branch_guard_missing_subject_update",
+          "Changed file #{path} impacts subject specs that were not updated: #{Enum.join(unattested, ", ")}",
+          path,
+          nil,
+          :error
+        )
+      end
+
+    attested_findings ++ unattested_findings
+  end
+
+  defp attesting_bindings(attestations, subject_id, path) do
+    case attestations |> Map.get(subject_id, %{}) |> Map.get(path) do
+      {:attested_clean, mfas} when is_list(mfas) -> mfas
+      _ -> []
+    end
+  end
+
+  defp attested_missing_subject_update_message(path, subject_id, bindings) do
+    "Changed file #{path} impacts subject #{subject_id}; spec.md not co-changed, " <>
+      "but realization attested binding(s) #{Enum.join(bindings, ", ")} as clean — informational only."
   end
 
   defp contract_findings(index, root, base, severity_opts) do

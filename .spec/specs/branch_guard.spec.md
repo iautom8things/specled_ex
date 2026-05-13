@@ -341,7 +341,7 @@ decisions:
     - specled.branch_guard.tier_dispatch_surfaces_drift
     - specled.branch_guard.tier_dispatch_surfaces_dangling
 - kind: tagged_tests
-  execute: false
+  execute: true
   covers:
     - specled.branch_guard.file_touch_yields_to_attested_file
     - specled.branch_guard.file_touch_per_subject_independence
