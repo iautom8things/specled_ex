@@ -243,8 +243,7 @@ decisions:
     - "a `branch_guard_realization_drift` finding fires for `VoydConfig.Component.new/2`"
     - "the `branch_guard_missing_subject_update` finding fires at severity `error` with the original message"
     - "mix spec.check exits non-zero"
-  covers:
-    - specled.branch_guard.file_touch_yields_to_attested_file
+  covers: []
 - id: specled.branch_guard.scenario.file_touch_surface_only_unbound_stays_strict
   given:
     - "a subject with `surface: [\"lib/voyd_config/component/\"]` (directory glob)"
@@ -256,8 +255,7 @@ decisions:
   then:
     - "a `branch_guard_missing_subject_update` finding fires at severity `error` with the original message"
     - "mix spec.check exits non-zero"
-  covers:
-    - specled.branch_guard.file_touch_yields_to_attested_file
+  covers: []
 - id: specled.branch_guard.scenario.file_touch_multi_subject_partial_attestation
   given:
     - "a file `lib/shared/util.ex` that maps to subjects `subj_a` and `subj_b`"

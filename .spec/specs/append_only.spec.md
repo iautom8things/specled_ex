@@ -44,6 +44,9 @@ decisions:
     its `affects` list.
   priority: must
   stability: evolving
+  realized_by:
+    api_boundary:
+      - "SpecLedEx.AppendOnly.analyze/4"
 - id: specled.append_only.requirement_deleted_authorized
   statement: >-
     AppendOnly.analyze shall NOT emit `append_only/requirement_deleted`
@@ -97,6 +100,9 @@ decisions:
     in that invocation.
   priority: must
   stability: evolving
+  realized_by:
+    api_boundary:
+      - "SpecLedEx.AppendOnly.analyze/4"
 - id: specled.append_only.adr_affects_widened
   statement: >-
     AppendOnly.analyze shall emit `append_only/adr_affects_widened` at

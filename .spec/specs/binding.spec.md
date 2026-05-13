@@ -250,8 +250,7 @@ decisions:
   then:
     - "the result returns a `nil` (or absent) source path"
     - "callers treat this as `not attested`"
-  covers:
-    - specled.binding.resolve_with_source_returns_path
+  covers: []
 - id: specled.binding.scenario.locate_source_public_callable
   given:
     - "a compiled module `MyMod` in `lib/my_mod.ex`"

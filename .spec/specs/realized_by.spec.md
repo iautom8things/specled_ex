@@ -495,8 +495,7 @@ decisions:
   then:
     - "the map contains no entry for `(\"subj\", \"lib/mod.ex\")`"
     - "a `branch_guard_realization_drift` finding for `Mod.f/2` is present in the findings list"
-  covers:
-    - specled.realized_by.orchestrator_publishes_attestations
+  covers: []
 - id: specled.realized_by.scenario.attestation_tagged_tests_expand
   given:
     - "a subject `subj` with a requirement `req.a` carrying `realized_by.api_boundary: [\"Mod.f/2\"]` that attests clean"
@@ -516,8 +515,7 @@ decisions:
     - "the orchestrator builds the attestation map"
   then:
     - "the map contains no entry for `(\"subj\", \"test/mod_test.exs\")`"
-  covers:
-    - specled.realized_by.attestation_tagged_tests_expansion
+  covers: []
 ```
 
 ## Verification

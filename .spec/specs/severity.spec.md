@@ -37,6 +37,9 @@ realized_by:
     affect the codes they name; other codes fall through to defaults.
   priority: must
   stability: evolving
+  realized_by:
+    implementation:
+      - "SpecLedEx.BranchCheck.Severity.resolve/3"
 - id: specled.severity.off_is_absorbing
   statement: >-
     When a code's severity is `:off` in config.severities, resolve/3 shall
