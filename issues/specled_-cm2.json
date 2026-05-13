@@ -18,11 +18,15 @@
     {
       "text": "AUDIT: APPROVE\nSession: b920bd00-78bf-43a9-b891-877e668cc527 (in-thread; Task spawn unavailable in this harness)\nLog: ~/.claude-remembers/projects/-Users-mz-src-specled-ex/b920bd00-78bf-43a9-b891-877e668cc527.jsonl\n\nReasoning: Re-checked the diff from scratch with two independent methods:\n\n1. `git diff -w main..HEAD` (whitespace-ignored) shows ONLY formatter line-wrapping transformations — multi-line ↔ one-line representations of the same calls with identical argument lists. No identifiers renamed, no new calls, no removed calls.\n\n2. Stricter check: for every one of the 66 touched files, computed sorted token sets of `main:\u003cfile\u003e` vs `HEAD:\u003cfile\u003e` (tokens = `[A-Za-z0-9_:]+`) and compared. ZERO files had any token-set difference. This is essentially a proof that the diff is whitespace/formatting only and carries no semantic content.\n\nScope: 66 files in `lib/**`, `test/**`, plus `mix.exs` — all consistent with \"run mix format from the repo root\". Zero files outside scope.\n\nTicket Verification list: all three items pass (`mix format --check-formatted` exit 0, `mix compile --warnings-as-errors` clean, `mix test` 0 failures across 773 tests + 2 properties).\n\nOn the `mix spec.check` caveat the verifier raised: branch_guard correctly flags 66 test/lib file changes as \"missing subject update\" per its standard heuristic, but the ticket EXPLICITLY self-declares `Advances: N/A (formatter-only, no spec subject)` and lists its own narrower Verification surface (no `mix spec.check`). The branch_guard heuristic is a false positive on formatter-only commits — token-set proof above shows zero actual subject impact. Approving on the ticket's declared verification surface; a follow-up could teach branch_guard to recognize formatter-only diffs, but that's outside this ticket's scope.\n\nNo bounce indicated.",
       "timestamp": "2026-05-13T10:45:14Z"
+    },
+    {
+      "text": "APPROVED. Merged to main (fast-forward, 8cd218f). Merge gates passed: compile clean, mix format --check-formatted exit 0, mix test 773 tests 0 failures, mix deps.unlock --check-unused clean. Closing per auditor sign-off.",
+      "timestamp": "2026-05-13T10:48:57Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fix mix format --check-formatted failures",
   "type": "task",
-  "updated_at": "2026-05-13T10:45:14Z"
+  "updated_at": "2026-05-13T10:48:57Z"
 }
