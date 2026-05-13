@@ -6,9 +6,15 @@
   "description": "Advances: N/A (formatter-only, no spec subject)\n\nThe project has widespread mix format --check-formatted failures on both main and the epic branch feature/file-touch-yields-to-realization. Run mix format from the repo root and commit the result. No logic changes — formatter-only diff.\n\nVerification:\n- mix format --check-formatted exits 0\n- mix compile --warnings-as-errors clean\n- mix test passes\n\nWork from a worktree based on main.",
   "id": "specled_-cm2",
   "labels": [],
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: b920bd00-78bf-43a9-b891-877e668cc527\nLog: ~/.claude-remembers/projects/-Users-mz-src-specled-ex/b920bd00-78bf-43a9-b891-877e668cc527.jsonl\n\nCommit: 8cd218ff04f685262db51e65bf423748f928d02a\nBranch: specled_-cm2/format-fix (worktree at /Users/mz/src/specled_ex-format-fix)\nFiles touched: 66 files (lib/** and test/** Elixir sources + mix.exs)\nTests added: none (formatter-only ticket; no logic change, no new tests)\nVerification stubs flipped: none (Advances: N/A for this ticket)\n\nSummary: Ran `mix format` from the repo root. The change is a pure whitespace/line-wrap diff produced by the formatter — no semantic edits. `mix format --check-formatted` exits 0, `mix compile --warnings-as-errors` is clean, and `mix test` reports 2 properties, 773 tests, 0 failures.",
+      "timestamp": "2026-05-13T10:40:48Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fix mix format --check-formatted failures",
   "type": "task",
-  "updated_at": "2026-05-13T10:38:52Z"
+  "updated_at": "2026-05-13T10:40:48Z"
 }
