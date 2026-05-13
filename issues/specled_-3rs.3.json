@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-3rs.2"
   ],
@@ -12,8 +12,8 @@
   "labels": [],
   "parent": "specled_-3rs",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "Tagged-tests attestation expansion",
   "type": "task",
-  "updated_at": "2026-05-13T00:53:10Z"
+  "updated_at": "2026-05-13T02:28:56Z"
 }
