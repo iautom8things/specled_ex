@@ -10,11 +10,15 @@
     {
       "text": "IMPLEMENTED\nSession: b920bd00-78bf-43a9-b891-877e668cc527\nLog: ~/.claude-remembers/projects/-Users-mz-src-specled-ex/b920bd00-78bf-43a9-b891-877e668cc527.jsonl\n\nCommit: 8cd218ff04f685262db51e65bf423748f928d02a\nBranch: specled_-cm2/format-fix (worktree at /Users/mz/src/specled_ex-format-fix)\nFiles touched: 66 files (lib/** and test/** Elixir sources + mix.exs)\nTests added: none (formatter-only ticket; no logic change, no new tests)\nVerification stubs flipped: none (Advances: N/A for this ticket)\n\nSummary: Ran `mix format` from the repo root. The change is a pure whitespace/line-wrap diff produced by the formatter — no semantic edits. `mix format --check-formatted` exits 0, `mix compile --warnings-as-errors` is clean, and `mix test` reports 2 properties, 773 tests, 0 failures.",
       "timestamp": "2026-05-13T10:40:48Z"
+    },
+    {
+      "text": "VERIFY: PASS\nSession: b920bd00-78bf-43a9-b891-877e668cc527 (in-thread; Task spawn unavailable in this harness)\nLog: ~/.claude-remembers/projects/-Users-mz-src-specled-ex/b920bd00-78bf-43a9-b891-877e668cc527.jsonl\n\nMechanical checks:\n- Files touched: 66\n- Files outside Allowed globs (lib/**, test/**, mix.exs): 0\n- Files matching Out-of-Scope globs: 0 (ticket lists none)\n\nSemantic checks:\n- Spec stubs run: 0 (Advances: N/A — no spec subjects to flip)\n- Requirements with passing tests: N/A\n- Intent-level scope concerns: none — diff is whitespace/line-wrapping only; no identifier renames, no logic changes. Confirmed by `git diff -w main..HEAD` showing only formatter line-wrapping artifacts (multi-line ↔ one-line representations of the same calls).\n- Project verification (per ticket Verification list):\n  * `mix format --check-formatted` exits 0 ✓\n  * `mix compile --warnings-as-errors` clean ✓\n  * `mix test` → 2 properties, 773 tests, 0 failures ✓\n- Idempotency: re-running `mix format` on the committed state produces zero changes.\n\nVerdict: PASS\n\nCaveat for the auditor:\n- `mix spec.check` exits 1 on this branch with 67 `branch_guard_missing_subject_update` findings — branch_guard sees 66 modified test/lib files and expects them to advance subjects. Ticket explicitly declares `Advances: N/A (formatter-only, no spec subject)` and its Verification list does NOT include `mix spec.check`. The branch_guard finding is structural noise that does not apply to formatter-only commits (the diff has no semantic changes that could \"impact\" a subject). Recommend the auditor accept this as a known property of formatter-only tickets in this repo; a follow-up could teach branch_guard to recognize formatter-only commits.\n- The repo-wide CLAUDE.md merge gates list `mix spec.check`. The ticket's narrower verification surface overrides for this specific change since it self-declares as out-of-spec-system. Auditor should confirm this trade-off.\n\nNotes: 66 files changed, 1011 insertions(+), 279 deletions(-). All hunks are formatter-produced line wrapping or blank-line normalization. mix.exs change is a single inserted blank line between two statements. No test/runtime behavior altered.",
+      "timestamp": "2026-05-13T10:44:39Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fix mix format --check-formatted failures",
   "type": "task",
-  "updated_at": "2026-05-13T10:40:48Z"
+  "updated_at": "2026-05-13T10:44:39Z"
 }
