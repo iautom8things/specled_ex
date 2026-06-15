@@ -170,6 +170,82 @@ defmodule Mix.Tasks.Spec.SuggestBindingTest do
              "stale camelize bug still present; got:\n#{joined}"
     end
 
+    test "resolves the real defmodule name from source instead of camelizing the path",
+         %{root: root} do
+      init_git_repo(root)
+
+      # Real module name does NOT match a naive camelize of the path
+      # (acronym) — and the path has a segment the module name omits.
+      File.mkdir_p!(Path.join(root, "lib/example/web/channels"))
+
+      File.write!(Path.join(root, "lib/example/llm_extractor.ex"), """
+      defmodule Example.LLMExtractor do
+        @moduledoc false
+      end
+      """)
+
+      File.write!(Path.join(root, "lib/example/web/channels/terminal_channel.ex"), """
+      defmodule ExampleWeb.TerminalChannel do
+        @moduledoc false
+      end
+      """)
+
+      write_subject_spec(root, "real",
+        meta: %{
+          "id" => "real.subject",
+          "kind" => "module",
+          "status" => "active",
+          "surface" => [
+            "lib/example/llm_extractor.ex",
+            "lib/example/web/channels/terminal_channel.ex"
+          ]
+        },
+        requirements: [%{"id" => "real.req", "statement" => "x", "priority" => "must"}]
+      )
+
+      commit_all(root, "seed")
+
+      Mix.Tasks.Spec.SuggestBinding.run(["--root", root])
+      joined = drain_shell_messages() |> Enum.join("\n")
+
+      assert String.contains?(joined, "Example.LLMExtractor"),
+             "expected real defmodule name, got:\n#{joined}"
+
+      assert String.contains?(joined, "ExampleWeb.TerminalChannel"),
+             "expected real defmodule name from source, got:\n#{joined}"
+
+      refute String.contains?(joined, "Example.LlmExtractor"),
+             "still camelizing the path instead of reading the module:\n#{joined}"
+
+      refute String.contains?(joined, "Example.Web.Channels.TerminalChannel"),
+             "still deriving namespace from the path instead of the module:\n#{joined}"
+    end
+
+    test "falls back to the path-derived name when the surface file is absent",
+         %{root: root} do
+      init_git_repo(root)
+
+      # No lib/absent/thing.ex on disk — proposal should still be produced via
+      # the path-camelize fallback.
+      write_subject_spec(root, "absent",
+        meta: %{
+          "id" => "absent.subject",
+          "kind" => "module",
+          "status" => "active",
+          "surface" => ["lib/absent/thing.ex"]
+        },
+        requirements: [%{"id" => "absent.req", "statement" => "x", "priority" => "must"}]
+      )
+
+      commit_all(root, "seed")
+
+      Mix.Tasks.Spec.SuggestBinding.run(["--root", root])
+      joined = drain_shell_messages() |> Enum.join("\n")
+
+      assert String.contains?(joined, "Absent.Thing"),
+             "expected path-derived fallback name, got:\n#{joined}"
+    end
+
     test "does not print a proposal for subjects that already have realized_by", %{root: root} do
       init_git_repo(root)
 
