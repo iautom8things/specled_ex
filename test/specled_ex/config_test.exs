@@ -13,6 +13,7 @@ defmodule SpecLedEx.ConfigTest do
 
   alias SpecLedEx.Config
   alias SpecLedEx.Config.TestTags
+  alias SpecLedEx.Config.Verification
 
   import ExUnit.CaptureLog
 
@@ -23,6 +24,7 @@ defmodule SpecLedEx.ConfigTest do
 
       assert %Config{
                test_tags: %TestTags{enabled: false, paths: ["test"], enforcement: :warning},
+               verification: %Verification{command_timeout_ms: nil},
                diagnostics: []
              } = config
     end
@@ -51,6 +53,10 @@ defmodule SpecLedEx.ConfigTest do
         paths:
           - test/specled_ex
         enforcement: error
+      verification:
+        command_timeout_ms: 600000
+        severities:
+          requirement_without_verification: info
       """)
 
       assert %Config{
@@ -59,8 +65,52 @@ defmodule SpecLedEx.ConfigTest do
                  paths: ["test/specled_ex"],
                  enforcement: :error
                },
+               verification: %Verification{
+                 command_timeout_ms: 600_000,
+                 severities: %{"requirement_without_verification" => :info}
+               },
                diagnostics: []
              } = Config.load(root)
+    end
+
+    @tag spec: "specled.config.yaml_parses_known_fields"
+    test "invalid command_timeout_ms falls back to the verifier default", %{root: root} do
+      write_config(root, """
+      verification:
+        command_timeout_ms: never
+      """)
+
+      config = Config.load(root)
+
+      assert config.verification.command_timeout_ms == nil
+
+      assert [
+               %{
+                 kind: :config_warning,
+                 message: "verification.command_timeout_ms must be a positive integer" <> _
+               }
+             ] = config.diagnostics
+    end
+
+    @tag spec: "specled.config.yaml_parses_known_fields"
+    test "invalid verification severity entries are dropped with diagnostics", %{root: root} do
+      write_config(root, """
+      verification:
+        severities:
+          requirement_without_verification: panic
+      """)
+
+      config = Config.load(root)
+
+      assert config.verification.severities == %{}
+
+      assert [
+               %{
+                 kind: :config_warning,
+                 message:
+                   "verification.severities.requirement_without_verification must be one of" <> _
+               }
+             ] = config.diagnostics
     end
 
     @tag spec: "specled.config.yaml_parses_known_fields"

@@ -12,7 +12,7 @@ halting the spec tooling, but malformed values are surfaced so the maintainer no
 id: specled.config
 kind: module
 status: active
-summary: Loads `.spec/config.yml` with defaults and exposes test-tag scanning settings to the index, verifier, and CLI tasks.
+summary: Loads `.spec/config.yml` with defaults and exposes test-tag scanning plus verification settings to the index, verifier, and CLI tasks.
 surface:
   - lib/specled_ex/config.ex
   - lib/mix/tasks/spec.init.ex
@@ -41,7 +41,7 @@ decisions:
   priority: must
   stability: evolving
 - id: specled.config.yaml_parses_known_fields
-  statement: SpecLedEx.Config shall parse `test_tags.enabled` (boolean), `test_tags.paths` (list of strings), and `test_tags.enforcement` (`warning` or `error`) from `.spec/config.yml` and expose them on the returned struct.
+  statement: SpecLedEx.Config shall parse `test_tags.enabled` (boolean), `test_tags.paths` (list of strings), `test_tags.enforcement` (`warning` or `error`), `verification.command_timeout_ms` (positive integer milliseconds), and `verification.severities` (finding-code map to off/info/warning/error) from `.spec/config.yml` and expose them on the returned struct.
   priority: must
   stability: evolving
 - id: specled.config.malformed_yaml_degrades
@@ -80,13 +80,15 @@ decisions:
     - specled.config.defaults_when_missing
 - id: specled.config.scenario.known_fields_parse
   given:
-    - "a `.spec/config.yml` that sets test_tags.enabled to true, test_tags.paths to [\"test/specled_ex\"], and test_tags.enforcement to error"
+    - "a `.spec/config.yml` that sets test_tags.enabled to true, test_tags.paths to [\"test/specled_ex\"], test_tags.enforcement to error, verification.command_timeout_ms to 600000, and verification.severities.requirement_without_verification to info"
   when:
     - SpecLedEx.Config.load/2 is called
   then:
     - "the struct has test_tags.enabled true"
     - "the struct has test_tags.paths equal to [\"test/specled_ex\"]"
     - "the struct has test_tags.enforcement equal to :error"
+    - "the struct has verification.command_timeout_ms equal to 600000"
+    - "the struct has verification.severities equal to %{\"requirement_without_verification\" => :info}"
   covers:
     - specled.config.yaml_parses_known_fields
 - id: specled.config.scenario.malformed_yaml_returns_defaults

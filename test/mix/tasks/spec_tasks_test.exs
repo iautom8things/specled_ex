@@ -10,6 +10,7 @@ defmodule Mix.Tasks.SpecTasksTest do
                "specled.status.decision_index",
                "specled.status.frontier_summary",
                "specled.tasks.check_strict_gate",
+               "specled.tasks.command_timeout_config",
                "specled.tasks.decision_new_scaffold",
                "specled.tasks.index_writes_state",
                "specled.tasks.init_local_skill",
@@ -19,6 +20,7 @@ defmodule Mix.Tasks.SpecTasksTest do
                "specled.tasks.prime_context",
                "specled.tasks.prime_json",
                "specled.tasks.status_summary",
+               "specled.tasks.verification_severity_config",
                "specled.tasks.validate_exit_status",
                "specled.tasks.validate_findings"
              ]
@@ -596,6 +598,89 @@ defmodule Mix.Tasks.SpecTasksTest do
     assert File.read!(Path.join(root, "checked.txt")) == "checked"
     assert message_contains?(messages, "debug_checks=")
     assert message_contains?(messages, "status=pass errors=0 warnings=0")
+  end
+
+  @tag spec: "specled.tasks.command_timeout_config"
+  test "spec.validate honors command timeout from config", %{root: root} do
+    write_files(root, %{
+      ".spec/config.yml" => "verification:\n  command_timeout_ms: 100\n"
+    })
+
+    write_subject_spec(
+      root,
+      "slow_validate",
+      meta: %{"id" => "slow.validate", "kind" => "module", "status" => "active"},
+      requirements: [%{"id" => "slow.validate.requirement", "statement" => "Times out"}],
+      verification: [
+        %{
+          "kind" => "command",
+          "target" => "sleep 1",
+          "covers" => ["slow.validate.requirement"],
+          "execute" => true
+        }
+      ]
+    )
+
+    assert_raise Mix.Error, ~r/Spec validate failed: 1 finding/, fn ->
+      Mix.Tasks.Spec.Validate.run(["--root", root, "--run-commands", "--strict"])
+    end
+
+    assert [%{"code" => "verification_command_failed"}] = read_state(root)["findings"]
+  end
+
+  @tag spec: "specled.tasks.command_timeout_config"
+  test "spec.check honors command timeout from config", %{root: root} do
+    write_files(root, %{
+      ".spec/config.yml" => "verification:\n  command_timeout_ms: 100\n"
+    })
+
+    write_subject_spec(
+      root,
+      "slow_check",
+      meta: %{"id" => "slow.check", "kind" => "module", "status" => "active"},
+      requirements: [%{"id" => "slow.check.requirement", "statement" => "Times out"}],
+      verification: [
+        %{
+          "kind" => "command",
+          "target" => "sleep 1",
+          "covers" => ["slow.check.requirement"],
+          "execute" => true
+        }
+      ]
+    )
+
+    assert_raise Mix.Error, ~r/Spec check failed: 1 validation finding/, fn ->
+      Mix.Tasks.Spec.Check.run(["--root", root])
+    end
+
+    assert [%{"code" => "verification_command_failed"}] = read_state(root)["findings"]
+  end
+
+  @tag spec: [
+         "specled.tasks.verification_severity_config",
+         "specled.verify.finding_severity_overrides"
+       ]
+  test "spec.check honors verifier finding severity overrides from config", %{root: root} do
+    write_files(root, %{
+      ".spec/config.yml" =>
+        "verification:\n  severities:\n    requirement_without_verification: info\n"
+    })
+
+    write_subject_spec(
+      root,
+      "informational",
+      meta: %{"id" => "informational.subject", "kind" => "module", "status" => "active"},
+      requirements: [%{"id" => "informational.requirement", "statement" => "Uncovered"}]
+    )
+
+    Mix.Tasks.Spec.Check.run(["--root", root])
+
+    assert [
+             %{
+               "code" => "requirement_without_verification",
+               "level" => "info"
+             }
+           ] = read_state(root)["findings"]
   end
 
   test "spec.check allows opting out of command execution", %{root: root} do

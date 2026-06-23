@@ -117,6 +117,14 @@ decisions:
   statement: When building the index, the effective test-tag enabled value shall follow CLI flag > `.spec/config.yml` > built-in default precedence.
   priority: must
   stability: evolving
+- id: specled.tasks.command_timeout_config
+  statement: mix spec.check and mix spec.validate shall read `verification.command_timeout_ms` from `.spec/config.yml` and pass that timeout to command and tagged-test verification execution.
+  priority: must
+  stability: evolving
+- id: specled.tasks.verification_severity_config
+  statement: mix spec.check and mix spec.validate shall read `verification.severities` from `.spec/config.yml` and pass those verifier finding severity overrides into validation before strict status is computed.
+  priority: must
+  stability: evolving
 - id: specled.tasks.check_verbose_flag
   statement: mix spec.check shall accept a `--verbose` flag and honor `SPECLED_SHOW_INFO=1` that together govern stdout filtering; without either, findings whose resolved severity is `:info` shall be suppressed from stdout while still being written to `.spec/state.json` unchanged. With either flag or env var, every finding regardless of severity shall be printed.
   priority: must
@@ -183,6 +191,8 @@ decisions:
   covers:
     - specled.tasks.test_tags_flag
     - specled.tasks.test_tags_precedence
+    - specled.tasks.command_timeout_config
+    - specled.tasks.verification_severity_config
 - kind: tagged_tests
   execute: true
   covers:

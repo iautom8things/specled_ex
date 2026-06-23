@@ -17,6 +17,92 @@ defmodule SpecLedEx.Config do
           }
   end
 
+  defmodule Verification do
+    @moduledoc false
+
+    @severity_tokens %{
+      "off" => :off,
+      "info" => :info,
+      "warning" => :warning,
+      "error" => :error
+    }
+
+    @type severity :: :off | :info | :warning | :error
+    @type t :: %__MODULE__{
+            command_timeout_ms: pos_integer() | nil,
+            severities: %{optional(String.t()) => severity()}
+          }
+
+    defstruct command_timeout_ms: nil, severities: %{}
+
+    @spec defaults() :: t()
+    def defaults, do: %__MODULE__{}
+
+    @spec parse(term()) :: {t(), [String.t()]}
+    def parse(input) when is_map(input) do
+      {command_timeout_ms, timeout_diagnostics} = parse_command_timeout(input)
+      {severities, severity_diagnostics} = parse_severities(input)
+
+      {
+        %__MODULE__{command_timeout_ms: command_timeout_ms, severities: severities},
+        timeout_diagnostics ++ severity_diagnostics
+      }
+    end
+
+    def parse(_), do: {defaults(), []}
+
+    defp parse_command_timeout(input) do
+      case Map.get(input, "command_timeout_ms", Map.get(input, :command_timeout_ms)) do
+        nil ->
+          {nil, []}
+
+        value when is_integer(value) and value > 0 ->
+          {value, []}
+
+        value ->
+          {nil,
+           [
+             "verification.command_timeout_ms must be a positive integer in milliseconds, got #{inspect(value)}; using default"
+           ]}
+      end
+    end
+
+    defp parse_severities(input) do
+      severities_input =
+        case Map.get(input, "severities", Map.get(input, :severities, %{})) do
+          map when is_map(map) -> map
+          _ -> %{}
+        end
+
+      {severities, diagnostics} =
+        Enum.reduce(severities_input, {%{}, []}, fn {code, severity_token}, {map, diags} ->
+          cond do
+            not is_binary(code) ->
+              {map, [unknown_code_diag(code) | diags]}
+
+            is_binary(severity_token) and Map.has_key?(@severity_tokens, severity_token) ->
+              {Map.put(map, code, Map.fetch!(@severity_tokens, severity_token)), diags}
+
+            severity_token in [:off, :info, :warning, :error] ->
+              {Map.put(map, code, severity_token), diags}
+
+            true ->
+              {map, [unknown_severity_diag(code, severity_token) | diags]}
+          end
+        end)
+
+      {severities, Enum.reverse(diagnostics)}
+    end
+
+    defp unknown_code_diag(code) do
+      "verification.severities key must be a string finding code, got #{inspect(code)}; dropped"
+    end
+
+    defp unknown_severity_diag(code, value) do
+      "verification.severities.#{code} must be one of off/info/warning/error, got #{inspect(value)}; dropped"
+    end
+  end
+
   defmodule Guardrails do
     @moduledoc """
     Config section for append-only / overlap guardrail severities.
@@ -93,7 +179,12 @@ defmodule SpecLedEx.Config do
     end
   end
 
-  defstruct test_tags: nil, branch_guard: nil, guardrails: nil, prose: nil, diagnostics: []
+  defstruct test_tags: nil,
+            branch_guard: nil,
+            guardrails: nil,
+            prose: nil,
+            verification: nil,
+            diagnostics: []
 
   @type diagnostic :: %{kind: atom(), message: String.t()}
   @type t :: %__MODULE__{
@@ -101,6 +192,7 @@ defmodule SpecLedEx.Config do
           branch_guard: BranchGuard.t(),
           guardrails: Guardrails.t(),
           prose: Prose.t(),
+          verification: Verification.t(),
           diagnostics: [diagnostic()]
         }
 
@@ -111,7 +203,8 @@ defmodule SpecLedEx.Config do
       test_tags: %TestTags{},
       branch_guard: BranchGuard.defaults(),
       guardrails: Guardrails.defaults(),
-      prose: Prose.defaults()
+      prose: Prose.defaults(),
+      verification: Verification.defaults()
     }
   end
 
@@ -173,13 +266,15 @@ defmodule SpecLedEx.Config do
     branch_guard_map = Map.get(map, "branch_guard", %{}) || %{}
     guardrails_map = Map.get(map, "guardrails", %{}) || %{}
     prose_map = Map.get(map, "prose", %{}) || %{}
+    verification_map = Map.get(map, "verification", %{}) || %{}
 
     {branch_guard, bg_diag} = BranchGuard.parse(branch_guard_map)
     {guardrails, gr_diag} = Guardrails.parse(guardrails_map)
     {prose, prose_diag} = Prose.parse(prose_map)
+    {verification, verification_diag} = Verification.parse(verification_map)
 
     diagnostics =
-      Enum.map(bg_diag ++ gr_diag ++ prose_diag, fn msg ->
+      Enum.map(bg_diag ++ gr_diag ++ prose_diag ++ verification_diag, fn msg ->
         %{kind: :config_warning, message: msg}
       end)
 
@@ -188,6 +283,7 @@ defmodule SpecLedEx.Config do
       branch_guard: branch_guard,
       guardrails: guardrails,
       prose: prose,
+      verification: verification,
       diagnostics: diagnostics
     }
   end

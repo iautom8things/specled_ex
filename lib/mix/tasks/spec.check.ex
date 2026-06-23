@@ -3,6 +3,7 @@ defmodule Mix.Tasks.Spec.Check do
 
   @requirements ["app.config"]
 
+  alias SpecLedEx.Config
   alias SpecLedEx.VerificationStrength
 
   @shortdoc "Runs the full local Spec Led gate"
@@ -53,12 +54,15 @@ defmodule Mix.Tasks.Spec.Check do
     spec_dir = opts[:spec_dir] || SpecLedEx.detect_spec_dir(root)
     authored_dir = SpecLedEx.detect_authored_dir(root, spec_dir)
     output = opts[:output] || "#{spec_dir}/state.json"
+    config = Config.load(root, path: config_path(root, spec_dir))
+    command_timeout_ms = config.verification.command_timeout_ms
+    verification_severities = config.verification.severities
     debug? = opts[:debug] || false
     run_commands? = run_commands?(opts)
     verbose? = verbose?(opts)
 
     index_opts =
-      [spec_dir: spec_dir, authored_dir: authored_dir]
+      [spec_dir: spec_dir, authored_dir: authored_dir, config: config]
       |> maybe_put_test_tags(opts)
 
     index = SpecLedEx.index(root, index_opts)
@@ -74,6 +78,8 @@ defmodule Mix.Tasks.Spec.Check do
         strict: true,
         debug: debug?,
         run_commands: run_commands?,
+        command_timeout_ms: command_timeout_ms,
+        severities: verification_severities,
         min_strength: min_strength
       )
 
@@ -123,6 +129,14 @@ defmodule Mix.Tasks.Spec.Check do
     case Keyword.fetch(opts, :run_commands) do
       {:ok, false} -> false
       _ -> true
+    end
+  end
+
+  defp config_path(root, spec_dir) do
+    if Path.type(spec_dir) == :absolute do
+      Path.join(spec_dir, "config.yml")
+    else
+      Path.join([root, spec_dir, "config.yml"])
     end
   end
 

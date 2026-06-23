@@ -17,7 +17,8 @@ defmodule SpecLedEx.Verifier do
     strict? = Keyword.get(opts, :strict, false)
     debug? = Keyword.get(opts, :debug, false)
     run_commands? = Keyword.get(opts, :run_commands, false)
-    command_timeout_ms = Keyword.get(opts, :command_timeout_ms, @default_command_timeout_ms)
+    command_timeout_ms = Keyword.get(opts, :command_timeout_ms) || @default_command_timeout_ms
+    severity_overrides = Keyword.get(opts, :severities, %{})
     cli_minimum_strength = normalize_minimum_strength!(Keyword.get(opts, :min_strength))
     subjects = index["subjects"] || []
     decisions = index["decisions"] || []
@@ -70,6 +71,7 @@ defmodule SpecLedEx.Verifier do
       |> then(&(&1 ++ invalid_id_format_findings(subjects, decisions)))
       |> then(&(&1 ++ verification_strength_findings(verification_claims)))
       |> then(&(&1 ++ SpecLedEx.TagFindings.findings(index)))
+      |> apply_severity_overrides(severity_overrides)
       |> sort_findings()
 
     checks =
@@ -2168,6 +2170,39 @@ defmodule SpecLedEx.Verifier do
         raise ArgumentError, "invalid min_strength: #{message}"
     end
   end
+
+  defp apply_severity_overrides(findings, overrides) when is_map(overrides) do
+    Enum.flat_map(findings, fn finding ->
+      case severity_override(overrides, finding["code"]) do
+        :off ->
+          []
+
+        severity when severity in [:info, :warning, :error] ->
+          [Map.put(finding, "severity", Atom.to_string(severity))]
+
+        severity when severity in ["info", "warning", "error"] ->
+          [Map.put(finding, "severity", severity)]
+
+        _ ->
+          [finding]
+      end
+    end)
+  end
+
+  defp apply_severity_overrides(findings, _overrides), do: findings
+
+  defp severity_override(overrides, code) when is_binary(code) do
+    atom_key =
+      try do
+        String.to_existing_atom(code)
+      rescue
+        ArgumentError -> nil
+      end
+
+    Map.get(overrides, code, if(atom_key, do: Map.get(overrides, atom_key)))
+  end
+
+  defp severity_override(_overrides, _code), do: nil
 
   defp display_kind(""), do: "<empty>"
   defp display_kind(kind), do: kind

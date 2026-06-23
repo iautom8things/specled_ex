@@ -128,6 +128,10 @@ decisions:
   statement: Verification shall not emit any tag-related findings when the index has no test-tag data.
   priority: must
   stability: evolving
+- id: specled.verify.finding_severity_overrides
+  statement: Verification shall apply configured finding-code severity overrides before computing summary error/warning counts and strict pass/fail status; `:off` removes matching findings, while `:info`, `:warning`, and `:error` rewrite matching finding severities.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -241,6 +245,17 @@ decisions:
     - no `requirement_without_test_tag`, `verification_cover_untagged`, `tag_scan_parse_error`, or `tag_dynamic_value_skipped` finding is emitted
   covers:
     - specled.verify.tag_findings_suppressed_when_disabled
+- id: specled.verify.scenario.finding_severity_override
+  given:
+    - a verification run that would normally emit a warning finding
+    - a severities config mapping that finding code to info
+  when:
+    - verification runs in strict mode
+  then:
+    - the finding is retained with severity info
+    - the strict report status is pass
+  covers:
+    - specled.verify.finding_severity_overrides
 ```
 
 ## Verification
@@ -269,4 +284,5 @@ decisions:
     - specled.verify.tag_dynamic_value_skipped
     - specled.verify.tag_findings_respect_enforcement
     - specled.verify.tag_findings_suppressed_when_disabled
+    - specled.verify.finding_severity_overrides
 ```
