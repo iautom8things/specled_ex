@@ -15,6 +15,7 @@ surface:
   - lib/specled_ex/status.ex
   - lib/specled_ex/coverage.ex
   - lib/mix/tasks/spec.status.ex
+  - test/mix/tasks/spec_tasks_test.exs
 realized_by:
   api_boundary:
     - "Mix.Tasks.Spec.Status.run/1"

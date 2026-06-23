@@ -34,6 +34,7 @@ realized_by:
     - "Mix.Tasks.Spec.SuggestBinding"
 decisions:
   - specled.decision.finding_code_budget
+  - specled.decision.verification_runtime_config
 ```
 
 ## Requirements

@@ -21,6 +21,7 @@ summary: Workspace-wide aggregation of tagged_tests verifications into a single 
 surface:
   - lib/specled_ex/tagged_tests.ex
   - test/specled_ex/tagged_tests_test.exs
+  - test/specled_ex/verifier_test.exs
   - priv/helper_scripts/tag_tests_from_specs.exs
   - priv/helper_scripts/flip_command_to_tagged_tests.exs
 realized_by:
@@ -29,6 +30,7 @@ realized_by:
     - "SpecLedEx.TaggedTests.build_command/2"
 decisions:
   - specled.decision.tagged_tests_file_selectors
+  - specled.decision.verification_runtime_config
 ```
 
 ## Requirements

@@ -17,6 +17,7 @@ surface:
   - lib/mix/tasks/spec.check.ex
   - lib/specled_ex/config/branch_guard.ex
   - lib/specled_ex/realization/orchestrator.ex
+  - test/mix/tasks/spec_tasks_test.exs
   - test/specled_ex/config/branch_guard_test.exs
   - test/specled_ex/branch_check/load_prior_state_test.exs
   - test/specled_ex/realization/orchestrator_test.exs

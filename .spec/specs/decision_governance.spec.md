@@ -16,6 +16,7 @@ surface:
   - lib/specled_ex/decision_parser/cross_field.ex
   - lib/specled_ex/schema/decision.ex
   - lib/specled_ex/verifier.ex
+  - test/specled_ex/verifier_test.exs
 realized_by:
   api_boundary:
     - "SpecLedEx.DecisionParser.parse_file/4"

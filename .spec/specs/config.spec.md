@@ -31,6 +31,7 @@ realized_by:
     - "SpecLedEx.Config.Guardrails.parse/1"
 decisions:
   - specled.decision.configurable_test_tag_enforcement
+  - specled.decision.verification_runtime_config
 ```
 
 ## Requirements

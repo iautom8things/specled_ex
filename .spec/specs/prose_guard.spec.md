@@ -50,8 +50,8 @@ realized_by:
   statement: >-
     The finding severity for `spec_requirement_too_short` shall be
     resolvable via SpecLedEx.BranchCheck.Severity (per-code default
-    `:info`). Setting it to `:off` in config.severities shall suppress
-    the finding entirely.
+    `:info`). Setting it to `:off` in `branch_guard.severities` shall
+    suppress the finding entirely.
   priority: must
   stability: evolving
 - id: specled.prose_guard.non_must_exempt

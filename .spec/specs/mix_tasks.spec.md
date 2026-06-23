@@ -52,6 +52,7 @@ decisions:
   - specled.decision.dep_runtime_bootstrap
   - specled.decision.configurable_test_tag_enforcement
   - specled.decision.realized_by_tier_implication
+  - specled.decision.verification_runtime_config
 ```
 
 ## Requirements

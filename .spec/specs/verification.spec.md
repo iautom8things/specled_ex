@@ -34,6 +34,7 @@ decisions:
   - specled.decision.tempfile_command_execution
   - specled.decision.configurable_test_tag_enforcement
   - specled.decision.tagged_tests_file_selectors
+  - specled.decision.verification_runtime_config
 ```
 
 ## Requirements
