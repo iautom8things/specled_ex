@@ -2491,7 +2491,7 @@
         "id": "specled.verify.command_execution_resilience",
         "priority": "must",
         "stability": "stable",
-        "statement": "Command verifications shall capture output via temp files and wait for process exit status, not pipe EOF. Commands shall run under a configurable timeout (default 120s). Output and exit code files shall be cleaned up even if reading fails.\n",
+        "statement": "Command verifications shall capture output via temp files and wait for process exit status, not pipe EOF. Commands shall run under a configurable timeout (default 120s). Output temp files shall be cleaned up even if reading fails. Exit status shall come from the supervised command process rather than a second sidecar file written after command completion.\n",
         "subject_id": "specled.verification"
       },
       {
@@ -5084,7 +5084,7 @@
         "then": [
           "the command output is captured correctly",
           "the exit code is 0",
-          "no temp files remain after verification"
+          "no temp output files remain after verification"
         ],
         "when": [
           "verification runs with run_commands true"

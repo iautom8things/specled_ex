@@ -71,8 +71,9 @@ decisions:
   statement: >
     Command verifications shall capture output via temp files and wait for
     process exit status, not pipe EOF. Commands shall run under a configurable
-    timeout (default 120s). Output and exit code files shall be cleaned up even
-    if reading fails.
+    timeout (default 120s). Output temp files shall be cleaned up even if
+    reading fails. Exit status shall come from the supervised command process
+    rather than a second sidecar file written after command completion.
   priority: must
   stability: stable
 - id: specled.verify.command_output_via_tempfile
@@ -173,7 +174,7 @@ decisions:
   then:
     - the command output is captured correctly
     - the exit code is 0
-    - no temp files remain after verification
+    - no temp output files remain after verification
   covers:
     - specled.verify.command_output_via_tempfile
 - id: specled.verify.scenario.command_timeout

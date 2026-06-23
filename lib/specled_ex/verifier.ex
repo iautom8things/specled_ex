@@ -394,10 +394,7 @@ defmodule SpecLedEx.Verifier do
     if exit_code == 0 do
       findings
     else
-      details =
-        output
-        |> String.trim()
-        |> String.slice(0, 1000)
+      details = command_failure_details(output, exit_code)
 
       [
         finding(
@@ -409,6 +406,26 @@ defmodule SpecLedEx.Verifier do
         )
         | findings
       ]
+    end
+  end
+
+  defp command_failure_details(output, exit_code) do
+    trimmed = String.trim(output || "")
+    header = "exit_code=#{exit_code}"
+
+    cond do
+      trimmed == "" ->
+        header
+
+      String.length(trimmed) <= 2_000 ->
+        "#{header}\n#{trimmed}"
+
+      true ->
+        head = String.slice(trimmed, 0, 1_000)
+        tail_start = max(String.length(trimmed) - 1_000, 0)
+        tail = String.slice(trimmed, tail_start, 1_000)
+
+        "#{header}\n#{head}\n...[output truncated]...\n#{tail}"
     end
   end
 
@@ -984,16 +1001,13 @@ defmodule SpecLedEx.Verifier do
                 | acc
               ]
             else
-              details =
-                output
-                |> String.trim()
-                |> String.slice(0, 300)
+              details = command_failure_details(output, exit_code)
 
               [
                 check(
                   "error",
                   "verification_command_failed",
-                  "Verification command failed: #{target} #{details}",
+                  "Verification command failed: #{target}\n#{details}",
                   subject_id,
                   file
                 )
@@ -1041,13 +1055,13 @@ defmodule SpecLedEx.Verifier do
                 | acc
               ]
             else
-              details = output |> String.trim() |> String.slice(0, 300)
+              details = command_failure_details(output, exit_code)
 
               [
                 check(
                   "error",
                   "verification_command_failed",
-                  "tagged_tests command failed: #{label} #{details}",
+                  "tagged_tests command failed: #{label}\n#{details}",
                   subject_id,
                   file
                 )
@@ -1847,17 +1861,15 @@ defmodule SpecLedEx.Verifier do
 
   defp run_command(target, root, timeout_ms) do
     tmp_out = Path.join(System.tmp_dir!(), "specled_cmd_#{System.unique_integer([:positive])}")
-    tmp_exit = "#{tmp_out}.exit"
 
     # Write a wrapper script to avoid shell escaping issues with nested quotes.
-    # The script captures stdout/stderr to a temp file and the exit code to another.
+    # The script captures stdout/stderr to a temp file and exits with the command status.
     tmp_script = "#{tmp_out}.sh"
 
     File.write!(tmp_script, """
     #!/bin/sh
     cd "#{root}" || exit 127
     (#{target}) > "#{tmp_out}" 2>&1
-    echo $? > "#{tmp_exit}"
     """)
 
     port =
@@ -1886,22 +1898,12 @@ defmodule SpecLedEx.Verifier do
         if exit_status == :timeout do
           1
         else
-          case File.read(tmp_exit) do
-            {:ok, code_str} ->
-              case Integer.parse(String.trim(code_str)) do
-                {n, _} -> n
-                :error -> 1
-              end
-
-            {:error, _} ->
-              1
-          end
+          exit_status
         end
 
       %{output: output, exit_code: exit_code}
     after
       File.rm(tmp_out)
-      File.rm(tmp_exit)
       File.rm(tmp_script)
     end
   end

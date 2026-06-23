@@ -942,6 +942,7 @@ defmodule SpecLedEx.VerifierTest do
       end)
 
     assert failed_check
+    assert failed_check["message"] =~ "exit_code=2"
   end
 
   test "command verification times out on slow commands", %{root: root} do
