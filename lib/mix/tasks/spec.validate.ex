@@ -48,12 +48,15 @@ defmodule Mix.Tasks.Spec.Validate do
     spec_dir = opts[:spec_dir] || SpecLedEx.detect_spec_dir(root)
     authored_dir = SpecLedEx.detect_authored_dir(root, spec_dir)
     output = opts[:output] || "#{spec_dir}/state.json"
+    config = Config.load(root, path: config_path(root, spec_dir))
+    command_timeout_ms = config.verification.command_timeout_ms
+    verification_severities = config.verification.severities
     strict? = opts[:strict] || false
     debug? = opts[:debug] || false
     run_commands? = opts[:run_commands] || false
 
     index_opts =
-      [spec_dir: spec_dir, authored_dir: authored_dir]
+      [spec_dir: spec_dir, authored_dir: authored_dir, config: config]
       |> maybe_put_test_tags(opts)
 
     index = SpecLedEx.index(root, index_opts)
@@ -63,6 +66,8 @@ defmodule Mix.Tasks.Spec.Validate do
         strict: strict?,
         debug: debug?,
         run_commands: run_commands?,
+        command_timeout_ms: command_timeout_ms,
+        severities: verification_severities,
         min_strength: min_strength
       )
       |> with_validator_findings(index, root, strict?)
@@ -118,6 +123,14 @@ defmodule Mix.Tasks.Spec.Validate do
     case Keyword.fetch(task_opts, :test_tags) do
       {:ok, value} when is_boolean(value) -> Keyword.put(index_opts, :test_tags, value)
       _ -> index_opts
+    end
+  end
+
+  defp config_path(root, spec_dir) do
+    if Path.type(spec_dir) == :absolute do
+      Path.join(spec_dir, "config.yml")
+    else
+      Path.join([root, spec_dir, "config.yml"])
     end
   end
 
