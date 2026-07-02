@@ -2679,6 +2679,14 @@
       },
       {
         "file": ".spec/specs/verification.spec.md",
+        "id": "specled.verify.command_timeout_cli_precedence",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "`mix spec.check` and `mix spec.validate` shall accept `--command-timeout-ms` as a one-shot command verification timeout override. When present, the CLI value shall override `.spec/config.yml` `verification.command_timeout_ms`; when absent, the config value shall be used; when neither is present, the verifier's 120 second default shall apply.\n",
+        "subject_id": "specled.verification"
+      },
+      {
+        "file": ".spec/specs/verification.spec.md",
         "id": "specled.verify.command_timeout_enforced",
         "priority": "must",
         "stability": "stable",
@@ -5689,6 +5697,26 @@
       },
       {
         "covers": [
+          "specled.verify.command_timeout_cli_precedence"
+        ],
+        "file": ".spec/specs/verification.spec.md",
+        "given": [
+          "a spec with an executable command verification targeting a slow command",
+          "`.spec/config.yml` may set `verification.command_timeout_ms`"
+        ],
+        "id": "specled.verify.scenario.command_timeout_cli_precedence",
+        "subject_id": "specled.verification",
+        "then": [
+          "`--command-timeout-ms` overrides the config timeout when present",
+          "the config timeout is used when the flag is absent",
+          "the verifier's 120 second default applies when both are absent"
+        ],
+        "when": [
+          "`mix spec.check` or `mix spec.validate` runs command verification"
+        ]
+      },
+      {
+        "covers": [
           "specled.verify.tag_findings_respect_enforcement"
         ],
         "file": ".spec/specs/verification.spec.md",
@@ -8064,6 +8092,7 @@
           "specled.verify.command_execution_resilience",
           "specled.verify.command_output_via_tempfile",
           "specled.verify.command_timeout_enforced",
+          "specled.verify.command_timeout_cli_precedence",
           "specled.verify.command_exit_code_recorded"
         ],
         "execute": true,
@@ -8596,8 +8625,8 @@
     "decisions": 32,
     "exceptions": 0,
     "findings": 0,
-    "requirements": 293,
-    "scenarios": 163,
+    "requirements": 294,
+    "scenarios": 164,
     "subjects": 33,
     "verifications": 96
   },
@@ -12201,6 +12230,17 @@
         "verification_index": 0
       },
       {
+        "cover_id": "specled.verify.command_timeout_cli_precedence",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "",
+        "verification_index": 0
+      },
+      {
         "cover_id": "specled.verify.command_timeout_enforced",
         "file": ".spec/specs/verification.spec.md",
         "kind": "tagged_tests",
@@ -12370,7 +12410,7 @@
     "default_minimum_strength": "claimed",
     "strength_summary": {
       "claimed": 2,
-      "executed": 267,
+      "executed": 268,
       "linked": 73
     },
     "threshold_failures": 0

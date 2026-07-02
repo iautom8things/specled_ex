@@ -16,6 +16,9 @@ defmodule Mix.Tasks.Spec.Validate do
 
     * `--run-commands` - execute `kind: command` verifications with `execute: true`
     * `--min-strength claimed|linked|executed` - require a minimum verification strength
+    * `--command-timeout-ms <ms>` - override the command verification timeout
+      for this run. Precedence is CLI flag, then `.spec/config.yml`
+      `verification.command_timeout_ms`, then the verifier's 120 second default.
     * `--strict` - fail on warnings as well as errors
     * `--test-tags` / `--no-test-tags` - enable or disable test-tag scanning
       for this invocation, overriding `.spec/config.yml`
@@ -36,6 +39,7 @@ defmodule Mix.Tasks.Spec.Validate do
           run_commands: :boolean,
           spec_dir: :string,
           min_strength: :string,
+          command_timeout_ms: :integer,
           test_tags: :boolean
         ],
         aliases: [r: :root, o: :output, s: :strict, d: :debug]
@@ -49,7 +53,7 @@ defmodule Mix.Tasks.Spec.Validate do
     authored_dir = SpecLedEx.detect_authored_dir(root, spec_dir)
     output = opts[:output] || "#{spec_dir}/state.json"
     config = Config.load(root, path: config_path(root, spec_dir))
-    command_timeout_ms = config.verification.command_timeout_ms
+    command_timeout_ms = opts[:command_timeout_ms] || config.verification.command_timeout_ms
     verification_severities = config.verification.severities
     strict? = opts[:strict] || false
     debug? = opts[:debug] || false

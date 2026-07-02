@@ -92,6 +92,16 @@ decisions:
     and a non-zero exit code shall be recorded on the result.
   priority: must
   stability: stable
+- id: specled.verify.command_timeout_cli_precedence
+  statement: >
+    `mix spec.check` and `mix spec.validate` shall accept
+    `--command-timeout-ms` as a one-shot command verification timeout override.
+    When present, the CLI value shall override
+    `.spec/config.yml` `verification.command_timeout_ms`; when absent, the
+    config value shall be used; when neither is present, the verifier's 120
+    second default shall apply.
+  priority: must
+  stability: evolving
 - id: specled.verify.command_exit_code_recorded
   statement: >
     Command verifications shall record the spawned process's exact exit
@@ -188,6 +198,18 @@ decisions:
     - a non-zero exit code is recorded
   covers:
     - specled.verify.command_timeout_enforced
+- id: specled.verify.scenario.command_timeout_cli_precedence
+  given:
+    - a spec with an executable command verification targeting a slow command
+    - `.spec/config.yml` may set `verification.command_timeout_ms`
+  when:
+    - `mix spec.check` or `mix spec.validate` runs command verification
+  then:
+    - `--command-timeout-ms` overrides the config timeout when present
+    - the config timeout is used when the flag is absent
+    - the verifier's 120 second default applies when both are absent
+  covers:
+    - specled.verify.command_timeout_cli_precedence
 - id: specled.verify.scenario.command_failed_exit_code
   given:
     - a spec with a command verification targeting "exit 2"
@@ -276,6 +298,7 @@ decisions:
     - specled.verify.command_execution_resilience
     - specled.verify.command_output_via_tempfile
     - specled.verify.command_timeout_enforced
+    - specled.verify.command_timeout_cli_precedence
     - specled.verify.command_exit_code_recorded
 - kind: tagged_tests
   execute: true

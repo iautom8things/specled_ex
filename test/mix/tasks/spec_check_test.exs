@@ -128,3 +128,78 @@ defmodule Mix.Tasks.Spec.CheckTest do
 
   defp diff_keys(_, _), do: [:not_both_maps]
 end
+
+defmodule Mix.Tasks.Spec.CheckCommandTimeoutTest do
+  use SpecLedEx.Case
+
+  @moduletag :capture_log
+
+  describe "--command-timeout-ms precedence" do
+    @tag spec: "specled.verify.command_timeout_cli_precedence"
+    test "flag beats config value", %{root: root} do
+      write_timeout_config(root, 1)
+      marker = write_slow_command_spec(root, "check_cli_timeout")
+
+      Mix.Tasks.Spec.Check.run(["--root", root, "--command-timeout-ms", "5000"])
+
+      assert read_state(root)["summary"]["findings"] == 0
+      assert File.read!(Path.join(root, marker)) == "done"
+    end
+
+    @tag spec: "specled.verify.command_timeout_cli_precedence"
+    test "absent flag falls back to config value", %{root: root} do
+      write_timeout_config(root, 1)
+      write_slow_command_spec(root, "check_config_timeout")
+
+      assert_raise Mix.Error, ~r/Spec check failed: 1 validation finding/, fn ->
+        Mix.Tasks.Spec.Check.run(["--root", root])
+      end
+
+      assert [%{"code" => "verification_command_failed"}] = read_state(root)["findings"]
+    end
+
+    @tag spec: "specled.verify.command_timeout_cli_precedence"
+    test "absent flag and config fall back to verifier default", %{root: root} do
+      marker = write_slow_command_spec(root, "check_default_timeout")
+
+      Mix.Tasks.Spec.Check.run(["--root", root])
+
+      assert read_state(root)["summary"]["findings"] == 0
+      assert File.read!(Path.join(root, marker)) == "done"
+    end
+  end
+
+  defp write_timeout_config(root, timeout_ms) do
+    write_files(root, %{
+      ".spec/config.yml" => "verification:\n  command_timeout_ms: #{timeout_ms}\n"
+    })
+  end
+
+  defp write_slow_command_spec(root, name) do
+    marker = "#{name}.txt"
+    requirement_id = "#{name}.requirement"
+
+    write_subject_spec(
+      root,
+      name,
+      meta: %{"id" => "#{name}.subject", "kind" => "module", "status" => "active"},
+      requirements: [
+        %{
+          "id" => requirement_id,
+          "statement" =>
+            "Command timeout precedence remains observable through a deliberately slow verification command."
+        }
+      ],
+      verification: [
+        %{
+          "kind" => "command",
+          "target" => "sleep 0.05; printf done > #{marker}",
+          "covers" => [requirement_id],
+          "execute" => true
+        }
+      ]
+    )
+
+    marker
+  end
+end
