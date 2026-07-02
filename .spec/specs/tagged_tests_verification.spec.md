@@ -228,6 +228,32 @@ decisions:
     tagged tests surface during spec.check.
   priority: must
   stability: evolving
+- id: specled.tagged_tests.resume_pass_over_remainder
+  statement: >-
+    When a merged run times out with a readable attribution artifact that leaves
+    cover ids that never started (the timeout remainder), the verifier shall run
+    exactly one resume pass over those never-started ids — and only those ids;
+    in-flight hang suspects are deliberately not re-run — built via
+    SpecLedEx.TaggedTests.build_command/2, executed with a fresh full timeout
+    budget and a second artifact path. The resume outcomes shall be merged into
+    the first run's via SpecLedEx.TaggedTests.Attribution.merge/2 so first-run
+    evidence wins for observed covers and the resume fills the remainder, and
+    findings and strengths shall be computed from the merged map. The resume
+    pass shall never itself be resumed. When the trigger is not met — no timeout
+    fact, an absent or unreadable artifact, an empty remainder, or no backing
+    tests for the remainder — the verifier shall fall back to the pre-resume
+    (single-run) behavior unchanged.
+  priority: must
+  stability: evolving
+- id: specled.tagged_tests.resume_double_timeout_signal
+  statement: >-
+    When the resume pass also times out, the `verification_command_timeout`
+    finding shall state that the resume pass re-ran the timeout remainder alone
+    with a fresh full budget and still timed out, name the resume pass's own
+    in-flight tests as the repeated suspects, and call out that the test, not the
+    budget, is the likely problem.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -403,6 +429,29 @@ decisions:
     - the timeout finding counts the cover ids that never started, and an empty artifact reports a likely compile cost
   covers:
     - specled.tagged_tests.timeout_names_hang_suspects
+- id: specled.tagged_tests.scenario.resume_runs_remainder_after_timeout
+  given:
+    - a merged run that records a pass for one cover then times out with a second cover never started
+    - a shim `mix` that times out on its first invocation and exits zero on its second
+  when:
+    - verification runs with run_commands=true
+  then:
+    - the shim is invoked exactly twice and the second command contains only the remainder's backing test file
+    - the resumed cover reaches `executed` strength and the first-run pass keeps `executed` strength
+    - no `verification_command_timeout` finding remains once the resume pass fills the remainder
+  covers:
+    - specled.tagged_tests.resume_pass_over_remainder
+- id: specled.tagged_tests.scenario.resume_double_timeout_names_suspect
+  given:
+    - a merged run that records a pass for one cover then times out with a second cover never started
+    - a shim `mix` that times out on both invocations, leaving the remainder's test in flight on the resume
+  when:
+    - verification runs with run_commands=true
+  then:
+    - the timeout finding names the resume pass's in-flight test as the repeated suspect
+    - the timeout finding states the test, not the budget, is the likely problem
+  covers:
+    - specled.tagged_tests.resume_double_timeout_signal
 ```
 
 ## Verification
@@ -431,4 +480,6 @@ decisions:
     - specled.tagged_tests.attribution_degrades_to_shared_fate
     - specled.tagged_tests.cover_not_executed_finding
     - specled.tagged_tests.timeout_names_hang_suspects
+    - specled.tagged_tests.resume_pass_over_remainder
+    - specled.tagged_tests.resume_double_timeout_signal
 ```

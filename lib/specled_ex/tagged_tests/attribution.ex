@@ -61,6 +61,30 @@ defmodule SpecLedEx.TaggedTests.Attribution do
     end)
   end
 
+  @doc """
+  Merges a resume run's attribution (`resume`) into the first run's (`first`).
+
+  For every cover id the first run observed — any outcome other than
+  `:not_started` — the first run's recorded outcome wins. A cover the first run
+  left `:not_started` (the timeout remainder) takes the resume run's outcome.
+  Cover ids present in only one map are carried through unchanged.
+
+  This backs the single resume pass over never-started covers after a
+  merged-run timeout: the first run's positive evidence is authoritative, and
+  the resume only fills covers that never got a chance to run. See
+  `specled.decision.evidence_based_attribution`.
+  """
+  @spec merge(%{optional(String.t()) => outcome()}, %{optional(String.t()) => outcome()}) ::
+          %{optional(String.t()) => outcome()}
+  def merge(first, resume) when is_map(first) and is_map(resume) do
+    Map.merge(first, resume, fn _cover_id, first_outcome, resume_outcome ->
+      case first_outcome do
+        :not_started -> resume_outcome
+        _ -> first_outcome
+      end
+    end)
+  end
+
   defp parse_events(content) do
     content
     |> String.split("\n", trim: true)

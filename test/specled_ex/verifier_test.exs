@@ -1412,9 +1412,12 @@ defmodule SpecLedEx.VerifierTest do
     sleep 5
     """
 
-    # Timeout is generous so the shim child reliably starts and writes the
-    # artifact before the process-group kill; the shim then sleeps past it.
-    report = run_two_subject_merged(root, shim, run_commands: true, command_timeout_ms: 300)
+    # Budget generous enough that the shim reliably writes its artifact before
+    # the process-group kill even under a loaded merged run; the shim sleeps past
+    # it. This timeout leaves req.beta as a never-started remainder, so a resume
+    # pass runs (and, with this always-hang shim, also times out) — the assertions
+    # below hold across the merged first-and-resume outcome.
+    report = run_two_subject_merged(root, shim, run_commands: true, command_timeout_ms: 2000)
 
     assert report["status"] == "fail"
 
@@ -1446,6 +1449,100 @@ defmodule SpecLedEx.VerifierTest do
     assert Enum.all?(timeouts, fn timeout ->
              timeout["message"] =~ "timed out before any test started — likely compile cost"
            end)
+  end
+
+  @tag spec: "specled.tagged_tests.resume_pass_over_remainder"
+  test "a merged-run timeout resumes the never-started remainder and fills it green",
+       %{root: root} do
+    # The first invocation's command carries both test files; the resume carries
+    # only the remainder (beta). Branch on that so the shim writes its artifact
+    # as its very first action — no forks ahead of the write — then records the
+    # command it was called with. First run: req.alpha passes, req.beta never
+    # starts, then hang past the budget. Resume: req.beta passes, suite finishes,
+    # exit 0.
+    shim = ~S"""
+    case "$*" in
+    *alpha_test.exs*)
+    cat >> "$SPECLED_ATTRIBUTION_PATH" <<'JSONL'
+    {"event":"test_finished","id":"AlphaTest.t","file":"test/alpha_test.exs","line":5,"spec":["req.alpha"],"state":"pass"}
+    JSONL
+    echo "$@" >> calls.txt
+    sleep 5
+    ;;
+    *)
+    cat >> "$SPECLED_ATTRIBUTION_PATH" <<'JSONL'
+    {"event":"test_finished","id":"BetaTest.t","file":"test/beta_test.exs","line":6,"spec":["req.beta"],"state":"pass"}
+    {"event":"suite_finished"}
+    JSONL
+    echo "$@" >> calls.txt
+    exit 0
+    ;;
+    esac
+    """
+
+    # Budget generous enough that the first run reliably writes its artifact
+    # before the process-group kill even under a loaded merged run; the shim
+    # sleeps well past it so the timeout still fires.
+    report = run_two_subject_merged(root, shim, run_commands: true, command_timeout_ms: 2000)
+
+    calls =
+      Path.join(root, "calls.txt")
+      |> File.read!()
+      |> String.trim()
+      |> String.split("\n", trim: true)
+
+    assert length(calls) == 2, "expected a first run plus exactly one resume pass"
+
+    [_first, resume_call] = calls
+    assert resume_call =~ "test/beta_test.exs"
+    refute resume_call =~ "test/alpha_test.exs"
+
+    assert claim_for(report, "req.alpha")["strength"] == "executed"
+    assert claim_for(report, "req.beta")["strength"] == "executed"
+
+    refute Enum.any?(findings(report, "verification_command_timeout"))
+    assert report["status"] == "pass"
+  end
+
+  @tag spec: "specled.tagged_tests.resume_double_timeout_signal"
+  test "a resume pass that also times out names the repeated suspect, not the budget",
+       %{root: root} do
+    # Branch on the remainder-only resume command (see the primary resume test)
+    # so each invocation writes its artifact first. First run: req.alpha passes,
+    # req.beta never starts, then hang. Resume (beta only): start req.beta's test,
+    # then hang too — so the resume times out with that test in flight.
+    shim = ~S"""
+    case "$*" in
+    *alpha_test.exs*)
+    cat >> "$SPECLED_ATTRIBUTION_PATH" <<'JSONL'
+    {"event":"test_finished","id":"AlphaTest.t","file":"test/alpha_test.exs","line":5,"spec":["req.alpha"],"state":"pass"}
+    JSONL
+    sleep 5
+    ;;
+    *)
+    cat >> "$SPECLED_ATTRIBUTION_PATH" <<'JSONL'
+    {"event":"test_started","id":"BetaTest.hang","file":"test/beta_test.exs","line":6,"spec":["req.beta"]}
+    JSONL
+    sleep 5
+    ;;
+    esac
+    """
+
+    # Both runs must write before their kills; keep the budget generous.
+    report = run_two_subject_merged(root, shim, run_commands: true, command_timeout_ms: 2000)
+
+    assert report["status"] == "fail"
+
+    timeouts = findings(report, "verification_command_timeout")
+    beta = Enum.find(timeouts, &(&1["subject_id"] == "beta"))
+
+    assert beta
+    assert beta["message"] =~ "test/beta_test.exs:6"
+
+    assert beta["message"] =~
+             "the resume pass re-ran the timeout remainder alone with a fresh full budget and still timed out"
+
+    assert beta["message"] =~ "this test, not the budget, is the likely problem"
   end
 
   defp run_two_subject_merged(root, shim_body, verify_opts) do

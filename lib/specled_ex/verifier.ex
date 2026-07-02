@@ -501,7 +501,25 @@ defmodule SpecLedEx.Verifier do
           "no test was observed still running at timeout#{remainder_suffix(remainder)}"
       end
 
-    "#{command_timeout_core(command_result)}\n#{evidence}"
+    "#{command_timeout_core(command_result)}\n#{evidence}#{resume_timeout_suffix(command_result)}"
+  end
+
+  # When a resume pass re-ran the never-started remainder alone with a fresh full
+  # budget and still timed out, the budget is no longer the likely explanation:
+  # a test that hangs on an isolated re-run is the suspect. Name the resume run's
+  # own in-flight tests when it recorded any.
+  defp resume_timeout_suffix(command_result) do
+    if Map.get(command_result, :resume_timed_out, false) do
+      case Map.get(command_result, :resume_in_flight, []) do
+        [] ->
+          "\nthe resume pass re-ran the timeout remainder alone with a fresh full budget and still timed out — the remaining tests, not the budget, are the likely problem"
+
+        suspects ->
+          "\nthe resume pass re-ran the timeout remainder alone with a fresh full budget and still timed out on #{Enum.join(suspects, ", ")} — this test, not the budget, is the likely problem"
+      end
+    else
+      ""
+    end
   end
 
   defp attributed_hang_suspects(attribution) do
@@ -2091,6 +2109,9 @@ defmodule SpecLedEx.Verifier do
               run_merged_command(cmd, root, timeout_ms, cover_ids, tag_map)
           end
 
+        {result, attribution} =
+          maybe_resume_after_timeout(result, attribution, root, timeout_ms, tag_map)
+
         result = Map.put(result, :tagged_tests_shared_count, length(entries))
 
         Enum.reduce(entries, %{}, fn entry, acc ->
@@ -2128,6 +2149,59 @@ defmodule SpecLedEx.Verifier do
     after
       File.rm(artifact_path)
     end
+  end
+
+  # Single resume pass over the never-started remainder after a merged-run
+  # timeout. Triggers only when the first run carried the timeout fact, its
+  # artifact was readable (attribution present), and it left cover ids that
+  # never started. Those never-started ids are re-run exactly once, with a fresh
+  # full timeout budget and a second artifact; in-flight hang suspects are
+  # deliberately excluded, since re-running a hanger would just burn the second
+  # budget. The resume outcomes are merged into the first run's — first-run
+  # evidence wins for observed covers, the resume fills the remainder — and the
+  # merged run's timeout state is recomputed. Any first-run state that misses
+  # the trigger (no timeout, degraded/absent artifact, empty remainder, or no
+  # backing tests for the remainder) falls back to the first-run result
+  # unchanged. See specled.decision.evidence_based_attribution.
+  defp maybe_resume_after_timeout(result, attribution, root, timeout_ms, tag_map) do
+    remainder = not_started_cover_ids(attribution)
+
+    if command_timed_out?(result) and is_map(attribution) and remainder != [] do
+      case TaggedTests.build_command(remainder, tag_map) do
+        :no_tests ->
+          {result, attribution}
+
+        {:ok, resume_cmd} ->
+          {resume_result, resume_attribution} =
+            run_merged_command(resume_cmd, root, timeout_ms, remainder, tag_map)
+
+          merged = Attribution.merge(attribution, resume_attribution || %{})
+          {resumed_result(result, resume_result, resume_attribution, merged), merged}
+      end
+    else
+      {result, attribution}
+    end
+  end
+
+  defp not_started_cover_ids(attribution) when is_map(attribution) do
+    for {cover_id, :not_started} <- attribution, do: cover_id
+  end
+
+  defp not_started_cover_ids(_), do: []
+
+  # Overlays the resume pass's facts onto the first run's result. The merged run
+  # still counts as timed out when the resume pass itself timed out or when the
+  # merged attribution still holds in-flight hang suspects (a first-run hanger we
+  # chose not to re-run). `resume_in_flight` records the resume pass's own hang
+  # suspects so a double timeout can name them as the likely problem.
+  defp resumed_result(first_result, resume_result, resume_attribution, merged) do
+    first_result
+    |> Map.put(
+      :timed_out,
+      command_timed_out?(resume_result) or attributed_hang_suspects(merged) != []
+    )
+    |> Map.put(:resume_timed_out, command_timed_out?(resume_result))
+    |> Map.put(:resume_in_flight, attributed_hang_suspects(resume_attribution || %{}))
   end
 
   # Maps each cover id to the `{absolute_file, test_line}` locations the tag

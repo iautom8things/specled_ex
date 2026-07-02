@@ -172,4 +172,47 @@ defmodule SpecLedEx.TaggedTests.AttributionTest do
              }
     end
   end
+
+  describe "merge/2" do
+    @tag spec: "specled.tagged_tests.resume_pass_over_remainder"
+    test "first run's observed outcome wins over the resume run" do
+      first = %{"req.a" => :passed, "req.b" => {:failed, ["test/b.exs:2"]}}
+      resume = %{"req.a" => {:failed, ["test/a.exs:1"]}, "req.b" => :passed}
+
+      assert Attribution.merge(first, resume) == %{
+               "req.a" => :passed,
+               "req.b" => {:failed, ["test/b.exs:2"]}
+             }
+    end
+
+    @tag spec: "specled.tagged_tests.resume_pass_over_remainder"
+    test "resume run fills the first run's never-started remainder" do
+      first = %{"req.a" => :passed, "req.b" => :not_started, "req.c" => :not_started}
+      resume = %{"req.b" => :passed, "req.c" => {:in_flight, ["test/c.exs:9"]}}
+
+      assert Attribution.merge(first, resume) == %{
+               "req.a" => :passed,
+               "req.b" => :passed,
+               "req.c" => {:in_flight, ["test/c.exs:9"]}
+             }
+    end
+
+    @tag spec: "specled.tagged_tests.resume_pass_over_remainder"
+    test "covers present in only one run are carried through unchanged" do
+      first = %{"req.a" => :not_started}
+      resume = %{"req.b" => :passed}
+
+      assert Attribution.merge(first, resume) == %{
+               "req.a" => :not_started,
+               "req.b" => :passed
+             }
+    end
+
+    @tag spec: "specled.tagged_tests.resume_pass_over_remainder"
+    test "an empty resume map leaves the first run untouched" do
+      first = %{"req.a" => :passed, "req.b" => :not_started}
+
+      assert Attribution.merge(first, %{}) == first
+    end
+  end
 end
