@@ -55,6 +55,14 @@ decisions:
   statement: The branch guard inside mix spec.check shall append additive guidance that reports the change type, impacted subjects or uncovered policy files, and the suggested mix spec.next command without changing its enforcement semantics.
   priority: should
   stability: evolving
+- id: specled.branch_guard.status_follows_error_severity
+  statement: >-
+    The branch guard report shall derive its aggregate `status` from
+    error-severity findings, returning `fail` only when one or more emitted
+    findings has severity `error`. Findings at severity `info` or `warning`
+    shall remain visible in the report without causing branch status failure.
+  priority: must
+  stability: evolving
 - id: specled.branch_guard.plan_docs_excluded
   statement: The branch guard inside mix spec.check shall ignore branch-local planning notes under docs/plans/ when evaluating policy co-changes.
   priority: should
@@ -229,8 +237,10 @@ decisions:
     - mix spec.check runs against the branch base
   then:
     - a finding is produced naming `billing.invoice` and the file where it was added
+    - the branch report status remains pass while the finding stays at severity warning
   covers:
     - specled.branch_guard.new_requirement_tag_warning
+    - specled.branch_guard.status_follows_error_severity
 - id: specled.branch_guard.scenario.enforcement_error_escalates_finding
   given:
     - the same new untagged requirement as above
@@ -382,6 +392,7 @@ decisions:
     - specled.branch_guard.subject_cochange
     - specled.branch_guard.cross_cutting_decision
     - specled.branch_guard.guidance_output
+    - specled.branch_guard.status_follows_error_severity
     - specled.branch_guard.plan_docs_excluded
 - kind: tagged_tests
   execute: true

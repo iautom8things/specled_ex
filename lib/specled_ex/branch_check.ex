@@ -119,10 +119,12 @@ defmodule SpecLedEx.BranchCheck do
         &{&1["code"], &1["file"] || "", &1["message"]}
       )
 
+    errors = Enum.count(findings, &(&1["severity"] == "error"))
+
     %{
       "base" => analysis.base,
       "changed_files" => analysis.changed_files,
-      "status" => if(findings == [], do: "pass", else: "fail"),
+      "status" => if(errors > 0, do: "fail", else: "pass"),
       "summary" => %{
         "changed_files" => length(analysis.changed_files),
         "policy_files" => length(analysis.policy_files),

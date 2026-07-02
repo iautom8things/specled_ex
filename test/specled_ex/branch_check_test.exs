@@ -10,7 +10,10 @@ defmodule SpecLedEx.BranchCheckTest do
 
   @moduletag :capture_log
 
-  @tag spec: "specled.branch_guard.new_requirement_tag_warning"
+  @tag spec: [
+         "specled.branch_guard.new_requirement_tag_warning",
+         "specled.branch_guard.status_follows_error_severity"
+       ]
   test "emits finding when a new must requirement lacks a backing @tag spec", %{root: root} do
     init_git_repo(root)
 
@@ -65,6 +68,7 @@ defmodule SpecLedEx.BranchCheckTest do
     assert hd(findings)["severity"] == "warning"
     assert hd(findings)["message"] =~ "billing.invoice"
     assert hd(findings)["file"] == ".spec/specs/billing.spec.md"
+    assert report["status"] == "pass"
   end
 
   @tag spec: "specled.branch_guard.new_requirement_tag_warning"
@@ -445,7 +449,10 @@ defmodule SpecLedEx.BranchCheckTest do
   describe "file-touch yields to attestation" do
     alias SpecLedEx.Realization.HashStore
 
-    @tag spec: "specled.branch_guard.file_touch_yields_to_attested_file"
+    @tag spec: [
+           "specled.branch_guard.file_touch_yields_to_attested_file",
+           "specled.branch_guard.status_follows_error_severity"
+         ]
     test "attested-clean (file, subject) pair downgrades to :info with binding-naming message",
          %{root: root} do
       init_git_repo(root)
@@ -480,6 +487,7 @@ defmodule SpecLedEx.BranchCheckTest do
       assert finding["message"] =~ "attest.clean.subject"
       assert finding["message"] =~ mfa
       assert finding["message"] =~ "informational only"
+      assert report["status"] == "pass"
     end
 
     @tag spec: "specled.branch_guard.file_touch_yields_to_attested_file"
