@@ -12,9 +12,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-ia9",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: a7c01b31-1832-4731-b697-52202d55f59c\nLog: ~/.claude/projects/-Users-mz-src-specled-ex/a7c01b31-1832-4731-b697-52202d55f59c.jsonl\n\nCommit: 7b73e0d (base: S2's 4538bd1)\nFiles touched: lib/specled_ex/compiler/context.ex, lib/mix/tasks/spec.check.ex, .spec/specs/compiler_context.spec.md, .spec/specs/mix_tasks.spec.md, test/specled_ex/compiler/manifest_test.exs, test/specled_ex/compiler/manifest_integration_test.exs, test/mix/tasks/spec_check_test.exs, CHANGELOG.md, .spec/state.json (regen)\nTests added: default-manifest-path unit tests (real manifest copied into a tmp app-dir tree; explicit compile_path override finds its own sibling .mix/), from_mix_project in-process tests (non-empty manifest containing SpecLedEx.Parser, compile_path exists, keyword override wins), manifest_integration strengthened to map_size \u003e 0 + sources_for(Sample) != [] via the DEFAULT derivation (the assertion that would have caught the ebin/ bug), default_context/1 tests (cwd -\u003e %Context{} with non-empty manifest; relative-dot root -\u003e context; tmp root -\u003e nil)\nVerification stubs flipped: new tagged_tests blocks (compiler_context: default_manifest_path + from_mix_project; mix_tasks: check_builds_compile_context) added at execute: true\n\nDeviations from ticket text, with rationale:\n1. mix_tasks.spec.md got requirement + verification cover but NO scenario — that spec file has no spec-scenarios section at all (~20 must requirements, none with scenarios, validates green); following the file's established structure instead of singling out one requirement.\n2. Requirement id is specled.tasks.check_builds_compile_context (the file's ids use the specled.tasks.* prefix, not specled.mix_tasks.*).\n\nRisk check that mattered: wiring a context changes Binding.resolve's resolution path for ALL tiers; verified api_boundary committed hashes are stable through the context path — spec.check green with zero drift findings.\n\nAcceptance run: warm compile then consecutive mix spec.check runs — three consecutive green with byte-identical findings output (5 info-level file-touch findings, two attested clean by the realization machinery itself). One earlier acceptance attempt had a one-off merged-run verification_command_failed, green on all re-runs, output lost to a narrow grep; logged with the day's other one-off in tracking ticket specled_-f98.\n\nGates: mix compile --warnings-as-errors PASS; mix test 888 tests 3 properties 0 failures; mix format --check-formatted PASS; mix deps.unlock --check-unused PASS; mix spec.check status=pass errors=0.\n\nSummary: mix spec.check now hands the realization tiers a real compile context (Context.from_mix_project/1, root==cwd guarded), fixing the production nil-manifest gap; Context.load/1's default manifest path bug (ebin/.mix, 0 modules) is fixed with the canary strengthened so it cannot silently return; CHANGELOG carries the consumer re-seed note for implementation-tier baselines.",
+      "timestamp": "2026-07-02T23:47:57Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "S3: Production Context wiring + Context.load manifest-path fix + release note",
   "type": "task",
-  "updated_at": "2026-07-02T23:32:53Z"
+  "updated_at": "2026-07-02T23:47:57Z"
 }
