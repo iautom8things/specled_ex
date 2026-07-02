@@ -9,9 +9,15 @@
     "phase:implementing",
     "slug:streaming-attribution"
   ],
+  "comments": [
+    {
+      "text": "NOTE: main-branch drift detected during orchestration.\n\norigin/main advanced 3 commits past this epic's fork point (643bc24) via\nspecled_-j4p (realization-baseline split), which deletes/moves decisions and\nrequirements this epic branch still carries: specled.decision.dedicated_realization_baseline,\nspecled.binding.hash_store_dedicated_file, specled.binding.hash_store_legacy_fallback,\nspecled.index.legacy_baseline_hoist, specled.index.state_fully_derived.\n\nEffect: plain `mix spec.check` (default base=origin/main) now fails with\nappend_only/decision_deleted and append_only/requirement_deleted errors on\nTHIS epic branch, independent of any ticket's own diff — confirmed by running\nit on the epic worktree with only S1 merged (before S2 landed).\n`mix spec.check --base 643bc24` (the epic's true fork point) passes clean:\nstatus=pass errors=0 warnings=0, same 3 INFO branch_guard_missing_subject_update\nfindings already attested by S1 and S2 via Spec-Drift trailers.\n\nOrchestrator decision: for the remainder of this epic's merge gates and\nverifier spawns, using `mix spec.check --base 643bc24` instead of the bare\nproject command, to avoid false FAILs from unrelated main drift. This is\nNOT a scope expansion or a code change — purely an evaluation-base choice,\nsame category as the .spec/state.json generated-file handling.\n\nFollow-up (deferred, not blocking orchestration): the epic branch needs a\nrebase onto origin/main before the final PR, so plain `mix spec.check`\npasses again and the PR diff is clean. Flagging for whoever runs /open-pr —\nnot doing it now mid-pipeline since it would rewrite already-merged S1/S2\ncommit SHAs and cascade into every stage branch.",
+      "timestamp": "2026-07-02T18:03:21Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Streaming per-test attribution for merged tagged_tests runs",
   "type": "epic",
-  "updated_at": "2026-07-02T15:35:13Z"
+  "updated_at": "2026-07-02T18:03:21Z"
 }
