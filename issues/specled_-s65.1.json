@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [
     "specled_-s65.2"
@@ -10,8 +10,8 @@
   "labels": [],
   "parent": "specled_-s65",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "S1: Config seam — parse realization.enabled_tiers (nil-means-default)",
   "type": "task",
-  "updated_at": "2026-07-02T02:06:38Z"
+  "updated_at": "2026-07-02T02:14:03Z"
 }
