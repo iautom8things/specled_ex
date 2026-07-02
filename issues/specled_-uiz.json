@@ -2,13 +2,14 @@
   "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-07-02T21:16:32Z",
   "created": "2026-07-02T20:39:36Z",
   "description": "No spec subject — tool-managed baseline repair, no contract change.\n\nmain@a4bfd3b fails mix spec.check: api_boundary hashes for SpecLedEx.TaggedTests.build_command/2 and collect_entries/1 in .spec/realization_hashes.json still carry pre-epic values. The recommit (a4bfd3b) could not update them: Orchestrator.refresh_and_commit_hashes only runs when has_drift? is false, so drift blocks the refresh that would accept it; the seed pass only adds missing entries. Fix: delete the two stale entries and let the silent_seed pass re-add them at current values (sanctioned per specled.realized_by.silent_seed).",
   "id": "specled_-uiz",
   "labels": [],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "Fix stale api_boundary baseline entries for TaggedTests on main",
   "type": "task",
-  "updated_at": "2026-07-02T20:39:46Z"
+  "updated_at": "2026-07-02T21:16:32Z"
 }
