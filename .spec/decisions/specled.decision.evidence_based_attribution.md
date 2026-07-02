@@ -95,3 +95,27 @@ start, finish, and pass/fail state with its tags at runtime.
 - The formatter transport (env var + JSONL + dual `--formatter` flags) is
   ExUnit-version-sensitive only through the stable formatter event API
   (Elixir ~> 1.18 project floor).
+- Implementation refinement (2026-07-02): the degradation-vs-compile-cost
+  discriminator is the *existence* of the artifact file, not merely its
+  parseable-line count. `read_artifact/1` returns `:absent` only for a missing
+  or unreadable file (the formatter transport never engaged: old host,
+  rejected `--formatter`, or a compile error before ExUnit loaded), and
+  `{:ok, events}` for any readable file — `events` may be empty. An empty but
+  present artifact on a timeout therefore stays on the evidence path (all
+  covers `:not_started`) and yields the "timed out before any test started —
+  likely compile cost" hint, while a missing artifact degrades byte-for-byte
+  to shared fate. This keeps the strict-degradation contract intact (missing
+  file → today's behavior) while making the compile-cost signal reachable.
+- Implementation refinement (2026-07-02): ExUnit collapses a test's multiple
+  `@tag spec:` declarations (and any `@moduletag spec:` list) to a single
+  effective tag at runtime, so a cover declared only via a shadowed tag never
+  appears in the recorded `spec` list even though its test ran. Attribution
+  therefore also credits a cover by test *location*: the verifier passes the
+  scanner's `{file, line}` map, and a passing event at a cover's mapped
+  location counts as positive evidence. A genuinely skipped/excluded test at
+  that location still reads as runtime-excluded, preserving the point of the
+  feature. Because the merged run is dogfooded through this repo's own strict
+  `mix spec.check` — a mix-tooling library whose tests spawn `mix`
+  subprocesses — the formatter also consumes and unsets `SPECLED_ATTRIBUTION_PATH`
+  on init so nested test-spawned runs cannot inherit it and pollute the parent
+  artifact with extra events or a spurious `suite_finished`.

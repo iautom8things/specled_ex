@@ -4,6 +4,12 @@ defmodule SpecLedEx.TaggedTests do
   @kind "tagged_tests"
   @base_command "mix test"
   @include_integration_flag "--include integration"
+  @formatter_flags [
+    "--formatter",
+    "SpecLedEx.TaggedTests.Formatter",
+    "--formatter",
+    "ExUnit.CLIFormatter"
+  ]
 
   @type entry :: %{key: {String.t(), String.t(), non_neg_integer()}, covers: [String.t()]}
 
@@ -15,6 +21,15 @@ defmodule SpecLedEx.TaggedTests do
 
   @doc "Returns the `--include integration` flag appended to merged commands."
   def include_integration_flag, do: @include_integration_flag
+
+  @doc """
+  Returns the `--formatter` flags appended to merged commands.
+
+  The streaming attribution formatter is listed first; `ExUnit.CLIFormatter`
+  is re-listed because passing any `--formatter` replaces ExUnit's default
+  formatter set.
+  """
+  def formatter_flags, do: @formatter_flags
 
   @doc """
   Collects every executable `tagged_tests` verification across the given subjects.
@@ -87,7 +102,7 @@ defmodule SpecLedEx.TaggedTests do
           |> Enum.reject(&is_nil/1)
           |> Enum.uniq()
 
-        command_parts = [@base_command, @include_integration_flag] ++ files
+        command_parts = [@base_command, @include_integration_flag] ++ @formatter_flags ++ files
 
         {:ok, Enum.join(command_parts, " ")}
     end

@@ -1321,6 +1321,177 @@ defmodule SpecLedEx.VerifierTest do
     end
   end
 
+  @tag spec: "specled.tagged_tests.attribution_partial_outcomes"
+  @tag spec: "specled.tagged_tests.merged_run_attribution"
+  test "attribution distributes per-cover outcomes: passing cover executes, failing cover reddens only itself",
+       %{root: root} do
+    shim = ~S"""
+    cat >> "$SPECLED_ATTRIBUTION_PATH" <<'JSONL'
+    {"event":"test_finished","id":"AlphaTest.t","file":"test/alpha_test.exs","line":5,"spec":["req.alpha"],"state":"pass"}
+    {"event":"test_finished","id":"BetaTest.t","file":"test/beta_test.exs","line":6,"spec":["req.beta"],"state":"failed"}
+    {"event":"suite_finished"}
+    JSONL
+    exit 1
+    """
+
+    report = run_two_subject_merged(root, shim, run_commands: true)
+
+    assert report["status"] == "fail"
+
+    assert claim_for(report, "req.alpha")["strength"] == "executed"
+    assert claim_for(report, "req.beta")["strength"] == "linked"
+
+    failures = findings(report, "verification_command_failed")
+    assert length(failures) == 1
+    failure = hd(failures)
+    assert failure["subject_id"] == "beta"
+    assert failure["message"] =~ "test/beta_test.exs:6"
+    refute failure["message"] =~ "shared run, not a subject-specific failure"
+  end
+
+  @tag spec: "specled.tagged_tests.attribution_degrades_to_shared_fate"
+  @tag spec: "specled.tagged_tests.merged_run_attribution"
+  test "an absent artifact degrades to shared fate identical to today", %{root: root} do
+    # The shim never touches SPECLED_ATTRIBUTION_PATH, so the file is missing.
+    shim = ~S"""
+    echo boom
+    exit 2
+    """
+
+    report = run_two_subject_merged(root, shim, run_commands: true)
+
+    assert report["status"] == "fail"
+
+    failures = findings(report, "verification_command_failed")
+    assert length(failures) == 2
+    assert MapSet.new(Enum.map(failures, & &1["subject_id"])) == MapSet.new(["alpha", "beta"])
+
+    assert Enum.all?(failures, fn failure ->
+             failure["message"] =~ "aggregated tagged_tests run (1 command shared by 2 subjects)" and
+               failure["message"] =~
+                 "this finding reflects the shared run, not a subject-specific failure"
+           end)
+
+    assert claim_for(report, "req.alpha")["strength"] == "linked"
+    assert claim_for(report, "req.beta")["strength"] == "linked"
+    refute Enum.any?(findings(report, "tagged_tests_cover_not_executed"))
+  end
+
+  @tag spec: "specled.tagged_tests.cover_not_executed_finding"
+  test "a completed run with a silent cover warns and stays linked, not executed", %{root: root} do
+    shim = ~S"""
+    cat >> "$SPECLED_ATTRIBUTION_PATH" <<'JSONL'
+    {"event":"test_finished","id":"AlphaTest.t","file":"test/alpha_test.exs","line":5,"spec":["req.alpha"],"state":"pass"}
+    {"event":"suite_finished"}
+    JSONL
+    exit 0
+    """
+
+    report = run_two_subject_merged(root, shim, run_commands: true)
+
+    assert claim_for(report, "req.alpha")["strength"] == "executed"
+    assert claim_for(report, "req.beta")["strength"] == "linked"
+
+    warnings = findings(report, "tagged_tests_cover_not_executed")
+    assert length(warnings) == 1
+    warning = hd(warnings)
+    assert warning["subject_id"] == "beta"
+    assert warning["message"] =~ "req.beta"
+    assert warning["severity"] == "warning"
+
+    refute Enum.any?(findings(report, "verification_command_failed"))
+  end
+
+  @tag spec: "specled.tagged_tests.timeout_names_hang_suspects"
+  test "a timeout names in-flight hang suspects and counts the never-started remainder",
+       %{root: root} do
+    shim = ~S"""
+    cat >> "$SPECLED_ATTRIBUTION_PATH" <<'JSONL'
+    {"event":"test_started","id":"AlphaTest.hang","file":"test/alpha_test.exs","line":42,"spec":["req.alpha"]}
+    JSONL
+    sleep 5
+    """
+
+    # Timeout is generous so the shim child reliably starts and writes the
+    # artifact before the process-group kill; the shim then sleeps past it.
+    report = run_two_subject_merged(root, shim, run_commands: true, command_timeout_ms: 300)
+
+    assert report["status"] == "fail"
+
+    timeouts = findings(report, "verification_command_timeout")
+    assert length(timeouts) == 2
+    refute Enum.any?(findings(report, "verification_command_failed"))
+
+    alpha = Enum.find(timeouts, &(&1["subject_id"] == "alpha"))
+    beta = Enum.find(timeouts, &(&1["subject_id"] == "beta"))
+
+    assert alpha["message"] =~ "timed out while running test/alpha_test.exs:42"
+    assert beta["message"] =~ "1 cover id(s) never started (timeout remainder)"
+  end
+
+  @tag spec: "specled.tagged_tests.timeout_names_hang_suspects"
+  test "a timeout with an empty artifact reports likely compile cost", %{root: root} do
+    shim = ~S"""
+    : > "$SPECLED_ATTRIBUTION_PATH"
+    sleep 5
+    """
+
+    # Timeout is generous so the shim child reliably starts and writes the
+    # artifact before the process-group kill; the shim then sleeps past it.
+    report = run_two_subject_merged(root, shim, run_commands: true, command_timeout_ms: 300)
+
+    timeouts = findings(report, "verification_command_timeout")
+    assert length(timeouts) == 2
+
+    assert Enum.all?(timeouts, fn timeout ->
+             timeout["message"] =~ "timed out before any test started — likely compile cost"
+           end)
+  end
+
+  defp run_two_subject_merged(root, shim_body, verify_opts) do
+    shim_dir = Path.join(root, "bin")
+    File.mkdir_p!(shim_dir)
+    shim_path = Path.join(shim_dir, "mix")
+    File.write!(shim_path, "#!/bin/sh\n" <> shim_body)
+    File.chmod!(shim_path, 0o755)
+
+    original_path = System.get_env("PATH")
+    System.put_env("PATH", "#{shim_dir}:#{original_path}")
+
+    try do
+      Verifier.verify(
+        %{
+          "subjects" => [
+            base_subject(%{
+              "file" => ".spec/specs/alpha.spec.md",
+              "meta" => %{"id" => "alpha", "kind" => "module", "status" => "active"},
+              "requirements" => [%{"id" => "req.alpha", "statement" => "Alpha"}],
+              "verification" => [
+                %{"kind" => "tagged_tests", "covers" => ["req.alpha"], "execute" => true}
+              ]
+            }),
+            base_subject(%{
+              "file" => ".spec/specs/beta.spec.md",
+              "meta" => %{"id" => "beta", "kind" => "module", "status" => "active"},
+              "requirements" => [%{"id" => "req.beta", "statement" => "Beta"}],
+              "verification" => [
+                %{"kind" => "tagged_tests", "covers" => ["req.beta"], "execute" => true}
+              ]
+            })
+          ],
+          "test_tags" => %{
+            "req.alpha" => [%{file: "test/alpha_test.exs"}],
+            "req.beta" => [%{file: "test/beta_test.exs"}]
+          }
+        },
+        root,
+        verify_opts
+      )
+    after
+      System.put_env("PATH", original_path)
+    end
+  end
+
   test "command verification writes output to temp files then cleans up", %{root: root} do
     report =
       verify_subject(

@@ -3,6 +3,7 @@ defmodule SpecLedEx.TaggedTestsTest do
 
   @moduletag spec: [
                "specled.tagged_tests.build_command",
+               "specled.tagged_tests.build_command_appends_formatters",
                "specled.tagged_tests.build_command_combines_backed_ids",
                "specled.tagged_tests.build_command_drops_unbacked_ids",
                "specled.tagged_tests.build_command_file_selectors_for_list_tags",
@@ -121,6 +122,27 @@ defmodule SpecLedEx.TaggedTestsTest do
 
       assert base_idx < include_idx
       assert include_idx < file_idx
+    end
+
+    @tag spec: "specled.tagged_tests.build_command_appends_formatters"
+    test "appends the streaming formatter flags after --include integration, before files" do
+      tag_map = %{
+        "a.one" => [%{file: "test/a_test.exs", line: 3, test_line: 4, test_name: "t1"}]
+      }
+
+      assert {:ok, command} = TaggedTests.build_command(["a.one"], tag_map)
+
+      assert command =~ "--formatter SpecLedEx.TaggedTests.Formatter"
+      assert command =~ "--formatter ExUnit.CLIFormatter"
+
+      include_idx = index_of(command, "--include integration")
+      formatter_idx = index_of(command, "--formatter SpecLedEx.TaggedTests.Formatter")
+      cli_idx = index_of(command, "--formatter ExUnit.CLIFormatter")
+      file_idx = index_of(command, "test/a_test.exs")
+
+      assert include_idx < formatter_idx
+      assert formatter_idx < cli_idx
+      assert cli_idx < file_idx
     end
 
     @tag spec: "specled.tagged_tests.build_command_file_selectors_for_list_tags"

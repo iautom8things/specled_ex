@@ -3,6 +3,7 @@ defmodule SpecLedEx.Verifier do
 
   alias SpecLedEx.Schema.Verification, as: VerificationSchema
   alias SpecLedEx.TaggedTests
+  alias SpecLedEx.TaggedTests.Attribution
   alias SpecLedEx.VerificationStrength
 
   @command_kind "command"
@@ -380,13 +381,176 @@ defmodule SpecLedEx.Verifier do
         append_command_runtime_finding(findings, command_result, target, subject_id, file)
 
       kind == @tagged_tests_kind and execute? and command_result ->
-        label = "tagged_tests: #{Map.get(command_result, :command) || @tagged_tests_command}"
-        append_command_runtime_finding(findings, command_result, label, subject_id, file)
+        case Map.get(command_result, :attribution) do
+          nil ->
+            label = "tagged_tests: #{Map.get(command_result, :command) || @tagged_tests_command}"
+            append_command_runtime_finding(findings, command_result, label, subject_id, file)
+
+          attribution ->
+            append_attributed_tagged_tests_findings(
+              findings,
+              command_result,
+              attribution,
+              subject_id,
+              file
+            )
+        end
 
       true ->
         findings
     end
   end
+
+  # Evidence-based findings for a merged tagged_tests run whose artifact was
+  # readable. Only covers with recorded failures redden their subjects; passing
+  # covers are silent (they reach `executed` via cover_executed?/2); a timeout
+  # names the in-flight hang suspects and counts the never-started remainder;
+  # runtime-excluded covers get the `tagged_tests_cover_not_executed` warning.
+  defp append_attributed_tagged_tests_findings(
+         findings,
+         command_result,
+         attribution,
+         subject_id,
+         file
+       ) do
+    findings
+    |> append_attributed_failure_finding(command_result, attribution, subject_id, file)
+    |> append_attributed_timeout_finding(command_result, attribution, subject_id, file)
+    |> append_not_executed_findings(attribution, subject_id, file)
+  end
+
+  defp append_attributed_failure_finding(findings, command_result, attribution, subject_id, file) do
+    case attributed_failing_tests(attribution) do
+      [] ->
+        findings
+
+      tests ->
+        label = Map.get(command_result, :command) || @tagged_tests_command
+
+        [
+          finding(
+            "error",
+            "verification_command_failed",
+            "Verification command failed: tagged_tests: #{label}\nexit_code=#{inspect(Map.get(command_result, :exit_code))}\nfailing tests: #{Enum.join(tests, ", ")}",
+            subject_id,
+            file
+          )
+          | findings
+        ]
+    end
+  end
+
+  defp append_attributed_timeout_finding(findings, command_result, attribution, subject_id, file) do
+    if command_timed_out?(command_result) do
+      label = Map.get(command_result, :command) || @tagged_tests_command
+
+      [
+        finding(
+          "error",
+          "verification_command_timeout",
+          "Verification command timed out: tagged_tests: #{label}\n#{attributed_timeout_details(command_result, attribution)}",
+          subject_id,
+          file
+        )
+        | findings
+      ]
+    else
+      findings
+    end
+  end
+
+  defp append_not_executed_findings(findings, attribution, subject_id, file) do
+    attribution
+    |> Enum.filter(fn {_cover_id, outcome} -> outcome == :not_executed end)
+    |> Enum.reduce(findings, fn {cover_id, _outcome}, acc ->
+      [
+        finding(
+          "warning",
+          "tagged_tests_cover_not_executed",
+          "tagged_tests cover #{cover_id} has @tag spec entries but no test executed in the merged run (skipped, excluded, or filtered out)",
+          subject_id,
+          file
+        )
+        | acc
+      ]
+    end)
+  end
+
+  defp attributed_failing_tests(attribution) do
+    attribution
+    |> Enum.flat_map(fn
+      {_cover_id, {:failed, tests}} -> tests
+      _ -> []
+    end)
+    |> Enum.uniq()
+  end
+
+  defp attributed_timeout_details(command_result, attribution) do
+    hang_suspects = attributed_hang_suspects(attribution)
+    remainder = attributed_not_started_count(attribution)
+
+    evidence =
+      cond do
+        Map.get(command_result, :attribution_empty, false) and hang_suspects == [] ->
+          "timed out before any test started — likely compile cost"
+
+        hang_suspects != [] ->
+          "timed out while running #{Enum.join(hang_suspects, ", ")}#{remainder_suffix(remainder)}"
+
+        true ->
+          "no test was observed still running at timeout#{remainder_suffix(remainder)}"
+      end
+
+    "#{command_timeout_core(command_result)}\n#{evidence}"
+  end
+
+  defp attributed_hang_suspects(attribution) do
+    attribution
+    |> Enum.flat_map(fn
+      {_cover_id, {:in_flight, tests}} -> tests
+      _ -> []
+    end)
+    |> Enum.uniq()
+  end
+
+  defp attributed_not_started_count(attribution) do
+    Enum.count(attribution, fn {_cover_id, outcome} -> outcome == :not_started end)
+  end
+
+  defp remainder_suffix(0), do: ""
+
+  defp remainder_suffix(count),
+    do: "; #{count} cover id(s) never started (timeout remainder)"
+
+  defp append_attributed_tagged_tests_checks(checks, command_result, subject_id, file) do
+    Enum.reduce(Map.get(command_result, :attribution), checks, fn {cover_id, outcome}, acc ->
+      {status, code, message} = attributed_cover_check(cover_id, outcome)
+      [check(status, code, message, subject_id, file) | acc]
+    end)
+  end
+
+  defp attributed_cover_check(cover_id, :passed),
+    do: {"pass", "verification_command_passed", "tagged_tests cover executed: #{cover_id}"}
+
+  defp attributed_cover_check(cover_id, {:failed, tests}),
+    do:
+      {"error", "verification_command_failed",
+       "tagged_tests cover failed: #{cover_id} (#{Enum.join(tests, ", ")})"}
+
+  defp attributed_cover_check(cover_id, {:in_flight, tests}),
+    do:
+      {"error", "verification_command_timeout",
+       "tagged_tests cover in flight at timeout: #{cover_id} (#{Enum.join(tests, ", ")})"}
+
+  defp attributed_cover_check(cover_id, :not_started),
+    do:
+      {"error", "verification_command_timeout",
+       "tagged_tests cover never started (timeout remainder): #{cover_id}"}
+
+  defp attributed_cover_check(cover_id, :not_executed),
+    do:
+      {"warning", "tagged_tests_cover_not_executed",
+       "tagged_tests cover not executed: #{cover_id}"}
 
   defp append_command_runtime_finding(findings, command_result, label, subject_id, file) do
     %{output: output, exit_code: exit_code} = command_result
@@ -449,11 +613,16 @@ defmodule SpecLedEx.Verifier do
   end
 
   defp command_timeout_details(command_result) do
+    command_result
+    |> command_timeout_core()
+    |> append_shared_tagged_tests_context(command_result)
+  end
+
+  defp command_timeout_core(command_result) do
     timeout_ms = Map.get(command_result, :timeout_ms, @default_command_timeout_ms)
     doubled_timeout_ms = timeout_ms * 2
 
     "command exceeded #{timeout_ms}ms (verification.command_timeout_ms in .spec/config.yml, default #{@default_command_timeout_ms}); tests were not observed to fail. Re-run with --command-timeout-ms #{doubled_timeout_ms} to confirm this is a budget problem."
-    |> append_shared_tagged_tests_context(command_result)
   end
 
   defp append_shared_tagged_tests_context(message, command_result) do
@@ -1095,6 +1264,10 @@ defmodule SpecLedEx.Verifier do
               )
               | acc
             ]
+
+          kind == @tagged_tests_kind and run_commands? and execute? and command_result and
+              Map.has_key?(command_result, :attribution) ->
+            append_attributed_tagged_tests_checks(acc, command_result, subject_id, file)
 
           kind == @tagged_tests_kind and run_commands? and execute? and command_result ->
             %{output: output, exit_code: exit_code, command: cmd} = command_result
@@ -1908,19 +2081,89 @@ defmodule SpecLedEx.Verifier do
       entries ->
         cover_ids = entries |> Enum.flat_map(& &1.covers) |> Enum.uniq()
 
-        result =
+        {result, attribution} =
           case TaggedTests.build_command(cover_ids, tag_map) do
             :no_tests ->
-              %{output: "No @tag spec entries found for covers", exit_code: 0, command: nil}
+              {%{output: "No @tag spec entries found for covers", exit_code: 0, command: nil},
+               nil}
 
             {:ok, cmd} ->
-              cmd |> run_command(root, timeout_ms) |> Map.put(:command, cmd)
+              run_merged_command(cmd, root, timeout_ms, cover_ids, tag_map)
           end
-          |> Map.put(:tagged_tests_shared_count, length(entries))
 
-        Enum.reduce(entries, %{}, fn entry, acc -> Map.put(acc, entry.key, result) end)
+        result = Map.put(result, :tagged_tests_shared_count, length(entries))
+
+        Enum.reduce(entries, %{}, fn entry, acc ->
+          Map.put(acc, entry.key, entry_result(result, attribution, entry.covers))
+        end)
     end
   end
+
+  # Runs the merged command with a streaming attribution artifact. The artifact
+  # path is passed to the child via SPECLED_ATTRIBUTION_PATH so the shipped
+  # SpecLedEx.TaggedTests.Formatter can record per-test evidence, then read back
+  # and deleted. A missing/unreadable artifact yields `nil` attribution, which
+  # keeps every downstream branch on today's shared-fate path (degradation
+  # contract — see specled.decision.evidence_based_attribution).
+  defp run_merged_command(cmd, root, timeout_ms, cover_ids, tag_map) do
+    artifact_path =
+      Path.join(System.tmp_dir!(), "specled_attr_#{System.unique_integer([:positive])}.jsonl")
+
+    try do
+      base =
+        cmd
+        |> run_command(root, timeout_ms, env: [{"SPECLED_ATTRIBUTION_PATH", artifact_path}])
+        |> Map.put(:command, cmd)
+
+      case Attribution.read_artifact(artifact_path) do
+        {:ok, events} ->
+          cover_locations = cover_locations(cover_ids, tag_map, root)
+
+          {Map.put(base, :attribution_empty, events == []),
+           Attribution.attribute(events, cover_ids, cover_locations)}
+
+        :absent ->
+          {base, nil}
+      end
+    after
+      File.rm(artifact_path)
+    end
+  end
+
+  # Maps each cover id to the `{absolute_file, test_line}` locations the tag
+  # scanner recorded for it, in the same form the formatter records events. The
+  # formatter runs with cwd = root and stores absolute file paths, so relative
+  # scanner paths are expanded against root. Entries without a resolvable line
+  # cannot match a real event and are dropped.
+  defp cover_locations(cover_ids, tag_map, root) do
+    Map.new(cover_ids, fn cover_id ->
+      locations =
+        tag_map
+        |> Map.get(cover_id, [])
+        |> Enum.flat_map(&tag_entry_location(&1, root))
+        |> Enum.uniq()
+
+      {cover_id, locations}
+    end)
+  end
+
+  defp tag_entry_location(entry, root) when is_map(entry) do
+    file = Map.get(entry, :file) || Map.get(entry, "file")
+    line = Map.get(entry, :test_line) || Map.get(entry, "test_line")
+
+    if is_binary(file) and is_integer(line) do
+      [{Path.expand(file, root), line}]
+    else
+      []
+    end
+  end
+
+  defp tag_entry_location(_entry, _root), do: []
+
+  defp entry_result(result, nil, _covers), do: result
+
+  defp entry_result(result, attribution, covers),
+    do: Map.put(result, :attribution, Map.take(attribution, covers))
 
   # Captures command output via temp files instead of pipe-based System.cmd.
   # OTP's erl_child_setup retains pipe write-end fds for the BEAM's lifetime,
@@ -1933,7 +2176,7 @@ defmodule SpecLedEx.Verifier do
     end
   end
 
-  defp run_command(target, root, timeout_ms) do
+  defp run_command(target, root, timeout_ms, opts \\ []) do
     tmp_out = Path.join(System.tmp_dir!(), "specled_cmd_#{System.unique_integer([:positive])}")
 
     # Write a wrapper script to avoid shell escaping issues with nested quotes.
@@ -1962,7 +2205,7 @@ defmodule SpecLedEx.Verifier do
     port =
       Port.open(
         {:spawn_executable, "/bin/sh"},
-        [:binary, :exit_status, {:args, [tmp_script]}]
+        [:binary, :exit_status, {:args, [tmp_script]}] ++ port_env_opts(opts)
       )
 
     try do
@@ -2015,6 +2258,19 @@ defmodule SpecLedEx.Verifier do
     :ok
   rescue
     ArgumentError -> :ok
+  end
+
+  # Translates a keyword `:env` option into the `Port.open/2` `{:env, ...}` form
+  # (charlist name/value pairs). Absent or empty → no env override, so the
+  # kind: command path (which never passes :env) stays inert.
+  defp port_env_opts(opts) do
+    case Keyword.get(opts, :env) do
+      env when is_list(env) and env != [] ->
+        [{:env, Enum.map(env, fn {name, value} -> {to_charlist(name), to_charlist(value)} end)}]
+
+      _ ->
+        []
+    end
   end
 
   defp verification_entries(subject, subject_id, file, command_results) do
@@ -2152,7 +2408,18 @@ defmodule SpecLedEx.Verifier do
     bool_field(verification, "execute") and
       Map.has_key?(tag_map, cover_id) and
       is_map(command_result) and
-      Map.get(command_result, :exit_code) == 0
+      cover_executed?(command_result, cover_id)
+  end
+
+  # With attribution present, `executed` requires positive per-cover evidence
+  # (a recorded pass, no recorded failure) even when the run as a whole was
+  # killed. Without attribution (degradation), today's aggregated exit-zero
+  # check applies byte-for-byte.
+  defp cover_executed?(command_result, cover_id) do
+    case Map.get(command_result, :attribution) do
+      nil -> Map.get(command_result, :exit_code) == 0
+      attribution -> Map.get(attribution, cover_id) == :passed
+    end
   end
 
   defp executable_command_succeeded?(verification, command_result) do
