@@ -6,9 +6,15 @@
   "description": "Advances: specled.compiler_tracer\n\n## Context\n\nFound by Atlas critical-review 2026-07-02 (consensus: performance + testing reviewers, independently). SpecLedEx.Compiler.Tracer writes _build/\u003cenv\u003e/.spec/xref_mfa.etf by serializing the ETS edge table at flush — but the table only holds edges from modules compiled in the CURRENT session. An incremental compile (warm _build) therefore REPLACES the full manifest with just the recompiled subset, and every downstream implementation-tier closure walk runs on a truncated callee graph: spurious drift findings, missed drift, and — if hashes are committed from that state — a corrupted committed baseline. Consumers with CI build caches hit this as the steady state; Atlas currently works around it with mix compile --force in its spec-check job (2-4 min/run tax).\n\n## Deliverable\n\nMerge-on-flush: read the existing manifest, replace only entries for modules recompiled this session (tracer knows them — they hit on_module), keep the rest, prune modules that no longer exist in the build. Property: manifest after incremental compile == manifest after --force compile. Test with a two-step compile fixture (full, then touch one module, incremental).",
   "id": "specled_-ia9",
   "labels": [],
+  "comments": [
+    {
+      "text": "Stronger evidence from Atlas (critical-review empirical verification): the problem is not only incremental-compile truncation — implementation-tier closure hashes were UNSTABLE across consecutive full-manifest runs (baseline re-seeded via rm + spec.check, then two back-to-back --no-run-commands runs on an untouched tree produced 50 drift findings both times, counts varying 50-58 across the session). api_boundary was fully stable throughout (0 drift). Atlas has disabled the implementation tier in .spec/config.yml pending this fix; re-enable + baseline re-seed is the acceptance test. Suggest the deliverable add: hash determinism property — two consecutive runs with no code change produce identical implementation hashes.",
+      "timestamp": "2026-07-02T20:45:56Z"
+    }
+  ],
   "priority": 2,
   "status": "open",
   "title": "Tracer manifest is replace-on-flush — incremental compiles truncate the callee graph",
   "type": "task",
-  "updated_at": "2026-07-02T20:32:08Z"
+  "updated_at": "2026-07-02T20:45:56Z"
 }
