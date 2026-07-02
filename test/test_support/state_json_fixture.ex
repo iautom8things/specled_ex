@@ -1,27 +1,28 @@
 defmodule SpecLedEx.StateJsonFixture do
   @moduledoc """
-  Test helpers for driving multi-trajectory `.spec/state.json` fixtures.
+  Test helpers for driving multi-trajectory committed-baseline fixtures
+  (`.spec/realization_hashes.json`; historically embedded in `.spec/state.json`).
 
   The realization tier-implication work needs to test what `mix spec.check`
-  does across four state.json trajectories per binding entry:
+  does across four baseline trajectories per binding entry:
 
-    * **cold** — state.json missing entirely (a fresh checkout / first run).
-    * **warm** — state.json present, every entry is committed and current.
-    * **seeded** — state.json present, the entry under test is missing
+    * **cold** — baseline missing entirely (a fresh checkout / first run).
+    * **warm** — baseline present, every entry is committed and current.
+    * **seeded** — baseline present, the entry under test is missing
       (silent-seed pass should compute and write its hash on this run).
-    * **dangling** — state.json present, the entry under test points at
+    * **dangling** — baseline present, the entry under test points at
       an MFA or module that cannot be resolved at runtime.
 
   These helpers compose the trajectory in a tmp `root` without touching the
-  project's real `.spec/state.json`. Pin a tmp root in test setup, then call
+  project's real `.spec/` files. Pin a tmp root in test setup, then call
   `seed/2` to lay down a starting state and `read/1` or
   `assert_state_contains/3` to inspect it after the system under test has
   run.
 
   ## Shape
 
-  The realization map is the tier → key → hash shape stored under
-  `state["realization"]`:
+  The realization map is the tier → key → hash shape stored at the top
+  level of `.spec/realization_hashes.json`:
 
       %{
         "api_boundary" => %{
@@ -35,7 +36,7 @@ defmodule SpecLedEx.StateJsonFixture do
   Hashes are passed as **raw binaries** (e.g. `:crypto.hash(:sha256, "x")`).
   `seed/2` hex-encodes them and stamps the current
   `SpecLedEx.Realization.HashStore.hasher_version/0` so the resulting
-  state.json matches what `HashStore.write/2` would have produced.
+  baseline file matches what `HashStore.write/2` would have produced.
 
   Keys may be MFA strings (`"Foo.bar/1"`) or bare-module strings
   (`"SpecLedEx.Coverage"`) — the fixture is tier/key-agnostic and stores
@@ -61,9 +62,7 @@ defmodule SpecLedEx.StateJsonFixture do
 
   alias SpecLedEx.Realization.HashStore
 
-  @state_rel Path.join(".spec", "state.json")
-
-  @typedoc "Tier name as it appears in state.json (e.g. \"api_boundary\")."
+  @typedoc "Tier name as it appears in the baseline file (e.g. \"api_boundary\")."
   @type tier :: String.t()
 
   @typedoc "MFA string (\"Foo.bar/1\") or bare-module string (\"My.Mod\")."
@@ -76,15 +75,14 @@ defmodule SpecLedEx.StateJsonFixture do
   @type stored_map :: %{optional(tier()) => %{optional(entry_key()) => map()}}
 
   @doc """
-  Seeds `<root>/.spec/state.json` with the given realization entries.
+  Seeds `<root>/.spec/realization_hashes.json` with the given realization
+  entries.
 
   `entries` is a `%{tier => %{key => hash_bin}}` map; raw binary hashes are
   hex-encoded and stamped with the current hasher version before being
-  written. Existing top-level keys in state.json (sections other than
-  `"realization"`) are preserved; the `"realization"` section is replaced
-  by the encoded form of `entries`.
+  written. The baseline file is replaced by the encoded form of `entries`.
 
-  Pass `%{}` to materialize an empty `"realization"` section (useful for
+  Pass `%{}` to materialize an empty baseline file (useful for
   cold-but-present-file trajectories).
 
   Returns `:ok`.
@@ -114,11 +112,11 @@ defmodule SpecLedEx.StateJsonFixture do
   end
 
   @doc """
-  Reads the realization section of `<root>/.spec/state.json`.
+  Reads the committed baseline for `root`.
 
   Returns the same shape `HashStore.read/1` returns — a tier → key → entry
   map where each entry is `%{"hash" => hex, "hasher_version" => int}`. When
-  state.json is missing or malformed, returns `%{}`.
+  the baseline is missing or malformed, returns `%{}`.
   """
   @spec read(Path.t()) :: stored_map()
   def read(root) when is_binary(root) do
@@ -126,8 +124,8 @@ defmodule SpecLedEx.StateJsonFixture do
   end
 
   @doc """
-  Asserts that `<root>/.spec/state.json` contains an entry for `tier` and
-  `key`.
+  Asserts that `root`'s committed baseline contains an entry for `tier`
+  and `key`.
 
   Returns the stored entry map (`%{"hash" => hex, "hasher_version" => int}`)
   on success. Raises `ExUnit.AssertionError` with a helpful message when
@@ -148,7 +146,7 @@ defmodule SpecLedEx.StateJsonFixture do
           :error ->
             raise ExUnit.AssertionError,
               message:
-                "expected state.json tier #{inspect(tier)} to contain entry " <>
+                "expected baseline tier #{inspect(tier)} to contain entry " <>
                   "#{inspect(key)}, but tier has only: " <>
                   inspect(Map.keys(tier_entries))
         end
@@ -156,10 +154,10 @@ defmodule SpecLedEx.StateJsonFixture do
       :error ->
         raise ExUnit.AssertionError,
           message:
-            "expected state.json to contain tier #{inspect(tier)}, " <>
-              "but state has only tiers: " <>
+            "expected the baseline to contain tier #{inspect(tier)}, " <>
+              "but it has only tiers: " <>
               inspect(Map.keys(realization)) <>
-              " (state.json path: " <> Path.join(root, @state_rel) <> ")"
+              " (baseline path: " <> Path.join(root, HashStore.baseline_rel()) <> ")"
     end
   end
 

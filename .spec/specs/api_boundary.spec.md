@@ -111,7 +111,7 @@ decisions:
 - id: specled.api_boundary.scenario.refactor_whitespace_stable
   given:
     - "a subject with binding `realized_by.api_boundary: [\"Foo.bar/1\"]`"
-    - a committed hash in `.spec/state.json` for that MFA
+    - a committed hash in `.spec/realization_hashes.json` for that MFA
     - a change that adds whitespace to the function body but not the arity or arg pattern
   when:
     - mix spec.check runs on the branch

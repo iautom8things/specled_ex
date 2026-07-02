@@ -13,17 +13,20 @@ kind: workflow
 status: active
 summary: Builds the authored index and writes canonical derived state for the workspace.
 surface:
+  - lib/specled_ex.ex
   - lib/specled_ex/index.ex
   - lib/specled_ex/json.ex
 realized_by:
   implementation:
     - "SpecLedEx.Index.build/2"
+    - "SpecLedEx.write_state/4"
     - "SpecLedEx.Json.write!/2"
     - "SpecLedEx.Json.encode_to_iodata!/1"
 decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.explicit_subject_ownership
   - specled.decision.configurable_test_tag_enforcement
+  - specled.decision.dedicated_realization_baseline
 ```
 
 ## Requirements
@@ -41,6 +44,25 @@ decisions:
   statement: JSON state helpers shall return an empty map for missing or invalid files, create parent directories on write, and skip rewriting identical canonical bytes.
   priority: must
   stability: stable
+- id: specled.index.state_fully_derived
+  statement: >-
+    `.spec/state.json` shall be freely regenerable derived state: state
+    writing shall not persist a realization baseline into state.json,
+    and regenerating state.json shall not alter the committed
+    `.spec/realization_hashes.json` baseline. Consumers may gitignore or
+    regenerate state.json without defeating realization drift detection.
+  priority: must
+  stability: evolving
+- id: specled.index.legacy_baseline_hoist
+  statement: >-
+    When the canonical `.spec/state.json` still carries a legacy embedded
+    `realization` section and `.spec/realization_hashes.json` is absent,
+    state writing shall hoist the embedded section into the dedicated
+    baseline file before regenerating state.json, so the committed hashes
+    survive the regeneration instead of being silently re-seeded from the
+    current tree.
+  priority: must
+  stability: evolving
 - id: specled.index.tag_data_conditional
   statement: Index building shall only scan test tags when enabled by configuration or caller options, and shall store the resulting tag map, parse errors, and effective tag configuration on the index under dedicated keys (`test_tags`, `test_tags_errors`, `test_tags_config`).
   priority: must
@@ -74,6 +96,36 @@ decisions:
     - the index has `test_tags`, `test_tags_errors`, and `test_tags_config` absent or nil
   covers:
     - specled.index.tag_data_absent_when_disabled
+- id: specled.index.scenario.regen_preserves_baseline
+  given:
+    - "a committed `.spec/realization_hashes.json` baseline"
+  when:
+    - write_state/4 regenerates `.spec/state.json`
+  then:
+    - the baseline file's bytes are unchanged
+    - the regenerated state.json carries no `realization` key
+  covers:
+    - specled.index.state_fully_derived
+- id: specled.index.scenario.conflict_ritual_preserves_baseline
+  given:
+    - "a committed `.spec/realization_hashes.json` baseline"
+    - "a `.spec/state.json` discarded during a merge-conflict resolution (take either side)"
+  when:
+    - state.json is regenerated
+  then:
+    - HashStore.read/1 still returns the committed baseline (it is preserved, not recomputed)
+  covers: []
+- id: specled.index.scenario.legacy_hoist_on_regen
+  given:
+    - "a `.spec/state.json` carrying a legacy embedded `realization` section"
+    - "no `.spec/realization_hashes.json`"
+  when:
+    - write_state/4 regenerates `.spec/state.json`
+  then:
+    - "`.spec/realization_hashes.json` is created carrying the embedded hashes unchanged"
+    - the regenerated state.json carries no `realization` key
+  covers:
+    - specled.index.legacy_baseline_hoist
 ```
 
 ## Verification
@@ -90,4 +142,9 @@ decisions:
   covers:
     - specled.index.tag_data_conditional
     - specled.index.tag_data_absent_when_disabled
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.index.state_fully_derived
+    - specled.index.legacy_baseline_hoist
 ```

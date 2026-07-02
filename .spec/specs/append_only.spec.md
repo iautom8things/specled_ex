@@ -8,7 +8,10 @@ across a Git base..HEAD diff.
 Enforce that committed spec content cannot be silently weakened or deleted without
 an authorizing ADR. The canonical baseline is the prior `state.json` retrieved via
 `git show <base>:.spec/state.json`; detection is a pure function over two normalized
-state payloads plus the head-side decision list.
+state payloads plus the head-side decision list. The realization-hash baseline is
+out of append-only's scope: it lives in `.spec/realization_hashes.json` (not in
+state.json), and `SpecLedEx.write_state/4` hoists a legacy embedded `realization`
+section into that file before regenerating state.json.
 
 ```yaml spec-meta
 id: specled.append_only

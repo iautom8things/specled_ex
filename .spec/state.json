@@ -128,6 +128,22 @@
       },
       {
         "affects": [
+          "specled.binding",
+          "specled.index_state",
+          "specled.realized_by",
+          "specled.api_boundary",
+          "specled.append_only",
+          "specled.policy_files"
+        ],
+        "change_type": "refines",
+        "date": "2026-07-02",
+        "file": ".spec/decisions/specled.decision.dedicated_realization_baseline.md",
+        "id": "specled.decision.dedicated_realization_baseline",
+        "status": "accepted",
+        "title": "Committed Realization Baseline Lives In `.spec/realization_hashes.json`, Not `state.json`"
+      },
+      {
+        "affects": [
           "specled.mix_tasks"
         ],
         "change_type": "clarifies",
@@ -701,7 +717,23 @@
         "id": "specled.binding.hash_store_atomic",
         "priority": "must",
         "stability": "evolving",
-        "statement": "SpecLedEx.Realization.HashStore.write/2 shall write `.spec/state.json` atomically via `.tmp` + fsync + rename. A crash mid-write shall leave the previous committed state intact — partial writes are not a reachable state.",
+        "statement": "SpecLedEx.Realization.HashStore.write/2 shall write `.spec/realization_hashes.json` atomically via `.tmp` + fsync + rename. A crash mid-write shall leave the previous committed state intact — partial writes are not a reachable state.",
+        "subject_id": "specled.binding"
+      },
+      {
+        "file": ".spec/specs/binding.spec.md",
+        "id": "specled.binding.hash_store_dedicated_file",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "The committed realization baseline shall live in the dedicated committed file `.spec/realization_hashes.json` whose top level is the tier → binding-key → entry map, serialized with recursively sorted keys so identical content yields identical bytes and diffs read as subject-level realization changes. HashStore shall not persist the baseline inside `.spec/state.json`.",
+        "subject_id": "specled.binding"
+      },
+      {
+        "file": ".spec/specs/binding.spec.md",
+        "id": "specled.binding.hash_store_legacy_fallback",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "When `.spec/realization_hashes.json` is absent, HashStore.read/2 shall fall back to the `realization` key of an existing `.spec/state.json` (the legacy embedded location), and HashStore.merge/2 shall read its existing baseline through the same fallback so a legacy embedded baseline is migrated into the dedicated file rather than dropped. Once the dedicated file exists it is authoritative: an embedded `realization` section in state.json is ignored.",
         "subject_id": "specled.binding"
       },
       {
@@ -1342,6 +1374,22 @@
         "priority": "must",
         "stability": "stable",
         "statement": "JSON state helpers shall return an empty map for missing or invalid files, create parent directories on write, and skip rewriting identical canonical bytes.",
+        "subject_id": "specled.index_state"
+      },
+      {
+        "file": ".spec/specs/index_state.spec.md",
+        "id": "specled.index.legacy_baseline_hoist",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "When the canonical `.spec/state.json` still carries a legacy embedded `realization` section and `.spec/realization_hashes.json` is absent, state writing shall hoist the embedded section into the dedicated baseline file before regenerating state.json, so the committed hashes survive the regeneration instead of being silently re-seeded from the current tree.",
+        "subject_id": "specled.index_state"
+      },
+      {
+        "file": ".spec/specs/index_state.spec.md",
+        "id": "specled.index.state_fully_derived",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "`.spec/state.json` shall be freely regenerable derived state: state writing shall not persist a realization baseline into state.json, and regenerating state.json shall not alter the committed `.spec/realization_hashes.json` baseline. Consumers may gitignore or regenerate state.json without defeating realization drift detection.",
         "subject_id": "specled.index_state"
       },
       {
@@ -2133,7 +2181,7 @@
         "id": "specled.realized_by.silent_seed",
         "priority": "must",
         "stability": "evolving",
-        "statement": "On `mix spec.check`, when a tracked entry (MFA or bare module, in any flat tier or implementation tier) has no committed hash in `.spec/state.json`, the orchestrator shall compute the entry's hash, persist it via `SpecLedEx.Realization.HashStore.merge/2`, and emit no drift finding for that entry on the seeding run. The seeding pass shall run before tier dispatch and shall be gated by the same `commit_hashes? != false` and `umbrella? == false` conditions that gate `refresh_and_commit_hashes/3`. Dangling entries shall not be seeded.",
+        "statement": "On `mix spec.check`, when a tracked entry (MFA or bare module, in any flat tier or implementation tier) has no committed hash in `.spec/realization_hashes.json`, the orchestrator shall compute the entry's hash, persist it via `SpecLedEx.Realization.HashStore.merge/2`, and emit no drift finding for that entry on the seeding run. The seeding pass shall run before tier dispatch and shall be gated by the same `commit_hashes? != false` and `umbrella? == false` conditions that gate `refresh_and_commit_hashes/3`. Dangling entries shall not be seeded.",
         "subject_id": "specled.realized_by"
       },
       {
@@ -2885,7 +2933,7 @@
         "file": ".spec/specs/api_boundary.spec.md",
         "given": [
           "a subject with binding `realized_by.api_boundary: [\"Foo.bar/1\"]`",
-          "a committed hash in `.spec/state.json` for that MFA",
+          "a committed hash in `.spec/realization_hashes.json` for that MFA",
           "a change that adds whitespace to the function body but not the arity or arg pattern"
         ],
         "id": "specled.api_boundary.scenario.refactor_whitespace_stable",
@@ -3193,17 +3241,36 @@
         ],
         "file": ".spec/specs/binding.spec.md",
         "given": [
-          "an existing `.spec/state.json` with committed entries",
+          "an existing `.spec/realization_hashes.json` with committed entries",
           "a simulated crash between `.tmp` write and rename (rename is skipped)"
         ],
         "id": "specled.binding.scenario.atomic_write_survives_crash",
         "subject_id": "specled.binding",
         "then": [
           "the previous committed state is returned intact",
-          "no partial `.spec/state.json` is observed"
+          "no partial `.spec/realization_hashes.json` is observed"
         ],
         "when": [
           "HashStore.read/1 is called after the crash"
+        ]
+      },
+      {
+        "covers": [
+          "specled.binding.hash_store_dedicated_file"
+        ],
+        "file": ".spec/specs/binding.spec.md",
+        "given": [
+          "a realization map written via HashStore.write/2"
+        ],
+        "id": "specled.binding.scenario.baseline_round_trip_dedicated_file",
+        "subject_id": "specled.binding",
+        "then": [
+          "the hashes load from `.spec/realization_hashes.json` and round-trip intact",
+          "`.spec/state.json` is not created or modified by the write",
+          "writing the same content twice yields byte-identical file contents with sorted keys"
+        ],
+        "when": [
+          "HashStore.read/1 is called"
         ]
       },
       {
@@ -3266,7 +3333,7 @@
         ],
         "file": ".spec/specs/binding.spec.md",
         "given": [
-          "a state.json with entries tagged hasher_version: 1",
+          "a realization_hashes.json with entries tagged hasher_version: 1",
           "the module attribute bumped to hasher_version: 2 at compile time"
         ],
         "id": "specled.binding.scenario.hasher_bump_silent_rehash",
@@ -3275,6 +3342,24 @@
           "entries are rehashed internally and written back at version 2",
           "no `realization_hasher_version_mismatch` finding is emitted",
           "a debug log names the rehash"
+        ],
+        "when": [
+          "HashStore.read/1 is called"
+        ]
+      },
+      {
+        "covers": [
+          "specled.binding.hash_store_legacy_fallback"
+        ],
+        "file": ".spec/specs/binding.spec.md",
+        "given": [
+          "no `.spec/realization_hashes.json`",
+          "a `.spec/state.json` carrying a legacy embedded `realization` section"
+        ],
+        "id": "specled.binding.scenario.legacy_state_json_fallback",
+        "subject_id": "specled.binding",
+        "then": [
+          "the legacy embedded hashes are returned"
         ],
         "when": [
           "HashStore.read/1 is called"
@@ -3295,6 +3380,23 @@
         ],
         "when": [
           "`SpecLedEx.Realization.Binding.locate_source/2` is called with `MyMod` and `nil` context"
+        ]
+      },
+      {
+        "covers": [],
+        "file": ".spec/specs/binding.spec.md",
+        "given": [
+          "no `.spec/realization_hashes.json`",
+          "a `.spec/state.json` carrying a legacy embedded `realization` section"
+        ],
+        "id": "specled.binding.scenario.merge_migrates_legacy_baseline",
+        "subject_id": "specled.binding",
+        "then": [
+          "`.spec/realization_hashes.json` is created containing both the legacy entries and the seeds",
+          "the legacy hashes keep their committed values (they are migrated, not recomputed)"
+        ],
+        "when": [
+          "HashStore.merge/2 is called with new seed entries"
         ]
       },
       {
@@ -4082,6 +4184,59 @@
         ]
       },
       {
+        "covers": [],
+        "file": ".spec/specs/index_state.spec.md",
+        "given": [
+          "a committed `.spec/realization_hashes.json` baseline",
+          "a `.spec/state.json` discarded during a merge-conflict resolution (take either side)"
+        ],
+        "id": "specled.index.scenario.conflict_ritual_preserves_baseline",
+        "subject_id": "specled.index_state",
+        "then": [
+          "HashStore.read/1 still returns the committed baseline (it is preserved, not recomputed)"
+        ],
+        "when": [
+          "state.json is regenerated"
+        ]
+      },
+      {
+        "covers": [
+          "specled.index.legacy_baseline_hoist"
+        ],
+        "file": ".spec/specs/index_state.spec.md",
+        "given": [
+          "a `.spec/state.json` carrying a legacy embedded `realization` section",
+          "no `.spec/realization_hashes.json`"
+        ],
+        "id": "specled.index.scenario.legacy_hoist_on_regen",
+        "subject_id": "specled.index_state",
+        "then": [
+          "`.spec/realization_hashes.json` is created carrying the embedded hashes unchanged",
+          "the regenerated state.json carries no `realization` key"
+        ],
+        "when": [
+          "write_state/4 regenerates `.spec/state.json`"
+        ]
+      },
+      {
+        "covers": [
+          "specled.index.state_fully_derived"
+        ],
+        "file": ".spec/specs/index_state.spec.md",
+        "given": [
+          "a committed `.spec/realization_hashes.json` baseline"
+        ],
+        "id": "specled.index.scenario.regen_preserves_baseline",
+        "subject_id": "specled.index_state",
+        "then": [
+          "the baseline file's bytes are unchanged",
+          "the regenerated state.json carries no `realization` key"
+        ],
+        "when": [
+          "write_state/4 regenerates `.spec/state.json`"
+        ]
+      },
+      {
         "covers": [
           "specled.index.tag_data_absent_when_disabled"
         ],
@@ -4726,7 +4881,7 @@
         "file": ".spec/specs/realized_by.spec.md",
         "given": [
           "a subject lists `\"SpecLedEx.Coverage\"` (bare module) under `realized_by.implementation`",
-          "no committed hash for `SpecLedEx.Coverage` exists in `.spec/state.json` for either tier"
+          "no committed hash for `SpecLedEx.Coverage` exists in `.spec/realization_hashes.json` for either tier"
         ],
         "id": "specled.realized_by.scenario.bare_module_first_run_silent_seed",
         "subject_id": "specled.realized_by",
@@ -4845,7 +5000,7 @@
         "file": ".spec/specs/realized_by.spec.md",
         "given": [
           "a subject whose spec lists `Foo.bar/1` only under `realized_by.implementation`",
-          "a hash for `Foo.bar/1` already committed in `.spec/state.json` for both `api_boundary` and `implementation`"
+          "a hash for `Foo.bar/1` already committed in `.spec/realization_hashes.json` for both `api_boundary` and `implementation`"
         ],
         "id": "specled.realized_by.scenario.implication_drift_both_tiers",
         "subject_id": "specled.realized_by",
@@ -5602,7 +5757,7 @@
         ],
         "file": ".spec/specs/use_tier.spec.md",
         "given": [
-          "a Provider with two committed consumers C1, C2 in state.json's use-tier record",
+          "a Provider with two committed consumers C1, C2 in the committed use-tier record",
           "a branch that adds a new consumer C3"
         ],
         "id": "specled.use_tier.scenario.consumers_current_not_persisted",
@@ -5968,7 +6123,8 @@
           "decisions": [
             "specled.decision.beam_first_binding_resolution",
             "specled.decision.deterministic_hashing",
-            "specled.decision.file_touch_yields_to_realization"
+            "specled.decision.file_touch_yields_to_realization",
+            "specled.decision.dedicated_realization_baseline"
           ],
           "id": "specled.binding",
           "kind": "module",
@@ -5989,7 +6145,9 @@
             "lib/specled_ex/realization/hash_store.ex",
             "test/specled_ex/realization/binding_test.exs",
             "test/specled_ex/realization/canonical_test.exs",
-            "test/specled_ex/realization/hash_store_test.exs"
+            "test/specled_ex/realization/hash_store_test.exs",
+            "test/specled_ex/state_json_fixture_test.exs",
+            "test/test_support/state_json_fixture.ex"
           ],
           "verification_minimum_strength": null
         },
@@ -6319,13 +6477,15 @@
           "decisions": [
             "specled.decision.declarative_current_truth",
             "specled.decision.explicit_subject_ownership",
-            "specled.decision.configurable_test_tag_enforcement"
+            "specled.decision.configurable_test_tag_enforcement",
+            "specled.decision.dedicated_realization_baseline"
           ],
           "id": "specled.index_state",
           "kind": "workflow",
           "realized_by": {
             "implementation": [
               "SpecLedEx.Index.build/2",
+              "SpecLedEx.write_state/4",
               "SpecLedEx.Json.write!/2",
               "SpecLedEx.Json.encode_to_iodata!/1"
             ]
@@ -6333,6 +6493,7 @@
           "status": "active",
           "summary": "Builds the authored index and writes canonical derived state for the workspace.",
           "surface": [
+            "lib/specled_ex.ex",
             "lib/specled_ex/index.ex",
             "lib/specled_ex/json.ex"
           ],
@@ -7141,6 +7302,17 @@
       },
       {
         "covers": [
+          "specled.binding.hash_store_dedicated_file",
+          "specled.binding.hash_store_legacy_fallback"
+        ],
+        "execute": true,
+        "file": ".spec/specs/binding.spec.md",
+        "kind": "tagged_tests",
+        "subject_id": "specled.binding",
+        "target": ""
+      },
+      {
+        "covers": [
           "specled.binding.hasher_version_internal"
         ],
         "execute": true,
@@ -7502,6 +7674,17 @@
         "covers": [
           "specled.index.tag_data_conditional",
           "specled.index.tag_data_absent_when_disabled"
+        ],
+        "execute": true,
+        "file": ".spec/specs/index_state.spec.md",
+        "kind": "tagged_tests",
+        "subject_id": "specled.index_state",
+        "target": ""
+      },
+      {
+        "covers": [
+          "specled.index.state_fully_derived",
+          "specled.index.legacy_baseline_hoist"
         ],
         "execute": true,
         "file": ".spec/specs/index_state.spec.md",
@@ -8176,516 +8359,16 @@
       }
     ]
   },
-  "realization": {
-    "api_boundary": {
-      "SpecLedEx.Validator.RealizedByDedupe.duplicates/1": {
-        "hash": "522c22956783ca372be72666b4ddf9aa2b853beb1757f6527b49e50defe3001e",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.Implementation.hash_for_subject/3": {
-        "hash": "e594ca56001035b51163800aeb7984da45e2c714c265b661d17f4e55d8afdc8c",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Overlap.analyze/2": {
-        "hash": "216a46b1f9e63e8ae5ffbea1cd824b796744a8471ce10f6112eaaa703bb20005",
-        "hasher_version": 1
-      },
-      "SpecLedEx.verify/3": {
-        "hash": "60d51f65e071190cfc5d991d6228bef9622894d84abb098afbf6316197116cf5",
-        "hasher_version": 1
-      },
-      "SpecLedEx.ChangeAnalysis.analyze/3": {
-        "hash": "82a11f36dbf7d15fe5b3b42cb805a1e1dae45e6d9f0b8be7a5e944db25707d8e",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Prime.format_human/1": {
-        "hash": "10a70b5a1361e0f5d32064408caff6f59a1df5f273cf2643eb78824f0891554c",
-        "hasher_version": 1
-      },
-      "SpecLedEx.TagScanner.collect_moduletags/2": {
-        "hash": "c9bdf19ee92d4eed506f87a2bec84c98c3fe8866ac14d23f55a4b1c30ec0f7c3",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Compiler.Manifest.load/1": {
-        "hash": "ca79a7f675a710f7f24580b87a96563f3e0d443f0d960ae9dee000ecf5421a60",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Coverage.default_artifact_path/0": {
-        "hash": "3d3e62d00fd461b4d26859e968056caa1963a392f83ecae6c540823f3f1b27a1",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.Typespecs.run/3": {
-        "hash": "5aa09417ee10b1d22f9d0284babdf2d209c06db59f02d903f5c747d5f02e1244",
-        "hasher_version": 1
-      },
-      "SpecLedEx.PolicyFiles.co_change_rule/1": {
-        "hash": "a6930df144e9ae907b405c1788365e956e2832a9b901090733a3d190590c6e9c",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.EffectiveBinding.for_requirement/2": {
-        "hash": "ead0de431cdc01fbcb9b92cd38bde428d91f0f358cb2e55af7e8f71eb6b6b359",
-        "hasher_version": 1
-      },
-      "SpecLedEx.DecisionParser.parse_file/4": {
-        "hash": "d43add190cd91dd47bc08aa113581b6ea59da8e5c7c6e24d08834e660cac8fe0",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Coverage.init/2": {
-        "hash": "e36bd35f1b2ba583a25ad57b519f45e5e320dc889f9192c84ec8271d34019fb6",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Compiler.Tracer.manifest_path/1": {
-        "hash": "4a61c9b73eb4a2790df25a7253c2d8461d9a2bb31e9ba0721bb14bf995c7b949",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Prime.build/4": {
-        "hash": "4aeb5f587ebf557fb7bd821ce0993d36132f0feb549b684dc4ea17df5ad1c800",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.Typespecs.hash/2": {
-        "hash": "fd3df1df5961b3e4799d0978f92c838f71f836cd40d2f0e7cd7694d8349403b8",
-        "hasher_version": 1
-      },
-      "SpecLedEx.ModalClass.downgrade?/2": {
-        "hash": "d38c5112b5e9a18fe09beb37f482df2a1a9182c810baa0d0984c4338d0011d75",
-        "hasher_version": 1
-      },
-      "Mix.Tasks.Spec.DedupRealizedBy.run/1": {
-        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.ApiBoundary.run/1": {
-        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-        "hasher_version": 1
-      },
-      "SpecLedEx.detect_authored_dir/2": {
-        "hash": "661ba84ffb4085ed05eb4f005751657e4b200d62d76a0c80d0efa2be02c71c08",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Schema.RealizedBy.validate/1": {
-        "hash": "d71abeb2263360332d4fba5534095760adfbb6d447a44b327d000446c2820d25",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Config.load/2": {
-        "hash": "df0c26931fc8ecb913709a9a1cd0c988b0d2e0a8b8691fd99180852168bcc6b3",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.Drift.dedupe/2": {
-        "hash": "6385d0df7ba2970ffbdc141f6e1b532b21e7198db099322256e2c67d6fe1ca26",
-        "hasher_version": 1
-      },
-      "SpecLedEx.BranchCheck.Severity.sanitized/3": {
-        "hash": "4b50e3616d87752b446bd06da484d5ca4f6daea2e89b3dc9bf335382d04dcc7c",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Config.defaults/0": {
-        "hash": "0a42bb538f416784220e75e793092b92f39aeb44f7f358d08db20ea4c9a733e8",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.Use.consumers_for/2": {
-        "hash": "b4534baf20a0063761cd7deffa74e2e84bfacb59a7b61717c3de99dee41e4471",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Config.parse_enforcement/2": {
-        "hash": "7d219f6893e20fefdd5bf80ab841782be04b5d7dba1cca6a458b5ad4c2772a76",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Schema.maybe_normalize_realized_by/2": {
-        "hash": "82301779261115891b5fec19c79be29884f9a1a8c7fd2459c11b57179085162e",
-        "hasher_version": 1
-      },
-      "Mix.Tasks.Spec.Decision.New.run/1": {
-        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-        "hasher_version": 1
-      },
-      "SpecLedEx.BranchCheck.run/3": {
-        "hash": "5aa09417ee10b1d22f9d0284babdf2d209c06db59f02d903f5c747d5f02e1244",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Config.Realization.parse/1": {
-        "hash": "a7a2d910b475b0a1565c1a6599505b4eb4ca5f41c166b46bb711c7d15afdaa3b",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Index.build/2": {
-        "hash": "d4071cf59d347d9e55af730403c8cb464f503ab845c4304bb2bc5d2213bf6edf",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.HashStore.merge/2": {
-        "hash": "ff170595a7a9870b197aa78ba381c7de0f85620e7fd5563e4e7ee436ccb7df83",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Schema.normalize_realized_by/1": {
-        "hash": "77017009806bef7b29a4aa0a0bac1a55ed16a7edb04472a1dc178bcdc3a79a4b",
-        "hasher_version": 1
-      },
-      "Mix.Tasks.Spec.Status.run/1": {
-        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Compiler.Tracer.trace/2": {
-        "hash": "3f24116dc67314bc72a107f7385cfbccade37abcf085b6ff4bab118ab1648cac",
-        "hasher_version": 1
-      },
-      "SpecLedEx.MixRuntime.ensure_started!/0": {
-        "hash": "0b609d434874220269ab12c19d0100930ea45c48ce603486ba64d3cae24c2203",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.Canonical.hash_module_head_union/2": {
-        "hash": "7c1ae5a3027132f6a7a2f249b5e49094133be2c7d29a7dad4c5d6f18a8d0c158",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.Canonical.normalize/1": {
-        "hash": "e4fe248c3e6e5949a952e5772478f627cae144266799844ab30bd06a056d48d3",
-        "hasher_version": 1
-      },
-      "SpecLedEx.VerificationStrength.levels/0": {
-        "hash": "de58aa0d91133e352eb2622fb698613f3cd7ebbc709099abda549c18eeebcc6d",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Coverage.subject_id/1": {
-        "hash": "2c7b1f35af4b91a8088719fbc6879275c83be7c8e42194c45d621288213ed436",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Config.Prose.findings/3": {
-        "hash": "99ec86337dd712ac86ddfa52f3cb456b4b9cb06964081ff6157d7e3c83562cda",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Config.parse/1": {
-        "hash": "6b46bf247915736b8758adfce4f63eca6532882ba72ef6d30f70ca0b83a07354",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.Closure.subject_for_mfa/2": {
-        "hash": "efbd883a914ac811edabcdd024f816caa80183e3b86097c86bd7a0b3301e28cb",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Coverage.Store.write/2": {
-        "hash": "61f7ef5859a691380eb601acd5e4fdfbaf3540339604bd9a1594c14c83e9c161",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Status.format_human/1": {
-        "hash": "10a70b5a1361e0f5d32064408caff6f59a1df5f273cf2643eb78824f0891554c",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Coverage.install/1": {
-        "hash": "9ba7d32a6bb73c09f79f89788bda80f1cd46c8e62863f7ad1b802b3d896368dd",
-        "hasher_version": 1
-      },
-      "SpecLedEx.VerificationStrength.meets_minimum?/2": {
-        "hash": "052171a817952c65ee879423363d609160540cf0fb827c56051719999139bf5c",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Coverage.Store.build_records/1": {
-        "hash": "32341d6f1673bf43a9ac66d62f4598e9e34a7f41a511fc97c7129ef4b49a044e",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.ApiBoundary.hash/2": {
-        "hash": "ffa599d793833673fef3531fe516f6ffaec6044f0a9894b95f073b9eeac15b43",
-        "hasher_version": 1
-      },
-      "Mix.Tasks.Spec.Validate.run/1": {
-        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.HashStore.read/2": {
-        "hash": "0860e21ba66d705b5ee76e70a943bad389fe961fb96a0125fdb9d38315d43063",
-        "hasher_version": 1
-      },
-      "SpecLedEx.DecisionParser.CrossField.validate/3": {
-        "hash": "3b7a8899bdf3a75c7b86b549cba511af77e2c39b37f67be3f051e63dea82a847",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.ExpandedBehavior.hash/2": {
-        "hash": "97bdef5d0536895edfe526d7c735ca6f7cefaa5d30c13b54883568a5df2d6001",
-        "hasher_version": 1
-      },
-      "Mix.Tasks.Spec.Index.run/1": {
-        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-        "hasher_version": 1
-      },
-      "Mix.Tasks.Spec.Check.run/1": {
-        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Parser.parse_file/2": {
-        "hash": "1a5e894be452e4e383344f93a0d338d2778c3a5a658a8a72c7a23b835a6f3e71",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.Orchestrator.run/2": {
-        "hash": "0415833469a3291ed32d881c72e4e2313551bd4783e4d4fce229932282c198a5",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Next.run/3": {
-        "hash": "5aa09417ee10b1d22f9d0284babdf2d209c06db59f02d903f5c747d5f02e1244",
-        "hasher_version": 1
-      },
-      "SpecLedEx.BranchCheck.Trailer.parse/1": {
-        "hash": "35ec72f7a25ea78158da38b5c5e8572407f28340c57be39c41a7fd610c8163e1",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Config.Prose.parse/1": {
-        "hash": "edcf9ef26aafd3cdf6e6e7a723aa181dda2cc6c45cd45c6d4c0441f11d576071",
-        "hasher_version": 1
-      },
-      "SpecLedEx.write_state/4": {
-        "hash": "fe41f8e8500a85a24a2905211db8fd68b0d242beae1fd47b58efa057a6d23778",
-        "hasher_version": 1
-      },
-      "Mix.Tasks.Spec.Triangle.run/1": {
-        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-        "hasher_version": 1
-      },
-      "SpecLedEx.build_index/2": {
-        "hash": "0ea09307db0e7de0dd467659435b4f121e5beae3d97ba3ea66466739c6d08ed9",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Validator.RealizedByDedupCheck.findings/2": {
-        "hash": "c70c91491887cca3ac646d1c7046530d943f964aa64e03e55fa7eebaab0342c5",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Json.write!/2": {
-        "hash": "fb2dd5d43d487f13094124598a9133c111658e4aea96143d1cc5f4836cf1cc6b",
-        "hasher_version": 1
-      },
-      "SpecLedEx.TagFindings.findings/1": {
-        "hash": "e400d7fe15f919ba37000988337d319cd52e35ab69bd27f2173f83eb285d37e3",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Coverage.subject_file_map/2": {
-        "hash": "7ec955535b921da5e209e7f5a5cc3b0213350331eaa36f885164aae7ce558188",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Coverage.Formatter.init/1": {
-        "hash": "d57f6ca9e4acd4a81e89d081d307b5a06fd530a1e3f5a22781c4651dfa0d288d",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Coverage.covered_files/2": {
-        "hash": "c3292795b666c95fa072ce587c8835b3980fa1a834cfc28f70bef51e0fa80916",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Coverage.category_summary/3": {
-        "hash": "cf9f629eafb1a0fd47620dde3c3b7500c674235f300dc2ae486794ab2109a2e7",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.HashStore.write/2": {
-        "hash": "014d4a1e3ecd5bd24058daf2a90992399fcb31c4da20524e6f8b5fbd28c04196",
-        "hasher_version": 1
-      },
-      "SpecLedEx.VerificationStrength.normalize/1": {
-        "hash": "8aaed212feb5f43dd88430d1fdbb12ce323c2a3e7bd64fd8050054626820373b",
-        "hasher_version": 1
-      },
-      "SpecLedEx.CoverageTriangulation.findings/3": {
-        "hash": "566d346c902806260be68dfe941027afff11eb2732c240cfab8dcf387148320a",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.ExpandedBehavior.run/3": {
-        "hash": "5aa09417ee10b1d22f9d0284babdf2d209c06db59f02d903f5c747d5f02e1244",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Status.build/3": {
-        "hash": "a7d4cbab1a681545553404ff010aadec72828e609e9a66d1486fce0ff27fb123",
-        "hasher_version": 1
-      },
-      "SpecLedEx.VerificationStrength.default/0": {
-        "hash": "d870f954e5d01ad2b9f000b813395bdb4ba277a0120832579779589c7f44a2c2",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Compiler.Xref.load/1": {
-        "hash": "4a490e1e53c68b68ebe1fc46f808aff79d2e76af62e2facf1a7ddd9175f5d175",
-        "hasher_version": 1
-      },
-      "SpecLedEx.BranchCheck.Severity.resolve/3": {
-        "hash": "7bd15e87e0ccbe24876ed4cc1fd4c0c6ab46389322827af1ff21deed5ae76429",
-        "hasher_version": 1
-      },
-      "SpecLedEx.TagScanner.scan/2": {
-        "hash": "8c1c0ebb14dd9aed30db5382d138b33d836316ce9dc433aaf463c38fa0999954",
-        "hasher_version": 1
-      },
-      "SpecLedEx.ModalClass.classify/1": {
-        "hash": "451877f40d0574e65c96ccdc9bed3d0a936d4d7b7dfc73a79df291fbf1eabf0a",
-        "hasher_version": 1
-      },
-      "SpecLedEx.report/3": {
-        "hash": "ddf5258e24f3b8e5ad08c516b92087aa49a39f5e7222cd2e65ed2551ccbfe567",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.EffectiveBinding.expand_implications/1": {
-        "hash": "ab6f9b1cec3d9f845e6da135567b98734d6508d7484725c3879fbf1f90493524",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.Binding.resolve/2": {
-        "hash": "b6a0e906aef4ee6bd8b322f1223d4ebd2cbf6fff85e143480d7ec9bf950f1671",
-        "hasher_version": 1
-      },
-      "SpecLedEx.CoverageTriangulation.execution_reach_map/2": {
-        "hash": "10ce3e919b8fa6b89a45cddf859d7c965863a4dc1dd6cd91638db373b0551464",
-        "hasher_version": 1
-      },
-      "Mix.Tasks.Spec.Prime.run/1": {
-        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.Implementation.run/4": {
-        "hash": "32c2b226d07434d7ab3f979da1303f92fdc3f49fbe1852aeb19738185192faf5",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Config.Guardrails.parse/1": {
-        "hash": "d0525e89a838b29f778ca4f0323d32d0d0a165ffd2303450a79b1f95d7d63504",
-        "hasher_version": 1
-      },
-      "SpecLedEx.TagScanner.extract_module_tags/2": {
-        "hash": "d6b39d0484497d7f52e5af9d348af9d2f1f75aacba27fb945d25682823b1adae",
-        "hasher_version": 1
-      },
-      "SpecLedEx.detect_decision_dir/2": {
-        "hash": "974ab48228ce966515da6567cceaea6b035d522f999240c75decc19fbc168017",
-        "hasher_version": 1
-      },
-      "SpecLedEx.BranchCheck.Trailer.apply_token/2": {
-        "hash": "25c4ec447e729e21d4897952318a9edc3a165dafa0e2574bded1d9c564711423",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Coverage.cover_modules_safe/0": {
-        "hash": "cf8fe59a6dd33c91edae898ef14e3286d46b489a38a5e0e68aedddd2252371e2",
-        "hasher_version": 1
-      },
-      "SpecLedEx.BranchCheck.Trailer.read/2": {
-        "hash": "cdfb6c7b0f549ec15b654c5157a93681ac3b942a72273bea7f7243a21dc73ae4",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Coverage.Store.read/1": {
-        "hash": "5c0bd736fe4fa34421c62f225eef3ec095e3ee4bed53dda2219f58d0c614890e",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.Closure.compute/2": {
-        "hash": "1b121c5e3b9bab64d54363514f344e74e2adc6beec0bd21b759bef881092aac5",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Json.encode_to_iodata!/1": {
-        "hash": "65a445f18c74988b58dcc0a5403391a0d8c7ad95f10bfd085ed6f8a711e91645",
-        "hasher_version": 1
-      },
-      "SpecLedEx.TaggedTests.build_command/2": {
-        "hash": "f31f4b1f0f631fb108af3cd50b8224f60d24361386e3884311e54f69c26543e7",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Compiler.Tracer.ensure_table/0": {
-        "hash": "e3c8c92c2e210773905c121d33e28567a626056388002438ec364cc0a7ed8013",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Verifier.verify_decision/4": {
-        "hash": "6c4100ca5e81b50c45e1b5b8ea02b0392c29cef642d14e270e3e3c8747a5b347",
-        "hasher_version": 1
-      },
-      "SpecLedEx.AppendOnly.analyze/4": {
-        "hash": "1cc572802bf101238ac9ab62432c00a156f20dc63463256f9627d71a8539f013",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.Canonical.hash_module_full_union/2": {
-        "hash": "67a1ac2b435ada6ea091498fc4cd7e67c1fb6e25e436710689520eae0c46e677",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.Use.run/3": {
-        "hash": "5aa09417ee10b1d22f9d0284babdf2d209c06db59f02d903f5c747d5f02e1244",
-        "hasher_version": 1
-      },
-      "SpecLedEx.TagScanner.resolve_spec_value/1": {
-        "hash": "5ec30c6594d30245f7aed53aa9a095f1cee3c1c19906d30b7c3a9ab0683ee623",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Config.build/1": {
-        "hash": "0be5951d175fa59db44d4b8a00a7d71f1fb1dc423d98f0262940beb63a95e472",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.Use.hash/2": {
-        "hash": "5bf1d0248b617bcca6c19ccde76c9f66e83f6d52f08b50dd7a0b164f8da83d41",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Verifier.verify/3": {
-        "hash": "60d51f65e071190cfc5d991d6228bef9622894d84abb098afbf6316197116cf5",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Config.build_test_tags/1": {
-        "hash": "3ceb937d96f2ad0108ed2f99f83a0e6b1fb9de597d4ce677671462d478199ff4",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Compiler.Context.load/1": {
-        "hash": "4a490e1e53c68b68ebe1fc46f808aff79d2e76af62e2facf1a7ddd9175f5d175",
-        "hasher_version": 1
-      },
-      "SpecLedEx.BranchCheck.Trailer.apply_pair/2": {
-        "hash": "a1d5f0de52b2b170c93f398f802a4bcba2631b19834dc089bfa9ca3f59f1a79f",
-        "hasher_version": 1
-      },
-      "SpecLedEx.normalize_for_state/1": {
-        "hash": "3786668294c10d2e62cc95f83a9f25bb1c8e5b8bf4e45fe12f411837ac143c4c",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Schema.validate_block/2": {
-        "hash": "51035afab9d2de682f513d7a3c31562ffec89f6ce8685faebecb99e1b1621526",
-        "hasher_version": 1
-      },
-      "SpecLedEx.PolicyFiles.classify/1": {
-        "hash": "a8660ea66d0b40c3876b5925c29d8b3d57fcc2df9f484d59c05226e387c7bcea",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Realization.Canonical.hash/1": {
-        "hash": "7383119575f06e2e099e2a7f72d81d2edd4e0378a4c441f84fad56e50e65259b",
-        "hasher_version": 1
-      },
-      "SpecLedEx.TagScanner.extract_spec_from_arg/1": {
-        "hash": "6734a3ffbf609eff1ac8bc5cc9af2fef89dd68e2f9e58e9e6c90f715f39f64a1",
-        "hasher_version": 1
-      },
-      "Mix.Tasks.Spec.Cover.Test.run/1": {
-        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-        "hasher_version": 1
-      },
-      "Mix.Tasks.Spec.Init.run/1": {
-        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-        "hasher_version": 1
-      },
-      "Mix.Tasks.Spec.Next.run/1": {
-        "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-        "hasher_version": 1
-      },
-      "SpecLedEx.TaggedTests.collect_entries/1": {
-        "hash": "a3ee9cbffd41c4e0112f5a65606fc2bb1bfab7ee2dfe5852dfd06c9b466f11a6",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Compiler.Xref.parse/1": {
-        "hash": "84e7508ca24a05894feba8b980ee04579df2a991e9c2a401c34bc9d960c36e95",
-        "hasher_version": 1
-      },
-      "SpecLedEx.Compiler.Manifest.sources_for/2": {
-        "hash": "cf0bc3db1e0bbbdd80a88ceabf01f2c0ffc058813cd2062220e9acf662afa58e",
-        "hasher_version": 1
-      },
-      "SpecLedEx.detect_spec_dir/1": {
-        "hash": "68c33f54cf359a3e8f65528f132d66880cbdf898b0aa082b1a0721967caac129",
-        "hasher_version": 1
-      },
-      "SpecLedEx.next/3": {
-        "hash": "6f0e0294c600b041eb4a4a78735fc04647d60328452cfcb5dd360959e590be3d",
-        "hasher_version": 1
-      },
-      "SpecLedEx.TagScanner.scan_file/1": {
-        "hash": "79d39508c40083415cc0bf93fe802dff667156aad49b3e53be16d3eed0e33fe0",
-        "hasher_version": 1
-      }
-    }
-  },
   "specification_version": "1.0",
   "summary": {
     "decision_parse_errors": 0,
-    "decisions": 32,
+    "decisions": 33,
     "exceptions": 0,
     "findings": 0,
-    "requirements": 296,
-    "scenarios": 166,
+    "requirements": 300,
+    "scenarios": 172,
     "subjects": 33,
-    "verifications": 96
+    "verifications": 98
   },
   "verification": {
     "claims": [
@@ -9218,7 +8901,7 @@
         "verification_index": 2
       },
       {
-        "cover_id": "specled.binding.hasher_version_internal",
+        "cover_id": "specled.binding.hash_store_dedicated_file",
         "file": ".spec/specs/binding.spec.md",
         "kind": "tagged_tests",
         "meets_minimum": true,
@@ -9229,7 +8912,18 @@
         "verification_index": 3
       },
       {
-        "cover_id": "specled.binding.locate_source_public",
+        "cover_id": "specled.binding.hash_store_legacy_fallback",
+        "file": ".spec/specs/binding.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.binding",
+        "target": "",
+        "verification_index": 3
+      },
+      {
+        "cover_id": "specled.binding.hasher_version_internal",
         "file": ".spec/specs/binding.spec.md",
         "kind": "tagged_tests",
         "meets_minimum": true,
@@ -9238,6 +8932,17 @@
         "subject_id": "specled.binding",
         "target": "",
         "verification_index": 4
+      },
+      {
+        "cover_id": "specled.binding.locate_source_public",
+        "file": ".spec/specs/binding.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.binding",
+        "target": "",
+        "verification_index": 5
       },
       {
         "cover_id": "specled.binding.resolve_with_source_handles_use_generated",
@@ -9248,7 +8953,7 @@
         "strength": "executed",
         "subject_id": "specled.binding",
         "target": "",
-        "verification_index": 4
+        "verification_index": 5
       },
       {
         "cover_id": "specled.binding.resolve_with_source_returns_path",
@@ -9259,7 +8964,7 @@
         "strength": "executed",
         "subject_id": "specled.binding",
         "target": "",
-        "verification_index": 4
+        "verification_index": 5
       },
       {
         "cover_id": "specled.schema.block_structs",
@@ -10217,6 +9922,28 @@
         "subject_id": "specled.index_state",
         "target": "",
         "verification_index": 1
+      },
+      {
+        "cover_id": "specled.index.legacy_baseline_hoist",
+        "file": ".spec/specs/index_state.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.index_state",
+        "target": "",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.index.state_fully_derived",
+        "file": ".spec/specs/index_state.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.index_state",
+        "target": "",
+        "verification_index": 2
       },
       {
         "cover_id": "specled.tasks.check_strict_gate",
@@ -12489,13 +12216,13 @@
     "default_minimum_strength": "claimed",
     "strength_summary": {
       "claimed": 2,
-      "executed": 270,
+      "executed": 274,
       "linked": 73
     },
     "threshold_failures": 0
   },
   "workspace": {
-    "decision_count": 32,
+    "decision_count": 33,
     "spec_count": 33
   }
 }

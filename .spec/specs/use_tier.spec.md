@@ -86,7 +86,7 @@ realized_by:
 ```yaml spec-scenarios
 - id: specled.use_tier.scenario.consumers_current_not_persisted
   given:
-    - a Provider with two committed consumers C1, C2 in state.json's use-tier record
+    - a Provider with two committed consumers C1, C2 in the committed use-tier record
     - a branch that adds a new consumer C3
   when:
     - Use.consumers_for/2 is called for Provider

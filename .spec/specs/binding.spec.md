@@ -24,6 +24,8 @@ surface:
   - test/specled_ex/realization/binding_test.exs
   - test/specled_ex/realization/canonical_test.exs
   - test/specled_ex/realization/hash_store_test.exs
+  - test/specled_ex/state_json_fixture_test.exs
+  - test/test_support/state_json_fixture.ex
 realized_by:
   implementation:
     - "SpecLedEx.Realization.Binding.resolve/2"
@@ -35,6 +37,7 @@ decisions:
   - specled.decision.beam_first_binding_resolution
   - specled.decision.deterministic_hashing
   - specled.decision.file_touch_yields_to_realization
+  - specled.decision.dedicated_realization_baseline
 ```
 
 ## Requirements
@@ -95,9 +98,31 @@ decisions:
 - id: specled.binding.hash_store_atomic
   statement: >-
     SpecLedEx.Realization.HashStore.write/2 shall write
-    `.spec/state.json` atomically via `.tmp` + fsync + rename. A crash
-    mid-write shall leave the previous committed state intact — partial
-    writes are not a reachable state.
+    `.spec/realization_hashes.json` atomically via `.tmp` + fsync +
+    rename. A crash mid-write shall leave the previous committed state
+    intact — partial writes are not a reachable state.
+  priority: must
+  stability: evolving
+- id: specled.binding.hash_store_dedicated_file
+  statement: >-
+    The committed realization baseline shall live in the dedicated
+    committed file `.spec/realization_hashes.json` whose top level is
+    the tier → binding-key → entry map, serialized with recursively
+    sorted keys so identical content yields identical bytes and diffs
+    read as subject-level realization changes. HashStore shall not
+    persist the baseline inside `.spec/state.json`.
+  priority: must
+  stability: evolving
+- id: specled.binding.hash_store_legacy_fallback
+  statement: >-
+    When `.spec/realization_hashes.json` is absent, HashStore.read/2
+    shall fall back to the `realization` key of an existing
+    `.spec/state.json` (the legacy embedded location), and
+    HashStore.merge/2 shall read its existing baseline through the same
+    fallback so a legacy embedded baseline is migrated into the
+    dedicated file rather than dropped. Once the dedicated file exists
+    it is authoritative: an embedded `realization` section in
+    state.json is ignored.
   priority: must
   stability: evolving
 - id: specled.binding.hasher_version_internal
@@ -201,18 +226,49 @@ decisions:
     - specled.binding.canonical_reserved_idents_preserved
 - id: specled.binding.scenario.atomic_write_survives_crash
   given:
-    - an existing `.spec/state.json` with committed entries
+    - an existing `.spec/realization_hashes.json` with committed entries
     - a simulated crash between `.tmp` write and rename (rename is skipped)
   when:
     - HashStore.read/1 is called after the crash
   then:
     - the previous committed state is returned intact
-    - no partial `.spec/state.json` is observed
+    - no partial `.spec/realization_hashes.json` is observed
   covers:
     - specled.binding.hash_store_atomic
+- id: specled.binding.scenario.baseline_round_trip_dedicated_file
+  given:
+    - a realization map written via HashStore.write/2
+  when:
+    - HashStore.read/1 is called
+  then:
+    - "the hashes load from `.spec/realization_hashes.json` and round-trip intact"
+    - "`.spec/state.json` is not created or modified by the write"
+    - writing the same content twice yields byte-identical file contents with sorted keys
+  covers:
+    - specled.binding.hash_store_dedicated_file
+- id: specled.binding.scenario.legacy_state_json_fallback
+  given:
+    - "no `.spec/realization_hashes.json`"
+    - "a `.spec/state.json` carrying a legacy embedded `realization` section"
+  when:
+    - HashStore.read/1 is called
+  then:
+    - the legacy embedded hashes are returned
+  covers:
+    - specled.binding.hash_store_legacy_fallback
+- id: specled.binding.scenario.merge_migrates_legacy_baseline
+  given:
+    - "no `.spec/realization_hashes.json`"
+    - "a `.spec/state.json` carrying a legacy embedded `realization` section"
+  when:
+    - HashStore.merge/2 is called with new seed entries
+  then:
+    - "`.spec/realization_hashes.json` is created containing both the legacy entries and the seeds"
+    - the legacy hashes keep their committed values (they are migrated, not recomputed)
+  covers: []
 - id: specled.binding.scenario.hasher_bump_silent_rehash
   given:
-    - "a state.json with entries tagged hasher_version: 1"
+    - "a realization_hashes.json with entries tagged hasher_version: 1"
     - "the module attribute bumped to hasher_version: 2 at compile time"
   when:
     - HashStore.read/1 is called
@@ -281,6 +337,11 @@ decisions:
   execute: true
   covers:
     - specled.binding.hash_store_atomic
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.binding.hash_store_dedicated_file
+    - specled.binding.hash_store_legacy_fallback
 - kind: tagged_tests
   execute: true
   covers:

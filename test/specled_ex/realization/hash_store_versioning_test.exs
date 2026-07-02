@@ -20,16 +20,14 @@ defmodule SpecLedEx.Realization.HashStoreVersioningTest do
   describe "silent rehash on older hasher_version" do
     test "older-version entries are filtered from the read result", %{root: root} do
       older = HashStore.hasher_version() - 1
-      path = Path.join([root, ".spec", "state.json"])
+      path = Path.join([root, ".spec", "realization_hashes.json"])
 
       File.write!(
         path,
         Jason.encode!(%{
-          "realization" => %{
-            "api_boundary" => %{
-              "Foo.old/0" => %{"hash" => "abc", "hasher_version" => older},
-              "Foo.new/0" => %{"hash" => "def", "hasher_version" => HashStore.hasher_version()}
-            }
+          "api_boundary" => %{
+            "Foo.old/0" => %{"hash" => "abc", "hasher_version" => older},
+            "Foo.new/0" => %{"hash" => "def", "hasher_version" => HashStore.hasher_version()}
           }
         })
       )
@@ -45,15 +43,13 @@ defmodule SpecLedEx.Realization.HashStoreVersioningTest do
 
     test "no user-visible finding is produced (debug log only)", %{root: root} do
       older = HashStore.hasher_version() - 1
-      path = Path.join([root, ".spec", "state.json"])
+      path = Path.join([root, ".spec", "realization_hashes.json"])
 
       File.write!(
         path,
         Jason.encode!(%{
-          "realization" => %{
-            "api_boundary" => %{
-              "Foo.old/0" => %{"hash" => "abc", "hasher_version" => older}
-            }
+          "api_boundary" => %{
+            "Foo.old/0" => %{"hash" => "abc", "hasher_version" => older}
           }
         })
       )
@@ -66,15 +62,13 @@ defmodule SpecLedEx.Realization.HashStoreVersioningTest do
 
     test "rehash callback rewrites entries to current version", %{root: root} do
       older = HashStore.hasher_version() - 1
-      path = Path.join([root, ".spec", "state.json"])
+      path = Path.join([root, ".spec", "realization_hashes.json"])
 
       File.write!(
         path,
         Jason.encode!(%{
-          "realization" => %{
-            "api_boundary" => %{
-              "Foo.old/0" => %{"hash" => "abc", "hasher_version" => older}
-            }
+          "api_boundary" => %{
+            "Foo.old/0" => %{"hash" => "abc", "hasher_version" => older}
           }
         })
       )

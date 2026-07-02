@@ -28,3 +28,18 @@ Use this folder to maintain authored Spec Led Development subjects and generated
 - If next says `ready for check`, move to `mix spec.check --base ...`.
 - Use `mix spec.validate --debug` only when you need low-level verification output.
 - Run `mix spec.status` when you need coverage or weak-spot summaries.
+
+## Generated vs Committed State
+
+- `.spec/state.json` is fully derived — regenerable from spec files at any
+  time via `mix spec.check` / `mix spec.validate`. On a rebase or merge
+  conflict, take either side (`git checkout --theirs .spec/state.json`),
+  finish the merge, regenerate, and commit the result. This ritual is safe:
+  state.json carries no committed baseline.
+- `.spec/realization_hashes.json` is the committed realization-hash
+  baseline that drift detection compares against. Do NOT resolve conflicts
+  in it by regenerating — that recomputes hashes from the merged tree and
+  silently absorbs realization drift between branches. Its diffs read as
+  subject-level realization changes; on conflict, prefer the side whose
+  branch legitimately changed the named bindings, or keep both entries when
+  different bindings moved on each branch.

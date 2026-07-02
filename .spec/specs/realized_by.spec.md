@@ -237,7 +237,7 @@ decisions:
   statement: >-
     On `mix spec.check`, when a tracked entry (MFA or bare module, in
     any flat tier or implementation tier) has no committed hash in
-    `.spec/state.json`, the orchestrator shall compute the entry's
+    `.spec/realization_hashes.json`, the orchestrator shall compute the entry's
     hash, persist it via `SpecLedEx.Realization.HashStore.merge/2`,
     and emit no drift finding for that entry on the seeding run. The
     seeding pass shall run before tier dispatch and shall be gated by
@@ -363,7 +363,7 @@ decisions:
 - id: specled.realized_by.scenario.implication_drift_both_tiers
   given:
     - "a subject whose spec lists `Foo.bar/1` only under `realized_by.implementation`"
-    - "a hash for `Foo.bar/1` already committed in `.spec/state.json` for both `api_boundary` and `implementation`"
+    - "a hash for `Foo.bar/1` already committed in `.spec/realization_hashes.json` for both `api_boundary` and `implementation`"
   when:
     - "another developer changes the argument pattern in `Foo.bar/1`'s clause head"
     - "`mix spec.check` runs"
@@ -400,7 +400,7 @@ decisions:
 - id: specled.realized_by.scenario.bare_module_first_run_silent_seed
   given:
     - "a subject lists `\"SpecLedEx.Coverage\"` (bare module) under `realized_by.implementation`"
-    - "no committed hash for `SpecLedEx.Coverage` exists in `.spec/state.json` for either tier"
+    - "no committed hash for `SpecLedEx.Coverage` exists in `.spec/realization_hashes.json` for either tier"
   when:
     - "`mix spec.check` runs for the first time after the upgrade"
   then:

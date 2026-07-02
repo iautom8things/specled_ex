@@ -1,7 +1,7 @@
 defmodule SpecLedEx.StateJsonFixtureTest do
   @moduledoc """
   Smoke test for `SpecLedEx.StateJsonFixture` — the test_support helper that
-  drives multi-trajectory `.spec/state.json` fixtures for the realized_by
+  drives multi-trajectory committed-baseline fixtures for the realized_by
   tier-implication work (specled_-701).
 
   This file exercises the fixture's three public functions (`seed/2`,
@@ -24,7 +24,9 @@ defmodule SpecLedEx.StateJsonFixtureTest do
   end
 
   describe "seed/2 + read/1" do
-    test "writes the realization map to .spec/state.json under the tmp root", %{root: root} do
+    test "writes the realization map to .spec/realization_hashes.json under the tmp root", %{
+      root: root
+    } do
       hash_bin = :crypto.hash(:sha256, "head-only")
 
       :ok =
@@ -69,7 +71,7 @@ defmodule SpecLedEx.StateJsonFixtureTest do
         })
 
       # The whole point of the fixture is that the system under test
-      # (HashStore + downstream readers) sees a state.json shape it
+      # (HashStore + downstream readers) sees a baseline shape it
       # already knows how to consume.
       via_hash_store = HashStore.read(root)
 
@@ -77,8 +79,8 @@ defmodule SpecLedEx.StateJsonFixtureTest do
                Base.encode16(hash_bin, case: :lower)
     end
 
-    test "cold trajectory: read/1 on a missing state.json returns an empty map", %{root: root} do
-      # No seed call — state.json does not exist.
+    test "cold trajectory: read/1 on a missing baseline returns an empty map", %{root: root} do
+      # No seed call — no baseline file exists.
       assert StateJsonFixture.read(root) == %{}
     end
 

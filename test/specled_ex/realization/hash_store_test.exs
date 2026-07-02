@@ -14,6 +14,9 @@ defmodule SpecLedEx.Realization.HashStoreTest do
     {:ok, root: root}
   end
 
+  defp baseline_path(root), do: Path.join([root, ".spec", "realization_hashes.json"])
+  defp state_path(root), do: Path.join([root, ".spec", "state.json"])
+
   describe "write/2 + read/1" do
     test "round-trips a simple realization payload", %{root: root} do
       payload = %{
@@ -40,9 +43,27 @@ defmodule SpecLedEx.Realization.HashStoreTest do
       assert read["api_boundary"]["Foo.bar/1"]["hasher_version"] == HashStore.hasher_version()
     end
 
-    test "preserves unrelated keys already in state.json", %{root: root} do
-      path = Path.join([root, ".spec", "state.json"])
-      File.write!(path, Jason.encode!(%{"other_section" => %{"kept" => true}}))
+    @tag spec: ["specled.binding.hash_store_dedicated_file"]
+    test "persists to .spec/realization_hashes.json and loads back from it", %{root: root} do
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            "Foo.bar/1" => %{"hash" => "a1", "hasher_version" => HashStore.hasher_version()}
+          }
+        })
+
+      assert File.regular?(baseline_path(root))
+
+      decoded = Jason.decode!(File.read!(baseline_path(root)))
+      assert decoded["api_boundary"]["Foo.bar/1"]["hash"] == "a1"
+
+      assert HashStore.read(root)["api_boundary"]["Foo.bar/1"]["hash"] == "a1"
+    end
+
+    @tag spec: ["specled.binding.hash_store_dedicated_file"]
+    test "does not create or modify .spec/state.json", %{root: root} do
+      File.write!(state_path(root), Jason.encode!(%{"summary" => %{"subjects" => 3}}))
+      before = File.read!(state_path(root))
 
       :ok =
         HashStore.write(root, %{
@@ -51,26 +72,133 @@ defmodule SpecLedEx.Realization.HashStoreTest do
           }
         })
 
-      {:ok, raw} = File.read(path)
-      decoded = Jason.decode!(raw)
+      assert File.read!(state_path(root)) == before
+    end
 
-      assert decoded["other_section"] == %{"kept" => true}
-      assert decoded["realization"]["api_boundary"]["Foo.bar/1"]["hash"] == "a1"
+    @tag spec: ["specled.binding.hash_store_dedicated_file"]
+    test "output is deterministic with recursively sorted keys", %{root: root} do
+      entry = %{"hash" => "aa", "hasher_version" => HashStore.hasher_version()}
+
+      payload = %{
+        "use" => %{"Zeta.Mod" => entry, "Alpha.Mod" => entry},
+        "api_boundary" => %{"B.f/1" => entry, "A.f/1" => entry}
+      }
+
+      :ok = HashStore.write(root, payload)
+      first = File.read!(baseline_path(root))
+
+      :ok = HashStore.write(root, payload)
+      second = File.read!(baseline_path(root))
+
+      assert first == second
+
+      # Keys appear in sorted order in the serialized bytes.
+      tier_positions =
+        for tier <- ["api_boundary", "use"] do
+          {pos, _len} = :binary.match(first, "\"#{tier}\"")
+          pos
+        end
+
+      assert tier_positions == Enum.sort(tier_positions)
+
+      {alpha_pos, _} = :binary.match(first, "\"Alpha.Mod\"")
+      {zeta_pos, _} = :binary.match(first, "\"Zeta.Mod\"")
+      assert alpha_pos < zeta_pos
+    end
+  end
+
+  describe "legacy state.json fallback" do
+    @tag spec: ["specled.binding.hash_store_legacy_fallback"]
+    test "read/1 falls back to state.json's realization key when the dedicated file is absent",
+         %{root: root} do
+      File.write!(
+        state_path(root),
+        Jason.encode!(%{
+          "realization" => %{
+            "api_boundary" => %{
+              "Foo.bar/1" => %{
+                "hash" => "legacy",
+                "hasher_version" => HashStore.hasher_version()
+              }
+            }
+          }
+        })
+      )
+
+      refute File.exists?(baseline_path(root))
+      assert HashStore.read(root)["api_boundary"]["Foo.bar/1"]["hash"] == "legacy"
+    end
+
+    @tag spec: ["specled.binding.hash_store_legacy_fallback"]
+    test "the dedicated file is authoritative once present — embedded section is ignored",
+         %{root: root} do
+      File.write!(
+        state_path(root),
+        Jason.encode!(%{
+          "realization" => %{
+            "api_boundary" => %{
+              "Foo.bar/1" => %{
+                "hash" => "stale-legacy",
+                "hasher_version" => HashStore.hasher_version()
+              }
+            }
+          }
+        })
+      )
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            "Foo.bar/1" => %{"hash" => "current", "hasher_version" => HashStore.hasher_version()}
+          }
+        })
+
+      assert HashStore.read(root)["api_boundary"]["Foo.bar/1"]["hash"] == "current"
+    end
+
+    @tag spec: ["specled.binding.hash_store_legacy_fallback"]
+    test "merge/2 migrates a legacy embedded baseline into the dedicated file", %{root: root} do
+      legacy_hash = Base.encode16(:crypto.hash(:sha256, "committed-on-main"), case: :lower)
+
+      File.write!(
+        state_path(root),
+        Jason.encode!(%{
+          "realization" => %{
+            "api_boundary" => %{
+              "Legacy.entry/0" => %{
+                "hash" => legacy_hash,
+                "hasher_version" => HashStore.hasher_version()
+              }
+            }
+          }
+        })
+      )
+
+      :ok =
+        HashStore.merge(root, %{
+          "api_boundary" => %{
+            "New.entry/0" => %{"hash" => "n1", "hasher_version" => HashStore.hasher_version()}
+          }
+        })
+
+      decoded = Jason.decode!(File.read!(baseline_path(root)))
+
+      # Migrated, not recomputed: the legacy value is carried forward verbatim.
+      assert decoded["api_boundary"]["Legacy.entry/0"]["hash"] == legacy_hash
+      assert decoded["api_boundary"]["New.entry/0"]["hash"] == "n1"
     end
   end
 
   describe "atomicity" do
     test "rename-target survives a missing .tmp — prior committed state intact", %{root: root} do
-      path = Path.join([root, ".spec", "state.json"])
+      path = baseline_path(root)
 
       committed =
         Jason.encode!(%{
-          "realization" => %{
-            "api_boundary" => %{
-              "Foo.bar/1" => %{
-                "hash" => "original",
-                "hasher_version" => HashStore.hasher_version()
-              }
+          "api_boundary" => %{
+            "Foo.bar/1" => %{
+              "hash" => "original",
+              "hasher_version" => HashStore.hasher_version()
             }
           }
         })
@@ -85,13 +213,13 @@ defmodule SpecLedEx.Realization.HashStoreTest do
       # The previous committed state is returned intact
       assert read["api_boundary"]["Foo.bar/1"]["hash"] == "original"
 
-      # No partial state.json observed (only state.json.tmp may be present)
+      # No partial realization_hashes.json observed (only the .tmp may be present)
       {:ok, raw} = File.read(path)
-      assert Jason.decode!(raw)["realization"]["api_boundary"]["Foo.bar/1"]["hash"] == "original"
+      assert Jason.decode!(raw)["api_boundary"]["Foo.bar/1"]["hash"] == "original"
     end
 
-    test "write uses tmp file + rename — partial is never the on-disk state.json", %{root: root} do
-      path = Path.join([root, ".spec", "state.json"])
+    test "write uses tmp file + rename — partial is never the on-disk baseline", %{root: root} do
+      path = baseline_path(root)
 
       :ok =
         HashStore.write(root, %{
@@ -100,18 +228,18 @@ defmodule SpecLedEx.Realization.HashStoreTest do
           }
         })
 
-      # state.json exists and is valid JSON
+      # realization_hashes.json exists and is valid JSON
       assert File.regular?(path)
       assert {:ok, _decoded} = Jason.decode(File.read!(path))
 
-      # state.json.tmp was removed by rename
+      # realization_hashes.json.tmp was removed by rename
       refute File.exists?(path <> ".tmp")
     end
   end
 
   describe "merge/2" do
     @tag spec: ["specled.realized_by.silent_seed_uses_merge"]
-    test "merges into empty state.json — creates the realization key", %{root: root} do
+    test "merges into an empty root — creates the baseline file", %{root: root} do
       :ok =
         HashStore.merge(root, %{
           "api_boundary" => %{
@@ -119,10 +247,9 @@ defmodule SpecLedEx.Realization.HashStoreTest do
           }
         })
 
-      path = Path.join([root, ".spec", "state.json"])
-      decoded = Jason.decode!(File.read!(path))
+      decoded = Jason.decode!(File.read!(baseline_path(root)))
 
-      assert decoded["realization"]["api_boundary"]["Foo.bar/1"]["hash"] == "a1"
+      assert decoded["api_boundary"]["Foo.bar/1"]["hash"] == "a1"
 
       read = HashStore.read(root)
       assert read["api_boundary"]["Foo.bar/1"]["hash"] == "a1"
@@ -209,10 +336,7 @@ defmodule SpecLedEx.Realization.HashStoreTest do
     end
 
     @tag spec: ["specled.realized_by.silent_seed_uses_merge"]
-    test "preserves unrelated top-level keys in state.json", %{root: root} do
-      path = Path.join([root, ".spec", "state.json"])
-      File.write!(path, Jason.encode!(%{"other_section" => %{"kept" => true}}))
-
+    test "atomic write — realization_hashes.json.tmp is removed after merge", %{root: root} do
       :ok =
         HashStore.merge(root, %{
           "api_boundary" => %{
@@ -220,22 +344,7 @@ defmodule SpecLedEx.Realization.HashStoreTest do
           }
         })
 
-      decoded = Jason.decode!(File.read!(path))
-
-      assert decoded["other_section"] == %{"kept" => true}
-      assert decoded["realization"]["api_boundary"]["Foo.bar/1"]["hash"] == "a1"
-    end
-
-    @tag spec: ["specled.realized_by.silent_seed_uses_merge"]
-    test "atomic write — state.json.tmp is removed after merge", %{root: root} do
-      :ok =
-        HashStore.merge(root, %{
-          "api_boundary" => %{
-            "Foo.bar/1" => %{"hash" => "a1", "hasher_version" => HashStore.hasher_version()}
-          }
-        })
-
-      path = Path.join([root, ".spec", "state.json"])
+      path = baseline_path(root)
       assert File.regular?(path)
       refute File.exists?(path <> ".tmp")
     end

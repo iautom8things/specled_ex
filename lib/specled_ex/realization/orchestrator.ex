@@ -651,8 +651,8 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # covers: specled.realized_by.silent_seed_uses_merge
   #
   # Pre-dispatch silent-seed pass. For each tracked entry that lacks a
-  # committed hash in `<root>/.spec/state.json`, compute the current hash
-  # and persist it via `HashStore.merge/2`. The detectors then read the
+  # committed hash in `<root>/.spec/realization_hashes.json`, compute the
+  # current hash and persist it via `HashStore.merge/2`. The detectors then read the
   # committed-by-this-pass hash on entry, see `committed == current`, and
   # emit no drift finding for that entry on the seeding run.
   #

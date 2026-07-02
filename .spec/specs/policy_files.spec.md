@@ -10,6 +10,12 @@ implicitly inside `change_analysis.ex` with scattered prefix checks. Centralizin
 classification lets the priv/ question be resolved once (conservatively: `:lib` by
 default, `:generated` only for explicit carve-outs like `priv/plts/`).
 
+Tool-managed `.spec/` artifacts never reach classification: `change_analysis.ex`
+drops `.spec/state.json` (regenerable derived state) and
+`.spec/realization_hashes.json` (the committed realization baseline, rewritten by
+the tooling's seed/refresh passes) from collected change sets before this module
+is consulted, so neither file drives co-change guidance.
+
 ```yaml spec-meta
 id: specled.policy_files
 kind: module

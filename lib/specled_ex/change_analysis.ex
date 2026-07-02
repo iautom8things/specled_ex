@@ -89,7 +89,7 @@ defmodule SpecLedEx.ChangeAnalysis do
     ]
     |> List.flatten()
     |> Enum.reject(&(&1 == ""))
-    |> Enum.reject(&generated_state_file?/1)
+    |> Enum.reject(&tool_managed_spec_file?/1)
     |> Enum.uniq()
     |> Enum.sort()
   end
@@ -207,7 +207,11 @@ defmodule SpecLedEx.ChangeAnalysis do
     exit_code == 0 and String.trim(output) == "true"
   end
 
-  defp generated_state_file?(path), do: path == ".spec/state.json"
+  # state.json is regenerable derived state; realization_hashes.json is the
+  # committed baseline but is rewritten by the tooling itself (seed/refresh
+  # passes), so neither should drive co-change guidance.
+  defp tool_managed_spec_file?(path),
+    do: path in [".spec/state.json", ".spec/realization_hashes.json"]
 
   defp guidance_scope(_base, since) when is_binary(since), do: %{type: :since, ref: since}
   defp guidance_scope(base, _since), do: %{type: :branch, ref: base}
