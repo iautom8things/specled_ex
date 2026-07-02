@@ -21,11 +21,15 @@
     {
       "text": "MERGE GATE RESOLVED: mix spec.check now passes cleanly (findings=0, status=pass) after the verification.command_timeout_ms bump (specled_-s65.3) merged.\n\nNote on the transient red I posted mid-run: a second mix spec.check attempt right after merging specled_-s65.3 also came back red (59 verification_command_failed, same signature as before). Root cause was my own scheduling mistake, not a regression — I had launched mix test and mix spec.check CONCURRENTLY in the same worktree, and CPU contention between the two heavy Elixir test runs pushed the tagged_tests subprocess over the 400s budget even though it fits comfortably in isolation. Re-ran mix spec.check alone (no concurrent mix test): clean pass, 0 findings, 94 verifications, exit 0. All merge gates (compile, test, format, deps.unlock, spec.check) are green on the current epic HEAD. Resuming the DAG to S2.",
       "timestamp": "2026-07-02T10:44:00Z"
+    },
+    {
+      "text": "Scope-expansion subticket specled_-s65.8 added (surfaced by specled_-s65.4's WORKER_ERROR): branch_check.ex's status computation ignores finding severity, contradicting its own spec scenarios. specled_-s65.4 (hermetic git config) is blocked on this fix — its actual code change is done and verified, it's only the merge gate that's blocked.",
+      "timestamp": "2026-07-02T11:25:51Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Wire realization.enabled_tiers from .spec/config.yml into the orchestrator",
   "type": "epic",
-  "updated_at": "2026-07-02T10:44:00Z"
+  "updated_at": "2026-07-02T11:25:51Z"
 }
