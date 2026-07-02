@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-02T20:32:08Z",
+  "description": "Advances: specled.compiler_tracer\n\n## Context\n\nFound by Atlas critical-review 2026-07-02 (consensus: performance + testing reviewers, independently). SpecLedEx.Compiler.Tracer writes _build/\u003cenv\u003e/.spec/xref_mfa.etf by serializing the ETS edge table at flush — but the table only holds edges from modules compiled in the CURRENT session. An incremental compile (warm _build) therefore REPLACES the full manifest with just the recompiled subset, and every downstream implementation-tier closure walk runs on a truncated callee graph: spurious drift findings, missed drift, and — if hashes are committed from that state — a corrupted committed baseline. Consumers with CI build caches hit this as the steady state; Atlas currently works around it with mix compile --force in its spec-check job (2-4 min/run tax).\n\n## Deliverable\n\nMerge-on-flush: read the existing manifest, replace only entries for modules recompiled this session (tracer knows them — they hit on_module), keep the rest, prune modules that no longer exist in the build. Property: manifest after incremental compile == manifest after --force compile. Test with a two-step compile fixture (full, then touch one module, incremental).",
+  "id": "specled_-ia9",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Tracer manifest is replace-on-flush — incremental compiles truncate the callee graph",
+  "type": "task",
+  "updated_at": "2026-07-02T20:32:08Z"
+}
