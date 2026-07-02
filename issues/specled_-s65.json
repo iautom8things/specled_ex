@@ -25,11 +25,15 @@
     {
       "text": "Scope-expansion subticket specled_-s65.8 added (surfaced by specled_-s65.4's WORKER_ERROR): branch_check.ex's status computation ignores finding severity, contradicting its own spec scenarios. specled_-s65.4 (hermetic git config) is blocked on this fix — its actual code change is done and verified, it's only the merge gate that's blocked.",
       "timestamp": "2026-07-02T11:25:51Z"
+    },
+    {
+      "text": "ORCHESTRATED\nChildren closed: 8\nBOUNCEs encountered: 1\nUser escalations: 1",
+      "timestamp": "2026-07-02T15:11:46Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Wire realization.enabled_tiers from .spec/config.yml into the orchestrator",
   "type": "epic",
-  "updated_at": "2026-07-02T11:25:51Z"
+  "updated_at": "2026-07-02T15:11:46Z"
 }
