@@ -1,5 +1,6 @@
 defmodule SpecLedEx.VerifierTest do
-  use SpecLedEx.Case
+  # System.put_env PATH shims are VM-global.
+  use SpecLedEx.Case, async: false
 
   @moduletag spec: [
                "specled.decisions.change_type_enum",

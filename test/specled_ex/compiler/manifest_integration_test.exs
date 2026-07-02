@@ -1,7 +1,9 @@
 Code.require_file("../../../test_support/specled_ex_integration_case.ex", __DIR__)
 
 defmodule SpecLedEx.Compiler.ManifestIntegrationTest do
-  use SpecLedEx.IntegrationCase
+  # IntegrationCase compiles shared test/fixtures projects.
+  use SpecLedEx.IntegrationCase, async: false
+
   @moduletag spec: ["specled.compiler_context.manifest_fixture_integration"]
 
   alias SpecLedEx.Compiler.{Context, Manifest}

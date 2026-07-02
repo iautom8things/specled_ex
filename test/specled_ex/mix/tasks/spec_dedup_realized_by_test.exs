@@ -8,11 +8,6 @@ defmodule Mix.Tasks.Spec.DedupRealizedByTest do
                "specled.tasks.dedup_realized_by_shared_seam"
              ]
 
-  setup do
-    Mix.Task.reenable("spec.dedup_realized_by")
-    :ok
-  end
-
   describe "mix spec.dedup_realized_by — proposal block format" do
     @tag spec: "specled.tasks.dedup_realized_by_proposal"
     test "prints a YAML proposal block per subject with cross-tier duplicates", %{root: root} do

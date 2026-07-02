@@ -2,6 +2,7 @@ defmodule SpecLedEx.Realization.TypespecsTest do
   # covers: specled.expanded_behavior_tier.typespecs_hashes_spec_and_type
   # covers: specled.expanded_behavior_tier.typespecs_drift_finding
   # covers: specled.expanded_behavior_tier.scenario.typespec_arg_change_drifts
+  # Tests recompile and purge same-name fixture modules.
   use ExUnit.Case, async: false
 
   @moduletag spec: [

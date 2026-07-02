@@ -1,5 +1,7 @@
 defmodule SpecLedEx.Realization.ImplementationTest do
+  # Tests recompile and purge same-name fixture modules.
   use ExUnit.Case, async: false
+
   @moduletag spec: ["specled.implementation_tier.closure_walks_tracer_edges"]
 
   alias SpecLedEx.Realization.{HashStore, Implementation}

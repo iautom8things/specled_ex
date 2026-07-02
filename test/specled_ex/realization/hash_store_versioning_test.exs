@@ -1,5 +1,6 @@
 defmodule SpecLedEx.Realization.HashStoreVersioningTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
+
   @moduletag spec: ["specled.binding.hasher_version_internal"]
 
   alias SpecLedEx.Realization.HashStore

@@ -4,7 +4,8 @@ defmodule SpecLedEx.Integration.MixedDebugInfoFixtureTest do
   # covers: specled.expanded_behavior_tier.mixed_fixture_coverage
   # covers: specled.expanded_behavior_tier.scenario.no_debug_info_degrades
   # covers: specled.expanded_behavior_tier.scenario.typespec_arg_change_drifts
-  use SpecLedEx.IntegrationCase
+  # IntegrationCase compiles shared test/fixtures projects.
+  use SpecLedEx.IntegrationCase, async: false
 
   alias SpecLedEx.Realization.{ExpandedBehavior, Typespecs}
 

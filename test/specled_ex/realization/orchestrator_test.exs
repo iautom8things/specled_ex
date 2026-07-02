@@ -1,4 +1,5 @@
 defmodule SpecLedEx.Realization.OrchestratorTest do
+  # Tests recompile and purge same-name fixture modules.
   use ExUnit.Case, async: false
 
   alias SpecLedEx.Realization.{ApiBoundary, Binding, Canonical, HashStore, Orchestrator}

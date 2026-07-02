@@ -1,16 +1,15 @@
 defmodule SpecLedEx.Case do
   use ExUnit.CaseTemplate
 
-  using do
+  using opts do
     quote do
-      use ExUnit.Case, async: false
+      use ExUnit.Case, async: Keyword.get(unquote(opts), :async, true)
 
       import SpecLedEx.Case
     end
   end
 
   setup _context do
-    Mix.shell(Mix.Shell.Process)
     Mix.Shell.Process.flush()
 
     root =
@@ -21,8 +20,6 @@ defmodule SpecLedEx.Case do
     File.mkdir_p!(root)
 
     on_exit(fn -> File.rm_rf(root) end)
-
-    reenable_tasks()
 
     {:ok, root: root}
   end

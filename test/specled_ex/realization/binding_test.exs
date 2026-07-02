@@ -1,4 +1,5 @@
 defmodule SpecLedEx.Realization.BindingTest do
+  # File.cd!/1 mutates the VM-global cwd.
   use ExUnit.Case, async: false
 
   @moduletag spec: [

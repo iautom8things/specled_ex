@@ -1,7 +1,8 @@
 Code.require_file("../../../test_support/specled_ex_integration_case.ex", __DIR__)
 
 defmodule Mix.Tasks.Spec.Cover.TestTest do
-  use SpecLedEx.IntegrationCase
+  # IntegrationCase compiles shared test/fixtures projects.
+  use SpecLedEx.IntegrationCase, async: false
 
   @moduletag spec: [
                "specled.coverage_capture.integration_case",

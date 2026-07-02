@@ -35,6 +35,7 @@ defmodule SpecLedEx.Realization.ImplicationIntegrationTest do
   to fresh module names per test so cross-test interference is impossible.
   """
 
+  # Tests recompile and purge same-name fixture modules.
   use ExUnit.Case, async: false
 
   alias SpecLedEx.Realization.{Canonical, HashStore, Orchestrator}

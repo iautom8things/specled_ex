@@ -4,6 +4,7 @@ defmodule SpecLedEx.Realization.ExpandedBehaviorTest do
   # covers: specled.expanded_behavior_tier.no_debug_info_detector_unavailable
   # covers: specled.expanded_behavior_tier.scenario.expanded_hash_stable_on_rename
   # covers: specled.expanded_behavior_tier.scenario.no_debug_info_degrades
+  # Tests recompile and purge same-name fixture modules.
   use ExUnit.Case, async: false
 
   @moduletag spec: [

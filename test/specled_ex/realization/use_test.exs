@@ -2,6 +2,7 @@ defmodule SpecLedEx.Realization.UseTest do
   # covers: specled.use_tier.enumerate_consumers
   # covers: specled.use_tier.provider_hash_composes
   # covers: specled.use_tier.scenario.consumers_current_not_persisted
+  # Tests recompile and purge same-name fixture modules.
   use ExUnit.Case, async: false
 
   @moduletag spec: [

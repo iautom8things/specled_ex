@@ -1,4 +1,5 @@
 defmodule SpecLedEx.Compiler.TracerTest do
+  # Tracer writes to a named ETS table shared by the VM.
   use ExUnit.Case, async: false
 
   @moduletag spec: [

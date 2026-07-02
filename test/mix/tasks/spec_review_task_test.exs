@@ -1,11 +1,6 @@
 defmodule Mix.Tasks.SpecReviewTaskTest do
   use SpecLedEx.Case
 
-  setup do
-    Mix.Task.reenable("spec.review")
-    :ok
-  end
-
   @tag spec: "specled.tasks.review_html_artifact"
   test "writes a self-contained HTML file with no external network references", %{root: root} do
     setup_repo(root)

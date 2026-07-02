@@ -8,6 +8,8 @@
 System.put_env("GIT_CONFIG_GLOBAL", "/dev/null")
 System.put_env("GIT_CONFIG_NOSYSTEM", "1")
 
+Mix.shell(Mix.Shell.Process)
+
 ExUnit.start()
 
 # Drift/refactor fixtures intentionally compile two versions of the same

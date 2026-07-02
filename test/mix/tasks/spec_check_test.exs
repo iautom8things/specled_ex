@@ -1,5 +1,7 @@
 defmodule Mix.Tasks.Spec.CheckTest do
-  use SpecLedEx.Case
+  # SPECLED_SHOW_INFO env mutation is VM-global.
+  use SpecLedEx.Case, async: false
+
   @moduletag spec: ["specled.tasks.check_verbose_flag"]
 
   @moduletag :capture_log
@@ -110,8 +112,6 @@ defmodule Mix.Tasks.Spec.CheckTest do
   # the branch status to fail) as success for the purposes of inspecting the
   # printed output. Stdout-filter behavior is orthogonal to exit status.
   defp run_spec_check(root, extra_args) do
-    Mix.Task.reenable("spec.check")
-
     try do
       Mix.Tasks.Spec.Check.run(["--root", root | extra_args])
     rescue

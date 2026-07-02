@@ -1,5 +1,7 @@
 defmodule SpecLedEx.Compiler.XrefTest do
+  # Compiler.Xref.load/1 runs the VM-global Mix xref task.
   use ExUnit.Case, async: false
+
   @moduletag spec: ["specled.compiler_tracer.xref_in_process"]
 
   alias SpecLedEx.Compiler.Xref

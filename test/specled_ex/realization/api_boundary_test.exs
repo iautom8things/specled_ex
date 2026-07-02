@@ -1,5 +1,5 @@
 defmodule SpecLedEx.Realization.ApiBoundaryTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   @moduletag spec: [
                "specled.api_boundary.dangling_finding_emitted",

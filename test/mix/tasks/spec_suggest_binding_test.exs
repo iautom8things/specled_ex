@@ -2,11 +2,6 @@ defmodule Mix.Tasks.Spec.SuggestBindingTest do
   use SpecLedEx.Case
   @moduletag spec: ["specled.api_boundary.suggest_binding_proposal_only"]
 
-  setup do
-    Mix.Task.reenable("spec.suggest_binding")
-    :ok
-  end
-
   describe "mix spec.suggest_binding" do
     test "prints a YAML realized_by: proposal for subjects with no binding", %{root: root} do
       init_git_repo(root)
