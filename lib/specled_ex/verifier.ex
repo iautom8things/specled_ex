@@ -2256,22 +2256,38 @@ defmodule SpecLedEx.Verifier do
     # Write a wrapper script to avoid shell escaping issues with nested quotes.
     # The script captures stdout/stderr to a temp file and exits with the command status.
     tmp_script = "#{tmp_out}.sh"
+    tmp_target = "#{tmp_out}.target.sh"
     tmp_pgid = "#{tmp_out}.pgid"
 
-    # POSIX job control (`set -m`) forces the backgrounded target into its own
-    # process group whose pgid equals the job-leader pid (`$!`), on both macOS
-    # bash-as-sh and Linux dash. On timeout we SIGKILL that whole group so
-    # grandchildren the target spawned are reaped too — Port.close alone only
-    # kills the direct child and orphans the rest. `wait $!` propagates the
-    # target's own exit status, preserving specled.verify.command_exit_code_recorded.
+    # The backgrounded target must land in its own process group whose pgid
+    # equals `$!`, so that on timeout we can SIGKILL the whole group and reap
+    # grandchildren the target spawned — Port.close alone only kills the
+    # direct child and orphans the rest. `setsid` (universal on Linux) is
+    # preferred: dash, ubuntu's /bin/sh, rejects `set -m` in a tty-less
+    # script ("can't access tty; job control turned off"), leaving the child
+    # in the wrapper's group where the group kill misses it. macOS has no
+    # setsid binary, but its bash-as-sh honors `set -m` job control, so that
+    # remains the fallback (stderr-silenced for shells that reject it).
+    # The target runs from its own script file rather than a subshell so both
+    # branches spawn the identical unit. `wait $!` propagates the target's
+    # own exit status, preserving specled.verify.command_exit_code_recorded.
     # `wait`'s stderr is silenced so the shell's "Killed: 9" job-control
     # notification for a SIGKILLed group does not leak into CLI output on
     # timeout; the exit status it returns is unaffected.
-    File.write!(tmp_script, """
+    File.write!(tmp_target, """
     #!/bin/sh
     cd "#{root}" || exit 127
-    set -m
-    (#{target}) > "#{tmp_out}" 2>&1 &
+    #{target}
+    """)
+
+    File.write!(tmp_script, """
+    #!/bin/sh
+    if command -v setsid >/dev/null 2>&1; then
+      setsid /bin/sh "#{tmp_target}" > "#{tmp_out}" 2>&1 &
+    else
+      set -m 2>/dev/null
+      /bin/sh "#{tmp_target}" > "#{tmp_out}" 2>&1 &
+    fi
     echo $! > "#{tmp_pgid}"
     wait $! 2>/dev/null
     """)
@@ -2306,11 +2322,12 @@ defmodule SpecLedEx.Verifier do
     after
       File.rm(tmp_out)
       File.rm(tmp_script)
+      File.rm(tmp_target)
       File.rm(tmp_pgid)
     end
   end
 
-  # SIGKILLs the target's process group recorded by the `set -m` wrapper.
+  # SIGKILLs the target's process group recorded by the job-control wrapper.
   # Tolerates a missing or empty pgid file (the timeout raced the wrapper's
   # first lines): close_port/1 then handles the direct child alone.
   defp kill_process_group(tmp_pgid) do
