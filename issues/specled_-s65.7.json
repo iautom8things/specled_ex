@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-s65",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: codex-44e5dfd2\nLog: /Users/mz/src/specled_ex-timeout-distinct-finding/.codex-runs/specled_-s65.7.log\n\nCommit: 643bc24dd2fa1cdc195a59e0ccba1a582fcb84fe\nFiles touched: .spec/specs/tagged_tests_verification.spec.md, .spec/specs/verification.spec.md, .spec/state.json, lib/specled_ex/verifier.ex, test/mix/tasks/spec_check_test.exs, test/mix/tasks/spec_tasks_test.exs, test/specled_ex/mix/tasks/spec_validate_test.exs, test/specled_ex/verifier_test.exs\nTests added: SpecLedEx.VerifierTest \"command verification captures non-zero exit codes\"; SpecLedEx.VerifierTest \"command verification times out on slow commands\"; SpecLedEx.VerifierTest \"tagged_tests merged command failure surfaces a finding per subject\"; SpecLedEx.VerifierTest \"tagged_tests merged command timeout surfaces shared context per subject\"; Mix.Tasks.Spec.ValidateCommandTimeoutTest \"absent flag falls back to config value\"; Mix.Tasks.Spec.CheckCommandTimeoutTest \"absent flag falls back to config value\"; Mix.Tasks.SpecTasksTest \"spec.validate honors command timeout from config\"; Mix.Tasks.SpecTasksTest \"spec.check honors command timeout from config\"\nVerification stubs flipped: none\n\nSummary: Command results now preserve timeout state with a timed_out marker and emit verification_command_timeout with the configured budget and --command-timeout-ms remediation, while ordinary non-zero exits still emit verification_command_failed. Aggregated tagged_tests failure and timeout findings now include shared-run context for every participating subject without changing the single-result distribution semantics. Specs and generated state were updated for the new timeout finding and shared-fate message contract.",
+      "timestamp": "2026-07-02T14:44:13Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Timeout-distinct finding + shared-fate context in merged tagged_tests messages",
   "type": "task",
-  "updated_at": "2026-07-02T14:29:41Z"
+  "updated_at": "2026-07-02T14:44:13Z"
 }
