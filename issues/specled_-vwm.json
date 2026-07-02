@@ -2,6 +2,8 @@
   "assignee": "",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-07-02T02:06:39Z",
+  "close_reason": "superseded by specled_-s65",
   "created": "2026-07-02T01:39:03Z",
   "description": "Advances: specled.config, specled.implementation_tier\n\n## Context\n\nspecled_-q59.9 wired the realization orchestrator into mix spec.check via SpecLedEx.BranchCheck.run_realization/3, but tier selection is hardcoded: branch_check.ex calls Orchestrator.run_with_attestations/2 without :enabled_tiers, so the orchestrator falls back to @default_tiers, which excludes :implementation. SpecLedEx.Config.Realization is still the v1 placeholder — defstruct enabled_tiers: [:api_boundary], and parse/1 has zero callers in lib/. Net effect: a consumer cannot enable the implementation tier at all; a realization: section in .spec/config.yml parses to nowhere and silently does nothing.\n\nMotivating consumer: Atlas wants realization: enabled_tiers: [api_boundary, implementation] so implementation-closure drift detection runs against its 157 subjects.\n\n## Deliverable\n\n1. Load the realization: section from .spec/config.yml through SpecLedEx.Config.Realization.parse/1 wherever workspace config is loaded.\n2. Thread enabled_tiers into the orchestrator opts in BranchCheck.run_realization/3.\n3. Decide the absent-config default deliberately: Config.Realization defaults to [:api_boundary] while the orchestrator @default_tiers is [api_boundary, expanded_behavior, typespecs, use]. Absent config must preserve current spec.check behavior (the orchestrator default), not silently shrink the tier set to api_boundary only.\n4. Surface rejected tier names as diagnostics (parse/1 already returns them — do not drop).\n5. Docs: config.yml example + moduledoc update removing the placeholder language.\n\n## Verification\n\n- Tagged test: config.yml with enabled_tiers including implementation causes the implementation tier to run (observable via findings or hash commits); absent section preserves the pre-change tier set.\n- mix spec.check green; update the specled.config spec with the new requirement.",
   "id": "specled_-vwm",
@@ -13,7 +15,7 @@
     }
   ],
   "priority": 2,
-  "status": "open",
+  "status": "closed",
   "title": "Wire realization.enabled_tiers from .spec/config.yml into the orchestrator",
   "type": "task",
   "updated_at": "2026-07-02T02:06:39Z"
