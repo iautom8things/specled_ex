@@ -27,11 +27,15 @@
     {
       "text": "TEST_CRITIC: FIXED (iteration 1)\nCritic session: a41cd5da93e7a4077 (elixir-test-critic agent)\nBlocking findings: 0 (advisory findings applied: 3 of 5)\nFiles reviewed: test/specled_ex/realization/implementation_test.exs (S2 diff only)\n\nApplied in follow-up commit 4538bd1: helpers hoisted out of the describe to module level (defp in describe is module-global — footgun + file-convention violation); run/4 determinism test strengthened to feed the second run Enum.reverse(subjects) so equality also discriminates input-order dependence (critic's point (a) — the spec's 'no run-order dependence' clause was only trivially satisfied before); describe renamed to reflect that it houses two requirements. Not applied: exposing a seam for in_project_set/build_world wiring (advisory 2 — S3's acceptance run exercises build_world with a real manifest end-to-end; noted for the record), same-VM PID/coarse-time nondeterminism classes (structurally untestable in a single-VM test, documented here as accepted residual risk). Critic affirmed points (b) full-map equality is additive-safe and (c) no shared-state hazards with the pinned HashStore write.\n\nAlso for the record: the S2 verifier's advisory about an intermittent S1 property failure (tracer_test.exs:255) could not be reproduced across 40 tagged-only + 15 whole-file + 3 full-suite seeded runs plus the verifier's own 11 re-runs; the verifier lost the original capture (tail -5) and posted a correction marking it unconfirmed. The property is a pure function of generated inputs with invariants that hold by construction; treated as an unconfirmed one-off.\n\nTest-only changes; gates re-run green (881 tests 0 failures).",
       "timestamp": "2026-07-02T23:32:28Z"
+    },
+    {
+      "text": "AUDIT: APPROVE (auto — selective audit)\nSession: a7c01b31-1832-4731-b697-52202d55f59c\nLog: ~/.claude/projects/-Users-mz-src-specled-ex/a7c01b31-1832-4731-b697-52202d55f59c.jsonl\n\nReasoning: VERIFY reported PASS with full stub coverage, full requirement\ncoverage with falsifiability confirmed by mutation reasoning, zero mechanical\nor intent-level scope violations, passing project verification, and the\nimplementer's two documented deviations independently confirmed correct by\nthe verifier (including the vacuous-run/4-test judgment, validated against\nClosure.walk). No auditor was spawned per selective-audit policy. Post-verify\ndelta is the test-only critic-advisory commit 4538bd1 (TEST_CRITIC: FIXED,\n0 blocking findings); all gates re-run green on the final tree.",
+      "timestamp": "2026-07-02T23:32:39Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "S2: Read-time ghost filtering + hash determinism contract",
   "type": "task",
-  "updated_at": "2026-07-02T23:32:28Z"
+  "updated_at": "2026-07-02T23:32:39Z"
 }
