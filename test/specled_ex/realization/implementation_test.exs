@@ -603,11 +603,29 @@ defmodule SpecLedEx.Realization.ImplementationTest do
     end
   end
 
+  defp write_fixture_etf!(root) do
+    edges = %{
+      {SpecLedEx.ImplFixtures.A, :foo, 1} => [{SpecLedEx.ImplFixtures.B, :bar, 1}],
+      {SpecLedEx.ImplFixtures.B, :bar, 1} => [{SpecLedEx.ImplFixtures.B, :helper, 1}]
+    }
+
+    path = Path.join(root, "xref_fixture.etf")
+    File.write!(path, :erlang.term_to_binary(edges))
+    path
+  end
+
+  defp seeding_subjects do
+    [
+      %{id: "A", surface: [], impl_bindings: ["SpecLedEx.ImplFixtures.A.foo/1"]},
+      %{id: "B", surface: [], impl_bindings: ["SpecLedEx.ImplFixtures.B.bar/1"]}
+    ]
+  end
+
   # ---------------------------------------------------------------------------
   # S2: read-time ghost filtering + determinism contract
   # ---------------------------------------------------------------------------
 
-  describe "filter_edges/3 (specled.implementation_tier.ghost_edges_filtered)" do
+  describe "filter_edges/3 — read-time ghost filtering" do
     @tag spec: "specled.implementation_tier.ghost_edges_filtered"
     test "ghost caller is dropped when the context manifest is a non-empty map" do
       edges = %{
@@ -648,24 +666,6 @@ defmodule SpecLedEx.Realization.ImplementationTest do
   end
 
   describe "determinism (specled.implementation_tier.deterministic_hashes)" do
-    defp write_fixture_etf!(root) do
-      edges = %{
-        {SpecLedEx.ImplFixtures.A, :foo, 1} => [{SpecLedEx.ImplFixtures.B, :bar, 1}],
-        {SpecLedEx.ImplFixtures.B, :bar, 1} => [{SpecLedEx.ImplFixtures.B, :helper, 1}]
-      }
-
-      path = Path.join(root, "xref_fixture.etf")
-      File.write!(path, :erlang.term_to_binary(edges))
-      path
-    end
-
-    defp seeding_subjects do
-      [
-        %{id: "A", surface: [], impl_bindings: ["SpecLedEx.ImplFixtures.A.foo/1"]},
-        %{id: "B", surface: [], impl_bindings: ["SpecLedEx.ImplFixtures.B.bar/1"]}
-      ]
-    end
-
     @tag spec: "specled.implementation_tier.deterministic_hashes"
     test "hashes_for_seeding/3 twice over an unchanged tree returns identical maps", %{root: root} do
       etf = write_fixture_etf!(root)
@@ -701,12 +701,15 @@ defmodule SpecLedEx.Realization.ImplementationTest do
           }
         })
 
-      run_once = fn ->
-        Implementation.run(subjects, nil, nil, root: root, tracer_manifest: etf)
+      run_once = fn subs ->
+        Implementation.run(subs, nil, nil, root: root, tracer_manifest: etf)
       end
 
-      findings_first = run_once.()
-      findings_second = run_once.()
+      findings_first = run_once.(subjects)
+      # Permuted subject order on the second run: identical output also
+      # proves the pipeline has no input-order dependence, not merely that
+      # repeating identical inputs repeats identical outputs.
+      findings_second = run_once.(Enum.reverse(subjects))
 
       assert findings_first == findings_second
 
