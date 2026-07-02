@@ -260,20 +260,32 @@ defmodule SpecLedEx.Compiler.TracerTest do
         session_set = MapSet.new(session_modules)
         merged = Tracer.merge_edges(previous, session_set, session_edges)
 
-        canonical = fn callees -> callees |> Enum.sort() |> Enum.dedup() end
-
-        expected_kept =
-          for {{mod, _f, _a} = caller, callees} <- previous,
+        # Structural invariants rather than a recomputed oracle — an oracle
+        # that reimplements the merge would agree with its bugs.
+        non_session_previous_keys =
+          for {{mod, _f, _a} = caller, _} <- previous,
               not MapSet.member?(session_set, mod),
-              into: %{},
-              do: {caller, callees}
+              into: MapSet.new(),
+              do: caller
 
-        expected =
-          expected_kept
-          |> Map.merge(session_edges)
-          |> Map.new(fn {caller, callees} -> {caller, canonical.(callees)} end)
+        # Key set is exactly: non-session previous callers ∪ session callers.
+        assert MapSet.new(Map.keys(merged)) ==
+                 MapSet.union(non_session_previous_keys, MapSet.new(Map.keys(session_edges)))
 
-        assert merged == expected
+        # A session-module caller may appear only via session_edges, and its
+        # callees come only from session_edges (stale values never survive).
+        for {{mod, _f, _a} = caller, callees} <- merged,
+            MapSet.member?(session_set, mod) do
+          assert Map.has_key?(session_edges, caller)
+
+          assert Enum.sort(callees) ==
+                   session_edges |> Map.fetch!(caller) |> Enum.sort() |> Enum.dedup()
+        end
+
+        # Every callee list is canonical: sorted with no duplicates.
+        for {_caller, callees} <- merged do
+          assert callees == callees |> Enum.sort() |> Enum.dedup()
+        end
 
         # Idempotence: re-merging the result with the same inputs is stable.
         assert Tracer.merge_edges(merged, session_set, session_edges) == merged
@@ -311,7 +323,7 @@ defmodule SpecLedEx.Compiler.TracerTest do
       # VM) keeps them.
       stale = %{
         {SpecLedEx.Overlap, :analyze, 2} => [{Enum, :stale_marker, 1}],
-        {SpecLedEx.Parser, :parse, 1} => [{String, :split, 2}]
+        {SpecLedEx.Parser, :parse_file, 2} => [{String, :split, 2}]
       }
 
       File.mkdir_p!(Path.dirname(@manifest_path))
@@ -324,8 +336,12 @@ defmodule SpecLedEx.Compiler.TracerTest do
 
       edges = @manifest_path |> File.read!() |> :erlang.binary_to_term()
 
+      # NOTE: this refute leans on SpecLedEx.Overlap staying a real, compiled
+      # module — if it were removed, the seed prune would drop the entry and
+      # the refute would pass vacuously. The Parser assertion below guards
+      # against that failure mode going unnoticed.
       refute Map.has_key?(edges, {SpecLedEx.Overlap, :analyze, 2})
-      assert edges[{SpecLedEx.Parser, :parse, 1}] == [{String, :split, 2}]
+      assert edges[{SpecLedEx.Parser, :parse_file, 2}] == [{String, :split, 2}]
     end
 
     @tag spec: "specled.compiler_tracer.seed_time_ghost_prune"
@@ -334,7 +350,7 @@ defmodule SpecLedEx.Compiler.TracerTest do
 
       stale = %{
         {ghost, :f, 0} => [{Enum, :map, 2}],
-        {SpecLedEx.Parser, :parse, 1} => [{String, :split, 2}]
+        {SpecLedEx.Parser, :parse_file, 2} => [{String, :split, 2}]
       }
 
       File.mkdir_p!(Path.dirname(@manifest_path))
@@ -348,7 +364,7 @@ defmodule SpecLedEx.Compiler.TracerTest do
       edges = @manifest_path |> File.read!() |> :erlang.binary_to_term()
 
       refute Map.has_key?(edges, {ghost, :f, 0})
-      assert Map.has_key?(edges, {SpecLedEx.Parser, :parse, 1})
+      assert Map.has_key?(edges, {SpecLedEx.Parser, :parse_file, 2})
     end
 
     @tag spec: "specled.compiler_tracer.merge_on_flush"
