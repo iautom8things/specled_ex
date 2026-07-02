@@ -1,7 +1,9 @@
 {
   "assignee": "",
   "blocked_by": [],
-  "blocks": [],
+  "blocks": [
+    "specled_-s65.5"
+  ],
   "created": "2026-07-02T10:30:35Z",
   "description": "Advances: none (test infrastructure only — no spec subject changes behavior)\n\nDeliverable:\nRoot-cause fix for the slow merge gate that motivated specled_-s65.3. Investigation (session bbf3b419, 2026-07-02) found the tagged_tests verification command is slow because the test suite inherits the developer's global git config: commit.gpgsign=true + gpg.format=ssh + gpg.ssh.program=/Applications/1Password.app/Contents/MacOS/op-ssh-sign means every git commit the tests make in temp fixture repos does IPC with the 1Password app. Measured: 2.54s per signed commit vs 0.30s unsigned; full suite 366s with global config vs 174s with GIT_CONFIG_GLOBAL=/dev/null (mix test --include integration, 816 tests, same host). The 59 verification_command_failed findings and the s65.3 timeout bump were symptoms of this leak, not of a slow host.\n\nFix: make the suite hermetic to host git config. In test/test_helper.exs, before ExUnit.start():\n- System.put_env(\"GIT_CONFIG_GLOBAL\", \"/dev/null\")\n- System.put_env(\"GIT_CONFIG_NOSYSTEM\", \"1\")\nEnv vars propagate to every child process the test BEAM spawns — all SpecLedEx.Case.git!/2 calls, the direct git show in branch_check_test.exs, lib code's read-only git calls during tests, and the child mix runs from SpecLedEx.IntegrationCase. No per-callsite changes needed: init_git_repo/1 already sets local user.name/user.email, so nothing from the global config is required. Add a short comment explaining why (host commit-signing config must not leak into fixture commits).\n\nVerification:\n- Tests to pass: full suite (mix test --include integration) green, 0 failures.\n- Behaviors to demonstrate: suite wall time drops roughly in half on a host with 1Password commit-signing configured (~366s -\u003e ~174s reference measurement); no test asserts on signed commits.\n- Commands: mix compile --warnings-as-errors \u0026\u0026 mix test \u0026\u0026 mix format --check-formatted \u0026\u0026 mix deps.unlock --check-unused \u0026\u0026 mix spec.check\n\nAllowed touches (this stage may modify):\n- test/test_helper.exs\n- .spec/state.json (regenerated only, if spec.check rewrites it)\n\nOut of Scope (files):\n- lib/**\n- test_support/**\n- test/** other than test_helper.exs\n- .spec/specs/**\n- .spec/config.yml\n\nOut of Scope (intent):\n- Do not revisit the s65.3 command_timeout_ms value here (follow-up: with this fix the merged run is ~170s, so 400s becomes comfortable headroom; a later ticket may lower it to ~240s).\n- Do not attempt the larger levers found in the same investigation (unglobalize Mix.shell to unlock async: false -\u003e async: true on 33 files; double suite execution in the merge gate; excluding :integration from plain mix test) — candidates for separate tickets.\n- No behavior change to shipped code.\n\nMerge gate:\n- [ ] Code compiles cleanly (mix compile --warnings-as-errors)\n- [ ] mix test passes (full suite, --include integration)\n- [ ] mix spec.check green within the configured timeout\n- [ ] Scope check: diff touches only test/test_helper.exs (+ regenerated .spec/state.json if applicable)\n- [ ] Auditor APPROVE comment on the ticket",
   "id": "specled_-s65.4",
@@ -11,5 +13,5 @@
   "status": "open",
   "title": "Hermetic git config in test suite — stop 1Password commit-signing from doubling suite runtime",
   "type": "task",
-  "updated_at": "2026-07-02T10:30:35Z"
+  "updated_at": "2026-07-02T10:46:00Z"
 }
