@@ -1,6 +1,7 @@
 defmodule SpecLedEx.Compiler.TracerTest do
-  # Tracer writes to a named ETS table shared by the VM.
+  # Tracer writes to named ETS tables shared by the VM.
   use ExUnit.Case, async: false
+  use ExUnitProperties
 
   @moduletag spec: [
                "specled.compiler_tracer.captures_remote_calls",
@@ -12,12 +13,25 @@ defmodule SpecLedEx.Compiler.TracerTest do
 
   @manifest_path Path.join(["_build", Atom.to_string(Mix.env()), ".spec", "xref_mfa.etf"])
 
+  # Flush tests write to the real per-env manifest; snapshot and restore it so
+  # test-fixture edges never leak into the file other tooling reads.
   setup do
-    table = Tracer.table_name()
+    Tracer.reset()
 
-    if :ets.whereis(table) != :undefined do
-      :ets.delete_all_objects(table)
-    end
+    snapshot = if File.exists?(@manifest_path), do: File.read!(@manifest_path)
+
+    on_exit(fn ->
+      Tracer.reset()
+
+      case snapshot do
+        nil ->
+          File.rm(@manifest_path)
+
+        binary ->
+          File.mkdir_p!(Path.dirname(@manifest_path))
+          File.write!(@manifest_path, binary)
+      end
+    end)
 
     :ok
   end
@@ -178,6 +192,179 @@ defmodule SpecLedEx.Compiler.TracerTest do
 
       assert sample_keys != [],
              "expected at least one edge from Sample.*/*, got keys: #{inspect(Map.keys(edges))}"
+    end
+  end
+
+  describe "Tracer.merge_edges/3 (specled.compiler_tracer.merge_on_flush)" do
+    @tag spec: "specled.compiler_tracer.merge_on_flush"
+    test "non-session entries are preserved; session-caller entries are replaced" do
+      previous = %{
+        {ModKeep, :f, 1} => [{Enum, :map, 2}],
+        {ModRecompiled, :g, 0} => [{String, :old_callee, 1}]
+      }
+
+      session_edges = %{{ModRecompiled, :g, 0} => [{String, :upcase, 1}]}
+
+      merged = Tracer.merge_edges(previous, MapSet.new([ModRecompiled]), session_edges)
+
+      assert merged[{ModKeep, :f, 1}] == [{Enum, :map, 2}]
+      assert merged[{ModRecompiled, :g, 0}] == [{String, :upcase, 1}]
+    end
+
+    @tag spec: "specled.compiler_tracer.session_module_replacement"
+    test "session module with zero session edges drops all its stale entries" do
+      previous = %{
+        {ModRecompiled, :g, 0} => [{String, :old_callee, 1}],
+        {ModRecompiled, :h, 2} => [{Enum, :sort, 1}],
+        {ModKeep, :f, 1} => [{Enum, :map, 2}]
+      }
+
+      merged = Tracer.merge_edges(previous, MapSet.new([ModRecompiled]), %{})
+
+      refute Map.has_key?(merged, {ModRecompiled, :g, 0})
+      refute Map.has_key?(merged, {ModRecompiled, :h, 2})
+      assert Map.has_key?(merged, {ModKeep, :f, 1})
+    end
+
+    @tag spec: "specled.compiler_tracer.merge_on_flush"
+    test "callee lists come out sorted and deduplicated" do
+      previous = %{{ModKeep, :f, 1} => [{Zeta, :z, 0}, {Alpha, :a, 0}, {Zeta, :z, 0}]}
+      session_edges = %{{ModNew, :n, 0} => [{Beta, :b, 1}, {Beta, :b, 1}, {Alpha, :a, 0}]}
+
+      merged = Tracer.merge_edges(previous, MapSet.new(), session_edges)
+
+      assert merged[{ModKeep, :f, 1}] == [{Alpha, :a, 0}, {Zeta, :z, 0}]
+      assert merged[{ModNew, :n, 0}] == [{Alpha, :a, 0}, {Beta, :b, 1}]
+    end
+
+    @tag spec: "specled.compiler_tracer.merge_on_flush"
+    property "merge keeps exactly non-session previous entries plus session edges, and is idempotent" do
+      module_pool = [ModA, ModB, ModC, ModD]
+
+      mfa_gen =
+        gen all(
+              mod <- member_of(module_pool),
+              fun <- member_of([:f, :g, :h]),
+              arity <- integer(0..2)
+            ) do
+          {mod, fun, arity}
+        end
+
+      edges_gen = map_of(mfa_gen, list_of(mfa_gen, max_length: 4), max_length: 8)
+
+      check all(
+              previous <- edges_gen,
+              session_edges <- edges_gen,
+              session_modules <- uniq_list_of(member_of(module_pool), max_length: 3)
+            ) do
+        session_set = MapSet.new(session_modules)
+        merged = Tracer.merge_edges(previous, session_set, session_edges)
+
+        canonical = fn callees -> callees |> Enum.sort() |> Enum.dedup() end
+
+        expected_kept =
+          for {{mod, _f, _a} = caller, callees} <- previous,
+              not MapSet.member?(session_set, mod),
+              into: %{},
+              do: {caller, callees}
+
+        expected =
+          expected_kept
+          |> Map.merge(session_edges)
+          |> Map.new(fn {caller, callees} -> {caller, canonical.(callees)} end)
+
+        assert merged == expected
+
+        # Idempotence: re-merging the result with the same inputs is stable.
+        assert Tracer.merge_edges(merged, session_set, session_edges) == merged
+      end
+    end
+  end
+
+  describe "Tracer.prune_edges/2 (specled.compiler_tracer.merge_on_flush)" do
+    @tag spec: "specled.compiler_tracer.seed_time_ghost_prune"
+    test "nil and empty live sets are identity (prune disabled)" do
+      edges = %{{GhostMod, :f, 0} => [{Enum, :map, 2}]}
+
+      assert Tracer.prune_edges(edges, nil) == edges
+      assert Tracer.prune_edges(edges, MapSet.new()) == edges
+    end
+
+    @tag spec: "specled.compiler_tracer.seed_time_ghost_prune"
+    test "callers absent from a non-empty live set are dropped" do
+      edges = %{
+        {LiveMod, :f, 0} => [{Enum, :map, 2}],
+        {GhostMod, :g, 1} => [{Enum, :sort, 1}]
+      }
+
+      pruned = Tracer.prune_edges(edges, MapSet.new([LiveMod]))
+
+      assert Map.keys(pruned) == [{LiveMod, :f, 0}]
+    end
+  end
+
+  describe "merge-on-flush through trace/2 (specled.compiler_tracer.scenario.recompiled_module_replaces_edges)" do
+    @tag spec: "specled.compiler_tracer.session_module_replacement"
+    test "recompiled module with zero captured edges drops its stale entries; others preserved" do
+      # Both caller modules are real host-project modules, so the seed-time
+      # prune (which runs against spec_led_ex's own compile manifest in this
+      # VM) keeps them.
+      stale = %{
+        {SpecLedEx.Overlap, :analyze, 2} => [{Enum, :stale_marker, 1}],
+        {SpecLedEx.Parser, :parse, 1} => [{String, :split, 2}]
+      }
+
+      File.mkdir_p!(Path.dirname(@manifest_path))
+      File.write!(@manifest_path, :erlang.term_to_binary(stale))
+      Tracer.reset()
+
+      env = %Macro.Env{module: SpecLedEx.Overlap, function: nil}
+      Tracer.trace(:start, env)
+      Tracer.trace(:on_module, env)
+
+      edges = @manifest_path |> File.read!() |> :erlang.binary_to_term()
+
+      refute Map.has_key?(edges, {SpecLedEx.Overlap, :analyze, 2})
+      assert edges[{SpecLedEx.Parser, :parse, 1}] == [{String, :split, 2}]
+    end
+
+    @tag spec: "specled.compiler_tracer.seed_time_ghost_prune"
+    test "ghost callers absent from the compile manifest are pruned at merge-base seed time" do
+      ghost = Module.concat([SpecLedEx, "GhostModuleNeverCompiled"])
+
+      stale = %{
+        {ghost, :f, 0} => [{Enum, :map, 2}],
+        {SpecLedEx.Parser, :parse, 1} => [{String, :split, 2}]
+      }
+
+      File.mkdir_p!(Path.dirname(@manifest_path))
+      File.write!(@manifest_path, :erlang.term_to_binary(stale))
+      Tracer.reset()
+
+      env = %Macro.Env{module: FlushGhostTrigger, function: nil}
+      Tracer.trace(:start, env)
+      Tracer.trace(:on_module, env)
+
+      edges = @manifest_path |> File.read!() |> :erlang.binary_to_term()
+
+      refute Map.has_key?(edges, {ghost, :f, 0})
+      assert Map.has_key?(edges, {SpecLedEx.Parser, :parse, 1})
+    end
+
+    @tag spec: "specled.compiler_tracer.merge_on_flush"
+    test "flush leaves no temp-file litter next to the manifest" do
+      env = %Macro.Env{module: AtomicFlushCaller, function: {:f, 0}}
+      Tracer.trace(:start, env)
+      Tracer.trace({:remote_function, [], Enum, :map, 2}, env)
+      Tracer.trace(:on_module, env)
+
+      litter =
+        @manifest_path
+        |> Path.dirname()
+        |> File.ls!()
+        |> Enum.filter(&String.contains?(&1, ".tmp."))
+
+      assert litter == []
     end
   end
 
