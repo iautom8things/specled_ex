@@ -1,7 +1,9 @@
 {
   "assignee": "",
   "blocked_by": [],
-  "blocks": [],
+  "blocks": [
+    "specled_-s65.7"
+  ],
   "created": "2026-07-02T11:15:08Z",
   "description": "Advances: specled.verification\n\nDeliverable:\nOne-shot CLI override for the verification command timeout, so an agent (or human) can test a bigger budget without editing .spec/config.yml. Motivated by the s65.3 incident: the verifier agent burned a full investigation cycle proving 'timeout, not test failures' — with this flag the hypothesis test is one command.\n\n- lib/mix/tasks/spec.check.ex: add command_timeout_ms: :integer to the OptionParser strict list; resolve as opts[:command_timeout_ms] || config.verification.command_timeout_ms (line ~58). Verifier already handles nil -\u003e 120_000 default, so precedence CLI \u003e config \u003e default falls out of the existing || chain.\n- lib/mix/tasks/spec.validate.ex: same change (strict list ~line 36, resolution ~line 52).\n- Moduledocs: document the flag and the precedence order on both tasks.\n- .spec/specs/verification.spec.md: new must requirement (CLI flag overrides config value which overrides the 120s default) + scenario + add the requirement id to the existing tagged_tests verification covers list.\n- Regenerate .spec/state.json via mix spec.check (never hand-edit).\n\nVerification:\n- Tests to pass: additions to test/mix/tasks/spec_check_test.exs and test/specled_ex/mix/tasks/spec_validate_test.exs — flag beats config value; absent flag falls back to config; absent both falls back to default. Tag covering tests with the new requirement id (test-tag enforcement runs at error).\n- Behaviors to demonstrate: mix spec.check --command-timeout-ms 1 forces a timeout on a slow command; the same setup passes with a generous flag value while config is unset.\n- Commands: mix compile --warnings-as-errors \u0026\u0026 mix test \u0026\u0026 mix format --check-formatted \u0026\u0026 mix deps.unlock --check-unused \u0026\u0026 mix spec.check\n\nAllowed touches (this stage may modify):\n- lib/mix/tasks/spec.check.ex\n- lib/mix/tasks/spec.validate.ex\n- test/mix/tasks/spec_check_test.exs\n- test/specled_ex/mix/tasks/spec_validate_test.exs\n- .spec/specs/verification.spec.md\n- .spec/state.json\n\nOut of Scope (files):\n- lib/specled_ex/verifier.ex\n- lib/specled_ex/config*\n- .spec/config.yml\n\nOut of Scope (intent):\n- No verifier behavior change — the verifier already accepts command_timeout_ms as an opt; this ticket only adds the CLI source for it.\n- No config schema change — config.verification.command_timeout_ms parsing is untouched.\n- Do not change finding codes or messages (that is the follow-up ticket).\n- Conventions: to_timeout/1 not :timer helpers; @impl with explicit behaviour module; escape interpolation in doc examples.\n\nMerge gate:\n- [ ] Code compiles cleanly (mix compile --warnings-as-errors)\n- [ ] Tests listed above pass\n- [ ] mix spec.check green\n- [ ] Scope check: diff touches only Allowed globs (mechanical)\n- [ ] Auditor APPROVE comment on the ticket",
   "id": "specled_-s65.6",
@@ -11,5 +13,5 @@
   "status": "open",
   "title": "CLI override for verification timeout: --command-timeout-ms on spec.check and spec.validate",
   "type": "task",
-  "updated_at": "2026-07-02T11:15:08Z"
+  "updated_at": "2026-07-02T11:15:35Z"
 }
