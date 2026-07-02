@@ -3,7 +3,7 @@
   "blocked_by": [],
   "blocks": [],
   "created": "2026-07-02T02:05:18Z",
-  "description": "Jira: TBD\nDistilled from mini-plan (think-q2h). Spec dir: .spec/\nWorktree: /Users/mz/src/specled_ex-realization-enabled-tiers\nPlan: -Users-mz-src-specled-ex/2026-07-01-realization-enabled-tiers/runs/20260701-214533-claude-mini/05-refined-plan.md\nDecision: specled.decision.realization_tiers_nil_default\nSupersedes: specled_-vwm",
+  "description": "Jira: TBD\nDistilled from mini-plan (think-q2h). Spec dir: .spec/\nWorktree: /Users/mz/src/specled_ex-realization-enabled-tiers\nBranch: specled_-s65/realization-enabled-tiers\nPlan: -Users-mz-src-specled-ex/2026-07-01-realization-enabled-tiers/runs/20260701-214533-claude-mini/05-refined-plan.md\nDecision: specled.decision.realization_tiers_nil_default\nSupersedes: specled_-vwm",
   "id": "specled_-s65",
   "labels": [
     "slug:realization-enabled-tiers"
