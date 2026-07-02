@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-ia9",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: a7c01b31-1832-4731-b697-52202d55f59c\nLog: ~/.claude/projects/-Users-mz-src-specled-ex/a7c01b31-1832-4731-b697-52202d55f59c.jsonl\n\nCommit: 13bcdbc (branch specled_-ia9/tracer-merge-on-flush; base for this ticket is S1's b2ba76c)\nFiles touched: lib/specled_ex/realization/implementation.ex, .spec/specs/implementation_tier.spec.md, test/specled_ex/realization/implementation_test.exs, .spec/state.json (regen)\nTests added: filter_edges/3 unit tests (ghost dropped under non-empty manifest; binding-module caller kept; nil/empty manifest identity), determinism tests (hashes_for_seeding/3 twice identical; run/4 twice identical findings with pinned wrong committed hash proving identical drift current_hash through the full pipeline)\nVerification stubs flipped: new tagged_tests block covering ghost_edges_filtered + empty_manifest_no_filtering + deterministic_hashes added at execute: true\n\nDeviations from ticket text, with rationale:\n1. The planned single ghost_edges_filtered requirement split into ghost_edges_filtered + empty_manifest_no_filtering — same overlap/duplicate_covers guardrail as S1 (one scenario per requirement id).\n2. The ticket's 'behavior test through Implementation.run/4 with a ghost-caller fixture -\u003e hash equals clean-set hash' was NOT written, deliberately: reading Closure.walk shows the walk already stops at in_project? misses using the same set the filter uses, so that run/4 assertion passes with or without the filter — a vacuous test (the test critic's assert-nothing category). The filter is honestly framed in the requirement and code comments as a world invariant / defense-in-depth (its real seam), unit-tested at filter_edges/3 where removal of the filter actually fails the tests. Determinism IS tested end-to-end through run/4.\n3. Commit carries Spec-Drift: branch_guard_missing_subject_update=info — implementation_test.exs sits in specled.realized_by's surface (hashes_for_seeding covers realized_by.silent_seed) but no realized_by contract changed. Note this finding is diff-scoped, so the trailer does not go inert post-merge (unlike realization-drift findings).\n\nGates: mix compile --warnings-as-errors PASS; mix test 881 tests 3 properties 0 failures; mix format --check-formatted PASS; mix deps.unlock --check-unused PASS; mix spec.check status=pass errors=0 (1 info finding via trailer).\n\nSummary: build_world filters ghost caller entries out of the tracer edge map whenever a non-empty compile manifest is present (authoritative read-time prune per specled.decision.tracer_manifest_merge_on_flush), passes edges through untouched otherwise, and the implementation tier now carries an explicit determinism contract with end-to-end regression tests.",
+      "timestamp": "2026-07-02T23:11:04Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "S2: Read-time ghost filtering + hash determinism contract",
   "type": "task",
-  "updated_at": "2026-07-02T23:03:17Z"
+  "updated_at": "2026-07-02T23:11:04Z"
 }
