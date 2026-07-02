@@ -4,6 +4,9 @@ test_tags:
     - test
   enforcement: error
 
+verification:
+  command_timeout_ms: 400000
+
 guardrails:
   severities:
     append_only/requirement_deleted: error
