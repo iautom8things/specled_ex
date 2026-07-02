@@ -17,11 +17,15 @@
     {
       "text": "ORCHESTRATED\nChildren closed: 3\nBOUNCEs encountered: 1\nUser escalations: 0",
       "timestamp": "2026-07-02T19:27:47Z"
+    },
+    {
+      "text": "Landed: rebase onto ead8d89 was already done; finished the deferred /open-pr steps — recommitted the realization baseline with a Spec-Drift: branch_guard_realization_drift=info trailer (the S2 TaggedTests changes are the acknowledged drift), 866 tests green, plain mix spec.check exit 0. ff-merged to main and pushed (5cf commits incl. baseline recommit). Atlas is bumping to this rev next.",
+      "timestamp": "2026-07-02T19:45:39Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Streaming per-test attribution for merged tagged_tests runs",
   "type": "epic",
-  "updated_at": "2026-07-02T19:27:47Z"
+  "updated_at": "2026-07-02T19:45:39Z"
 }
