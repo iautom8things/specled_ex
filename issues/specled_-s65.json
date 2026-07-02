@@ -9,9 +9,15 @@
     "phase:implementing",
     "slug:realization-enabled-tiers"
   ],
+  "comments": [
+    {
+      "text": "MERGE GATE RED (post-S1-close): mix spec.check exited 1 with 59 verification_command_failed findings after S1 (specled_-s65.1) merged into the epic branch.\n\nRoot cause (independently confirmed by both S1's verifier and auditor, and reproduced here in the epic worktree): lib/specled_ex/verifier.ex defaults command_timeout_ms to 120000ms, but the tagged_tests verification command (`mix test --include integration \u003c62 files\u003e`) takes ~245-320s on this host — well over budget. .spec/config.yml sets no override. On timeout the verification port closes and every subject sharing that command gets verification_command_failed, hence 59 findings from one slow command.\n\nEvidence this is NOT a real regression from S1:\n- `mix test --include integration` run standalone: 816 tests, 0 failures (both by the auditor and just now via the full mix spec.check run — all dots, no F's, in the log before the timeout-classification errors)\n- plain `mix test`: passes\n- mix compile --warnings-as-errors, mix format --check-formatted, mix deps.unlock --check-unused: all pass\n- Committed .spec/state.json at S1's commit (067f791) has findings: []\n- S1's diff does not touch .spec/config.yml or verification timeout settings; the added tests are fast unit tests with no plausible way to add ~150-200s\n\nThis is a pre-existing condition (present on the base commit, unrelated to any child ticket's Allowed touches — S1 and S2 are both out of scope for touching verification.command_timeout_ms). Per orchestration rules, a red merge gate blocks further work regardless of root-cause analysis, so I'm pausing here rather than continuing to S2.\n\nOptions for the human:\n1. Raise verification.command_timeout_ms in .spec/config.yml (the repo already ships \"configurable spec verification timeout\" per a recent commit) — this would need its own small ticket/change since it's out of scope for S1/S2, or a manual config edit if you consider it pre-existing repo maintenance rather than epic scope.\n2. Confirm CI runs with a longer effective timeout / faster host and this is a local-sandbox-only artifact — in which case you may want to explicitly waive this gate for local orchestration and only enforce it in CI.\n3. Direct me to bypass this gate for this run (I will not do so without explicit instruction, per \"never bypass merge gates\").\n\nEpic paused pending your call. S1 is closed and merged; S2 (specled_-s65.2) has not been started.",
+      "timestamp": "2026-07-02T03:21:56Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Wire realization.enabled_tiers from .spec/config.yml into the orchestrator",
   "type": "epic",
-  "updated_at": "2026-07-02T02:10:03Z"
+  "updated_at": "2026-07-02T03:21:56Z"
 }
