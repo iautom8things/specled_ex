@@ -600,7 +600,10 @@ defmodule Mix.Tasks.SpecTasksTest do
     assert message_contains?(messages, "status=pass errors=0 warnings=0")
   end
 
-  @tag spec: "specled.tasks.command_timeout_config"
+  @tag spec: [
+         "specled.tasks.command_timeout_config",
+         "specled.verify.command_timeout_distinct_finding"
+       ]
   test "spec.validate honors command timeout from config", %{root: root} do
     write_files(root, %{
       ".spec/config.yml" => "verification:\n  command_timeout_ms: 100\n"
@@ -625,10 +628,17 @@ defmodule Mix.Tasks.SpecTasksTest do
       Mix.Tasks.Spec.Validate.run(["--root", root, "--run-commands", "--strict"])
     end
 
-    assert [%{"code" => "verification_command_failed"}] = read_state(root)["findings"]
+    assert [%{"code" => "verification_command_timeout", "message" => message}] =
+             read_state(root)["findings"]
+
+    assert message =~ "command exceeded 100ms"
+    assert message =~ "--command-timeout-ms 200"
   end
 
-  @tag spec: "specled.tasks.command_timeout_config"
+  @tag spec: [
+         "specled.tasks.command_timeout_config",
+         "specled.verify.command_timeout_distinct_finding"
+       ]
   test "spec.check honors command timeout from config", %{root: root} do
     write_files(root, %{
       ".spec/config.yml" => "verification:\n  command_timeout_ms: 100\n"
@@ -653,7 +663,11 @@ defmodule Mix.Tasks.SpecTasksTest do
       Mix.Tasks.Spec.Check.run(["--root", root])
     end
 
-    assert [%{"code" => "verification_command_failed"}] = read_state(root)["findings"]
+    assert [%{"code" => "verification_command_timeout", "message" => message}] =
+             read_state(root)["findings"]
+
+    assert message =~ "command exceeded 100ms"
+    assert message =~ "--command-timeout-ms 200"
   end
 
   @tag spec: [

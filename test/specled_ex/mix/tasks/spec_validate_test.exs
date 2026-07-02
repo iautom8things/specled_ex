@@ -180,7 +180,10 @@ defmodule Mix.Tasks.Spec.ValidateCommandTimeoutTest do
       assert File.read!(Path.join(root, marker)) == "done"
     end
 
-    @tag spec: "specled.verify.command_timeout_cli_precedence"
+    @tag spec: [
+           "specled.verify.command_timeout_cli_precedence",
+           "specled.verify.command_timeout_distinct_finding"
+         ]
     test "absent flag falls back to config value", %{root: root} do
       write_timeout_config(root, 1)
       write_slow_command_spec(root, "validate_config_timeout")
@@ -189,7 +192,11 @@ defmodule Mix.Tasks.Spec.ValidateCommandTimeoutTest do
         Mix.Tasks.Spec.Validate.run(["--root", root, "--run-commands", "--strict"])
       end
 
-      assert [%{"code" => "verification_command_failed"}] = read_state(root)["findings"]
+      assert [%{"code" => "verification_command_timeout", "message" => message}] =
+               read_state(root)["findings"]
+
+      assert message =~ "command exceeded 1ms"
+      assert message =~ "--command-timeout-ms 2"
     end
 
     @tag spec: "specled.verify.command_timeout_cli_precedence"

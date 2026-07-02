@@ -944,8 +944,18 @@ defmodule SpecLedEx.VerifierTest do
 
     assert failed_check
     assert failed_check["message"] =~ "exit_code=2"
+
+    failed_finding =
+      Enum.find(
+        findings(report, "verification_command_failed"),
+        &(&1["message"] =~ "exit_code=2")
+      )
+
+    assert failed_finding
+    refute Enum.any?(findings(report, "verification_command_timeout"))
   end
 
+  @tag spec: "specled.verify.command_timeout_distinct_finding"
   test "command verification times out on slow commands", %{root: root} do
     report =
       verify_subject(
@@ -955,25 +965,39 @@ defmodule SpecLedEx.VerifierTest do
           "verification" => [
             %{
               "kind" => "command",
-              "target" => "sleep 30",
+              "target" => "sleep 1",
               "covers" => ["req.slow"],
               "execute" => true
             }
           ]
         },
         run_commands: true,
-        command_timeout_ms: 500,
+        command_timeout_ms: 50,
         debug: true
       )
 
     assert report["status"] == "fail"
 
-    failed_check =
-      Enum.find(report["checks"], fn c ->
-        c["code"] == "verification_command_failed" and c["status"] == "error"
+    timeout_finding =
+      Enum.find(findings(report, "verification_command_timeout"), fn finding ->
+        finding["message"] =~ "sleep 1"
       end)
 
-    assert failed_check
+    assert timeout_finding
+    assert timeout_finding["message"] =~ "command exceeded 50ms"
+    assert timeout_finding["message"] =~ "verification.command_timeout_ms in .spec/config.yml"
+    assert timeout_finding["message"] =~ "default 120000"
+    assert timeout_finding["message"] =~ "--command-timeout-ms 100"
+    assert timeout_finding["message"] =~ "tests were not observed to fail"
+
+    refute Enum.any?(findings(report, "verification_command_failed"))
+
+    timeout_check =
+      Enum.find(report["checks"], fn c ->
+        c["code"] == "verification_command_timeout" and c["status"] == "error"
+      end)
+
+    assert timeout_check
   end
 
   # ── tagged_tests verification kind ───────────────────────────────────────
@@ -1128,6 +1152,7 @@ defmodule SpecLedEx.VerifierTest do
   end
 
   @tag spec: "specled.tagged_tests.merged_run_attribution"
+  @tag spec: "specled.tagged_tests.shared_run_finding_context"
   test "tagged_tests merged command failure surfaces a finding per subject",
        %{root: root} do
     shim_dir = Path.join(root, "bin")
@@ -1174,9 +1199,82 @@ defmodule SpecLedEx.VerifierTest do
 
       failures = findings(report, "verification_command_failed")
       assert length(failures) == 2
+      assert MapSet.new(Enum.map(failures, & &1["subject_id"])) == MapSet.new(["alpha", "beta"])
+
+      assert Enum.all?(failures, fn failure ->
+               failure["message"] =~
+                 "aggregated tagged_tests run (1 command shared by 2 subjects)" and
+                 failure["message"] =~
+                   "this finding reflects the shared run, not a subject-specific failure"
+             end)
 
       assert claim_for(report, "req.alpha")["strength"] == "linked"
       assert claim_for(report, "req.beta")["strength"] == "linked"
+    after
+      System.put_env("PATH", original_path)
+    end
+  end
+
+  @tag spec: "specled.tagged_tests.merged_run_attribution"
+  @tag spec: "specled.tagged_tests.shared_run_finding_context"
+  @tag spec: "specled.verify.command_timeout_distinct_finding"
+  test "tagged_tests merged command timeout surfaces shared context per subject",
+       %{root: root} do
+    shim_dir = Path.join(root, "bin")
+    File.mkdir_p!(shim_dir)
+    shim_path = Path.join(shim_dir, "mix")
+    File.write!(shim_path, "#!/bin/sh\nsleep 1\n")
+    File.chmod!(shim_path, 0o755)
+
+    original_path = System.get_env("PATH")
+    System.put_env("PATH", "#{shim_dir}:#{original_path}")
+
+    try do
+      report =
+        Verifier.verify(
+          %{
+            "subjects" => [
+              base_subject(%{
+                "file" => ".spec/specs/alpha.spec.md",
+                "meta" => %{"id" => "alpha", "kind" => "module", "status" => "active"},
+                "requirements" => [%{"id" => "req.alpha", "statement" => "Alpha"}],
+                "verification" => [
+                  %{"kind" => "tagged_tests", "covers" => ["req.alpha"], "execute" => true}
+                ]
+              }),
+              base_subject(%{
+                "file" => ".spec/specs/beta.spec.md",
+                "meta" => %{"id" => "beta", "kind" => "module", "status" => "active"},
+                "requirements" => [%{"id" => "req.beta", "statement" => "Beta"}],
+                "verification" => [
+                  %{"kind" => "tagged_tests", "covers" => ["req.beta"], "execute" => true}
+                ]
+              })
+            ],
+            "test_tags" => %{
+              "req.alpha" => [%{file: "test/alpha_test.exs"}],
+              "req.beta" => [%{file: "test/beta_test.exs"}]
+            }
+          },
+          root,
+          run_commands: true,
+          command_timeout_ms: 50
+        )
+
+      assert report["status"] == "fail"
+
+      timeouts = findings(report, "verification_command_timeout")
+      assert length(timeouts) == 2
+      assert MapSet.new(Enum.map(timeouts, & &1["subject_id"])) == MapSet.new(["alpha", "beta"])
+      refute Enum.any?(findings(report, "verification_command_failed"))
+
+      assert Enum.all?(timeouts, fn timeout ->
+               timeout["message"] =~
+                 "aggregated tagged_tests run (1 command shared by 2 subjects)" and
+                 timeout["message"] =~ "--command-timeout-ms 100" and
+                 timeout["message"] =~
+                   "this finding reflects the shared run, not a subject-specific failure"
+             end)
     after
       System.put_env("PATH", original_path)
     end

@@ -2527,6 +2527,14 @@
       },
       {
         "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "id": "specled.tagged_tests.shared_run_finding_context",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "Findings emitted from an aggregated tagged_tests command result shall state that one command was shared by the participating entry count and that the finding reflects the shared run rather than a subject-specific failure, while preserving distribution of the single result to every participating verification entry.",
+        "subject_id": "specled.tagged_tests"
+      },
+      {
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
         "id": "specled.tagged_tests.strength_claimed_on_untagged_cover",
         "priority": "must",
         "stability": "evolving",
@@ -2687,10 +2695,18 @@
       },
       {
         "file": ".spec/specs/verification.spec.md",
+        "id": "specled.verify.command_timeout_distinct_finding",
+        "priority": "must",
+        "stability": "stable",
+        "statement": "When a command verification times out, verification shall emit an error finding with code `verification_command_timeout` rather than `verification_command_failed`. The timeout message shall include the exceeded millisecond budget, the `verification.command_timeout_ms` `.spec/config.yml` key with the 120000ms default, and a `--command-timeout-ms` retry hint.\n",
+        "subject_id": "specled.verification"
+      },
+      {
+        "file": ".spec/specs/verification.spec.md",
         "id": "specled.verify.command_timeout_enforced",
         "priority": "must",
         "stability": "stable",
-        "statement": "Command verifications shall run under a configurable timeout (default 120s). When the timeout elapses, the spawned process shall be killed and a non-zero exit code shall be recorded on the result.\n",
+        "statement": "Command verifications shall run under a configurable timeout (default 120s). When the timeout elapses, the result shall record the timeout distinctly and verification shall fail for gating purposes without treating the timeout as an observed non-zero test failure.\n",
         "subject_id": "specled.verification"
       },
       {
@@ -5487,6 +5503,26 @@
       },
       {
         "covers": [
+          "specled.tagged_tests.shared_run_finding_context"
+        ],
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "given": [
+          "two subjects each declaring a `kind: tagged_tests` verification with execute=true",
+          "a tag map backing every cover id to a test file",
+          "the aggregated command fails or times out"
+        ],
+        "id": "specled.tagged_tests.scenario.shared_run_finding_context",
+        "subject_id": "specled.tagged_tests",
+        "then": [
+          "every per-subject command failure or timeout finding includes the participating entry count",
+          "every per-subject finding states that the finding reflects the shared run, not a subject-specific failure"
+        ],
+        "when": [
+          "verification distributes the aggregated command result back to each entry"
+        ]
+      },
+      {
+        "covers": [
           "specled.triangulation.detector_unavailable_on_missing_coverage"
         ],
         "file": ".spec/specs/triangulation.spec.md",
@@ -5688,8 +5724,8 @@
         "id": "specled.verify.scenario.command_timeout",
         "subject_id": "specled.verification",
         "then": [
-          "the command is killed after the timeout",
-          "a non-zero exit code is recorded"
+          "the result records the timeout distinctly",
+          "verification is reported failed for gating purposes"
         ],
         "when": [
           "verification runs with run_commands true and a short timeout"
@@ -5713,6 +5749,25 @@
         ],
         "when": [
           "`mix spec.check` or `mix spec.validate` runs command verification"
+        ]
+      },
+      {
+        "covers": [
+          "specled.verify.command_timeout_distinct_finding"
+        ],
+        "file": ".spec/specs/verification.spec.md",
+        "given": [
+          "a spec with a command verification targeting a slow command"
+        ],
+        "id": "specled.verify.scenario.command_timeout_distinct_finding",
+        "subject_id": "specled.verification",
+        "then": [
+          "a `verification_command_timeout` error finding is emitted",
+          "no `verification_command_failed` finding is emitted for that timeout",
+          "the finding message includes the exceeded budget and `--command-timeout-ms` retry hint"
+        ],
+        "when": [
+          "verification runs with run_commands true and a short timeout"
         ]
       },
       {
@@ -7990,6 +8045,7 @@
           "specled.tagged_tests.build_command_includes_integration_flag",
           "specled.tagged_tests.build_command_file_selectors_for_list_tags",
           "specled.tagged_tests.merged_run_attribution",
+          "specled.tagged_tests.shared_run_finding_context",
           "specled.tagged_tests.strength_progression",
           "specled.tagged_tests.strength_executed_on_green_run",
           "specled.tagged_tests.strength_claimed_on_untagged_cover",
@@ -8092,6 +8148,7 @@
           "specled.verify.command_execution_resilience",
           "specled.verify.command_output_via_tempfile",
           "specled.verify.command_timeout_enforced",
+          "specled.verify.command_timeout_distinct_finding",
           "specled.verify.command_timeout_cli_precedence",
           "specled.verify.command_exit_code_recorded"
         ],
@@ -8625,8 +8682,8 @@
     "decisions": 32,
     "exceptions": 0,
     "findings": 0,
-    "requirements": 294,
-    "scenarios": 164,
+    "requirements": 296,
+    "scenarios": 166,
     "subjects": 33,
     "verifications": 96
   },
@@ -11988,6 +12045,17 @@
         "verification_index": 0
       },
       {
+        "cover_id": "specled.tagged_tests.shared_run_finding_context",
+        "file": ".spec/specs/tagged_tests_verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.tagged_tests",
+        "target": "",
+        "verification_index": 0
+      },
+      {
         "cover_id": "specled.tagged_tests.strength_claimed_on_untagged_cover",
         "file": ".spec/specs/tagged_tests_verification.spec.md",
         "kind": "tagged_tests",
@@ -12241,6 +12309,17 @@
         "verification_index": 0
       },
       {
+        "cover_id": "specled.verify.command_timeout_distinct_finding",
+        "file": ".spec/specs/verification.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.verification",
+        "target": "",
+        "verification_index": 0
+      },
+      {
         "cover_id": "specled.verify.command_timeout_enforced",
         "file": ".spec/specs/verification.spec.md",
         "kind": "tagged_tests",
@@ -12410,7 +12489,7 @@
     "default_minimum_strength": "claimed",
     "strength_summary": {
       "claimed": 2,
-      "executed": 268,
+      "executed": 270,
       "linked": 73
     },
     "threshold_failures": 0

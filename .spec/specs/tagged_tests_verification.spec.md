@@ -99,6 +99,15 @@ decisions:
     same execution outcome.
   priority: must
   stability: evolving
+- id: specled.tagged_tests.shared_run_finding_context
+  statement: >-
+    Findings emitted from an aggregated tagged_tests command result shall
+    state that one command was shared by the participating entry count and
+    that the finding reflects the shared run rather than a subject-specific
+    failure, while preserving distribution of the single result to every
+    participating verification entry.
+  priority: must
+  stability: evolving
 - id: specled.tagged_tests.strength_progression
   statement: >-
     A `tagged_tests` claim shall reach `linked` strength when its cover
@@ -209,6 +218,18 @@ decisions:
   covers:
     - specled.tagged_tests.merged_run_attribution
     - specled.tagged_tests.strength_executed_on_green_run
+- id: specled.tagged_tests.scenario.shared_run_finding_context
+  given:
+    - "two subjects each declaring a `kind: tagged_tests` verification with execute=true"
+    - a tag map backing every cover id to a test file
+    - the aggregated command fails or times out
+  when:
+    - verification distributes the aggregated command result back to each entry
+  then:
+    - every per-subject command failure or timeout finding includes the participating entry count
+    - every per-subject finding states that the finding reflects the shared run, not a subject-specific failure
+  covers:
+    - specled.tagged_tests.shared_run_finding_context
 - id: specled.tagged_tests.scenario.missing_tag_warning_emitted
   given:
     - "a subject with a `kind: tagged_tests` verification covering `req.untagged`"
@@ -237,6 +258,7 @@ decisions:
     - specled.tagged_tests.build_command_includes_integration_flag
     - specled.tagged_tests.build_command_file_selectors_for_list_tags
     - specled.tagged_tests.merged_run_attribution
+    - specled.tagged_tests.shared_run_finding_context
     - specled.tagged_tests.strength_progression
     - specled.tagged_tests.strength_executed_on_green_run
     - specled.tagged_tests.strength_claimed_on_untagged_cover

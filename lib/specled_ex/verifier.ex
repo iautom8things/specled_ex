@@ -391,42 +391,83 @@ defmodule SpecLedEx.Verifier do
   defp append_command_runtime_finding(findings, command_result, label, subject_id, file) do
     %{output: output, exit_code: exit_code} = command_result
 
-    if exit_code == 0 do
-      findings
-    else
-      details = command_failure_details(output, exit_code)
+    cond do
+      command_timed_out?(command_result) ->
+        details = command_timeout_details(command_result)
 
-      [
-        finding(
-          "error",
-          "verification_command_failed",
-          "Verification command failed: #{label}\n#{details}",
-          subject_id,
-          file
-        )
-        | findings
-      ]
+        [
+          finding(
+            "error",
+            "verification_command_timeout",
+            "Verification command timed out: #{label}\n#{details}",
+            subject_id,
+            file
+          )
+          | findings
+        ]
+
+      exit_code == 0 ->
+        findings
+
+      true ->
+        details = command_failure_details(output, exit_code, command_result)
+
+        [
+          finding(
+            "error",
+            "verification_command_failed",
+            "Verification command failed: #{label}\n#{details}",
+            subject_id,
+            file
+          )
+          | findings
+        ]
     end
   end
 
-  defp command_failure_details(output, exit_code) do
+  defp command_failure_details(output, exit_code, command_result \\ %{}) do
     trimmed = String.trim(output || "")
     header = "exit_code=#{exit_code}"
 
-    cond do
-      trimmed == "" ->
-        header
+    details =
+      cond do
+        trimmed == "" ->
+          header
 
-      String.length(trimmed) <= 2_000 ->
-        "#{header}\n#{trimmed}"
+        String.length(trimmed) <= 2_000 ->
+          "#{header}\n#{trimmed}"
 
-      true ->
-        head = String.slice(trimmed, 0, 1_000)
-        tail_start = max(String.length(trimmed) - 1_000, 0)
-        tail = String.slice(trimmed, tail_start, 1_000)
+        true ->
+          head = String.slice(trimmed, 0, 1_000)
+          tail_start = max(String.length(trimmed) - 1_000, 0)
+          tail = String.slice(trimmed, tail_start, 1_000)
 
-        "#{header}\n#{head}\n...[output truncated]...\n#{tail}"
+          "#{header}\n#{head}\n...[output truncated]...\n#{tail}"
+      end
+
+    append_shared_tagged_tests_context(details, command_result)
+  end
+
+  defp command_timeout_details(command_result) do
+    timeout_ms = Map.get(command_result, :timeout_ms, @default_command_timeout_ms)
+    doubled_timeout_ms = timeout_ms * 2
+
+    "command exceeded #{timeout_ms}ms (verification.command_timeout_ms in .spec/config.yml, default #{@default_command_timeout_ms}); tests were not observed to fail. Re-run with --command-timeout-ms #{doubled_timeout_ms} to confirm this is a budget problem."
+    |> append_shared_tagged_tests_context(command_result)
+  end
+
+  defp append_shared_tagged_tests_context(message, command_result) do
+    case Map.get(command_result, :tagged_tests_shared_count) do
+      count when is_integer(count) and count > 0 ->
+        "#{message}\naggregated tagged_tests run (1 command shared by #{count} subjects) - this finding reflects the shared run, not a subject-specific failure."
+
+      _ ->
+        message
     end
+  end
+
+  defp command_timed_out?(command_result) do
+    Map.get(command_result, :timed_out) == true
   end
 
   defp add_tagged_tests_cover_findings(
@@ -989,30 +1030,46 @@ defmodule SpecLedEx.Verifier do
           kind == @command_kind and run_commands? and execute? and command_result ->
             %{output: output, exit_code: exit_code} = command_result
 
-            if exit_code == 0 do
-              [
-                check(
-                  "pass",
-                  "verification_command_passed",
-                  "Verification command passed: #{target}",
-                  subject_id,
-                  file
-                )
-                | acc
-              ]
-            else
-              details = command_failure_details(output, exit_code)
+            cond do
+              command_timed_out?(command_result) ->
+                details = command_timeout_details(command_result)
 
-              [
-                check(
-                  "error",
-                  "verification_command_failed",
-                  "Verification command failed: #{target}\n#{details}",
-                  subject_id,
-                  file
-                )
-                | acc
-              ]
+                [
+                  check(
+                    "error",
+                    "verification_command_timeout",
+                    "Verification command timed out: #{target}\n#{details}",
+                    subject_id,
+                    file
+                  )
+                  | acc
+                ]
+
+              exit_code == 0 ->
+                [
+                  check(
+                    "pass",
+                    "verification_command_passed",
+                    "Verification command passed: #{target}",
+                    subject_id,
+                    file
+                  )
+                  | acc
+                ]
+
+              true ->
+                details = command_failure_details(output, exit_code)
+
+                [
+                  check(
+                    "error",
+                    "verification_command_failed",
+                    "Verification command failed: #{target}\n#{details}",
+                    subject_id,
+                    file
+                  )
+                  | acc
+                ]
             end
 
           kind == @command_kind and run_commands? and not execute? ->
@@ -1043,30 +1100,46 @@ defmodule SpecLedEx.Verifier do
             %{output: output, exit_code: exit_code, command: cmd} = command_result
             label = cmd || @tagged_tests_command
 
-            if exit_code == 0 do
-              [
-                check(
-                  "pass",
-                  "verification_command_passed",
-                  "tagged_tests command passed: #{label}",
-                  subject_id,
-                  file
-                )
-                | acc
-              ]
-            else
-              details = command_failure_details(output, exit_code)
+            cond do
+              command_timed_out?(command_result) ->
+                details = command_timeout_details(command_result)
 
-              [
-                check(
-                  "error",
-                  "verification_command_failed",
-                  "tagged_tests command failed: #{label}\n#{details}",
-                  subject_id,
-                  file
-                )
-                | acc
-              ]
+                [
+                  check(
+                    "error",
+                    "verification_command_timeout",
+                    "tagged_tests command timed out: #{label}\n#{details}",
+                    subject_id,
+                    file
+                  )
+                  | acc
+                ]
+
+              exit_code == 0 ->
+                [
+                  check(
+                    "pass",
+                    "verification_command_passed",
+                    "tagged_tests command passed: #{label}",
+                    subject_id,
+                    file
+                  )
+                  | acc
+                ]
+
+              true ->
+                details = command_failure_details(output, exit_code, command_result)
+
+                [
+                  check(
+                    "error",
+                    "verification_command_failed",
+                    "tagged_tests command failed: #{label}\n#{details}",
+                    subject_id,
+                    file
+                  )
+                  | acc
+                ]
             end
 
           kind == @tagged_tests_kind and run_commands? and not execute? ->
@@ -1843,6 +1916,7 @@ defmodule SpecLedEx.Verifier do
             {:ok, cmd} ->
               cmd |> run_command(root, timeout_ms) |> Map.put(:command, cmd)
           end
+          |> Map.put(:tagged_tests_shared_count, length(entries))
 
         Enum.reduce(entries, %{}, fn entry, acc -> Map.put(acc, entry.key, result) end)
     end
@@ -1894,14 +1968,10 @@ defmodule SpecLedEx.Verifier do
           {:error, _} -> ""
         end
 
-      exit_code =
-        if exit_status == :timeout do
-          1
-        else
-          exit_status
-        end
+      timed_out? = exit_status == :timeout
+      exit_code = if(timed_out?, do: nil, else: exit_status)
 
-      %{output: output, exit_code: exit_code}
+      %{output: output, exit_code: exit_code, timed_out: timed_out?, timeout_ms: timeout_ms}
     after
       File.rm(tmp_out)
       File.rm(tmp_script)

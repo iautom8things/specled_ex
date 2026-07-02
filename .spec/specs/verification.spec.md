@@ -88,8 +88,19 @@ decisions:
 - id: specled.verify.command_timeout_enforced
   statement: >
     Command verifications shall run under a configurable timeout (default
-    120s). When the timeout elapses, the spawned process shall be killed
-    and a non-zero exit code shall be recorded on the result.
+    120s). When the timeout elapses, the result shall record the timeout
+    distinctly and verification shall fail for gating purposes without
+    treating the timeout as an observed non-zero test failure.
+  priority: must
+  stability: stable
+- id: specled.verify.command_timeout_distinct_finding
+  statement: >
+    When a command verification times out, verification shall emit an error
+    finding with code `verification_command_timeout` rather than
+    `verification_command_failed`. The timeout message shall include the
+    exceeded millisecond budget, the
+    `verification.command_timeout_ms` `.spec/config.yml` key with the 120000ms
+    default, and a `--command-timeout-ms` retry hint.
   priority: must
   stability: stable
 - id: specled.verify.command_timeout_cli_precedence
@@ -194,10 +205,21 @@ decisions:
   when:
     - verification runs with run_commands true and a short timeout
   then:
-    - the command is killed after the timeout
-    - a non-zero exit code is recorded
+    - the result records the timeout distinctly
+    - verification is reported failed for gating purposes
   covers:
     - specled.verify.command_timeout_enforced
+- id: specled.verify.scenario.command_timeout_distinct_finding
+  given:
+    - a spec with a command verification targeting a slow command
+  when:
+    - verification runs with run_commands true and a short timeout
+  then:
+    - a `verification_command_timeout` error finding is emitted
+    - no `verification_command_failed` finding is emitted for that timeout
+    - the finding message includes the exceeded budget and `--command-timeout-ms` retry hint
+  covers:
+    - specled.verify.command_timeout_distinct_finding
 - id: specled.verify.scenario.command_timeout_cli_precedence
   given:
     - a spec with an executable command verification targeting a slow command
@@ -298,6 +320,7 @@ decisions:
     - specled.verify.command_execution_resilience
     - specled.verify.command_output_via_tempfile
     - specled.verify.command_timeout_enforced
+    - specled.verify.command_timeout_distinct_finding
     - specled.verify.command_timeout_cli_precedence
     - specled.verify.command_exit_code_recorded
 - kind: tagged_tests
