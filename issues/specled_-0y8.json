@@ -2,6 +2,7 @@
   "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-07-02T19:45:39Z",
   "created": "2026-07-02T15:28:08Z",
   "description": "Jira: TBD\nDistilled from mini-plan (think-t2d). Spec dir: .spec/\nWorktree: /Users/mz/src/specled_ex-streaming-attribution\nBranch: specled_-0y8/streaming-attribution\nRefined plan: /Users/mz/Documents/my-vault/LLMs/plans/-Users-mz-src-specled-ex/2026-07-02-streaming-attribution/runs/20260702-071642-claude-mini/05-refined-plan.md\n\nEvidence-based per-cover-id attribution for merged tagged_tests verification runs: process-group kill on timeout (S1), streaming ExUnit formatter artifact + per-cover strength distribution with strict artifact-absent degradation (S2), resume pass over never-started covers (S3). ADR specled.decision.evidence_based_attribution authored at distill. External prerequisites specled_-s65.6 and specled_-s65.7 are CLOSED and merged into main (this branch bases off 643bc24 which contains both).",
   "id": "specled_-0y8",
@@ -24,7 +25,7 @@
     }
   ],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "Streaming per-test attribution for merged tagged_tests runs",
   "type": "epic",
   "updated_at": "2026-07-02T19:45:39Z"
