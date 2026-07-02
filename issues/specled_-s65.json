@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
   "created": "2026-07-02T02:05:18Z",
@@ -9,8 +9,8 @@
     "slug:realization-enabled-tiers"
   ],
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "Wire realization.enabled_tiers from .spec/config.yml into the orchestrator",
   "type": "epic",
-  "updated_at": "2026-07-02T02:05:19Z"
+  "updated_at": "2026-07-02T02:10:03Z"
 }
