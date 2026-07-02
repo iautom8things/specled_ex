@@ -1003,6 +1003,22 @@
       },
       {
         "file": ".spec/specs/compiler_context.spec.md",
+        "id": "specled.compiler_context.default_manifest_path",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "When `Context.load/1` receives no `manifest_path:` override, it shall derive the manifest path as the `.mix/compile.elixir` inside the app directory that is the parent of `compile_path` (i.e. a sibling of `ebin`), including when `compile_path:` itself was explicitly overridden. Deriving it under `ebin/` loads zero modules and silently disables every manifest consumer.",
+        "subject_id": "specled.compiler_context"
+      },
+      {
+        "file": ".spec/specs/compiler_context.spec.md",
+        "id": "specled.compiler_context.from_mix_project",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "`Context.from_mix_project/1` shall be the production entry-point constructor and the only Context function that consults Mix globals (`Mix.Project.config/0`, `Mix.env/0`, `Mix.Project.build_path/0`, `Mix.Project.compile_path/0`, `Mix.Project.manifest_path/0`); `load/1` shall remain Mix-free. Keyword options shall override any derived value. In a compiled project it shall yield a context whose manifest is a non-empty module map.",
+        "subject_id": "specled.compiler_context"
+      },
+      {
+        "file": ".spec/specs/compiler_context.spec.md",
         "id": "specled.compiler_context.load_from_opts",
         "priority": "must",
         "stability": "evolving",
@@ -1014,7 +1030,7 @@
         "id": "specled.compiler_context.manifest_fixture_integration",
         "priority": "must",
         "stability": "evolving",
-        "statement": "A `:integration`-tagged test shall exercise Manifest.load/1 against a real `test/fixtures/sample_project/` compile, asserting the returned map contains at least one module entry whose `sources` list is non-empty. This is the canary for minor-version format drift.",
+        "statement": "A `:integration`-tagged test shall exercise Manifest.load/1 against a real `test/fixtures/sample_project/` compile, asserting the returned map contains at least one module entry whose `sources` list is non-empty. The same fixture shall also exercise `Context.load/1` through its DEFAULT manifest-path derivation, asserting the resulting context manifest is non-empty (`map_size > 0`) — an `is_map/1` check alone lets an empty map from a wrong default path pass silently. This is the canary for minor-version format drift and for default-path regressions.",
         "subject_id": "specled.compiler_context"
       },
       {
@@ -1488,6 +1504,14 @@
         "stability": "evolving",
         "statement": "Index building shall only scan test tags when enabled by configuration or caller options, and shall store the resulting tag map, parse errors, and effective tag configuration on the index under dedicated keys (`test_tags`, `test_tags_errors`, `test_tags_config`).",
         "subject_id": "specled.index_state"
+      },
+      {
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "id": "specled.tasks.check_builds_compile_context",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "mix spec.check shall construct the compile `Context` via `SpecLedEx.Compiler.Context.from_mix_project/1` when its effective root is the current working directory, and shall thread it into the branch guard so realization tiers receive the compile manifest. When `--root` points anywhere else, no context shall be passed (Mix.Project describes the cwd's project, not an arbitrary root — a wrong-project context is worse than none).",
+        "subject_id": "specled.mix_tasks"
       },
       {
         "file": ".spec/specs/mix_tasks.spec.md",
@@ -3882,6 +3906,43 @@
         ],
         "when": [
           "`SpecLedEx.BranchCheck.run/3` runs"
+        ]
+      },
+      {
+        "covers": [
+          "specled.compiler_context.default_manifest_path"
+        ],
+        "file": ".spec/specs/compiler_context.spec.md",
+        "given": [
+          "a build tree shaped `<build>/<env>/lib/<app>/` containing both `ebin/` and a real `.mix/compile.elixir`"
+        ],
+        "id": "specled.compiler_context.scenario.default_manifest_path_sibling",
+        "subject_id": "specled.compiler_context",
+        "then": [
+          "the loaded manifest is non-empty (the default derivation found the sibling `.mix/compile.elixir`)",
+          "an explicit `compile_path:` override still resolves the manifest as that path's sibling `.mix/compile.elixir`"
+        ],
+        "when": [
+          "`Context.load/1` is called with `app:`, `env:`, and `build_path:` but no `manifest_path:` override"
+        ]
+      },
+      {
+        "covers": [
+          "specled.compiler_context.from_mix_project"
+        ],
+        "file": ".spec/specs/compiler_context.spec.md",
+        "given": [
+          "a compiled Mix project as the current project (the test VM's own spec_led_ex)"
+        ],
+        "id": "specled.compiler_context.scenario.from_mix_project_production_construction",
+        "subject_id": "specled.compiler_context",
+        "then": [
+          "the returned context's manifest is a non-empty map containing a known project module",
+          "the returned `compile_path` exists on disk",
+          "a keyword override (e.g. `manifest_path:` pointing at a missing file) wins over the derived value"
+        ],
+        "when": [
+          "`Context.from_mix_project/0` is called with no overrides"
         ]
       },
       {
@@ -7893,6 +7954,17 @@
       },
       {
         "covers": [
+          "specled.compiler_context.default_manifest_path",
+          "specled.compiler_context.from_mix_project"
+        ],
+        "execute": true,
+        "file": ".spec/specs/compiler_context.spec.md",
+        "kind": "tagged_tests",
+        "subject_id": "specled.compiler_context",
+        "target": ""
+      },
+      {
+        "covers": [
           "specled.compiler_context.orchestrators_take_context"
         ],
         "execute": true,
@@ -8179,6 +8251,16 @@
           "specled.tasks.status_summary",
           "specled.tasks.no_app_start",
           "specled.tasks.review_html_artifact"
+        ],
+        "execute": true,
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "subject_id": "specled.mix_tasks",
+        "target": ""
+      },
+      {
+        "covers": [
+          "specled.tasks.check_builds_compile_context"
         ],
         "execute": true,
         "file": ".spec/specs/mix_tasks.spec.md",
@@ -8846,10 +8928,10 @@
     "decisions": 35,
     "exceptions": 0,
     "findings": 0,
-    "requirements": 315,
-    "scenarios": 188,
+    "requirements": 318,
+    "scenarios": 190,
     "subjects": 33,
-    "verifications": 100
+    "verifications": 102
   },
   "verification": {
     "claims": [
@@ -9767,6 +9849,28 @@
         "verification_index": 1
       },
       {
+        "cover_id": "specled.compiler_context.default_manifest_path",
+        "file": ".spec/specs/compiler_context.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.compiler_context",
+        "target": "",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.compiler_context.from_mix_project",
+        "file": ".spec/specs/compiler_context.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.compiler_context",
+        "target": "",
+        "verification_index": 2
+      },
+      {
         "cover_id": "specled.compiler_context.orchestrators_take_context",
         "file": ".spec/specs/compiler_context.spec.md",
         "kind": "source_file",
@@ -9775,7 +9879,7 @@
         "strength": "linked",
         "subject_id": "specled.compiler_context",
         "target": "lib/specled_ex/realization/api_boundary.ex",
-        "verification_index": 2
+        "verification_index": 3
       },
       {
         "cover_id": "specled.compiler_tracer.captures_remote_calls",
@@ -10636,51 +10740,18 @@
         "verification_index": 0
       },
       {
+        "cover_id": "specled.tasks.check_builds_compile_context",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 1
+      },
+      {
         "cover_id": "specled.tasks.command_timeout_config",
-        "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "tagged_tests",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "executed",
-        "subject_id": "specled.mix_tasks",
-        "target": "",
-        "verification_index": 1
-      },
-      {
-        "cover_id": "specled.tasks.test_tags_flag",
-        "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "tagged_tests",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "executed",
-        "subject_id": "specled.mix_tasks",
-        "target": "",
-        "verification_index": 1
-      },
-      {
-        "cover_id": "specled.tasks.test_tags_precedence",
-        "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "tagged_tests",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "executed",
-        "subject_id": "specled.mix_tasks",
-        "target": "",
-        "verification_index": 1
-      },
-      {
-        "cover_id": "specled.tasks.verification_severity_config",
-        "file": ".spec/specs/mix_tasks.spec.md",
-        "kind": "tagged_tests",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "executed",
-        "subject_id": "specled.mix_tasks",
-        "target": "",
-        "verification_index": 1
-      },
-      {
-        "cover_id": "specled.tasks.check_verbose_flag",
         "file": ".spec/specs/mix_tasks.spec.md",
         "kind": "tagged_tests",
         "meets_minimum": true,
@@ -10691,6 +10762,50 @@
         "verification_index": 2
       },
       {
+        "cover_id": "specled.tasks.test_tags_flag",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.tasks.test_tags_precedence",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.tasks.verification_severity_config",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.tasks.check_verbose_flag",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 3
+      },
+      {
         "cover_id": "specled.tasks.dep_runtime_bootstrap",
         "file": ".spec/specs/mix_tasks.spec.md",
         "kind": "command",
@@ -10699,7 +10814,7 @@
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "sh -c 'missing=$(grep -L \"SpecLedEx.MixRuntime.ensure_started\" lib/mix/tasks/*.ex); if [ -n \"$missing\" ]; then echo \"tasks missing MixRuntime bootstrap:\"; echo \"$missing\"; exit 1; fi'",
-        "verification_index": 3
+        "verification_index": 4
       },
       {
         "cover_id": "specled.tasks.dedup_realized_by_exit_code",
@@ -10710,7 +10825,7 @@
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "",
-        "verification_index": 4
+        "verification_index": 5
       },
       {
         "cover_id": "specled.tasks.dedup_realized_by_no_write",
@@ -10721,7 +10836,7 @@
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "",
-        "verification_index": 4
+        "verification_index": 5
       },
       {
         "cover_id": "specled.tasks.dedup_realized_by_proposal",
@@ -10732,7 +10847,7 @@
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "",
-        "verification_index": 4
+        "verification_index": 5
       },
       {
         "cover_id": "specled.tasks.dedup_realized_by_shared_seam",
@@ -10743,7 +10858,7 @@
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "",
-        "verification_index": 4
+        "verification_index": 5
       },
       {
         "cover_id": "specled.modal_class.classify_case_and_punctuation_insensitive",
@@ -12862,7 +12977,7 @@
     "default_minimum_strength": "claimed",
     "strength_summary": {
       "claimed": 2,
-      "executed": 289,
+      "executed": 292,
       "linked": 73
     },
     "threshold_failures": 0

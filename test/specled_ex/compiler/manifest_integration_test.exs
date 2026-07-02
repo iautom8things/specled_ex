@@ -55,7 +55,16 @@ defmodule SpecLedEx.Compiler.ManifestIntegrationTest do
         )
 
       assert %Context{} = context
-      assert is_map(context.manifest)
+
+      # map_size, not is_map: an empty map from a wrong default manifest
+      # path passed the old is_map/1 check silently (the ebin/.mix bug).
+      assert map_size(context.manifest) > 0,
+             "default manifest-path derivation loaded 0 modules — " <>
+               "likely resolving under ebin/ instead of its sibling .mix/"
+
+      assert Manifest.sources_for(context.manifest, Sample) != [],
+             "expected the Sample module with non-empty sources via the default derivation"
+
       assert context.compile_path != nil
     end
   end

@@ -134,6 +134,28 @@ defmodule Mix.Tasks.Spec.CheckCommandTimeoutTest do
 
   @moduletag :capture_log
 
+  describe "default_context/1 (specled.tasks.check_builds_compile_context)" do
+    @tag spec: "specled.tasks.check_builds_compile_context"
+    test "returns a context with a non-empty manifest when root is the cwd" do
+      context = Mix.Tasks.Spec.Check.default_context(File.cwd!())
+
+      assert %SpecLedEx.Compiler.Context{} = context
+
+      assert map_size(context.manifest) > 0,
+             "expected the current project's compile manifest to load non-empty"
+    end
+
+    @tag spec: "specled.tasks.check_builds_compile_context"
+    test "returns a context for a relative root that expands to the cwd" do
+      assert %SpecLedEx.Compiler.Context{} = Mix.Tasks.Spec.Check.default_context(".")
+    end
+
+    @tag spec: "specled.tasks.check_builds_compile_context"
+    test "returns nil when --root points anywhere else", %{root: root} do
+      assert Mix.Tasks.Spec.Check.default_context(root) == nil
+    end
+  end
+
   describe "--command-timeout-ms precedence" do
     @tag spec: "specled.verify.command_timeout_cli_precedence"
     test "flag beats config value", %{root: root} do

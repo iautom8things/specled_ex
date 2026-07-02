@@ -166,6 +166,17 @@ decisions:
     cannot disagree.
   priority: must
   stability: evolving
+- id: specled.tasks.check_builds_compile_context
+  statement: >-
+    mix spec.check shall construct the compile `Context` via
+    `SpecLedEx.Compiler.Context.from_mix_project/1` when its effective
+    root is the current working directory, and shall thread it into the
+    branch guard so realization tiers receive the compile manifest.
+    When `--root` points anywhere else, no context shall be passed
+    (Mix.Project describes the cwd's project, not an arbitrary root —
+    a wrong-project context is worse than none).
+  priority: must
+  stability: evolving
 ```
 
 ## Verification
@@ -187,6 +198,10 @@ decisions:
     - specled.tasks.status_summary
     - specled.tasks.no_app_start
     - specled.tasks.review_html_artifact
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.tasks.check_builds_compile_context
 - kind: tagged_tests
   execute: true
   covers:

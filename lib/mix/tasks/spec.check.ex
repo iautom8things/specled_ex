@@ -3,6 +3,7 @@ defmodule Mix.Tasks.Spec.Check do
 
   @requirements ["app.config"]
 
+  alias SpecLedEx.Compiler.Context
   alias SpecLedEx.Config
   alias SpecLedEx.VerificationStrength
 
@@ -105,11 +106,29 @@ defmodule Mix.Tasks.Spec.Check do
       Mix.raise("Spec check failed: #{length(report["findings"] || [])} validation finding(s)")
     end
 
-    branch_report = SpecLedEx.branch_check(index, root, base: opts[:base])
+    branch_report =
+      SpecLedEx.branch_check(index, root, base: opts[:base], context: default_context(root))
+
     print_branch_report(branch_report, verbose?)
 
     if branch_report["status"] == "fail" do
       Mix.raise("Spec check failed: #{length(branch_report["findings"] || [])} branch finding(s)")
+    end
+  end
+
+  # covers: specled.tasks.check_builds_compile_context
+  #
+  # Compile context for the realization tiers. Mix.Project describes the
+  # project in the current working directory, so a `--root` pointing anywhere
+  # else gets no context (the pre-wiring behavior) rather than a wrong one —
+  # this also keeps tmp-root task tests context-free by construction.
+  @doc false
+  @spec default_context(Path.t()) :: Context.t() | nil
+  def default_context(root) do
+    if Path.expand(root) == File.cwd!() do
+      Context.from_mix_project()
+    else
+      nil
     end
   end
 

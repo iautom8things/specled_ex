@@ -5,8 +5,9 @@ defmodule SpecLedEx.Compiler.Context do
 
   Orchestrators under `SpecLedEx.Realization.*` accept a `%Context{}` as a positional
   argument rather than reaching into `Mix.env/0` or `Mix.Project.config/0`. Tests
-  construct a context with fixture-pointing fields; production calls `load/1` at
-  the mix-task entry point.
+  construct a context with fixture-pointing fields; production calls
+  `from_mix_project/1` at the mix-task entry point — the only Context function
+  that consults Mix globals. `load/1` stays Mix-free.
 
   Fields:
 
@@ -52,7 +53,12 @@ defmodule SpecLedEx.Compiler.Context do
       opts[:compile_path] ||
         Path.join([build_path, Atom.to_string(env), "lib", Atom.to_string(app), "ebin"])
 
-    manifest_path = opts[:manifest_path] || Path.join(compile_path, ".mix/compile.elixir")
+    # The compile manifest lives in the app dir's `.mix/`, a *sibling* of
+    # `ebin` — derived via dirname so an explicit `compile_path:` override
+    # still finds its own sibling.
+    manifest_path =
+      opts[:manifest_path] ||
+        Path.join([Path.dirname(compile_path), ".mix", "compile.elixir"])
 
     manifest = Manifest.load(manifest_path)
 
@@ -62,5 +68,24 @@ defmodule SpecLedEx.Compiler.Context do
       tracer_table: opts[:tracer_table],
       compile_path: compile_path
     }
+  end
+
+  @doc """
+  Builds a `%Context{}` from the current Mix project — the production
+  entry-point constructor, and the only Context function that consults Mix
+  globals; `load/1` stays Mix-free. Keyword `opts` override any derived
+  value and are passed through to `load/1`.
+  """
+  @spec from_mix_project(keyword()) :: t()
+  def from_mix_project(opts \\ []) do
+    [
+      app: Mix.Project.config()[:app],
+      env: Mix.env(),
+      build_path: Path.dirname(Mix.Project.build_path()),
+      compile_path: Mix.Project.compile_path(),
+      manifest_path: Path.join(Mix.Project.manifest_path(), "compile.elixir")
+    ]
+    |> Keyword.merge(opts)
+    |> load()
   end
 end

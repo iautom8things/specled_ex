@@ -63,8 +63,33 @@ decisions:
     A `:integration`-tagged test shall exercise Manifest.load/1
     against a real `test/fixtures/sample_project/` compile, asserting
     the returned map contains at least one module entry whose
-    `sources` list is non-empty. This is the canary for minor-version
-    format drift.
+    `sources` list is non-empty. The same fixture shall also exercise
+    `Context.load/1` through its DEFAULT manifest-path derivation,
+    asserting the resulting context manifest is non-empty
+    (`map_size > 0`) — an `is_map/1` check alone lets an empty map
+    from a wrong default path pass silently. This is the canary for
+    minor-version format drift and for default-path regressions.
+  priority: must
+  stability: evolving
+- id: specled.compiler_context.default_manifest_path
+  statement: >-
+    When `Context.load/1` receives no `manifest_path:` override, it
+    shall derive the manifest path as the `.mix/compile.elixir` inside
+    the app directory that is the parent of `compile_path` (i.e. a
+    sibling of `ebin`), including when `compile_path:` itself was
+    explicitly overridden. Deriving it under `ebin/` loads zero modules
+    and silently disables every manifest consumer.
+  priority: must
+  stability: evolving
+- id: specled.compiler_context.from_mix_project
+  statement: >-
+    `Context.from_mix_project/1` shall be the production entry-point
+    constructor and the only Context function that consults Mix globals
+    (`Mix.Project.config/0`, `Mix.env/0`, `Mix.Project.build_path/0`,
+    `Mix.Project.compile_path/0`, `Mix.Project.manifest_path/0`);
+    `load/1` shall remain Mix-free. Keyword options shall override any
+    derived value. In a compiled project it shall yield a context whose
+    manifest is a non-empty module map.
   priority: must
   stability: evolving
 - id: specled.compiler_context.orchestrators_take_context
@@ -104,6 +129,27 @@ decisions:
   covers:
     - specled.compiler_context.manifest_wraps_stdlib
     - specled.compiler_context.manifest_fixture_integration
+- id: specled.compiler_context.scenario.default_manifest_path_sibling
+  given:
+    - a build tree shaped `<build>/<env>/lib/<app>/` containing both `ebin/` and a real `.mix/compile.elixir`
+  when:
+    - "`Context.load/1` is called with `app:`, `env:`, and `build_path:` but no `manifest_path:` override"
+  then:
+    - the loaded manifest is non-empty (the default derivation found the sibling `.mix/compile.elixir`)
+    - an explicit `compile_path:` override still resolves the manifest as that path's sibling `.mix/compile.elixir`
+  covers:
+    - specled.compiler_context.default_manifest_path
+- id: specled.compiler_context.scenario.from_mix_project_production_construction
+  given:
+    - a compiled Mix project as the current project (the test VM's own spec_led_ex)
+  when:
+    - "`Context.from_mix_project/0` is called with no overrides"
+  then:
+    - the returned context's manifest is a non-empty map containing a known project module
+    - the returned `compile_path` exists on disk
+    - "a keyword override (e.g. `manifest_path:` pointing at a missing file) wins over the derived value"
+  covers:
+    - specled.compiler_context.from_mix_project
 ```
 
 ## Verification
@@ -119,6 +165,11 @@ decisions:
   execute: true
   covers:
     - specled.compiler_context.manifest_fixture_integration
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.compiler_context.default_manifest_path
+    - specled.compiler_context.from_mix_project
 - kind: source_file
   target: lib/specled_ex/realization/api_boundary.ex
   execute: true
