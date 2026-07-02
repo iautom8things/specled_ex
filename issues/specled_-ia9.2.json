@@ -23,11 +23,15 @@
     {
       "text": "VERIFY follow-up (advisory note b correction): the tracer_test.exs:255 flake report is UNCONFIRMED and carries no captured evidence. My first full-suite run piped through 'tail -5', which discarded the ExUnit seed line and the failure block (assertion + generated values); only the final stack frame 'test/specled_ex/compiler/tracer_test.exs:255: (test)' and the '881 tests, 1 failure' summary were captured. The immediate recapture attempt (mix test | grep -B2 -A25 '1) test') passed, so no details exist. _build/test/lib/spec_led_ex/.mix/.mix_test_failures has since been rewritten to the empty set by passing runs. Coordinator reproduction attempts: 0/58 seeded runs failed; mine: 0/12 after the first. Tracer.merge_edges/3 (tracer.ex:294-301) is pure — no ETS/process state — so cross-test interference into the property body is implausible; remaining hypotheses are a rare seed-found counterexample or a one-off environmental failure (e.g. load-induced timeout). Treat as unconfirmed unless it recurs WITH a captured seed. Does not affect the PASS verdict.",
       "timestamp": "2026-07-02T23:27:33Z"
+    },
+    {
+      "text": "TEST_CRITIC: FIXED (iteration 1)\nCritic session: a41cd5da93e7a4077 (elixir-test-critic agent)\nBlocking findings: 0 (advisory findings applied: 3 of 5)\nFiles reviewed: test/specled_ex/realization/implementation_test.exs (S2 diff only)\n\nApplied in follow-up commit 4538bd1: helpers hoisted out of the describe to module level (defp in describe is module-global — footgun + file-convention violation); run/4 determinism test strengthened to feed the second run Enum.reverse(subjects) so equality also discriminates input-order dependence (critic's point (a) — the spec's 'no run-order dependence' clause was only trivially satisfied before); describe renamed to reflect that it houses two requirements. Not applied: exposing a seam for in_project_set/build_world wiring (advisory 2 — S3's acceptance run exercises build_world with a real manifest end-to-end; noted for the record), same-VM PID/coarse-time nondeterminism classes (structurally untestable in a single-VM test, documented here as accepted residual risk). Critic affirmed points (b) full-map equality is additive-safe and (c) no shared-state hazards with the pinned HashStore write.\n\nAlso for the record: the S2 verifier's advisory about an intermittent S1 property failure (tracer_test.exs:255) could not be reproduced across 40 tagged-only + 15 whole-file + 3 full-suite seeded runs plus the verifier's own 11 re-runs; the verifier lost the original capture (tail -5) and posted a correction marking it unconfirmed. The property is a pure function of generated inputs with invariants that hold by construction; treated as an unconfirmed one-off.\n\nTest-only changes; gates re-run green (881 tests 0 failures).",
+      "timestamp": "2026-07-02T23:32:28Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "S2: Read-time ghost filtering + hash determinism contract",
   "type": "task",
-  "updated_at": "2026-07-02T23:27:33Z"
+  "updated_at": "2026-07-02T23:32:28Z"
 }
