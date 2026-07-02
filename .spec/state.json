@@ -1379,6 +1379,30 @@
       },
       {
         "file": ".spec/specs/implementation_tier.spec.md",
+        "id": "specled.implementation_tier.deterministic_hashes",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "Two consecutive implementation-tier runs over an unchanged tree — same subjects, same context, same tracer manifest, no recompilation between them — shall produce identical implementation hashes and an identical findings list. Hash computation shall introduce no run-order, process, or time dependence.",
+        "subject_id": "specled.implementation_tier"
+      },
+      {
+        "file": ".spec/specs/implementation_tier.spec.md",
+        "id": "specled.implementation_tier.empty_manifest_no_filtering",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "When the context is absent or its compile manifest is nil or empty, no read-time edge filtering shall occur: the in-project set degrades to binding modules alone in that state, and filtering against it would erase the callee graph (a cold build or context-less run must not lose edges).",
+        "subject_id": "specled.implementation_tier"
+      },
+      {
+        "file": ".spec/specs/implementation_tier.spec.md",
+        "id": "specled.implementation_tier.ghost_edges_filtered",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "When the implementation tier builds its world from a context whose compile manifest is a non-empty module map, tracer edges whose caller module is outside the in-project set (manifest keys unioned with binding modules) shall be excluded from the world's edge map. This is the authoritative prune for stale (deleted/renamed-module) manifest entries — the tracer's seed-time prune only bounds file growth — and it is defense-in-depth by design: the closure walk independently stops at in-project boundaries, so the filter's contract is the invariant that no ghost caller survives in the world's edge map for any consumer of it.",
+        "subject_id": "specled.implementation_tier"
+      },
+      {
+        "file": ".spec/specs/implementation_tier.spec.md",
         "id": "specled.implementation_tier.hash_ref_composition",
         "priority": "must",
         "stability": "evolving",
@@ -4301,6 +4325,42 @@
       },
       {
         "covers": [
+          "specled.implementation_tier.ghost_edges_filtered"
+        ],
+        "file": ".spec/specs/implementation_tier.spec.md",
+        "given": [
+          "a tracer edge map containing an entry whose caller module does not exist in the compile manifest and is no subject's binding module",
+          "a context whose compile manifest is a non-empty module map"
+        ],
+        "id": "specled.implementation_tier.scenario.ghost_caller_excluded",
+        "subject_id": "specled.implementation_tier",
+        "then": [
+          "the ghost caller's entry is absent from the world's edge map",
+          "entries whose caller is a binding module absent from the manifest are preserved"
+        ],
+        "when": [
+          "the implementation tier builds its world"
+        ]
+      },
+      {
+        "covers": [
+          "specled.implementation_tier.empty_manifest_no_filtering"
+        ],
+        "file": ".spec/specs/implementation_tier.spec.md",
+        "given": [
+          "a tracer edge map containing an entry whose caller module is not in any in-project set"
+        ],
+        "id": "specled.implementation_tier.scenario.nil_manifest_unfiltered",
+        "subject_id": "specled.implementation_tier",
+        "then": [
+          "the edge map passes through unfiltered (identity)"
+        ],
+        "when": [
+          "the implementation tier builds its world with a nil context, or a context whose manifest is nil or empty"
+        ]
+      },
+      {
+        "covers": [
           "specled.implementation_tier.ownership_rule"
         ],
         "file": ".spec/specs/implementation_tier.spec.md",
@@ -4355,6 +4415,25 @@
         ],
         "when": [
           "Closure.compute/2 is called for subject A"
+        ]
+      },
+      {
+        "covers": [
+          "specled.implementation_tier.deterministic_hashes"
+        ],
+        "file": ".spec/specs/implementation_tier.spec.md",
+        "given": [
+          "a set of subjects with implementation bindings over compiled fixture modules",
+          "a fixed tracer manifest and context"
+        ],
+        "id": "specled.implementation_tier.scenario.two_runs_identical_hashes",
+        "subject_id": "specled.implementation_tier",
+        "then": [
+          "the two hash maps are identical",
+          "two consecutive run/4 invocations return identical findings lists"
+        ],
+        "when": [
+          "hashes are computed twice back-to-back with no code or manifest change"
         ]
       },
       {
@@ -8041,6 +8120,18 @@
       },
       {
         "covers": [
+          "specled.implementation_tier.ghost_edges_filtered",
+          "specled.implementation_tier.empty_manifest_no_filtering",
+          "specled.implementation_tier.deterministic_hashes"
+        ],
+        "execute": true,
+        "file": ".spec/specs/implementation_tier.spec.md",
+        "kind": "tagged_tests",
+        "subject_id": "specled.implementation_tier",
+        "target": ""
+      },
+      {
+        "covers": [
           "specled.index.subject_and_decision_index",
           "specled.index.canonical_state_output",
           "specled.index.json_resilience"
@@ -8755,10 +8846,10 @@
     "decisions": 35,
     "exceptions": 0,
     "findings": 0,
-    "requirements": 312,
-    "scenarios": 185,
+    "requirements": 315,
+    "scenarios": 188,
     "subjects": 33,
-    "verifications": 99
+    "verifications": 100
   },
   "verification": {
     "claims": [
@@ -10290,6 +10381,39 @@
         "subject_id": "specled.implementation_tier",
         "target": "",
         "verification_index": 3
+      },
+      {
+        "cover_id": "specled.implementation_tier.deterministic_hashes",
+        "file": ".spec/specs/implementation_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.implementation_tier",
+        "target": "",
+        "verification_index": 4
+      },
+      {
+        "cover_id": "specled.implementation_tier.empty_manifest_no_filtering",
+        "file": ".spec/specs/implementation_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.implementation_tier",
+        "target": "",
+        "verification_index": 4
+      },
+      {
+        "cover_id": "specled.implementation_tier.ghost_edges_filtered",
+        "file": ".spec/specs/implementation_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.implementation_tier",
+        "target": "",
+        "verification_index": 4
       },
       {
         "cover_id": "specled.index.canonical_state_output",
@@ -12738,7 +12862,7 @@
     "default_minimum_strength": "claimed",
     "strength_summary": {
       "claimed": 2,
-      "executed": 286,
+      "executed": 289,
       "linked": 73
     },
     "threshold_failures": 0

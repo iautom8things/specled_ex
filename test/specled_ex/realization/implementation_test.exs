@@ -602,4 +602,121 @@ defmodule SpecLedEx.Realization.ImplementationTest do
       end)
     end
   end
+
+  # ---------------------------------------------------------------------------
+  # S2: read-time ghost filtering + determinism contract
+  # ---------------------------------------------------------------------------
+
+  describe "filter_edges/3 (specled.implementation_tier.ghost_edges_filtered)" do
+    @tag spec: "specled.implementation_tier.ghost_edges_filtered"
+    test "ghost caller is dropped when the context manifest is a non-empty map" do
+      edges = %{
+        {GhostCallerMod, :f, 0} => [{Enum, :map, 2}],
+        {SpecLedEx.ImplFixtures.A, :foo, 1} => [{SpecLedEx.ImplFixtures.B, :bar, 1}]
+      }
+
+      in_project = MapSet.new([SpecLedEx.ImplFixtures.A, SpecLedEx.ImplFixtures.B])
+      manifest = %{SpecLedEx.ImplFixtures.A => {:module, :stub}}
+
+      filtered = Implementation.filter_edges(edges, in_project, manifest)
+
+      refute Map.has_key?(filtered, {GhostCallerMod, :f, 0})
+      assert Map.has_key?(filtered, {SpecLedEx.ImplFixtures.A, :foo, 1})
+    end
+
+    @tag spec: "specled.implementation_tier.ghost_edges_filtered"
+    test "binding-module caller absent from the manifest is kept (in-project set rules)" do
+      # BindingOnlyMod is in the in-project set (a subject binding module)
+      # even though the manifest does not list it — e.g. fixtures compiled
+      # outside the app. The filter must key on the in-project set, not on
+      # manifest membership directly.
+      edges = %{{BindingOnlyMod, :g, 1} => [{Enum, :sort, 1}]}
+      in_project = MapSet.new([BindingOnlyMod, SomeManifestMod])
+      manifest = %{SomeManifestMod => {:module, :stub}}
+
+      assert Implementation.filter_edges(edges, in_project, manifest) == edges
+    end
+
+    @tag spec: "specled.implementation_tier.empty_manifest_no_filtering"
+    test "nil and empty manifests disable filtering entirely" do
+      edges = %{{GhostCallerMod, :f, 0} => [{Enum, :map, 2}]}
+      in_project = MapSet.new([SpecLedEx.ImplFixtures.A])
+
+      assert Implementation.filter_edges(edges, in_project, nil) == edges
+      assert Implementation.filter_edges(edges, in_project, %{}) == edges
+    end
+  end
+
+  describe "determinism (specled.implementation_tier.deterministic_hashes)" do
+    defp write_fixture_etf!(root) do
+      edges = %{
+        {SpecLedEx.ImplFixtures.A, :foo, 1} => [{SpecLedEx.ImplFixtures.B, :bar, 1}],
+        {SpecLedEx.ImplFixtures.B, :bar, 1} => [{SpecLedEx.ImplFixtures.B, :helper, 1}]
+      }
+
+      path = Path.join(root, "xref_fixture.etf")
+      File.write!(path, :erlang.term_to_binary(edges))
+      path
+    end
+
+    defp seeding_subjects do
+      [
+        %{id: "A", surface: [], impl_bindings: ["SpecLedEx.ImplFixtures.A.foo/1"]},
+        %{id: "B", surface: [], impl_bindings: ["SpecLedEx.ImplFixtures.B.bar/1"]}
+      ]
+    end
+
+    @tag spec: "specled.implementation_tier.deterministic_hashes"
+    test "hashes_for_seeding/3 twice over an unchanged tree returns identical maps", %{root: root} do
+      etf = write_fixture_etf!(root)
+      subjects = seeding_subjects()
+
+      first = Implementation.hashes_for_seeding(subjects, nil, tracer_manifest: etf)
+      second = Implementation.hashes_for_seeding(subjects, nil, tracer_manifest: etf)
+
+      assert first == second
+      assert first |> Map.keys() |> Enum.sort() == ["A", "B"]
+      assert Enum.all?(Map.values(first), &is_binary/1)
+    end
+
+    @tag spec: "specled.implementation_tier.deterministic_hashes"
+    test "run/4 twice over an unchanged tree returns identical findings, including drift hashes",
+         %{
+           root: root
+         } do
+      etf = write_fixture_etf!(root)
+      subjects = seeding_subjects()
+
+      # Commit a wrong hash for A so each run must recompute A's real hash
+      # and emit a drift finding carrying it — identical current_hash across
+      # runs proves determinism through the full world-build + walk + hash
+      # pipeline, not just an empty-findings equality.
+      :ok =
+        HashStore.write(root, %{
+          "implementation" => %{
+            "A" => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "wrong"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      run_once = fn ->
+        Implementation.run(subjects, nil, nil, root: root, tracer_manifest: etf)
+      end
+
+      findings_first = run_once.()
+      findings_second = run_once.()
+
+      assert findings_first == findings_second
+
+      drift =
+        Enum.find(findings_first, fn f ->
+          f["code"] == "branch_guard_realization_drift" and f["subject_id"] == "A"
+        end)
+
+      assert drift, "expected a drift finding for A, got: #{inspect(findings_first)}"
+      assert is_binary(drift["current_hash"])
+    end
+  end
 end

@@ -442,14 +442,43 @@ defmodule SpecLedEx.Realization.Implementation do
   defp build_world(subjects, context, opts) do
     edges = load_tracer_edges(context, opts)
     manifest = if context, do: context.manifest, else: nil
+    in_project = in_project_set(subjects, manifest)
 
     %{
       subjects: subjects,
-      tracer_edges: edges,
+      tracer_edges: filter_edges(edges, in_project, manifest),
       manifest: manifest,
-      in_project?: in_project_set(subjects, manifest)
+      in_project?: in_project
     }
   end
+
+  # covers: specled.implementation_tier.ghost_edges_filtered
+  # covers: specled.implementation_tier.empty_manifest_no_filtering
+  #
+  # Read-time ghost filtering — the authoritative prune for stale manifest
+  # entries (the tracer's seed-time prune merely bounds file growth; see
+  # specled.decision.tracer_manifest_merge_on_flush). This is an invariant on
+  # the constructed world, defense-in-depth by design: the closure walk
+  # independently stops at in-project boundaries
+  # (specled.implementation_tier.closure_walks_tracer_edges), so the filter
+  # guarantees no ghost caller survives in `world.tracer_edges` for any
+  # present or future consumer of the edge map. It applies only when the
+  # context carries a non-empty compile manifest: with a nil or empty
+  # manifest the in-project set degrades to binding modules alone, and
+  # filtering against it would erase the graph.
+  @doc false
+  @spec filter_edges(map(), MapSet.t(), map() | nil) :: map()
+  def filter_edges(edges, %MapSet{} = in_project_set, manifest)
+      when is_map(edges) and is_map(manifest) and map_size(manifest) > 0 do
+    edges
+    |> Enum.filter(fn
+      {{module, _fun, _arity}, _callees} -> MapSet.member?(in_project_set, module)
+      {_other, _callees} -> false
+    end)
+    |> Map.new()
+  end
+
+  def filter_edges(edges, _in_project_set, _manifest) when is_map(edges), do: edges
 
   defp load_tracer_edges(nil, opts) do
     path = Keyword.get(opts, :tracer_manifest, Tracer.manifest_path())

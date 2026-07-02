@@ -94,6 +94,38 @@ decisions:
     tier set.
   priority: must
   stability: evolving
+- id: specled.implementation_tier.ghost_edges_filtered
+  statement: >-
+    When the implementation tier builds its world from a context whose
+    compile manifest is a non-empty module map, tracer edges whose caller
+    module is outside the in-project set (manifest keys unioned with
+    binding modules) shall be excluded from the world's edge map. This is
+    the authoritative prune for stale (deleted/renamed-module) manifest
+    entries — the tracer's seed-time prune only bounds file growth — and
+    it is defense-in-depth by design: the closure walk independently
+    stops at in-project boundaries, so the filter's contract is the
+    invariant that no ghost caller survives in the world's edge map for
+    any consumer of it.
+  priority: must
+  stability: evolving
+- id: specled.implementation_tier.empty_manifest_no_filtering
+  statement: >-
+    When the context is absent or its compile manifest is nil or empty,
+    no read-time edge filtering shall occur: the in-project set degrades
+    to binding modules alone in that state, and filtering against it
+    would erase the callee graph (a cold build or context-less run must
+    not lose edges).
+  priority: must
+  stability: evolving
+- id: specled.implementation_tier.deterministic_hashes
+  statement: >-
+    Two consecutive implementation-tier runs over an unchanged tree —
+    same subjects, same context, same tracer manifest, no recompilation
+    between them — shall produce identical implementation hashes and an
+    identical findings list. Hash computation shall introduce no
+    run-order, process, or time dependence.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -156,6 +188,37 @@ decisions:
     - "removing the `realization:` section leaves the implementation tier inactive"
   covers:
     - specled.implementation_tier.config_opt_in
+- id: specled.implementation_tier.scenario.ghost_caller_excluded
+  given:
+    - a tracer edge map containing an entry whose caller module does not exist in the compile manifest and is no subject's binding module
+    - a context whose compile manifest is a non-empty module map
+  when:
+    - the implementation tier builds its world
+  then:
+    - the ghost caller's entry is absent from the world's edge map
+    - entries whose caller is a binding module absent from the manifest are preserved
+  covers:
+    - specled.implementation_tier.ghost_edges_filtered
+- id: specled.implementation_tier.scenario.nil_manifest_unfiltered
+  given:
+    - a tracer edge map containing an entry whose caller module is not in any in-project set
+  when:
+    - the implementation tier builds its world with a nil context, or a context whose manifest is nil or empty
+  then:
+    - the edge map passes through unfiltered (identity)
+  covers:
+    - specled.implementation_tier.empty_manifest_no_filtering
+- id: specled.implementation_tier.scenario.two_runs_identical_hashes
+  given:
+    - a set of subjects with implementation bindings over compiled fixture modules
+    - a fixed tracer manifest and context
+  when:
+    - hashes are computed twice back-to-back with no code or manifest change
+  then:
+    - the two hash maps are identical
+    - two consecutive run/4 invocations return identical findings lists
+  covers:
+    - specled.implementation_tier.deterministic_hashes
 ```
 
 ## Verification
@@ -180,4 +243,10 @@ decisions:
   execute: true
   covers:
     - specled.implementation_tier.config_opt_in
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.implementation_tier.ghost_edges_filtered
+    - specled.implementation_tier.empty_manifest_no_filtering
+    - specled.implementation_tier.deterministic_hashes
 ```
