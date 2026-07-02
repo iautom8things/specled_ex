@@ -5,10 +5,12 @@
   "created": "2026-07-02T15:28:08Z",
   "description": "Jira: TBD\nDistilled from mini-plan (think-t2d). Spec dir: .spec/\nWorktree: /Users/mz/src/specled_ex-streaming-attribution",
   "id": "specled_-0y8",
-  "labels": [],
+  "labels": [
+    "slug:streaming-attribution"
+  ],
   "priority": 2,
   "status": "open",
   "title": "Streaming per-test attribution for merged tagged_tests runs",
   "type": "epic",
-  "updated_at": "2026-07-02T15:28:08Z"
+  "updated_at": "2026-07-02T15:28:09Z"
 }
