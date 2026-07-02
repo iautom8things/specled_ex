@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-0y8.2"
   ],
@@ -10,8 +10,8 @@
   "labels": [],
   "parent": "specled_-0y8",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "S3: Resume pass over never-started covers after merged-run timeout",
   "type": "task",
-  "updated_at": "2026-07-02T15:29:36Z"
+  "updated_at": "2026-07-02T18:34:33Z"
 }
