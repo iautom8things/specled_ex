@@ -5,7 +5,9 @@
   "created": "2026-07-02T20:32:08Z",
   "description": "Jira: TBD\nDistilled from mini-plan (think-nxq). Spec dir: .spec/\nWorktree: /Users/mz/src/specled_ex-tracer-merge-on-flush\nBranch: specled_-ia9/tracer-merge-on-flush\nRefined plan: ~/Documents/my-vault/LLMs/plans/-Users-mz-src-specled-ex/2026-07-02-tracer-merge-on-flush/runs/20260702-175637-claude-mini/05-refined-plan.md\n\nTracer manifest is replace-on-flush — incremental compiles truncate the callee graph.\nFix: merge-on-flush (S1), read-time ghost filtering + determinism contract (S2),\nproduction Context wiring + Context.load manifest-path fix (S3). Decision:\nspecled.decision.tracer_manifest_merge_on_flush.\n\nOriginal bug context and Atlas evidence preserved in this ticket's comments/history:\nfound by Atlas critical-review 2026-07-02; implementation-tier hashes varied 50-58\nfindings across runs; Atlas disabled the tier pending this fix. Acceptance: Atlas\nre-enables tier, re-seeds baseline, two consecutive clean runs identical.",
   "id": "specled_-ia9",
-  "labels": [],
+  "labels": [
+    "slug:tracer-merge-on-flush"
+  ],
   "comments": [
     {
       "text": "Stronger evidence from Atlas (critical-review empirical verification): the problem is not only incremental-compile truncation — implementation-tier closure hashes were UNSTABLE across consecutive full-manifest runs (baseline re-seeded via rm + spec.check, then two back-to-back --no-run-commands runs on an untouched tree produced 50 drift findings both times, counts varying 50-58 across the session). api_boundary was fully stable throughout (0 drift). Atlas has disabled the implementation tier in .spec/config.yml pending this fix; re-enable + baseline re-seed is the acceptance test. Suggest the deliverable add: hash determinism property — two consecutive runs with no code change produce identical implementation hashes.",
@@ -16,5 +18,5 @@
   "status": "in_progress",
   "title": "Tracer manifest is replace-on-flush — incremental compiles truncate the callee graph",
   "type": "epic",
-  "updated_at": "2026-07-02T22:18:50Z"
+  "updated_at": "2026-07-02T22:20:19Z"
 }
