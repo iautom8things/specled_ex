@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-s65",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: codex-213ec781\nLog: /Users/mz/src/specled_ex-thread-enabled-tiers-branchcheck/.codex-runs/specled_-s65.2.log\n\nCommit: e0cb642c74b0002971537f683ac1176301e82cfa\nFiles touched: .spec/specs/branch_guard.spec.md, .spec/specs/implementation_tier.spec.md, .spec/state.json, lib/specled_ex/branch_check.ex, lib/specled_ex/realization/orchestrator.ex, test/specled_ex/branch_check/realization_config_test.exs\nTests added: SpecLedEx.BranchCheck.RealizationConfigTest \"enabled_tiers including implementation runs the implementation tier\"; \"absent realization config keeps the orchestrator default tier set\"; \"explicit empty enabled_tiers runs no tiers and preserves committed hashes\"; \"rejected realization tier names emit a branch guard finding that can be disabled\"\nVerification stubs flipped: none (added execute:true tagged_tests verification coverage for specled.branch_guard.realization_tiers_from_config, specled.branch_guard.realization_unknown_tier_finding, and specled.implementation_tier.config_opt_in)\n\nSummary: BranchCheck now loads .spec/config.yml once, reuses that config for severity resolution, and threads realization.enabled_tiers into the realization orchestrator only when the config explicitly provides a list. Unknown realization tiers now emit branch_guard_realization_unknown_tier findings through the normal severity pipeline, including branch_guard.severities off, and the new tests cover enabled, absent, empty, and rejected-tier config behavior.",
+      "timestamp": "2026-07-02T11:11:25Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "S2: Thread enabled_tiers into BranchCheck + unknown-tier findings + tier-run tests",
   "type": "task",
-  "updated_at": "2026-07-02T10:48:56Z"
+  "updated_at": "2026-07-02T11:11:25Z"
 }
