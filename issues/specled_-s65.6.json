@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-s65",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: codex-484e1ade\nLog: /Users/mz/src/specled_ex-cli-timeout-override/.codex-runs/specled_-s65.6.log\n\nCommit: da7ea7823285e6de66421f27782c3d4157d98d66\nFiles touched: .spec/specs/verification.spec.md, .spec/state.json, lib/mix/tasks/spec.check.ex, lib/mix/tasks/spec.validate.ex, test/mix/tasks/spec_check_test.exs, test/specled_ex/mix/tasks/spec_validate_test.exs\nTests added: Mix.Tasks.Spec.CheckCommandTimeoutTest \"flag beats config value\"; Mix.Tasks.Spec.CheckCommandTimeoutTest \"absent flag falls back to config value\"; Mix.Tasks.Spec.CheckCommandTimeoutTest \"absent flag and config fall back to verifier default\"; Mix.Tasks.Spec.ValidateCommandTimeoutTest \"flag beats config value\"; Mix.Tasks.Spec.ValidateCommandTimeoutTest \"absent flag falls back to config value\"; Mix.Tasks.Spec.ValidateCommandTimeoutTest \"absent flag and config fall back to verifier default\"\nVerification stubs flipped: none; existing specled.verification tagged_tests verification was already execute: true and now covers specled.verify.command_timeout_cli_precedence\n\nSummary: Added --command-timeout-ms parsing to spec.check and spec.validate, with CLI \u003e config \u003e verifier default precedence passed through to validation. Added the verification requirement/scenario, literal-tagged tests for both Mix tasks, regenerated state, and manually demonstrated that a 1ms CLI timeout fails while a generous CLI timeout passes without editing .spec/config.yml.",
+      "timestamp": "2026-07-02T14:03:14Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "CLI override for verification timeout: --command-timeout-ms on spec.check and spec.validate",
   "type": "task",
-  "updated_at": "2026-07-02T13:36:00Z"
+  "updated_at": "2026-07-02T14:03:14Z"
 }
