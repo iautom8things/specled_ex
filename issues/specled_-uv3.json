@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-02T21:03:20Z",
+  "description": "Advances: specled.realized_by\n\nDiscovered fixing main@a4bfd3b. When a function's realization intentionally changes: (1) Orchestrator.refresh_and_commit_hashes/3 is gated on has_drift?(raw findings) — severity-independent — so drift blocks the very refresh that would accept the new hash; mix spec.check can never self-heal intentional drift, contrary to what a4bfd3b's commit message assumed. (2) The Spec-Drift: branch_guard_realization_drift=info trailer only downgrades the finding while the carrying commit is inside base..HEAD; once merged (tip of main), Trailer.read sees an empty range and the drift comes back as an error forever. (3) The only working ritual is delete-the-stale-entry-and-let-silent_seed-reseed, which is sanctioned by specled.realized_by.silent_seed but documented nowhere as the acceptance flow. Consider an explicit accept mechanism (e.g. mix spec.check --accept-drift \u003cmfa\u003e or accepting when the run's trailer downgrades the code) plus guide documentation.",
+  "id": "specled_-uv3",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "intentional realization drift has no acceptance path",
+  "type": "task",
+  "updated_at": "2026-07-02T21:03:20Z"
+}
