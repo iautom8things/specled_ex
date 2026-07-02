@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [
     "specled_-ia9.3"
@@ -10,8 +10,8 @@
   "labels": [],
   "parent": "specled_-ia9",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "S2: Read-time ghost filtering + hash determinism contract",
   "type": "task",
-  "updated_at": "2026-07-02T22:20:04Z"
+  "updated_at": "2026-07-02T23:03:16Z"
 }
