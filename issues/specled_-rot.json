@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-02T21:03:24Z",
+  "description": "Advances: specled.realized_by\n\nThe silent-seed pass writes bare-module api_boundary entries (Canonical.hash_module_head_union), but compute_tier_hashes(:api_boundary,...) in refresh_and_commit_hashes skips bare modules ({:ok, {:module, _}} -\u003e acc) and HashStore.write has replacement semantics. So a clean (no-drift) run drops all bare-module api_boundary entries from realization_hashes.json, and the next run silently re-seeds them from the current tree. Two consequences: (1) the committed baseline has two different fixed points depending on whether the last committing run had drift — observed on main where a4bfd3b (committed under drift) carried 15 bare-module entries that the first clean run dropped; (2) cross-commit drift detection for bare modules is effectively dead whenever the committed baseline came from a clean run, because a checkout with a drifted bare module just re-seeds it at the drifted value. refresh should recompute bare-module head-union hashes instead of skipping them (or seed should not write them under api_boundary).",
+  "id": "specled_-rot",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "bare-module api_boundary entries oscillate between seed and refresh passes",
+  "type": "task",
+  "updated_at": "2026-07-02T21:03:24Z"
+}
