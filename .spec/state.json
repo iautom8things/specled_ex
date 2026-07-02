@@ -431,6 +431,20 @@
       },
       {
         "affects": [
+          "specled.compiler_tracer",
+          "specled.implementation_tier",
+          "specled.compiler_context",
+          "specled.mix_tasks"
+        ],
+        "change_type": "refines",
+        "date": "2026-07-02",
+        "file": ".spec/decisions/specled.decision.tracer_manifest_merge_on_flush.md",
+        "id": "specled.decision.tracer_manifest_merge_on_flush",
+        "status": "accepted",
+        "title": "Tracer Manifest Merges On Flush; Read-Time Filtering Is The Authoritative Prune"
+      },
+      {
+        "affects": [
           "specled.api_boundary",
           "specled.implementation_tier",
           "specled.expanded_behavior_tier",
@@ -461,7 +475,15 @@
       }
     ]
   },
-  "findings": [],
+  "findings": [
+    {
+      "code": "realized_by_redundant_dup",
+      "entity_id": "specled.realized_by",
+      "file": ".spec/specs/realized_by.spec.md",
+      "level": "warning",
+      "message": "realized_by entry \"SpecLedEx.Realization.EffectiveBinding.expand_implications/1\" on subject specled.realized_by appears in both api_boundary and implementation; the api_boundary hash is a strict subset of implementation's, so the api_boundary line is redundant (implication still tracks it). run mix spec.dedup_realized_by to remove the redundant api_boundary line."
+    }
+  ],
   "index": {
     "exceptions": [],
     "requirements": [
@@ -8648,9 +8670,9 @@
   "specification_version": "1.0",
   "summary": {
     "decision_parse_errors": 0,
-    "decisions": 34,
+    "decisions": 35,
     "exceptions": 0,
-    "findings": 0,
+    "findings": 1,
     "requirements": 309,
     "scenarios": 182,
     "subjects": 33,
@@ -8763,7 +8785,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.api_boundary",
         "target": "",
         "verification_index": 0
@@ -8774,7 +8796,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.api_boundary",
         "target": "",
         "verification_index": 0
@@ -8785,7 +8807,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.api_boundary",
         "target": "",
         "verification_index": 0
@@ -8796,7 +8818,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.api_boundary",
         "target": "",
         "verification_index": 0
@@ -8807,7 +8829,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.api_boundary",
         "target": "",
         "verification_index": 1
@@ -8818,7 +8840,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.api_boundary",
         "target": "",
         "verification_index": 1
@@ -8829,7 +8851,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.api_boundary",
         "target": "",
         "verification_index": 2
@@ -8840,7 +8862,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.append_only",
         "target": "",
         "verification_index": 0
@@ -8851,7 +8873,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.append_only",
         "target": "",
         "verification_index": 0
@@ -8862,7 +8884,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.append_only",
         "target": "",
         "verification_index": 0
@@ -8873,7 +8895,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.append_only",
         "target": "",
         "verification_index": 0
@@ -8884,7 +8906,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.append_only",
         "target": "",
         "verification_index": 0
@@ -8895,7 +8917,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.append_only",
         "target": "",
         "verification_index": 0
@@ -8906,7 +8928,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.append_only",
         "target": "",
         "verification_index": 0
@@ -8917,7 +8939,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.append_only",
         "target": "",
         "verification_index": 0
@@ -8928,7 +8950,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.append_only",
         "target": "",
         "verification_index": 0
@@ -8939,7 +8961,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.append_only",
         "target": "",
         "verification_index": 0
@@ -8950,7 +8972,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.append_only",
         "target": "",
         "verification_index": 0
@@ -8961,7 +8983,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.append_only",
         "target": "",
         "verification_index": 0
@@ -8972,7 +8994,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.append_only",
         "target": "",
         "verification_index": 0
@@ -8983,7 +9005,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.append_only",
         "target": "",
         "verification_index": 0
@@ -9115,7 +9137,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.binding",
         "target": "",
         "verification_index": 0
@@ -9126,7 +9148,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.binding",
         "target": "",
         "verification_index": 0
@@ -9137,7 +9159,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.binding",
         "target": "",
         "verification_index": 0
@@ -9148,7 +9170,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.binding",
         "target": "",
         "verification_index": 1
@@ -9159,7 +9181,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.binding",
         "target": "",
         "verification_index": 1
@@ -9170,7 +9192,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.binding",
         "target": "",
         "verification_index": 1
@@ -9181,7 +9203,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.binding",
         "target": "",
         "verification_index": 2
@@ -9192,7 +9214,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.binding",
         "target": "",
         "verification_index": 3
@@ -9203,7 +9225,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.binding",
         "target": "",
         "verification_index": 3
@@ -9214,7 +9236,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.binding",
         "target": "",
         "verification_index": 4
@@ -9225,7 +9247,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.binding",
         "target": "",
         "verification_index": 5
@@ -9236,7 +9258,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.binding",
         "target": "",
         "verification_index": 5
@@ -9247,7 +9269,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.binding",
         "target": "",
         "verification_index": 5
@@ -9258,7 +9280,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.block_schema",
         "target": "",
         "verification_index": 0
@@ -9269,7 +9291,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.block_schema",
         "target": "",
         "verification_index": 0
@@ -9280,7 +9302,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.block_schema",
         "target": "",
         "verification_index": 0
@@ -9291,7 +9313,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.block_schema",
         "target": "",
         "verification_index": 0
@@ -9302,7 +9324,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.branch_guard",
         "target": "",
         "verification_index": 0
@@ -9313,7 +9335,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.branch_guard",
         "target": "",
         "verification_index": 0
@@ -9324,7 +9346,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.branch_guard",
         "target": "",
         "verification_index": 0
@@ -9335,7 +9357,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.branch_guard",
         "target": "",
         "verification_index": 0
@@ -9346,7 +9368,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.branch_guard",
         "target": "",
         "verification_index": 0
@@ -9357,7 +9379,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.branch_guard",
         "target": "",
         "verification_index": 1
@@ -9368,7 +9390,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.branch_guard",
         "target": "",
         "verification_index": 1
@@ -9379,7 +9401,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.branch_guard",
         "target": "mix test test/specled_ex/realization/orchestrator_test.exs",
         "verification_index": 2
@@ -9390,7 +9412,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.branch_guard",
         "target": "mix test test/specled_ex/realization/orchestrator_test.exs",
         "verification_index": 2
@@ -9401,7 +9423,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.branch_guard",
         "target": "mix test test/specled_ex/realization/orchestrator_test.exs",
         "verification_index": 2
@@ -9412,7 +9434,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.branch_guard",
         "target": "mix test test/specled_ex/realization/orchestrator_test.exs",
         "verification_index": 2
@@ -9423,7 +9445,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.branch_guard",
         "target": "mix test test/integration/scenario_tier_dispatch_test.exs",
         "verification_index": 3
@@ -9434,7 +9456,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.branch_guard",
         "target": "mix test test/integration/scenario_tier_dispatch_test.exs",
         "verification_index": 3
@@ -9445,7 +9467,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.branch_guard",
         "target": "mix test test/integration/scenario_tier_dispatch_test.exs",
         "verification_index": 3
@@ -9456,7 +9478,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.branch_guard",
         "target": "",
         "verification_index": 4
@@ -9467,7 +9489,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.branch_guard",
         "target": "",
         "verification_index": 4
@@ -9478,7 +9500,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.branch_guard",
         "target": "",
         "verification_index": 4
@@ -9489,7 +9511,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.branch_guard",
         "target": "",
         "verification_index": 4
@@ -9500,7 +9522,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.branch_guard",
         "target": "",
         "verification_index": 4
@@ -9511,7 +9533,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.branch_guard",
         "target": "",
         "verification_index": 5
@@ -9522,7 +9544,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.branch_guard",
         "target": "",
         "verification_index": 5
@@ -9533,7 +9555,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.compiler_context",
         "target": "",
         "verification_index": 0
@@ -9544,7 +9566,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.compiler_context",
         "target": "",
         "verification_index": 0
@@ -9555,7 +9577,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.compiler_context",
         "target": "",
         "verification_index": 0
@@ -9566,7 +9588,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.compiler_context",
         "target": "",
         "verification_index": 1
@@ -9588,7 +9610,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.compiler_tracer",
         "target": "",
         "verification_index": 0
@@ -9599,7 +9621,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.compiler_tracer",
         "target": "",
         "verification_index": 0
@@ -9610,7 +9632,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.compiler_tracer",
         "target": "",
         "verification_index": 0
@@ -9621,7 +9643,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.compiler_tracer",
         "target": "",
         "verification_index": 1
@@ -9643,7 +9665,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.config",
         "target": "",
         "verification_index": 0
@@ -9654,7 +9676,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.config",
         "target": "",
         "verification_index": 0
@@ -9665,7 +9687,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.config",
         "target": "",
         "verification_index": 0
@@ -9676,7 +9698,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.config",
         "target": "",
         "verification_index": 0
@@ -9687,7 +9709,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.config",
         "target": "",
         "verification_index": 0
@@ -9698,7 +9720,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.config",
         "target": "",
         "verification_index": 0
@@ -9709,7 +9731,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.config",
         "target": "",
         "verification_index": 0
@@ -9720,7 +9742,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.config",
         "target": "",
         "verification_index": 0
@@ -9731,7 +9753,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.coverage_capture",
         "target": "",
         "verification_index": 0
@@ -9742,7 +9764,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.coverage_capture",
         "target": "",
         "verification_index": 0
@@ -9753,7 +9775,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.coverage_capture",
         "target": "",
         "verification_index": 0
@@ -9764,7 +9786,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.coverage_capture",
         "target": "",
         "verification_index": 1
@@ -9775,7 +9797,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.coverage_capture",
         "target": "",
         "verification_index": 1
@@ -9786,7 +9808,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.coverage_capture",
         "target": "",
         "verification_index": 2
@@ -9797,7 +9819,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.coverage_capture",
         "target": "",
         "verification_index": 2
@@ -9808,7 +9830,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.decisions",
         "target": "",
         "verification_index": 0
@@ -9819,7 +9841,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.decisions",
         "target": "",
         "verification_index": 0
@@ -9830,7 +9852,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.decisions",
         "target": "",
         "verification_index": 0
@@ -9841,7 +9863,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.decisions",
         "target": "",
         "verification_index": 0
@@ -9852,7 +9874,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.decisions",
         "target": "",
         "verification_index": 0
@@ -9863,7 +9885,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.decisions",
         "target": "",
         "verification_index": 0
@@ -9874,7 +9896,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.decisions",
         "target": "",
         "verification_index": 0
@@ -9885,7 +9907,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.decisions",
         "target": "",
         "verification_index": 0
@@ -9896,7 +9918,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.decisions",
         "target": "",
         "verification_index": 0
@@ -9907,7 +9929,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.decisions",
         "target": "",
         "verification_index": 0
@@ -9918,7 +9940,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.decisions",
         "target": "",
         "verification_index": 0
@@ -10017,7 +10039,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.expanded_behavior_tier",
         "target": "",
         "verification_index": 0
@@ -10028,7 +10050,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.expanded_behavior_tier",
         "target": "",
         "verification_index": 0
@@ -10039,7 +10061,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.expanded_behavior_tier",
         "target": "",
         "verification_index": 0
@@ -10050,7 +10072,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.expanded_behavior_tier",
         "target": "",
         "verification_index": 1
@@ -10061,7 +10083,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.expanded_behavior_tier",
         "target": "",
         "verification_index": 1
@@ -10083,7 +10105,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.implementation_tier",
         "target": "",
         "verification_index": 0
@@ -10094,7 +10116,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.implementation_tier",
         "target": "",
         "verification_index": 0
@@ -10105,7 +10127,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.implementation_tier",
         "target": "",
         "verification_index": 0
@@ -10116,7 +10138,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.implementation_tier",
         "target": "",
         "verification_index": 0
@@ -10127,7 +10149,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.implementation_tier",
         "target": "",
         "verification_index": 1
@@ -10138,7 +10160,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.implementation_tier",
         "target": "",
         "verification_index": 2
@@ -10149,7 +10171,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.implementation_tier",
         "target": "",
         "verification_index": 3
@@ -10160,7 +10182,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.index_state",
         "target": "",
         "verification_index": 0
@@ -10171,7 +10193,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.index_state",
         "target": "",
         "verification_index": 0
@@ -10182,7 +10204,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.index_state",
         "target": "",
         "verification_index": 0
@@ -10193,7 +10215,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.index_state",
         "target": "",
         "verification_index": 1
@@ -10204,7 +10226,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.index_state",
         "target": "",
         "verification_index": 1
@@ -10215,7 +10237,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.index_state",
         "target": "",
         "verification_index": 2
@@ -10226,7 +10248,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.index_state",
         "target": "",
         "verification_index": 2
@@ -10237,7 +10259,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 0
@@ -10248,7 +10270,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 0
@@ -10259,7 +10281,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 0
@@ -10270,7 +10292,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 0
@@ -10281,7 +10303,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 0
@@ -10292,7 +10314,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 0
@@ -10303,7 +10325,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 0
@@ -10314,7 +10336,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 0
@@ -10325,7 +10347,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 0
@@ -10336,7 +10358,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 0
@@ -10347,7 +10369,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 0
@@ -10358,7 +10380,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 0
@@ -10369,7 +10391,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 0
@@ -10380,7 +10402,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 1
@@ -10391,7 +10413,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 1
@@ -10402,7 +10424,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 1
@@ -10413,7 +10435,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 1
@@ -10424,7 +10446,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 2
@@ -10435,7 +10457,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.mix_tasks",
         "target": "sh -c 'missing=$(grep -L \"SpecLedEx.MixRuntime.ensure_started\" lib/mix/tasks/*.ex); if [ -n \"$missing\" ]; then echo \"tasks missing MixRuntime bootstrap:\"; echo \"$missing\"; exit 1; fi'",
         "verification_index": 3
@@ -10446,7 +10468,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 4
@@ -10457,7 +10479,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 4
@@ -10468,7 +10490,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 4
@@ -10479,7 +10501,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 4
@@ -10490,7 +10512,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.modal_class",
         "target": "",
         "verification_index": 0
@@ -10501,7 +10523,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.modal_class",
         "target": "",
         "verification_index": 0
@@ -10512,7 +10534,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.modal_class",
         "target": "",
         "verification_index": 0
@@ -10523,7 +10545,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.modal_class",
         "target": "",
         "verification_index": 0
@@ -10534,7 +10556,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.modal_class",
         "target": "",
         "verification_index": 0
@@ -10545,7 +10567,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.modal_class",
         "target": "",
         "verification_index": 0
@@ -10556,7 +10578,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.modal_class",
         "target": "",
         "verification_index": 0
@@ -10567,7 +10589,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.modal_class",
         "target": "",
         "verification_index": 0
@@ -10578,7 +10600,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.modal_class",
         "target": "",
         "verification_index": 0
@@ -10589,7 +10611,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.modal_class",
         "target": "",
         "verification_index": 0
@@ -10600,7 +10622,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.modal_class",
         "target": "",
         "verification_index": 0
@@ -10611,7 +10633,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.modal_class",
         "target": "",
         "verification_index": 0
@@ -10644,7 +10666,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.next",
         "target": "",
         "verification_index": 0
@@ -10655,7 +10677,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.next",
         "target": "",
         "verification_index": 0
@@ -10666,7 +10688,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.next",
         "target": "",
         "verification_index": 0
@@ -10677,7 +10699,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.next",
         "target": "",
         "verification_index": 0
@@ -10688,7 +10710,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.overlap",
         "target": "",
         "verification_index": 0
@@ -10699,7 +10721,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.overlap",
         "target": "",
         "verification_index": 0
@@ -10710,7 +10732,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.overlap",
         "target": "",
         "verification_index": 0
@@ -10721,7 +10743,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.overlap",
         "target": "",
         "verification_index": 0
@@ -10732,7 +10754,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.overlap",
         "target": "",
         "verification_index": 0
@@ -10776,7 +10798,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.package",
         "target": "",
         "verification_index": 0
@@ -10787,7 +10809,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.package",
         "target": "",
         "verification_index": 0
@@ -10820,7 +10842,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.package",
         "target": "mix run -e 'Mix.Task.load_all(); Enum.each(~w(spec.init spec.prime spec.next spec.check spec.status spec.decision.new spec.index spec.validate spec.review), fn task -> Mix.Task.get(task) || raise(\"missing #{task}\") end)'",
         "verification_index": 2
@@ -10853,7 +10875,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.parser",
         "target": "",
         "verification_index": 0
@@ -10864,7 +10886,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.parser",
         "target": "",
         "verification_index": 0
@@ -10875,7 +10897,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.parser",
         "target": "",
         "verification_index": 0
@@ -10886,7 +10908,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.parser",
         "target": "",
         "verification_index": 0
@@ -10897,7 +10919,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.parser",
         "target": "",
         "verification_index": 0
@@ -10908,7 +10930,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.parser",
         "target": "",
         "verification_index": 0
@@ -10919,7 +10941,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.policy_files",
         "target": "",
         "verification_index": 0
@@ -10930,7 +10952,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.policy_files",
         "target": "",
         "verification_index": 0
@@ -10941,7 +10963,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.policy_files",
         "target": "",
         "verification_index": 0
@@ -10952,7 +10974,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.policy_files",
         "target": "",
         "verification_index": 0
@@ -10963,7 +10985,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.policy_files",
         "target": "",
         "verification_index": 0
@@ -10974,7 +10996,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.policy_files",
         "target": "",
         "verification_index": 0
@@ -10985,7 +11007,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.prime",
         "target": "",
         "verification_index": 0
@@ -10996,7 +11018,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.prime",
         "target": "",
         "verification_index": 0
@@ -11007,7 +11029,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.prime",
         "target": "",
         "verification_index": 0
@@ -11018,7 +11040,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.prose_guard",
         "target": "",
         "verification_index": 0
@@ -11029,7 +11051,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.prose_guard",
         "target": "",
         "verification_index": 0
@@ -11040,7 +11062,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.prose_guard",
         "target": "",
         "verification_index": 0
@@ -11051,7 +11073,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.prose_guard",
         "target": "",
         "verification_index": 0
@@ -11062,7 +11084,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 0
@@ -11073,7 +11095,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 0
@@ -11084,7 +11106,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 0
@@ -11095,7 +11117,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 0
@@ -11106,7 +11128,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 1
@@ -11117,7 +11139,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 1
@@ -11128,7 +11150,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 1
@@ -11337,7 +11359,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 7
@@ -11348,7 +11370,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.realized_by",
         "target": "",
         "verification_index": 8
@@ -11359,7 +11381,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.severity",
         "target": "",
         "verification_index": 0
@@ -11370,7 +11392,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.severity",
         "target": "",
         "verification_index": 0
@@ -11381,7 +11403,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.severity",
         "target": "",
         "verification_index": 0
@@ -11392,7 +11414,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.severity",
         "target": "",
         "verification_index": 0
@@ -11403,7 +11425,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.spec_drift_trailer",
         "target": "",
         "verification_index": 0
@@ -11414,7 +11436,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.spec_drift_trailer",
         "target": "",
         "verification_index": 0
@@ -11425,7 +11447,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.spec_drift_trailer",
         "target": "",
         "verification_index": 0
@@ -11436,7 +11458,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.spec_drift_trailer",
         "target": "",
         "verification_index": 0
@@ -11447,7 +11469,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs",
         "verification_index": 0
@@ -11458,7 +11480,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs",
         "verification_index": 0
@@ -11469,7 +11491,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs",
         "verification_index": 0
@@ -11480,7 +11502,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs",
         "verification_index": 0
@@ -11491,7 +11513,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs",
         "verification_index": 0
@@ -11502,7 +11524,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs",
         "verification_index": 0
@@ -11513,7 +11535,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs",
         "verification_index": 0
@@ -11524,7 +11546,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs",
         "verification_index": 0
@@ -11535,7 +11557,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/review_test.exs test/mix/tasks/spec_review_task_test.exs",
         "verification_index": 0
@@ -11546,7 +11568,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/review/html_test.exs",
         "verification_index": 1
@@ -11557,7 +11579,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/review/html_test.exs",
         "verification_index": 1
@@ -11568,7 +11590,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/review/html_test.exs",
         "verification_index": 1
@@ -11579,7 +11601,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/review/html_test.exs",
         "verification_index": 1
@@ -11590,7 +11612,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/coverage_triangulation_test.exs",
         "verification_index": 2
@@ -11601,7 +11623,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "claimed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/review_test.exs",
         "verification_index": 3
@@ -11799,7 +11821,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.status",
         "target": "",
         "verification_index": 0
@@ -11810,7 +11832,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.status",
         "target": "",
         "verification_index": 0
@@ -11821,7 +11843,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.status",
         "target": "",
         "verification_index": 0
@@ -11832,7 +11854,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tag_scanning",
         "target": "",
         "verification_index": 0
@@ -11843,7 +11865,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tag_scanning",
         "target": "",
         "verification_index": 0
@@ -11854,7 +11876,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tag_scanning",
         "target": "",
         "verification_index": 0
@@ -11865,7 +11887,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tag_scanning",
         "target": "",
         "verification_index": 0
@@ -11876,7 +11898,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tag_scanning",
         "target": "",
         "verification_index": 0
@@ -11887,7 +11909,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tag_scanning",
         "target": "",
         "verification_index": 0
@@ -11898,7 +11920,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tag_scanning",
         "target": "",
         "verification_index": 0
@@ -11909,7 +11931,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tag_scanning",
         "target": "",
         "verification_index": 0
@@ -11920,7 +11942,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tag_scanning",
         "target": "",
         "verification_index": 0
@@ -11931,7 +11953,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tag_scanning",
         "target": "",
         "verification_index": 0
@@ -11942,7 +11964,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tag_scanning",
         "target": "",
         "verification_index": 0
@@ -11953,7 +11975,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tag_scanning",
         "target": "",
         "verification_index": 0
@@ -11964,7 +11986,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -11975,7 +11997,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -11986,7 +12008,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -11997,7 +12019,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -12008,7 +12030,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -12019,7 +12041,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -12030,7 +12052,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -12041,7 +12063,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -12052,7 +12074,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -12063,7 +12085,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -12074,7 +12096,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -12085,7 +12107,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -12096,7 +12118,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -12107,7 +12129,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -12118,7 +12140,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -12129,7 +12151,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -12140,7 +12162,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -12151,7 +12173,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -12162,7 +12184,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -12173,7 +12195,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -12184,7 +12206,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -12195,7 +12217,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.tagged_tests",
         "target": "",
         "verification_index": 0
@@ -12206,7 +12228,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.triangulation",
         "target": "",
         "verification_index": 0
@@ -12217,7 +12239,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.triangulation",
         "target": "",
         "verification_index": 0
@@ -12228,7 +12250,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.triangulation",
         "target": "",
         "verification_index": 0
@@ -12239,7 +12261,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.triangulation",
         "target": "",
         "verification_index": 0
@@ -12250,7 +12272,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.triangulation",
         "target": "",
         "verification_index": 0
@@ -12261,7 +12283,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.triangulation",
         "target": "",
         "verification_index": 0
@@ -12272,7 +12294,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.triangulation",
         "target": "",
         "verification_index": 0
@@ -12283,7 +12305,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.triangulation",
         "target": "",
         "verification_index": 1
@@ -12294,7 +12316,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.triangulation",
         "target": "",
         "verification_index": 2
@@ -12305,7 +12327,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.triangulation",
         "target": "",
         "verification_index": 2
@@ -12316,7 +12338,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.triangulation",
         "target": "",
         "verification_index": 3
@@ -12327,7 +12349,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.use_tier",
         "target": "",
         "verification_index": 0
@@ -12338,7 +12360,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.use_tier",
         "target": "",
         "verification_index": 0
@@ -12349,7 +12371,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.use_tier",
         "target": "",
         "verification_index": 1
@@ -12360,7 +12382,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.use_tier",
         "target": "",
         "verification_index": 1
@@ -12371,7 +12393,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.use_tier",
         "target": "",
         "verification_index": 2
@@ -12382,7 +12404,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 0
@@ -12393,7 +12415,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 0
@@ -12404,7 +12426,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 0
@@ -12415,7 +12437,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 0
@@ -12426,7 +12448,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 0
@@ -12437,7 +12459,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 0
@@ -12448,7 +12470,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 0
@@ -12459,7 +12481,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 0
@@ -12470,7 +12492,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 0
@@ -12481,7 +12503,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 0
@@ -12492,7 +12514,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 0
@@ -12503,7 +12525,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 0
@@ -12514,7 +12536,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 0
@@ -12525,7 +12547,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 1
@@ -12536,7 +12558,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 1
@@ -12547,7 +12569,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 1
@@ -12558,7 +12580,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 1
@@ -12569,7 +12591,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 1
@@ -12580,7 +12602,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 1
@@ -12591,7 +12613,7 @@
         "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "executed",
+        "strength": "linked",
         "subject_id": "specled.verification",
         "target": "",
         "verification_index": 1
@@ -12600,14 +12622,14 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 2,
-      "executed": 283,
-      "linked": 73
+      "claimed": 26,
+      "executed": 0,
+      "linked": 332
     },
     "threshold_failures": 0
   },
   "workspace": {
-    "decision_count": 34,
+    "decision_count": 35,
     "spec_count": 33
   }
 }
