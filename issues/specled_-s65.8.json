@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-s65",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: codex-b086eeaf\nLog: /Users/mz/src/specled_ex-branch-check-severity-status/.codex-runs/specled_-s65.8.log\n\nCommit: 7ff0bbf69d1c65634d4427a3e7856c799f0e78e5\nFiles touched: .spec/specs/branch_guard.spec.md, .spec/state.json, lib/specled_ex/branch_check.ex, test/specled_ex/branch_check_test.exs\nTests added: SpecLedEx.BranchCheckTest \"emits finding when a new must requirement lacks a backing @tag spec\" (updated); SpecLedEx.BranchCheckTest \"attested-clean (file, subject) pair downgrades to :info with binding-naming message\" (updated)\nVerification stubs flipped: none\n\nSummary: BranchCheck now derives report status from the count of error-severity findings, so info and warning findings remain visible without failing the aggregate branch report. I added a branch_guard requirement and status assertions for the warning-only new-requirement finding and the info-only attested-clean file-touch case; existing error-present cases still fail. I found no branch_guard or spec_drift_trailer scenario requiring warning-only branch findings to make mix spec.check exit non-zero; only scenarios with error-severity findings require non-zero exit.",
+      "timestamp": "2026-07-02T12:03:52Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fix branch_check status/exit code to be severity-aware (info/warning findings incorrectly fail mix spec.check)",
   "type": "bug",
-  "updated_at": "2026-07-02T11:30:26Z"
+  "updated_at": "2026-07-02T12:03:52Z"
 }
