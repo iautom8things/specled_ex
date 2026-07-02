@@ -5,6 +5,7 @@ defmodule SpecLedEx.Config do
 
   alias SpecLedEx.Config.BranchGuard
   alias SpecLedEx.Config.Prose
+  alias SpecLedEx.Config.Realization
 
   defmodule TestTags do
     @moduledoc false
@@ -183,6 +184,7 @@ defmodule SpecLedEx.Config do
             branch_guard: nil,
             guardrails: nil,
             prose: nil,
+            realization: nil,
             verification: nil,
             diagnostics: []
 
@@ -192,6 +194,7 @@ defmodule SpecLedEx.Config do
           branch_guard: BranchGuard.t(),
           guardrails: Guardrails.t(),
           prose: Prose.t(),
+          realization: Realization.t(),
           verification: Verification.t(),
           diagnostics: [diagnostic()]
         }
@@ -204,6 +207,7 @@ defmodule SpecLedEx.Config do
       branch_guard: BranchGuard.defaults(),
       guardrails: Guardrails.defaults(),
       prose: Prose.defaults(),
+      realization: Realization.defaults(),
       verification: Verification.defaults()
     }
   end
@@ -266,23 +270,29 @@ defmodule SpecLedEx.Config do
     branch_guard_map = Map.get(map, "branch_guard", %{}) || %{}
     guardrails_map = Map.get(map, "guardrails", %{}) || %{}
     prose_map = Map.get(map, "prose", %{}) || %{}
+    realization_map = Map.get(map, "realization", %{}) || %{}
     verification_map = Map.get(map, "verification", %{}) || %{}
 
     {branch_guard, bg_diag} = BranchGuard.parse(branch_guard_map)
     {guardrails, gr_diag} = Guardrails.parse(guardrails_map)
     {prose, prose_diag} = Prose.parse(prose_map)
+    {realization, realization_diag} = Realization.parse(realization_map)
     {verification, verification_diag} = Verification.parse(verification_map)
 
     diagnostics =
-      Enum.map(bg_diag ++ gr_diag ++ prose_diag ++ verification_diag, fn msg ->
-        %{kind: :config_warning, message: msg}
-      end)
+      Enum.map(
+        bg_diag ++ gr_diag ++ prose_diag ++ realization_diag ++ verification_diag,
+        fn msg ->
+          %{kind: :config_warning, message: msg}
+        end
+      )
 
     %__MODULE__{
       test_tags: build_test_tags(test_tags_map),
       branch_guard: branch_guard,
       guardrails: guardrails,
       prose: prose,
+      realization: realization,
       verification: verification,
       diagnostics: diagnostics
     }

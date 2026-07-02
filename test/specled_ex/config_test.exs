@@ -7,11 +7,13 @@ defmodule SpecLedEx.ConfigTest do
                "specled.config.init_scaffolds_config_yml",
                "specled.config.malformed_yaml_degrades",
                "specled.config.paths_filtered_to_strings",
+               "specled.config.realization_enabled_tiers",
                "specled.config.unknown_enforcement_warns",
                "specled.config.yaml_parses_known_fields"
              ]
 
   alias SpecLedEx.Config
+  alias SpecLedEx.Config.Realization
   alias SpecLedEx.Config.TestTags
   alias SpecLedEx.Config.Verification
 
@@ -24,6 +26,7 @@ defmodule SpecLedEx.ConfigTest do
 
       assert %Config{
                test_tags: %TestTags{enabled: false, paths: ["test"], enforcement: :warning},
+               realization: %Realization{enabled_tiers: nil, rejected: []},
                verification: %Verification{command_timeout_ms: nil},
                diagnostics: []
              } = config
@@ -271,6 +274,61 @@ defmodule SpecLedEx.ConfigTest do
 
       config = Config.load(root)
       assert config.guardrails.severities == %{}
+    end
+  end
+
+  describe "load/2 realization.enabled_tiers" do
+    @tag spec: "specled.config.realization_enabled_tiers"
+    test "parses a realization section into config.realization", %{root: root} do
+      write_config(root, """
+      realization:
+        enabled_tiers:
+          - api_boundary
+          - implementation
+      """)
+
+      assert %Config{
+               realization: %Realization{
+                 enabled_tiers: [:api_boundary, :implementation],
+                 rejected: []
+               },
+               diagnostics: []
+             } = Config.load(root)
+    end
+
+    @tag spec: "specled.config.realization_enabled_tiers"
+    test "wraps rejected realization tiers as config_warning diagnostics", %{root: root} do
+      write_config(root, """
+      realization:
+        enabled_tiers:
+          - api_boundary
+          - mystery
+      """)
+
+      config = Config.load(root)
+
+      assert config.realization.enabled_tiers == [:api_boundary]
+      assert config.realization.rejected == ["mystery"]
+
+      assert [
+               %{
+                 kind: :config_warning,
+                 message: "realization.enabled_tiers rejected: \"mystery\""
+               }
+             ] = config.diagnostics
+    end
+
+    @tag spec: "specled.config.realization_enabled_tiers"
+    test "uses realization defaults when the section is missing", %{root: root} do
+      write_config(root, """
+      test_tags:
+        enabled: true
+      """)
+
+      config = Config.load(root)
+
+      assert config.realization == Realization.defaults()
+      assert config.realization.enabled_tiers == nil
     end
   end
 

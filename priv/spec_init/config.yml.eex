@@ -17,3 +17,13 @@ test_tags:
   # `warning` leaves `mix spec.check` exit status unchanged; `error` fails the
   # gate so CI can enforce coverage.
   enforcement: warning
+
+# realization:
+#   # Leave enabled_tiers absent to use the realization orchestrator default.
+#   # Set an empty list (`[]`) to opt out of every realization tier.
+#   enabled_tiers:
+#     - api_boundary
+#     - implementation
+#     - expanded_behavior
+#     - use
+#     - typespecs

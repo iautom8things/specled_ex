@@ -15,6 +15,7 @@ status: active
 summary: Loads `.spec/config.yml` with defaults and exposes test-tag scanning plus verification settings to the index, verifier, and CLI tasks.
 surface:
   - lib/specled_ex/config.ex
+  - lib/specled_ex/config/realization.ex
   - lib/mix/tasks/spec.init.ex
   - priv/spec_init/config.yml.eex
   - test/specled_ex/config_test.exs
@@ -29,9 +30,11 @@ realized_by:
     - "SpecLedEx.Config.build_test_tags/1"
     - "SpecLedEx.Config.parse_enforcement/2"
     - "SpecLedEx.Config.Guardrails.parse/1"
+    - "SpecLedEx.Config.Realization.parse/1"
 decisions:
   - specled.decision.configurable_test_tag_enforcement
   - specled.decision.verification_runtime_config
+  - specled.decision.realization_tiers_nil_default
 ```
 
 ## Requirements
@@ -63,6 +66,10 @@ decisions:
   stability: evolving
 - id: specled.config.guardrails_severities
   statement: SpecLedEx.Config shall parse `guardrails.severities` from `.spec/config.yml` as a map of finding code to severity atom (one of `:off`, `:info`, `:warning`, `:error`) and expose it on the returned struct under a `guardrails` field that is distinct from `branch_guard.severities`, with entries whose severity tokens are unknown dropped and recorded as a config_warning diagnostic.
+  priority: must
+  stability: evolving
+- id: specled.config.realization_enabled_tiers
+  statement: SpecLedEx.Config shall parse `realization.enabled_tiers` from `.spec/config.yml` into a `realization` field, preserving `nil` when the key is absent, preserving an explicit empty list, accepting only `api_boundary`, `implementation`, `expanded_behavior`, `use`, and `typespecs` in order-preserving deduped form, and surfacing unknown tier tokens as `config_warning` diagnostics while recording the raw rejected tokens on the realization config.
   priority: must
   stability: evolving
 ```
@@ -142,6 +149,19 @@ decisions:
     - "config.branch_guard.severities remains its parsed namespace (distinct from guardrails)"
   covers:
     - specled.config.guardrails_severities
+- id: specled.config.scenario.realization_enabled_tiers
+  given:
+    - "a `.spec/config.yml` that sets realization.enabled_tiers to [api_boundary, implementation]"
+    - "a `.spec/config.yml` that sets realization.enabled_tiers to [api_boundary, mystery]"
+    - a `.spec/config.yml` with no realization section
+  when:
+    - SpecLedEx.Config.load/2 is called for each config
+  then:
+    - "the valid-list config yields config.realization.enabled_tiers equal to [:api_boundary, :implementation] with no rejected tokens"
+    - "the unknown-tier config keeps only [:api_boundary], records [\"mystery\"] on rejected, and records a config_warning diagnostic with the `realization.enabled_tiers rejected:` prefix"
+    - "the absent-section config yields config.realization.enabled_tiers equal to nil with no rejected tokens"
+  covers:
+    - specled.config.realization_enabled_tiers
 ```
 
 ## Verification
@@ -157,4 +177,5 @@ decisions:
     - specled.config.paths_filtered_to_strings
     - specled.config.init_scaffolds_config_yml
     - specled.config.guardrails_severities
+    - specled.config.realization_enabled_tiers
 ```
