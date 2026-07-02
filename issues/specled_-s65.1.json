@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-s65",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: codex-fd7bc484\nLog: /Users/mz/src/specled_ex-config-seam-realization/.codex-runs/specled_-s65.1.log\n\nCommit: 067f791877f43ddce16484909bab91574903a8cf\nFiles touched: .spec/specs/config.spec.md, .spec/specs/realized_by.spec.md, .spec/state.json, lib/specled_ex/config.ex, lib/specled_ex/config/realization.ex, priv/spec_init/config.yml.eex, test/specled_ex/config/realization_test.exs, test/specled_ex/config_test.exs\nTests added: SpecLedEx.Config.RealizationTest parse/1 valid list/dedupes repeated tiers; accepts atom keys; records unknown names; keeps absent enabled_tiers as nil; returns defaults for non-map input; preserves explicit empty list. SpecLedEx.ConfigTest load/2 realization section populates config.realization; rejected tier becomes config_warning diagnostic; missing section uses realization defaults.\nVerification stubs flipped: none\n\nSummary: Added the realization config seam with nil-as-default semantics, explicit empty-list opt-out, order-preserving dedupe, and raw rejected tier diagnostics. Wired it into SpecLedEx.Config, updated the scaffold and specs, moved ownership to specled.config, regenerated .spec/state.json, and verified the required gates pass.",
+      "timestamp": "2026-07-02T02:23:56Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "S1: Config seam — parse realization.enabled_tiers (nil-means-default)",
   "type": "task",
-  "updated_at": "2026-07-02T02:16:26Z"
+  "updated_at": "2026-07-02T02:23:56Z"
 }
