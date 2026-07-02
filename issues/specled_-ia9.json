@@ -15,6 +15,6 @@
   "priority": 2,
   "status": "open",
   "title": "Tracer manifest is replace-on-flush — incremental compiles truncate the callee graph",
-  "type": "task",
-  "updated_at": "2026-07-02T20:45:56Z"
+  "type": "epic",
+  "updated_at": "2026-07-02T22:18:50Z"
 }
