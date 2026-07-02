@@ -1000,6 +1000,47 @@ defmodule SpecLedEx.VerifierTest do
     assert timeout_check
   end
 
+  @tag spec: "specled.verify.command_timeout_enforced"
+  test "command verification timeout SIGKILLs the target's whole process group", %{root: root} do
+    pidfile = Path.join(System.tmp_dir!(), "specled_pgkill_#{System.unique_integer([:positive])}")
+    on_exit(fn -> File.rm(pidfile) end)
+
+    # The target backgrounds a long-lived grandchild and records its pid.
+    # Port.close alone would orphan that grandchild; the process-group kill
+    # must take it out.
+    report =
+      verify_subject(
+        root,
+        %{
+          "requirements" => [%{"id" => "req.pg", "statement" => "Process group killed"}],
+          "verification" => [
+            %{
+              "kind" => "command",
+              "target" => "sleep 30 & echo $! > #{pidfile}; wait",
+              "covers" => ["req.pg"],
+              "execute" => true
+            }
+          ]
+        },
+        run_commands: true,
+        command_timeout_ms: 300,
+        debug: true
+      )
+
+    assert report["status"] == "fail"
+    assert Enum.any?(findings(report, "verification_command_timeout"))
+
+    child_pid = pidfile |> File.read!() |> String.trim()
+
+    assert child_pid =~ ~r/^\d+$/,
+           "expected the target to record a child pid, got #{inspect(child_pid)}"
+
+    on_exit(fn -> System.cmd("kill", ["-KILL", child_pid], stderr_to_stdout: true) end)
+
+    assert process_dead?(child_pid),
+           "expected spawned grandchild #{child_pid} to be killed with its process group, but it survived"
+  end
+
   # ── tagged_tests verification kind ───────────────────────────────────────
 
   @tag spec: "specled.tagged_tests.strength_progression"
@@ -1325,6 +1366,21 @@ defmodule SpecLedEx.VerifierTest do
 
   defp findings(report, code) do
     Enum.filter(report["findings"], &(&1["code"] == code))
+  end
+
+  # Polls `kill -0 <pid>` until it reports the process no longer exists, tolerating
+  # the brief window between SIGKILL delivery and the OS reaping the zombie.
+  defp process_dead?(pid, attempts \\ 50) do
+    Enum.reduce_while(1..attempts, false, fn _, _ ->
+      case System.cmd("kill", ["-0", pid], stderr_to_stdout: true) do
+        {_, 0} ->
+          Process.sleep(20)
+          {:cont, false}
+
+        {_, _} ->
+          {:halt, true}
+      end
+    end)
   end
 
   defp check_codes(report) do

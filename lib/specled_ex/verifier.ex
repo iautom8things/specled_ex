@@ -1939,11 +1939,24 @@ defmodule SpecLedEx.Verifier do
     # Write a wrapper script to avoid shell escaping issues with nested quotes.
     # The script captures stdout/stderr to a temp file and exits with the command status.
     tmp_script = "#{tmp_out}.sh"
+    tmp_pgid = "#{tmp_out}.pgid"
 
+    # POSIX job control (`set -m`) forces the backgrounded target into its own
+    # process group whose pgid equals the job-leader pid (`$!`), on both macOS
+    # bash-as-sh and Linux dash. On timeout we SIGKILL that whole group so
+    # grandchildren the target spawned are reaped too — Port.close alone only
+    # kills the direct child and orphans the rest. `wait $!` propagates the
+    # target's own exit status, preserving specled.verify.command_exit_code_recorded.
+    # `wait`'s stderr is silenced so the shell's "Killed: 9" job-control
+    # notification for a SIGKILLed group does not leak into CLI output on
+    # timeout; the exit status it returns is unaffected.
     File.write!(tmp_script, """
     #!/bin/sh
     cd "#{root}" || exit 127
-    (#{target}) > "#{tmp_out}" 2>&1
+    set -m
+    (#{target}) > "#{tmp_out}" 2>&1 &
+    echo $! > "#{tmp_pgid}"
+    wait $! 2>/dev/null
     """)
 
     port =
@@ -1958,7 +1971,8 @@ defmodule SpecLedEx.Verifier do
           {^port, {:exit_status, status}} -> status
         after
           timeout_ms ->
-            Port.close(port)
+            kill_process_group(tmp_pgid)
+            close_port(port)
             :timeout
         end
 
@@ -1975,7 +1989,32 @@ defmodule SpecLedEx.Verifier do
     after
       File.rm(tmp_out)
       File.rm(tmp_script)
+      File.rm(tmp_pgid)
     end
+  end
+
+  # SIGKILLs the target's process group recorded by the `set -m` wrapper.
+  # Tolerates a missing or empty pgid file (the timeout raced the wrapper's
+  # first lines): close_port/1 then handles the direct child alone.
+  defp kill_process_group(tmp_pgid) do
+    with {:ok, data} <- File.read(tmp_pgid),
+         {pgid, _rest} when pgid > 0 <- Integer.parse(String.trim(data)) do
+      System.cmd("kill", ["-KILL", "--", "-#{pgid}"], stderr_to_stdout: true)
+      :ok
+    else
+      _ -> :ok
+    end
+  end
+
+  # Killing the process group makes the wrapper's `wait` return, so the port may
+  # auto-close (on child exit) before this call and Port.close/1 would raise.
+  # Tolerate that; the close still fires in the fallback where the pgid was
+  # unavailable and the wrapper is left running.
+  defp close_port(port) do
+    Port.close(port)
+    :ok
+  rescue
+    ArgumentError -> :ok
   end
 
   defp verification_entries(subject, subject_id, file, command_results) do

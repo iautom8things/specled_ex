@@ -209,6 +209,16 @@ decisions:
     - verification is reported failed for gating purposes
   covers:
     - specled.verify.command_timeout_enforced
+- id: specled.verify.scenario.command_timeout_kills_process_group
+  given:
+    - a spec with a command verification whose target spawns a long-lived child process
+  when:
+    - verification runs with run_commands true and a short timeout
+  then:
+    - the timeout SIGKILLs the target's whole process group
+    - the spawned child process is no longer running after verification returns
+  covers:
+    - specled.verify.command_execution_resilience
 - id: specled.verify.scenario.command_timeout_distinct_finding
   given:
     - a spec with a command verification targeting a slow command
