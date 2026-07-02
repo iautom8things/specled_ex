@@ -33,5 +33,5 @@
   "status": "in_progress",
   "title": "Fix branch_check status/exit code to be severity-aware (info/warning findings incorrectly fail mix spec.check)",
   "type": "bug",
-  "updated_at": "2026-07-02T12:40:47Z"
+  "updated_at": "2026-07-02T12:40:48Z"
 }
