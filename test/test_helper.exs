@@ -1,3 +1,13 @@
+# Make the suite hermetic to the host's git config so host commit-signing
+# does not leak into fixture commits. On a dev machine with commit.gpgsign=true
+# + 1Password's op-ssh-sign, every fixture commit would do IPC with the
+# 1Password app (~2.5s signed vs ~0.3s unsigned), roughly doubling suite
+# runtime. These env vars propagate to every git subprocess the test BEAM
+# spawns; init_git_repo/1 already sets local user.name/user.email, so nothing
+# from the global config is required.
+System.put_env("GIT_CONFIG_GLOBAL", "/dev/null")
+System.put_env("GIT_CONFIG_NOSYSTEM", "1")
+
 ExUnit.start()
 
 # Drift/refactor fixtures intentionally compile two versions of the same
