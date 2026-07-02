@@ -19,8 +19,10 @@ kind: workflow
 status: active
 summary: Walks tracer edges from declared MFAs; hashes closure with subject-boundary stops + hash-ref composition (Cargo pattern); MFA ownership via binding map with surface + lexical tiebreak.
 surface:
+  - lib/specled_ex/branch_check.ex
   - lib/specled_ex/realization/implementation.ex
   - lib/specled_ex/realization/closure.ex
+  - test/specled_ex/branch_check/realization_config_test.exs
   - test/specled_ex/realization/implementation_test.exs
   - test/specled_ex/realization/closure_test.exs
   - test/integration/scenario_refactor_stable_test.exs
@@ -30,6 +32,8 @@ realized_by:
     - "SpecLedEx.Realization.Implementation.hash_for_subject/3"
     - "SpecLedEx.Realization.Closure.compute/2"
     - "SpecLedEx.Realization.Closure.subject_for_mfa/2"
+decisions:
+  - specled.decision.realization_tiers_nil_default
 ```
 
 ## Requirements
@@ -79,6 +83,15 @@ realized_by:
     functions with no semantic effect) shall not produce a
     `branch_guard_realization_drift` finding for that subject. This is
     the gating criterion for scenario 1 of the spec.
+  priority: must
+  stability: evolving
+- id: specled.implementation_tier.config_opt_in
+  statement: >-
+    When `.spec/config.yml` sets `realization.enabled_tiers` to a list that
+    includes `implementation`, the `mix spec.check` branch-check path shall
+    run the implementation realization tier. When the setting is absent, the
+    implementation tier shall remain excluded from the orchestrator default
+    tier set.
   priority: must
   stability: evolving
 ```
@@ -132,6 +145,17 @@ realized_by:
     - no `branch_guard_realization_drift` finding is emitted for that subject
   covers:
     - specled.implementation_tier.scenario_refactor_stable
+- id: specled.implementation_tier.scenario.config_opt_in_runs_tier
+  given:
+    - "a subject with an implementation-tier binding"
+    - "`.spec/config.yml` sets `realization.enabled_tiers` to include `implementation`"
+  when:
+    - "mix spec.check runs the branch guard"
+  then:
+    - "the implementation tier runs"
+    - "removing the `realization:` section leaves the implementation tier inactive"
+  covers:
+    - specled.implementation_tier.config_opt_in
 ```
 
 ## Verification
@@ -152,4 +176,8 @@ realized_by:
   execute: true
   covers:
     - specled.implementation_tier.scenario_refactor_stable
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.implementation_tier.config_opt_in
 ```

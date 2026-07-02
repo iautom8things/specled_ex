@@ -1,5 +1,5 @@
 defmodule SpecLedEx.BranchCheck do
-  # covers: specled.branch_guard.subject_cochange specled.branch_guard.cross_cutting_decision specled.branch_guard.guidance_output specled.branch_guard.plan_docs_excluded specled.branch_guard.new_requirement_tag_warning specled.branch_guard.tag_findings_respect_enforcement specled.branch_guard.file_touch_yields_to_attested_file specled.branch_guard.file_touch_per_subject_independence specled.branch_guard.file_touch_severity_config_wins specled.branch_guard.file_touch_tagged_tests_attested specled.branch_guard.file_touch_detector_failure_strict
+  # covers: specled.branch_guard.subject_cochange specled.branch_guard.cross_cutting_decision specled.branch_guard.guidance_output specled.branch_guard.plan_docs_excluded specled.branch_guard.new_requirement_tag_warning specled.branch_guard.tag_findings_respect_enforcement specled.branch_guard.realization_tiers_from_config specled.branch_guard.realization_unknown_tier_finding specled.branch_guard.file_touch_yields_to_attested_file specled.branch_guard.file_touch_per_subject_independence specled.branch_guard.file_touch_severity_config_wins specled.branch_guard.file_touch_tagged_tests_attested specled.branch_guard.file_touch_detector_failure_strict
   @moduledoc false
 
   alias SpecLedEx.AppendOnly
@@ -19,6 +19,7 @@ defmodule SpecLedEx.BranchCheck do
     # realization tier findings (q59.9 wiring)
     "branch_guard_realization_drift" => :warning,
     "branch_guard_dangling_binding" => :error,
+    "branch_guard_realization_unknown_tier" => :warning,
     "detector_unavailable" => :info,
     # append_only/* (10 ratified codes)
     "append_only/requirement_deleted" => :error,
@@ -39,15 +40,16 @@ defmodule SpecLedEx.BranchCheck do
   def run(index, root, opts \\ []) do
     validate_base!(root, Keyword.get(opts, :base))
 
+    config = Config.load(root)
     analysis = ChangeAnalysis.analyze(index, root, opts)
     changed_subject_ids = MapSet.new(analysis.changed_subject_ids)
-    severity_opts = severity_opts(root, analysis.base)
+    severity_opts = severity_opts(config, root, analysis.base)
 
     # Hoist the realization run so its attestation map is available to the
     # file-touch loop below. The same raw findings flow through
     # `realization_findings/2` (severity resolution + emit) so we don't run
     # the orchestrator twice.
-    {realization_raw, attestations} = run_realization(index, root, opts)
+    {realization_raw, attestations} = run_realization(index, root, opts, config)
 
     file_findings =
       Enum.flat_map(analysis.policy_files, fn path ->
@@ -102,7 +104,9 @@ defmodule SpecLedEx.BranchCheck do
     {append_only_findings, overlap_findings} =
       contract_findings(index, root, analysis.base, severity_opts)
 
-    realization_findings = realization_findings(realization_raw, severity_opts)
+    realization_findings =
+      realization_unknown_tier_findings(config, severity_opts) ++
+        realization_findings(realization_raw, severity_opts)
 
     findings =
       Enum.sort_by(
@@ -150,9 +154,7 @@ defmodule SpecLedEx.BranchCheck do
     end
   end
 
-  defp severity_opts(root, base) do
-    config = Config.load(root)
-
+  defp severity_opts(config, root, base) do
     trailer_overrides =
       if is_binary(base) and base != "HEAD" do
         Trailer.read(root, base).overrides
@@ -193,14 +195,41 @@ defmodule SpecLedEx.BranchCheck do
   # `realization_findings/2` for severity resolution; the attestation map
   # drives the file-touch attested/unattested partition (see
   # `missing_subject_update_findings/4`).
-  defp run_realization(index, root, opts) do
-    Orchestrator.run_with_attestations(index,
+  defp run_realization(index, root, opts, config) do
+    realization_opts = [
       root: root,
       umbrella?: Keyword.get(opts, :umbrella?, false),
       context: Keyword.get(opts, :context),
       commit_hashes?: Keyword.get(opts, :commit_realization_hashes?, true)
-    )
+    ]
+
+    realization_opts =
+      case config.realization.enabled_tiers do
+        nil ->
+          realization_opts
+
+        enabled_tiers when is_list(enabled_tiers) ->
+          Keyword.put(realization_opts, :enabled_tiers, enabled_tiers)
+      end
+
+    Orchestrator.run_with_attestations(index, realization_opts)
   end
+
+  defp realization_unknown_tier_findings(config, severity_opts) do
+    config.realization.rejected
+    |> List.wrap()
+    |> Enum.flat_map(fn token ->
+      emit(
+        severity_opts,
+        "branch_guard_realization_unknown_tier",
+        "realization.enabled_tiers contains unknown tier #{render_rejected_tier(token)}; valid tiers: api_boundary, implementation, expanded_behavior, typespecs, use — this tier will not run.",
+        ".spec/config.yml"
+      )
+    end)
+  end
+
+  defp render_rejected_tier(token) when is_binary(token), do: token
+  defp render_rejected_tier(token), do: inspect(token)
 
   defp realization_findings(raw, severity_opts) do
     Enum.flat_map(raw, fn finding ->

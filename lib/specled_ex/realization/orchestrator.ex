@@ -34,15 +34,17 @@ defmodule SpecLedEx.Realization.Orchestrator do
 
   ## Implementation tier is opt-in
 
-  The default `enabled_tiers` list excludes `:implementation`. Dispatching it
+  The default `enabled_tiers` list excludes `:implementation`. In normal
+  `mix spec.check` usage, opt in through `.spec/config.yml`:
+  `realization.enabled_tiers: [api_boundary, implementation]`; `SpecLedEx.BranchCheck`
+  threads that setting into this orchestrator. Dispatching the implementation tier
   against the current repo surfaces a pre-existing AST shape mismatch between
-  `SpecLedEx.Realization.Binding.resolve/2` (which returns
-  `{fun, arity, clauses}` — an api_boundary-specific wrapper) and
-  `SpecLedEx.Realization.Canonical.normalize/1` (which expects the standard
-  Elixir `{name, meta, args}` AST that `Macro.prewalk/3` can walk). Fixing this
-  requires reshaping either the resolver return or the impl tier's normalize
-  call-site — both outside q59.9's Allowed touches. Opt in per-call via
-  `enabled_tiers: [..., :implementation]` in controlled test contexts where the
+  `SpecLedEx.Realization.Binding.resolve/2` (which returns `{fun, arity, clauses}`
+  — an api_boundary-specific wrapper) and `SpecLedEx.Realization.Canonical.normalize/1`
+  (which expects the standard Elixir `{name, meta, args}` AST that `Macro.prewalk/3`
+  can walk). Fixing this requires reshaping either the resolver return or the impl
+  tier's normalize call-site — both outside q59.9's Allowed touches. Opt in per-call
+  via `enabled_tiers: [..., :implementation]` in controlled test contexts where the
   bindings are known to be impl-friendly.
 
   ## Umbrella + debug_info_stripped

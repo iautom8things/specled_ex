@@ -858,6 +858,22 @@
       },
       {
         "file": ".spec/specs/branch_guard.spec.md",
+        "id": "specled.branch_guard.realization_tiers_from_config",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "`SpecLedEx.BranchCheck.run/3` shall load `.spec/config.yml` once per run and thread `config.realization.enabled_tiers` into `SpecLedEx.Realization.Orchestrator.run_with_attestations/2` when the value is a list. When the value is `nil`, BranchCheck shall omit the option so the orchestrator default tier set applies. When the value is `[]`, BranchCheck shall run no realization tiers and shall not replace or remove existing realization hash-store entries.",
+        "subject_id": "specled.branch_guard"
+      },
+      {
+        "file": ".spec/specs/branch_guard.spec.md",
+        "id": "specled.branch_guard.realization_unknown_tier_finding",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "`SpecLedEx.BranchCheck.run/3` shall emit one `branch_guard_realization_unknown_tier` finding for each raw entry recorded in `config.realization.rejected`. The finding shall default to warning severity, respect `branch_guard.severities` including `off`, point at `.spec/config.yml`, and tell the user which tier token was rejected and which tier names are valid.",
+        "subject_id": "specled.branch_guard"
+      },
+      {
+        "file": ".spec/specs/branch_guard.spec.md",
         "id": "specled.branch_guard.subject_cochange",
         "priority": "must",
         "stability": "evolving",
@@ -1262,6 +1278,14 @@
         "priority": "must",
         "stability": "evolving",
         "statement": "SpecLedEx.Realization.Closure.compute/2 shall walk MFA callee edges from the tracer side-manifest starting at the subject's declared `implementation` MFAs. The walk shall stop at (a) subject boundaries (an MFA owned by another subject), (b) MFAs outside the project's in-tree modules, and (c) already-visited MFAs (cycle guard).",
+        "subject_id": "specled.implementation_tier"
+      },
+      {
+        "file": ".spec/specs/implementation_tier.spec.md",
+        "id": "specled.implementation_tier.config_opt_in",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "When `.spec/config.yml` sets `realization.enabled_tiers` to a list that includes `implementation`, the `mix spec.check` branch-check path shall run the implementation realization tier. When the setting is absent, the implementation tier shall remain excluded from the orchestrator default tier set.",
         "subject_id": "specled.implementation_tier"
       },
       {
@@ -3509,6 +3533,77 @@
         ]
       },
       {
+        "covers": [],
+        "file": ".spec/specs/branch_guard.spec.md",
+        "given": [
+          "a subject with a `realized_by.implementation` binding",
+          "no `realization:` section exists in `.spec/config.yml`"
+        ],
+        "id": "specled.branch_guard.scenario.realization_config_absent_uses_default",
+        "subject_id": "specled.branch_guard",
+        "then": [
+          "the orchestrator default tier set applies",
+          "no implementation-tier activity is produced"
+        ],
+        "when": [
+          "`SpecLedEx.BranchCheck.run/3` runs"
+        ]
+      },
+      {
+        "covers": [],
+        "file": ".spec/specs/branch_guard.spec.md",
+        "given": [
+          "`.spec/config.yml` sets `realization.enabled_tiers: []`",
+          "the realization hash store already contains committed tier entries"
+        ],
+        "id": "specled.branch_guard.scenario.realization_config_empty_preserves_hashes",
+        "subject_id": "specled.branch_guard",
+        "then": [
+          "no realization tiers run",
+          "the existing realization hash-store entries remain intact"
+        ],
+        "when": [
+          "`SpecLedEx.BranchCheck.run/3` runs"
+        ]
+      },
+      {
+        "covers": [
+          "specled.branch_guard.realization_tiers_from_config"
+        ],
+        "file": ".spec/specs/branch_guard.spec.md",
+        "given": [
+          "a subject with a `realized_by.implementation` binding that is safe for the implementation tier",
+          "`.spec/config.yml` sets `realization.enabled_tiers: [api_boundary, implementation]`"
+        ],
+        "id": "specled.branch_guard.scenario.realization_config_enables_implementation",
+        "subject_id": "specled.branch_guard",
+        "then": [
+          "the orchestrator receives the configured tier list",
+          "implementation-tier activity is visible in the realization hash store or realization findings"
+        ],
+        "when": [
+          "`SpecLedEx.BranchCheck.run/3` runs"
+        ]
+      },
+      {
+        "covers": [
+          "specled.branch_guard.realization_unknown_tier_finding"
+        ],
+        "file": ".spec/specs/branch_guard.spec.md",
+        "given": [
+          "`.spec/config.yml` contains an unknown `realization.enabled_tiers` token"
+        ],
+        "id": "specled.branch_guard.scenario.realization_unknown_tier_finding",
+        "subject_id": "specled.branch_guard",
+        "then": [
+          "a `branch_guard_realization_unknown_tier` finding is emitted at warning severity",
+          "a `branch_guard.severities` override to `off` suppresses the finding"
+        ],
+        "when": [
+          "`SpecLedEx.BranchCheck.run/3` runs"
+        ]
+      },
+      {
         "covers": [
           "specled.compiler_context.load_from_opts",
           "specled.compiler_context.struct_shape"
@@ -3873,6 +3968,25 @@
         ],
         "when": [
           "Closure.compute/2 is called for subject A"
+        ]
+      },
+      {
+        "covers": [
+          "specled.implementation_tier.config_opt_in"
+        ],
+        "file": ".spec/specs/implementation_tier.spec.md",
+        "given": [
+          "a subject with an implementation-tier binding",
+          "`.spec/config.yml` sets `realization.enabled_tiers` to include `implementation`"
+        ],
+        "id": "specled.implementation_tier.scenario.config_opt_in_runs_tier",
+        "subject_id": "specled.implementation_tier",
+        "then": [
+          "the implementation tier runs",
+          "removing the `realization:` section leaves the implementation tier inactive"
+        ],
+        "when": [
+          "mix spec.check runs the branch guard"
         ]
       },
       {
@@ -5830,7 +5944,8 @@
             "specled.decision.guided_reconciliation_loop",
             "specled.decision.no_app_start",
             "specled.decision.configurable_test_tag_enforcement",
-            "specled.decision.file_touch_yields_to_realization"
+            "specled.decision.file_touch_yields_to_realization",
+            "specled.decision.realization_tiers_nil_default"
           ],
           "id": "specled.branch_guard",
           "kind": "workflow",
@@ -5853,6 +5968,7 @@
             "lib/mix/tasks/spec.check.ex",
             "lib/specled_ex/config/branch_guard.ex",
             "lib/specled_ex/realization/orchestrator.ex",
+            "test/specled_ex/branch_check/realization_config_test.exs",
             "test/mix/tasks/spec_tasks_test.exs",
             "test/specled_ex/config/branch_guard_test.exs",
             "test/specled_ex/branch_check/load_prior_state_test.exs",
@@ -6075,7 +6191,9 @@
         "file": ".spec/specs/implementation_tier.spec.md",
         "id": "specled.implementation_tier",
         "meta": {
-          "decisions": null,
+          "decisions": [
+            "specled.decision.realization_tiers_nil_default"
+          ],
           "id": "specled.implementation_tier",
           "kind": "workflow",
           "realized_by": {
@@ -6089,8 +6207,10 @@
           "status": "active",
           "summary": "Walks tracer edges from declared MFAs; hashes closure with subject-boundary stops + hash-ref composition (Cargo pattern); MFA ownership via binding map with surface + lexical tiebreak.",
           "surface": [
+            "lib/specled_ex/branch_check.ex",
             "lib/specled_ex/realization/implementation.ex",
             "lib/specled_ex/realization/closure.ex",
+            "test/specled_ex/branch_check/realization_config_test.exs",
             "test/specled_ex/realization/implementation_test.exs",
             "test/specled_ex/realization/closure_test.exs",
             "test/integration/scenario_refactor_stable_test.exs"
@@ -7026,6 +7146,17 @@
       },
       {
         "covers": [
+          "specled.branch_guard.realization_tiers_from_config",
+          "specled.branch_guard.realization_unknown_tier_finding"
+        ],
+        "execute": true,
+        "file": ".spec/specs/branch_guard.spec.md",
+        "kind": "tagged_tests",
+        "subject_id": "specled.branch_guard",
+        "target": ""
+      },
+      {
+        "covers": [
           "specled.compiler_context.struct_shape",
           "specled.compiler_context.load_from_opts",
           "specled.compiler_context.manifest_wraps_stdlib"
@@ -7244,6 +7375,16 @@
       {
         "covers": [
           "specled.implementation_tier.scenario_refactor_stable"
+        ],
+        "execute": true,
+        "file": ".spec/specs/implementation_tier.spec.md",
+        "kind": "tagged_tests",
+        "subject_id": "specled.implementation_tier",
+        "target": ""
+      },
+      {
+        "covers": [
+          "specled.implementation_tier.config_opt_in"
         ],
         "execute": true,
         "file": ".spec/specs/implementation_tier.spec.md",
@@ -8173,7 +8314,7 @@
         "hasher_version": 1
       },
       "SpecLedEx.Realization.Orchestrator.run/2": {
-        "hash": "a3057d88771ba2a39e8244411c6aadc33da0b966507dd15bc56cc6f465e7a67f",
+        "hash": "0415833469a3291ed32d881c72e4e2313551bd4783e4d4fce229932282c198a5",
         "hasher_version": 1
       },
       "SpecLedEx.Next.run/3": {
@@ -8444,10 +8585,10 @@
     "decisions": 32,
     "exceptions": 0,
     "findings": 0,
-    "requirements": 289,
-    "scenarios": 158,
+    "requirements": 292,
+    "scenarios": 163,
     "subjects": 33,
-    "verifications": 94
+    "verifications": 96
   },
   "verification": {
     "claims": [
@@ -9266,6 +9407,28 @@
         "verification_index": 4
       },
       {
+        "cover_id": "specled.branch_guard.realization_tiers_from_config",
+        "file": ".spec/specs/branch_guard.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.branch_guard",
+        "target": "",
+        "verification_index": 5
+      },
+      {
+        "cover_id": "specled.branch_guard.realization_unknown_tier_finding",
+        "file": ".spec/specs/branch_guard.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.branch_guard",
+        "target": "",
+        "verification_index": 5
+      },
+      {
         "cover_id": "specled.compiler_context.load_from_opts",
         "file": ".spec/specs/compiler_context.spec.md",
         "kind": "tagged_tests",
@@ -9880,6 +10043,17 @@
         "subject_id": "specled.implementation_tier",
         "target": "",
         "verification_index": 2
+      },
+      {
+        "cover_id": "specled.implementation_tier.config_opt_in",
+        "file": ".spec/specs/implementation_tier.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.implementation_tier",
+        "target": "",
+        "verification_index": 3
       },
       {
         "cover_id": "specled.index.canonical_state_output",
@@ -12174,7 +12348,7 @@
     "default_minimum_strength": "claimed",
     "strength_summary": {
       "claimed": 2,
-      "executed": 263,
+      "executed": 266,
       "linked": 73
     },
     "threshold_failures": 0

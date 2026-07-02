@@ -17,6 +17,7 @@ surface:
   - lib/mix/tasks/spec.check.ex
   - lib/specled_ex/config/branch_guard.ex
   - lib/specled_ex/realization/orchestrator.ex
+  - test/specled_ex/branch_check/realization_config_test.exs
   - test/mix/tasks/spec_tasks_test.exs
   - test/specled_ex/config/branch_guard_test.exs
   - test/specled_ex/branch_check/load_prior_state_test.exs
@@ -36,6 +37,7 @@ decisions:
   - specled.decision.no_app_start
   - specled.decision.configurable_test_tag_enforcement
   - specled.decision.file_touch_yields_to_realization
+  - specled.decision.realization_tiers_nil_default
 ```
 
 ## Requirements
@@ -131,6 +133,27 @@ decisions:
     pre-existing AST shape mismatch between `Binding.resolve/2` and
     `Canonical.normalize/1`. A follow-up ticket tracks reshaping one of the
     two call sites so the impl tier can be enabled by default.
+  priority: must
+  stability: evolving
+- id: specled.branch_guard.realization_tiers_from_config
+  statement: >-
+    `SpecLedEx.BranchCheck.run/3` shall load `.spec/config.yml` once per run
+    and thread `config.realization.enabled_tiers` into
+    `SpecLedEx.Realization.Orchestrator.run_with_attestations/2` when the
+    value is a list. When the value is `nil`, BranchCheck shall omit the
+    option so the orchestrator default tier set applies. When the value is
+    `[]`, BranchCheck shall run no realization tiers and shall not replace or
+    remove existing realization hash-store entries.
+  priority: must
+  stability: evolving
+- id: specled.branch_guard.realization_unknown_tier_finding
+  statement: >-
+    `SpecLedEx.BranchCheck.run/3` shall emit one
+    `branch_guard_realization_unknown_tier` finding for each raw entry recorded
+    in `config.realization.rejected`. The finding shall default to warning
+    severity, respect `branch_guard.severities` including `off`, point at
+    `.spec/config.yml`, and tell the user which tier token was rejected and
+    which tier names are valid.
   priority: must
   stability: evolving
 - id: specled.branch_guard.file_touch_yields_to_attested_file
@@ -307,6 +330,47 @@ decisions:
     - "the `detector_unavailable` finding is also present"
   covers:
     - specled.branch_guard.file_touch_detector_failure_strict
+- id: specled.branch_guard.scenario.realization_config_enables_implementation
+  given:
+    - "a subject with a `realized_by.implementation` binding that is safe for the implementation tier"
+    - "`.spec/config.yml` sets `realization.enabled_tiers: [api_boundary, implementation]`"
+  when:
+    - "`SpecLedEx.BranchCheck.run/3` runs"
+  then:
+    - "the orchestrator receives the configured tier list"
+    - "implementation-tier activity is visible in the realization hash store or realization findings"
+  covers:
+    - specled.branch_guard.realization_tiers_from_config
+- id: specled.branch_guard.scenario.realization_config_absent_uses_default
+  given:
+    - "a subject with a `realized_by.implementation` binding"
+    - "no `realization:` section exists in `.spec/config.yml`"
+  when:
+    - "`SpecLedEx.BranchCheck.run/3` runs"
+  then:
+    - "the orchestrator default tier set applies"
+    - "no implementation-tier activity is produced"
+  covers: []
+- id: specled.branch_guard.scenario.realization_config_empty_preserves_hashes
+  given:
+    - "`.spec/config.yml` sets `realization.enabled_tiers: []`"
+    - "the realization hash store already contains committed tier entries"
+  when:
+    - "`SpecLedEx.BranchCheck.run/3` runs"
+  then:
+    - "no realization tiers run"
+    - "the existing realization hash-store entries remain intact"
+  covers: []
+- id: specled.branch_guard.scenario.realization_unknown_tier_finding
+  given:
+    - "`.spec/config.yml` contains an unknown `realization.enabled_tiers` token"
+  when:
+    - "`SpecLedEx.BranchCheck.run/3` runs"
+  then:
+    - "a `branch_guard_realization_unknown_tier` finding is emitted at warning severity"
+    - "a `branch_guard.severities` override to `off` suppresses the finding"
+  covers:
+    - specled.branch_guard.realization_unknown_tier_finding
 ```
 
 ## Verification
@@ -347,4 +411,9 @@ decisions:
     - specled.branch_guard.file_touch_severity_config_wins
     - specled.branch_guard.file_touch_tagged_tests_attested
     - specled.branch_guard.file_touch_detector_failure_strict
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.branch_guard.realization_tiers_from_config
+    - specled.branch_guard.realization_unknown_tier_finding
 ```
