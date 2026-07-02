@@ -58,6 +58,9 @@ defmodule SpecLedEx.Realization.HashStoreTest do
       assert decoded["api_boundary"]["Foo.bar/1"]["hash"] == "a1"
 
       assert HashStore.read(root)["api_boundary"]["Foo.bar/1"]["hash"] == "a1"
+
+      # The write never creates state.json.
+      refute File.exists?(state_path(root))
     end
 
     @tag spec: ["specled.binding.hash_store_dedicated_file"]
@@ -132,6 +135,41 @@ defmodule SpecLedEx.Realization.HashStoreTest do
     @tag spec: ["specled.binding.hash_store_legacy_fallback"]
     test "the dedicated file is authoritative once present — embedded section is ignored",
          %{root: root} do
+      # Disjoint keys: a merge-forward bug would leak Legacy.only/0 into the read.
+      File.write!(
+        state_path(root),
+        Jason.encode!(%{
+          "realization" => %{
+            "api_boundary" => %{
+              "Legacy.only/0" => %{
+                "hash" => "stale-legacy",
+                "hasher_version" => HashStore.hasher_version()
+              }
+            }
+          }
+        })
+      )
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            "Current.only/0" => %{
+              "hash" => "current",
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      read = HashStore.read(root)
+      assert read["api_boundary"]["Current.only/0"]["hash"] == "current"
+      refute Map.has_key?(read["api_boundary"], "Legacy.only/0")
+    end
+
+    @tag spec: ["specled.binding.hash_store_legacy_fallback"]
+    test "a malformed dedicated file reads as empty — never falls back to the embedded section",
+         %{root: root} do
+      File.write!(baseline_path(root), "{not-json")
+
       File.write!(
         state_path(root),
         Jason.encode!(%{
@@ -146,14 +184,7 @@ defmodule SpecLedEx.Realization.HashStoreTest do
         })
       )
 
-      :ok =
-        HashStore.write(root, %{
-          "api_boundary" => %{
-            "Foo.bar/1" => %{"hash" => "current", "hasher_version" => HashStore.hasher_version()}
-          }
-        })
-
-      assert HashStore.read(root)["api_boundary"]["Foo.bar/1"]["hash"] == "current"
+      assert HashStore.read(root) == %{}
     end
 
     @tag spec: ["specled.binding.hash_store_legacy_fallback"]

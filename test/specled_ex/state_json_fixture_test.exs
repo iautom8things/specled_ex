@@ -9,7 +9,7 @@ defmodule SpecLedEx.StateJsonFixtureTest do
   stages (S1 HashStore.merge/2, S6 integration scenarios) can rely on
   the fixture without separately re-verifying it.
   """
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias SpecLedEx.Realization.HashStore
   alias SpecLedEx.StateJsonFixture

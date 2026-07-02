@@ -1,5 +1,9 @@
 defmodule SpecLedEx.Realization.HashStoreVersioningTest do
-  use ExUnit.Case, async: true
+  # async: false — the debug-log assertion below temporarily lowers the global
+  # Logger level, which would race with concurrently-running async tests.
+  use ExUnit.Case, async: false
+
+  import ExUnit.CaptureLog
 
   @moduletag spec: ["specled.binding.hasher_version_internal"]
 
@@ -41,7 +45,8 @@ defmodule SpecLedEx.Realization.HashStoreVersioningTest do
       assert read["api_boundary"]["Foo.new/0"]["hash"] == "def"
     end
 
-    test "no user-visible finding is produced (debug log only)", %{root: root} do
+    test "rehash is debug-log only — nothing at warning level, no finding surfaced",
+         %{root: root} do
       older = HashStore.hasher_version() - 1
       path = Path.join([root, ".spec", "realization_hashes.json"])
 
@@ -54,10 +59,24 @@ defmodule SpecLedEx.Realization.HashStoreVersioningTest do
         })
       )
 
-      # Read should complete without raising or producing findings.
-      # HashStore.read returns only the hashmap — no finding list.
-      result = HashStore.read(root)
-      assert is_map(result)
+      prev_level = Logger.level()
+      Logger.configure(level: :debug)
+      on_exit(fn -> Logger.configure(level: prev_level) end)
+
+      debug_log =
+        capture_log(fn ->
+          read = HashStore.read(root)
+
+          # No finding structure is surfaced — the return is only the hash
+          # map, with the stale entry dropped.
+          assert read == %{}
+        end)
+
+      assert debug_log =~ "silent rehash triggered for 1 entries"
+
+      # Nothing user-visible: at warning level and above the read is silent.
+      warning_log = capture_log([level: :warning], fn -> HashStore.read(root) end)
+      assert warning_log == ""
     end
 
     test "rehash callback rewrites entries to current version", %{root: root} do
