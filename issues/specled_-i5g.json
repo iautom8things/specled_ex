@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-02T20:48:42Z",
+  "description": "Advances: specled.verification\n\nUnder dash (ubuntu /bin/sh), 'set -m' in a tty-less script prints 'can't access tty; job control turned off' and the backgrounded target never gets its own process group: the recorded pgid is not a group leader, kill -KILL -- -pgid is a no-op, and grandchildren survive the timeout. Empirically reproduced with /bin/dash on macOS. This is why verifier_test.exs:1004 (command timeout SIGKILLs the whole process group, scenario specled.verify.scenario.command_timeout_kills_process_group) fails in GitHub Actions while passing on macOS bash-as-sh. Fix: prefer setsid when available (universal on Linux) with set -m as the macOS fallback.",
+  "id": "specled_-i5g",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "verification timeout group-kill is broken on Linux (dash rejects set -m)",
+  "type": "task",
+  "updated_at": "2026-07-02T20:48:42Z"
+}
