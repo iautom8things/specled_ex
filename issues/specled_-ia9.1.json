@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-ia9",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: a7c01b31-1832-4731-b697-52202d55f59c\nLog: ~/.claude/projects/-Users-mz-src-specled-ex/a7c01b31-1832-4731-b697-52202d55f59c.jsonl\n\nCommit: 38fe651dcbb508372b613a576b93e2914e760a8f\nFiles touched: lib/specled_ex/compiler/tracer.ex, .spec/specs/compiler_tracer.spec.md, test/specled_ex/compiler/tracer_test.exs, test/integration/tracer_incremental_merge_test.exs (new), .spec/state.json (regen)\nTests added: TracerTest merge_edges/prune_edges unit tests + stream_data property (merge keeps non-session entries + session edges, idempotent), flush-through tests (recompiled-module-with-zero-edges replacement, ghost-caller seed prune, no temp litter), Integration.TracerIncrementalMergeTest (incremental==force map equality over a 3-module scratch project; deleted-module ghost pruned by second compile)\nVerification stubs flipped: new tagged_tests block for merge_on_flush + session_module_replacement + seed_time_ghost_prune added directly at execute: true (tests land in this commit)\n\nDeviations from ticket text, with rationale:\n1. NO lib/specled_ex/compiler/tracer/manifest_merge.ex. The ticket allowed creating it if tracer.ex exceeded the 300-LOC cap; I built it and it FAILED in the ERL_LIBS fixture path: Mix prunes code paths mid-compile (Elixir 1.15+), so a companion module loaded lazily at first flush is unavailable (UndefinedFunctionError, reproduced in sample_project subprocess compile). Trace-time code must be self-contained. single_file_cap (priority: should) statement refined accordingly — self-containment mandated, factor-out clause removed (spec feedback loop, not weakening: the old guidance was empirically wrong). tracer.ex is 340 LOC, single module.\n2. live_modules reads Mix.Compilers.Elixir.read_manifest directly instead of SpecLedEx.Compiler.Manifest.load — same pruning hazard (Manifest is a sibling module only rescued by luck today); Mix is resident in every compiling VM.\n3. merge_on_flush split into three requirements (merge_on_flush, session_module_replacement, seed_time_ghost_prune), one scenario each — the planned 1-requirement/3-scenarios shape violates this repo's overlap/duplicate_covers error gate (one scenario per requirement id per subject).\n\nGates: mix compile --warnings-as-errors PASS; mix test 876 tests 3 properties 0 failures; mix format --check-formatted PASS; mix deps.unlock --check-unused PASS; mix spec.check status=pass errors=0 warnings=0 findings=0 (base=origin/main).\n\nSummary: Tracer.flush now merges instead of replaces: pre-session manifest (read once/session, cached in a new meta ETS table, seed-time pruned against a non-empty compile manifest) minus session-compiled callers (tracked from :on_module env) unioned with session edges, callee lists canonical, atomic temp+rename writes. Incremental==force property holds end-to-end in a real subprocess-compile fixture.",
+      "timestamp": "2026-07-02T22:42:45Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "S1: Tracer merge-on-flush, seed-time prune, atomic writes",
   "type": "task",
-  "updated_at": "2026-07-02T22:23:22Z"
+  "updated_at": "2026-07-02T22:42:45Z"
 }
