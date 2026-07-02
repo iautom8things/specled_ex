@@ -1,6 +1,8 @@
 {
   "assignee": "Manuel Zubieta",
-  "blocked_by": [],
+  "blocked_by": [
+    "specled_-s65.8"
+  ],
   "blocks": [
     "specled_-s65.5"
   ],
@@ -21,5 +23,5 @@
   "status": "in_progress",
   "title": "Hermetic git config in test suite — stop 1Password commit-signing from doubling suite runtime",
   "type": "task",
-  "updated_at": "2026-07-02T11:20:43Z"
+  "updated_at": "2026-07-02T11:25:42Z"
 }
