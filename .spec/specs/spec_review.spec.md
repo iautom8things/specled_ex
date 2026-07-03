@@ -417,7 +417,7 @@ decisions:
     - specled.spec_review.coverage_pivot_touched_first
 - kind: command
   target: mix test test/specled_ex/review/findings_delta_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.spec_review.findings_delta
 - kind: command

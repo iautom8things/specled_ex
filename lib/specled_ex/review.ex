@@ -9,7 +9,7 @@ defmodule SpecLedEx.Review do
   """
 
   alias SpecLedEx.{ChangeAnalysis, Coverage, Verifier}
-  alias SpecLedEx.Review.{CoverageClosure, FileDiff, SpecDiff}
+  alias SpecLedEx.Review.{CoverageClosure, FileDiff, FindingsDelta, SpecDiff}
 
   @doc """
   Builds the view-model for the current change set.
@@ -116,6 +116,16 @@ defmodule SpecLedEx.Review do
 
     stats = compute_stats(all_changes)
 
+    # covers: specled.spec_review.findings_delta
+    # Classify head findings against the committed verification state at the
+    # base ref. Base findings come from `git show <base>:.spec/state.json`,
+    # never from re-running the verifier at base. A missing or unparseable
+    # base state degrades to a non-differential fallback rather than
+    # misattributing findings as introduced by the change.
+    findings_delta = FindingsDelta.classify(root, analysis.base, findings)
+
+    queue_subjects = build_queue_subjects(affected_subjects)
+
     %{
       meta: %{
         base_ref: analysis.base,
@@ -127,14 +137,50 @@ defmodule SpecLedEx.Review do
       },
       triage: triage,
       affected_subjects: affected_subjects,
+      queue_subjects: queue_subjects,
       unmapped_changes: unmapped_changes,
       decisions_changed: decisions_changed,
       adrs_by_id: adrs_by_id,
       all_findings: findings,
+      findings_delta: findings_delta,
       all_changes: all_changes,
       file_breakdown: file_breakdown
     }
   end
+
+  # covers: specled.spec_review.review_queue_navigation
+  # The left-rail review queue groups subjects by change kind (spec edited,
+  # then code only, then impacted only) and orders within each group by change
+  # size descending. Ties break on subject id so the queue is deterministic
+  # regardless of the order subjects arrive in.
+  @queue_group_order %{spec_edited: 0, code_only: 1, impacted_only: 2}
+
+  defp build_queue_subjects(affected_subjects) do
+    affected_subjects
+    |> Enum.map(fn s ->
+      %{
+        id: s.id,
+        change_kind: s.change_kind,
+        diffstat: s.diffstat,
+        findings_count: length(s.findings)
+      }
+    end)
+    |> Enum.sort_by(fn e ->
+      {Map.fetch!(@queue_group_order, e.change_kind), -(e.diffstat.adds + e.diffstat.dels), e.id}
+    end)
+  end
+
+  @doc """
+  Classify an affected subject's change kind for the review queue.
+
+  A subject whose spec file was edited is `:spec_edited`; otherwise a subject
+  with changed code files is `:code_only`; a subject present only because it was
+  impacted (no file of its own changed) is `:impacted_only`.
+  """
+  def change_kind(spec_file_changed?, has_code_changes?)
+  def change_kind(true, _has_code_changes?), do: :spec_edited
+  def change_kind(false, true), do: :code_only
+  def change_kind(false, false), do: :impacted_only
 
   defp compute_stats(all_changes) do
     Enum.reduce(all_changes, %{files_changed: 0, additions: 0, deletions: 0}, fn %{lines: lines},
@@ -268,8 +314,20 @@ defmodule SpecLedEx.Review do
       findings: Map.get(findings_by_subject, id, []),
       claims_by_req: claims_by_req,
       closure_reach: closure_reach,
-      changed_files: changed_files
+      changed_files: changed_files,
+      change_kind: change_kind(spec_file_changed?, code_changes != []),
+      diffstat: diffstat_of(code_changes)
     }
+  end
+
+  defp diffstat_of(changes) do
+    Enum.reduce(changes, %{adds: 0, dels: 0}, fn %{lines: lines}, acc ->
+      Enum.reduce(lines, acc, fn
+        {:add, _}, a -> %{a | adds: a.adds + 1}
+        {:del, _}, a -> %{a | dels: a.dels + 1}
+        _, a -> a
+      end)
+    end)
   end
 
   defp group_claims_by_subject(verifier_report) do
