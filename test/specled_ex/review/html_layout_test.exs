@@ -81,6 +81,25 @@ defmodule SpecLedEx.Review.HtmlLayoutTest do
     end
   end
 
+  # Extract one subject pivot panel (spec-/code-/coverage-/decisions-<slug>) by
+  # its id. Pivot panels contain no nested <section>, so a non-greedy match to
+  # the next </section> isolates exactly one panel.
+  defp tab_panel(html, id) do
+    re =
+      Regex.compile!(
+        "<section class=\"tab-panel[^\"]*\" id=\"" <>
+          Regex.escape(id) <> "\"[^>]*>(.*?)</section>",
+        "s"
+      )
+
+    case Regex.run(re, html, capture: :all_but_first) do
+      [inner] -> inner
+      _ -> flunk("no tab panel #{id}")
+    end
+  end
+
+  defp at(haystack, needle), do: elem(:binary.match(haystack, needle), 0)
+
   describe "review queue navigation (specled.spec_review.review_queue_navigation)" do
     @tag spec: "specled.spec_review.review_queue_navigation"
     test "queue lists every reviewable unit and each is a deep-linkable pane", %{root: root} do
@@ -450,6 +469,268 @@ defmodule SpecLedEx.Review.HtmlLayoutTest do
       # No requirement is marked touched.
       refute html =~ "cov-req-new"
       refute html =~ "cov-req-modified"
+    end
+  end
+
+  describe "Code pivot grouped by binding tier (specled.spec_review.per_subject_tabs)" do
+    # A subject declaring MFAs in both the api_boundary and implementation tiers,
+    # with code changes touching a file that resolves to each tier — the
+    # code_tab_grouped_by_binding scenario's given clause.
+    defp two_tier_subject do
+      %{
+        id: "auth.subject",
+        bindings: %{
+          "api_boundary" => ["Auth.Boundary.check/1"],
+          "implementation" => ["Auth.Impl.run/0"]
+        },
+        code_changes: [
+          %{file: "lib/auth/boundary.ex", lines: [{:add, "def check(x), do: x"}]},
+          %{file: "lib/auth/impl.ex", lines: [{:add, "def run, do: :ok"}]}
+        ]
+      }
+    end
+
+    @tag spec: "specled.spec_review.per_subject_tabs"
+    test "code changes are grouped under realized_by tier headers, files nested under each tier" do
+      html = IO.iodata_to_binary(Html.render_code_tab(two_tier_subject()))
+
+      # Both tiers render as headed groups (not a flat file tree).
+      assert html =~ ~s|data-tier="api_boundary"|
+      assert html =~ ~s|data-tier="implementation"|
+      assert html =~ "API boundary"
+      assert html =~ "Implementation"
+
+      # The file that resolves to each tier sits under that tier's header rather
+      # than being organized by path first. Ordering proves attribution: the
+      # api_boundary group (with boundary.ex) fully precedes the implementation
+      # group (with impl.ex). Under the old flat build there were no tier
+      # headers at all, so this is the falsifiable condition.
+      api_at = at(html, ~s|data-tier="api_boundary"|)
+      boundary_at = at(html, "lib/auth/boundary.ex")
+      impl_tier_at = at(html, ~s|data-tier="implementation"|)
+      impl_at = at(html, "lib/auth/impl.ex")
+
+      assert api_at < boundary_at
+      assert boundary_at < impl_tier_at
+      assert impl_tier_at < impl_at
+    end
+
+    @tag spec: "specled.spec_review.per_subject_tabs"
+    test "a changed file matching no declared binding falls into an Other group, not dropped" do
+      subject = %{
+        id: "auth.subject",
+        bindings: %{"implementation" => ["Auth.Impl.run/0"]},
+        code_changes: [
+          %{file: "lib/auth/impl.ex", lines: [{:add, "def run, do: :ok"}]},
+          %{file: "lib/auth/helpers.ex", lines: [{:add, "def util, do: :ok"}]}
+        ]
+      }
+
+      html = IO.iodata_to_binary(Html.render_code_tab(subject))
+
+      assert html =~ ~s|data-tier="implementation"|
+      assert html =~ ~s|code-tier-other|
+      assert html =~ "Other changed files"
+      # The unmatched file is still rendered (under Other), never silently dropped.
+      assert html =~ "lib/auth/helpers.ex"
+    end
+
+    @tag spec: "specled.spec_review.per_subject_tabs"
+    test "a subject with no bindings degrades to a flat file diff with an explanatory note" do
+      subject = %{
+        id: "auth.subject",
+        bindings: %{},
+        code_changes: [%{file: "lib/auth.ex", lines: [{:add, "def run, do: :ok"}]}]
+      }
+
+      html = IO.iodata_to_binary(Html.render_code_tab(subject))
+
+      assert html =~ "code-flat-note"
+      assert html =~ "declares no"
+      assert html =~ "flat file diff"
+      # No tier grouping when there are no bindings to group by.
+      refute html =~ "data-tier="
+      assert html =~ "lib/auth.ex"
+    end
+  end
+
+  describe "per-subject pivot labels, default, and de-emphasis (specled.spec_review.per_subject_tabs)" do
+    # A subject whose code changed: three requirements untouched, two ADRs.
+    defp code_changed_subject do
+      %{
+        id: "s.a",
+        statement: "x",
+        bindings: %{},
+        code_changes: [%{file: "lib/a.ex", lines: [{:add, "x"}]}],
+        diffstat: %{adds: 3, dels: 1},
+        requirements: [%{"id" => "s.a.r1", "statement" => "One.", "priority" => "must"}],
+        scenarios: [],
+        decision_refs: [],
+        findings: [],
+        claims_by_req: %{},
+        closure_reach: %{status: :ok, by_requirement: %{}},
+        spec_diff: nil,
+        spec_changes: %{
+          file_changed?: false,
+          base_existed?: true,
+          requirements: %{added: [], modified: [], removed: []},
+          scenarios: %{added: [], modified: [], removed: []}
+        }
+      }
+    end
+
+    @tag spec: "specled.spec_review.per_subject_tabs"
+    test "each pivot label carries a change-scoped summary" do
+      html = IO.iodata_to_binary(Html.render_subject_pivots(code_changed_subject(), "s-a", %{}))
+
+      # Code: file count + diffstat. Spec/Coverage: unchanged. Decisions: empty.
+      assert html =~ "Code · 1 file +3/−1"
+      assert html =~ "Spec · unchanged"
+      assert html =~ "Coverage · no change"
+      # Decisions has no refs, so it reads bare and is de-emphasized.
+      assert html =~
+               ~r|<button class="tab tab-empty"[^>]*data-tab="decisions-s-a"[^>]*title="No ADRs referenced|
+    end
+
+    @tag spec: "specled.spec_review.per_subject_tabs"
+    test "the default pivot is Code when this subject's code changed" do
+      html = IO.iodata_to_binary(Html.render_subject_pivots(code_changed_subject(), "s-a", %{}))
+
+      # Exactly one tab and one panel are active, and they are Code.
+      assert length(Regex.scan(~r|<button class="tab active"|, html)) == 1
+      assert html =~ ~r|<button class="tab active"[^>]*data-tab="code-s-a"|
+      assert html =~ ~r|<section class="tab-panel active" id="code-s-a"|
+      refute html =~ ~r|<section class="tab-panel active" id="spec-s-a"|
+    end
+
+    @tag spec: "specled.spec_review.per_subject_tabs"
+    test "the default pivot is Spec when only the spec changed, and empty Code is de-emphasized" do
+      subject = %{
+        code_changed_subject()
+        | code_changes: [],
+          diffstat: %{adds: 0, dels: 0},
+          spec_changes: %{
+            file_changed?: true,
+            base_existed?: true,
+            requirements: %{
+              added: [%{"id" => "s.a.r2", "statement" => "New.", "priority" => "must"}],
+              modified: [],
+              removed: []
+            },
+            scenarios: %{added: [], modified: [], removed: []}
+          }
+      }
+
+      html = IO.iodata_to_binary(Html.render_subject_pivots(subject, "s-a", %{}))
+
+      assert html =~ ~r|<button class="tab active"[^>]*data-tab="spec-s-a"|
+      assert html =~ ~r|<section class="tab-panel active" id="spec-s-a"|
+      # Change-scoped labels reflect the spec edit.
+      assert html =~ "Spec · +1"
+      assert html =~ "Coverage · 1 touched"
+      # Code has no changes: bare label + de-emphasis with a reason.
+      assert html =~
+               ~r|<button class="tab tab-empty"[^>]*data-tab="code-s-a"[^>]*title="No code files|
+    end
+  end
+
+  describe "subject header (specled.spec_review.spec_first_navigation)" do
+    @tag spec: "specled.spec_review.spec_first_navigation"
+    test "a long prose statement is clamped with a pure-CSS expand toggle" do
+      long = String.duplicate("credential rotation policy ", 12)
+      html = IO.iodata_to_binary(Html.render_subject_statement(long, "s-a"))
+
+      assert html =~ "subject-statement-clamped"
+      assert html =~ ~s|id="stmt-s-a"|
+      assert html =~ "statement-toggle"
+      assert html =~ ~s|<label class="statement-expand" for="stmt-s-a">|
+    end
+
+    @tag spec: "specled.spec_review.spec_first_navigation"
+    test "a short statement renders plainly with no expand toggle" do
+      html = IO.iodata_to_binary(Html.render_subject_statement("Short and sweet.", "s-b"))
+
+      assert html =~ ~s|<p class="subject-statement">Short and sweet.</p>|
+      refute html =~ "statement-toggle"
+    end
+
+    @tag spec: "specled.spec_review.per_subject_tabs"
+    test "per-subject triangle leg chips reflect the subject's own findings" do
+      # A no_realized_by detector_unavailable finding degrades SPEC ↔ CODE; an
+      # observed-coverage error fails CODE ↔ TESTS; SPEC ↔ TESTS stays ok.
+      findings = [
+        %{"code" => "detector_unavailable", "reason" => "no_realized_by", "severity" => "info"},
+        %{"code" => "branch_guard_untethered_test", "severity" => "error"}
+      ]
+
+      html = IO.iodata_to_binary(Html.render_subject_leg_chips(findings))
+
+      assert html =~ "subject-legs"
+      assert html =~ ~r|leg-chip-degraded"[^>]*>Spec ↔ Code|
+      assert html =~ ~r|leg-chip-ok"[^>]*>Spec ↔ Tests|
+      assert html =~ ~r|leg-chip-fail"[^>]*>Code ↔ Tests|
+    end
+  end
+
+  describe "Spec pivot semantic diff (specled.spec_review.per_subject_tabs)" do
+    defp modified_requirement_repo(root) do
+      init_git_repo(root)
+
+      base_meta = %{
+        "id" => "auth.subject",
+        "kind" => "module",
+        "status" => "active",
+        "summary" => "Auth boundary protects credentials.",
+        "surface" => ["lib/auth.ex"]
+      }
+
+      write_subject_spec(root, "auth",
+        meta: base_meta,
+        requirements: [
+          %{
+            "id" => "auth.subject.req1",
+            "statement" => "Legacy wording here.",
+            "priority" => "must"
+          }
+        ]
+      )
+
+      write_files(root, %{"lib/auth.ex" => "defmodule Auth do\nend\n"})
+      commit_all(root, "initial")
+
+      write_subject_spec(root, "auth",
+        meta: base_meta,
+        requirements: [
+          %{
+            "id" => "auth.subject.req1",
+            "statement" => "Updated phrasing here.",
+            "priority" => "must"
+          }
+        ]
+      )
+
+      index = SpecLedEx.index(root)
+      view = Review.build_view(index, root, base: "main")
+      {view, IO.iodata_to_binary(Html.render(view))}
+    end
+
+    @tag spec: "specled.spec_review.per_subject_tabs"
+    test "a modified requirement renders inline wording del/ins and the raw file diff folds away",
+         %{root: root} do
+      {_view, html} = modified_requirement_repo(root)
+      spec = tab_panel(html, "spec-auth-subject")
+
+      # The requirement is flagged MODIFIED and its wording shows both a deletion
+      # and an insertion inline (base -> head). Under the old rendering the head
+      # statement rendered plainly, so the del/ins markup is the falsifiable bit.
+      assert spec =~ "MODIFIED"
+      assert spec =~ ~s|<del class="wording-del">|
+      assert spec =~ ~s|<ins class="wording-ins">|
+
+      # The line-level file diff is behind a fold rather than an open heading.
+      assert spec =~ "spec-diff-fold"
+      assert spec =~ "Raw spec file diff"
+      refute spec =~ "<h4 class=\"tab-heading\">Spec file changes</h4>"
     end
   end
 end

@@ -1397,7 +1397,7 @@ defmodule SpecLedEx.Review.Html do
     ~S"""
     <article class="subject" id="subject-<%= assigns[:slug] %>">
       <header class="subject-header">
-        <p class="subject-statement"><%= SpecLedEx.Review.Html.h(assigns[:s].statement) %></p>
+        <%= SpecLedEx.Review.Html.render_subject_statement(assigns[:s].statement, assigns[:slug]) %>
         <div class="subject-meta-row">
           <code class="subject-id"><%= SpecLedEx.Review.Html.h(assigns[:s].id) %></code>
           <%= if assigns[:s].file do %>
@@ -1407,30 +1407,250 @@ defmodule SpecLedEx.Review.Html do
           <%= SpecLedEx.Review.Html.render_subject_finding_badges(assigns[:s].findings) %>
           <%= SpecLedEx.Review.Html.render_subject_binding_health(assigns[:s].bindings, assigns[:s].findings) %>
         </div>
+        <%= SpecLedEx.Review.Html.render_subject_leg_chips(assigns[:s].findings) %>
       </header>
-      <div class="tabs" role="tablist">
-        <button class="tab active" role="tab" data-tab="spec-<%= assigns[:slug] %>">Spec</button>
-        <button class="tab" role="tab" data-tab="code-<%= assigns[:slug] %>">Code (<%= length(assigns[:s].code_changes) %>)</button>
-        <button class="tab" role="tab" data-tab="coverage-<%= assigns[:slug] %>">Coverage</button>
-        <button class="tab" role="tab" data-tab="decisions-<%= assigns[:slug] %>">Decisions (<%= length(assigns[:s].decision_refs) %>)</button>
-      </div>
-      <div class="tab-panels">
-        <section class="tab-panel active" id="spec-<%= assigns[:slug] %>" role="tabpanel">
-          <%= SpecLedEx.Review.Html.render_spec_tab(assigns[:s]) %>
-        </section>
-        <section class="tab-panel" id="code-<%= assigns[:slug] %>" role="tabpanel">
-          <%= SpecLedEx.Review.Html.render_code_tab(assigns[:s]) %>
-        </section>
-        <section class="tab-panel" id="coverage-<%= assigns[:slug] %>" role="tabpanel">
-          <%= SpecLedEx.Review.Html.render_coverage_tab(assigns[:s]) %>
-        </section>
-        <section class="tab-panel" id="decisions-<%= assigns[:slug] %>" role="tabpanel">
-          <%= SpecLedEx.Review.Html.render_decisions_tab(assigns[:s], assigns[:adrs]) %>
-        </section>
-      </div>
+      <%= SpecLedEx.Review.Html.render_subject_pivots(assigns[:s], assigns[:slug], assigns[:adrs]) %>
     </article>
     """
   end
+
+  # covers: specled.spec_review.per_subject_tabs
+  # Render the four per-subject pivots (Spec / Code / Coverage / Decisions) with
+  # change-scoped labels, a smart default (the pivot carrying this change set's
+  # edits: Code when code changed, else Spec), and empty pivots visibly
+  # de-emphasized with the reason exposed as a tooltip. Centralized here (rather
+  # than inline in the EEx template) so the label/default/de-emphasis logic is
+  # unit-testable and the template stays declarative.
+  @doc false
+  def render_subject_pivots(s, slug, adrs) do
+    default = default_pivot(s)
+
+    pivots = [
+      {:spec, "spec-" <> slug, spec_tab_label(s), spec_empty_reason(s), render_spec_tab(s)},
+      {:code, "code-" <> slug, code_tab_label(s), code_empty_reason(s), render_code_tab(s)},
+      {:coverage, "coverage-" <> slug, coverage_tab_label(s), coverage_empty_reason(s),
+       render_coverage_tab(s)},
+      {:decisions, "decisions-" <> slug, decisions_tab_label(s), decisions_empty_reason(s),
+       render_decisions_tab(s, adrs)}
+    ]
+
+    [
+      ~S|<div class="tabs" role="tablist">|,
+      Enum.map(pivots, fn {key, target, label, empty_reason, _panel} ->
+        active = if key == default, do: " active", else: ""
+        empty = if empty_reason, do: " tab-empty", else: ""
+
+        ~s|<button class="tab#{active}#{empty}" role="tab" data-tab="#{target}"#{title_attr(empty_reason)}>#{label}</button>|
+      end),
+      ~S|</div>|,
+      ~S|<div class="tab-panels">|,
+      Enum.map(pivots, fn {key, target, _label, _reason, panel} ->
+        active = if key == default, do: " active", else: ""
+
+        [
+          ~s|<section class="tab-panel#{active}" id="#{target}" role="tabpanel">|,
+          panel,
+          ~S|</section>|
+        ]
+      end),
+      ~S|</div>|
+    ]
+  end
+
+  # The default-selected pivot follows the change: Code when this subject's code
+  # changed, Spec when only the spec was edited, otherwise the first pivot that
+  # actually has content (an impacted-only subject with no direct edits).
+  defp default_pivot(s) do
+    cond do
+      Map.get(s, :code_changes, []) != [] -> :code
+      spec_edited?(s) -> :spec
+      is_nil(spec_empty_reason(s)) -> :spec
+      is_nil(coverage_empty_reason(s)) -> :coverage
+      is_nil(decisions_empty_reason(s)) -> :decisions
+      true -> :spec
+    end
+  end
+
+  defp spec_edited?(s) do
+    case Map.get(s, :spec_changes) do
+      %{} = changes ->
+        Map.get(changes, :file_changed?, false) or Map.get(changes, :base_existed?, true) == false
+
+      _ ->
+        false
+    end
+  end
+
+  defp code_tab_label(s) do
+    case Map.get(s, :code_changes, []) do
+      [] ->
+        "Code"
+
+      changes ->
+        n = length(changes)
+        "Code · #{n} #{maybe_plural(n, "file")}#{diffstat_suffix(Map.get(s, :diffstat))}"
+    end
+  end
+
+  defp diffstat_suffix(%{adds: a, dels: d}) when a > 0 or d > 0, do: " +#{a}/−#{d}"
+  defp diffstat_suffix(_), do: ""
+
+  defp spec_tab_label(s) do
+    case Map.get(s, :spec_changes) do
+      %{base_existed?: false} ->
+        "Spec · new"
+
+      %{requirements: %{added: added, modified: modified}} ->
+        cond do
+          added == [] and modified == [] -> "Spec · unchanged"
+          true -> "Spec · " <> spec_change_counts(length(added), length(modified))
+        end
+
+      _ ->
+        "Spec · unchanged"
+    end
+  end
+
+  defp spec_change_counts(added, modified) do
+    [
+      if(added > 0, do: "+#{added}", else: nil),
+      if(modified > 0, do: "~#{modified}", else: nil)
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(" ")
+  end
+
+  defp coverage_tab_label(s) do
+    touched =
+      case Map.get(s, :spec_changes) do
+        %{requirements: %{added: added, modified: modified}} ->
+          length(added) + length(modified)
+
+        _ ->
+          0
+      end
+
+    if touched == 0, do: "Coverage · no change", else: "Coverage · #{touched} touched"
+  end
+
+  defp decisions_tab_label(s) do
+    case Map.get(s, :decision_refs, []) do
+      [] -> "Decisions"
+      refs -> "Decisions · #{length(refs)} #{maybe_plural(length(refs), "ref")}"
+    end
+  end
+
+  # An empty-reason helper returns a human sentence when the pivot has no
+  # content (so the tab is de-emphasized and the reason surfaced), or nil when
+  # the pivot carries content.
+  defp code_empty_reason(s) do
+    if Map.get(s, :code_changes, []) == [],
+      do: "No code files in this change set map to this subject.",
+      else: nil
+  end
+
+  defp spec_empty_reason(s) do
+    reqs = Map.get(s, :requirements, [])
+    scenarios = Map.get(s, :scenarios, [])
+
+    if reqs == [] and scenarios == [],
+      do: "This subject declares no requirements or scenarios.",
+      else: nil
+  end
+
+  defp coverage_empty_reason(s) do
+    if Map.get(s, :requirements, []) == [],
+      do: "No requirements to report coverage for.",
+      else: nil
+  end
+
+  defp decisions_empty_reason(s) do
+    if Map.get(s, :decision_refs, []) == [],
+      do: "No ADRs referenced by this subject.",
+      else: nil
+  end
+
+  # covers: specled.spec_review.spec_first_navigation
+  # The prose statement is the subject headline. Long statements are clamped to
+  # a few lines with a pure-CSS expand toggle (a checkbox + label, no JS) so the
+  # headline stays scannable while the full text remains available in-place.
+  @doc false
+  def render_subject_statement(statement, slug) do
+    text = statement || ""
+
+    if String.length(text) > 160 do
+      ~s"""
+      <div class="subject-statement-wrap">
+        <input type="checkbox" class="statement-toggle" id="stmt-#{slug}" />
+        <p class="subject-statement subject-statement-clamped">#{h(text)}</p>
+        <label class="statement-expand" for="stmt-#{slug}"></label>
+      </div>
+      """
+    else
+      ~s|<p class="subject-statement">#{h(text)}</p>|
+    end
+  end
+
+  # covers: specled.spec_review.per_subject_tabs
+  # Per-subject triangle leg chips summarize this subject's SPEC ↔ CODE,
+  # SPEC ↔ TESTS, and CODE ↔ TESTS legs at a glance in the header, derived from
+  # the subject's own findings (not repo-wide state) so a reviewer sees which
+  # leg carries weight before pivoting into a tab. A leg with no finding reads
+  # ok (✓); a detector_unavailable finding degrades it (?); an error fails it
+  # (✗); a warning flags it (!).
+  @doc false
+  def render_subject_leg_chips(findings) do
+    findings = List.wrap(findings)
+
+    [
+      ~s|<div class="subject-legs" aria-label="Triangle leg states for this subject">|,
+      Enum.map(["Spec ↔ Code", "Spec ↔ Tests", "Code ↔ Tests"], fn leg ->
+        state = subject_leg_state(findings, leg)
+
+        ~s|<span class="leg-chip leg-chip-#{state}"#{title_attr(subject_leg_tooltip(leg, state))}>#{h(leg)} <span class="leg-chip-glyph" aria-hidden="true">#{leg_state_glyph(state)}</span></span>|
+      end),
+      ~S|</div>|
+    ]
+  end
+
+  defp subject_leg_state(findings, leg) do
+    leg_findings = Enum.filter(findings, fn f -> finding_leg(f) == leg end)
+
+    cond do
+      leg_findings == [] -> :ok
+      Enum.any?(leg_findings, &(&1["severity"] == "error")) -> :fail
+      Enum.any?(leg_findings, &(&1["code"] == "detector_unavailable")) -> :degraded
+      Enum.any?(leg_findings, &(&1["severity"] == "warning")) -> :warn
+      true -> :degraded
+    end
+  end
+
+  # A detector_unavailable finding carries no checklist code, so its leg is
+  # keyed on its reason (mirroring the view-model's detector_unavailable_by_leg
+  # aggregation): no_coverage_artifact lives on CODE ↔ TESTS; every other
+  # reason — including no_realized_by and the realization-tier reasons — lives
+  # on SPEC ↔ CODE. All other findings defer to the shared code-to-leg lookup.
+  defp finding_leg(%{"code" => "detector_unavailable"} = f) do
+    case f["reason"] do
+      "no_coverage_artifact" -> "Code ↔ Tests"
+      _ -> "Spec ↔ Code"
+    end
+  end
+
+  defp finding_leg(f), do: leg_for_finding_code(f["code"])
+
+  defp leg_state_glyph(:ok), do: "✓"
+  defp leg_state_glyph(:degraded), do: "?"
+  defp leg_state_glyph(:warn), do: "!"
+  defp leg_state_glyph(:fail), do: "✗"
+
+  defp subject_leg_tooltip(leg, :ok), do: "#{leg}: no findings on this leg for this subject."
+
+  defp subject_leg_tooltip(leg, :degraded),
+    do: "#{leg}: verification degraded — a detector was unavailable for this leg."
+
+  defp subject_leg_tooltip(leg, :warn), do: "#{leg}: a warning-level finding affects this leg."
+  defp subject_leg_tooltip(leg, :fail), do: "#{leg}: a failing finding affects this leg."
 
   @doc false
   def render_subject_change_badge(%{base_existed?: false}),
@@ -1511,10 +1731,11 @@ defmodule SpecLedEx.Review.Html do
     req_status = id_status_lookup(s.spec_changes.requirements)
     scenario_status = id_status_lookup(s.spec_changes.scenarios)
     base_existed? = Map.get(s.spec_changes, :base_existed?, true)
+    base_statements = base_statement_lookup(s.spec_changes.requirements)
 
     [
       render_spec_change_callout(s.spec_changes, base_existed?),
-      render_requirements(s.requirements, s.findings, req_status),
+      render_requirements(s.requirements, s.findings, req_status, base_statements),
       render_removed_items("Removed requirements", s.spec_changes.requirements.removed),
       render_scenarios(s.scenarios, scenario_status),
       render_removed_items("Removed scenarios", s.spec_changes.scenarios.removed),
@@ -1573,9 +1794,9 @@ defmodule SpecLedEx.Review.Html do
     end
   end
 
-  defp render_requirements([], _, _), do: ""
+  defp render_requirements([], _, _, _), do: ""
 
-  defp render_requirements(requirements, findings, status_lookup) do
+  defp render_requirements(requirements, findings, status_lookup, base_statements) do
     findings_by_req = group_findings_by_requirement(findings)
 
     {changed, unchanged} =
@@ -1592,6 +1813,13 @@ defmodule SpecLedEx.Review.Html do
       req_findings = Map.get(findings_by_req, id, [])
       status = Map.get(status_lookup, id, :unchanged)
 
+      statement_html =
+        if status == :modified do
+          render_statement_diff(Map.get(base_statements, id), statement)
+        else
+          h(statement)
+        end
+
       ~s"""
       <li class="requirement requirement-#{status}">
         <div class="requirement-header">
@@ -1601,7 +1829,7 @@ defmodule SpecLedEx.Review.Html do
           <span class="pill pill-neutral"#{title_attr(tooltip(:stability, stability))}>#{h(stability)}</span>
           #{render_requirement_finding_badge(req_findings)}
         </div>
-        <p class="requirement-statement">#{h(statement)}</p>
+        <p class="requirement-statement">#{statement_html}</p>
       </li>
       """
     end
@@ -1671,6 +1899,36 @@ defmodule SpecLedEx.Review.Html do
           true -> "scenario-list"
         end
     end
+  end
+
+  # Map modified-requirement ids to their base-ref statement so the head
+  # rendering can show inline wording del/ins against what was there before.
+  defp base_statement_lookup(%{modified: modified}) do
+    modified
+    |> Enum.map(fn m ->
+      id = field(m, :id) || item_id(m)
+      base = field(field(m, :base) || %{}, :statement)
+      {id, base}
+    end)
+    |> Enum.reject(fn {id, base} -> id in [nil, ""] or is_nil(base) end)
+    |> Map.new()
+  end
+
+  defp base_statement_lookup(_), do: %{}
+
+  # Character-level inline diff of a requirement's wording (base -> head) using
+  # the stdlib Myers diff. Deterministic and dependency-free. Falls back to the
+  # plain head statement when no base wording is available.
+  defp render_statement_diff(nil, head), do: h(head)
+
+  defp render_statement_diff(base, head) do
+    base
+    |> String.myers_difference(head)
+    |> Enum.map(fn
+      {:eq, s} -> h(s)
+      {:del, s} -> ~s|<del class="wording-del">#{h(s)}</del>|
+      {:ins, s} -> ~s|<ins class="wording-ins">#{h(s)}</ins>|
+    end)
   end
 
   defp render_change_chip(:new),
@@ -1779,37 +2037,200 @@ defmodule SpecLedEx.Review.Html do
 
   defp render_spec_diff(nil), do: ""
 
+  # The raw spec file diff is folded away by default — the semantic spec diff
+  # (ADDED/MODIFIED/REMOVED requirements and scenarios above, with inline
+  # wording del/ins) is the primary read; the line-level file diff is available
+  # for reviewers who want the exact hunk.
   defp render_spec_diff(%{file: file, lines: lines}) do
     [
-      ~s|<h4 class="tab-heading">Spec file changes</h4>|,
+      ~s|<details class="spec-diff-fold">|,
+      ~s|<summary class="spec-diff-summary">Raw spec file diff</summary>|,
       ~s|<div class="filename"><code>#{h(file)}</code></div>|,
-      render_diff_block(lines, language_for(file))
+      render_diff_block(lines, language_for(file)),
+      ~S|</details>|
     ]
   end
 
+  # covers: specled.spec_review.per_subject_tabs
+  # The Code pivot organizes changes by realized_by binding tier rather than
+  # by file path (per_subject_tabs / code_tab_grouped_by_binding). Each changed
+  # file is attributed to a tier when one of that tier's declared MFAs names a
+  # module whose conventional source file matches the changed file (last module
+  # segment underscored == file basename). Files that match no declared binding
+  # fall into an "Other changed files" group rather than being dropped, and a
+  # subject that declares no bindings at all degrades to a flat file diff with
+  # an explanatory note.
   @doc false
   def render_code_tab(%{code_changes: []}) do
     ~S|<p class="empty-tab">No code files in this change set map to this subject.</p>|
   end
 
-  def render_code_tab(%{code_changes: changes, id: id}) do
+  def render_code_tab(%{code_changes: changes} = s) do
+    id = Map.get(s, :id, "")
+    bindings = normalize_bindings(Map.get(s, :bindings))
+
+    if map_size(bindings) == 0 do
+      render_code_flat(changes, id)
+    else
+      render_code_by_tier(changes, bindings, id)
+    end
+  end
+
+  defp render_code_flat(changes, id) do
     anchor_prefix = "code-" <> slug(id)
     paths = Enum.map(changes, & &1.file)
     tree = build_path_tree(paths)
+    diff_blocks = code_diff_blocks(changes, anchor_prefix)
 
-    diff_blocks =
-      Enum.map(changes, fn %{file: file, lines: lines} ->
-        anchor = anchor_prefix <> "-" <> slug(file)
+    [
+      ~S|<p class="code-tier-note code-flat-note">This subject declares no <code>realized_by</code> bindings, so changes are shown as a flat file diff rather than grouped by binding tier.</p>|,
+      render_files_section(tree, anchor_prefix, "Files (#{length(paths)})", diff_blocks)
+    ]
+  end
 
-        ~s"""
-        <details class="code-change" id="#{anchor}" open>
-          <summary class="filename"><code>#{h(file)}</code></summary>
-          #{IO.iodata_to_binary(render_diff_block(lines, language_for(file)))}
-        </details>
-        """
+  defp render_code_by_tier(changes, bindings, id) do
+    tier_keys = ordered_tier_keys(bindings)
+    {grouped, leftover} = assign_changes_to_tiers(changes, tier_keys, bindings)
+
+    [
+      Enum.map(tier_keys, fn tier ->
+        render_code_tier_group(tier, Map.get(grouped, tier, []), id)
+      end),
+      render_code_other_group(leftover, id)
+    ]
+  end
+
+  defp render_code_tier_group(_tier, [], _id), do: ""
+
+  defp render_code_tier_group(tier, changes, id) do
+    anchor_prefix = "code-" <> slug(id) <> "-" <> slug(tier)
+    label = tier_label(tier)
+    paths = Enum.map(changes, & &1.file)
+    tree = build_path_tree(paths)
+    diff_blocks = code_diff_blocks(changes, anchor_prefix)
+    n = length(paths)
+
+    [
+      ~s|<div class="code-tier" data-tier="#{h(tier)}">|,
+      ~s|<h4 class="code-tier-heading"><span class="code-tier-name">#{h(label)}</span> <span class="code-tier-count">#{n} #{maybe_plural(n, "file")}</span></h4>|,
+      render_files_section(tree, anchor_prefix, "#{label} (#{n})", diff_blocks),
+      ~S|</div>|
+    ]
+  end
+
+  defp render_code_other_group([], _id), do: ""
+
+  defp render_code_other_group(changes, id) do
+    anchor_prefix = "code-" <> slug(id) <> "-other"
+    paths = Enum.map(changes, & &1.file)
+    tree = build_path_tree(paths)
+    diff_blocks = code_diff_blocks(changes, anchor_prefix)
+    n = length(paths)
+
+    [
+      ~s|<div class="code-tier code-tier-other" data-tier="other">|,
+      ~s|<h4 class="code-tier-heading"><span class="code-tier-name">Other changed files</span> <span class="code-tier-count">#{n} #{maybe_plural(n, "file")}</span></h4>|,
+      ~S|<p class="code-tier-note">These files changed in this subject's surface but do not resolve to a declared <code>realized_by</code> binding.</p>|,
+      render_files_section(tree, anchor_prefix, "Other files (#{n})", diff_blocks),
+      ~S|</div>|
+    ]
+  end
+
+  defp code_diff_blocks(changes, anchor_prefix) do
+    Enum.map(changes, fn %{file: file, lines: lines} ->
+      anchor = anchor_prefix <> "-" <> slug(file)
+
+      ~s"""
+      <details class="code-change" id="#{anchor}" open>
+        <summary class="filename"><code>#{h(file)}</code></summary>
+        #{IO.iodata_to_binary(render_diff_block(lines, language_for(file)))}
+      </details>
+      """
+    end)
+  end
+
+  # Normalize a subject's realized_by map to string-keyed tiers with wrapped
+  # MFA lists. Bindings arrive from spec-meta as either atom- or string-keyed
+  # maps depending on the parse path, so downstream lookups key on strings.
+  defp normalize_bindings(bindings) when is_map(bindings) and map_size(bindings) > 0 do
+    Map.new(bindings, fn {k, v} -> {to_string(k), List.wrap(v)} end)
+  end
+
+  defp normalize_bindings(_), do: %{}
+
+  # api_boundary and implementation are the canonical tiers and lead; any other
+  # declared tier follows in alphabetical order for deterministic rendering.
+  defp ordered_tier_keys(bindings) do
+    keys = Map.keys(bindings)
+    preferred = Enum.filter(["api_boundary", "implementation"], &(&1 in keys))
+    preferred ++ Enum.sort(keys -- preferred)
+  end
+
+  defp assign_changes_to_tiers(changes, tier_keys, bindings) do
+    {grouped, leftover} =
+      Enum.reduce(changes, {%{}, []}, fn change, {grouped, leftover} ->
+        tier =
+          Enum.find(tier_keys, fn t ->
+            file_matches_tier?(change.file, Map.get(bindings, t, []))
+          end)
+
+        case tier do
+          nil -> {grouped, [change | leftover]}
+          t -> {Map.update(grouped, t, [change], &[change | &1]), leftover}
+        end
       end)
 
-    render_files_section(tree, anchor_prefix, "Files (#{length(paths)})", diff_blocks)
+    {Map.new(grouped, fn {k, v} -> {k, Enum.reverse(v)} end), Enum.reverse(leftover)}
+  end
+
+  defp file_matches_tier?(file, mfas) do
+    base = file_basename(file)
+    base != "" and Enum.any?(mfas, fn mfa -> mfa_file_basename(mfa) == base end)
+  end
+
+  defp file_basename(file) when is_binary(file) do
+    file |> Path.basename() |> String.replace(~r/\.exs?$/, "")
+  end
+
+  defp file_basename(_), do: ""
+
+  # "SpecLedEx.Realization.ApiBoundary.hash/2" -> "api_boundary" — the
+  # conventional Elixir source-file basename for the module named by the MFA.
+  # Robust to the app-name vs module-name mismatch (SpecLedEx <-> specled_ex)
+  # because it keys on the module's last segment, which matches the file name.
+  defp mfa_file_basename(mfa) when is_binary(mfa) do
+    mfa
+    |> String.split("/")
+    |> hd()
+    |> String.split(".")
+    |> drop_trailing_function()
+    |> List.last()
+    |> case do
+      nil -> ""
+      seg -> Macro.underscore(seg)
+    end
+  end
+
+  defp mfa_file_basename(_), do: ""
+
+  # Drop a single trailing function-name segment (starts lowercase) so only the
+  # module segments remain. Bare-module MFAs (e.g. "Mix.Tasks.Spec.Check") have
+  # no lowercase tail and are returned unchanged.
+  defp drop_trailing_function(segments) do
+    case List.last(segments) do
+      seg when is_binary(seg) ->
+        if seg =~ ~r/^[a-z_]/, do: Enum.drop(segments, -1), else: segments
+
+      _ ->
+        segments
+    end
+  end
+
+  defp tier_label("api_boundary"), do: "API boundary"
+  defp tier_label("implementation"), do: "Implementation"
+
+  defp tier_label(tier) do
+    tier |> to_string() |> String.replace("_", " ") |> String.capitalize()
   end
 
   # covers: specled.spec_review.coverage_pivot_touched_first
@@ -3923,6 +4344,55 @@ defmodule SpecLedEx.Review.Html do
       color: var(--fg-faint);
     }
 
+    /* Clamped prose headline with a pure-CSS expand toggle. */
+    .subject-statement-wrap { margin: 0 0 12px 0; }
+    .statement-toggle { position: absolute; opacity: 0; pointer-events: none; }
+    .subject-statement-clamped {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .statement-toggle:checked ~ .subject-statement-clamped {
+      -webkit-line-clamp: unset;
+      overflow: visible;
+    }
+    .statement-expand {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--accent);
+      cursor: pointer;
+    }
+    .statement-expand::after { content: "Show more"; }
+    .statement-toggle:checked ~ .statement-expand::after { content: "Show less"; }
+
+    /* Per-subject triangle leg chips. */
+    .subject-legs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .leg-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      color: var(--fg-muted);
+      background: var(--neutral-bg);
+    }
+    .leg-chip-glyph { font-weight: 700; }
+    .leg-chip-ok { color: var(--success); background: var(--success-bg); border-color: var(--success); }
+    .leg-chip-degraded { color: var(--fg-muted); background: var(--neutral-bg); }
+    .leg-chip-warn { color: var(--warning); background: var(--warning-bg); border-color: var(--warning); }
+    .leg-chip-fail { color: var(--error); background: var(--error-bg); border-color: var(--error); }
+
     /* Tabs */
     .tabs {
       display: flex;
@@ -3952,6 +4422,52 @@ defmodule SpecLedEx.Review.Html do
     .tab-panels { padding: 24px; }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
+
+    /* An empty pivot is de-emphasized; its tooltip carries the reason. */
+    .tab.tab-empty { color: var(--fg-faint); opacity: 0.6; cursor: help; }
+    .tab.tab-empty.active { color: var(--fg-muted); opacity: 1; }
+
+    /* Code pivot grouped by realized_by binding tier. */
+    .code-tier { margin-bottom: 24px; }
+    .code-tier-heading {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin: 0 0 12px 0;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--fg-muted);
+    }
+    .code-tier-count { font-weight: 500; color: var(--fg-faint); }
+    .code-tier-note {
+      margin: 0 0 12px 0;
+      font-size: 12px;
+      color: var(--fg-faint);
+      font-style: italic;
+    }
+
+    /* Raw spec file diff, folded under the semantic spec diff. */
+    .spec-diff-fold { margin-top: 32px; }
+    .spec-diff-summary {
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--fg-muted);
+    }
+
+    /* Inline wording del/ins on modified requirement statements. */
+    .wording-del {
+      background: var(--error-bg);
+      color: var(--error);
+      text-decoration: line-through;
+    }
+    .wording-ins {
+      background: var(--success-bg);
+      color: var(--success);
+      text-decoration: none;
+    }
 
     .tab-heading {
       margin: 0 0 12px 0;
@@ -4130,7 +4646,6 @@ defmodule SpecLedEx.Review.Html do
     .raw-verification[open] .raw-verification-summary::before { content: "▾"; }
     .raw-verification-explainer { padding: 0 14px; margin: 4px 0 12px; color: var(--fg-muted); font-size: 12px; font-style: italic; }
     .raw-verification .verification-list { padding: 0 14px 14px; margin: 0; }
-    .raw-verification-all { margin-top: 32px; }
     .raw-verification-subject { padding: 0 14px 4px; }
     .raw-verification-subject-heading {
       margin: 12px 0 6px;
