@@ -1674,7 +1674,7 @@ defmodule SpecLedEx.Review.Html do
   end
 
   defp render_change_chip(:new),
-    do: ~s|<span class="chip chip-new"#{title_attr(tooltip(:change, :new))}>NEW</span>|
+    do: ~s|<span class="chip chip-new"#{title_attr(tooltip(:change, :new))}>ADDED</span>|
 
   defp render_change_chip(:modified),
     do:
@@ -1812,16 +1812,34 @@ defmodule SpecLedEx.Review.Html do
     render_files_section(tree, anchor_prefix, "Files (#{length(paths)})", diff_blocks)
   end
 
+  # covers: specled.spec_review.coverage_pivot_touched_first
+  # The Coverage pivot lists requirements the change set touched (added or
+  # modified in this subject's spec_changes) first, each carrying its change
+  # chip and strength, and folds untouched requirements behind a disclosure
+  # whose summary states their strength is unchanged from base. Mirrors the
+  # Spec tab's changed-then-unchanged fold with coverage-specific wording.
   @doc false
   def render_coverage_tab(s) do
     closure_reach = Map.get(s, :closure_reach, %{status: :ok, by_requirement: %{}})
+    req_status = coverage_req_status(s)
 
     [
       render_coverage_help_link(),
       render_closure_reach_status(closure_reach),
-      render_requirements_coverage(s.requirements, s.claims_by_req, closure_reach),
+      render_requirements_coverage(s.requirements, s.claims_by_req, closure_reach, req_status),
       render_bindings_section(s.bindings)
     ]
+  end
+
+  # Touched set for the Coverage pivot: requirement ids added or modified by
+  # this change set, reusing the Spec tab's id_status_lookup. Defensive —
+  # unit-test subjects and code-only changes may carry no spec_changes, in
+  # which case every requirement is untouched (folded as unchanged-from-base).
+  defp coverage_req_status(s) do
+    case Map.get(s, :spec_changes) do
+      %{requirements: reqs} -> id_status_lookup(reqs)
+      _ -> %{}
+    end
   end
 
   # covers: specled.spec_review.coverage_tab_bind_closure
@@ -1889,42 +1907,86 @@ defmodule SpecLedEx.Review.Html do
     """
   end
 
-  defp render_requirements_coverage([], _, _), do: ""
+  defp render_requirements_coverage([], _, _, _), do: ""
 
-  defp render_requirements_coverage(requirements, claims_by_req, closure_reach) do
+  defp render_requirements_coverage(requirements, claims_by_req, closure_reach, req_status) do
     by_req = Map.get(closure_reach || %{}, :by_requirement, %{})
     status = Map.get(closure_reach || %{}, :status, :ok)
 
-    rows =
-      Enum.map(requirements, fn req ->
-        id = field(req, :id) || ""
-        statement = field(req, :statement) || ""
-        priority = field(req, :priority) || ""
-        claims = Map.get(claims_by_req, id, [])
-        best_strength = best_claim_strength(claims)
-        meets_minimum? = Enum.all?(claims, &(&1["meets_minimum"] != false))
-        reach = Map.get(by_req, id)
+    render_one = fn req ->
+      id = field(req, :id) || ""
+      statement = field(req, :statement) || ""
+      priority = field(req, :priority) || ""
+      claims = Map.get(claims_by_req, id, [])
+      best_strength = best_claim_strength(claims)
+      meets_minimum? = Enum.all?(claims, &(&1["meets_minimum"] != false))
+      reach = Map.get(by_req, id)
+      change = Map.get(req_status, id, :unchanged)
 
-        ~s"""
-        <li class="cov-req cov-req-#{best_strength}">
-          <div class="cov-req-header">
-            <code class="requirement-id">#{h(id)}</code>
-            <span class="pill pill-priority pill-priority-#{h(priority)}"#{title_attr(tooltip(:priority, priority))}>#{h(priority)}</span>
-            #{render_strength_badge(best_strength, claims, meets_minimum?)}
-          </div>
-          <p class="cov-req-statement">#{h(statement)}</p>
-          #{render_closure_reach(reach, status)}
-          #{render_covering_claims(claims)}
-        </li>
-        """
+      ~s"""
+      <li class="cov-req cov-req-#{best_strength} cov-req-#{change}">
+        <div class="cov-req-header">
+          #{render_change_chip(change)}
+          <code class="requirement-id">#{h(id)}</code>
+          <span class="pill pill-priority pill-priority-#{h(priority)}"#{title_attr(tooltip(:priority, priority))}>#{h(priority)}</span>
+          #{render_strength_badge(best_strength, claims, meets_minimum?)}
+        </div>
+        <p class="cov-req-statement">#{h(statement)}</p>
+        #{render_closure_reach(reach, status)}
+        #{render_covering_claims(claims)}
+      </li>
+      """
+    end
+
+    {touched, untouched} =
+      Enum.split_with(requirements, fn req ->
+        id = field(req, :id) || ""
+        Map.get(req_status, id, :unchanged) != :unchanged
       end)
 
     [
       ~s|<h4 class="tab-heading">Requirement coverage (#{length(requirements)})</h4>|,
       render_strength_legend(),
+      render_coverage_touched_then_untouched(touched, untouched, render_one)
+    ]
+  end
+
+  # Touched requirements render first in an open list; untouched requirements
+  # fold behind a disclosure whose summary states their strength is unchanged
+  # from base (per specled.spec_review.coverage_pivot_touched_first).
+  defp render_coverage_touched_then_untouched([], [], _renderer), do: ""
+
+  defp render_coverage_touched_then_untouched(touched, [], renderer) do
+    [
       ~S|<ul class="cov-req-list">|,
-      rows,
+      Enum.map(touched, renderer),
       ~S|</ul>|
+    ]
+  end
+
+  defp render_coverage_touched_then_untouched([], untouched, renderer) do
+    render_coverage_unchanged_disclosure(untouched, renderer)
+  end
+
+  defp render_coverage_touched_then_untouched(touched, untouched, renderer) do
+    [
+      ~S|<ul class="cov-req-list">|,
+      Enum.map(touched, renderer),
+      ~S|</ul>|,
+      render_coverage_unchanged_disclosure(untouched, renderer)
+    ]
+  end
+
+  defp render_coverage_unchanged_disclosure(untouched, renderer) do
+    n = length(untouched)
+
+    [
+      ~s|<details class="unchanged-disclosure cov-unchanged-disclosure">|,
+      ~s|<summary class="unchanged-summary">Show #{n} requirement#{maybe_s(n)} whose strength is unchanged from base</summary>|,
+      ~s|<ul class="cov-req-list">|,
+      Enum.map(untouched, renderer),
+      ~S|</ul>|,
+      ~S|</details>|
     ]
   end
 

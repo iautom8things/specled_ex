@@ -330,4 +330,126 @@ defmodule SpecLedEx.Review.HtmlLayoutTest do
       assert view.findings_delta.change_verdict.differential? == false
     end
   end
+
+  describe "coverage pivot touched-first (specled.spec_review.coverage_pivot_touched_first)" do
+    # Base: subject S with two requirements. Change: a third requirement is
+    # added to the same subject, leaving the first two untouched — the
+    # coverage_pivot_leads_with_touched scenario's given clause.
+    defp added_requirement_repo(root) do
+      init_git_repo(root)
+
+      base_meta = %{
+        "id" => "auth.subject",
+        "kind" => "module",
+        "status" => "active",
+        "summary" => "Auth boundary protects credentials.",
+        "surface" => ["lib/auth.ex"]
+      }
+
+      write_subject_spec(root, "auth",
+        meta: base_meta,
+        requirements: [
+          %{"id" => "auth.subject.req1", "statement" => "Must protect.", "priority" => "must"},
+          %{"id" => "auth.subject.req2", "statement" => "Must audit.", "priority" => "must"}
+        ]
+      )
+
+      write_files(root, %{"lib/auth.ex" => "defmodule Auth do\nend\n"})
+      commit_all(root, "initial")
+
+      # The PR adds req_new to the subject and leaves the other two untouched.
+      write_subject_spec(root, "auth",
+        meta: base_meta,
+        requirements: [
+          %{"id" => "auth.subject.req1", "statement" => "Must protect.", "priority" => "must"},
+          %{"id" => "auth.subject.req2", "statement" => "Must audit.", "priority" => "must"},
+          %{
+            "id" => "auth.subject.req_new",
+            "statement" => "Must rotate keys.",
+            "priority" => "must"
+          }
+        ]
+      )
+
+      index = SpecLedEx.index(root)
+      view = Review.build_view(index, root, base: "main")
+      {view, IO.iodata_to_binary(Html.render(view))}
+    end
+
+    # Isolate one subject's Coverage tab panel from the full artifact.
+    defp coverage_tab(html, slug) do
+      re =
+        Regex.compile!(
+          "<section class=\"tab-panel\" id=\"coverage-" <>
+            Regex.escape(slug) <> "\"[^>]*>(.*?)</section>",
+          "s"
+        )
+
+      case Regex.run(re, html, capture: :all_but_first) do
+        [inner] -> inner
+        _ -> flunk("no coverage tab for #{slug}")
+      end
+    end
+
+    defp index_of(haystack, needle), do: elem(:binary.match(haystack, needle), 0)
+
+    @tag spec: "specled.spec_review.coverage_pivot_touched_first"
+    test "the added requirement leads the Coverage pivot; untouched ones fold behind an unchanged-from-base disclosure",
+         %{root: root} do
+      {_view, html} = added_requirement_repo(root)
+      coverage = coverage_tab(html, "auth-subject")
+
+      # The added requirement renders with its ADDED change chip and a strength
+      # badge (the scenario's "R1 renders first with its ADDED change chip and
+      # strength").
+      assert coverage =~ "auth.subject.req_new"
+      assert coverage =~ ~r|cov-req cov-req-\w+ cov-req-new|
+      assert coverage =~ "ADDED"
+      assert coverage =~ "strength-badge"
+
+      # Untouched requirements fold behind a disclosure stating their strength
+      # is unchanged from base.
+      assert coverage =~ "cov-unchanged-disclosure"
+      assert coverage =~ "whose strength is unchanged from base"
+
+      # Touched-first ordering: the added requirement precedes the disclosure,
+      # and the untouched requirements sit inside (after) it. Under the old
+      # flat-list rendering req1 preceded req_new and no disclosure existed, so
+      # this ordering is what makes the assertion falsifiable.
+      added_at = index_of(coverage, "auth.subject.req_new")
+      fold_at = index_of(coverage, "whose strength is unchanged from base")
+      untouched_at = index_of(coverage, "auth.subject.req1")
+
+      assert added_at < fold_at
+      assert fold_at < untouched_at
+    end
+
+    @tag spec: "specled.spec_review.coverage_pivot_touched_first"
+    test "a change set that touches no requirement folds the whole coverage list as unchanged from base",
+         %{root: _root} do
+      # No spec_changes key at all: every requirement is untouched and the whole
+      # list collapses behind the disclosure rather than rendering open.
+      subject = %{
+        id: "subj.a",
+        bindings: %{},
+        requirements: [
+          %{"id" => "subj.a.req1", "statement" => "One.", "priority" => "must"},
+          %{"id" => "subj.a.req2", "statement" => "Two.", "priority" => "must"}
+        ],
+        claims_by_req: %{},
+        closure_reach: %{status: :ok, by_requirement: %{}}
+      }
+
+      html = IO.iodata_to_binary(Html.render_coverage_tab(subject))
+
+      assert html =~ "cov-unchanged-disclosure"
+      assert html =~ "Show 2 requirements whose strength is unchanged from base"
+      # Requirements are still present (inside the fold), not dropped.
+      assert html =~ "subj.a.req1"
+      assert html =~ "subj.a.req2"
+      # No requirement is marked touched.
+      refute html =~ "cov-req-new"
+      refute html =~ "cov-req-modified"
+    end
+  end
 end
