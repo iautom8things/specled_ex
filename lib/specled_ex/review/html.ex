@@ -487,7 +487,7 @@ defmodule SpecLedEx.Review.Html do
       ~S|<p class="spec-health-note">This is the whole-repo verification state at the head ref, not the verdict for this change set. It gates <code>mix spec.check</code> regardless of what this PR touched.</p>|,
       spec_health_partial_note(triage),
       ~S|</header>|,
-      render_sync_headline(triage, triage.findings_count == 0),
+      render_sync_headline(triage),
       render_sync_checklist(triage),
       render_strength_inventory(triage),
       render_repo_inventory(triage),
@@ -616,13 +616,39 @@ defmodule SpecLedEx.Review.Html do
   defp severity_rank("info"), do: 2
   defp severity_rank(_), do: 3
 
-  defp render_sync_headline(triage, in_sync?) do
+  # Findings above info severity are real failures; an info-only finding set
+  # (e.g. a lone `detector_unavailable` advisory) must not read as "Out of
+  # sync ⚠" — that contradicts the Overview's own "advisory; never blocks"
+  # framing and the decision record's "degraded ≠ warning" principle.
+  defp sync_status(triage) do
+    blocking_count =
+      triage.by_severity
+      |> Map.drop(["info"])
+      |> Map.values()
+      |> Enum.sum()
+
+    cond do
+      triage.findings_count == 0 -> :in_sync
+      blocking_count > 0 -> :out_of_sync
+      true -> :advisory_only
+    end
+  end
+
+  defp render_sync_headline(triage) do
+    status = sync_status(triage)
+
     {icon, icon_class, title} =
-      if in_sync? do
-        {"✓", "sync-headline-icon-ok", "In sync"}
-      else
-        {"⚠", "sync-headline-icon-fail",
-         "Out of sync — #{triage.findings_count} finding#{maybe_s(triage.findings_count)}"}
+      case status do
+        :in_sync ->
+          {"✓", "sync-headline-icon-ok", "In sync"}
+
+        :advisory_only ->
+          {"?", "sync-headline-icon-advisory",
+           "Cannot fully verify — #{triage.findings_count} advisory finding#{maybe_s(triage.findings_count)}"}
+
+        :out_of_sync ->
+          {"⚠", "sync-headline-icon-fail",
+           "Out of sync — #{triage.findings_count} finding#{maybe_s(triage.findings_count)}"}
       end
 
     ~s"""
@@ -635,7 +661,7 @@ defmodule SpecLedEx.Review.Html do
           <p class="sync-headline-meta">#{render_sync_meta(triage)}</p>
         </div>
       </div>
-      #{render_sync_diagram(triage, in_sync?)}
+      #{render_sync_diagram(triage, status == :in_sync)}
     </header>
     """
   end
@@ -1771,27 +1797,38 @@ defmodule SpecLedEx.Review.Html do
     """
   end
 
+  # Requirements and scenarios are counted and labeled separately (not
+  # summed into one figure) — a merged "N added" collides with the
+  # requirements-only counts shown elsewhere (the overview tile, the
+  # per-subject spec-edit list, and this tab's own label all count
+  # requirements alone), which reads as a data bug rather than two
+  # different quantities.
   defp render_spec_change_callout(changes, true) do
-    counts = [
-      {length(changes.requirements.added) + length(changes.scenarios.added), "added"},
-      {length(changes.requirements.modified) + length(changes.scenarios.modified), "modified"},
-      {length(changes.requirements.removed) + length(changes.scenarios.removed), "removed"}
-    ]
+    clauses =
+      [{"Requirements", changes.requirements}, {"Scenarios", changes.scenarios}]
+      |> Enum.map(fn {label, counts} -> {label, spec_change_summary(counts)} end)
+      |> Enum.reject(fn {_label, summary} -> summary == "" end)
+      |> Enum.map_join(" · ", fn {label, summary} -> "#{label}: #{summary}" end)
 
-    if Enum.all?(counts, fn {n, _} -> n == 0 end) do
+    if clauses == "" do
       ""
     else
-      summary =
-        counts
-        |> Enum.reject(fn {n, _} -> n == 0 end)
-        |> Enum.map_join(" · ", fn {n, label} -> "#{n} #{label}" end)
-
       ~s"""
       <div class="spec-change-callout">
-        <strong>Changes in this PR:</strong> #{summary}
+        <strong>Changes in this PR:</strong> #{clauses}
       </div>
       """
     end
+  end
+
+  defp spec_change_summary(%{added: added, modified: modified, removed: removed}) do
+    [
+      {length(added), "added"},
+      {length(modified), "modified"},
+      {length(removed), "removed"}
+    ]
+    |> Enum.reject(fn {n, _} -> n == 0 end)
+    |> Enum.map_join(" · ", fn {n, label} -> "#{n} #{label}" end)
   end
 
   defp render_requirements([], _, _, _), do: ""
@@ -1916,20 +1953,28 @@ defmodule SpecLedEx.Review.Html do
 
   defp base_statement_lookup(_), do: %{}
 
-  # Character-level inline diff of a requirement's wording (base -> head) using
-  # the stdlib Myers diff. Deterministic and dependency-free. Falls back to the
-  # plain head statement when no base wording is available.
+  # Word-level inline diff of a requirement's wording (base -> head) using the
+  # stdlib Myers diff over word/whitespace tokens (not graphemes) so a
+  # rewritten sentence reads as changed phrases, not a character-level word
+  # salad. Deterministic and dependency-free. Falls back to the plain head
+  # statement when no base wording is available.
   defp render_statement_diff(nil, head), do: h(head)
 
   defp render_statement_diff(base, head) do
     base
-    |> String.myers_difference(head)
+    |> tokenize_words()
+    |> List.myers_difference(tokenize_words(head))
     |> Enum.map(fn
-      {:eq, s} -> h(s)
-      {:del, s} -> ~s|<del class="wording-del">#{h(s)}</del>|
-      {:ins, s} -> ~s|<ins class="wording-ins">#{h(s)}</ins>|
+      {:eq, tokens} -> h(Enum.join(tokens))
+      {:del, tokens} -> ~s|<del class="wording-del">#{h(Enum.join(tokens))}</del>|
+      {:ins, tokens} -> ~s|<ins class="wording-ins">#{h(Enum.join(tokens))}</ins>|
     end)
   end
+
+  # Splits on whitespace runs while keeping them as their own tokens, so
+  # re-joining any subsequence of tokens reconstructs the exact original
+  # spacing without an explicit separator.
+  defp tokenize_words(text), do: Regex.split(~r/(\s+)/, text, include_captures: true)
 
   defp render_change_chip(:new),
     do: ~s|<span class="chip chip-new"#{title_attr(tooltip(:change, :new))}>ADDED</span>|
@@ -2352,7 +2397,7 @@ defmodule SpecLedEx.Review.Html do
           <span class="pill pill-priority pill-priority-#{h(priority)}"#{title_attr(tooltip(:priority, priority))}>#{h(priority)}</span>
           #{render_strength_badge(best_strength, claims, meets_minimum?)}
         </div>
-        <p class="cov-req-statement">#{h(statement)}</p>
+        <p class="cov-req-statement" title="#{h(statement)}">#{h(statement)}</p>
         #{render_closure_reach(reach, status)}
         #{render_covering_claims(claims)}
       </li>
@@ -3007,7 +3052,7 @@ defmodule SpecLedEx.Review.Html do
     <div class="misc-breakdown" role="note">
       <span class="misc-breakdown-label">Of #{total} changed file#{maybe_s(total)} in this PR:</span>
       <ul class="misc-breakdown-list">
-        #{misc_breakdown_row(mapped, "map to a spec subject", "see the subject's Code tab above", "#subjects")}
+        #{misc_breakdown_row(mapped, "map to a spec subject", "see each subject's Code tab, reachable from the queue", nil)}
         #{misc_breakdown_row(policy, "are spec/decision files", "see the Spec tab on the affected subject(s) or the Decisions changed section", "#decisions-changed")}
         #{misc_breakdown_row(unmapped, "have no spec mapping", "listed below", nil)}
       </ul>
@@ -3432,6 +3477,8 @@ defmodule SpecLedEx.Review.Html do
       --info-bg: #e3f2fd;
       --success: #2e7d32;
       --success-bg: #e8f5e9;
+      --modified: #7c3aed;
+      --modified-bg: #f5f3ff;
       --neutral-bg: #f0f0f0;
       --add-bg: #e6ffec;
       --add-fg: #1a7f37;
@@ -3465,6 +3512,8 @@ defmodule SpecLedEx.Review.Html do
         --info-bg: #0f2338;
         --success: #3fb950;
         --success-bg: #12261a;
+        --modified: #a78bfa;
+        --modified-bg: #211a35;
         --neutral-bg: #21262d;
         --add-bg: #12261a;
         --add-fg: #3fb950;
@@ -3492,6 +3541,8 @@ defmodule SpecLedEx.Review.Html do
       --info-bg: #0f2338;
       --success: #3fb950;
       --success-bg: #12261a;
+      --modified: #a78bfa;
+      --modified-bg: #211a35;
       --neutral-bg: #21262d;
       --add-bg: #12261a;
       --add-fg: #3fb950;
@@ -3762,6 +3813,9 @@ defmodule SpecLedEx.Review.Html do
     }
     .sync-headline-icon-ok { background: #d1fae5; color: #065f46; }
     .sync-headline-icon-fail { background: #fed7aa; color: #9a3412; }
+    /* Advisory-only (no blocking findings): neutral, not alarming — same
+       "degraded ≠ warning" tone as the triangle's degraded-leg styling. */
+    .sync-headline-icon-advisory { background: var(--neutral-bg); color: var(--fg-muted); }
 
     .sync-headline-text { flex: 1; min-width: 0; }
     .sync-headline-title {
@@ -3954,13 +4008,17 @@ defmodule SpecLedEx.Review.Html do
       line-height: 1.45;
     }
     .sync-check-ok { background: transparent; }
-    .sync-check-fail { background: #fff7ed; border-left: 3px solid #ea580c; padding-left: 6px; }
-    .sync-check-degraded { background: #fffbeb; border-left: 3px solid #d4a373; padding-left: 6px; }
+    .sync-check-fail { background: var(--error-bg); border-left: 3px solid var(--error); padding-left: 6px; }
+    /* Degraded is neutral, not a warning (per the banner above) — grey, not
+       amber, so it doesn't read as a failure alongside actual .sync-check-fail
+       rows. Border/icon reuse --border-strong (not --fg-muted, a text-only
+       token) since this is a border, not text. */
+    .sync-check-degraded { background: var(--neutral-bg); border-left: 3px solid var(--border-strong); padding-left: 6px; }
     .sync-check-vacuous { background: transparent; opacity: 0.7; }
     .sync-check-icon { font-weight: 700; font-size: 14px; text-align: center; }
-    .sync-check-ok .sync-check-icon { color: #10b981; }
-    .sync-check-fail .sync-check-icon { color: #c2410c; }
-    .sync-check-degraded .sync-check-icon { color: #b45309; }
+    .sync-check-ok .sync-check-icon { color: var(--success); }
+    .sync-check-fail .sync-check-icon { color: var(--error); }
+    .sync-check-degraded .sync-check-icon { color: var(--fg-muted); }
     .sync-check-vacuous .sync-check-icon { color: var(--fg-faint); }
     .sync-check-vacuous .sync-check-label { color: var(--fg-muted); }
     .sync-check-vacuous-tag {
@@ -3972,11 +4030,13 @@ defmodule SpecLedEx.Review.Html do
       border-radius: 999px;
       white-space: nowrap;
     }
+    /* Neutral, matching .sync-check-vacuous-tag — same "degraded ≠ warning"
+       reasoning as .sync-check-degraded above. */
     .sync-check-degraded-tag {
       font-size: 11px;
       font-weight: 600;
-      color: #92400e;
-      background: #fef3c7;
+      color: var(--fg-muted);
+      background: var(--neutral-bg);
       padding: 2px 8px;
       border-radius: 999px;
       white-space: nowrap;
@@ -4117,19 +4177,22 @@ defmodule SpecLedEx.Review.Html do
       color: #065f46;
     }
 
-    /* Per-row tinting for new/modified */
+    /* Per-row tinting for new/modified. Background/border use theme tokens
+       (not hardcoded hex) because the row's own text inherits --fg, which
+       switches to near-white in dark mode — a hardcoded light background
+       left the text unreadable there. */
     .requirement-new,
     .scenario-new {
-      background: #ecfdf5;
-      border-left: 3px solid #10b981;
+      background: var(--success-bg);
+      border-left: 3px solid var(--success);
       padding-left: 12px;
       margin-left: -12px;
       border-radius: 0 4px 4px 0;
     }
     .requirement-modified,
     .scenario-modified {
-      background: #f5f3ff;
-      border-left: 3px solid #8b5cf6;
+      background: var(--modified-bg);
+      border-left: 3px solid var(--modified);
       padding-left: 12px;
       margin-left: -12px;
       border-radius: 0 4px 4px 0;
@@ -4173,8 +4236,8 @@ defmodule SpecLedEx.Review.Html do
     .removed-list { list-style: none; margin: 0 0 16px 0; padding: 0; }
     .removed-item {
       padding: 10px 12px;
-      background: #fef2f2;
-      border-left: 3px solid #ef4444;
+      background: var(--error-bg);
+      border-left: 3px solid var(--error);
       border-radius: 0 4px 4px 0;
       margin-bottom: 8px;
     }
@@ -4238,7 +4301,7 @@ defmodule SpecLedEx.Review.Html do
     .badge-info { background: var(--info-bg); color: var(--info); }
 
     .badge-binding-health { text-transform: none; letter-spacing: 0; }
-    .badge-binding-empty { background: #f3f4f6; color: var(--fg-muted); }
+    .badge-binding-empty { background: var(--neutral-bg); color: var(--fg-muted); }
     .badge-binding-dangling { background: var(--error-bg); color: var(--error); }
     .badge-binding-valid { background: var(--success-bg); color: var(--success); }
 
@@ -4303,18 +4366,27 @@ defmodule SpecLedEx.Review.Html do
     .finding-subject-label { font-family: var(--body-font); color: var(--fg-muted); }
     .finding-message { color: var(--fg); }
 
-    /* Subject card */
+    /* Subject card.
+       No `overflow: hidden` here: it clips rounded corners, but it also
+       makes this the nearest ancestor with a non-visible overflow for every
+       `position: sticky` descendant (the pivot tab bar, sticky filename
+       headers, the file-tree drawer) — since this box itself never scrolls,
+       that silently breaks their stickiness relative to the page instead of
+       clipping anything visible (subject-header and tab-panels are both
+       transparent and inset by padding, so nothing was actually being
+       clipped). Corner-rounding is preserved explicitly on the first/last
+       child instead. */
     .subject {
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 8px;
       margin-bottom: 16px;
-      overflow: hidden;
       scroll-margin-top: 16px;
     }
     .subject-header {
       padding: 24px 24px 16px;
       border-bottom: 1px solid var(--border);
+      border-radius: 8px 8px 0 0;
     }
     .subject-statement {
       margin: 0 0 12px 0;
@@ -4393,13 +4465,20 @@ defmodule SpecLedEx.Review.Html do
     .leg-chip-warn { color: var(--warning); background: var(--warning-bg); border-color: var(--warning); }
     .leg-chip-fail { color: var(--error); background: var(--error-bg); border-color: var(--error); }
 
-    /* Tabs */
+    /* Tabs.
+       Sticky so the pivot bar (and which pivot is active) stays reachable
+       while scrolling a long panel — most load-bearing for the Code pivot,
+       which can run to thousands of diff lines. `top` matches .topbar's
+       height so it docks directly under it. */
     .tabs {
       display: flex;
       gap: 0;
       border-bottom: 1px solid var(--border);
       background: var(--bg);
       padding: 0 12px;
+      position: sticky;
+      top: 57px;
+      z-index: 12;
     }
     .tab {
       background: none;
@@ -4419,7 +4498,7 @@ defmodule SpecLedEx.Review.Html do
       border-bottom-color: var(--accent);
       background: var(--card-bg);
     }
-    .tab-panels { padding: 24px; }
+    .tab-panels { padding: 24px; border-radius: 0 0 8px 8px; }
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
 
@@ -4720,7 +4799,7 @@ defmodule SpecLedEx.Review.Html do
     .cov-req-executed { border-left-color: #10b981; }
     .cov-req-linked { border-left-color: #d97706; }
     .cov-req-claimed { border-left-color: #9ca3af; }
-    .cov-req-uncovered { border-left-color: #ef4444; background: #fef2f2; }
+    .cov-req-uncovered { border-left-color: var(--error); background: var(--error-bg); }
     .cov-req-header {
       display: flex;
       align-items: center;
@@ -4728,7 +4807,20 @@ defmodule SpecLedEx.Review.Html do
       flex-wrap: wrap;
       margin-bottom: 4px;
     }
-    .cov-req-statement { margin: 0 0 8px 0; color: var(--fg); font-size: 13px; line-height: 1.5; }
+    /* The full statement already reads in full on the Spec pivot — the
+       Coverage pivot's job is id + strength + evidence, so one line here
+       (hover for the rest) halves the list's height with no information
+       lost. */
+    .cov-req-statement {
+      margin: 0 0 8px 0;
+      color: var(--fg);
+      font-size: 13px;
+      line-height: 1.5;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: help;
+    }
 
     /* Coverage tab — per-requirement bind-closure summary */
     .cov-closure {
@@ -5097,6 +5189,11 @@ defmodule SpecLedEx.Review.Html do
       scroll-margin-top: 16px;
     }
     .misc-change:last-child, .code-change:last-child { margin-bottom: 0; }
+    /* Sticky filename header (GitHub-style): the currently-open file's name
+       stays visible while scrolling through its diff. Default offset docks
+       under .topbar alone (used by the standalone Outside-the-spec-system
+       and All-files panes); inside a subject's tab-panels the sticky tab
+       bar also occupies that band, so the offset is pushed down to clear it. */
     .filename {
       background: var(--neutral-bg);
       padding: 8px 12px;
@@ -5107,7 +5204,11 @@ defmodule SpecLedEx.Review.Html do
       align-items: center;
       gap: 8px;
       border-radius: 4px;
+      position: sticky;
+      top: 57px;
+      z-index: 8;
     }
+    .tab-panels .filename { top: 98px; }
     .misc-change[open] > .filename, .code-change[open] > .filename {
       border-radius: 4px 4px 0 0;
       border-bottom: 1px solid var(--border);
@@ -5137,9 +5238,9 @@ defmodule SpecLedEx.Review.Html do
       padding-left: 256px;
       transition: padding-left 0.25s ease;
       /* Ensure the absolutely-positioned drawer rail (height:100% of this
-         section) always has room to render even when every file diff is
-         collapsed and the right column is tiny. Without this the parent
-         subject card's overflow:hidden clips the drawer. */
+         section) always has enough height to remain sticky-relevant even
+         when every file diff is collapsed and the section's natural
+         content height shrinks to almost nothing. */
       min-height: 320px;
     }
     .files-section.tree-collapsed { padding-left: 32px; }
@@ -5153,16 +5254,25 @@ defmodule SpecLedEx.Review.Html do
       pointer-events: none;
     }
 
+    /* Default offset docks the drawer below the sticky topbar alone (used
+       by the standalone Outside-the-spec-system and All-files panes).
+       Inside a subject's tab-panels the sticky pivot tab bar also occupies
+       that band, so the offset is pushed down to clear it — same split as
+       .filename's above. */
     .file-tree-panel,
     .file-tree-handle {
       pointer-events: auto;
       position: sticky;
-      top: 16px;
+      top: 73px;
+    }
+    .tab-panels .file-tree-panel,
+    .tab-panels .file-tree-handle {
+      top: 98px;
     }
 
     .file-tree-panel {
       width: 240px;
-      max-height: calc(100vh - 32px);
+      max-height: calc(100vh - 89px);
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 6px;
@@ -5174,6 +5284,7 @@ defmodule SpecLedEx.Review.Html do
       transition: transform 0.25s ease, opacity 0.2s ease;
       z-index: 1;
     }
+    .tab-panels .file-tree-panel { max-height: calc(100vh - 114px); }
     .files-section.tree-collapsed .file-tree-panel {
       transform: translateX(calc(-100% - 16px));
       opacity: 0;
@@ -5372,6 +5483,28 @@ defmodule SpecLedEx.Review.Html do
        add/del backgrounds. */
     .diff-row-add code .token.deleted,
     .diff-row-del code .token.inserted { background: transparent; }
+
+    /* Prism's bundled theme paints .token.operator/.entity/.url (and CSS
+       string tokens) with a translucent WHITE background — invisible on
+       Prism's near-white default, but a visible gray box on our dark
+       background. Neutralize it under both dark paths (system default and
+       explicit toggle) so operators read as plain colored text. */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .token.operator,
+      :root:not([data-theme="light"]) .token.entity,
+      :root:not([data-theme="light"]) .token.url,
+      :root:not([data-theme="light"]) .language-css .token.string,
+      :root:not([data-theme="light"]) .style .token.string {
+        background: transparent;
+      }
+    }
+    :root[data-theme="dark"] .token.operator,
+    :root[data-theme="dark"] .token.entity,
+    :root[data-theme="dark"] .token.url,
+    :root[data-theme="dark"] .language-css .token.string,
+    :root[data-theme="dark"] .style .token.string {
+      background: transparent;
+    }
 
     /* Footer */
     .page-footer {
