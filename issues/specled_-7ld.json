@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-03T01:07:42Z",
+  "description": "Advances: specled.spec_review\n\nFound by Atlas PR #60 CI (first consumer of the workflows spec-check job): mix spec.review crashed with UnicodeConversionError in Review.Html.page/3 — List.to_string on raw :ets.tab2file bytes. Root cause: CI restores MIX_HOME/HEX_HOME caches into the workspace (.mix/.hex); .hex/cache.ets is an untracked non-UTF-8 binary, change_analysis picks it up via ls-files --others --exclude-standard, and FileDiff.untracked_as_addition inlines raw file bytes into the diff lines.\n\nFix: (1) untracked files with non-UTF-8 content render as a 'binary file not shown (N bytes)' placeholder instead of inlined bytes; (2) unified diff output from git is sanitized to valid UTF-8 before parsing so tracked non-UTF-8 (e.g. latin-1) hunks cannot crash the renderer. New requirement specled.spec_review.binary_content_safe + scenario + regression tests.",
+  "id": "specled_-7ld",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "spec.review: binary-safe file diff rendering",
+  "type": "task",
+  "updated_at": "2026-07-03T01:07:42Z"
+}
