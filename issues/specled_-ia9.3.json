@@ -24,11 +24,15 @@
     {
       "text": "TEST_CRITIC: FIXED (iteration 1)\nCritic session: aa44194f096b17b76 (elixir-test-critic agent)\nBlocking findings: 0 (advisory findings applied: 3 of 3)\nFiles reviewed: test/specled_ex/compiler/manifest_test.exs, test/specled_ex/compiler/manifest_integration_test.exs, test/mix/tasks/spec_check_test.exs (S3 diff only)\n\nApplied in follow-up commit ce080c1: (1) default_context tests moved from the file's second module — which is async: true via SpecLedEx.Case's default, a placement the critic caught and I had missed — into the async: false module with an explicit cwd-dependence comment; (2) default-manifest-path tests now use @tag :tmp_dir (per-test auto-cleaned dirs; the manual File.rm_rf! leaked on assertion failure); (3) extracted copy_real_manifest!/1 with an assert File.exists? precondition. Critic affirmed: copying the test VM's real compile.elixir is the drift-robust choice (a hand-built manifest would recreate exactly the custom-format-writer trap manifest_wraps_stdlib forbids); tmp-root -\u003e nil is sufficient for the root!=cwd contract (the branch never inspects root contents); SpecLedEx.Parser is a robust manifest anchor. Test-only changes; all gates re-run green (888 tests, spec.check pass).",
       "timestamp": "2026-07-03T00:10:46Z"
+    },
+    {
+      "text": "AUDIT: APPROVE (auto — selective audit)\nSession: a7c01b31-1832-4731-b697-52202d55f59c\nLog: ~/.claude/projects/-Users-mz-src-specled-ex/a7c01b31-1832-4731-b697-52202d55f59c.jsonl\n\nReasoning: VERIFY reported PASS with full stub coverage, full requirement\ncoverage with falsifiability probes reasoned per requirement, zero mechanical\nor intent-level scope violations, all source-claim traces grounded (Mix-global\nconfinement to from_mix_project, end-to-end context threading, tier-keyed\nbaseline claim), acceptance run green with byte-identical consecutive\nspec.check output, and both documented deviations independently confirmed.\nThe verifier additionally root-caused the merged-run flake (env leak into the\nchild VM — recorded on specled_-f98, not a defect in this commit). No auditor\nwas spawned per selective-audit policy. Post-verify delta is the test-only\ncritic-advisory commit ce080c1 (TEST_CRITIC: FIXED, 0 blocking findings); all\ngates re-run green on the final tree.",
+      "timestamp": "2026-07-03T00:10:57Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "S3: Production Context wiring + Context.load manifest-path fix + release note",
   "type": "task",
-  "updated_at": "2026-07-03T00:10:46Z"
+  "updated_at": "2026-07-03T00:10:57Z"
 }
