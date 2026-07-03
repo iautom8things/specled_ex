@@ -80,18 +80,17 @@ defmodule SpecLedEx.Compiler.ManifestTest do
 
   describe "Context.load/1 — default manifest path (specled.compiler_context.default_manifest_path)" do
     @tag spec: "specled.compiler_context.default_manifest_path"
-    test "derives the manifest as the sibling .mix/compile.elixir of the app dir" do
-      tmp = Path.join(System.tmp_dir!(), "ctx_default_#{:erlang.unique_integer([:positive])}")
+    @tag :tmp_dir
+    test "derives the manifest as the sibling .mix/compile.elixir of the app dir", %{
+      tmp_dir: tmp
+    } do
       app_dir = Path.join([tmp, "_build", "test", "lib", "myapp"])
       File.mkdir_p!(Path.join(app_dir, "ebin"))
       File.mkdir_p!(Path.join(app_dir, ".mix"))
 
       # A real manifest, so a wrong default path is distinguishable from a
       # format problem: the test VM's own compile manifest.
-      File.cp!(
-        Path.join(Mix.Project.manifest_path(), "compile.elixir"),
-        Path.join([app_dir, ".mix", "compile.elixir"])
-      )
+      copy_real_manifest!(Path.join([app_dir, ".mix", "compile.elixir"]))
 
       context = Context.load(app: :myapp, env: :test, build_path: Path.join(tmp, "_build"))
 
@@ -99,21 +98,18 @@ defmodule SpecLedEx.Compiler.ManifestTest do
              "default derivation loaded 0 modules — likely resolving under ebin/"
 
       assert Map.has_key?(context.manifest, SpecLedEx.Compiler.Context)
-
-      File.rm_rf!(tmp)
     end
 
     @tag spec: "specled.compiler_context.default_manifest_path"
-    test "an explicit compile_path override still resolves its own sibling .mix/" do
-      tmp = Path.join(System.tmp_dir!(), "ctx_sibling_#{:erlang.unique_integer([:positive])}")
+    @tag :tmp_dir
+    test "an explicit compile_path override still resolves its own sibling .mix/", %{
+      tmp_dir: tmp
+    } do
       app_dir = Path.join([tmp, "elsewhere", "custom_app"])
       File.mkdir_p!(Path.join(app_dir, "ebin"))
       File.mkdir_p!(Path.join(app_dir, ".mix"))
 
-      File.cp!(
-        Path.join(Mix.Project.manifest_path(), "compile.elixir"),
-        Path.join([app_dir, ".mix", "compile.elixir"])
-      )
+      copy_real_manifest!(Path.join([app_dir, ".mix", "compile.elixir"]))
 
       context =
         Context.load(
@@ -124,8 +120,6 @@ defmodule SpecLedEx.Compiler.ManifestTest do
         )
 
       assert map_size(context.manifest) > 0
-
-      File.rm_rf!(tmp)
     end
   end
 
@@ -149,6 +143,15 @@ defmodule SpecLedEx.Compiler.ManifestTest do
 
       assert context.manifest == %{}
     end
+  end
+
+  defp copy_real_manifest!(destination) do
+    source = Path.join(Mix.Project.manifest_path(), "compile.elixir")
+
+    assert File.exists?(source),
+           "test VM's own compile manifest missing at #{source} — cannot seed fixture"
+
+    File.cp!(source, destination)
   end
 
   describe "orchestrators_take_context (mechanical check)" do
