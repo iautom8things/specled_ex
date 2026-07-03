@@ -12,11 +12,15 @@
     {
       "text": "Stronger evidence from Atlas (critical-review empirical verification): the problem is not only incremental-compile truncation — implementation-tier closure hashes were UNSTABLE across consecutive full-manifest runs (baseline re-seeded via rm + spec.check, then two back-to-back --no-run-commands runs on an untouched tree produced 50 drift findings both times, counts varying 50-58 across the session). api_boundary was fully stable throughout (0 drift). Atlas has disabled the implementation tier in .spec/config.yml pending this fix; re-enable + baseline re-seed is the acceptance test. Suggest the deliverable add: hash determinism property — two consecutive runs with no code change produce identical implementation hashes.",
       "timestamp": "2026-07-02T20:45:56Z"
+    },
+    {
+      "text": "All three stages implemented, verified, audited, and closed on branch\nspecled_-ia9/tracer-merge-on-flush (worktree /Users/mz/src/specled_ex-tracer-merge-on-flush):\n\n228c0bd spec: distill tracer-merge-on-flush (ADR specled.decision.tracer_manifest_merge_on_flush)\n38fe651 + b2ba76c  S1 merge-on-flush, seed-time prune, atomic writes (+ critic fixes)\n13bcdbc + 4538bd1  S2 read-time ghost filtering + determinism contract (+ critic fixes)\n7b73e0d + ce080c1  S3 production Context wiring + Context.load manifest-path fix + CHANGELOG (+ critic fixes)\n\nEpic acceptance verified: warm compile → consecutive mix spec.check runs green with\nbyte-identical findings; incremental compile manifest == force-compile manifest proven\nby integration test. All merge gates green at every stage (888 tests, 3 properties).\n\nAtlas-side acceptance remains (their repo): re-enable implementation tier in\n.spec/config.yml, re-seed implementation baseline, two consecutive clean runs identical\n— CHANGELOG carries the re-seed instructions.\n\nAwaiting landing decision (PR vs direct push to main). Epic stays open until landed.",
+      "timestamp": "2026-07-03T00:11:30Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Tracer manifest is replace-on-flush — incremental compiles truncate the callee graph",
   "type": "epic",
-  "updated_at": "2026-07-02T22:20:19Z"
+  "updated_at": "2026-07-03T00:11:30Z"
 }
