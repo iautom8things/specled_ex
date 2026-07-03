@@ -2,6 +2,7 @@
   "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-07-03T00:21:06Z",
   "created": "2026-07-02T20:32:08Z",
   "description": "Jira: TBD\nDistilled from mini-plan (think-nxq). Spec dir: .spec/\nWorktree: /Users/mz/src/specled_ex-tracer-merge-on-flush\nBranch: specled_-ia9/tracer-merge-on-flush\nRefined plan: ~/Documents/my-vault/LLMs/plans/-Users-mz-src-specled-ex/2026-07-02-tracer-merge-on-flush/runs/20260702-175637-claude-mini/05-refined-plan.md\n\nTracer manifest is replace-on-flush — incremental compiles truncate the callee graph.\nFix: merge-on-flush (S1), read-time ghost filtering + determinism contract (S2),\nproduction Context wiring + Context.load manifest-path fix (S3). Decision:\nspecled.decision.tracer_manifest_merge_on_flush.\n\nOriginal bug context and Atlas evidence preserved in this ticket's comments/history:\nfound by Atlas critical-review 2026-07-02; implementation-tier hashes varied 50-58\nfindings across runs; Atlas disabled the tier pending this fix. Acceptance: Atlas\nre-enables tier, re-seeds baseline, two consecutive clean runs identical.",
   "id": "specled_-ia9",
@@ -19,8 +20,8 @@
     }
   ],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "Tracer manifest is replace-on-flush — incremental compiles truncate the callee graph",
   "type": "epic",
-  "updated_at": "2026-07-03T00:11:30Z"
+  "updated_at": "2026-07-03T00:21:06Z"
 }
