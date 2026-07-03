@@ -19,6 +19,7 @@ surface:
   - lib/mix/tasks/spec.review.ex
   - lib/specled_ex/review.ex
   - lib/specled_ex/review/file_diff.ex
+  - lib/specled_ex/review/findings_delta.ex
   - lib/specled_ex/review/html.ex
   - lib/specled_ex/review/spec_diff.ex
   - priv/spec_review_assets/*
@@ -82,9 +83,14 @@ decisions:
     head), and pre-existing (present at both), computing the base-side
     finding set from the committed verification state at the base ref
     (`git show <base>:.spec/state.json`). The change verdict shall be
-    driven by introduced findings only. When the base state file is absent
-    or unparseable the artifact shall fall back to a non-differential
-    presentation that is explicitly labeled as such — findings shall never
+    driven by introduced findings only.
+  priority: must
+  stability: evolving
+- id: specled.spec_review.findings_delta_base_fallback
+  statement: >-
+    When the base state file is absent or unparseable the Overview pane
+    shall fall back to a non-differential findings presentation that is
+    explicitly labeled as lacking base attribution — findings shall never
     be silently presented as introduced by the change when base attribution
     is unavailable.
   priority: must
@@ -183,9 +189,10 @@ decisions:
     (`debug_info_stripped`, `umbrella_unsupported`, `no_coverage_artifact`,
     etc.) attributed to that leg. When any leg is degraded, the Spec health
     pane's headline and the Spec health queue entry's badge shall advertise
-    that verification is partial; degraded repo state shall not flip the
-    change-scoped verdict chip. A `:fail` finding on the same leg
-    supersedes `:degraded`; `:degraded` supersedes `:vacuous` and `:ok`.
+    that verification is partial; the change-scoped verdict chip shall
+    remain driven by the change set alone, independent of degraded repo
+    state. A `:fail` finding on the same leg supersedes `:degraded`;
+    `:degraded` supersedes `:vacuous` and `:ok`.
   priority: must
   stability: evolving
 - id: specled.spec_review.decisions_governance_inline
@@ -294,7 +301,7 @@ decisions:
     - the findings presentation is non-differential and explicitly labeled as lacking base attribution
     - no finding is presented as introduced by the change
   covers:
-    - specled.spec_review.findings_delta
+    - specled.spec_review.findings_delta_base_fallback
 - id: specled.spec_review.duplicate_findings_dedup
   given:
     - a change set producing 23 findings that share code detector_unavailable and reason no_realized_by across 23 subjects
@@ -424,6 +431,7 @@ decisions:
   execute: true
   covers:
     - specled.spec_review.findings_delta
+    - specled.spec_review.findings_delta_base_fallback
 - kind: command
   target: mix test test/specled_ex/coverage_triangulation_test.exs
   execute: true

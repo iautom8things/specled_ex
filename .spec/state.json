@@ -2414,7 +2414,7 @@
         "id": "specled.spec_review.degraded_leg_state",
         "priority": "must",
         "stability": "evolving",
-        "statement": "The sync diagram shall render a fourth per-leg state — `:degraded` — distinct from `:ok`, `:fail`, and `:vacuous`, used when a leg carries a `detector_unavailable` finding rather than a positive or negative verification. A degraded leg shall render with a `?` glyph (not `✓`) and a non-green, non-warning color, and the leg's tooltip shall enumerate the distinct `detector_unavailable` reasons (`debug_info_stripped`, `umbrella_unsupported`, `no_coverage_artifact`, etc.) attributed to that leg. When any leg is degraded, the Spec health pane's headline and the Spec health queue entry's badge shall advertise that verification is partial; degraded repo state shall not flip the change-scoped verdict chip. A `:fail` finding on the same leg supersedes `:degraded`; `:degraded` supersedes `:vacuous` and `:ok`.",
+        "statement": "The sync diagram shall render a fourth per-leg state — `:degraded` — distinct from `:ok`, `:fail`, and `:vacuous`, used when a leg carries a `detector_unavailable` finding rather than a positive or negative verification. A degraded leg shall render with a `?` glyph (not `✓`) and a non-green, non-warning color, and the leg's tooltip shall enumerate the distinct `detector_unavailable` reasons (`debug_info_stripped`, `umbrella_unsupported`, `no_coverage_artifact`, etc.) attributed to that leg. When any leg is degraded, the Spec health pane's headline and the Spec health queue entry's badge shall advertise that verification is partial; the change-scoped verdict chip shall remain driven by the change set alone, independent of degraded repo state. A `:fail` finding on the same leg supersedes `:degraded`; `:degraded` supersedes `:vacuous` and `:ok`.",
         "subject_id": "specled.spec_review"
       },
       {
@@ -2430,7 +2430,15 @@
         "id": "specled.spec_review.findings_delta",
         "priority": "must",
         "stability": "evolving",
-        "statement": "The Overview pane shall classify findings differentially as introduced (present at head, absent at base), resolved (present at base, absent at head), and pre-existing (present at both), computing the base-side finding set from the committed verification state at the base ref (`git show <base>:.spec/state.json`). The change verdict shall be driven by introduced findings only. When the base state file is absent or unparseable the artifact shall fall back to a non-differential presentation that is explicitly labeled as such — findings shall never be silently presented as introduced by the change when base attribution is unavailable.",
+        "statement": "The Overview pane shall classify findings differentially as introduced (present at head, absent at base), resolved (present at base, absent at head), and pre-existing (present at both), computing the base-side finding set from the committed verification state at the base ref (`git show <base>:.spec/state.json`). The change verdict shall be driven by introduced findings only.",
+        "subject_id": "specled.spec_review"
+      },
+      {
+        "file": ".spec/specs/spec_review.spec.md",
+        "id": "specled.spec_review.findings_delta_base_fallback",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "When the base state file is absent or unparseable the Overview pane shall fall back to a non-differential findings presentation that is explicitly labeled as lacking base attribution — findings shall never be silently presented as introduced by the change when base attribution is unavailable.",
         "subject_id": "specled.spec_review"
       },
       {
@@ -5722,7 +5730,7 @@
       },
       {
         "covers": [
-          "specled.spec_review.findings_delta"
+          "specled.spec_review.findings_delta_base_fallback"
         ],
         "file": ".spec/specs/spec_review.spec.md",
         "given": [
@@ -7617,6 +7625,7 @@
             "lib/mix/tasks/spec.review.ex",
             "lib/specled_ex/review.ex",
             "lib/specled_ex/review/file_diff.ex",
+            "lib/specled_ex/review/findings_delta.ex",
             "lib/specled_ex/review/html.ex",
             "lib/specled_ex/review/spec_diff.ex",
             "priv/spec_review_assets/*",
@@ -8890,7 +8899,8 @@
       },
       {
         "covers": [
-          "specled.spec_review.findings_delta"
+          "specled.spec_review.findings_delta",
+          "specled.spec_review.findings_delta_base_fallback"
         ],
         "execute": true,
         "file": ".spec/specs/spec_review.spec.md",
@@ -9179,7 +9189,7 @@
     "decisions": 36,
     "exceptions": 0,
     "findings": 1,
-    "requirements": 325,
+    "requirements": 326,
     "scenarios": 197,
     "subjects": 33,
     "verifications": 105
@@ -12289,6 +12299,17 @@
         "verification_index": 4
       },
       {
+        "cover_id": "specled.spec_review.findings_delta_base_fallback",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review/findings_delta_test.exs",
+        "verification_index": 4
+      },
+      {
         "cover_id": "specled.spec_review.coverage_tab_bind_closure",
         "file": ".spec/specs/spec_review.spec.md",
         "kind": "command",
@@ -13382,7 +13403,7 @@
     "default_minimum_strength": "claimed",
     "strength_summary": {
       "claimed": 4,
-      "executed": 298,
+      "executed": 299,
       "linked": 79
     },
     "threshold_failures": 0
