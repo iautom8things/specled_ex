@@ -492,42 +492,7 @@
       "entity_id": "specled.spec_review",
       "file": ".spec/specs/spec_review.spec.md",
       "level": "warning",
-      "message": "Verification target lib/specled_ex/review/html.ex does not reference covered requirement: specled.spec_review.change_scoped_overview"
-    },
-    {
-      "code": "verification_target_missing_reference",
-      "entity_id": "specled.spec_review",
-      "file": ".spec/specs/spec_review.spec.md",
-      "level": "warning",
       "message": "Verification target lib/specled_ex/review/html.ex does not reference covered requirement: specled.spec_review.coverage_pivot_touched_first"
-    },
-    {
-      "code": "verification_target_missing_reference",
-      "entity_id": "specled.spec_review",
-      "file": ".spec/specs/spec_review.spec.md",
-      "level": "warning",
-      "message": "Verification target lib/specled_ex/review/html.ex does not reference covered requirement: specled.spec_review.findings_digest_dedup"
-    },
-    {
-      "code": "verification_target_missing_reference",
-      "entity_id": "specled.spec_review",
-      "file": ".spec/specs/spec_review.spec.md",
-      "level": "warning",
-      "message": "Verification target lib/specled_ex/review/html.ex does not reference covered requirement: specled.spec_review.repo_state_health_pane"
-    },
-    {
-      "code": "verification_target_missing_reference",
-      "entity_id": "specled.spec_review",
-      "file": ".spec/specs/spec_review.spec.md",
-      "level": "warning",
-      "message": "Verification target lib/specled_ex/review/html.ex does not reference covered requirement: specled.spec_review.review_queue_navigation"
-    },
-    {
-      "code": "verification_target_missing_reference",
-      "entity_id": "specled.spec_review",
-      "file": ".spec/specs/spec_review.spec.md",
-      "level": "warning",
-      "message": "Verification target lib/specled_ex/review/html.ex does not reference covered requirement: specled.spec_review.theme_tokens"
     }
   ],
   "index": {
@@ -8905,14 +8870,23 @@
           "specled.spec_review.change_scoped_overview",
           "specled.spec_review.repo_state_health_pane",
           "specled.spec_review.findings_digest_dedup",
-          "specled.spec_review.theme_tokens",
+          "specled.spec_review.theme_tokens"
+        ],
+        "execute": true,
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review/html_layout_test.exs"
+      },
+      {
+        "covers": [
           "specled.spec_review.coverage_pivot_touched_first"
         ],
         "execute": false,
         "file": ".spec/specs/spec_review.spec.md",
         "kind": "command",
         "subject_id": "specled.spec_review",
-        "target": "mix test test/specled_ex/review/html_layout_test.exs"
+        "target": "mix test test/specled_ex/review/html_coverage_pivot_test.exs"
       },
       {
         "covers": [
@@ -9204,11 +9178,11 @@
     "decision_parse_errors": 0,
     "decisions": 36,
     "exceptions": 0,
-    "findings": 6,
+    "findings": 1,
     "requirements": 325,
     "scenarios": 197,
     "subjects": 33,
-    "verifications": 104
+    "verifications": 105
   },
   "verification": {
     "claims": [
@@ -12243,7 +12217,51 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review/html_layout_test.exs",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.spec_review.findings_digest_dedup",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review/html_layout_test.exs",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.spec_review.repo_state_health_pane",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review/html_layout_test.exs",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.spec_review.review_queue_navigation",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review/html_layout_test.exs",
+        "verification_index": 2
+      },
+      {
+        "cover_id": "specled.spec_review.theme_tokens",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/review/html_layout_test.exs",
         "verification_index": 2
@@ -12256,52 +12274,8 @@
         "required_strength": "claimed",
         "strength": "claimed",
         "subject_id": "specled.spec_review",
-        "target": "mix test test/specled_ex/review/html_layout_test.exs",
-        "verification_index": 2
-      },
-      {
-        "cover_id": "specled.spec_review.findings_digest_dedup",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "command",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "claimed",
-        "subject_id": "specled.spec_review",
-        "target": "mix test test/specled_ex/review/html_layout_test.exs",
-        "verification_index": 2
-      },
-      {
-        "cover_id": "specled.spec_review.repo_state_health_pane",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "command",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "claimed",
-        "subject_id": "specled.spec_review",
-        "target": "mix test test/specled_ex/review/html_layout_test.exs",
-        "verification_index": 2
-      },
-      {
-        "cover_id": "specled.spec_review.review_queue_navigation",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "command",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "claimed",
-        "subject_id": "specled.spec_review",
-        "target": "mix test test/specled_ex/review/html_layout_test.exs",
-        "verification_index": 2
-      },
-      {
-        "cover_id": "specled.spec_review.theme_tokens",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "command",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "claimed",
-        "subject_id": "specled.spec_review",
-        "target": "mix test test/specled_ex/review/html_layout_test.exs",
-        "verification_index": 2
+        "target": "mix test test/specled_ex/review/html_coverage_pivot_test.exs",
+        "verification_index": 3
       },
       {
         "cover_id": "specled.spec_review.findings_delta",
@@ -12312,7 +12286,7 @@
         "strength": "executed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/review/findings_delta_test.exs",
-        "verification_index": 3
+        "verification_index": 4
       },
       {
         "cover_id": "specled.spec_review.coverage_tab_bind_closure",
@@ -12323,7 +12297,7 @@
         "strength": "executed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/coverage_triangulation_test.exs",
-        "verification_index": 4
+        "verification_index": 5
       },
       {
         "cover_id": "specled.spec_review.no_realized_by_degrades_spec_to_code",
@@ -12334,7 +12308,7 @@
         "strength": "executed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/review_test.exs",
-        "verification_index": 5
+        "verification_index": 6
       },
       {
         "cover_id": "specled.spec_review.diff_against_base",
@@ -12345,7 +12319,7 @@
         "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/mix/tasks/spec.review.ex",
-        "verification_index": 6
+        "verification_index": 7
       },
       {
         "cover_id": "specled.spec_review.same_artifact_local_and_ci",
@@ -12356,7 +12330,7 @@
         "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/mix/tasks/spec.review.ex",
-        "verification_index": 6
+        "verification_index": 7
       },
       {
         "cover_id": "specled.spec_review.findings_delta",
@@ -12367,7 +12341,7 @@
         "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/specled_ex/review.ex",
-        "verification_index": 7
+        "verification_index": 8
       },
       {
         "cover_id": "specled.spec_review.misc_panel",
@@ -12378,7 +12352,7 @@
         "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/specled_ex/review.ex",
-        "verification_index": 7
+        "verification_index": 8
       },
       {
         "cover_id": "specled.spec_review.no_realized_by_degrades_spec_to_code",
@@ -12389,7 +12363,7 @@
         "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/specled_ex/review.ex",
-        "verification_index": 7
+        "verification_index": 8
       },
       {
         "cover_id": "specled.spec_review.spec_first_navigation",
@@ -12400,7 +12374,7 @@
         "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/specled_ex/review.ex",
-        "verification_index": 7
+        "verification_index": 8
       },
       {
         "cover_id": "specled.spec_review.change_scoped_overview",
@@ -12408,10 +12382,10 @@
         "kind": "source_file",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 8
+        "verification_index": 9
       },
       {
         "cover_id": "specled.spec_review.coverage_pivot_touched_first",
@@ -12422,160 +12396,6 @@
         "strength": "claimed",
         "subject_id": "specled.spec_review",
         "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 8
-      },
-      {
-        "cover_id": "specled.spec_review.coverage_tab_bind_closure",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 8
-      },
-      {
-        "cover_id": "specled.spec_review.decisions_governance_inline",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 8
-      },
-      {
-        "cover_id": "specled.spec_review.degraded_leg_state",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 8
-      },
-      {
-        "cover_id": "specled.spec_review.findings_digest_dedup",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "claimed",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 8
-      },
-      {
-        "cover_id": "specled.spec_review.html_artifact",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 8
-      },
-      {
-        "cover_id": "specled.spec_review.inline_finding_badges",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 8
-      },
-      {
-        "cover_id": "specled.spec_review.per_subject_tabs",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 8
-      },
-      {
-        "cover_id": "specled.spec_review.read_only_viewer",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 8
-      },
-      {
-        "cover_id": "specled.spec_review.repo_state_health_pane",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "claimed",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 8
-      },
-      {
-        "cover_id": "specled.spec_review.review_queue_navigation",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "claimed",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 8
-      },
-      {
-        "cover_id": "specled.spec_review.theme_tokens",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "claimed",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 8
-      },
-      {
-        "cover_id": "specled.spec_review.triage_panel",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 8
-      },
-      {
-        "cover_id": "specled.spec_review.triangle_code_classification",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 8
-      },
-      {
-        "cover_id": "specled.spec_review.coverage_tab_bind_closure",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/coverage_closure.ex",
         "verification_index": 9
       },
       {
@@ -12586,8 +12406,162 @@
         "required_strength": "claimed",
         "strength": "linked",
         "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/coverage_triangulation.ex",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 9
+      },
+      {
+        "cover_id": "specled.spec_review.decisions_governance_inline",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 9
+      },
+      {
+        "cover_id": "specled.spec_review.degraded_leg_state",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 9
+      },
+      {
+        "cover_id": "specled.spec_review.findings_digest_dedup",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 9
+      },
+      {
+        "cover_id": "specled.spec_review.html_artifact",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 9
+      },
+      {
+        "cover_id": "specled.spec_review.inline_finding_badges",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 9
+      },
+      {
+        "cover_id": "specled.spec_review.per_subject_tabs",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 9
+      },
+      {
+        "cover_id": "specled.spec_review.read_only_viewer",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 9
+      },
+      {
+        "cover_id": "specled.spec_review.repo_state_health_pane",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 9
+      },
+      {
+        "cover_id": "specled.spec_review.review_queue_navigation",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 9
+      },
+      {
+        "cover_id": "specled.spec_review.theme_tokens",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 9
+      },
+      {
+        "cover_id": "specled.spec_review.triage_panel",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 9
+      },
+      {
+        "cover_id": "specled.spec_review.triangle_code_classification",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 9
+      },
+      {
+        "cover_id": "specled.spec_review.coverage_tab_bind_closure",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/coverage_closure.ex",
         "verification_index": 10
+      },
+      {
+        "cover_id": "specled.spec_review.coverage_tab_bind_closure",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/coverage_triangulation.ex",
+        "verification_index": 11
       },
       {
         "cover_id": "specled.spec_review.gh_pages_distribution",
@@ -12598,7 +12572,7 @@
         "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "priv/spec_init/workflows/spec_review.yml.eex",
-        "verification_index": 11
+        "verification_index": 12
       },
       {
         "cover_id": "specled.status.coverage_summary",
@@ -13407,9 +13381,9 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 14,
-      "executed": 293,
-      "linked": 74
+      "claimed": 4,
+      "executed": 298,
+      "linked": 79
     },
     "threshold_failures": 0
   },

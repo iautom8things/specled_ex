@@ -407,13 +407,17 @@ decisions:
     - specled.spec_review.coverage_tab_bind_closure
 - kind: command
   target: mix test test/specled_ex/review/html_layout_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.spec_review.review_queue_navigation
     - specled.spec_review.change_scoped_overview
     - specled.spec_review.repo_state_health_pane
     - specled.spec_review.findings_digest_dedup
     - specled.spec_review.theme_tokens
+- kind: command
+  target: mix test test/specled_ex/review/html_coverage_pivot_test.exs
+  execute: false
+  covers:
     - specled.spec_review.coverage_pivot_touched_first
 - kind: command
   target: mix test test/specled_ex/review/findings_delta_test.exs

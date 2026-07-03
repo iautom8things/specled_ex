@@ -64,47 +64,42 @@ defmodule SpecLedEx.Review.Html do
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <title>Spec Review · <%= h(view.meta.head_ref) %></title>
+      <script><%= theme_bootstrap_js() %></script>
       <style><%= prism_css() %></style>
       <style><%= css %></style>
     </head>
     <body>
-      <header class="page-header">
-        <div class="page-header-row">
+      <header class="topbar">
+        <div class="topbar-left">
           <h1>Spec Review</h1>
-          <div class="page-header-meta">
-            <%= render_diff_stats(view.meta.stats) %>
-            <span class="ref"><%= h(view.meta.base_ref) %><span class="ref-sep">…</span><%= h(view.meta.head_ref) %></span>
-            <span class="generated"><%= h(format_dt(view.meta.generated_at)) %></span>
-          </div>
+          <span class="ref"><%= h(view.meta.base_ref) %><span class="ref-sep">…</span><%= h(view.meta.head_ref) %></span>
+          <%= render_diff_stats(view.meta.stats) %>
         </div>
-        <div class="view-toggle-wrap">
-          <div class="view-toggle" role="tablist" aria-label="Review mode">
-            <button class="view-toggle-btn active" type="button" role="tab" data-view="spec" aria-selected="true">
-              <span class="view-toggle-label">Spec view</span>
-              <span class="view-toggle-hint">grouped by subject, with triangulation</span>
-            </button>
-            <button class="view-toggle-btn" type="button" role="tab" data-view="files" aria-selected="false">
-              <span class="view-toggle-label">Files view</span>
-              <span class="view-toggle-hint">flat diff of all changed files</span>
-            </button>
-          </div>
+        <div class="topbar-right">
+          <%= render_verdict_chip(view.findings_delta) %>
+          <%= render_theme_toggle() %>
         </div>
       </header>
-      <div class="layout" data-view-mode="spec">
-        <aside class="toc" aria-label="Table of contents">
-          <%= render_toc(view) %>
+      <div class="layout">
+        <aside class="queue" aria-label="Review queue">
+          <%= render_queue(view) %>
         </aside>
-        <main>
-          <section class="view-pane view-pane-spec active" data-view-pane="spec">
-            <%= render_triage(view.triage, view.all_findings) %>
-            <%= render_coverage_help_disclosure() %>
-            <%= render_decisions_changed(view.decisions_changed, view.adrs_by_id, view.all_findings) %>
-            <%= render_subjects(view.affected_subjects, view.adrs_by_id) %>
-            <%= render_unmapped(view.unmapped_changes, view.file_breakdown) %>
-            <%= render_raw_verification_all(view.affected_subjects) %>
+        <main class="detail">
+          <section class="detail-pane active" data-unit="overview" id="unit-overview" tabindex="-1">
+            <%= render_overview(view) %>
           </section>
-          <section class="view-pane view-pane-files" data-view-pane="files">
+          <section class="detail-pane" data-unit="decisions" id="unit-decisions" tabindex="-1">
+            <%= render_decisions_changed(view.decisions_changed, view.adrs_by_id, view.all_findings) %>
+          </section>
+          <%= render_subject_panes(view.affected_subjects, view.adrs_by_id) %>
+          <section class="detail-pane" data-unit="misc" id="unit-misc" tabindex="-1">
+            <%= render_unmapped(view.unmapped_changes, view.file_breakdown) %>
+          </section>
+          <section class="detail-pane" data-unit="files" id="unit-files" tabindex="-1">
             <%= render_files_view(view.all_changes, view.meta.stats) %>
+          </section>
+          <section class="detail-pane" data-unit="health" id="unit-health" tabindex="-1">
+            <%= render_spec_health(view) %>
           </section>
         </main>
       </div>
@@ -124,142 +119,502 @@ defmodule SpecLedEx.Review.Html do
   @doc false
   def prism_css, do: @prism_css
 
-  defp render_toc(view) do
+  # covers: specled.spec_review.review_queue_navigation
+  # The left rail lists every reviewable unit as a queue: Overview, Decisions
+  # changed, the affected subjects grouped by change kind (spec edited / code
+  # only / impacted only) and ordered by change size, the outside-the-spec
+  # panel, the all-files view, and Spec health. Every row deep-links to its
+  # detail pane via a `#unit-…` URL fragment, and the filter input narrows the
+  # subject rows. Queue navigation, current-selection marking, and j/k keys
+  # are wired in the page JS.
+  @queue_group_labels %{
+    spec_edited: "Spec edited",
+    code_only: "Code only",
+    impacted_only: "Impacted only"
+  }
+
+  defp render_queue(view) do
+    sev_by_id =
+      Map.new(view.affected_subjects, fn s -> {s.id, worst_finding_severity(s.findings)} end)
+
+    files_by_id = Map.new(view.affected_subjects, fn s -> {s.id, length(s.changed_files)} end)
+    kind_by_id = Map.new(view.affected_subjects, fn s -> {s.id, s.change_kind} end)
+
     [
-      ~S|<nav><ul class="toc-list">|,
-      toc_item("triage", "Triage", triage_toc_badge(view.triage)),
-      render_toc_decisions(view.decisions_changed, view.adrs_by_id),
-      ~s|<li class="toc-section"><a href="#subjects">Affected subjects (#{view.triage.affected_subject_count})</a>|,
-      if view.triage.affected_subjects == [] do
+      ~S|<input type="text" class="queue-filter" placeholder="Filter subjects…" aria-label="Filter review queue">|,
+      ~S|<nav aria-label="Review units"><ul class="queue-list">|,
+      queue_item("overview", "Overview", ""),
+      queue_item(
+        "decisions",
+        ~s|Decisions changed <span class="queue-count">#{length(view.decisions_changed)}</span>|,
         ""
-      else
-        [
-          ~S|<ul class="toc-sublist">|,
-          Enum.map(view.triage.affected_subjects, fn s ->
-            ~s|<li><a href="#subject-#{slug(s.id)}"><code>#{h(s.id)}</code><span class="toc-pips">#{render_toc_change_pip(s)}#{render_toc_finding_badge(s)}</span></a></li>|
-          end),
-          ~S|</ul>|
-        ]
-      end,
-      ~S|</li>|,
-      toc_item("misc", "Outside the spec system (#{length(view.unmapped_changes)})", ""),
+      ),
+      render_queue_subjects(view.queue_subjects, sev_by_id, files_by_id, kind_by_id),
+      queue_item(
+        "misc",
+        ~s|Outside the spec system <span class="queue-count">#{length(view.unmapped_changes)}</span>|,
+        ""
+      ),
+      queue_item("files", "All files", ""),
+      queue_item("health", "Spec health", spec_health_queue_badge(view.triage)),
       ~S|</ul></nav>|
     ]
   end
 
-  defp render_toc_decisions([], _adrs_by_id) do
-    ~s|<li class="toc-section"><a href="#decisions-changed">Decisions changed (0)</a></li>|
+  defp queue_item(unit, label, trailing) do
+    ~s|<li class="queue-item" data-unit="#{unit}"><a class="queue-link" href="#unit-#{unit}">#{label}#{trailing}</a></li>|
   end
 
-  defp render_toc_decisions(decisions, adrs_by_id) do
-    [
-      ~s|<li class="toc-section"><a href="#decisions-changed">Decisions changed (#{length(decisions)})</a>|,
-      ~S|<ul class="toc-sublist">|,
-      Enum.map(decisions, fn d ->
-        adr = Map.get(adrs_by_id || %{}, d.id)
-        anchor = "adr-" <> slug(d.id || d.file)
-        pip = render_toc_adr_pip(adr)
-        label = d.id || Path.basename(d.file)
+  defp render_queue_subjects([], _sev, _files, _kind), do: ""
 
-        ~s|<li><a href="##{anchor}"><code>#{h(label)}</code><span class="toc-pips">#{pip}</span></a></li>|
-      end),
-      ~S|</ul>|,
-      ~S|</li>|
-    ]
+  defp render_queue_subjects(queue_subjects, sev_by_id, files_by_id, kind_by_id) do
+    queue_subjects
+    |> Enum.chunk_by(& &1.change_kind)
+    |> Enum.map(fn [%{change_kind: kind} | _] = chunk ->
+      [
+        ~s|<li class="queue-group-label">#{h(Map.get(@queue_group_labels, kind, to_string(kind)))}</li>|,
+        Enum.map(chunk, fn e ->
+          render_queue_subject_row(
+            e,
+            Map.get(sev_by_id, e.id),
+            Map.get(files_by_id, e.id, 0),
+            Map.get(kind_by_id, e.id, e.change_kind)
+          )
+        end)
+      ]
+    end)
   end
 
-  defp render_toc_adr_pip(nil), do: ""
+  defp render_queue_subject_row(entry, severity, file_count, change_kind) do
+    dot =
+      case severity do
+        nil ->
+          ~S|<span class="queue-dot queue-dot-none" aria-hidden="true"></span>|
 
-  defp render_toc_adr_pip(adr) do
-    case Map.get(adr, :change_status) do
-      :new ->
-        ~s|<span class="toc-pip toc-pip-new"#{title_attr(tooltip(:change, :new))}>NEW</span>|
+        sev ->
+          ~s|<span class="queue-dot queue-dot-#{sev}" title="#{h(sev)} finding#{maybe_s(entry.findings_count)}"></span>|
+      end
 
-      :modified ->
-        ~s|<span class="toc-pip toc-pip-edited"#{title_attr(tooltip(:change, :modified))}>EDITED</span>|
-
-      :removed ->
-        ~s|<span class="toc-pip toc-pip-error"#{title_attr(tooltip(:change, :removed))}>REM</span>|
-
-      _ ->
+    spec_chip =
+      if change_kind == :spec_edited do
+        ~S|<span class="queue-chip queue-chip-spec" title="Spec file edited in this change set">SPEC</span>|
+      else
         ""
+      end
+
+    ~s|<li class="queue-item queue-subject" data-unit="subject-#{slug(entry.id)}" data-subject-id="#{h(entry.id)}"><a class="queue-link" href="#unit-subject-#{slug(entry.id)}">#{dot}<code class="queue-subject-id">#{h(entry.id)}</code>#{spec_chip}<span class="queue-filecount">#{file_count} file#{maybe_s(file_count)}</span></a></li>|
+  end
+
+  defp spec_health_queue_badge(triage) do
+    if degraded?(triage) do
+      ~S| <span class="queue-badge queue-badge-degraded" title="Verification is partial — some legs could not be checked">partial</span>|
+    else
+      ""
     end
   end
 
-  defp toc_item(anchor, label, badge) do
-    ~s|<li class="toc-section"><a href="##{anchor}">#{h(label)}#{badge}</a></li>|
+  defp degraded?(triage) do
+    triage
+    |> Map.get(:detector_unavailable_by_leg, %{})
+    |> map_size() > 0
   end
 
-  defp triage_toc_badge(%{clean?: true}), do: ~s| <span class="toc-pip toc-pip-clean">✓</span>|
+  defp worst_finding_severity([]), do: nil
 
-  defp triage_toc_badge(%{findings_count: 0}), do: ""
+  defp worst_finding_severity(findings) do
+    severities = Enum.map(findings, & &1["severity"])
 
-  defp triage_toc_badge(triage) do
     cond do
-      Map.get(triage.by_severity, "error", 0) > 0 ->
-        ~s| <span class="toc-pip toc-pip-error">#{triage.findings_count}</span>|
-
-      Map.get(triage.by_severity, "warning", 0) > 0 ->
-        ~s| <span class="toc-pip toc-pip-warning">#{triage.findings_count}</span>|
-
-      true ->
-        ~s| <span class="toc-pip toc-pip-info">#{triage.findings_count}</span>|
+      "error" in severities -> "error"
+      "warning" in severities -> "warning"
+      "info" in severities -> "info"
+      true -> nil
     end
   end
-
-  defp render_toc_finding_badge(%{findings_count: 0}), do: ""
-
-  defp render_toc_finding_badge(%{by_severity: by_sev, findings_count: count}) do
-    cond do
-      Map.get(by_sev, "error", 0) > 0 ->
-        ~s|<span class="toc-pip toc-pip-error">#{count}</span>|
-
-      Map.get(by_sev, "warning", 0) > 0 ->
-        ~s|<span class="toc-pip toc-pip-warning">#{count}</span>|
-
-      true ->
-        ~s|<span class="toc-pip toc-pip-info">#{count}</span>|
-    end
-  end
-
-  defp render_toc_change_pip(%{change_status: :new}),
-    do:
-      ~s|<span class="toc-pip toc-pip-new"#{title_attr(tooltip(:change, :new_subject))}>NEW</span>|
-
-  defp render_toc_change_pip(%{change_status: :edited}),
-    do:
-      ~s|<span class="toc-pip toc-pip-edited"#{title_attr(tooltip(:change, :spec_edited))}>EDITED</span>|
-
-  defp render_toc_change_pip(_), do: ""
 
   # covers: specled.spec_review.triage_panel
-  # The sync-status panel headlines whether spec ↔ code ↔ tests ↔ coverage
-  # are in sync for this change set, then enumerates the specific checks
-  # that were performed (so a first-time reader can see what "no findings"
-  # actually means). Per-subject status badges and the full findings list
-  # remain available below.
-  defp render_triage(%{clean?: true} = triage, _findings) do
+  # A persistent change-verdict chip lives in the top bar and states the
+  # change-scoped verdict — the count/severity of findings the change set
+  # introduced, or a clean confirmation when it introduces none. The chip is
+  # driven by the differential verdict only, so a change that introduces
+  # nothing reads clean even when pre-existing findings or degraded
+  # verification exist at head.
+  @doc false
+  def render_verdict_chip(%{change_verdict: verdict}), do: render_verdict_chip(verdict)
+
+  def render_verdict_chip(%{differential?: false}) do
+    ~S|<span class="verdict-chip verdict-chip-nondiff" title="No committed base state — findings could not be attributed to this change">No base attribution</span>|
+  end
+
+  def render_verdict_chip(%{clean?: true}) do
+    ~S|<span class="verdict-chip verdict-chip-clean" title="This change set introduces no findings">✓ Clean — no findings introduced</span>|
+  end
+
+  def render_verdict_chip(%{introduced_count: count, by_severity: by_sev}) do
+    sev = worst_severity_key(by_sev)
+
+    ~s|<span class="verdict-chip verdict-chip-#{sev}" title="This change set introduces #{count} finding#{maybe_s(count)}">#{count} finding#{maybe_s(count)} introduced</span>|
+  end
+
+  def render_verdict_chip(_), do: ""
+
+  defp worst_severity_key(by_sev) do
+    cond do
+      Map.get(by_sev, "error", 0) > 0 -> "error"
+      Map.get(by_sev, "warning", 0) > 0 -> "warning"
+      true -> "info"
+    end
+  end
+
+  # covers: specled.spec_review.theme_tokens
+  # A three-state theme control (system / light / dark) in the top bar. The
+  # choice is applied and persisted to localStorage by the page JS; the
+  # inline bootstrap script in <head> applies any stored choice before first
+  # paint so there is no flash. No network resources are involved.
+  @doc false
+  def render_theme_toggle do
+    ~S"""
+    <div class="theme-toggle" role="group" aria-label="Theme">
+      <button type="button" class="theme-btn" data-theme-choice="system" title="Match system">◐</button>
+      <button type="button" class="theme-btn" data-theme-choice="light" title="Light">☀</button>
+      <button type="button" class="theme-btn" data-theme-choice="dark" title="Dark">☾</button>
+    </div>
+    """
+  end
+
+  # covers: specled.spec_review.change_scoped_overview
+  # The Overview (landing) pane is change-scoped only: the change verdict, the
+  # diff-scoped counts, the spec edits, the differential findings delta, the
+  # file breakdown, and the changed decisions. Whole-repo inventories and the
+  # sync triangle are deliberately absent here — they live on Spec health.
+  defp render_overview(view) do
     [
-      ~s|<section id="triage" class="sync-status sync-status-in" aria-label="Sync status">|,
-      render_sync_headline(triage, true),
-      render_sync_checklist(triage),
+      ~s|<section class="overview" aria-label="Change overview">|,
+      render_overview_headline(view.findings_delta),
+      render_overview_tiles(view),
+      render_overview_findings(view.findings_delta, view.all_findings),
+      render_overview_spec_edits(view.affected_subjects),
+      render_overview_file_breakdown(view.file_breakdown),
+      render_overview_decisions(view.decisions_changed),
       ~S|</section>|
     ]
   end
 
-  defp render_triage(triage, findings) do
-    in_sync? = triage.findings_count == 0
-    state = if in_sync?, do: "in", else: "out"
+  defp render_overview_headline(%{change_verdict: %{differential?: false}}) do
+    ~S|<div class="overview-headline overview-headline-nondiff"><h2>Findings could not be attributed to this change.</h2><p>No committed <code>.spec/state.json</code> at the base ref, so findings below are shown for the head ref as a whole rather than as introduced by this change set.</p></div>|
+  end
+
+  defp render_overview_headline(%{change_verdict: %{clean?: true}}) do
+    ~S|<div class="overview-headline overview-headline-clean"><h2>✓ This change introduces no findings.</h2><p>Pre-existing repo state, if any, is on the <a class="queue-link" href="#unit-health">Spec health</a> pane and does not affect this change's verdict.</p></div>|
+  end
+
+  defp render_overview_headline(%{
+         change_verdict: %{introduced_count: count, by_severity: by_sev}
+       }) do
+    chips =
+      ["error", "warning", "info"]
+      |> Enum.map(fn sev ->
+        case Map.get(by_sev, sev, 0) do
+          0 -> ""
+          n -> ~s|<span class="overview-sev overview-sev-#{sev}">#{n} #{sev}</span>|
+        end
+      end)
+
+    ~s|<div class="overview-headline overview-headline-flagged"><h2>This change introduces #{count} finding#{maybe_s(count)}.</h2><p class="overview-sev-row">#{chips}</p></div>|
+  end
+
+  defp render_overview_headline(_), do: ""
+
+  defp render_overview_tiles(view) do
+    spec_reqs_edited =
+      view.affected_subjects
+      |> Enum.map(fn s ->
+        r = s.spec_changes.requirements
+        length(r.added) + length(r.modified) + length(r.removed)
+      end)
+      |> Enum.sum()
+
+    tiles = [
+      {"Subjects touched", length(view.affected_subjects)},
+      {"Spec requirements edited", spec_reqs_edited},
+      {"Decisions changed", length(view.decisions_changed)},
+      {"Unmapped files", view.file_breakdown.unmapped}
+    ]
 
     [
-      ~s|<section id="triage" class="sync-status sync-status-#{state}" aria-label="Sync status">|,
-      render_sync_headline(triage, in_sync?),
-      render_sync_checklist(triage),
-      render_triage_subjects(triage.affected_subjects),
-      render_findings_list(findings),
+      ~S|<div class="overview-tiles">|,
+      Enum.map(tiles, fn {label, n} ->
+        ~s|<div class="overview-tile"><span class="overview-tile-num">#{n}</span><span class="overview-tile-label">#{h(label)}</span></div>|
+      end),
+      ~S|</div>|
+    ]
+  end
+
+  # covers: specled.spec_review.findings_delta
+  # The Overview classifies findings differentially — introduced / resolved /
+  # pre-existing — from the S1 view-model's `findings_delta`. When base
+  # attribution is unavailable the pane renders a single explicitly-labeled
+  # non-differential digest instead, never presenting findings as introduced.
+  defp render_overview_findings(%{delta_available?: false}, all_findings) do
+    case render_findings_digest(all_findings) do
+      "" ->
+        ""
+
+      digest ->
+        [
+          ~S|<section class="overview-findings" aria-label="Findings (no base attribution)">|,
+          ~S|<h3 class="overview-section-heading">Findings <span class="overview-nondiff-note">(not attributed to this change — no base state)</span></h3>|,
+          digest,
+          ~S|</section>|
+        ]
+    end
+  end
+
+  defp render_overview_findings(delta, _all_findings) do
+    sections =
+      [
+        {"Introduced by this change", "introduced", delta.introduced},
+        {"Resolved by this change", "resolved", delta.resolved},
+        {"Pre-existing (not caused by this change)", "pre-existing", delta.pre_existing}
+      ]
+      |> Enum.map(fn {label, cls, findings} ->
+        case render_findings_digest(findings) do
+          "" ->
+            ""
+
+          digest ->
+            [
+              ~s|<div class="overview-delta-group overview-delta-#{cls}">|,
+              ~s|<h4 class="overview-delta-heading">#{h(label)} <span class="overview-delta-count">#{length(findings)}</span></h4>|,
+              digest,
+              ~S|</div>|
+            ]
+        end
+      end)
+
+    if delta.introduced == [] and delta.resolved == [] and delta.pre_existing == [] do
+      ""
+    else
+      [
+        ~S|<section class="overview-findings" aria-label="Findings delta">|,
+        ~S|<h3 class="overview-section-heading">Findings delta</h3>|,
+        sections,
+        ~S|</section>|
+      ]
+    end
+  end
+
+  defp render_overview_spec_edits(affected_subjects) do
+    edited =
+      Enum.filter(affected_subjects, fn s ->
+        r = s.spec_changes.requirements
+        sc = s.spec_changes.scenarios
+
+        r.added != [] or r.modified != [] or r.removed != [] or
+          sc.added != [] or sc.modified != [] or sc.removed != []
+      end)
+
+    case edited do
+      [] ->
+        ""
+
+      _ ->
+        [
+          ~S|<section class="overview-spec-edits" aria-label="Spec edits"><h3 class="overview-section-heading">Spec edits in this change</h3>|,
+          ~S|<ul class="overview-spec-edits-list">|,
+          Enum.map(edited, fn s ->
+            r = s.spec_changes.requirements
+
+            ~s|<li><a class="queue-link" href="#unit-subject-#{slug(s.id)}"><code>#{h(s.id)}</code></a> <span class="overview-spec-edit-counts">+#{length(r.added)} added · ~#{length(r.modified)} modified · -#{length(r.removed)} removed</span></li>|
+          end),
+          ~S|</ul></section>|
+        ]
+    end
+  end
+
+  defp render_overview_file_breakdown(%{total: 0}), do: ""
+
+  defp render_overview_file_breakdown(%{total: total} = b) do
+    seg = fn n, cls, label ->
+      if n == 0 do
+        ""
+      else
+        pct = Float.round(n / total * 100, 1)
+
+        ~s|<div class="overview-meter-seg overview-meter-#{cls}" style="flex: #{n}" title="#{n} #{label} (#{pct}%)"></div>|
+      end
+    end
+
+    [
+      ~S|<section class="overview-file-breakdown" aria-label="File breakdown"><h3 class="overview-section-heading">File breakdown</h3>|,
+      ~S|<div class="overview-meter">|,
+      seg.(b.mapped, "mapped", "mapped to a subject"),
+      seg.(b.policy, "policy", "spec/policy files"),
+      seg.(b.unmapped, "unmapped", "unmapped"),
+      ~S|</div>|,
+      ~s|<ul class="overview-meter-legend"><li><span class="overview-meter-key overview-meter-mapped"></span>#{b.mapped} mapped</li><li><span class="overview-meter-key overview-meter-policy"></span>#{b.policy} spec/policy</li><li><span class="overview-meter-key overview-meter-unmapped"></span>#{b.unmapped} unmapped</li></ul>|,
       ~S|</section>|
     ]
   end
+
+  defp render_overview_decisions([]), do: ""
+
+  defp render_overview_decisions(decisions) do
+    [
+      ~S|<section class="overview-decisions" aria-label="Decisions changed"><h3 class="overview-section-heading">Decisions changed <span class="queue-count">|,
+      Integer.to_string(length(decisions)),
+      ~S|</span></h3><ul class="overview-decisions-list">|,
+      Enum.map(decisions, fn d ->
+        label = d.id || Path.basename(d.file || "")
+        ~s|<li><code>#{h(label)}</code></li>|
+      end),
+      ~s|</ul><p class="overview-decisions-more"><a class="queue-link" href="#unit-decisions">Open Decisions changed →</a></p></section>|
+    ]
+  end
+
+  # covers: specled.spec_review.repo_state_health_pane
+  # Whole-repo verification state renders here and nowhere else: the sync
+  # triangle with per-leg states, the per-leg check lists, the strength
+  # inventory, and the full findings inventory. The heading explicitly labels
+  # the content as repo state at the head ref so it is never mistaken for the
+  # change set's own verdict.
+  defp render_spec_health(view) do
+    triage = view.triage
+
+    [
+      ~s|<section class="spec-health" aria-label="Spec health">|,
+      ~s|<header class="spec-health-head"><h2>Spec health <span class="spec-health-scope">— repo state at <code>#{h(view.meta.head_ref)}</code></span></h2>|,
+      ~S|<p class="spec-health-note">This is the whole-repo verification state at the head ref, not the verdict for this change set. It gates <code>mix spec.check</code> regardless of what this PR touched.</p>|,
+      spec_health_partial_note(triage),
+      ~S|</header>|,
+      render_sync_headline(triage, triage.findings_count == 0),
+      render_sync_checklist(triage),
+      render_strength_inventory(triage),
+      render_repo_inventory(triage),
+      render_health_findings_inventory(view.all_findings),
+      render_coverage_help_disclosure(),
+      ~S|</section>|
+    ]
+  end
+
+  defp spec_health_partial_note(triage) do
+    if degraded?(triage) do
+      ~S|<p class="spec-health-partial" role="status">Verification is partial on this run — one or more triangle legs could not be checked. See the degraded legs below.</p>|
+    else
+      ""
+    end
+  end
+
+  defp render_strength_inventory(%{strength_breakdown: breakdown})
+       when is_map(breakdown) and map_size(breakdown) > 0 do
+    order = [:executed, :linked, :claimed, :uncovered]
+
+    rows =
+      order
+      |> Enum.map(fn s -> {s, Map.get(breakdown, s, 0)} end)
+      |> Enum.reject(fn {_s, n} -> n == 0 end)
+
+    [
+      ~S|<section class="strength-inventory" aria-label="Coverage strength inventory"><h3 class="section-heading">Coverage strength (repo state)</h3><ul class="strength-inventory-list">|,
+      Enum.map(rows, fn {s, n} ->
+        ~s|<li><span class="strength-inventory-key strength-#{s}">#{h(to_string(s))}</span><span class="strength-inventory-count">#{n}</span></li>|
+      end),
+      ~S|</ul></section>|
+    ]
+  end
+
+  defp render_strength_inventory(_), do: ""
+
+  defp render_repo_inventory(triage) do
+    items = [
+      {"Requirements", Map.get(triage, :requirement_count, 0)},
+      {"Bindings", Map.get(triage, :binding_count, 0)},
+      {"Verification entries", Map.get(triage, :verification_count, 0)},
+      {"ADR references", Map.get(triage, :adr_ref_count, 0)}
+    ]
+
+    [
+      ~S|<section class="repo-inventory" aria-label="Repo inventory"><h3 class="section-heading">Inventory (repo state)</h3><ul class="repo-inventory-list">|,
+      Enum.map(items, fn {label, n} ->
+        ~s|<li><span class="repo-inventory-count">#{n}</span> <span class="repo-inventory-label">#{h(label)}</span></li>|
+      end),
+      ~S|</ul></section>|
+    ]
+  end
+
+  defp render_health_findings_inventory(all_findings) do
+    case render_findings_digest(all_findings) do
+      "" ->
+        ~S|<section class="health-findings" aria-label="Findings inventory"><h3 class="section-heading">Findings inventory (repo state)</h3><p class="health-findings-empty">No findings at head.</p></section>|
+
+      digest ->
+        [
+          ~s|<section class="health-findings" aria-label="Findings inventory"><h3 class="section-heading">Findings inventory (repo state · #{length(all_findings)})</h3>|,
+          digest,
+          ~S|</section>|
+        ]
+    end
+  end
+
+  # covers: specled.spec_review.findings_digest_dedup
+  # Findings on the Overview and Spec health panes are grouped by (code,
+  # reason) into a single digest row carrying the severity, the occurrence
+  # count, and an expandable list of the affected subjects linking to their
+  # queue entries — never one visually identical row per finding instance.
+  @doc false
+  def render_findings_digest([]), do: ""
+
+  def render_findings_digest(findings) do
+    groups =
+      findings
+      |> Enum.group_by(fn f -> {f["code"], f["reason"]} end)
+      |> Enum.map(fn {{code, reason}, items} ->
+        %{
+          code: code,
+          reason: reason,
+          count: length(items),
+          severity: worst_finding_severity(items) || "info",
+          subjects:
+            items
+            |> Enum.map(& &1["subject_id"])
+            |> Enum.reject(&is_nil/1)
+            |> Enum.uniq()
+        }
+      end)
+      |> Enum.sort_by(fn g -> {severity_rank(g.severity), -g.count, to_string(g.code)} end)
+
+    [
+      ~S|<ul class="findings-digest">|,
+      Enum.map(groups, &render_findings_digest_row/1),
+      ~S|</ul>|
+    ]
+  end
+
+  defp render_findings_digest_row(g) do
+    reason_frag =
+      if g.reason, do: ~s| <span class="findings-digest-reason">#{h(g.reason)}</span>|, else: ""
+
+    subjects_frag =
+      case g.subjects do
+        [] ->
+          ""
+
+        subjects ->
+          links =
+            Enum.map_join(subjects, "", fn sid ->
+              ~s|<li><a class="queue-link" href="#unit-subject-#{slug(sid)}"><code>#{h(sid)}</code></a></li>|
+            end)
+
+          ~s|<details class="findings-digest-subjects"><summary>#{length(subjects)} subject#{maybe_s(length(subjects))}</summary><ul>#{links}</ul></details>|
+      end
+
+    ~s|<li class="findings-digest-row findings-digest-#{g.severity}"><div class="findings-digest-main"><span class="findings-digest-sev findings-group-sev-#{g.severity}"#{title_attr(tooltip(:severity, g.severity))}>#{h(g.severity)}</span><code class="findings-digest-code">#{h(g.code)}</code>#{reason_frag}<span class="findings-digest-count">×#{g.count}</span></div>#{subjects_frag}</li>|
+  end
+
+  defp severity_rank("error"), do: 0
+  defp severity_rank("warning"), do: 1
+  defp severity_rank("info"), do: 2
+  defp severity_rank(_), do: 3
 
   defp render_sync_headline(triage, in_sync?) do
     {icon, icon_class, title} =
@@ -764,40 +1119,6 @@ defmodule SpecLedEx.Review.Html do
     ~s|<li class="sync-check sync-check-#{icon_class}"><span class="sync-check-icon" aria-hidden="true">#{icon}</span><span class="sync-check-leg">#{h(check.leg)}</span><span class="sync-check-label">#{check.label}</span>#{count_text}#{detail_text}</li>|
   end
 
-  defp render_triage_subjects([]), do: ""
-
-  defp render_triage_subjects(subjects) do
-    [
-      ~S|<ul class="triage-subjects">|,
-      Enum.map(subjects, fn s ->
-        badge =
-          cond do
-            s.findings_count == 0 ->
-              ~S|<span class="badge badge-clean">clean</span>|
-
-            Map.get(s.by_severity, "error", 0) > 0 ->
-              ~s|<span class="badge badge-error">#{s.findings_count} #{maybe_plural(s.findings_count, "error")}</span>|
-
-            Map.get(s.by_severity, "warning", 0) > 0 ->
-              ~s|<span class="badge badge-warning">#{s.findings_count} #{maybe_plural(s.findings_count, "warning")}</span>|
-
-            true ->
-              ~s|<span class="badge badge-info">#{s.findings_count} #{maybe_plural(s.findings_count, "finding")}</span>|
-          end
-
-        ~s"""
-        <li>
-          <a class="triage-subject-link" href="#subject-#{slug(s.id)}">
-            <code class="subject-id">#{h(s.id)}</code>
-            #{badge}
-          </a>
-        </li>
-        """
-      end),
-      ~S|</ul>|
-    ]
-  end
-
   defp maybe_plural(1, word), do: word
   defp maybe_plural(_, word), do: word <> "s"
 
@@ -1041,15 +1362,21 @@ defmodule SpecLedEx.Review.Html do
     |> Enum.join("")
   end
 
-  defp render_subjects([], _adrs), do: ""
-
-  defp render_subjects(subjects, adrs) do
-    [
-      ~s|<section id="subjects" class="subjects" aria-label="Affected subjects">|,
-      ~s|<h2 class="section-heading">Affected subjects (#{length(subjects)})</h2>|,
-      Enum.map(subjects, &render_subject(&1, adrs)),
-      ~S|</section>|
-    ]
+  # covers: specled.spec_review.review_queue_navigation
+  # Each affected subject becomes its own detail pane in the master–detail
+  # layout, addressable by the `unit-subject-<slug>` fragment its queue row
+  # links to. Exactly one pane is visible at a time (CSS + queue JS); the
+  # subject `<article>` keeps its `subject-<slug>` id so inline finding
+  # anchors still resolve to it inside the pane.
+  defp render_subject_panes(subjects, adrs) do
+    Enum.map(subjects, fn s ->
+      [
+        ~s|<section class="detail-pane" data-unit="subject-#{slug(s.id)}" id="unit-subject-#{slug(s.id)}" tabindex="-1">|,
+        render_subject(s, adrs),
+        render_subject_raw_verification(s),
+        ~S|</section>|
+      ]
+    end)
   end
 
   defp render_subject(subject, adrs) do
@@ -1738,31 +2065,21 @@ defmodule SpecLedEx.Review.Html do
     ]
   end
 
-  # Page-level aggregator. Renders a single "Raw verification (all subjects)"
-  # disclosure containing every spec-verification entry across affected
-  # subjects, grouped by subject. The per-subject Coverage tab no longer
-  # repeats this block — power-user noise is consolidated to one place.
-  defp render_raw_verification_all(subjects) do
-    grouped =
-      subjects
-      |> Enum.map(fn s -> {s, List.wrap(s.verification)} end)
-      |> Enum.reject(fn {_s, list} -> list == [] end)
-
-    case grouped do
+  # Per-subject raw-verification disclosure inside a subject pane: the author's
+  # spec-verification declarations as written. Rendered only when the subject
+  # actually declares verification entries.
+  defp render_subject_raw_verification(subject) do
+    case List.wrap(subject.verification) do
       [] ->
         ""
 
-      _ ->
-        total = Enum.reduce(grouped, 0, fn {_s, list}, acc -> acc + length(list) end)
-
+      list ->
         [
-          ~s|<section id="raw-verification" class="raw-verification-all" aria-label="Raw verification across subjects">|,
           ~s|<details class="raw-verification">|,
-          ~s|<summary class="raw-verification-summary">Raw spec-verification (all subjects · #{total} entr#{if total == 1, do: "y", else: "ies"})</summary>|,
-          ~S|<p class="raw-verification-explainer">The author's declarations as written in each subject's spec file. The per-requirement Coverage views above are computed from these entries.</p>|,
-          Enum.map(grouped, fn {s, list} -> render_raw_verification_subject(s, list) end),
-          ~S|</details>|,
-          ~S|</section>|
+          ~s|<summary class="raw-verification-summary">Raw spec-verification (#{length(list)} entr#{if length(list) == 1, do: "y", else: "ies"})</summary>|,
+          ~S|<p class="raw-verification-explainer">The author's declarations as written in this subject's spec file. The Coverage pivot above is computed from these entries.</p>|,
+          render_raw_verification_subject(subject, list),
+          ~S|</details>|
         ]
     end
   end
@@ -2601,9 +2918,6 @@ defmodule SpecLedEx.Review.Html do
 
   defp slug(_), do: "x"
 
-  defp format_dt(%DateTime{} = dt), do: DateTime.to_iso8601(dt)
-  defp format_dt(other), do: to_string(other)
-
   defp field(nil, _key), do: nil
 
   defp field(item, key) when is_struct(item), do: Map.get(item, key)
@@ -2644,6 +2958,64 @@ defmodule SpecLedEx.Review.Html do
       --hunk-fg: #0a3069;
       --code-font: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
       --body-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    /* Dark token set. Applied when the OS prefers dark and the viewer has not
+       forced light, OR when the viewer explicitly forces dark via the toggle.
+       Forcing light re-selects the :root light set because the media query is
+       excluded by :not([data-theme="light"]). */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0d1117;
+        --fg: #e6edf3;
+        --fg-muted: #9198a1;
+        --fg-faint: #6e7681;
+        --card-bg: #161b22;
+        --border: #30363d;
+        --border-strong: #444c56;
+        --accent: #4493f8;
+        --error: #ff7b72;
+        --error-bg: #2d1416;
+        --warning: #e3b341;
+        --warning-bg: #272013;
+        --info: #79c0ff;
+        --info-bg: #0f2338;
+        --success: #3fb950;
+        --success-bg: #12261a;
+        --neutral-bg: #21262d;
+        --add-bg: #12261a;
+        --add-fg: #3fb950;
+        --del-bg: #2d1416;
+        --del-fg: #ff7b72;
+        --hunk-bg: #0c2d5a;
+        --hunk-fg: #79c0ff;
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --bg: #0d1117;
+      --fg: #e6edf3;
+      --fg-muted: #9198a1;
+      --fg-faint: #6e7681;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --border-strong: #444c56;
+      --accent: #4493f8;
+      --error: #ff7b72;
+      --error-bg: #2d1416;
+      --warning: #e3b341;
+      --warning-bg: #272013;
+      --info: #79c0ff;
+      --info-bg: #0f2338;
+      --success: #3fb950;
+      --success-bg: #12261a;
+      --neutral-bg: #21262d;
+      --add-bg: #12261a;
+      --add-fg: #3fb950;
+      --del-bg: #2d1416;
+      --del-fg: #ff7b72;
+      --hunk-bg: #0c2d5a;
+      --hunk-fg: #79c0ff;
     }
 
     * { box-sizing: border-box; }
@@ -3003,13 +3375,13 @@ defmodule SpecLedEx.Review.Html do
     }
     .sync-edge-fail .sync-edge-line { background: #ea580c; }
     .sync-edge-fail .sync-edge-line::after { border-left-color: #ea580c; }
-    /* Degraded edge: detector_unavailable on this leg. Solid amber/gray
-       — neither a positive proof nor a failure; the system is being
-       honest that the detector could not run. */
-    .sync-edge-degraded .sync-edge-line { background: #d4a373; }
-    .sync-edge-degraded .sync-edge-line::after { border-left-color: #d4a373; }
-    .sync-edge-degraded .sync-edge-icon { color: #b45309; }
-    .sync-edge-degraded .sync-edge-label { color: #92400e; }
+    /* Degraded edge: detector_unavailable on this leg. Neutral grey with a
+       ? glyph — not amber. "Couldn't check" must not read as "something is
+       wrong"; the system is being honest that the detector could not run. */
+    .sync-edge-degraded .sync-edge-line { background: var(--fg-faint); }
+    .sync-edge-degraded .sync-edge-line::after { border-left-color: var(--fg-faint); }
+    .sync-edge-degraded .sync-edge-icon { color: var(--fg-muted); }
+    .sync-edge-degraded .sync-edge-label { color: var(--fg-muted); }
     /* Vacuous edge: nothing to verify on this leg. Dashed gray — neither
        a positive proof nor a failure. */
     .sync-edge-vacuous .sync-edge-line {
@@ -3126,31 +3498,32 @@ defmodule SpecLedEx.Review.Html do
       border-radius: 999px;
       white-space: nowrap;
     }
+    /* Degraded is neutral, not a warning: grey surface, ? glyph. */
     .sync-degraded-banner {
       display: flex;
       align-items: center;
       gap: 10px;
       padding: 8px 12px;
       margin-bottom: 10px;
-      background: #fffbeb;
-      border: 1px solid #fde68a;
-      border-left: 4px solid #d4a373;
+      background: var(--neutral-bg);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--fg-faint);
       border-radius: 4px;
-      color: #92400e;
+      color: var(--fg-muted);
       font-size: 13px;
       line-height: 1.45;
     }
     .sync-degraded-icon {
       font-weight: 700;
       font-size: 16px;
-      color: #b45309;
+      color: var(--fg-muted);
       flex-shrink: 0;
     }
     .sync-degraded-text code {
       font-family: var(--code-font);
       font-size: 11px;
-      background: rgba(180, 83, 9, 0.08);
-      color: #92400e;
+      background: var(--card-bg);
+      color: var(--fg-muted);
       padding: 1px 5px;
       border-radius: 3px;
     }
@@ -4441,6 +4814,272 @@ defmodule SpecLedEx.Review.Html do
       .toc { position: static; max-height: none; }
     }
 
+    /* ── Master–detail shell ─────────────────────────────────────────── */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 24px;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .topbar-left { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+    .topbar-left h1 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+    .verdict-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .verdict-chip-clean { color: var(--success); background: var(--success-bg); border-color: var(--success); }
+    .verdict-chip-error { color: var(--error); background: var(--error-bg); border-color: var(--error); }
+    .verdict-chip-warning { color: var(--warning); background: var(--warning-bg); border-color: var(--warning); }
+    .verdict-chip-info { color: var(--info); background: var(--info-bg); border-color: var(--info); }
+    .verdict-chip-nondiff { color: var(--fg-muted); background: var(--neutral-bg); }
+
+    .theme-toggle {
+      display: inline-flex;
+      gap: 2px;
+      padding: 2px;
+      background: var(--neutral-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .theme-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 14px;
+      line-height: 1;
+      color: var(--fg-muted);
+    }
+    .theme-btn:hover { color: var(--fg); }
+    .theme-btn.active { background: var(--card-bg); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 0;
+      max-width: 1400px;
+      margin: 0 auto;
+      align-items: start;
+    }
+    .queue {
+      position: sticky;
+      top: 57px;
+      align-self: start;
+      max-height: calc(100vh - 57px);
+      overflow-y: auto;
+      padding: 16px 12px;
+      border-right: 1px solid var(--border);
+    }
+    .queue-filter {
+      width: 100%;
+      padding: 6px 10px;
+      margin-bottom: 12px;
+      font: inherit;
+      font-size: 13px;
+      color: var(--fg);
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+    .queue-list { list-style: none; margin: 0; padding: 0; }
+    .queue-group-label {
+      margin: 12px 6px 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--fg-faint);
+    }
+    .queue-item { margin: 1px 0; }
+    .queue-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      color: var(--fg);
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .queue-link:hover { background: var(--neutral-bg); }
+    .queue-current > .queue-link { background: var(--info-bg); color: var(--info); font-weight: 600; }
+    .queue-count {
+      display: inline-block;
+      min-width: 18px;
+      padding: 0 5px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--fg-muted);
+      background: var(--neutral-bg);
+      border-radius: 999px;
+    }
+    .queue-subject-id { font-family: var(--code-font); font-size: 12px; flex: 1; overflow: hidden; text-overflow: ellipsis; }
+    .queue-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .queue-dot-none { background: transparent; box-shadow: inset 0 0 0 1px var(--border-strong); }
+    .queue-dot-error { background: var(--error); }
+    .queue-dot-warning { background: var(--warning); }
+    .queue-dot-info { background: var(--info); }
+    .queue-chip {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+    .queue-chip-spec { color: var(--accent); background: var(--info-bg); }
+    .queue-filecount { font-size: 11px; color: var(--fg-faint); flex-shrink: 0; }
+    .queue-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+    .queue-badge-degraded { color: var(--fg-muted); background: var(--neutral-bg); border: 1px solid var(--border); }
+
+    .detail { min-width: 0; padding: 24px 32px; }
+    .detail-pane { display: none; }
+    .detail-pane.active { display: block; }
+    .detail-pane:focus { outline: none; }
+
+    /* ── Overview (change-scoped) ────────────────────────────────────── */
+    .overview-headline h2 { margin: 0 0 4px; font-size: 20px; letter-spacing: -0.01em; }
+    .overview-headline p { margin: 0 0 16px; color: var(--fg-muted); font-size: 14px; }
+    .overview-headline-clean h2 { color: var(--success); }
+    .overview-headline-nondiff h2 { color: var(--fg-muted); }
+    .overview-sev-row { display: flex; gap: 8px; }
+    .overview-sev { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+    .overview-sev-error { color: var(--error); background: var(--error-bg); }
+    .overview-sev-warning { color: var(--warning); background: var(--warning-bg); }
+    .overview-sev-info { color: var(--info); background: var(--info-bg); }
+    .overview-tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin: 8px 0 24px;
+    }
+    .overview-tile {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 14px 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .overview-tile-num { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+    .overview-tile-label { font-size: 12px; color: var(--fg-muted); }
+    .overview-section-heading { margin: 24px 0 10px; font-size: 15px; font-weight: 600; }
+    .overview-nondiff-note, .overview-delta-count, .overview-spec-edit-counts { font-weight: 400; font-size: 12px; color: var(--fg-muted); }
+    .overview-delta-group { margin-bottom: 14px; }
+    .overview-delta-heading { margin: 0 0 6px; font-size: 13px; font-weight: 600; }
+    .overview-delta-pre-existing .overview-delta-heading { color: var(--fg-muted); }
+    .overview-spec-edits-list, .overview-decisions-list { list-style: none; margin: 0; padding: 0; }
+    .overview-spec-edits-list li, .overview-decisions-list li { padding: 4px 0; font-size: 13px; }
+    .overview-decisions-more { margin: 8px 0 0; font-size: 13px; }
+    .overview-decisions-more a, .overview-spec-edits-list a { color: var(--accent); text-decoration: none; }
+    .overview-meter {
+      display: flex;
+      height: 12px;
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--neutral-bg);
+    }
+    .overview-meter-seg { min-width: 2px; }
+    .overview-meter-mapped { background: var(--success); }
+    .overview-meter-policy { background: var(--accent); }
+    .overview-meter-unmapped { background: var(--fg-faint); }
+    .overview-meter-legend {
+      display: flex;
+      gap: 16px;
+      list-style: none;
+      margin: 8px 0 0;
+      padding: 0;
+      font-size: 12px;
+      color: var(--fg-muted);
+    }
+    .overview-meter-legend li { display: flex; align-items: center; gap: 5px; }
+    .overview-meter-key { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+    /* ── Spec health (repo state) ────────────────────────────────────── */
+    .spec-health-head h2 { margin: 0 0 4px; font-size: 20px; letter-spacing: -0.01em; }
+    .spec-health-scope { font-size: 14px; font-weight: 400; color: var(--fg-muted); }
+    .spec-health-note { margin: 0 0 8px; font-size: 13px; color: var(--fg-muted); }
+    .spec-health-partial { margin: 0 0 12px; font-size: 13px; color: var(--fg-muted); font-weight: 600; }
+    .strength-inventory, .repo-inventory, .health-findings { margin-top: 24px; }
+    .strength-inventory-list, .repo-inventory-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      list-style: none;
+      margin: 8px 0 0;
+      padding: 0;
+    }
+    .strength-inventory-list li, .repo-inventory-list li {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .strength-inventory-count, .repo-inventory-count { font-weight: 700; }
+    .repo-inventory-label { color: var(--fg-muted); }
+
+    /* ── Findings digest (dedup by code, reason) ─────────────────────── */
+    .findings-digest { list-style: none; margin: 8px 0 0; padding: 0; }
+    .findings-digest-row {
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-left-width: 3px;
+      border-radius: 6px;
+    }
+    .findings-digest-error { border-left-color: var(--error); }
+    .findings-digest-warning { border-left-color: var(--warning); }
+    .findings-digest-info { border-left-color: var(--info); }
+    .findings-digest-main { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .findings-digest-sev {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+    .findings-group-sev-error { color: var(--error); background: var(--error-bg); }
+    .findings-group-sev-warning { color: var(--warning); background: var(--warning-bg); }
+    .findings-group-sev-info { color: var(--info); background: var(--info-bg); }
+    .findings-digest-code { font-family: var(--code-font); font-size: 12px; }
+    .findings-digest-reason { font-size: 12px; color: var(--fg-muted); }
+    .findings-digest-count { margin-left: auto; font-weight: 700; font-size: 13px; }
+    .findings-digest-subjects { margin-top: 6px; font-size: 12px; }
+    .findings-digest-subjects summary { cursor: pointer; color: var(--fg-muted); }
+    .findings-digest-subjects ul { list-style: none; margin: 6px 0 0; padding: 0 0 0 14px; }
+    .findings-digest-subjects li { padding: 2px 0; }
+    .findings-digest-subjects a { color: var(--accent); text-decoration: none; }
+
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; }
+      .queue { position: static; max-height: none; border-right: none; border-bottom: 1px solid var(--border); }
+    }
     @media (max-width: 720px) {
       .page-header, .layout, .page-footer { padding-left: 16px; padding-right: 16px; }
       .finding-item { grid-template-columns: 1fr; gap: 4px; }
@@ -4448,24 +5087,134 @@ defmodule SpecLedEx.Review.Html do
     """
   end
 
+  # covers: specled.spec_review.theme_tokens
+  # Applied synchronously in <head> before first paint: read the persisted
+  # theme choice from localStorage and stamp `data-theme` on the root element
+  # so the correct token set is active on the very first frame (no flash). A
+  # "system" choice (or no stored choice) leaves the attribute off so the
+  # prefers-color-scheme media query decides.
+  @doc false
+  def theme_bootstrap_js do
+    """
+    (function () {
+      try {
+        var choice = localStorage.getItem('specled-theme');
+        if (choice === 'light' || choice === 'dark') {
+          document.documentElement.setAttribute('data-theme', choice);
+        }
+      } catch (e) {}
+    })();
+    """
+  end
+
   defp js do
     """
-    // Top-level Spec / Files view toggle.
+    // Theme toggle: system / light / dark, persisted to localStorage.
+    function applyTheme(choice) {
+      if (choice === 'light' || choice === 'dark') {
+        document.documentElement.setAttribute('data-theme', choice);
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+      }
+      document.querySelectorAll('.theme-btn').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-theme-choice') === choice);
+      });
+    }
+
+    (function () {
+      var stored = 'system';
+      try { stored = localStorage.getItem('specled-theme') || 'system'; } catch (e) {}
+      applyTheme(stored);
+    })();
+
     document.addEventListener('click', function (e) {
-      var btn = e.target.closest('.view-toggle-btn');
+      var btn = e.target.closest('.theme-btn');
       if (!btn) return;
-      var mode = btn.getAttribute('data-view');
-      var layout = document.querySelector('.layout');
-      if (!layout) return;
-      layout.setAttribute('data-view-mode', mode);
-      document.querySelectorAll('.view-toggle-btn').forEach(function (b) {
-        var active = b.getAttribute('data-view') === mode;
-        b.classList.toggle('active', active);
-        b.setAttribute('aria-selected', active ? 'true' : 'false');
+      var choice = btn.getAttribute('data-theme-choice');
+      try { localStorage.setItem('specled-theme', choice); } catch (e) {}
+      applyTheme(choice);
+    });
+
+    // Master–detail queue navigation. Exactly one detail pane is visible at a
+    // time; the visible pane is driven by the URL fragment so every unit is
+    // deep-linkable. A fragment may name a pane directly (unit-…) or any
+    // element inside a pane (e.g. an inline finding anchor), in which case the
+    // owning pane is activated and the element scrolled into view.
+    function paneForHash(hash) {
+      if (!hash || hash === '#') return null;
+      var id = hash.slice(1);
+      var el = document.getElementById(id);
+      if (!el) return null;
+      if (el.classList.contains('detail-pane')) return el;
+      return el.closest('.detail-pane');
+    }
+
+    function selectPane(pane, focusEl) {
+      if (!pane) return;
+      document.querySelectorAll('.detail-pane').forEach(function (p) {
+        p.classList.toggle('active', p === pane);
       });
-      document.querySelectorAll('.view-pane').forEach(function (p) {
-        p.classList.toggle('active', p.getAttribute('data-view-pane') === mode);
+      var unit = pane.getAttribute('data-unit');
+      document.querySelectorAll('.queue-item').forEach(function (item) {
+        var current = item.getAttribute('data-unit') === unit;
+        item.classList.toggle('queue-current', current);
+        var link = item.querySelector('.queue-link');
+        if (link) {
+          if (current) { link.setAttribute('aria-current', 'true'); }
+          else { link.removeAttribute('aria-current'); }
+        }
       });
+      if (focusEl && focusEl !== pane) {
+        focusEl.scrollIntoView({ block: 'start' });
+      } else {
+        pane.scrollTop = 0;
+      }
+    }
+
+    function syncFromHash() {
+      var pane = paneForHash(location.hash);
+      if (pane) {
+        var target = document.getElementById(location.hash.slice(1));
+        selectPane(pane, target);
+      } else {
+        var overview = document.querySelector('.detail-pane[data-unit="overview"]');
+        selectPane(overview, null);
+      }
+    }
+
+    window.addEventListener('hashchange', syncFromHash);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', syncFromHash);
+    } else {
+      syncFromHash();
+    }
+
+    // Filter the subject rows in the queue by subject id.
+    document.addEventListener('input', function (e) {
+      var input = e.target.closest('.queue-filter');
+      if (!input) return;
+      var q = input.value.trim().toLowerCase();
+      document.querySelectorAll('.queue-subject').forEach(function (item) {
+        var id = (item.getAttribute('data-subject-id') || '').toLowerCase();
+        item.style.display = (q === '' || id.indexOf(q) !== -1) ? '' : 'none';
+      });
+    });
+
+    // j / k move the selection through the visible queue items.
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'j' && e.key !== 'k') return;
+      var tag = (e.target.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+      var items = Array.prototype.filter.call(
+        document.querySelectorAll('.queue-item'),
+        function (it) { return it.style.display !== 'none'; }
+      );
+      if (!items.length) return;
+      var idx = items.findIndex(function (it) { return it.classList.contains('queue-current'); });
+      if (e.key === 'j') { idx = (idx < 0) ? 0 : Math.min(idx + 1, items.length - 1); }
+      else { idx = (idx < 0) ? 0 : Math.max(idx - 1, 0); }
+      var link = items[idx].querySelector('.queue-link');
+      if (link) { location.hash = link.getAttribute('href'); }
     });
 
     // Tab switching inside subject cards.
