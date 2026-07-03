@@ -170,6 +170,10 @@ decisions:
   statement: The HTML artifact shall be a read-only viewer in v1 with no acceptance state, no per-subject sign-off, and no reviewer-attributed approval recorded by the artifact itself.
   priority: must
   stability: evolving
+- id: specled.spec_review.binary_content_safe
+  statement: The renderer shall tolerate non-UTF-8 content anywhere in the change set. Untracked files whose content is not valid UTF-8 shall render as a placeholder line naming the file as binary with its byte size, never inlining raw bytes; unified diff output obtained from git shall be sanitized to valid UTF-8 (invalid sequences replaced) before parsing. mix spec.review shall complete and produce a valid artifact for such change sets rather than raising.
+  priority: must
+  stability: evolving
 - id: specled.spec_review.gh_pages_distribution
   statement: A documented GitHub Actions workflow shall be provided that runs mix spec.review on PR open and synchronize, deploys the rendered HTML to a per-PR path on a GitHub Pages branch, and posts or updates a PR comment containing the link.
   priority: should
@@ -344,6 +348,17 @@ decisions:
     - the file is not silently excluded from the artifact
   covers:
     - specled.spec_review.misc_panel
+- id: specled.spec_review.untracked_binary_placeholder
+  given:
+    - a change set whose untracked files include a non-UTF-8 binary file (e.g. an ets tab2file dump such as Hex's cache.ets restored into the workspace by CI caching)
+  when:
+    - mix spec.review renders the HTML artifact
+  then:
+    - rendering completes without raising UnicodeConversionError
+    - the binary file renders as a placeholder line naming it binary with its byte size
+    - no raw bytes of the binary file are inlined in the artifact
+  covers:
+    - specled.spec_review.binary_content_safe
 - id: specled.spec_review.self_contained_html
   given:
     - a rendered spec.review HTML artifact
@@ -437,6 +452,11 @@ decisions:
   execute: true
   covers:
     - specled.spec_review.coverage_tab_bind_closure
+- kind: command
+  target: mix test test/specled_ex/review/file_diff_test.exs
+  execute: true
+  covers:
+    - specled.spec_review.binary_content_safe
 - kind: command
   target: mix test test/specled_ex/review_test.exs
   execute: true

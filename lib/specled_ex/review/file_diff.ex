@@ -31,7 +31,24 @@ defmodule SpecLedEx.Review.FileDiff do
   defp run_diff(paths, root, base) do
     args = ["-C", root, "diff", "--no-color", base, "--"] ++ paths
     {output, _exit_code} = System.cmd("git", args, stderr_to_stdout: true)
-    output
+    sanitize_utf8(output)
+  end
+
+  # covers: specled.spec_review.binary_content_safe
+  # Diff output and untracked file contents flow into the HTML renderer as
+  # strings; non-UTF-8 bytes (binary files, latin-1 sources) would crash
+  # String conversion at render time, so they are neutralized here at the
+  # boundary rather than trusted downstream.
+  defp sanitize_utf8(binary) do
+    if String.valid?(binary) do
+      binary
+    else
+      binary
+      |> String.chunk(:valid)
+      |> Enum.map_join(fn chunk ->
+        if String.valid?(chunk), do: chunk, else: String.duplicate("�", byte_size(chunk))
+      end)
+    end
   end
 
   defp partition_tracked(root, paths) do
@@ -49,16 +66,21 @@ defmodule SpecLedEx.Review.FileDiff do
     case File.read(Path.join(root, path)) do
       {:ok, content} ->
         header = [{:file_header, "diff --git a/#{path} b/#{path}"}, {:file_header, "new file"}]
-
-        body =
-          content
-          |> String.split("\n")
-          |> Enum.map(&{:add, "+" <> &1})
-
-        header ++ body
+        header ++ untracked_body(content)
 
       {:error, _} ->
         []
+    end
+  end
+
+  # covers: specled.spec_review.binary_content_safe
+  defp untracked_body(content) do
+    if String.valid?(content) do
+      content
+      |> String.split("\n")
+      |> Enum.map(&{:add, "+" <> &1})
+    else
+      [{:ctx, "Binary file (#{byte_size(content)} bytes) not shown"}]
     end
   end
 
