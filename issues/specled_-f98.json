@@ -6,9 +6,15 @@
   "description": "No spec subject — flake observation log, cause unknown.\n\nTwo uncaptured one-off failures on 2026-07-02 in worktree specled_ex-tracer-merge-on-flush (branch specled_-ia9/tracer-merge-on-flush), both green on immediate re-run and unreproducible since:\n1. Full mix test run by the S2 verifier agent: 1 failure attributed to test/specled_ex/compiler/tracer_test.exs:255 (the merge_edges stream_data property, which is a pure function of generated inputs with invariants that hold by construction). Output lost to tail -5. 0/58 reproduction attempts (40 tagged-only seeded, 15 whole-file seeded, 3 full-suite seeded) plus verifier's 0/11.\n2. mix spec.check merged tagged-tests subprocess run (first S3 acceptance run): verification_command_failed on the merged run affecting specled.decisions/tagged_tests/verification covers — same finding shape as the CI failure earlier that day (verifier_test.exs pgkill test on ubuntu), but on macOS where that test is otherwise stable. failing-tests line lost to a narrow grep. 5 subsequent spec.check runs green.\n\nBoth occurred under heavy load contexts (full suite / merged run). If either recurs: capture FULL output (the merged-run finding includes 'failing tests:' via attribution; ExUnit prints the seed at run start). Suspects to rule out with real evidence, not speculation: verifier_test timeout/pgkill tests under load, tracer_test real-manifest mutation interplay, resource exhaustion.",
   "id": "specled_-f98",
   "labels": [],
+  "comments": [
+    {
+      "text": "Root cause found for observation 2 (S3 verifier, deterministic repro with full output captured): the merged tagged-tests child VM inherits the parent environment, and spec_check_test.exs's SPECLED_SHOW_INFO env-mutation tests are order-dependent under a leaked/exported var — test :11 (default run suppresses :info) fails seed-dependently because another test's after block deletes the var VM-globally, so intra-file order decides. Not a defect in the ia9 commits. Candidate fixes when actioned: (a) spec_check_test setup should snapshot+restore SPECLED_SHOW_INFO (and assert a clean baseline by deleting it in setup), (b) the verifier's merged-run command could sanitize SPECLED_* vars from the child env the same way the tagged-tests formatter consumes SPECLED_ATTRIBUTION_PATH. Observation 1 (tracer property one-off) remains unexplained and unreproduced.",
+      "timestamp": "2026-07-03T00:02:19Z"
+    }
+  ],
   "priority": 3,
   "status": "open",
   "title": "flaky one-off failures in full-suite/merged verification runs (2 observations 2026-07-02)",
   "type": "task",
-  "updated_at": "2026-07-02T23:47:23Z"
+  "updated_at": "2026-07-03T00:02:19Z"
 }
