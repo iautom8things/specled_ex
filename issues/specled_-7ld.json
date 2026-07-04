@@ -11,11 +11,15 @@
     {
       "text": "Fix on branch fix/spec-review-binary-safe (6f78a2a), also on local main (unpushed — default-branch push withheld pending user review). Atlas PR #60 temporarily pins the dep to the branch. Merge to main + drop the Atlas pin when satisfied.",
       "timestamp": "2026-07-03T01:15:11Z"
+    },
+    {
+      "text": "Rebased onto v2 main (14b5818) -\u003e 5995b8a; full suite 934/934 green. Commit currently UNSIGNED (1Password locked during rebase) — say the word after unlocking and it gets amend-signed. Still awaiting merge to main.",
+      "timestamp": "2026-07-04T00:36:07Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "spec.review: binary-safe file diff rendering",
   "type": "task",
-  "updated_at": "2026-07-03T01:15:11Z"
+  "updated_at": "2026-07-04T00:36:07Z"
 }
