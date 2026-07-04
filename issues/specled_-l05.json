@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-04T12:31:07Z",
+  "description": "Advances: specled.realized_by\n\nObserved on Atlas (first implementation-tier adopter, PR #60): implementation closure hashes shift across compile contexts even with merge-on-flush (ia9) in place and per-context determinism holding (consecutive spec.check runs are byte-identical).\n\nEvidence: (1) a dep bump touching ONLY spec_led_ex's own file_diff.ex shifted implementation hashes for ~53 of 101 Atlas subjects (forced clean recompile + fresh manifest, hashers unchanged); (2) CI runs (Linux, shared-workflow compile) consistently report large drift lists vs locally-seeded baselines (macOS); (3) after a from-scratch reseed the working baseline differed from the prior seed by only 8 entries while ~50 drift warnings persisted vs the committed copy — the drift detector and the seeded file disagree about what changed.\n\nConsequence: branch_guard_realization_drift on the implementation tier cannot graduate warning-\u003eerror for any consumer until hash inputs are normalized to be compile-context-invariant (or the baseline becomes CI-seeded by convention). Suggest auditing hash inputs for beam-metadata/path/dep-version leakage and adding a cross-compile determinism test (compile --force twice; compile on two MIX_ENVs) to the ia9 determinism contract.",
+  "id": "specled_-l05",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "implementation-tier hashes are compile-context-sensitive (drift noise across recompiles/environments)",
+  "type": "task",
+  "updated_at": "2026-07-04T12:31:07Z"
+}
