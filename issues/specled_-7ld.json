@@ -15,11 +15,15 @@
     {
       "text": "Rebased onto v2 main (14b5818) -\u003e 5995b8a; full suite 934/934 green. Commit currently UNSIGNED (1Password locked during rebase) — say the word after unlocking and it gets amend-signed. Still awaiting merge to main.",
       "timestamp": "2026-07-04T00:36:07Z"
+    },
+    {
+      "text": "Landed on main: user fast-forwarded main 14b5818 -\u003e 5995b8a. Atlas now tracks plain main (no pin) as of its PR #60. Commit is unsigned (vault was locked during the rebase) — on main now, so it stays as-is.",
+      "timestamp": "2026-07-04T12:40:02Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "spec.review: binary-safe file diff rendering",
   "type": "task",
-  "updated_at": "2026-07-04T00:36:07Z"
+  "updated_at": "2026-07-04T12:40:02Z"
 }
