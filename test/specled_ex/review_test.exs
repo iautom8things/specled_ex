@@ -106,6 +106,25 @@ defmodule SpecLedEx.ReviewTest do
       assert :file_header in kinds
       assert :add in kinds
     end
+
+    @tag spec: "specled.spec_review.diff_against_base"
+    test "renders a committed file deletion as a full deletion, not an empty diff", %{root: root} do
+      init_git_repo(root)
+      write_files(root, %{"doomed.txt" => "alpha\nbeta\ngamma\n"})
+      commit_all(root, "add doomed file")
+      base = String.trim(git!(root, ["rev-parse", "HEAD"]))
+
+      git!(root, ["rm", "doomed.txt"])
+      git!(root, ["commit", "-m", "delete doomed file"])
+
+      result = SpecLedEx.Review.FileDiff.for_files(root, base, ["doomed.txt"])
+      lines = result["doomed.txt"]
+
+      dels = for {:del, text} <- lines, do: text
+      assert "-alpha" in dels
+      assert "-gamma" in dels
+      refute Enum.any?(lines, &match?({:add, _}, &1))
+    end
   end
 
   describe "Html.render_subject_binding_health/2" do

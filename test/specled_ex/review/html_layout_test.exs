@@ -554,6 +554,64 @@ defmodule SpecLedEx.Review.HtmlLayoutTest do
     end
   end
 
+  describe "file diff collapse for deletions and oversized diffs (specled.spec_review.diff_against_base)" do
+    defp flat_subject(file, lines) do
+      %{id: "auth.subject", bindings: %{}, code_changes: [%{file: file, lines: lines}]}
+    end
+
+    @tag spec: "specled.spec_review.diff_against_base"
+    test "a small diff renders expanded" do
+      html =
+        IO.iodata_to_binary(
+          Html.render_code_tab(flat_subject("lib/auth.ex", [{:add, "+def run, do: :ok"}]))
+        )
+
+      assert html =~ ~r/<details class="code-change"[^>]* open>/
+      refute html =~ "code-change-note"
+    end
+
+    @tag spec: "specled.spec_review.diff_against_base"
+    test "a full-file deletion renders collapsed with a deletion note" do
+      lines = [
+        {:file_header, "diff --git a/lib/gone.ex b/lib/gone.ex"},
+        {:file_header, "deleted file mode 100644"},
+        {:del, "-defmodule Gone do"},
+        {:del, "-end"}
+      ]
+
+      html = IO.iodata_to_binary(Html.render_code_tab(flat_subject("lib/gone.ex", lines)))
+
+      refute html =~ ~r/<details class="code-change"[^>]* open>/
+      assert html =~ "file deleted · 2 lines"
+      # The deletion body is still present behind the fold, not dropped.
+      assert html =~ "defmodule Gone do"
+    end
+
+    @tag spec: "specled.spec_review.diff_against_base"
+    test "a diff above the size threshold renders collapsed with a large-diff note" do
+      lines = Enum.map(1..401, fn n -> {:add, "+line #{n}"} end)
+
+      html = IO.iodata_to_binary(Html.render_code_tab(flat_subject("lib/big.ex", lines)))
+
+      refute html =~ ~r/<details class="code-change"[^>]* open>/
+      assert html =~ "large diff · 401 lines"
+    end
+  end
+
+  describe "header diffstat info popover (specled.spec_review.diff_against_base)" do
+    @tag spec: "specled.spec_review.diff_against_base"
+    test "explains that tool-managed spec state files are excluded from the counts" do
+      html =
+        IO.iodata_to_binary(
+          Html.render_diff_stats(%{files_changed: 3, additions: 10, deletions: 4})
+        )
+
+      assert html =~ "diffstat-info"
+      assert html =~ ".spec/state.json"
+      assert html =~ "excluded"
+    end
+  end
+
   describe "per-subject pivot labels, default, and de-emphasis (specled.spec_review.per_subject_tabs)" do
     # A subject whose code changed: three requirements untouched, two ADRs.
     defp code_changed_subject do

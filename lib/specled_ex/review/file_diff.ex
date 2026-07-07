@@ -51,15 +51,24 @@ defmodule SpecLedEx.Review.FileDiff do
     end
   end
 
+  # Untracked means git has never seen the file (not in the index), so
+  # `git diff <base>` can't show it and we synthesize a full addition.
+  # Files deleted at head are NOT untracked — they're absent from disk and
+  # the index but present at base, and `git diff <base>` renders them as
+  # full deletions, so they must stay on the tracked side of the split.
   defp partition_tracked(root, paths) do
-    Enum.split_with(paths, fn path -> tracked?(root, path) end)
+    untracked = untracked_set(root, paths)
+    Enum.split_with(paths, fn path -> not MapSet.member?(untracked, path) end)
   end
 
-  defp tracked?(root, path) do
-    {_out, status} =
-      System.cmd("git", ["-C", root, "ls-files", "--error-unmatch", path], stderr_to_stdout: true)
+  defp untracked_set(root, paths) do
+    args = ["-C", root, "ls-files", "--others", "--exclude-standard", "--"] ++ paths
+    {output, status} = System.cmd("git", args, stderr_to_stdout: true)
 
-    status == 0
+    case status do
+      0 -> output |> String.split("\n", trim: true) |> MapSet.new()
+      _ -> MapSet.new()
+    end
   end
 
   defp untracked_as_addition(root, path) do
