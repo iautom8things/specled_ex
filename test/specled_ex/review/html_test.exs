@@ -948,6 +948,43 @@ defmodule SpecLedEx.Review.HtmlTest do
     end
 
     @tag spec: "specled.spec_review.decisions_governance_inline"
+    test "[[wiki-links]] in ADR prose render as in-page anchors, but not inside code spans" do
+      decision = %{
+        id: "specled.decision.linker",
+        file: ".spec/decisions/linker.md",
+        status: "accepted",
+        change_type: nil,
+        affects: [],
+        deleted?: false
+      }
+
+      adr = %{
+        id: "specled.decision.linker",
+        file: ".spec/decisions/linker.md",
+        title: "Linker",
+        status: "accepted",
+        date: nil,
+        change_type: nil,
+        affects: [],
+        body_text:
+          "## Context\n\nSee [[atlas.decision.expansion_rerank_deleted]] for the audit.\nLiteral in code: `[[not.a.link]]`.",
+        change_status: :new
+      }
+
+      html =
+        IO.iodata_to_binary(
+          Html.render_decisions_changed([decision], %{"specled.decision.linker" => adr}, [])
+        )
+
+      assert html =~
+               ~s|<a class="wikilink" href="#adr-atlas-decision-expansion-rerank-deleted"><code>atlas.decision.expansion_rerank_deleted</code></a>|
+
+      # The code-span occurrence stays literal.
+      assert html =~ "[[not.a.link]]"
+      refute html =~ ~s|href="#adr-not-a-link"|
+    end
+
+    @tag spec: "specled.spec_review.decisions_governance_inline"
     test "a section deleted from an ADR body renders as a REMOVED section block" do
       html =
         IO.iodata_to_binary(

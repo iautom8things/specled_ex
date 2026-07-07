@@ -2812,12 +2812,35 @@ defmodule SpecLedEx.Review.Html do
     stripped = strip_leading_h1(text)
 
     case Earmark.as_html(stripped, escape: true, compact_output: false) do
-      {:ok, html, _} -> html
-      {:error, html, _messages} -> html
+      {:ok, html, _} -> resolve_wikilinks(html)
+      {:error, html, _messages} -> resolve_wikilinks(html)
     end
   end
 
   defp render_markdown(_), do: ""
+
+  # Obsidian-style `[[id]]` refs in ADR prose become in-page links to the
+  # referenced ADR's card. Resolution against what actually rendered happens
+  # client-side (a wikilink whose anchor is absent from the page is downgraded
+  # to a plain code ref), so this stays context-free. Code spans and fenced
+  # blocks are skipped — a `[[...]]` inside example code is content, not a ref.
+  @wikilink_pattern ~r/\[\[([A-Za-z][A-Za-z0-9._\/-]*)\]\]/
+  @code_segment_pattern ~r/(<pre[\s\S]*?<\/pre>|<code[\s\S]*?<\/code>)/
+
+  defp resolve_wikilinks(html) do
+    html
+    |> String.split(@code_segment_pattern, include_captures: true)
+    |> Enum.map(fn segment ->
+      if String.starts_with?(segment, "<pre") or String.starts_with?(segment, "<code") do
+        segment
+      else
+        Regex.replace(@wikilink_pattern, segment, fn _, id ->
+          ~s|<a class="wikilink" href="#adr-#{slug(id)}"><code>#{h(id)}</code></a>|
+        end)
+      end
+    end)
+    |> Enum.join()
+  end
 
   defp strip_leading_h1(text) do
     text
@@ -5214,6 +5237,9 @@ defmodule SpecLedEx.Review.Html do
     .markdown-body p { margin: 0 0 12px; }
     .markdown-body a { color: var(--accent); text-decoration: none; }
     .markdown-body a:hover { text-decoration: underline; }
+    .wikilink code { color: var(--accent); }
+    .wikilink:hover code { text-decoration: underline; }
+    .wikilink-unresolved { color: var(--fg-muted); }
     .markdown-body strong { font-weight: 600; }
     .markdown-body em { font-style: italic; }
     .markdown-body code {
@@ -6162,6 +6188,25 @@ defmodule SpecLedEx.Review.Html do
       document.addEventListener('DOMContentLoaded', syncFromHash);
     } else {
       syncFromHash();
+    }
+
+    // Wikilinks resolve optimistically at render time; downgrade any whose
+    // target ADR card is not on this page to a plain code ref.
+    function resolveWikilinks() {
+      document.querySelectorAll('a.wikilink').forEach(function (link) {
+        var id = (link.getAttribute('href') || '').slice(1);
+        if (!id || !document.getElementById(id)) {
+          var code = document.createElement('code');
+          code.className = 'wikilink-unresolved';
+          code.textContent = link.textContent;
+          link.replaceWith(code);
+        }
+      });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', resolveWikilinks);
+    } else {
+      resolveWikilinks();
     }
 
     // Filter the subject rows in the queue by subject id.
