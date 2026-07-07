@@ -989,7 +989,19 @@ defmodule SpecLedEx.Review.HtmlLayoutTest do
       assert queue =~ ~s|data-unit="shared-lib-shared-ex"|
       assert queue =~ ~s|href="#unit-shared-lib-shared-ex"|
       assert queue =~ "3 subjects"
-      assert queue =~ ~s|class="queue-group-label"|
+      assert at(queue, "Code only") < at(queue, ~s|data-unit="shared-lib-shared-ex"|)
+
+      # The group row aggregates the collapsed subjects' finding severity
+      # into its indicator dot. Each fixture subject carries an untested
+      # must requirement (warning) alongside its info no_realized_by
+      # finding, so the aggregated dot shows the worst severity: warning.
+      assert [group_row] =
+               Regex.run(
+                 ~r|<li class="queue-item queue-subject queue-shared-file".*?</li>|s,
+                 queue
+               )
+
+      assert group_row =~ "queue-dot-warning"
 
       assert [ids_attr] =
                Regex.run(~r|data-subject-ids="([^"]*)"|, queue, capture: :all_but_first)
@@ -1004,10 +1016,6 @@ defmodule SpecLedEx.Review.HtmlLayoutTest do
       end
 
       assert queue =~ ~s|data-subject-id="delta.subject"|
-
-      # The queue filter reads data-subject-ids so a collapsed id surfaces the
-      # group row.
-      assert html =~ "data-subject-ids"
 
       # Collapsed subjects' unit panes remain rendered and deep-linkable.
       for slug <- ~w(alpha-subject beta-subject gamma-subject) do
@@ -1036,6 +1044,13 @@ defmodule SpecLedEx.Review.HtmlLayoutTest do
       end
 
       assert group_pane =~ "shared-card-summary"
+
+      # Each card renders its subject's inline finding badges (the fixture
+      # subjects each carry an info no_realized_by finding).
+      assert [card] =
+               Regex.run(~r|<li class="shared-subject-card".*?</li>|s, group_pane)
+
+      assert card =~ ~s|<span class="badge badge-info">|
     end
 
     @tag spec: "specled.spec_review.shared_file_spec_modal"

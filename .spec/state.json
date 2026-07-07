@@ -2371,10 +2371,18 @@
       },
       {
         "file": ".spec/specs/spec_review.spec.md",
+        "id": "specled.spec_review.binary_content_safe",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "The renderer shall tolerate non-UTF-8 content anywhere in the change set. Untracked files whose content is not valid UTF-8 shall render as a placeholder line naming the file as binary with its byte size, never inlining raw bytes; unified diff output obtained from git shall be sanitized to valid UTF-8 (invalid sequences replaced) before parsing. mix spec.review shall complete and produce a valid artifact for such change sets rather than raising.",
+        "subject_id": "specled.spec_review"
+      },
+      {
+        "file": ".spec/specs/spec_review.spec.md",
         "id": "specled.spec_review.change_scoped_overview",
         "priority": "must",
         "stability": "evolving",
-        "statement": "The landing detail pane (Overview) shall present only change-scoped information: the change verdict, diff-scoped counts (subjects touched, spec requirements edited, decisions changed, unmapped files), the spec edits in the change set, the findings delta, the mapped/policy/unmapped file breakdown, and changed decisions. Whole-repo inventories (requirement, binding, and verification counts; coverage strength totals) and whole-repo verification state (the triangle diagram and its per-leg checks) shall not render on the Overview pane.",
+        "statement": "The landing detail pane (Overview) shall present only change-scoped information: the change verdict, diff-scoped counts (subjects touched, spec requirements edited, decisions changed, unmapped files), the spec edits in the change set, the findings delta, the mapped/policy/unmapped file breakdown, and changed decisions. Each spec-edit entry shall deep-link to that subject's Spec pivot (activating the Spec tab on arrival), not merely to the subject's pane with its default pivot. Whole-repo inventories (requirement, binding, and verification counts; coverage strength totals) and whole-repo verification state (the triangle diagram and its per-leg checks) shall not render on the Overview pane.",
         "subject_id": "specled.spec_review"
       },
       {
@@ -2398,7 +2406,7 @@
         "id": "specled.spec_review.decisions_governance_inline",
         "priority": "must",
         "stability": "evolving",
-        "statement": "The Decisions Changed section of the HTML artifact shall render `append_only/*` findings inline next to the ADR they should have authorized (matched by ADR id when the finding's `entity_id` resolves to a changed ADR), and shall surface findings that name no resolvable ADR — including unauthorized requirement deletions, modal downgrades, scenario regressions, and decision deletions — in a dedicated \"Governance violations\" subsection of the same panel. Each rendered finding shall preserve the code-fenced `fix:` block emitted by `SpecLedEx.AppendOnly.analyze` so reviewers see the remediation contract verbatim.",
+        "statement": "The Decisions Changed section of the HTML artifact shall render `append_only/*` findings inline next to the ADR they should have authorized (matched by ADR id when the finding's `entity_id` resolves to a changed ADR), and shall surface findings that name no resolvable ADR — including unauthorized requirement deletions, modal downgrades, scenario regressions, and decision deletions — in a dedicated \"Governance violations\" subsection of the same panel. Each rendered finding shall preserve the code-fenced `fix:` block emitted by `SpecLedEx.AppendOnly.analyze` so reviewers see the remediation contract verbatim. A decision file deleted in the change set shall render as a REMOVED card carrying its base-ref parsed content (title, status, affects, body), never as an unexplained \"no parsed ADR\" stub. A modified ADR shall render a section-level body diff against its base-ref body — added/removed sections chipped, edited sections showing inline wording del/ins — rather than only the head document. Obsidian-style `[[id]]` references in ADR prose shall resolve to in-page links to the referenced ADR's card (outside code spans), degrading to a plain code ref when the target is not rendered on the page.",
         "subject_id": "specled.spec_review"
       },
       {
@@ -2414,7 +2422,7 @@
         "id": "specled.spec_review.diff_against_base",
         "priority": "must",
         "stability": "evolving",
-        "statement": "mix spec.review shall accept an explicit --base ref and otherwise default to the same base detection used by mix spec.next (origin/main, main, master, HEAD).",
+        "statement": "mix spec.review shall accept an explicit --base ref and otherwise default to the same base detection used by mix spec.next (origin/main, main, master, HEAD). Files deleted between base and head shall render as full-deletion diffs and count toward the artifact's file and line stats — never silently dropped. Full-file deletions and oversized diffs shall render collapsed by default with a summary note (file deleted / large diff, with the line count) instead of auto-expanding. The header diffstat shall expose an info affordance explaining that tool-managed spec state files are intentionally excluded from the counts, which may differ from the hosting forge's numbers.",
         "subject_id": "specled.spec_review"
       },
       {
@@ -2486,7 +2494,7 @@
         "id": "specled.spec_review.per_subject_tabs",
         "priority": "must",
         "stability": "evolving",
-        "statement": "Each subject's detail pane shall expose four pivots — Spec, Code, Coverage, and Decisions — that pivot from the subject's intent to its supporting artifacts. The Code pivot shall organize changes by realized_by binding tier rather than by file path. Each pivot label shall carry a change-scoped summary (file count and diffstat for Code; added/modified requirement counts for Spec; touched-requirement count for Coverage; reference count for Decisions). The default-selected pivot shall be the one carrying this change set's edits (Code when code changed; Spec when only the spec changed), and pivots with no content shall render visibly de-emphasized with the reason available.",
+        "statement": "Each subject's detail pane shall expose four pivots — Spec, Code, Coverage, and Decisions — that pivot from the subject's intent to its supporting artifacts. The Code pivot shall organize changes by realized_by binding tier rather than by file path. Each pivot label shall carry a change-scoped summary (file count and diffstat for Code; added/modified/removed counts across both requirements and scenarios for Spec, so a removal-only spec edit never labels itself unchanged; touched-requirement count for Coverage; reference count for Decisions). Modified-requirement wording shall diff inline (del/ins) for surgical edits, coalescing one-word unchanged bridges, and shall fall back to the full old statement stacked above the full new statement when the wording mostly changed. The default-selected pivot shall be the one carrying this change set's edits (Code when code changed; Spec when only the spec changed), and pivots with no content shall render visibly de-emphasized with the reason available.",
         "subject_id": "specled.spec_review"
       },
       {
@@ -5939,6 +5947,25 @@
       },
       {
         "covers": [
+          "specled.spec_review.binary_content_safe"
+        ],
+        "file": ".spec/specs/spec_review.spec.md",
+        "given": [
+          "a change set whose untracked files include a non-UTF-8 binary file (e.g. an ets tab2file dump such as Hex's cache.ets restored into the workspace by CI caching)"
+        ],
+        "id": "specled.spec_review.untracked_binary_placeholder",
+        "subject_id": "specled.spec_review",
+        "then": [
+          "rendering completes without raising UnicodeConversionError",
+          "the binary file renders as a placeholder line naming it binary with its byte size",
+          "no raw bytes of the binary file are inlined in the artifact"
+        ],
+        "when": [
+          "mix spec.review renders the HTML artifact"
+        ]
+      },
+      {
+        "covers": [
           "specled.tag_scanning.describe_block_recursion"
         ],
         "file": ".spec/specs/tag_scanning.spec.md",
@@ -8997,6 +9024,16 @@
       },
       {
         "covers": [
+          "specled.spec_review.binary_content_safe"
+        ],
+        "execute": true,
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review/file_diff_test.exs"
+      },
+      {
+        "covers": [
           "specled.spec_review.no_realized_by_degrades_spec_to_code"
         ],
         "execute": true,
@@ -9292,10 +9329,10 @@
     "decisions": 36,
     "exceptions": 0,
     "findings": 0,
-    "requirements": 329,
-    "scenarios": 200,
+    "requirements": 330,
+    "scenarios": 201,
     "subjects": 33,
-    "verifications": 107
+    "verifications": 108
   },
   "verification": {
     "claims": [
@@ -12424,18 +12461,18 @@
         "verification_index": 5
       },
       {
-        "cover_id": "specled.spec_review.no_realized_by_degrades_spec_to_code",
+        "cover_id": "specled.spec_review.binary_content_safe",
         "file": ".spec/specs/spec_review.spec.md",
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.spec_review",
-        "target": "mix test test/specled_ex/review_test.exs",
+        "target": "mix test test/specled_ex/review/file_diff_test.exs",
         "verification_index": 6
       },
       {
-        "cover_id": "specled.spec_review.shared_file_fanin_collapse",
+        "cover_id": "specled.spec_review.no_realized_by_degrades_spec_to_code",
         "file": ".spec/specs/spec_review.spec.md",
         "kind": "command",
         "meets_minimum": true,
@@ -12453,8 +12490,19 @@
         "required_strength": "claimed",
         "strength": "executed",
         "subject_id": "specled.spec_review",
-        "target": "mix test test/specled_ex/review/html_layout_test.exs",
+        "target": "mix test test/specled_ex/review_test.exs",
         "verification_index": 8
+      },
+      {
+        "cover_id": "specled.spec_review.shared_file_fanin_collapse",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.spec_review",
+        "target": "mix test test/specled_ex/review/html_layout_test.exs",
+        "verification_index": 9
       },
       {
         "cover_id": "specled.spec_review.shared_file_group_pane",
@@ -12465,7 +12513,7 @@
         "strength": "executed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/review/html_layout_test.exs",
-        "verification_index": 8
+        "verification_index": 9
       },
       {
         "cover_id": "specled.spec_review.shared_file_spec_modal",
@@ -12476,7 +12524,7 @@
         "strength": "executed",
         "subject_id": "specled.spec_review",
         "target": "mix test test/specled_ex/review/html_layout_test.exs",
-        "verification_index": 8
+        "verification_index": 9
       },
       {
         "cover_id": "specled.spec_review.diff_against_base",
@@ -12487,7 +12535,7 @@
         "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/mix/tasks/spec.review.ex",
-        "verification_index": 9
+        "verification_index": 10
       },
       {
         "cover_id": "specled.spec_review.same_artifact_local_and_ci",
@@ -12498,7 +12546,7 @@
         "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/mix/tasks/spec.review.ex",
-        "verification_index": 9
+        "verification_index": 10
       },
       {
         "cover_id": "specled.spec_review.findings_delta",
@@ -12509,7 +12557,7 @@
         "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/specled_ex/review.ex",
-        "verification_index": 10
+        "verification_index": 11
       },
       {
         "cover_id": "specled.spec_review.misc_panel",
@@ -12520,7 +12568,7 @@
         "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/specled_ex/review.ex",
-        "verification_index": 10
+        "verification_index": 11
       },
       {
         "cover_id": "specled.spec_review.no_realized_by_degrades_spec_to_code",
@@ -12531,7 +12579,7 @@
         "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/specled_ex/review.ex",
-        "verification_index": 10
+        "verification_index": 11
       },
       {
         "cover_id": "specled.spec_review.shared_file_fanin_collapse",
@@ -12542,7 +12590,7 @@
         "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/specled_ex/review.ex",
-        "verification_index": 10
+        "verification_index": 11
       },
       {
         "cover_id": "specled.spec_review.spec_first_navigation",
@@ -12553,7 +12601,7 @@
         "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/specled_ex/review.ex",
-        "verification_index": 10
+        "verification_index": 11
       },
       {
         "cover_id": "specled.spec_review.change_scoped_overview",
@@ -12564,7 +12612,7 @@
         "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 11
+        "verification_index": 12
       },
       {
         "cover_id": "specled.spec_review.coverage_pivot_touched_first",
@@ -12575,193 +12623,6 @@
         "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 11
-      },
-      {
-        "cover_id": "specled.spec_review.coverage_tab_bind_closure",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 11
-      },
-      {
-        "cover_id": "specled.spec_review.decisions_governance_inline",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 11
-      },
-      {
-        "cover_id": "specled.spec_review.degraded_leg_state",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 11
-      },
-      {
-        "cover_id": "specled.spec_review.findings_digest_dedup",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 11
-      },
-      {
-        "cover_id": "specled.spec_review.html_artifact",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 11
-      },
-      {
-        "cover_id": "specled.spec_review.inline_finding_badges",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 11
-      },
-      {
-        "cover_id": "specled.spec_review.per_subject_tabs",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 11
-      },
-      {
-        "cover_id": "specled.spec_review.read_only_viewer",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 11
-      },
-      {
-        "cover_id": "specled.spec_review.repo_state_health_pane",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 11
-      },
-      {
-        "cover_id": "specled.spec_review.review_queue_navigation",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 11
-      },
-      {
-        "cover_id": "specled.spec_review.shared_file_fanin_collapse",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 11
-      },
-      {
-        "cover_id": "specled.spec_review.shared_file_group_pane",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 11
-      },
-      {
-        "cover_id": "specled.spec_review.shared_file_spec_modal",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 11
-      },
-      {
-        "cover_id": "specled.spec_review.theme_tokens",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 11
-      },
-      {
-        "cover_id": "specled.spec_review.triage_panel",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 11
-      },
-      {
-        "cover_id": "specled.spec_review.triangle_code_classification",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/html.ex",
-        "verification_index": 11
-      },
-      {
-        "cover_id": "specled.spec_review.coverage_tab_bind_closure",
-        "file": ".spec/specs/spec_review.spec.md",
-        "kind": "source_file",
-        "meets_minimum": true,
-        "required_strength": "claimed",
-        "strength": "linked",
-        "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/review/coverage_closure.ex",
         "verification_index": 12
       },
       {
@@ -12772,8 +12633,195 @@
         "required_strength": "claimed",
         "strength": "linked",
         "subject_id": "specled.spec_review",
-        "target": "lib/specled_ex/coverage_triangulation.ex",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 12
+      },
+      {
+        "cover_id": "specled.spec_review.decisions_governance_inline",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 12
+      },
+      {
+        "cover_id": "specled.spec_review.degraded_leg_state",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 12
+      },
+      {
+        "cover_id": "specled.spec_review.findings_digest_dedup",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 12
+      },
+      {
+        "cover_id": "specled.spec_review.html_artifact",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 12
+      },
+      {
+        "cover_id": "specled.spec_review.inline_finding_badges",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 12
+      },
+      {
+        "cover_id": "specled.spec_review.per_subject_tabs",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 12
+      },
+      {
+        "cover_id": "specled.spec_review.read_only_viewer",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 12
+      },
+      {
+        "cover_id": "specled.spec_review.repo_state_health_pane",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 12
+      },
+      {
+        "cover_id": "specled.spec_review.review_queue_navigation",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 12
+      },
+      {
+        "cover_id": "specled.spec_review.shared_file_fanin_collapse",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 12
+      },
+      {
+        "cover_id": "specled.spec_review.shared_file_group_pane",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 12
+      },
+      {
+        "cover_id": "specled.spec_review.shared_file_spec_modal",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 12
+      },
+      {
+        "cover_id": "specled.spec_review.theme_tokens",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 12
+      },
+      {
+        "cover_id": "specled.spec_review.triage_panel",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 12
+      },
+      {
+        "cover_id": "specled.spec_review.triangle_code_classification",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/html.ex",
+        "verification_index": 12
+      },
+      {
+        "cover_id": "specled.spec_review.coverage_tab_bind_closure",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/review/coverage_closure.ex",
         "verification_index": 13
+      },
+      {
+        "cover_id": "specled.spec_review.coverage_tab_bind_closure",
+        "file": ".spec/specs/spec_review.spec.md",
+        "kind": "source_file",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "linked",
+        "subject_id": "specled.spec_review",
+        "target": "lib/specled_ex/coverage_triangulation.ex",
+        "verification_index": 14
       },
       {
         "cover_id": "specled.spec_review.gh_pages_distribution",
@@ -12784,7 +12832,7 @@
         "strength": "linked",
         "subject_id": "specled.spec_review",
         "target": "priv/spec_init/workflows/spec_review.yml.eex",
-        "verification_index": 14
+        "verification_index": 15
       },
       {
         "cover_id": "specled.status.coverage_summary",
@@ -13594,7 +13642,7 @@
     "default_minimum_strength": "claimed",
     "strength_summary": {
       "claimed": 2,
-      "executed": 304,
+      "executed": 305,
       "linked": 84
     },
     "threshold_failures": 0
