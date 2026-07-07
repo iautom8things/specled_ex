@@ -690,6 +690,58 @@ defmodule SpecLedEx.Review.HtmlLayoutTest do
       assert html =~
                ~r|<button class="tab tab-empty"[^>]*data-tab="code-s-a"[^>]*title="No code files|
     end
+
+    @tag spec: "specled.spec_review.per_subject_tabs"
+    test "a removal-only spec edit labels the Spec pivot with the removal, not 'unchanged'" do
+      subject = %{
+        code_changed_subject()
+        | spec_changes: %{
+            file_changed?: true,
+            base_existed?: true,
+            requirements: %{
+              added: [],
+              modified: [],
+              removed: [%{"id" => "s.a.r9", "statement" => "Dropped.", "priority" => "must"}]
+            },
+            scenarios: %{
+              added: [],
+              modified: [],
+              removed: [%{"id" => "s.a.sc1", "given" => [], "when" => [], "then" => []}]
+            }
+          }
+      }
+
+      html = IO.iodata_to_binary(Html.render_subject_pivots(subject, "s-a", %{}))
+
+      # One removed requirement + one removed scenario roll into the label.
+      assert html =~ "Spec · −2"
+      refute html =~ "Spec · unchanged"
+      # Removals don't fabricate touched coverage rows (removed reqs have no
+      # head row for the Coverage pivot to lead with).
+      assert html =~ "Coverage · no change"
+    end
+
+    @tag spec: "specled.spec_review.per_subject_tabs"
+    test "scenario-only additions also surface in the Spec pivot label" do
+      subject = %{
+        code_changed_subject()
+        | spec_changes: %{
+            file_changed?: true,
+            base_existed?: true,
+            requirements: %{added: [], modified: [], removed: []},
+            scenarios: %{
+              added: [%{"id" => "s.a.sc2", "given" => [], "when" => [], "then" => []}],
+              modified: [],
+              removed: []
+            }
+          }
+      }
+
+      html = IO.iodata_to_binary(Html.render_subject_pivots(subject, "s-a", %{}))
+
+      assert html =~ "Spec · +1"
+      refute html =~ "Spec · unchanged"
+    end
   end
 
   describe "subject header (specled.spec_review.spec_first_navigation)" do
@@ -791,6 +843,21 @@ defmodule SpecLedEx.Review.HtmlLayoutTest do
       assert spec =~ "spec-diff-fold"
       assert spec =~ "Raw spec file diff"
       refute spec =~ "<h4 class=\"tab-heading\">Spec file changes</h4>"
+    end
+
+    @tag spec: "specled.spec_review.change_scoped_overview"
+    test "the overview spec-edits entry deep-links to the subject's Spec panel, not just its pane",
+         %{root: root} do
+      {_view, html} = modified_requirement_repo(root)
+
+      edits =
+        Regex.run(~r|<section class="overview-spec-edits".*?</section>|s, html)
+        |> hd()
+
+      # The link targets the Spec tab panel id; the pane-selection JS
+      # activates the owning pane AND the Spec tab from that fragment.
+      assert edits =~ ~s|href="#spec-auth-subject"|
+      refute edits =~ ~s|href="#unit-subject-auth-subject"|
     end
   end
 

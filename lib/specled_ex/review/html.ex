@@ -425,7 +425,7 @@ defmodule SpecLedEx.Review.Html do
           Enum.map(edited, fn s ->
             r = s.spec_changes.requirements
 
-            ~s|<li><a class="queue-link" href="#unit-subject-#{slug(s.id)}"><code>#{h(s.id)}</code></a> <span class="overview-spec-edit-counts">+#{length(r.added)} added · ~#{length(r.modified)} modified · -#{length(r.removed)} removed</span></li>|
+            ~s|<li><a class="queue-link" href="#spec-#{slug(s.id)}"><code>#{h(s.id)}</code></a> <span class="overview-spec-edit-counts">+#{length(r.added)} added · ~#{length(r.modified)} modified · -#{length(r.removed)} removed</span></li>|
           end),
           ~S|</ul></section>|
         ]
@@ -1521,15 +1521,22 @@ defmodule SpecLedEx.Review.Html do
   defp diffstat_suffix(%{adds: a, dels: d}) when a > 0 or d > 0, do: " +#{a}/−#{d}"
   defp diffstat_suffix(_), do: ""
 
+  # The Spec pivot label aggregates every kind of spec change — added,
+  # modified, AND removed, across requirements and scenarios. A subject whose
+  # only spec change is a removal must not label itself "unchanged": removals
+  # are precisely the edits the append-only governance cares most about.
   defp spec_tab_label(s) do
     case Map.get(s, :spec_changes) do
       %{base_existed?: false} ->
         "Spec · new"
 
-      %{requirements: %{added: added, modified: modified}} ->
-        cond do
-          added == [] and modified == [] -> "Spec · unchanged"
-          true -> "Spec · " <> spec_change_counts(length(added), length(modified))
+      %{} = changes ->
+        {added, modified, removed} = spec_change_totals(changes)
+
+        if added + modified + removed == 0 do
+          "Spec · unchanged"
+        else
+          "Spec · " <> spec_change_counts(added, modified, removed)
         end
 
       _ ->
@@ -1537,15 +1544,30 @@ defmodule SpecLedEx.Review.Html do
     end
   end
 
-  defp spec_change_counts(added, modified) do
+  defp spec_change_totals(changes) do
+    [:requirements, :scenarios]
+    |> Enum.map(&Map.get(changes, &1))
+    |> Enum.reduce({0, 0, 0}, fn
+      %{added: a, modified: m, removed: r}, {added, modified, removed} ->
+        {added + length(a), modified + length(m), removed + length(r)}
+
+      _, acc ->
+        acc
+    end)
+  end
+
+  defp spec_change_counts(added, modified, removed) do
     [
       if(added > 0, do: "+#{added}", else: nil),
-      if(modified > 0, do: "~#{modified}", else: nil)
+      if(modified > 0, do: "~#{modified}", else: nil),
+      if(removed > 0, do: "−#{removed}", else: nil)
     ]
     |> Enum.reject(&is_nil/1)
     |> Enum.join(" ")
   end
 
+  # Coverage counts only added+modified: the pivot body lists head
+  # requirements, and a removed requirement has no head row to lead with.
   defp coverage_tab_label(s) do
     touched =
       case Map.get(s, :spec_changes) do
@@ -6166,10 +6188,29 @@ defmodule SpecLedEx.Review.Html do
         }
       });
       if (focusEl && focusEl !== pane) {
+        activateOwningTab(focusEl);
         focusEl.scrollIntoView({ block: 'start' });
       } else {
         pane.scrollTop = 0;
       }
+    }
+
+    // Deep links may target an element inside (or naming) a subject tab
+    // panel that isn't the card's default tab. Activate that tab so the
+    // link lands on visible content instead of the default pivot.
+    function activateOwningTab(el) {
+      var panel = el.classList && el.classList.contains('tab-panel')
+        ? el
+        : el.closest && el.closest('.tab-panel');
+      if (!panel || panel.classList.contains('active')) return;
+      var subjectCard = panel.closest('.subject');
+      if (!subjectCard) return;
+      subjectCard.querySelectorAll('.tab').forEach(function (t) {
+        t.classList.toggle('active', t.getAttribute('data-tab') === panel.id);
+      });
+      subjectCard.querySelectorAll('.tab-panel').forEach(function (p) {
+        p.classList.toggle('active', p === panel);
+      });
     }
 
     function syncFromHash() {

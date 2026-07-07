@@ -61,10 +61,13 @@ decisions:
     information: the change verdict, diff-scoped counts (subjects touched,
     spec requirements edited, decisions changed, unmapped files), the spec
     edits in the change set, the findings delta, the mapped/policy/unmapped
-    file breakdown, and changed decisions. Whole-repo inventories
-    (requirement, binding, and verification counts; coverage strength
-    totals) and whole-repo verification state (the triangle diagram and its
-    per-leg checks) shall not render on the Overview pane.
+    file breakdown, and changed decisions. Each spec-edit entry shall
+    deep-link to that subject's Spec pivot (activating the Spec tab on
+    arrival), not merely to the subject's pane with its default pivot.
+    Whole-repo inventories (requirement, binding, and verification counts;
+    coverage strength totals) and whole-repo verification state (the
+    triangle diagram and its per-leg checks) shall not render on the
+    Overview pane.
   priority: must
   stability: evolving
 - id: specled.spec_review.repo_state_health_pane
@@ -111,11 +114,16 @@ decisions:
     supporting artifacts. The Code pivot shall organize changes by
     realized_by binding tier rather than by file path. Each pivot label
     shall carry a change-scoped summary (file count and diffstat for Code;
-    added/modified requirement counts for Spec; touched-requirement count
-    for Coverage; reference count for Decisions). The default-selected
-    pivot shall be the one carrying this change set's edits (Code when code
-    changed; Spec when only the spec changed), and pivots with no content
-    shall render visibly de-emphasized with the reason available.
+    added/modified/removed counts across both requirements and scenarios
+    for Spec, so a removal-only spec edit never labels itself unchanged;
+    touched-requirement count for Coverage; reference count for Decisions).
+    Modified-requirement wording shall diff inline (del/ins) for surgical
+    edits, coalescing one-word unchanged bridges, and shall fall back to
+    the full old statement stacked above the full new statement when the
+    wording mostly changed. The default-selected pivot shall be the one
+    carrying this change set's edits (Code when code changed; Spec when
+    only the spec changed), and pivots with no content shall render
+    visibly de-emphasized with the reason available.
   priority: must
   stability: evolving
 - id: specled.spec_review.triage_panel
@@ -163,7 +171,17 @@ decisions:
   priority: must
   stability: evolving
 - id: specled.spec_review.diff_against_base
-  statement: mix spec.review shall accept an explicit --base ref and otherwise default to the same base detection used by mix spec.next (origin/main, main, master, HEAD).
+  statement: >-
+    mix spec.review shall accept an explicit --base ref and otherwise
+    default to the same base detection used by mix spec.next (origin/main,
+    main, master, HEAD). Files deleted between base and head shall render
+    as full-deletion diffs and count toward the artifact's file and line
+    stats — never silently dropped. Full-file deletions and oversized
+    diffs shall render collapsed by default with a summary note (file
+    deleted / large diff, with the line count) instead of auto-expanding.
+    The header diffstat shall expose an info affordance explaining that
+    tool-managed spec state files are intentionally excluded from the
+    counts, which may differ from the hosting forge's numbers.
   priority: must
   stability: evolving
 - id: specled.spec_review.read_only_viewer
@@ -200,7 +218,7 @@ decisions:
   priority: must
   stability: evolving
 - id: specled.spec_review.decisions_governance_inline
-  statement: The Decisions Changed section of the HTML artifact shall render `append_only/*` findings inline next to the ADR they should have authorized (matched by ADR id when the finding's `entity_id` resolves to a changed ADR), and shall surface findings that name no resolvable ADR — including unauthorized requirement deletions, modal downgrades, scenario regressions, and decision deletions — in a dedicated "Governance violations" subsection of the same panel. Each rendered finding shall preserve the code-fenced `fix:` block emitted by `SpecLedEx.AppendOnly.analyze` so reviewers see the remediation contract verbatim.
+  statement: The Decisions Changed section of the HTML artifact shall render `append_only/*` findings inline next to the ADR they should have authorized (matched by ADR id when the finding's `entity_id` resolves to a changed ADR), and shall surface findings that name no resolvable ADR — including unauthorized requirement deletions, modal downgrades, scenario regressions, and decision deletions — in a dedicated "Governance violations" subsection of the same panel. Each rendered finding shall preserve the code-fenced `fix:` block emitted by `SpecLedEx.AppendOnly.analyze` so reviewers see the remediation contract verbatim. A decision file deleted in the change set shall render as a REMOVED card carrying its base-ref parsed content (title, status, affects, body), never as an unexplained "no parsed ADR" stub. A modified ADR shall render a section-level body diff against its base-ref body — added/removed sections chipped, edited sections showing inline wording del/ins — rather than only the head document. Obsidian-style `[[id]]` references in ADR prose shall resolve to in-page links to the referenced ADR's card (outside code spans), degrading to a plain code ref when the target is not rendered on the page.
   priority: must
   stability: evolving
 - id: specled.spec_review.coverage_tab_bind_closure
