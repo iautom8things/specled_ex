@@ -2,6 +2,7 @@
   "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-07-07T12:54:09Z",
   "created": "2026-07-03T08:54:22Z",
   "description": "Jira: TBD\nDistilled from approved design conversation (2026-07-02/03). Spec dir: .spec/\nDesign mockup: https://claude.ai/code/artifact/e21fe2c1-642b-4a91-a6e3-ee835f9f7414\nWorktree: /Users/mz/src/specled_ex-spec-review-redesign\nBranch: specled_-7md/spec-review-redesign",
   "id": "specled_-7md",
@@ -47,8 +48,8 @@
     }
   ],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "spec.review v2: change-scoped master–detail layout",
   "type": "epic",
-  "updated_at": "2026-07-07T12:54:08Z"
+  "updated_at": "2026-07-07T12:54:09Z"
 }
