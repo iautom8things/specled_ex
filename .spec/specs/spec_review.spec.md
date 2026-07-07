@@ -556,12 +556,12 @@ decisions:
     - specled.spec_review.no_realized_by_degrades_spec_to_code
 - kind: command
   target: mix test test/specled_ex/review_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.spec_review.shared_file_fanin_collapse
 - kind: command
   target: mix test test/specled_ex/review/html_layout_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.spec_review.shared_file_fanin_collapse
     - specled.spec_review.shared_file_group_pane

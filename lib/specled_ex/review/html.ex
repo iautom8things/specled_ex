@@ -92,6 +92,7 @@ defmodule SpecLedEx.Review.Html do
             <%= render_decisions_changed(view.decisions_changed, view.adrs_by_id, view.all_findings) %>
           </section>
           <%= render_subject_panes(view.affected_subjects, view.adrs_by_id) %>
+          <%= render_shared_group_panes(Map.get(view, :shared_file_groups, []), view.affected_subjects) %>
           <section class="detail-pane" data-unit="misc" id="unit-misc" tabindex="-1">
             <%= render_unmapped(view.unmapped_changes, view.file_breakdown) %>
           </section>
@@ -149,7 +150,13 @@ defmodule SpecLedEx.Review.Html do
         ~s|Decisions changed <span class="queue-count">#{length(view.decisions_changed)}</span>|,
         ""
       ),
-      render_queue_subjects(view.queue_subjects, sev_by_id, files_by_id, kind_by_id),
+      render_queue_subjects(
+        view.queue_subjects,
+        Map.get(view, :shared_file_groups, []),
+        sev_by_id,
+        files_by_id,
+        kind_by_id
+      ),
       queue_item(
         "misc",
         ~s|Outside the spec system <span class="queue-count">#{length(view.unmapped_changes)}</span>|,
@@ -165,24 +172,78 @@ defmodule SpecLedEx.Review.Html do
     ~s|<li class="queue-item" data-unit="#{unit}"><a class="queue-link" href="#unit-#{unit}">#{label}#{trailing}</a></li>|
   end
 
-  defp render_queue_subjects([], _sev, _files, _kind), do: ""
+  defp render_queue_subjects([], [], _sev, _files, _kind), do: ""
 
-  defp render_queue_subjects(queue_subjects, sev_by_id, files_by_id, kind_by_id) do
-    queue_subjects
-    |> Enum.chunk_by(& &1.change_kind)
-    |> Enum.map(fn [%{change_kind: kind} | _] = chunk ->
+  # covers: specled.spec_review.shared_file_fanin_collapse
+  # Shared-file group rows live inside the Code-only section, ahead of the
+  # individual code-only rows. The section label renders whenever either
+  # group rows or individual rows exist, so a change set whose code-only
+  # subjects all collapsed still shows the section.
+  defp render_queue_subjects(queue_subjects, shared_groups, sev_by_id, files_by_id, kind_by_id) do
+    by_kind = Enum.group_by(queue_subjects, & &1.change_kind)
+
+    row = fn e ->
+      render_queue_subject_row(
+        e,
+        Map.get(sev_by_id, e.id),
+        Map.get(files_by_id, e.id, 0),
+        Map.get(kind_by_id, e.id, e.change_kind)
+      )
+    end
+
+    [
+      queue_kind_section(:spec_edited, Enum.map(Map.get(by_kind, :spec_edited, []), row)),
+      queue_kind_section(:code_only, [
+        Enum.map(shared_groups, &render_queue_shared_group_row(&1, sev_by_id)),
+        Enum.map(Map.get(by_kind, :code_only, []), row)
+      ]),
+      queue_kind_section(:impacted_only, Enum.map(Map.get(by_kind, :impacted_only, []), row))
+    ]
+  end
+
+  defp queue_kind_section(kind, rows) do
+    if IO.iodata_length(rows) == 0 do
+      ""
+    else
       [
-        ~s|<li class="queue-group-label">#{h(Map.get(@queue_group_labels, kind, to_string(kind)))}</li>|,
-        Enum.map(chunk, fn e ->
-          render_queue_subject_row(
-            e,
-            Map.get(sev_by_id, e.id),
-            Map.get(files_by_id, e.id, 0),
-            Map.get(kind_by_id, e.id, e.change_kind)
-          )
-        end)
+        ~s|<li class="queue-group-label">#{h(Map.fetch!(@queue_group_labels, kind))}</li>|,
+        rows
       ]
-    end)
+    end
+  end
+
+  # covers: specled.spec_review.shared_file_fanin_collapse
+  # The group row carries the shared file path, the collapsed-subject count,
+  # and the worst finding severity across the collapsed subjects. The
+  # `data-subject-ids` attribute lets the queue filter surface the row when
+  # the filter text matches any collapsed subject's id.
+  defp render_queue_shared_group_row(group, sev_by_id) do
+    n = length(group.subject_ids)
+    worst = worst_severity_across(group.subject_ids, sev_by_id)
+
+    dot =
+      case worst do
+        nil ->
+          ~S|<span class="queue-dot queue-dot-none" aria-hidden="true"></span>|
+
+        sev ->
+          ~s|<span class="queue-dot queue-dot-#{sev}" title="#{h(sev)} finding#{maybe_s(group.findings_count)} across collapsed subjects"></span>|
+      end
+
+    filter_ids = Enum.join([group.file | group.subject_ids], " ")
+
+    ~s|<li class="queue-item queue-subject queue-shared-file" data-unit="shared-#{slug(group.file)}" data-subject-ids="#{h(filter_ids)}"><a class="queue-link" href="#unit-shared-#{slug(group.file)}">#{dot}<code class="queue-subject-id queue-shared-path">#{h(group.file)}</code><span class="queue-chip queue-chip-shared" title="This file is the only changed file for #{n} code-only subjects; their rows are collapsed behind this one">#{n} subjects</span></a></li>|
+  end
+
+  defp worst_severity_across(subject_ids, sev_by_id) do
+    severities = Enum.map(subject_ids, &Map.get(sev_by_id, &1))
+
+    cond do
+      "error" in severities -> "error"
+      "warning" in severities -> "warning"
+      "info" in severities -> "info"
+      true -> nil
+    end
   end
 
   defp render_queue_subject_row(entry, severity, file_count, change_kind) do
@@ -1410,6 +1471,147 @@ defmodule SpecLedEx.Review.Html do
       assigns: [s: subject, slug: slug(subject.id), adrs: adrs],
       trim: false
     )
+  end
+
+  # covers: specled.spec_review.shared_file_group_pane
+  # One detail pane per shared-file group, addressable as `unit-shared-<slug>`.
+  # The shared diff renders exactly once; each collapsed subject renders as a
+  # card carrying its id, clamped prose summary, and finding badges, linking
+  # to the subject's full unit pane.
+  defp render_shared_group_panes([], _subjects), do: ""
+
+  defp render_shared_group_panes(groups, subjects) do
+    subjects_by_id = Map.new(subjects, &{&1.id, &1})
+
+    Enum.map(groups, fn group ->
+      gslug = slug(group.file)
+
+      collapsed =
+        group.subject_ids
+        |> Enum.map(&Map.get(subjects_by_id, &1))
+        |> Enum.reject(&is_nil/1)
+
+      [
+        ~s|<section class="detail-pane" data-unit="shared-#{gslug}" id="unit-shared-#{gslug}" tabindex="-1">|,
+        render_shared_group(group, collapsed, gslug),
+        ~S|</section>|
+      ]
+    end)
+  end
+
+  defp render_shared_group(group, collapsed, gslug) do
+    n = length(group.subject_ids)
+
+    [
+      ~s|<header class="shared-group-header">|,
+      ~s|<h3 class="shared-group-title"><code>#{h(group.file)}</code></h3>|,
+      ~s|<p class="shared-group-note">This file is the only changed file mapping to #{n} code-only subjects, so their queue rows are collapsed here. The diff is shown once below; open any subject card to orient on its spec without leaving the diff.</p>|,
+      ~S|</header>|,
+      ~s|<details class="code-change shared-group-diff" id="shared-diff-#{gslug}" open><summary class="filename"><code>#{h(group.file)}</code></summary>|,
+      render_diff_block(group.lines, language_for(group.file)),
+      ~S|</details>|,
+      ~s|<h4 class="tab-heading">Subjects sharing this file (#{n})</h4>|,
+      ~S|<ul class="shared-subject-cards">|,
+      Enum.map(collapsed, &render_shared_subject_card/1),
+      ~S|</ul>|,
+      Enum.map(collapsed, &render_shared_spec_modal/1)
+    ]
+  end
+
+  defp render_shared_subject_card(s) do
+    sslug = slug(s.id)
+
+    ~s"""
+    <li class="shared-subject-card" data-subject-id="#{h(s.id)}">
+      <button class="shared-card-open" type="button" data-spec-modal="shared-spec-#{sslug}" title="Preview this subject's spec while keeping the diff visible">
+        <code class="shared-card-id">#{h(s.id)}</code>
+        <span class="shared-card-summary">#{h(s.statement)}</span>
+      </button>
+      <div class="shared-card-meta">
+        #{IO.iodata_to_binary(render_subject_finding_badges(s.findings))}
+        <a class="shared-card-unit-link" href="#unit-subject-#{sslug}">Full view →</a>
+      </div>
+    </li>
+    """
+  end
+
+  # covers: specled.spec_review.shared_file_spec_modal
+  # The full spec content — statement, requirements, scenarios — is embedded
+  # in the artifact inside a native <dialog>, so opening it needs no network
+  # fetch and the group pane's diff stays visible behind the modal. Escape
+  # closes natively via showModal(); backdrop click and the explicit close
+  # control are wired in the page JS.
+  defp render_shared_spec_modal(s) do
+    sslug = slug(s.id)
+
+    [
+      ~s|<dialog class="spec-modal" id="shared-spec-#{sslug}" aria-label="Spec for #{h(s.id)}">|,
+      ~S|<div class="spec-modal-body">|,
+      ~S|<header class="spec-modal-header">|,
+      ~s|<code class="subject-id">#{h(s.id)}</code>|,
+      ~s|<a class="spec-modal-unit-link" href="#unit-subject-#{sslug}" data-modal-close>Open full subject view →</a>|,
+      ~S|<button class="spec-modal-close" type="button" data-modal-close aria-label="Close">×</button>|,
+      ~S|</header>|,
+      ~s|<p class="spec-modal-statement">#{h(s.statement)}</p>|,
+      render_modal_requirements(s.requirements),
+      render_modal_scenarios(s.scenarios),
+      ~S|</div>|,
+      ~S|</dialog>|
+    ]
+  end
+
+  defp render_modal_requirements([]), do: ""
+
+  defp render_modal_requirements(requirements) do
+    [
+      ~s|<h4 class="tab-heading">Requirements (#{length(requirements)})</h4>|,
+      ~S|<ul class="requirement-list spec-modal-requirements">|,
+      Enum.map(requirements, fn req ->
+        id = field(req, :id) || ""
+        statement = field(req, :statement) || ""
+        priority = field(req, :priority) || ""
+
+        ~s"""
+        <li class="requirement">
+          <div class="requirement-header">
+            <code class="requirement-id">#{h(id)}</code>
+            <span class="pill pill-priority pill-priority-#{h(priority)}"#{title_attr(tooltip(:priority, priority))}>#{h(priority)}</span>
+          </div>
+          <p class="requirement-statement">#{h(statement)}</p>
+        </li>
+        """
+      end),
+      ~S|</ul>|
+    ]
+  end
+
+  defp render_modal_scenarios([]), do: ""
+
+  defp render_modal_scenarios(scenarios) do
+    [
+      ~s|<h4 class="tab-heading">Scenarios (#{length(scenarios)})</h4>|,
+      ~S|<ul class="scenario-list spec-modal-scenarios">|,
+      Enum.map(scenarios, fn sc ->
+        id = field(sc, :id) || ""
+        given = field(sc, :given) || []
+        when_ = field(sc, :when) || []
+        then_ = field(sc, :then) || []
+
+        ~s"""
+        <li class="scenario">
+          <div class="scenario-header">
+            <code class="scenario-id">#{h(id)}</code>
+          </div>
+          <div class="gherkin">
+            #{render_gherkin_section("given", given)}
+            #{render_gherkin_section("when", when_)}
+            #{render_gherkin_section("then", then_)}
+          </div>
+        </li>
+        """
+      end),
+      ~S|</ul>|
+    ]
   end
 
   # covers: specled.spec_review.per_subject_tabs
@@ -6110,6 +6312,93 @@ defmodule SpecLedEx.Review.Html do
     .findings-digest-subjects li { padding: 2px 0; }
     .findings-digest-subjects a { color: var(--accent); text-decoration: none; }
 
+    /* Shared-file fan-in collapse: group queue row, group pane, spec modal. */
+    .queue-shared-path { direction: rtl; text-align: left; }
+    .queue-chip-shared {
+      color: var(--fg-muted);
+      background: var(--neutral-bg);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .shared-group-header { margin-bottom: 12px; }
+    .shared-group-title { margin: 0 0 6px; font-size: 18px; }
+    .shared-group-title code { font-family: var(--code-font); }
+    .shared-group-note { margin: 0; color: var(--fg-muted); font-size: 13px; max-width: 72ch; }
+    .shared-group-diff { margin-bottom: 16px; }
+    .shared-subject-cards {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 10px;
+    }
+    .shared-subject-card {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card-bg);
+      padding: 10px 12px;
+    }
+    .shared-card-open {
+      display: block;
+      background: none;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      font: inherit;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+    .shared-card-open:hover .shared-card-id { color: var(--accent); }
+    .shared-card-id { font-family: var(--code-font); font-size: 12px; font-weight: 600; }
+    .shared-card-summary {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-top: 4px;
+      font-size: 13px;
+      color: var(--fg-muted);
+    }
+    .shared-card-meta { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+    .shared-card-unit-link { margin-left: auto; color: var(--accent); text-decoration: none; white-space: nowrap; }
+    .spec-modal {
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      padding: 0;
+      max-width: min(760px, 92vw);
+      max-height: 82vh;
+      background: var(--card-bg);
+      color: var(--fg);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    }
+    .spec-modal::backdrop { background: rgba(0, 0, 0, 0.45); }
+    .spec-modal-body { padding: 16px 20px 20px; overflow: auto; max-height: calc(82vh - 2px); }
+    .spec-modal-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .spec-modal-unit-link { margin-left: auto; color: var(--accent); text-decoration: none; font-size: 13px; white-space: nowrap; }
+    .spec-modal-close {
+      background: none;
+      border: 0;
+      font-size: 20px;
+      line-height: 1;
+      color: var(--fg-muted);
+      cursor: pointer;
+      padding: 2px 6px;
+    }
+    .spec-modal-close:hover { color: var(--fg); }
+    .spec-modal-statement { margin: 0 0 12px; font-size: 14px; }
+
     @media (max-width: 860px) {
       .layout { grid-template-columns: 1fr; }
       .queue { position: static; max-height: none; border-right: none; border-bottom: 1px solid var(--border); }
@@ -6261,15 +6550,38 @@ defmodule SpecLedEx.Review.Html do
       resolveWikilinks();
     }
 
-    // Filter the subject rows in the queue by subject id.
+    // Filter the subject rows in the queue by subject id. Shared-file group
+    // rows carry the collapsed subjects' ids in data-subject-ids, so a filter
+    // matching a collapsed subject surfaces its group row.
     document.addEventListener('input', function (e) {
       var input = e.target.closest('.queue-filter');
       if (!input) return;
       var q = input.value.trim().toLowerCase();
       document.querySelectorAll('.queue-subject').forEach(function (item) {
-        var id = (item.getAttribute('data-subject-id') || '').toLowerCase();
+        var id = ((item.getAttribute('data-subject-id') || '') + ' ' +
+          (item.getAttribute('data-subject-ids') || '')).toLowerCase();
         item.style.display = (q === '' || id.indexOf(q) !== -1) ? '' : 'none';
       });
+    });
+
+    // Shared-file spec modal: a subject card opens its embedded <dialog>;
+    // Escape closes natively (showModal), backdrop clicks land on the dialog
+    // element itself, and [data-modal-close] controls close explicitly.
+    document.addEventListener('click', function (e) {
+      var opener = e.target.closest('[data-spec-modal]');
+      if (opener) {
+        var dlg = document.getElementById(opener.getAttribute('data-spec-modal'));
+        if (dlg && typeof dlg.showModal === 'function' && !dlg.open) dlg.showModal();
+        return;
+      }
+      var closer = e.target.closest('[data-modal-close]');
+      if (closer) {
+        var openDlg = closer.closest('dialog');
+        if (openDlg) openDlg.close();
+        return;
+      }
+      var backdrop = e.target.closest('dialog.spec-modal');
+      if (backdrop && e.target === backdrop) backdrop.close();
     });
 
     // j / k move the selection through the visible queue items.

@@ -125,7 +125,19 @@ defmodule SpecLedEx.Review do
     # misattributing findings as introduced by the change.
     findings_delta = FindingsDelta.classify(root, analysis.base, findings)
 
-    queue_subjects = build_queue_subjects(affected_subjects)
+    # covers: specled.spec_review.shared_file_fanin_collapse
+    # A file that is the only changed file for three-or-more code-only
+    # subjects collapses those subjects behind one shared-file group; the
+    # collapsed subjects keep their full detail panes but lose their
+    # individual queue rows.
+    shared_file_groups = build_shared_file_groups(affected_subjects, all_diffs)
+
+    collapsed_subject_ids =
+      shared_file_groups
+      |> Enum.flat_map(& &1.subject_ids)
+      |> MapSet.new()
+
+    queue_subjects = build_queue_subjects(affected_subjects, collapsed_subject_ids)
 
     %{
       meta: %{
@@ -139,6 +151,7 @@ defmodule SpecLedEx.Review do
       triage: triage,
       affected_subjects: affected_subjects,
       queue_subjects: queue_subjects,
+      shared_file_groups: shared_file_groups,
       unmapped_changes: unmapped_changes,
       decisions_changed: decisions_changed,
       adrs_by_id: adrs_by_id,
@@ -156,8 +169,9 @@ defmodule SpecLedEx.Review do
   # regardless of the order subjects arrive in.
   @queue_group_order %{spec_edited: 0, code_only: 1, impacted_only: 2}
 
-  defp build_queue_subjects(affected_subjects) do
+  defp build_queue_subjects(affected_subjects, collapsed_subject_ids) do
     affected_subjects
+    |> Enum.reject(&MapSet.member?(collapsed_subject_ids, &1.id))
     |> Enum.map(fn s ->
       %{
         id: s.id,
@@ -169,6 +183,32 @@ defmodule SpecLedEx.Review do
     |> Enum.sort_by(fn e ->
       {Map.fetch!(@queue_group_order, e.change_kind), -(e.diffstat.adds + e.diffstat.dels), e.id}
     end)
+  end
+
+  # covers: specled.spec_review.shared_file_fanin_collapse
+  # Only code-only subjects whose entire change set is one file are
+  # collapsible, and only when at least @shared_file_collapse_threshold of
+  # them share that same file. Spec-edited subjects never collapse, and a
+  # subject with any second changed file keeps its own queue row.
+  @shared_file_collapse_threshold 3
+
+  defp build_shared_file_groups(affected_subjects, all_diffs) do
+    affected_subjects
+    |> Enum.filter(fn s -> s.change_kind == :code_only and match?([_], s.changed_files) end)
+    |> Enum.group_by(fn s -> hd(s.changed_files) end)
+    |> Enum.filter(fn {_file, subjects} ->
+      length(subjects) >= @shared_file_collapse_threshold
+    end)
+    |> Enum.map(fn {file, subjects} ->
+      %{
+        file: file,
+        subject_ids: subjects |> Enum.map(& &1.id) |> Enum.sort(),
+        lines: Map.get(all_diffs, file, []),
+        diffstat: subjects |> hd() |> Map.fetch!(:diffstat),
+        findings_count: subjects |> Enum.map(&length(&1.findings)) |> Enum.sum()
+      }
+    end)
+    |> Enum.sort_by(fn g -> {-length(g.subject_ids), g.file} end)
   end
 
   @doc """

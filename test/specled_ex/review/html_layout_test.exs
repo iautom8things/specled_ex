@@ -913,4 +913,157 @@ defmodule SpecLedEx.Review.HtmlLayoutTest do
       assert statement_diff(nil, "Fresh requirement.") == "Fresh requirement."
     end
   end
+
+  describe "shared-file fan-in collapse" do
+    # Three code-only subjects whose only changed file is lib/shared.ex, plus
+    # one (delta.subject) that also touches its own file and must keep its
+    # individual queue row.
+    defp shared_file_repo(root) do
+      init_git_repo(root)
+
+      for name <- ~w(alpha beta gamma) do
+        write_subject_spec(root, name,
+          meta: %{
+            "id" => "#{name}.subject",
+            "kind" => "module",
+            "status" => "active",
+            "summary" => "#{String.capitalize(name)} keeps its process registered.",
+            "surface" => ["lib/shared.ex"]
+          },
+          requirements: [
+            %{
+              "id" => "#{name}.subject.req1",
+              "statement" => "#{String.capitalize(name)} must stay supervised.",
+              "priority" => "must"
+            }
+          ],
+          scenarios: [
+            %{
+              "id" => "#{name}.subject.scenario1",
+              "given" => ["a running supervision tree"],
+              "when" => ["the application boots"],
+              "then" => ["#{name} is registered"],
+              "covers" => ["#{name}.subject.req1"]
+            }
+          ]
+        )
+      end
+
+      write_subject_spec(root, "delta",
+        meta: %{
+          "id" => "delta.subject",
+          "kind" => "module",
+          "status" => "active",
+          "summary" => "Delta owns its own file too.",
+          "surface" => ["lib/shared.ex", "lib/delta.ex"]
+        }
+      )
+
+      write_files(root, %{
+        "lib/shared.ex" => "defmodule Shared do\nend\n",
+        "lib/delta.ex" => "defmodule Delta do\nend\n"
+      })
+
+      commit_all(root, "initial")
+
+      write_files(root, %{
+        "lib/shared.ex" => "defmodule Shared do\n  def run, do: :ok\nend\n",
+        "lib/delta.ex" => "defmodule Delta do\n  def run, do: :ok\nend\n"
+      })
+
+      index = SpecLedEx.index(root)
+      view = Review.build_view(index, root, base: "main")
+      {view, IO.iodata_to_binary(Html.render(view))}
+    end
+
+    @tag spec: "specled.spec_review.shared_file_fanin_collapse"
+    test "the queue collapses the shared-file subjects behind one group row", %{root: root} do
+      {_view, html} = shared_file_repo(root)
+
+      queue =
+        Regex.run(~r|<aside class="queue"[^>]*>(.*?)</aside>|s, html, capture: :all_but_first)
+        |> hd()
+
+      # One group row inside the Code-only section, carrying the file path,
+      # the collapsed-subject count, and the filterable collapsed ids.
+      assert queue =~ ~s|data-unit="shared-lib-shared-ex"|
+      assert queue =~ ~s|href="#unit-shared-lib-shared-ex"|
+      assert queue =~ "3 subjects"
+      assert queue =~ ~s|class="queue-group-label"|
+
+      assert [ids_attr] =
+               Regex.run(~r|data-subject-ids="([^"]*)"|, queue, capture: :all_but_first)
+
+      for id <- ~w(alpha.subject beta.subject gamma.subject) do
+        assert ids_attr =~ id
+      end
+
+      # Collapsed subjects render no individual queue rows; delta keeps its row.
+      for id <- ~w(alpha.subject beta.subject gamma.subject) do
+        refute queue =~ ~s|data-subject-id="#{id}"|
+      end
+
+      assert queue =~ ~s|data-subject-id="delta.subject"|
+
+      # The queue filter reads data-subject-ids so a collapsed id surfaces the
+      # group row.
+      assert html =~ "data-subject-ids"
+
+      # Collapsed subjects' unit panes remain rendered and deep-linkable.
+      for slug <- ~w(alpha-subject beta-subject gamma-subject) do
+        assert html =~ ~s|id="unit-subject-#{slug}"|
+      end
+    end
+
+    @tag spec: "specled.spec_review.shared_file_group_pane"
+    test "the group pane renders the shared diff exactly once with one card per subject",
+         %{root: root} do
+      {_view, html} = shared_file_repo(root)
+      group_pane = pane(html, "shared-lib-shared-ex")
+
+      # The diff renders exactly once in the pane.
+      assert length(Regex.scan(~r|<details class="code-change|, group_pane)) == 1
+      assert group_pane =~ "shared-group-diff"
+
+      # One card per collapsed subject: id, clamped summary, finding badge,
+      # and a link to the subject's full unit pane.
+      assert length(Regex.scan(~r|class="shared-subject-card"|, group_pane)) == 3
+
+      for name <- ~w(alpha beta gamma) do
+        assert group_pane =~ ~s|data-subject-id="#{name}.subject"|
+        assert group_pane =~ "#{String.capitalize(name)} keeps its process registered."
+        assert group_pane =~ ~s|href="#unit-subject-#{name}-subject"|
+      end
+
+      assert group_pane =~ "shared-card-summary"
+    end
+
+    @tag spec: "specled.spec_review.shared_file_spec_modal"
+    test "each card opens an embedded dialog with the subject's full spec", %{root: root} do
+      {_view, html} = shared_file_repo(root)
+      group_pane = pane(html, "shared-lib-shared-ex")
+
+      for name <- ~w(alpha beta gamma) do
+        # The card's opener targets the subject's dialog.
+        assert group_pane =~ ~s|data-spec-modal="shared-spec-#{name}-subject"|
+        assert group_pane =~ ~s|<dialog class="spec-modal" id="shared-spec-#{name}-subject"|
+      end
+
+      # The dialog embeds the full spec content — statement, requirements,
+      # scenarios — with no external fetch.
+      assert group_pane =~ "Alpha keeps its process registered."
+      assert group_pane =~ "Alpha must stay supervised."
+      assert group_pane =~ "alpha.subject.scenario1"
+
+      # The modal links back to the subject's full unit pane and carries an
+      # explicit close control.
+      assert group_pane =~ ~s|class="spec-modal-unit-link" href="#unit-subject-alpha-subject"|
+      assert group_pane =~ "data-modal-close"
+
+      # The page JS wires open-on-activation, backdrop close, and close
+      # controls; Escape is native to showModal().
+      assert html =~ "showModal"
+      assert html =~ "e.target === backdrop"
+    end
+  end
 end

@@ -473,9 +473,161 @@ defmodule SpecLedEx.ReviewTest do
     end
   end
 
+  describe "shared-file fan-in collapse (specled.spec_review.shared_file_fanin_collapse)" do
+    @tag spec: "specled.spec_review.shared_file_fanin_collapse"
+    test "collapses three-or-more code-only subjects whose only changed file is the same file",
+         %{root: root} do
+      init_git_repo(root)
+
+      for name <- ~w(alpha beta gamma) do
+        write_shared_surface_subject(root, name, ["lib/shared.ex"])
+      end
+
+      write_shared_surface_subject(root, "delta", ["lib/shared.ex", "lib/delta.ex"])
+
+      write_files(root, %{
+        "lib/shared.ex" => "defmodule Shared do\nend\n",
+        "lib/delta.ex" => "defmodule Delta do\nend\n"
+      })
+
+      commit_all(root, "initial")
+
+      write_files(root, %{
+        "lib/shared.ex" => "defmodule Shared do\n  def run, do: :ok\nend\n",
+        "lib/delta.ex" => "defmodule Delta do\n  def run, do: :ok\nend\n"
+      })
+
+      index = SpecLedEx.index(root)
+      view = Review.build_view(index, root, base: "main")
+
+      assert [group] = view.shared_file_groups
+      assert group.file == "lib/shared.ex"
+      assert group.subject_ids == ["alpha.subject", "beta.subject", "gamma.subject"]
+      assert group.lines != []
+      assert group.findings_count >= 3
+
+      queue_ids = Enum.map(view.queue_subjects, & &1.id)
+      refute "alpha.subject" in queue_ids
+      refute "beta.subject" in queue_ids
+      refute "gamma.subject" in queue_ids
+
+      # A subject with any other changed file keeps its individual row.
+      assert "delta.subject" in queue_ids
+
+      # Collapsed subjects keep their full detail views.
+      affected_ids = Enum.map(view.affected_subjects, & &1.id)
+      assert "alpha.subject" in affected_ids
+      assert "beta.subject" in affected_ids
+      assert "gamma.subject" in affected_ids
+    end
+
+    @tag spec: "specled.spec_review.shared_file_fanin_collapse"
+    test "does not collapse below the three-subject threshold", %{root: root} do
+      init_git_repo(root)
+
+      for name <- ~w(alpha beta) do
+        write_shared_surface_subject(root, name, ["lib/shared.ex"])
+      end
+
+      write_files(root, %{"lib/shared.ex" => "defmodule Shared do\nend\n"})
+      commit_all(root, "initial")
+
+      write_files(root, %{"lib/shared.ex" => "defmodule Shared do\n  def run, do: :ok\nend\n"})
+
+      index = SpecLedEx.index(root)
+      view = Review.build_view(index, root, base: "main")
+
+      assert view.shared_file_groups == []
+      queue_ids = Enum.map(view.queue_subjects, & &1.id)
+      assert "alpha.subject" in queue_ids
+      assert "beta.subject" in queue_ids
+    end
+
+    @tag spec: "specled.spec_review.shared_file_fanin_collapse"
+    test "spec-edited subjects never collapse, even when they share the file", %{root: root} do
+      init_git_repo(root)
+
+      for name <- ~w(alpha beta gamma) do
+        write_shared_surface_subject(root, name, ["lib/shared.ex"])
+      end
+
+      write_files(root, %{"lib/shared.ex" => "defmodule Shared do\nend\n"})
+      commit_all(root, "initial")
+
+      write_files(root, %{"lib/shared.ex" => "defmodule Shared do\n  def run, do: :ok\nend\n"})
+
+      # Editing gamma's spec flips it to :spec_edited; only two code-only
+      # subjects remain on the shared file, which is below the threshold.
+      write_shared_surface_subject(root, "gamma", ["lib/shared.ex"],
+        summary: "Gamma subject, reworded."
+      )
+
+      index = SpecLedEx.index(root)
+      view = Review.build_view(index, root, base: "main")
+
+      assert view.shared_file_groups == []
+
+      queue_ids = Enum.map(view.queue_subjects, & &1.id)
+      assert "alpha.subject" in queue_ids
+      assert "beta.subject" in queue_ids
+      assert "gamma.subject" in queue_ids
+
+      gamma = Enum.find(view.queue_subjects, &(&1.id == "gamma.subject"))
+      assert gamma.change_kind == :spec_edited
+    end
+
+    @tag spec: "specled.spec_review.shared_file_fanin_collapse"
+    test "each qualifying file produces its own group", %{root: root} do
+      init_git_repo(root)
+
+      for name <- ~w(a1 a2 a3 a4) do
+        write_shared_surface_subject(root, name, ["lib/shared_a.ex"])
+      end
+
+      for name <- ~w(b1 b2 b3) do
+        write_shared_surface_subject(root, name, ["lib/shared_b.ex"])
+      end
+
+      write_files(root, %{
+        "lib/shared_a.ex" => "defmodule SharedA do\nend\n",
+        "lib/shared_b.ex" => "defmodule SharedB do\nend\n"
+      })
+
+      commit_all(root, "initial")
+
+      write_files(root, %{
+        "lib/shared_a.ex" => "defmodule SharedA do\n  def run, do: :ok\nend\n",
+        "lib/shared_b.ex" => "defmodule SharedB do\n  def run, do: :ok\nend\n"
+      })
+
+      index = SpecLedEx.index(root)
+      view = Review.build_view(index, root, base: "main")
+
+      assert [%{file: "lib/shared_a.ex"} = group_a, %{file: "lib/shared_b.ex"} = group_b] =
+               view.shared_file_groups
+
+      assert length(group_a.subject_ids) == 4
+      assert length(group_b.subject_ids) == 3
+    end
+  end
+
   # ----------------------------------------------------------------------
   # helpers
   # ----------------------------------------------------------------------
+
+  defp write_shared_surface_subject(root, name, surface, opts \\ []) do
+    write_subject_spec(
+      root,
+      name,
+      meta: %{
+        "id" => "#{name}.subject",
+        "kind" => "module",
+        "status" => "active",
+        "summary" => Keyword.get(opts, :summary, "#{String.capitalize(name)} subject."),
+        "surface" => surface
+      }
+    )
+  end
 
   defp setup_repo(root, name, statement) do
     init_git_repo(root)
