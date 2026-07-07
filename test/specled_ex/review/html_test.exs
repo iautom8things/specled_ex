@@ -876,6 +876,91 @@ defmodule SpecLedEx.Review.HtmlTest do
       refute html =~ "decision changed but no parsed ADR available"
     end
 
+    @tag spec: "specled.spec_review.decisions_governance_inline"
+    test "a modified ADR renders a section-level body diff instead of the plain document" do
+      base = """
+      ## Context
+
+      Original context prose.
+
+      ## Decision
+
+      We use approach A.
+
+      ## Consequences
+
+      Cheap to operate.
+      """
+
+      head = """
+      ## Context
+
+      Original context prose.
+
+      ## Decision
+
+      We use approach A with batching.
+
+      ## Consequences
+
+      Cheap to operate.
+
+      ## Update (2026-07-01)
+
+      Approach A survived the audit.
+      """
+
+      decision = %{
+        id: "specled.decision.evolving",
+        file: ".spec/decisions/evolving.md",
+        status: "accepted",
+        change_type: "refines",
+        affects: [],
+        deleted?: false
+      }
+
+      adr = %{
+        id: "specled.decision.evolving",
+        file: ".spec/decisions/evolving.md",
+        title: "Evolving Decision",
+        status: "accepted",
+        date: "2026-01-01",
+        change_type: "refines",
+        affects: [],
+        body_text: head,
+        base_body_text: base,
+        change_status: :modified
+      }
+
+      html =
+        IO.iodata_to_binary(
+          Html.render_decisions_changed([decision], %{"specled.decision.evolving" => adr}, [])
+        )
+
+      # The appended Update section is chipped ADDED; the edited Decision
+      # section is chipped MODIFIED with inline wording del/ins; the untouched
+      # Context section renders as plain markdown without a chip wrapper.
+      assert html =~ "adr-section-added"
+      assert html =~ "Update (2026-07-01)"
+      assert html =~ "adr-section-modified"
+      assert html =~ ~s|<ins class="wording-ins">|
+      refute html =~ "adr-section-removed"
+    end
+
+    @tag spec: "specled.spec_review.decisions_governance_inline"
+    test "a section deleted from an ADR body renders as a REMOVED section block" do
+      html =
+        IO.iodata_to_binary(
+          Html.render_adr_body_diff(
+            "## Context\n\nKept.\n\n## Obsolete\n\nDrop this rationale.\n",
+            "## Context\n\nKept.\n"
+          )
+        )
+
+      assert html =~ "adr-section-removed"
+      assert html =~ "Drop this rationale."
+    end
+
     test "non-append_only findings are ignored by the Decisions panel" do
       noise = %{
         "code" => "branch_guard_realization_drift",

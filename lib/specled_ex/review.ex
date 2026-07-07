@@ -210,6 +210,7 @@ defmodule SpecLedEx.Review do
       id = meta_field(meta, :id, nil)
       file = decision["file"]
       title = decision["title"] || id
+      change_status = SpecDiff.adr_change_status(root, base_ref, file)
 
       data = %{
         id: id,
@@ -222,12 +223,25 @@ defmodule SpecLedEx.Review do
         superseded_by: meta_field(meta, :superseded_by, nil),
         replaces: meta_field(meta, :replaces, nil),
         body_text: read_adr_body(root, file),
-        change_status: SpecDiff.adr_change_status(root, base_ref, file)
+        base_body_text: base_adr_body(root, base_ref, file, change_status),
+        change_status: change_status
       }
 
       {id, data}
     end)
   end
+
+  # The base-ref body is only fetched for modified ADRs — it feeds the
+  # decision body diff so the review can show what changed in the document,
+  # not just that it changed.
+  defp base_adr_body(root, base_ref, file, :modified) when is_binary(file) do
+    case fetch_at_ref(root, base_ref, file) do
+      {:ok, content} -> strip_frontmatter(content)
+      :error -> nil
+    end
+  end
+
+  defp base_adr_body(_root, _base_ref, _file, _change_status), do: nil
 
   defp read_adr_body(root, file) when is_binary(file) do
     case File.read(Path.join(root, file)) do

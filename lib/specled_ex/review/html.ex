@@ -2999,12 +2999,96 @@ defmodule SpecLedEx.Review.Html do
       <div class="adr-body-wrap">
         #{render_decision_affects_block(d.affects)}
         #{removed_note}
-        <div class="markdown-body">#{render_markdown(adr.body_text)}</div>
+        #{IO.iodata_to_binary(render_adr_body(adr))}
         #{if adr.file, do: ~s|<div class="adr-source"><code>#{h(adr.file)}</code></div>|, else: ""}
       </div>
     </details>
     """
   end
+
+  # A modified ADR renders as a section-level diff against its base-ref body
+  # (added/removed sections chipped, edited sections showing wording del/ins)
+  # so the reader sees what changed, not just the current document. ADRs
+  # without a base body — new, removed, or unchanged — render plainly.
+  defp render_adr_body(adr) do
+    base = Map.get(adr, :base_body_text)
+    head = Map.get(adr, :body_text) || ""
+
+    if is_binary(base) and base != head and Map.get(adr, :change_status) == :modified do
+      render_adr_body_diff(base, head)
+    else
+      [~s|<div class="markdown-body">#{render_markdown(head)}</div>|]
+    end
+  end
+
+  @doc false
+  def render_adr_body_diff(base, head) do
+    base_sections = split_adr_sections(base)
+    head_sections = split_adr_sections(head)
+    base_by_key = Map.new(base_sections)
+    head_keys = MapSet.new(head_sections, fn {key, _} -> key end)
+
+    removed = Enum.reject(base_sections, fn {key, _} -> MapSet.member?(head_keys, key) end)
+
+    [
+      ~S|<div class="adr-body-diff">|,
+      Enum.map(head_sections, fn {key, content} ->
+        case Map.fetch(base_by_key, key) do
+          :error ->
+            ~s|<div class="adr-section adr-section-added"><span class="chip chip-new">ADDED</span><div class="markdown-body">#{render_markdown(content)}</div></div>|
+
+          {:ok, base_content} when base_content == content ->
+            ~s|<div class="markdown-body">#{render_markdown(content)}</div>|
+
+          {:ok, base_content} ->
+            ~s|<div class="adr-section adr-section-modified"><span class="chip chip-modified">MODIFIED</span><div class="adr-section-diff">#{IO.iodata_to_binary(render_statement_diff(base_content, content))}</div></div>|
+        end
+      end),
+      Enum.map(removed, fn {_key, content} ->
+        ~s|<div class="adr-section adr-section-removed"><span class="chip chip-removed">REMOVED</span><div class="adr-section-diff"><del class="wording-del wording-block">#{h(content)}</del></div></div>|
+      end),
+      ~S|</div>|
+    ]
+  end
+
+  # Splits an ADR body into `{key, content}` sections on `##` headings, with
+  # everything before the first heading keyed as the preamble. Duplicate
+  # headings (recurring "Update" sections) are disambiguated by occurrence
+  # index so they diff positionally instead of colliding.
+  defp split_adr_sections(text) do
+    text
+    |> String.split("\n")
+    |> Enum.chunk_while(
+      [],
+      fn line, acc ->
+        if String.match?(line, ~r/^##\s+/) and acc != [] do
+          {:cont, Enum.reverse(acc), [line]}
+        else
+          {:cont, [line | acc]}
+        end
+      end,
+      fn
+        [] -> {:cont, []}
+        acc -> {:cont, Enum.reverse(acc), []}
+      end
+    )
+    |> Enum.map(fn lines -> {section_heading(lines), String.trim(Enum.join(lines, "\n"))} end)
+    |> Enum.reject(fn {_key, content} -> content == "" end)
+    |> Enum.map_reduce(%{}, fn {heading, content}, seen ->
+      n = Map.get(seen, heading, 0)
+      {{{heading, n}, content}, Map.put(seen, heading, n + 1)}
+    end)
+    |> elem(0)
+  end
+
+  defp section_heading([first | _]) do
+    case Regex.run(~r/^##\s+(.+)$/, first, capture: :all_but_first) do
+      [heading] -> String.trim(heading)
+      _ -> :preamble
+    end
+  end
+
+  defp section_heading([]), do: :preamble
 
   defp render_inline_governance_findings(findings) do
     [
@@ -5080,6 +5164,23 @@ defmodule SpecLedEx.Review.Html do
       color: var(--error);
       border-radius: 4px;
       font-size: 12px;
+    }
+    /* Section-level diff of a modified ADR body. */
+    .adr-section {
+      margin: 12px 0;
+      padding: 10px 12px;
+      border-radius: 4px;
+      border-left: 3px solid transparent;
+    }
+    .adr-section > .chip { margin-bottom: 6px; }
+    .adr-section-added { background: var(--success-bg); border-left-color: var(--success); }
+    .adr-section-modified { background: var(--neutral-bg); border-left-color: var(--warning, var(--accent)); }
+    .adr-section-removed { background: var(--error-bg); border-left-color: var(--error); }
+    .adr-section-diff {
+      white-space: pre-wrap;
+      font-size: 13px;
+      line-height: 1.55;
+      margin-top: 4px;
     }
 
     /* GitHub-style markdown rendering for ADR bodies. */
