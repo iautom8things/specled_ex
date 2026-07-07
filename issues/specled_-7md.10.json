@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-07T10:47:08Z",
+  "description": "Advances: specled.spec_review.per_subject_tabs, specled.spec_review.change_scoped_overview\n\nspec_tab_label (html.ex:1524) counts only requirements.added/modified — removed is ignored and scenarios are never counted. search.benchmark in atlas PR 62 (−1 requirement, −1 scenario) labels 'Spec · unchanged' while the overview correctly says '-1 removed'. coverage_tab_label has the same blind spot. Separately, default_pivot (html.ex:1489) prefers Code whenever code changed, so clicking a 'Spec edits in this change' overview entry lands on the Code tab.\n\nFix: extend spec_change_counts with −N removed; include scenario changes in the label (or a second count); make overview spec-edit links carry an explicit tab target that activates the Spec pivot on arrival. SpecDiff.compute already returns removed for both requirements and scenarios — data layer needs no change.",
+  "id": "specled_-7md.10",
+  "labels": [],
+  "parent": "specled_-7md",
+  "priority": 2,
+  "status": "closed",
+  "title": "Spec/Coverage tab labels ignore removals and scenarios; overview spec-edit links land on Code tab",
+  "type": "bug",
+  "updated_at": "2026-07-07T11:16:30Z"
+}

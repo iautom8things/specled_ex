@@ -10,11 +10,19 @@
     {
       "text": "Root cause found for observation 2 (S3 verifier, deterministic repro with full output captured): the merged tagged-tests child VM inherits the parent environment, and spec_check_test.exs's SPECLED_SHOW_INFO env-mutation tests are order-dependent under a leaked/exported var — test :11 (default run suppresses :info) fails seed-dependently because another test's after block deletes the var VM-globally, so intra-file order decides. Not a defect in the ia9 commits. Candidate fixes when actioned: (a) spec_check_test setup should snapshot+restore SPECLED_SHOW_INFO (and assert a clean baseline by deleting it in setup), (b) the verifier's merged-run command could sanitize SPECLED_* vars from the child env the same way the tagged-tests formatter consumes SPECLED_ATTRIBUTION_PATH. Observation 1 (tracer property one-off) remains unexplained and unreproduced.",
       "timestamp": "2026-07-03T00:02:19Z"
+    },
+    {
+      "text": "Third observation, 2026-07-03, during specled_-7md.3 rebase-worker verification (worktree specled_ex-subject-detail-pivots, branch specled_-7md.3/subject-detail-pivots after rebase onto specled_-7md/spec-review-redesign at 706cdbb). Committed end-state is clean (5dc8707, spec.check status=pass errors=0 warnings=0, confirmed twice), but 4 consecutive mix spec.check runs on that same clean tree were non-deterministic:\n- Run 1 (regen): status=pass errors=0 warnings=0\n- Run 2: status=fail errors=1 warnings=0 — specled.compiler_tracer verification_command_failed, test/specled_ex/compiler/tracer_test.exs:241 (passes in isolation, 21/21)\n- Run 3: status=fail errors=0 warnings=225\n- Run 4: status=pass errors=0 warnings=0\n\nSame shape as observation 1 (tracer_test one-off under full-suite/merged load) plus a new symptom not previously logged: run 3's spurious 225-warning spike, which doesn't match any known real finding count for this repo state and looks like a verification-rerun artifact rather than a genuine validation result. Not investigated further — orchestrator proceeded with the epic merge since the deterministic/cache-warm state is genuinely clean and this is unrelated to specled_-7md's work (spec.review only).",
+      "timestamp": "2026-07-03T11:46:34Z"
+    },
+    {
+      "text": "Fourth observation, 2026-07-03, during UI-polish follow-up work on specled_-7md's epic worktree (specled_ex-spec-review-redesign, branch specled_-7md/spec-review-redesign, uncommitted html.ex CSS/rendering changes only). Full mix test: 1 failure — test/specled_ex/verifier_test.exs:1449 \"a timeout with an empty artifact reports likely compile cost\". Isolated re-run of verifier_test.exs alone: 41/41 pass. Full-suite re-run immediately after: 930/930 pass. Unrelated to the changes in flight (html.ex/CSS only, no verifier.ex touched). Same shape as prior observations — order/load-dependent flake in full-suite runs, clean in isolation and on retry.",
+      "timestamp": "2026-07-03T22:30:09Z"
     }
   ],
   "priority": 3,
   "status": "open",
   "title": "flaky one-off failures in full-suite/merged verification runs (2 observations 2026-07-02)",
   "type": "task",
-  "updated_at": "2026-07-03T00:02:19Z"
+  "updated_at": "2026-07-03T22:30:09Z"
 }

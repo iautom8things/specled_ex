@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-07T10:46:56Z",
+  "description": "Advances: specled.spec_review.per_subject_tabs\n\nrender_statement_diff (html.ex:1963) runs Myers over word tokens with no coalescing and no fallback. Heavily rewritten statements (search.pipeline.batch_ready in atlas PR 62) interleave del/ins per word: 'grouped by ~~query,~~query; ~~enabling~~single-query ~~query~~search ~~expansion~~passes ~~in~~a ...' — unreadable.\n\nFix: (a) coalesce adjacent del/ins runs separated by short eq runs (whitespace-only or 1–2 words); (b) when changed-token ratio exceeds ~50–60%, fall back to block display — full old statement as del stacked above full new statement as ins (GitHub-style). Keep word-level for surgical edits.",
+  "id": "specled_-7md.8",
+  "labels": [],
+  "parent": "specled_-7md",
+  "priority": 2,
+  "status": "closed",
+  "title": "Statement word-diff degrades to word salad on heavy rewrites",
+  "type": "bug",
+  "updated_at": "2026-07-07T10:57:39Z"
+}

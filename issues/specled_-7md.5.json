@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-07T10:46:33Z",
+  "description": "Advances: specled.spec_review.diff_against_base, specled.spec_review.change_scoped_overview\n\nFileDiff.tracked?/2 uses `git ls-files --error-unmatch`, which fails for files deleted at head. Deleted tracked files are misclassified as untracked, File.read fails, and they end up with zero diff lines — dropped from header stats, subject Code pivots, and the all-files view. Verified on atlas PR 62: GitHub 38 files +221/−2019 vs review header 24 files +135/−396; the gap is exactly 12 fully-deleted files (−912 lines) plus the 2 intentionally excluded .spec state files (−711).\n\nFix: partition by presence in the git diff output (or `git cat-file -e \u003cbase\u003e:\u003cpath\u003e`) instead of ls-files. Deleted files should render as full-deletion diffs.\n\nSecond part (UX): header diffstat should carry an info icon whose tooltip/popover explains the *intentional* residual difference from GitHub (.spec/state.json + .spec/realization_hashes.json excluded as tool-managed derived state, change_analysis.ex:214).",
+  "id": "specled_-7md.5",
+  "labels": [],
+  "parent": "specled_-7md",
+  "priority": 2,
+  "status": "closed",
+  "title": "Review drops fully-deleted files from stats and file views",
+  "type": "bug",
+  "updated_at": "2026-07-07T10:53:17Z"
+}

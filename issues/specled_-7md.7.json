@@ -1,0 +1,17 @@
+{
+  "assignee": "",
+  "blocked_by": [
+    "specled_-7md.6"
+  ],
+  "blocks": [],
+  "created": "2026-07-07T10:46:46Z",
+  "description": "Advances: specled.spec_review.decisions_governance_inline\n\nMODIFIED decisions in the Decisions Changed panel render only the head body_text (review.ex read_adr_body → html.ex render_changed_decision_full). Impossible to tell what changed — e.g. batch_from_day_one in atlas PR 62 gained an appended Update section but reads as a plain document.\n\nFix: fetch base body via SpecDiff.fetch_at_ref, render a body diff following the Spec-tab pattern from 5570bea: semantic del/ins as the primary read (block-level: added/removed/changed sections or paragraphs) plus a folded raw line diff. Likely needs a new spec requirement (decision body diff) — amend spec_review.spec.md accordingly.",
+  "id": "specled_-7md.7",
+  "labels": [],
+  "parent": "specled_-7md",
+  "priority": 2,
+  "status": "closed",
+  "title": "Modified decisions show no diff — render base→head ADR body diff",
+  "type": "task",
+  "updated_at": "2026-07-07T11:02:48Z"
+}

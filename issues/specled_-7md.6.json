@@ -1,0 +1,17 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [
+    "specled_-7md.7"
+  ],
+  "created": "2026-07-07T10:46:42Z",
+  "description": "Advances: specled.spec_review.decisions_governance_inline\n\nA decision file deleted in the change set (e.g. atlas.decision.reranker_replaces_score.md in atlas PR 62) is absent from the head index, so build_decisions_changed (review.ex:592) yields id: nil and html.ex renders the confusing minimal card 'decision changed but no parsed ADR available'. SpecDiff.adr_change_status/3 already returns :removed but only runs for head-index ADRs — the REMOVED chip path in render_changed_decision_full is dead code.\n\nFix: when a changed decision file is missing from the head index, fetch base content via git show \u003cbase\u003e:\u003cfile\u003e, parse it (DecisionParser), and render a REMOVED card with parsed title/status/affects and the former body folded. Fallback copy when even base parsing fails should say the file was deleted in this change.",
+  "id": "specled_-7md.6",
+  "labels": [],
+  "parent": "specled_-7md",
+  "priority": 2,
+  "status": "closed",
+  "title": "Deleted decision files render as 'no parsed ADR available' instead of REMOVED with content",
+  "type": "bug",
+  "updated_at": "2026-07-07T11:00:59Z"
+}

@@ -1,0 +1,55 @@
+{
+  "assignee": "Manuel Zubieta",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-03T08:54:22Z",
+  "description": "Jira: TBD\nDistilled from approved design conversation (2026-07-02/03). Spec dir: .spec/\nDesign mockup: https://claude.ai/code/artifact/e21fe2c1-642b-4a91-a6e3-ee835f9f7414\nWorktree: /Users/mz/src/specled_ex-spec-review-redesign\nBranch: specled_-7md/spec-review-redesign",
+  "id": "specled_-7md",
+  "labels": [
+    "phase:implementing",
+    "slug:spec-review-v2-change"
+  ],
+  "comments": [
+    {
+      "text": "Distill complete.\nSpecs: 1 subject amended (specled.spec_review — 7 requirements added, 3 refined, 9 scenarios added/rewritten)\nDecisions: 1 (specled.decision.spec_review_change_scoped_master_detail, change_type: refines)\nTasks: 3 stages (specled_-7md.1 → .2 → .3, dep-chained)\nSpec dir: .spec/\nSpec commit: 125b8dc (branch specled_-7md/spec-review-redesign)\nDesign mockup: https://claude.ai/code/artifact/e21fe2c1-642b-4a91-a6e3-ee835f9f7414\nNext step: /implement specled_-7md.1 (or /orchestrate-epic specled_-7md)",
+      "timestamp": "2026-07-03T08:56:18Z"
+    },
+    {
+      "text": "Merge gates after specled_-7md.1 close: compile clean, 904 tests / 0 failures, format clean, deps.unlock clean.\n\nmix spec.check: status=fail errors=0 warnings=6 — all 6 are verification_target_missing_reference on lib/specled_ex/review/html.ex for S2/S3 requirements (change_scoped_overview, coverage_pivot_touched_first, findings_digest_dedup, repo_state_health_pane, review_queue_navigation, theme_tokens). Both the verifier and auditor on .1 independently confirmed these predate this merge (present at base ref 125b8dc) and are out of scope for S1 — html.ex is untouched by this stage. This is the expected interim state for a 3-stage epic whose specs were authored upfront in /distill; spec.check will not reach green until S2/S3 wire up html.ex. Not treating this as an integration regression. Continuing to specled_-7md.2.",
+      "timestamp": "2026-07-03T09:36:06Z"
+    },
+    {
+      "text": "Merge gates after specled_-7md.2 close: compile clean, 918 tests / 0 failures, format clean, deps.unlock clean.\n\nmix spec.check: status=fail errors=0 warnings=1 — sole remaining warning is verification_target_missing_reference on lib/specled_ex/review/html.ex for specled.spec_review.coverage_pivot_touched_first, explicitly S3's scope (its stub was correctly split to execute:false). Both verifier and auditor on .2 independently confirmed this. Not a regression.\n\nspecled_-7md.3 is now unblocked (final stage). Pausing here per user request before spawning its implementer.",
+      "timestamp": "2026-07-03T10:19:00Z"
+    },
+    {
+      "text": "Scope expansion: added specled_-7md.4 (spec-governance repair) to resolve 3 pre-existing branch-guard defects surfaced by specled_-7md.3's implementer once the last validate-stage warning cleared:\n1. append_only/must_downgraded on degraded_leg_state (existing ADR doesn't formally authorize it per the guard's requirements — needs investigation + ADR amendment or rewording)\n2. branch_guard_unmapped_change on findings_delta.ex (never registered in the subject's surface: list — .1's scope excluded this edit)\n3. overlap/duplicate_covers on findings_delta (two scenarios cover the same requirement id — distill-time authoring gap)\nspecled_-7md.4 blocks specled_-7md.3. specled_-7md.3's own commit is complete and unaffected; it will be rebased and re-verified once .4 lands.",
+      "timestamp": "2026-07-03T10:49:00Z"
+    },
+    {
+      "text": "Merge gates after specled_-7md.4 close: compile clean, 918 tests / 0 failures, format clean, deps.unlock clean.\n\nmix spec.check back to exactly 1 warning (coverage_pivot_touched_first — specled_-7md.3's job, as expected; matches state after .2). All 3 branch-guard defects .4 targeted are confirmed cleared (verified independently by both cold verifier and auditor, including live reproduction of the classifier logic and the .3+.4 integration overlay).\n\nRebasing specled_-7md.3's stage branch onto the new epic HEAD next.",
+      "timestamp": "2026-07-03T11:38:56Z"
+    },
+    {
+      "text": "Merge gates after specled_-7md.3 close: compile clean, 930 tests / 0 failures, format clean, deps.unlock clean.\n\nmix spec.check: status=pass errors=0 warnings=0, branch findings=0 — fully clean for the first time in this epic. All 4 children closed (.1, .2, .3, .4 — .4 was a scope-expansion ticket carved mid-epic to fix pre-existing spec-governance defects .3's own validate-stage fix unmasked). Proceeding to deliver.",
+      "timestamp": "2026-07-03T13:01:20Z"
+    },
+    {
+      "text": "ORCHESTRATED\nChildren closed: 4 (.1, .2, .3, .4 — .4 was a scope-expansion ticket carved mid-epic)\nBOUNCEs encountered: 1 (.3: AUDIT: BOUNCE -\u003e implementer, iteration 1 delivered only 1 of 6 deliverable parts; iteration 2 addressed all gaps and passed verify+audit cleanly)\nUser escalations: 0 formal ESCALATED events. One process note: the orchestrator fast-forward-merged .3's iteration-1 commit before running verify/audit (a sequencing error), caught before closing the ticket; corrected by running verify+audit after the fact rather than rolling back, since the merge was a reversible no-op fast-forward with nothing built on top.\nFinal state: mix spec.check fully clean (status=pass, 0 errors, 0 warnings, branch findings=0) for the first time in the epic. 930 tests, 0 failures. All merge gates green.",
+      "timestamp": "2026-07-03T13:03:44Z"
+    },
+    {
+      "text": "Post-orchestration UX polish pass (commit 14b5818), driven by an independent fable-model fresh-eyes review of the rebuilt spec.review artifact plus two verification passes (before/after fix, both via live playwright interaction, not just source reading):\n\n1. Word-level (not character-level) inline wording diff for modified requirements\n2. Dark-mode Prism token background fix (operators/entities/urls no longer show as visible gray boxes)\n3. Sticky pivot tab bar + sticky per-file diff headers + correctly-pinned file-tree drawer handle — root cause was .subject's overflow:hidden silently breaking position:sticky for every descendant\n4. Removed a dead #subjects link + stale v1 single-scroll copy on the Outside-the-spec-system pane\n5. Reconciled 4 previously-inconsistent spec-edit count presentations (split combined requirements+scenarios into labeled clauses)\n6. Spec health headline no longer reads \"Out of sync ⚠\" for advisory-only (info-severity) findings — added a neutral \"Cannot fully verify\" state matching the degraded-≠-warning design principle\n7. Coverage pivot requirement statements truncated to one line with hover tooltip (full text stays on Spec tab)\n8-9. Two additional dark-mode contrast bugs found during verification (hardcoded light-palette backgrounds on requirement-new/modified/removed/uncovered cards and sync-check-degraded rows) and one low-contrast badge, all fixed with proper theme tokens\n\nAll merge gates green: compile clean, 930 tests / 0 failures (one confirmed pre-existing flake on retry, logged on specled_-f98), format clean, deps clean, mix spec.check fully clean.\n\nNot tracked as a separate ticket per user's explicit \"quick fix in epic worktree\" delivery choice — committed directly on the epic branch.",
+      "timestamp": "2026-07-03T22:32:01Z"
+    },
+    {
+      "text": "Merged and pushed directly to main (14b5818), per user's explicit instruction and this repo's established direct-push workflow (no PR). origin/main confirmed at ce080c1..14b5818, fast-forward, no conflicts. Re-ran compile + full test suite (930/930) on main post-merge before pushing.\n\nEpic worktree/branch left in place. Epic ticket not closed — leaving that to a deliberate /deliver pass if wanted.",
+      "timestamp": "2026-07-03T23:44:03Z"
+    }
+  ],
+  "priority": 2,
+  "status": "in_progress",
+  "title": "spec.review v2: change-scoped master–detail layout",
+  "type": "epic",
+  "updated_at": "2026-07-07T11:10:52Z"
+}

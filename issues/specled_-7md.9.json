@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-07T10:46:59Z",
+  "description": "Advances: specled.spec_review.decisions_governance_inline\n\nrender_markdown (html.ex:2710) is plain Earmark; Obsidian-style [[id]] refs in ADR bodies render as literal double-bracket text (e.g. [[atlas.decision.expansion_rerank_deleted]] in atlas PR 62).\n\nFix: pre-process the ADR body before Earmark — [[id]] where id is in adrs_by_id links to that ADR's #adr-\u003cslug\u003e anchor; where id matches a subject, link to the subject anchor; otherwise render as a styled \u003ccode\u003e ref. Must not fire inside fenced/inline code spans.",
+  "id": "specled_-7md.9",
+  "labels": [],
+  "parent": "specled_-7md",
+  "priority": 2,
+  "status": "closed",
+  "title": "ADR markdown: resolve [[wiki-links]] to page anchors",
+  "type": "task",
+  "updated_at": "2026-07-07T11:09:09Z"
+}
