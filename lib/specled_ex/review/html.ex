@@ -1956,20 +1956,92 @@ defmodule SpecLedEx.Review.Html do
   # Word-level inline diff of a requirement's wording (base -> head) using the
   # stdlib Myers diff over word/whitespace tokens (not graphemes) so a
   # rewritten sentence reads as changed phrases, not a character-level word
-  # salad. Deterministic and dependency-free. Falls back to the plain head
+  # salad. Two readability guards on top of the raw edit script: short
+  # unchanged runs sandwiched between changes are folded into one del/ins
+  # pair (avoiding "~~a~~b ~~c~~d ~~e~~f" confetti), and a statement whose
+  # wording mostly changed falls back to the old text stacked above the new
+  # text — past that point interleaving obscures both sentences.
+  # Deterministic and dependency-free. Falls back to the plain head
   # statement when no base wording is available.
-  defp render_statement_diff(nil, head), do: h(head)
+  @doc false
+  def render_statement_diff(nil, head), do: h(head)
 
-  defp render_statement_diff(base, head) do
-    base
-    |> tokenize_words()
-    |> List.myers_difference(tokenize_words(head))
-    |> Enum.map(fn
-      {:eq, tokens} -> h(Enum.join(tokens))
-      {:del, tokens} -> ~s|<del class="wording-del">#{h(Enum.join(tokens))}</del>|
-      {:ins, tokens} -> ~s|<ins class="wording-ins">#{h(Enum.join(tokens))}</ins>|
-    end)
+  @rewrite_fallback_ratio 0.55
+
+  def render_statement_diff(base, head) do
+    script =
+      base
+      |> tokenize_words()
+      |> List.myers_difference(tokenize_words(head))
+
+    if rewrite_ratio(script) > @rewrite_fallback_ratio do
+      ~s|<span class="wording-rewrite"><del class="wording-del wording-block">#{h(base)}</del><ins class="wording-ins wording-block">#{h(head)}</ins></span>|
+    else
+      script
+      |> chunk_edit_script()
+      |> coalesce_chunks()
+      |> Enum.map(fn
+        {:eq, text} ->
+          h(text)
+
+        {:change, del, ins} ->
+          [
+            if(del != "", do: ~s|<del class="wording-del">#{h(del)}</del>|, else: ""),
+            if(ins != "", do: ~s|<ins class="wording-ins">#{h(ins)}</ins>|, else: "")
+          ]
+      end)
+    end
   end
+
+  # Share of word tokens (whitespace excluded) that the edit script touches.
+  defp rewrite_ratio(script) do
+    {changed, total} =
+      Enum.reduce(script, {0, 0}, fn {op, tokens}, {changed, total} ->
+        words = Enum.count(tokens, &(not whitespace_token?(&1)))
+        {changed + if(op == :eq, do: 0, else: words), total + words}
+      end)
+
+    if total == 0, do: 0.0, else: changed / total
+  end
+
+  # Normalizes the Myers script into `{:eq, text}` and `{:change, del, ins}`
+  # chunks by pairing each del run with the ins run that immediately follows.
+  defp chunk_edit_script(script) do
+    script
+    |> Enum.map(fn {op, tokens} -> {op, Enum.join(tokens)} end)
+    |> Enum.reduce([], fn
+      {:eq, text}, acc -> [{:eq, text} | acc]
+      {:del, text}, acc -> [{:change, text, ""} | acc]
+      {:ins, text}, [{:change, del, ""} | rest] -> [{:change, del, text} | rest]
+      {:ins, text}, acc -> [{:change, "", text} | acc]
+    end)
+    |> Enum.reverse()
+  end
+
+  # An unchanged run of at most one word bridging two changed chunks reads as
+  # noise, not signal — fold it into both sides so the change renders as one
+  # del/ins pair instead of confetti.
+  defp coalesce_chunks(chunks) do
+    chunks
+    |> Enum.reduce([], fn
+      {:change, del2, ins2}, [{:eq, bridge}, {:change, del1, ins1} | rest] ->
+        if tiny_bridge?(bridge) do
+          [{:change, del1 <> bridge <> del2, ins1 <> bridge <> ins2} | rest]
+        else
+          [{:change, del2, ins2}, {:eq, bridge}, {:change, del1, ins1} | rest]
+        end
+
+      chunk, acc ->
+        [chunk | acc]
+    end)
+    |> Enum.reverse()
+  end
+
+  defp tiny_bridge?(text) do
+    text |> tokenize_words() |> Enum.count(&(not whitespace_token?(&1))) <= 1
+  end
+
+  defp whitespace_token?(token), do: String.trim(token) == ""
 
   # Splits on whitespace runs while keeping them as their own tokens, so
   # re-joining any subsequence of tokens reconstructs the exact original
@@ -4599,6 +4671,14 @@ defmodule SpecLedEx.Review.Html do
       color: var(--success);
       text-decoration: none;
     }
+    /* Heavily rewritten statements stack old over new instead of interleaving. */
+    .wording-rewrite { display: block; }
+    .wording-block {
+      display: block;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .wording-block + .wording-block { margin-top: 4px; }
 
     .tab-heading {
       margin: 0 0 12px 0;

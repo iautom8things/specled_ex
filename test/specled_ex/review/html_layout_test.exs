@@ -756,12 +756,14 @@ defmodule SpecLedEx.Review.HtmlLayoutTest do
       write_files(root, %{"lib/auth.ex" => "defmodule Auth do\nend\n"})
       commit_all(root, "initial")
 
+      # A surgical one-word edit: most of the statement survives, so the
+      # wording diff stays inline rather than falling back to stacked blocks.
       write_subject_spec(root, "auth",
         meta: base_meta,
         requirements: [
           %{
             "id" => "auth.subject.req1",
-            "statement" => "Updated phrasing here.",
+            "statement" => "Updated wording here.",
             "priority" => "must"
           }
         ]
@@ -789,6 +791,59 @@ defmodule SpecLedEx.Review.HtmlLayoutTest do
       assert spec =~ "spec-diff-fold"
       assert spec =~ "Raw spec file diff"
       refute spec =~ "<h4 class=\"tab-heading\">Spec file changes</h4>"
+    end
+  end
+
+  describe "statement wording diff readability (specled.spec_review.per_subject_tabs)" do
+    defp statement_diff(base, head) do
+      IO.iodata_to_binary(Html.render_statement_diff(base, head))
+    end
+
+    @tag spec: "specled.spec_review.per_subject_tabs"
+    test "a surgical edit renders inline del/ins around the changed phrase" do
+      html =
+        statement_diff(
+          "Retrieval functions shall accept a single query and return results.",
+          "Retrieval functions shall accept a list of queries and return results."
+        )
+
+      assert html =~ ~s|<del class="wording-del">|
+      assert html =~ ~s|<ins class="wording-ins">|
+      # The shared prefix and suffix stay outside the del/ins markup.
+      assert html =~ ~r/^Retrieval functions shall accept a/
+      refute html =~ ~s|wording-block|
+    end
+
+    @tag spec: "specled.spec_review.per_subject_tabs"
+    test "single-word unchanged bridges between changes fold into one del/ins pair" do
+      # "by" and "the" survive the rewrite but bridging them through eq runs
+      # would render alternating one-word del/ins confetti.
+      base = "grouped by query, enabling query expansion in Stage B without retrieval changes."
+      head = "grouped by query; single-query search passes a one-element list, keeping retrieval."
+
+      html = statement_diff(base, head)
+
+      # Coalescing (or the rewrite fallback) must keep the changed region to a
+      # few del/ins spans rather than one per surviving word.
+      del_count = html |> String.split("<del") |> length() |> Kernel.-(1)
+      assert del_count <= 3
+    end
+
+    @tag spec: "specled.spec_review.per_subject_tabs"
+    test "a mostly-rewritten statement falls back to old stacked above new" do
+      base = "Results are reranked by the Voyage reranker before enrichment happens."
+      head = "Normalized keyword scores flow straight into percentile rank computation."
+
+      html = statement_diff(base, head)
+
+      assert html =~ ~s|<span class="wording-rewrite">|
+      assert html =~ ~s|<del class="wording-del wording-block">#{base}</del>|
+      assert html =~ ~s|<ins class="wording-ins wording-block">#{head}</ins>|
+    end
+
+    @tag spec: "specled.spec_review.per_subject_tabs"
+    test "without a base statement the head renders plainly" do
+      assert statement_diff(nil, "Fresh requirement.") == "Fresh requirement."
     end
   end
 end
