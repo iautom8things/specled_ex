@@ -13,11 +13,15 @@
     {
       "text": "Distill complete.\nSpecs: specled.spec_review amended — 3 requirements (shared_file_fanin_collapse, shared_file_group_pane, shared_file_spec_modal), 3 scenarios, 2 verification stubs (execute: false)\nDecisions: 0 (additive UX requirement; no governance-relevant change)\nSpec commit: d9497f5\nWorktree: /Users/mz/src/specled_ex-fanin-collapse\nBranch: specled_-7md.11/fanin-collapse\nNext step: /implement specled_-7md.11",
       "timestamp": "2026-07-07T11:03:51Z"
+    },
+    {
+      "text": "IMPLEMENTED\nSession: b2c766a1-a4a1-40e7-93b9-8466e98f85d7\nLog: ~/.claude/projects/-Users-mz-src-specled-ex/b2c766a1-a4a1-40e7-93b9-8466e98f85d7.jsonl\n\nCommit: 7cb9962\nFiles touched: lib/specled_ex/review.ex, lib/specled_ex/review/html.ex, test/specled_ex/review_test.exs, test/specled_ex/review/html_layout_test.exs, .spec/specs/spec_review.spec.md, .spec/state.json (regenerated)\nTests added: ReviewTest \"shared-file fan-in collapse\" describe (4 tests: \u003e=3 collapse, below-threshold no-op, spec-edited exemption via threshold, multiple groups); HtmlLayoutTest \"shared-file fan-in collapse\" describe (3 tests: queue group row + hidden individual rows + deep-linkable panes, group pane diff-once + cards, embedded dialog with full spec + close/link wiring)\nVerification stubs flipped: mix test test/specled_ex/review_test.exs (shared_file_fanin_collapse), mix test test/specled_ex/review/html_layout_test.exs (shared_file_fanin_collapse, shared_file_group_pane, shared_file_spec_modal) — both execute: true\n\nSummary: build_view now computes shared_file_groups (files that are the only changed file for \u003e=3 code-only subjects) and drops collapsed subjects from queue_subjects while keeping their full detail panes. The renderer adds a group queue row (path + N subjects + worst-severity dot, filterable via data-subject-ids), a unit-shared-\u003cslug\u003e pane rendering the shared diff exactly once beside per-subject cards, and a per-subject \u003cdialog\u003e embedding the full spec (statement/requirements/scenarios) with Esc/backdrop/button close and a link to the full unit pane. Verified end-to-end in a browser against an atlas-PR-62-shaped fixture (5 subjects collapsed, modal over visible diff, filter surfacing group row). Gates: compile -Werror clean, 937 tests 0 failures, format clean, deps.unlock clean, mix spec.check pass (0 warnings, 0 findings, single_subject=specled.spec_review).",
+      "timestamp": "2026-07-07T11:29:08Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Shared-file fan-in collapse: group code-only subjects behind their common changed file",
   "type": "task",
-  "updated_at": "2026-07-07T11:10:35Z"
+  "updated_at": "2026-07-07T11:29:08Z"
 }
