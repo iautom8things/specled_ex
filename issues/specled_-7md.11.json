@@ -2,6 +2,7 @@
   "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-07-07T11:57:54Z",
   "created": "2026-07-07T11:01:50Z",
   "description": "Advances: specled.spec_review\n\nContext: when one changed file (e.g. lib/atlas/application.ex) sits in the surface of many subjects with no realized_by bindings, the queue floods with near-identical code-only rows (atlas PR 62: 17 rows for one small diff). The fan-out is honest signal; the presentation is the problem.\n\nDeliverable:\n1. Queue collapse (view-model, review.ex): when a single changed file is the ONLY changed file for \u003e=3 code-only subjects, replace those rows with one group row in the Code-only queue section: file path + collapsed-subject count + aggregated finding badges. Subjects with any other changed file keep their own row. Spec-edited subjects never collapse. Each qualifying file produces its own group row. Collapsed subjects' unit sections remain rendered and deep-linkable; the queue filter matches a group row when the filter text matches a collapsed subject's id.\n2. Group detail pane (html.ex): renders the shared diff exactly ONCE, plus one card per collapsed subject (subject id, clamped prose summary from meta, finding badges). Cards link to the subject's full unit anchor.\n3. Spec modal: activating a card opens a self-contained \u003cdialog\u003e with the subject's full spec (statement, requirements, scenarios) embedded in the artifact — no network fetch — while the diff stays visible behind. Esc/backdrop closes. Modal links to the subject's full unit section.\n\nVerification:\n- Tests to pass: mix test test/specled_ex/review_test.exs (view-model grouping), mix test test/specled_ex/review/html_layout_test.exs (group row, pane, modal rendering)\n- Behaviors to demonstrate: specled.spec_review.shared_file_queue_collapses_fanout, specled.spec_review.shared_file_group_pane_renders_once, specled.spec_review.shared_file_modal_orients_reviewer\n\nOut of Scope (files):\n- lib/specled_ex/coverage.ex (subject_file_map semantics unchanged)\n- lib/specled_ex/change_analysis.ex\n- lib/mix/tasks/**\n- .spec/specs/* other than spec_review.spec.md\nAllowed touches (this stage may modify):\n- lib/specled_ex/review.ex\n- lib/specled_ex/review/html.ex\n- priv/spec_review_assets/**\n- test/specled_ex/review_test.exs\n- test/specled_ex/review/html_layout_test.exs\n- test/specled_ex/review/html_test.exs\n- .spec/specs/spec_review.spec.md\n- .spec/state.json (regenerated)\n\nOut of Scope (intent):\n- No change to how files map to subjects (surface expansion, verification targets) — this is presentation only\n- No comment-only-hunk detection or diff significance heuristics\n- No change to findings computation; no_realized_by findings still fire per subject\n- Collapse threshold (3) is a presentation constant, not configurable in v1\n\nMerge gate:\n- [ ] Code compiles cleanly\n- [ ] Tests listed above pass\n- [ ] Spec verification passes (mix spec.check)\n- [ ] Scope check: diff touches only Allowed globs (mechanical)\n- [ ] Auditor APPROVE comment on the ticket",
   "id": "specled_-7md.11",
@@ -34,7 +35,7 @@
     }
   ],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "Shared-file fan-in collapse: group code-only subjects behind their common changed file",
   "type": "task",
   "updated_at": "2026-07-07T11:57:54Z"
