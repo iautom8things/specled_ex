@@ -74,6 +74,58 @@ defmodule SpecLedEx.ReviewTest do
     end
   end
 
+  describe "build_view/3 decisions changed" do
+    @tag spec: "specled.spec_review.decisions_governance_inline"
+    test "a deleted decision file surfaces as a removed ADR with its base-ref content", %{
+      root: root
+    } do
+      setup_repo(root, "auth_subject", "Auth.")
+
+      write_decision(root, "auth_choice", """
+      ---
+      id: auth.decision.choice
+      status: accepted
+      date: 2026-01-01
+      affects:
+        - auth.subject
+      ---
+
+      # Auth Choice
+
+      ## Context
+
+      Original context prose.
+
+      ## Decision
+
+      The decision text.
+
+      ## Consequences
+
+      The consequences.
+      """)
+
+      commit_all(root, "add decision")
+      base = String.trim(git!(root, ["rev-parse", "HEAD"]))
+
+      git!(root, ["rm", ".spec/decisions/auth_choice.md"])
+      git!(root, ["commit", "-m", "delete decision"])
+
+      index = SpecLedEx.index(root)
+      view = Review.build_view(index, root, base: base)
+
+      assert [d] = view.decisions_changed
+      assert d.id == "auth.decision.choice"
+      assert d.deleted? == true
+      assert d.affects == ["auth.subject"]
+
+      adr = view.adrs_by_id["auth.decision.choice"]
+      assert adr.change_status == :removed
+      assert adr.title == "Auth Choice"
+      assert adr.body_text =~ "Original context prose."
+    end
+  end
+
   describe "FileDiff.for_files/3" do
     test "returns an empty map when no paths are passed", %{root: root} do
       assert SpecLedEx.Review.FileDiff.for_files(root, "main", []) == %{}

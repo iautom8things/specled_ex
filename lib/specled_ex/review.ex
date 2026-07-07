@@ -105,8 +105,9 @@ defmodule SpecLedEx.Review do
       unmapped: length(unmapped_files)
     }
 
-    decisions_changed = build_decisions_changed(analysis, index)
-    adrs_by_id = build_adrs_by_id(index, root, analysis.base)
+    removed_adrs = build_removed_adrs(analysis, index, root)
+    decisions_changed = build_decisions_changed(analysis, index, removed_adrs, root)
+    adrs_by_id = Map.merge(build_adrs_by_id(index, root, analysis.base), removed_adrs)
     triage = build_triage(findings, affected_subjects, unmapped_changes != [], adrs_by_id)
 
     all_changes =
@@ -584,16 +585,14 @@ defmodule SpecLedEx.Review do
     |> Enum.group_by(& &1["subject_id"])
   end
 
-  defp build_decisions_changed(analysis, index) do
+  defp build_decisions_changed(analysis, index, removed_adrs, root) do
     decision_files = Enum.filter(analysis.changed_files, &ChangeAnalysis.decision_file?/1)
     decisions_by_file = Map.new(index["decisions"] || [], &{&1["file"], &1})
+    removed_by_file = Map.new(removed_adrs, fn {_id, adr} -> {adr.file, adr} end)
 
     Enum.map(decision_files, fn file ->
-      case Map.get(decisions_by_file, file) do
-        nil ->
-          %{id: nil, file: file, status: nil, change_type: nil, affects: []}
-
-        decision ->
+      cond do
+        decision = Map.get(decisions_by_file, file) ->
           meta = decision["meta"] || %{}
 
           %{
@@ -601,11 +600,93 @@ defmodule SpecLedEx.Review do
             file: file,
             status: meta["status"],
             change_type: meta["change_type"],
-            affects: meta["affects"] || []
+            affects: meta["affects"] || [],
+            deleted?: false
+          }
+
+        adr = Map.get(removed_by_file, file) ->
+          %{
+            id: adr.id,
+            file: file,
+            status: adr.status,
+            change_type: adr.change_type,
+            affects: adr.affects,
+            deleted?: true
+          }
+
+        true ->
+          # Not parseable at head or base. Whether the file is gone from the
+          # working tree still distinguishes "deleted" from "unparseable".
+          %{
+            id: nil,
+            file: file,
+            status: nil,
+            change_type: nil,
+            affects: [],
+            deleted?: not File.exists?(Path.join(root, file))
           }
       end
     end)
   end
+
+  # A decision file changed in this change set but absent from the head index
+  # was deleted (or renamed away). Its base-ref version is parsed so the
+  # review can show what was removed instead of a bare "no parsed ADR" stub.
+  defp build_removed_adrs(analysis, index, root) do
+    head_files = MapSet.new(index["decisions"] || [], & &1["file"])
+
+    analysis.changed_files
+    |> Enum.filter(&ChangeAnalysis.decision_file?/1)
+    |> Enum.reject(&MapSet.member?(head_files, &1))
+    |> Enum.flat_map(fn file ->
+      with {:ok, content} <- fetch_at_ref(root, analysis.base, file),
+           %{"meta" => meta} = decision when is_map(meta) <-
+             parse_decision_content(content, file),
+           id when is_binary(id) <- meta["id"] do
+        adr = %{
+          id: id,
+          file: file,
+          title: decision["title"] || id,
+          status: meta["status"],
+          date: meta["date"],
+          change_type: meta["change_type"],
+          affects: meta["affects"] || [],
+          superseded_by: meta["superseded_by"],
+          replaces: meta["replaces"],
+          body_text: strip_frontmatter(content),
+          change_status: :removed
+        }
+
+        [{id, adr}]
+      else
+        _ -> []
+      end
+    end)
+    |> Map.new()
+  end
+
+  defp parse_decision_content(content, file) do
+    tmp_dir = System.tmp_dir!()
+    tmp = Path.join(tmp_dir, "specled_adr_#{System.unique_integer([:positive])}.md")
+    File.write!(tmp, content)
+
+    try do
+      tmp
+      |> SpecLedEx.DecisionParser.parse_file(tmp_dir)
+      |> Map.put("file", file)
+    after
+      File.rm(tmp)
+    end
+  end
+
+  defp fetch_at_ref(root, ref, file) when is_binary(ref) and is_binary(file) do
+    {output, status} =
+      System.cmd("git", ["-C", root, "show", "#{ref}:#{file}"], stderr_to_stdout: true)
+
+    if status == 0, do: {:ok, output}, else: :error
+  end
+
+  defp fetch_at_ref(_, _, _), do: :error
 
   defp head_ref(root) do
     case System.cmd("git", ["-C", root, "rev-parse", "--short", "HEAD"], stderr_to_stdout: true) do

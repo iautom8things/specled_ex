@@ -2943,11 +2943,20 @@ defmodule SpecLedEx.Review.Html do
   defp render_changed_decision_minimal(d) do
     anchor = "adr-" <> slug(d.id || d.file)
 
+    {chip, note} =
+      if Map.get(d, :deleted?, false) do
+        {~s|<span class="chip chip-removed">REMOVED</span>|,
+         "decision file deleted in this change set (base version could not be parsed)"}
+      else
+        {"", "decision changed but no parsed ADR available"}
+      end
+
     ~s"""
     <details class="adr" id="#{anchor}">
       <summary class="adr-summary">
+        #{chip}
         <code class="adr-id">#{h(d.id || d.file)}</code>
-        <span class="adr-title-missing">decision changed but no parsed ADR available</span>
+        <span class="adr-title-missing">#{note}</span>
         #{render_decision_status_pill(d.status)}
         #{render_decision_change_type_pill(d.change_type)}
       </summary>
@@ -2970,6 +2979,13 @@ defmodule SpecLedEx.Review.Html do
 
     anchor = "adr-" <> slug(adr.id || d.file)
 
+    removed_note =
+      if Map.get(adr, :change_status) == :removed do
+        ~S|<p class="adr-removed-note">This decision file was deleted in this change set. The content below is the last version at the base ref.</p>|
+      else
+        ""
+      end
+
     ~s"""
     <details class="adr adr-#{Map.get(adr, :change_status, :unchanged)}" id="#{anchor}" open>
       <summary class="adr-summary">
@@ -2982,6 +2998,7 @@ defmodule SpecLedEx.Review.Html do
       </summary>
       <div class="adr-body-wrap">
         #{render_decision_affects_block(d.affects)}
+        #{removed_note}
         <div class="markdown-body">#{render_markdown(adr.body_text)}</div>
         #{if adr.file, do: ~s|<div class="adr-source"><code>#{h(adr.file)}</code></div>|, else: ""}
       </div>
@@ -5056,6 +5073,14 @@ defmodule SpecLedEx.Review.Html do
     .adr-date { color: var(--fg-muted); font-size: 12px; font-family: var(--code-font); }
     .adr-body-wrap { padding: 0 14px 14px; }
     .adr-source { padding-top: 6px; font-size: 11px; color: var(--fg-faint); text-align: right; }
+    .adr-removed-note {
+      margin: 10px 0 0;
+      padding: 8px 12px;
+      background: var(--error-bg);
+      color: var(--error);
+      border-radius: 4px;
+      font-size: 12px;
+    }
 
     /* GitHub-style markdown rendering for ADR bodies. */
     .markdown-body {

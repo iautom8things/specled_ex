@@ -823,6 +823,59 @@ defmodule SpecLedEx.Review.HtmlTest do
       assert html =~ "append_only/adr_affects_widened"
     end
 
+    @tag spec: "specled.spec_review.decisions_governance_inline"
+    test "a removed ADR renders with a REMOVED chip and a deletion note around its base content" do
+      decision = %{
+        id: "specled.decision.gone",
+        file: ".spec/decisions/gone.md",
+        status: "accepted",
+        change_type: nil,
+        affects: ["x.req_a"],
+        deleted?: true
+      }
+
+      adr = %{
+        id: "specled.decision.gone",
+        file: ".spec/decisions/gone.md",
+        title: "Gone Decision",
+        status: "accepted",
+        date: "2026-01-01",
+        change_type: nil,
+        affects: ["x.req_a"],
+        body_text: "## Context\n\nWhy it existed.",
+        change_status: :removed
+      }
+
+      html =
+        IO.iodata_to_binary(
+          Html.render_decisions_changed([decision], %{"specled.decision.gone" => adr}, [])
+        )
+
+      assert html =~ "REMOVED"
+      assert html =~ "Gone Decision"
+      assert html =~ "deleted in this change set"
+      assert html =~ "Why it existed."
+      refute html =~ "no parsed ADR available"
+    end
+
+    @tag spec: "specled.spec_review.decisions_governance_inline"
+    test "a deleted decision with no parseable base still says deleted, not 'no parsed ADR'" do
+      decision = %{
+        id: nil,
+        file: ".spec/decisions/mystery.md",
+        status: nil,
+        change_type: nil,
+        affects: [],
+        deleted?: true
+      }
+
+      html = IO.iodata_to_binary(Html.render_decisions_changed([decision], %{}, []))
+
+      assert html =~ "REMOVED"
+      assert html =~ "decision file deleted in this change set"
+      refute html =~ "decision changed but no parsed ADR available"
+    end
+
     test "non-append_only findings are ignored by the Decisions panel" do
       noise = %{
         "code" => "branch_guard_realization_drift",
