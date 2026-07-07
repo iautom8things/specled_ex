@@ -253,6 +253,43 @@ decisions:
     finding.
   priority: must
   stability: evolving
+- id: specled.spec_review.shared_file_fanin_collapse
+  statement: >-
+    When a single changed file is the only changed file for three or more
+    code-only subjects, the review queue shall replace those subjects'
+    individual rows with one shared-file group row inside the code-only
+    group, labeled by the file path and carrying the collapsed-subject
+    count and an aggregated finding indicator. A code-only subject with
+    any other changed file shall retain its individual row; spec-edited
+    subjects shall never be collapsed; each changed file meeting the
+    threshold shall produce its own group row. Collapsed subjects' unit
+    sections shall remain rendered and reachable by URL fragment, and the
+    queue filter shall match a group row when the filter text matches any
+    collapsed subject's id.
+  priority: must
+  stability: evolving
+- id: specled.spec_review.shared_file_group_pane
+  statement: >-
+    Selecting a shared-file group row shall render a group detail pane
+    that renders the shared file's diff exactly once, alongside one card
+    per collapsed subject carrying the subject's id, its prose summary
+    clamped to a preview, and that subject's inline finding badges. Each
+    card shall link to the subject's full unit section so the reviewer
+    can pivot from the shared diff to any subject's Spec / Code /
+    Coverage / Decisions detail.
+  priority: must
+  stability: evolving
+- id: specled.spec_review.shared_file_spec_modal
+  statement: >-
+    Activating a subject card in the shared-file group pane shall open a
+    modal dialog rendering that subject's full spec content — the prose
+    statement, requirements, and scenarios — sourced from content
+    embedded in the artifact with no network fetch, while the group
+    pane's diff remains visible behind the modal. The modal shall close
+    on Escape and on backdrop click, and shall contain a link to the
+    subject's full unit section.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -419,6 +456,43 @@ decisions:
     - the change-scoped verdict chip is not flipped by the degraded state
   covers:
     - specled.spec_review.degraded_leg_state
+- id: specled.spec_review.shared_file_queue_collapses_fanout
+  given:
+    - a change set where lib/atlas/application.ex is the only changed file for 17 code-only subjects
+    - a code-only subject `versioning` whose changed files are lib/atlas/application.ex plus two others
+  when:
+    - mix spec.review renders the HTML artifact
+  then:
+    - the code-only queue group renders one shared-file group row labeled lib/atlas/application.ex carrying a count of 17 and an aggregated finding indicator
+    - none of the 17 collapsed subjects render an individual queue row
+    - subject `versioning` retains its own individual queue row
+    - each of the 17 collapsed subjects' unit sections is still reachable via its URL fragment
+    - typing a collapsed subject's id into the queue filter surfaces the group row
+  covers:
+    - specled.spec_review.shared_file_fanin_collapse
+- id: specled.spec_review.shared_file_group_pane_renders_once
+  given:
+    - a rendered artifact whose queue contains a shared-file group row for lib/atlas/application.ex collapsing 17 subjects
+  when:
+    - the reviewer selects the group row
+  then:
+    - the detail pane renders the lib/atlas/application.ex diff exactly once
+    - the pane renders 17 subject cards, each carrying the subject id, a clamped prose summary, and that subject's finding badges
+    - each card links to its subject's full unit section
+  covers:
+    - specled.spec_review.shared_file_group_pane
+- id: specled.spec_review.shared_file_modal_orients_reviewer
+  given:
+    - an open shared-file group pane containing a card for subject session_process.horde_singleton
+  when:
+    - the reviewer activates the card
+  then:
+    - a modal dialog renders the subject's prose statement, requirements, and scenarios from artifact-embedded content with no network request
+    - the group pane's diff remains visible behind the modal
+    - pressing Escape or clicking the backdrop closes the modal
+    - the modal contains a link to the subject's full unit section
+  covers:
+    - specled.spec_review.shared_file_spec_modal
 ```
 
 ## Verification
@@ -480,6 +554,18 @@ decisions:
   execute: true
   covers:
     - specled.spec_review.no_realized_by_degrades_spec_to_code
+- kind: command
+  target: mix test test/specled_ex/review_test.exs
+  execute: false
+  covers:
+    - specled.spec_review.shared_file_fanin_collapse
+- kind: command
+  target: mix test test/specled_ex/review/html_layout_test.exs
+  execute: false
+  covers:
+    - specled.spec_review.shared_file_fanin_collapse
+    - specled.spec_review.shared_file_group_pane
+    - specled.spec_review.shared_file_spec_modal
 - kind: source_file
   target: lib/mix/tasks/spec.review.ex
   covers:
@@ -492,6 +578,7 @@ decisions:
     - specled.spec_review.misc_panel
     - specled.spec_review.no_realized_by_degrades_spec_to_code
     - specled.spec_review.findings_delta
+    - specled.spec_review.shared_file_fanin_collapse
 - kind: source_file
   target: lib/specled_ex/review/html.ex
   covers:
@@ -510,6 +597,9 @@ decisions:
     - specled.spec_review.findings_digest_dedup
     - specled.spec_review.theme_tokens
     - specled.spec_review.coverage_pivot_touched_first
+    - specled.spec_review.shared_file_fanin_collapse
+    - specled.spec_review.shared_file_group_pane
+    - specled.spec_review.shared_file_spec_modal
 - kind: source_file
   target: lib/specled_ex/review/coverage_closure.ex
   covers:
