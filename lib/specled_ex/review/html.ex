@@ -3068,8 +3068,11 @@ defmodule SpecLedEx.Review.Html do
 
   @doc false
   def render_adr_body_diff(base, head) do
-    base_sections = split_adr_sections(base)
-    head_sections = split_adr_sections(head)
+    # The leading H1 (the ADR title) is stripped from both sides just as the
+    # plain render path does — the title already heads the disclosure summary,
+    # and an H1-only preamble section would render as a duplicate title box.
+    base_sections = base |> strip_leading_h1() |> split_adr_sections()
+    head_sections = head |> strip_leading_h1() |> split_adr_sections()
     base_by_key = Map.new(base_sections)
     head_keys = MapSet.new(head_sections, fn {key, _} -> key end)
 
@@ -5210,7 +5213,15 @@ defmodule SpecLedEx.Review.Html do
       border-radius: 4px;
       font-size: 12px;
     }
-    /* Section-level diff of a modified ADR body. */
+    /* Section-level diff of a modified ADR body. Unchanged sections lose the
+       markdown card box so the document reads continuously; only changed
+       sections stand out as chipped blocks. */
+    .adr-body-diff > .markdown-body {
+      border: none;
+      border-radius: 0;
+      padding: 4px 0;
+      background: transparent;
+    }
     .adr-section {
       margin: 12px 0;
       padding: 10px 12px;

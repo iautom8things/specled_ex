@@ -1,0 +1,314 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - heading "Spec Review" [level=1] [ref=e4]
+      - generic [ref=e5]: 13bc5a65…9d3ea0e7
+      - generic "37 files changed · +136 −1307 lines" [ref=e6]:
+        - generic [ref=e7]: 37 files
+        - generic [ref=e8]: "+136"
+        - generic [ref=e9]: −1307
+      - note "Why these counts differ from GitHub" [ref=e16]: ⓘ
+    - generic [ref=e17]:
+      - generic "This change set introduces 18 findings" [ref=e18]: 18 findings introduced
+      - group "Theme" [ref=e19]:
+        - button "◐" [ref=e20] [cursor=pointer]
+        - button "☀" [ref=e21] [cursor=pointer]
+        - button "☾" [ref=e22] [cursor=pointer]
+  - generic [ref=e23]:
+    - complementary "Review queue" [ref=e24]:
+      - textbox "Filter review queue" [ref=e25]:
+        - /placeholder: Filter subjects…
+      - navigation "Review units" [ref=e26]:
+        - list [ref=e27]:
+          - listitem [ref=e28]:
+            - link "Overview" [ref=e29] [cursor=pointer]:
+              - /url: "#unit-overview"
+          - listitem [ref=e30]:
+            - link "Decisions changed 4" [ref=e31] [cursor=pointer]:
+              - /url: "#unit-decisions"
+              - text: Decisions changed
+              - generic [ref=e32]: "4"
+          - listitem [ref=e33]: Spec edited
+          - listitem [ref=e34]:
+            - link "search.pipeline SPEC 4 files" [ref=e35] [cursor=pointer]:
+              - /url: "#unit-subject-search-pipeline"
+              - code [ref=e37]: search.pipeline
+              - generic "Spec file edited in this change set" [ref=e38]: SPEC
+              - generic [ref=e39]: 4 files
+          - listitem [ref=e40]:
+            - link "search.benchmark SPEC 3 files" [ref=e41] [cursor=pointer]:
+              - /url: "#unit-subject-search-benchmark"
+              - code [ref=e43]: search.benchmark
+              - generic "Spec file edited in this change set" [ref=e44]: SPEC
+              - generic [ref=e45]: 3 files
+          - listitem [ref=e46]:
+            - link "ref.resolver SPEC 0 files" [ref=e47] [cursor=pointer]:
+              - /url: "#unit-subject-ref-resolver"
+              - code [ref=e49]: ref.resolver
+              - generic "Spec file edited in this change set" [ref=e50]: SPEC
+              - generic [ref=e51]: 0 files
+          - listitem [ref=e52]: Code only
+          - listitem [ref=e53]:
+            - link "versioning 3 files" [ref=e54] [cursor=pointer]:
+              - /url: "#unit-subject-versioning"
+              - code [ref=e56]: versioning
+              - generic [ref=e57]: 3 files
+          - listitem [ref=e58]:
+            - link "info finding search.kinds_filter 2 files" [ref=e59] [cursor=pointer]:
+              - /url: "#unit-subject-search-kinds-filter"
+              - generic "info finding" [ref=e60]
+              - code [ref=e61]: search.kinds_filter
+              - generic [ref=e62]: 2 files
+          - listitem [ref=e63]:
+            - link "search.scoring 1 file" [ref=e64] [cursor=pointer]:
+              - /url: "#unit-subject-search-scoring"
+              - code [ref=e66]: search.scoring
+              - generic [ref=e67]: 1 file
+          - listitem [ref=e68]:
+            - link "info finding spec.system 7 files" [ref=e69] [cursor=pointer]:
+              - /url: "#unit-subject-spec-system"
+              - generic "info finding" [ref=e70]
+              - code [ref=e71]: spec.system
+              - generic [ref=e72]: 7 files
+          - listitem [ref=e73]:
+            - link "csharp.pipeline.registration 2 files" [ref=e74] [cursor=pointer]:
+              - /url: "#unit-subject-csharp-pipeline-registration"
+              - code [ref=e76]: csharp.pipeline.registration
+              - generic [ref=e77]: 2 files
+          - listitem [ref=e78]:
+            - link "csharp.dll_metadata.sidecar 1 file" [ref=e79] [cursor=pointer]:
+              - /url: "#unit-subject-csharp-dll-metadata-sidecar"
+              - code [ref=e81]: csharp.dll_metadata.sidecar
+              - generic [ref=e82]: 1 file
+          - listitem [ref=e83]:
+            - link "cli 1 file" [ref=e84] [cursor=pointer]:
+              - /url: "#unit-subject-cli"
+              - code [ref=e86]: cli
+              - generic [ref=e87]: 1 file
+          - listitem [ref=e88]:
+            - link "multi.kb 1 file" [ref=e89] [cursor=pointer]:
+              - /url: "#unit-subject-multi-kb"
+              - code [ref=e91]: multi.kb
+              - generic [ref=e92]: 1 file
+          - listitem [ref=e93]:
+            - link "package 1 file" [ref=e94] [cursor=pointer]:
+              - /url: "#unit-subject-package"
+              - code [ref=e96]: package
+              - generic [ref=e97]: 1 file
+          - listitem [ref=e98]:
+            - link "info finding atlas.llm_transport 3 files" [ref=e99] [cursor=pointer]:
+              - /url: "#unit-subject-atlas-llm-transport"
+              - generic "info finding" [ref=e100]
+              - code [ref=e101]: atlas.llm_transport
+              - generic [ref=e102]: 3 files
+          - listitem [ref=e103]:
+            - link "info finding agent_eval.execution_worker 2 files" [ref=e104] [cursor=pointer]:
+              - /url: "#unit-subject-agent-eval-execution-worker"
+              - generic "info finding" [ref=e105]
+              - code [ref=e106]: agent_eval.execution_worker
+              - generic [ref=e107]: 2 files
+          - listitem [ref=e108]:
+            - link "info finding deploy.staging_env 4 files" [ref=e109] [cursor=pointer]:
+              - /url: "#unit-subject-deploy-staging-env"
+              - generic "info finding" [ref=e110]
+              - code [ref=e111]: deploy.staging_env
+              - generic [ref=e112]: 4 files
+          - listitem [ref=e113]:
+            - link "atlas_web.tailwind_assets 2 files" [ref=e114] [cursor=pointer]:
+              - /url: "#unit-subject-atlas-web-tailwind-assets"
+              - code [ref=e116]: atlas_web.tailwind_assets
+              - generic [ref=e117]: 2 files
+          - listitem [ref=e118]:
+            - link "query.engine 1 file" [ref=e119] [cursor=pointer]:
+              - /url: "#unit-subject-query-engine"
+              - code [ref=e121]: query.engine
+              - generic [ref=e122]: 1 file
+          - listitem [ref=e123]:
+            - link "access.workforce_sync 2 files" [ref=e124] [cursor=pointer]:
+              - /url: "#unit-subject-access-workforce-sync"
+              - code [ref=e126]: access.workforce_sync
+              - generic [ref=e127]: 2 files
+          - listitem [ref=e128]:
+            - link "info finding atlas.metrics_pipeline 2 files" [ref=e129] [cursor=pointer]:
+              - /url: "#unit-subject-atlas-metrics-pipeline"
+              - generic "info finding" [ref=e130]
+              - code [ref=e131]: atlas.metrics_pipeline
+              - generic [ref=e132]: 2 files
+          - listitem [ref=e133]:
+            - link "info finding atlas.sentry 2 files" [ref=e134] [cursor=pointer]:
+              - /url: "#unit-subject-atlas-sentry"
+              - generic "info finding" [ref=e135]
+              - code [ref=e136]: atlas.sentry
+              - generic [ref=e137]: 2 files
+          - listitem [ref=e138]:
+            - link "info finding deploy.dns_cluster 2 files" [ref=e139] [cursor=pointer]:
+              - /url: "#unit-subject-deploy-dns-cluster"
+              - generic "info finding" [ref=e140]
+              - code [ref=e141]: deploy.dns_cluster
+              - generic [ref=e142]: 2 files
+          - listitem [ref=e143]:
+            - link "info finding deploy.traffic_drain 2 files" [ref=e144] [cursor=pointer]:
+              - /url: "#unit-subject-deploy-traffic-drain"
+              - generic "info finding" [ref=e145]
+              - code [ref=e146]: deploy.traffic_drain
+              - generic [ref=e147]: 2 files
+          - listitem [ref=e148]:
+            - link "access.cache 1 file" [ref=e149] [cursor=pointer]:
+              - /url: "#unit-subject-access-cache"
+              - code [ref=e151]: access.cache
+              - generic [ref=e152]: 1 file
+          - listitem [ref=e153]:
+            - link "info finding agent_eval.importer 1 file" [ref=e154] [cursor=pointer]:
+              - /url: "#unit-subject-agent-eval-importer"
+              - generic "info finding" [ref=e155]
+              - code [ref=e156]: agent_eval.importer
+              - generic [ref=e157]: 1 file
+          - listitem [ref=e158]:
+            - link "info finding agent_eval.rate_limiter 1 file" [ref=e159] [cursor=pointer]:
+              - /url: "#unit-subject-agent-eval-rate-limiter"
+              - generic "info finding" [ref=e160]
+              - code [ref=e161]: agent_eval.rate_limiter
+              - generic [ref=e162]: 1 file
+          - listitem [ref=e163]:
+            - link "info finding agent_hardening.retry_safety 1 file" [ref=e164] [cursor=pointer]:
+              - /url: "#unit-subject-agent-hardening-retry-safety"
+              - generic "info finding" [ref=e165]
+              - code [ref=e166]: agent_hardening.retry_safety
+              - generic [ref=e167]: 1 file
+          - listitem [ref=e168]:
+            - link "info finding atlas.llm_instrumentation 1 file" [ref=e169] [cursor=pointer]:
+              - /url: "#unit-subject-atlas-llm-instrumentation"
+              - generic "info finding" [ref=e170]
+              - code [ref=e171]: atlas.llm_instrumentation
+              - generic [ref=e172]: 1 file
+          - listitem [ref=e173]:
+            - link "atlas_web.graph_explorer 1 file" [ref=e174] [cursor=pointer]:
+              - /url: "#unit-subject-atlas-web-graph-explorer"
+              - code [ref=e176]: atlas_web.graph_explorer
+              - generic [ref=e177]: 1 file
+          - listitem [ref=e178]:
+            - link "info finding chat_sessions.sharing 1 file" [ref=e179] [cursor=pointer]:
+              - /url: "#unit-subject-chat-sessions-sharing"
+              - generic "info finding" [ref=e180]
+              - code [ref=e181]: chat_sessions.sharing
+              - generic [ref=e182]: 1 file
+          - listitem [ref=e183]:
+            - link "info finding deploy.boot_migration 1 file" [ref=e184] [cursor=pointer]:
+              - /url: "#unit-subject-deploy-boot-migration"
+              - generic "info finding" [ref=e185]
+              - code [ref=e186]: deploy.boot_migration
+              - generic [ref=e187]: 1 file
+          - listitem [ref=e188]:
+            - link "info finding deploy.repo_read_seam 1 file" [ref=e189] [cursor=pointer]:
+              - /url: "#unit-subject-deploy-repo-read-seam"
+              - generic "info finding" [ref=e190]
+              - code [ref=e191]: deploy.repo_read_seam
+              - generic [ref=e192]: 1 file
+          - listitem [ref=e193]:
+            - link "ingest.progress_reporter 1 file" [ref=e194] [cursor=pointer]:
+              - /url: "#unit-subject-ingest-progress-reporter"
+              - code [ref=e196]: ingest.progress_reporter
+              - generic [ref=e197]: 1 file
+          - listitem [ref=e198]:
+            - link "info finding prompt_management.compare_tool 1 file" [ref=e199] [cursor=pointer]:
+              - /url: "#unit-subject-prompt-management-compare-tool"
+              - generic "info finding" [ref=e200]
+              - code [ref=e201]: prompt_management.compare_tool
+              - generic [ref=e202]: 1 file
+          - listitem [ref=e203]:
+            - link "info finding session_process.horde_singleton 1 file" [ref=e204] [cursor=pointer]:
+              - /url: "#unit-subject-session-process-horde-singleton"
+              - generic "info finding" [ref=e205]
+              - code [ref=e206]: session_process.horde_singleton
+              - generic [ref=e207]: 1 file
+          - listitem [ref=e208]:
+            - link "Outside the spec system 14" [ref=e209] [cursor=pointer]:
+              - /url: "#unit-misc"
+              - text: Outside the spec system
+              - generic [ref=e210]: "14"
+          - listitem [ref=e211]:
+            - link "All files" [ref=e212] [cursor=pointer]:
+              - /url: "#unit-files"
+          - listitem [ref=e213]:
+            - link "Spec health partial" [ref=e214] [cursor=pointer]:
+              - /url: "#unit-health"
+              - text: Spec health
+              - generic "Verification is partial — some legs could not be checked" [ref=e215]: partial
+    - main [ref=e216]:
+      - region "Change overview" [ref=e218]:
+        - generic [ref=e219]:
+          - heading "This change introduces 18 findings." [level=2] [ref=e220]
+          - paragraph [ref=e221]:
+            - generic [ref=e222]: 18 info
+        - generic [ref=e223]:
+          - generic [ref=e224]:
+            - generic [ref=e225]: "34"
+            - generic [ref=e226]: Subjects touched
+          - generic [ref=e227]:
+            - generic [ref=e228]: "4"
+            - generic [ref=e229]: Spec requirements edited
+          - generic [ref=e230]:
+            - generic [ref=e231]: "4"
+            - generic [ref=e232]: Decisions changed
+          - generic [ref=e233]:
+            - generic [ref=e234]: "14"
+            - generic [ref=e235]: Unmapped files
+        - region "Findings delta" [ref=e236]:
+          - heading "Findings delta" [level=3] [ref=e237]
+          - generic [ref=e238]:
+            - heading "Introduced by this change 18" [level=4] [ref=e239]
+            - list [ref=e240]:
+              - listitem [ref=e241]:
+                - generic [ref=e242]:
+                  - generic "Info — advisory; never blocks." [ref=e243]: info
+                  - code [ref=e244]: detector_unavailable
+                  - generic [ref=e245]: no_realized_by
+                  - generic [ref=e246]: ×18
+                - group [ref=e247]:
+                  - generic "18 subjects" [ref=e248] [cursor=pointer]
+        - region "Spec edits" [ref=e249]:
+          - heading "Spec edits in this change" [level=3] [ref=e250]
+          - list [ref=e251]:
+            - listitem [ref=e252]:
+              - link "ref.resolver" [ref=e253] [cursor=pointer]:
+                - /url: "#spec-ref-resolver"
+                - code [ref=e254]: ref.resolver
+              - text: +0 added · ~1 modified · -0 removed
+            - listitem [ref=e255]:
+              - link "search.benchmark" [ref=e256] [cursor=pointer]:
+                - /url: "#spec-search-benchmark"
+                - code [ref=e257]: search.benchmark
+              - text: +0 added · ~0 modified · -1 removed
+            - listitem [ref=e258]:
+              - link "search.pipeline" [ref=e259] [cursor=pointer]:
+                - /url: "#spec-search-pipeline"
+                - code [ref=e260]: search.pipeline
+              - text: +0 added · ~2 modified · -0 removed
+        - region "File breakdown" [ref=e261]:
+          - heading "File breakdown" [level=3] [ref=e262]
+          - generic [ref=e263]:
+            - generic "20 mapped to a subject (54.1%)" [ref=e264]
+            - generic "9 spec/policy files (24.3%)" [ref=e265]
+            - generic "14 unmapped (37.8%)" [ref=e266]
+          - list [ref=e267]:
+            - listitem [ref=e268]: 20 mapped
+            - listitem [ref=e270]: 9 spec/policy
+            - listitem [ref=e272]: 14 unmapped
+        - region "Decisions changed" [ref=e274]:
+          - heading "Decisions changed 4" [level=3] [ref=e275]:
+            - text: Decisions changed
+            - generic [ref=e276]: "4"
+          - list [ref=e277]:
+            - listitem [ref=e278]:
+              - code [ref=e279]: atlas.decision.batch_from_day_one
+            - listitem [ref=e280]:
+              - code [ref=e281]: atlas.decision.expansion_rerank_deleted
+            - listitem [ref=e282]:
+              - code [ref=e283]: atlas.decision.reranker_replaces_score
+            - listitem [ref=e284]:
+              - code [ref=e285]: atlas.decision.telemetry_conventions
+          - paragraph [ref=e286]:
+            - link "Open Decisions changed →" [ref=e287] [cursor=pointer]:
+              - /url: "#unit-decisions"
+      - text: ▸ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▾ ▾ ▸ ▸ ▸ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▾ ▾ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▸ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▸ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • ▾ ▾ ▾ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▾ ▾ ▾ ▸ ▸ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • ▾ ▾ ▾ ▾ ▾ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▾ ▾ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▸ ▸ ▸ ▸ ▸ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▸ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▸ ▸ ▸ ▸ Show more ▸ ▾ ▾ ▾ ▾ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • • • • ▾ ▸ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▸ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • ▾ ▾ ▾ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • ▾ ▾ ▾ ▾ ▾ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▸ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▾ ▾ ▸ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▸ ▸ ▸ ▸ ▸ ▸ ▸ ▸ • • • ▾ ▾ ▾ ▾ ▸ ▸ ▸ ▸ ▸ ▸ ▾ ▾ ▾ ▾ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▸ ▸ ▸ ▸ ▸ ▸ • • • • • • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▾ ▸ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • ▾ ▸ ▸ ▸ ▸ ▸ • • • • • • • • • • • • ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▸ ▸ ▸ ▸ ▸ • • • • • • • • • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▸ ▸ ▸ ▸ ▸ ▸ ▸ ▸ • • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▾ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▸ ▸ ▸ ▸ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▸ ▸ ▸ Show more ▸ ▸ • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▸ ▸ ▸ ▸ ▸ ▸ ▸ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▸ ▸ ▸ ▸ ▸ ▸ ▸ ▸ ▸ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▸ ▾ ▾ ▾ ▸ ▾ ▸ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▾ ▸ ▸ ▸ ▸ ▸ ▾ ▾ ▾ ▾ ▾ ▸ ▸ ▸ ▾ ▸ ▾ ▸
+  - contentinfo [ref=e288]: specled_ex · spec.review
