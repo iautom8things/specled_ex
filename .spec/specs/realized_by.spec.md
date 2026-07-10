@@ -250,8 +250,11 @@ decisions:
   statement: >-
     `SpecLedEx.Realization.HashStore.merge/2` shall deep-merge per-tier
     seed entries into the existing realization map, preserving
-    non-seeded entries; `write/2` shall keep its existing replacement
-    semantics for the post-run `refresh_and_commit_hashes/3` path.
+    non-seeded entries. The post-run `refresh_and_commit_hashes/3`
+    flat-tier refresh shall also use `merge/2` so the silent-seeded
+    `implementation` section survives; `write/2` shall retain
+    full-baseline replacement semantics for callers that intentionally
+    rewrite the entire file.
   priority: must
   stability: evolving
 - id: specled.realized_by.redundant_dup_warning

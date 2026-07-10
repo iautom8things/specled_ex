@@ -102,9 +102,9 @@ defmodule SpecLedEx.Realization.HashStore do
   Entries lacking a `"hasher_version"` are stamped with the current
   `@hasher_version` via `ensure_version/1`.
 
-  Used by the orchestrator's silent-seed pass for newly-tracked entries.
-  `write/2` keeps its existing replacement semantics for the post-run
-  `refresh_and_commit_hashes/3` path.
+  Used by the orchestrator's silent-seed pass and by the post-run
+  `refresh_and_commit_hashes/3` flat-tier refresh, which must merge rather
+  than replace so the silent-seeded `implementation` section survives.
   """
   @spec merge(Path.t(), map()) :: :ok
   def merge(root, seed) when is_map(seed) do

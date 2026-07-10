@@ -73,7 +73,12 @@ decisions:
     input shall include the string `"subject:#{B.id}:hash:#{B.impl_hash}"`
     rather than B's canonical AST. When B's impl hash changes, A's
     hash changes via this reference; this is the composition-by-hash
-    rule (Cargo pattern).
+    rule (Cargo pattern). The silent-seed pass shall compute this
+    reference over the full subject graph in a single pass so a
+    subject's committed hash is reproducible by the detector; seeding a
+    subject in isolation (a partial world that cannot resolve peer B,
+    embedding `subject:B:hash:unknown`) is prohibited, as it yields
+    permanent spurious `branch_guard_realization_drift`.
   priority: must
   stability: evolving
 - id: specled.implementation_tier.scenario_refactor_stable

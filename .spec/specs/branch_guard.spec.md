@@ -117,11 +117,13 @@ decisions:
     On a run that produced neither drift nor dangling findings, the
     orchestrator shall commit current hashes for the four flat-binding tiers
     (`api_boundary`, `expanded_behavior`, `typespecs`, `use`) to `HashStore`
-    via `HashStore.write/2`. When drift or dangling findings are present, the
-    orchestrator shall NOT overwrite committed hashes. The implementation tier
-    is excluded from hash commit in this revision because its hash refresh
-    requires a `world` map whose construction lives inside `Implementation`'s
-    private API.
+    via `HashStore.merge/2`, merging rather than replacing so the
+    silent-seeded implementation section survives the flat-tier refresh. When
+    drift or dangling findings are present, the orchestrator shall NOT
+    overwrite committed hashes. The implementation tier is excluded from this
+    flat-tier refresh because its hash recompute requires a `world` map whose
+    construction lives inside `Implementation`'s private API; its committed
+    hash is maintained by the silent-seed pass alone.
   priority: must
   stability: evolving
 - id: specled.branch_guard.tier_dispatch_umbrella_degrades

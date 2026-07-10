@@ -30,6 +30,14 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
       @compile {:no_debug_info, true}
       def q(v), do: v
     end
+
+    defmodule SpecLedEx.OrchestratorFixtures.Callee do
+      def target(y), do: y * 3
+    end
+
+    defmodule SpecLedEx.OrchestratorFixtures.Caller do
+      def calls(x), do: SpecLedEx.OrchestratorFixtures.Callee.target(x) + 1
+    end
     """)
 
     {:ok, _mods, _warns} =
@@ -39,7 +47,9 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
 
     for mod <- [
           SpecLedEx.OrchestratorFixtures.Mod,
-          SpecLedEx.OrchestratorFixtures.NoDebug
+          SpecLedEx.OrchestratorFixtures.NoDebug,
+          SpecLedEx.OrchestratorFixtures.Callee,
+          SpecLedEx.OrchestratorFixtures.Caller
         ] do
       :code.purge(mod)
       :code.delete(mod)
@@ -714,8 +724,66 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
 
       store = HashStore.read(root)
       assert is_map(get_in(store, ["api_boundary", mfa]))
+
       assert is_map(get_in(store, ["implementation", "preserve.impl.subject"])),
              "implementation baseline must survive clean-run refresh, got #{inspect(store)}"
+    end
+
+    @tag spec: [
+           "specled.realized_by.silent_seed",
+           "specled.implementation_tier.hash_ref_composition"
+         ]
+    test "batches the full subject graph when seeding hash-ref peers (no re-run drift)",
+         %{root: root} do
+      # atlas-vmi regression guard for the ORCHESTRATOR seed path. When subject
+      # A's closure hash-refs peer subject B (`subject:B:hash:…`), the seed pass
+      # MUST hash the full subject graph in one call. Seeding A in isolation
+      # builds a world without B, so A is seeded with a `subject:B:hash:unknown`
+      # marker; the detector walks A+B and embeds B's real hash → A permanently
+      # reports branch_guard_realization_drift on every run after the seed.
+      #
+      # A tracer edge (Caller.calls/1 → Callee.target/1) makes A reference B.
+      # Two runs: run 1 seeds on an empty baseline; run 2 must detect no drift.
+      caller_mfa = "SpecLedEx.OrchestratorFixtures.Caller.calls/1"
+      callee_mfa = "SpecLedEx.OrchestratorFixtures.Callee.target/1"
+
+      table = :ets.new(:seed_regression_edges, [:bag, :public])
+      on_exit(fn -> :ets.info(table) != :undefined && :ets.delete(table) end)
+
+      :ets.insert(
+        table,
+        {{SpecLedEx.OrchestratorFixtures.Caller, :calls, 1},
+         {SpecLedEx.OrchestratorFixtures.Callee, :target, 1}}
+      )
+
+      context = %SpecLedEx.Compiler.Context{tracer_table: table}
+
+      index = %{
+        "subjects" => [
+          subject("hashref.caller", %{"implementation" => [caller_mfa]}, []),
+          subject("hashref.callee", %{"implementation" => [callee_mfa]}, [])
+        ]
+      }
+
+      opts = [root: root, enabled_tiers: [:implementation], context: context]
+
+      # Run 1: empty baseline → silent seed, no drift.
+      assert Orchestrator.run(index, opts) == []
+
+      # Both subjects must be seeded under their ids.
+      store = HashStore.read(root)
+      assert is_map(get_in(store, ["implementation", "hashref.caller"]))
+      assert is_map(get_in(store, ["implementation", "hashref.callee"]))
+
+      # Run 2: detect against the seeded baseline. If A were seeded in
+      # isolation (unknown-B marker), this run embeds B's real hash and drifts.
+      drift =
+        index
+        |> Orchestrator.run(opts)
+        |> Enum.filter(&(&1["code"] == "branch_guard_realization_drift"))
+
+      assert drift == [],
+             "batch-seeded hash-ref peer must be reproducible; got drift: #{inspect(drift)}"
     end
   end
 
