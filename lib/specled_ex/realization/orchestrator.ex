@@ -845,6 +845,10 @@ defmodule SpecLedEx.Realization.Orchestrator do
   defp bare_module_binding?(_), do: false
 
   defp refresh_and_commit_hashes(bindings_by_tier, context, root) do
+    # Flat-tier refresh only. MUST merge, not replace: HashStore.write/2 would
+    # wipe the implementation (and any other non-flat) section that silent-seed
+    # just wrote. Implementation remains seed-only until a dedicated refresh
+    # helper lands (see moduledoc). atlas-vmi caught the wipe on clean runs.
     realization =
       @flat_tiers
       |> Enum.reduce(%{}, fn tier, acc ->
@@ -859,7 +863,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
       end)
 
     if realization != %{} do
-      HashStore.write(root, realization)
+      HashStore.merge(root, realization)
     end
 
     :ok

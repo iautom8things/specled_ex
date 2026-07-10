@@ -687,6 +687,36 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
       assert is_map(get_in(store, ["implementation", "closure.seed.subject"])),
              "expected closure-hash seed for closure.seed.subject, got #{inspect(store)}"
     end
+
+    @tag spec: ["specled.realized_by.silent_seed", "specled.realized_by.silent_seed_uses_merge"]
+    test "clean-run flat-tier refresh preserves implementation baseline (no write wipe)",
+         %{root: root} do
+      # atlas-vmi: after a clean multi-tier run, refresh_and_commit_hashes used
+      # HashStore.write/2 with only flat-tier entries and wiped implementation.
+      # Must merge so silent-seeded impl hashes survive into the committed file.
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+
+      subject =
+        subject(
+          "preserve.impl.subject",
+          %{"api_boundary" => [mfa], "implementation" => [mfa]},
+          []
+        )
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary, :implementation],
+          context: nil
+        )
+
+      assert findings == []
+
+      store = HashStore.read(root)
+      assert is_map(get_in(store, ["api_boundary", mfa]))
+      assert is_map(get_in(store, ["implementation", "preserve.impl.subject"])),
+             "implementation baseline must survive clean-run refresh, got #{inspect(store)}"
+    end
   end
 
   # ---------------------------------------------------------------------------
