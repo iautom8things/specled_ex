@@ -762,42 +762,53 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # by the module string. Both go under `realization.implementation`. Subjects
   # whose MFAs all dangle drop out of the closure-hash result; bare modules
   # that fail to load are skipped (the detector emits dangling separately).
+  #
+  # Closure hashes MUST be computed across the FULL subject graph in a single
+  # `hashes_for_seeding/3` call, then filtered to uncommitted ids for write.
+  # Hash-ref composition embeds peer subject hashes (`subject:B:hash:…`);
+  # seeding one subject (or only the uncommitted subset) builds a world that
+  # cannot resolve peers, so the seed writes `…:hash:unknown` markers and the
+  # detector (which walks the full subject graph) permanently reports
+  # wholesale `branch_guard_realization_drift`. See atlas-vmi.
   defp seed_implementation_subjects(subjects, committed, context, root) do
-    Enum.reduce(subjects, %{}, fn subject, acc ->
-      acc
-      |> seed_impl_closure(subject, committed, context, root)
-      |> seed_impl_bare_modules(subject, committed)
-    end)
-  end
+    bare_seeds =
+      Enum.reduce(subjects, %{}, fn subject, acc ->
+        seed_impl_bare_modules(acc, subject, committed)
+      end)
 
-  defp seed_impl_closure(acc, subject, committed, context, root) do
-    if Map.has_key?(committed, subject.id) do
-      acc
-    else
-      mfa_bindings =
-        subject
-        |> Map.get(:impl_bindings, [])
-        |> Enum.reject(&bare_module_binding?/1)
+    mfa_subjects =
+      subjects
+      |> Enum.map(fn subject ->
+        mfa_bindings =
+          subject
+          |> Map.get(:impl_bindings, [])
+          |> Enum.reject(&bare_module_binding?/1)
 
-      case mfa_bindings do
-        [] ->
-          acc
+        Map.put(subject, :impl_bindings, mfa_bindings)
+      end)
+      |> Enum.reject(fn subject -> subject.impl_bindings == [] end)
 
-        bindings ->
-          subject_for_seeding = Map.put(subject, :impl_bindings, bindings)
+    needs_seed? =
+      Enum.any?(mfa_subjects, fn subject -> not Map.has_key?(committed, subject.id) end)
 
-          case Implementation.hashes_for_seeding([subject_for_seeding], context, root: root) do
-            map when map_size(map) == 0 ->
+    closure_seeds =
+      cond do
+        mfa_subjects == [] or not needs_seed? ->
+          %{}
+
+        true ->
+          mfa_subjects
+          |> Implementation.hashes_for_seeding(context, root: root)
+          |> Enum.reduce(%{}, fn {id, hash_bin}, acc ->
+            if Map.has_key?(committed, id) do
               acc
-
-            map ->
-              case Map.fetch(map, subject.id) do
-                {:ok, hash_bin} -> Map.put(acc, subject.id, hash_entry(hash_bin))
-                :error -> acc
-              end
-          end
+            else
+              Map.put(acc, id, hash_entry(hash_bin))
+            end
+          end)
       end
-    end
+
+    Map.merge(bare_seeds, closure_seeds)
   end
 
   defp seed_impl_bare_modules(acc, subject, committed) do

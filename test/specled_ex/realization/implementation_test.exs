@@ -722,4 +722,60 @@ defmodule SpecLedEx.Realization.ImplementationTest do
       assert is_binary(drift["current_hash"])
     end
   end
+
+  # ---------------------------------------------------------------------------
+  # Silent-seed batching (atlas-vmi): hash-ref composition requires the full
+  # subject graph in one hashes_for_seeding/3 call. Seeding A alone resolves
+  # peer B as `subject:B:hash:unknown`; the detector walks A+B and embeds B's
+  # real hash → permanent wholesale branch_guard_realization_drift.
+  # ---------------------------------------------------------------------------
+  describe "silent-seed batching — hash_ref peers must share a world" do
+    @tag spec: ["specled.implementation_tier.hash_ref_composition", "specled.realized_by.silent_seed"]
+    test "singleton seed of A differs from batch seed when A references B", %{root: root} do
+      etf = write_fixture_etf!(root)
+      [subject_a, subject_b] = seeding_subjects()
+
+      solo_a =
+        Implementation.hashes_for_seeding([subject_a], nil, tracer_manifest: etf)
+
+      batch =
+        Implementation.hashes_for_seeding([subject_a, subject_b], nil, tracer_manifest: etf)
+
+      assert Map.has_key?(solo_a, "A")
+      assert Map.has_key?(batch, "A")
+      assert Map.has_key?(batch, "B")
+
+      refute solo_a["A"] == batch["A"],
+             "seeding A alone must not match a full-graph seed when A hash-refs B"
+    end
+
+    @tag spec: ["specled.implementation_tier.hash_ref_composition", "specled.realized_by.silent_seed"]
+    test "batch seed then run/4 emits no drift on an empty baseline", %{root: root} do
+      etf = write_fixture_etf!(root)
+      subjects = seeding_subjects()
+
+      seeds = Implementation.hashes_for_seeding(subjects, nil, tracer_manifest: etf)
+
+      :ok =
+        HashStore.write(root, %{
+          "implementation" =>
+            Map.new(seeds, fn {id, hash_bin} ->
+              {id,
+               %{
+                 "hash" => Base.encode16(hash_bin, case: :lower),
+                 "hasher_version" => HashStore.hasher_version()
+               }}
+            end)
+        })
+
+      findings =
+        Implementation.run(subjects, nil, nil, root: root, tracer_manifest: etf)
+
+      drift =
+        Enum.filter(findings, &(&1["code"] == "branch_guard_realization_drift"))
+
+      assert drift == [],
+             "batch-seeded baseline must match detector; got: #{inspect(drift)}"
+    end
+  end
 end
