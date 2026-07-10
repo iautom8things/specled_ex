@@ -126,14 +126,26 @@ defmodule SpecLedEx.Realization.Implementation do
   @spec hashes_for_seeding([subject()], Context.t() | nil, keyword()) ::
           %{String.t() => binary()}
   def hashes_for_seeding(subjects, context \\ nil, opts \\ []) when is_list(subjects) do
+    # Build the world from the FULL subject list (including bare-module
+    # bindings) so in_project set / peer graph match Implementation.run/4.
+    # Partition bare modules out only when hashing each subject's MFA closure
+    # — same shape as check_subject/5.
     world = build_world(subjects, context, opts)
     sorted = Enum.sort_by(subjects, & &1.id)
 
     {result, _cache} =
       Enum.reduce(sorted, {%{}, %{}}, fn subject, {acc, cache} ->
-        case compute_hash(subject, world, context, cache) do
-          {:ok, hash, cache} -> {Map.put(acc, subject.id, hash), cache}
-          {:error, _reason, cache} -> {acc, cache}
+        {mfa_subject, _bare_modules} = partition_bare_modules(subject)
+
+        case mfa_subject do
+          nil ->
+            {acc, cache}
+
+          mfa_subject ->
+            case compute_hash(mfa_subject, world, context, cache) do
+              {:ok, hash, cache} -> {Map.put(acc, subject.id, hash), cache}
+              {:error, _reason, cache} -> {acc, cache}
+            end
         end
       end)
 

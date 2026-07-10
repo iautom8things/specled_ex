@@ -776,28 +776,22 @@ defmodule SpecLedEx.Realization.Orchestrator do
         seed_impl_bare_modules(acc, subject, committed)
       end)
 
-    mfa_subjects =
-      subjects
-      |> Enum.map(fn subject ->
-        mfa_bindings =
-          subject
-          |> Map.get(:impl_bindings, [])
-          |> Enum.reject(&bare_module_binding?/1)
-
-        Map.put(subject, :impl_bindings, mfa_bindings)
-      end)
-      |> Enum.reject(fn subject -> subject.impl_bindings == [] end)
-
+    # Pass the FULL subject list (MFA + bare-module bindings) into
+    # hashes_for_seeding so world building sees the same in_project set and
+    # peer graph as Implementation.run/4. hashes_for_seeding partitions bare
+    # modules out of each subject's declared bindings before hashing.
     needs_seed? =
-      Enum.any?(mfa_subjects, fn subject -> not Map.has_key?(committed, subject.id) end)
+      Enum.any?(subjects, fn subject ->
+        has_mfa_binding?(subject) and not Map.has_key?(committed, subject.id)
+      end)
 
     closure_seeds =
       cond do
-        mfa_subjects == [] or not needs_seed? ->
+        subjects == [] or not needs_seed? ->
           %{}
 
         true ->
-          mfa_subjects
+          subjects
           |> Implementation.hashes_for_seeding(context, root: root)
           |> Enum.reduce(%{}, fn {id, hash_bin}, acc ->
             if Map.has_key?(committed, id) do
@@ -809,6 +803,12 @@ defmodule SpecLedEx.Realization.Orchestrator do
       end
 
     Map.merge(bare_seeds, closure_seeds)
+  end
+
+  defp has_mfa_binding?(subject) do
+    subject
+    |> Map.get(:impl_bindings, [])
+    |> Enum.any?(fn binding -> not bare_module_binding?(binding) end)
   end
 
   defp seed_impl_bare_modules(acc, subject, committed) do
