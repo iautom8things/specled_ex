@@ -5,10 +5,12 @@
   "created": "2026-07-16T23:53:38Z",
   "description": "Distilled from mini-plan. Spec dir: .spec/\nWorktree: /Users/mz/src/specled_ex-evidence-ledger-split",
   "id": "specled_-csg",
-  "labels": [],
+  "labels": [
+    "slug:evidence-ledger-split"
+  ],
   "priority": 2,
   "status": "open",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-16T23:53:38Z"
+  "updated_at": "2026-07-16T23:53:39Z"
 }
