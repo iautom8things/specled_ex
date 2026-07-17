@@ -17,11 +17,15 @@
     {
       "text": "S1 baseline before specled_-csg.1 code changes:\n- mix spec.check status=fail\n- findings count=11 (errors=3, warnings=8)\n- error codes: specled.decisions verification_command_failed; specled.tagged_tests verification_command_failed; specled.verification verification_command_failed\n- warning codes: specled.evidence_store surface_target_missing x8\n- shared failing test reported by command failures: test/specled_ex/verifier_test.exs:1436",
       "timestamp": "2026-07-17T00:12:15Z"
+    },
+    {
+      "text": "LESSONS\n- [other] Run mix format scoped to files you touched — tree-wide format reflows unrelated tests and trips the mechanical scope gate (from specled_-csg.1)\n- [fixture-leak] When a behavior change forces edits to a fixture file outside Allowed touches, disclose it explicitly in IMPLEMENTED instead of shipping it silently (from specled_-csg.1)",
+      "timestamp": "2026-07-17T00:29:11Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-17T00:12:15Z"
+  "updated_at": "2026-07-17T00:29:11Z"
 }
