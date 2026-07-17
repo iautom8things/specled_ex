@@ -32,9 +32,15 @@ surface:
   - lib/specled_ex/evidence/tree_hash.ex
   - lib/specled_ex/evidence/entry.ex
   - lib/specled_ex/evidence/store.ex
+  - lib/specled_ex/evidence/sync.ex
+  - lib/mix/tasks/spec.sync.ex
+  - lib/mix/tasks/spec.prune.ex
   - test/specled_ex/evidence/tree_hash_test.exs
   - test/specled_ex/evidence/entry_test.exs
   - test/specled_ex/evidence/store_test.exs
+  - test/specled_ex/evidence/sync_test.exs
+  - test/mix/tasks/spec_sync_task_test.exs
+  - test/mix/tasks/spec_prune_task_test.exs
 decisions:
   - specled.decision.evidence_orphan_branch_split
 ```
@@ -303,7 +309,7 @@ decisions:
     - specled.evidence_store.local_only_write_path
 - kind: command
   target: mix test test/specled_ex/evidence/sync_test.exs test/mix/tasks/spec_sync_task_test.exs test/mix/tasks/spec_prune_task_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.evidence_store.sync_tree_union
     - specled.evidence_store.sync_failure_contracts

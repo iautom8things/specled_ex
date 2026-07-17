@@ -25,6 +25,8 @@ surface:
   - lib/mix/tasks/spec.triangle.ex
   - lib/mix/tasks/spec.review.ex
   - lib/mix/tasks/spec.dedup_realized_by.ex
+  - lib/mix/tasks/spec.sync.ex
+  - lib/mix/tasks/spec.prune.ex
   - lib/specled_ex/mix_runtime.ex
   - lib/specled_ex/prime.ex
   - priv/spec_init/agents/skills/spec-led-development/SKILL.md.eex
@@ -43,6 +45,8 @@ realized_by:
     - "Mix.Tasks.Spec.Index.run/1"
     - "Mix.Tasks.Spec.Validate.run/1"
     - "Mix.Tasks.Spec.DedupRealizedBy.run/1"
+    - "Mix.Tasks.Spec.Sync.run/1"
+    - "Mix.Tasks.Spec.Prune.run/1"
     - "SpecLedEx.MixRuntime.ensure_started!/0"
 decisions:
   - specled.decision.declarative_current_truth
@@ -187,6 +191,22 @@ decisions:
     a wrong-project context is worse than none).
   priority: must
   stability: evolving
+- id: specled.tasks.sync_evidence
+  statement: >-
+    mix spec.sync shall call the evidence Sync production path, print ahead
+    and behind entry counts labeled as of the last fetch, raise on failure by
+    default, and accept --best-effort to emit exactly one warning and return
+    successfully.
+  priority: must
+  stability: evolving
+- id: specled.tasks.prune_evidence
+  statement: >-
+    mix spec.prune shall be an explicit-only command that fetches before
+    computing trees reachable from local branch heads and remote-tracking
+    refs, removes only evidence outside that set, and pushes through the
+    lease-guarded Sync production path.
+  priority: must
+  stability: evolving
 ```
 
 ## Verification
@@ -240,4 +260,10 @@ decisions:
     - specled.tasks.dedup_realized_by_no_write
     - specled.tasks.dedup_realized_by_exit_code
     - specled.tasks.dedup_realized_by_shared_seam
+- kind: command
+  target: mix test test/mix/tasks/spec_sync_task_test.exs test/mix/tasks/spec_prune_task_test.exs
+  execute: true
+  covers:
+    - specled.tasks.sync_evidence
+    - specled.tasks.prune_evidence
 ```

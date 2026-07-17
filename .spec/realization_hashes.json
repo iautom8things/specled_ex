@@ -36,12 +36,20 @@
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
       "hasher_version": 1
     },
+    "Mix.Tasks.Spec.Prune.run/1": {
+      "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
+      "hasher_version": 1
+    },
     "Mix.Tasks.Spec.Status.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
       "hasher_version": 1
     },
     "Mix.Tasks.Spec.SuggestBinding": {
       "hash": "a7005f2357d30f46cc35f11fb1cf72fa2b861f2d976b1599d0dfe1fe25e07105",
+      "hasher_version": 1
+    },
+    "Mix.Tasks.Spec.Sync.run/1": {
+      "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
       "hasher_version": 1
     },
     "Mix.Tasks.Spec.Triangle.run/1": {

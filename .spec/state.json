@@ -1812,6 +1812,14 @@
       },
       {
         "file": ".spec/specs/mix_tasks.spec.md",
+        "id": "specled.tasks.prune_evidence",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "mix spec.prune shall be an explicit-only command that fetches before computing trees reachable from local branch heads and remote-tracking refs, removes only evidence outside that set, and pushes through the lease-guarded Sync production path.",
+        "subject_id": "specled.mix_tasks"
+      },
+      {
+        "file": ".spec/specs/mix_tasks.spec.md",
         "id": "specled.tasks.review_html_artifact",
         "priority": "should",
         "stability": "evolving",
@@ -1824,6 +1832,14 @@
         "priority": "should",
         "stability": "evolving",
         "statement": "mix spec.status shall summarize coverage, verification strength, weak spots, and ADR usage for the current workspace, executing command verifications by default unless explicitly opted out.",
+        "subject_id": "specled.mix_tasks"
+      },
+      {
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "id": "specled.tasks.sync_evidence",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "mix spec.sync shall call the evidence Sync production path, print ahead and behind entry counts labeled as of the last fetch, raise on failure by default, and accept --best-effort to emit exactly one warning and return successfully.",
         "subject_id": "specled.mix_tasks"
       },
       {
@@ -7648,9 +7664,15 @@
             "lib/specled_ex/evidence/tree_hash.ex",
             "lib/specled_ex/evidence/entry.ex",
             "lib/specled_ex/evidence/store.ex",
+            "lib/specled_ex/evidence/sync.ex",
+            "lib/mix/tasks/spec.sync.ex",
+            "lib/mix/tasks/spec.prune.ex",
             "test/specled_ex/evidence/tree_hash_test.exs",
             "test/specled_ex/evidence/entry_test.exs",
-            "test/specled_ex/evidence/store_test.exs"
+            "test/specled_ex/evidence/store_test.exs",
+            "test/specled_ex/evidence/sync_test.exs",
+            "test/mix/tasks/spec_sync_task_test.exs",
+            "test/mix/tasks/spec_prune_task_test.exs"
           ],
           "verification_minimum_strength": null
         },
@@ -7777,6 +7799,8 @@
               "Mix.Tasks.Spec.Index.run/1",
               "Mix.Tasks.Spec.Validate.run/1",
               "Mix.Tasks.Spec.DedupRealizedBy.run/1",
+              "Mix.Tasks.Spec.Sync.run/1",
+              "Mix.Tasks.Spec.Prune.run/1",
               "SpecLedEx.MixRuntime.ensure_started!/0"
             ]
           },
@@ -7796,6 +7820,8 @@
             "lib/mix/tasks/spec.triangle.ex",
             "lib/mix/tasks/spec.review.ex",
             "lib/mix/tasks/spec.dedup_realized_by.ex",
+            "lib/mix/tasks/spec.sync.ex",
+            "lib/mix/tasks/spec.prune.ex",
             "lib/specled_ex/mix_runtime.ex",
             "lib/specled_ex/prime.ex",
             "priv/spec_init/agents/skills/spec-led-development/SKILL.md.eex",
@@ -8900,7 +8926,7 @@
           "specled.evidence_store.prune_explicit_only",
           "specled.evidence_store.drift_surfaced"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/evidence_store.spec.md",
         "kind": "command",
         "subject_id": "specled.evidence_store",
@@ -9146,6 +9172,17 @@
         "kind": "tagged_tests",
         "subject_id": "specled.mix_tasks",
         "target": ""
+      },
+      {
+        "covers": [
+          "specled.tasks.sync_evidence",
+          "specled.tasks.prune_evidence"
+        ],
+        "execute": true,
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "command",
+        "subject_id": "specled.mix_tasks",
+        "target": "mix test test/mix/tasks/spec_sync_task_test.exs test/mix/tasks/spec_prune_task_test.exs"
       },
       {
         "covers": [
@@ -9839,10 +9876,10 @@
     "decisions": 38,
     "exceptions": 0,
     "findings": 0,
-    "requirements": 346,
+    "requirements": 348,
     "scenarios": 214,
     "subjects": 34,
-    "verifications": 115
+    "verifications": 116
   },
   "verification": {
     "claims": [
@@ -11337,7 +11374,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.evidence_store",
         "target": "mix test test/specled_ex/evidence/sync_test.exs test/mix/tasks/spec_sync_task_test.exs test/mix/tasks/spec_prune_task_test.exs",
         "verification_index": 1
@@ -11348,7 +11385,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.evidence_store",
         "target": "mix test test/specled_ex/evidence/sync_test.exs test/mix/tasks/spec_sync_task_test.exs test/mix/tasks/spec_prune_task_test.exs",
         "verification_index": 1
@@ -11359,7 +11396,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.evidence_store",
         "target": "mix test test/specled_ex/evidence/sync_test.exs test/mix/tasks/spec_sync_task_test.exs test/mix/tasks/spec_prune_task_test.exs",
         "verification_index": 1
@@ -11370,7 +11407,7 @@
         "kind": "command",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.evidence_store",
         "target": "mix test test/specled_ex/evidence/sync_test.exs test/mix/tasks/spec_sync_task_test.exs test/mix/tasks/spec_prune_task_test.exs",
         "verification_index": 1
@@ -11946,6 +11983,28 @@
         "subject_id": "specled.mix_tasks",
         "target": "",
         "verification_index": 6
+      },
+      {
+        "cover_id": "specled.tasks.prune_evidence",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "mix test test/mix/tasks/spec_sync_task_test.exs test/mix/tasks/spec_prune_task_test.exs",
+        "verification_index": 7
+      },
+      {
+        "cover_id": "specled.tasks.sync_evidence",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "command",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "mix test test/mix/tasks/spec_sync_task_test.exs test/mix/tasks/spec_prune_task_test.exs",
+        "verification_index": 7
       },
       {
         "cover_id": "specled.modal_class.classify_case_and_punctuation_insensitive",
@@ -14327,8 +14386,8 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 8,
-      "executed": 315,
+      "claimed": 4,
+      "executed": 321,
       "linked": 84
     },
     "threshold_failures": 0
