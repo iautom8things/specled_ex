@@ -13,8 +13,8 @@
       "message": "Changed file lib/specled_ex.ex impacts subject specled.package; spec.md not co-changed, but realization attested binding(s) SpecLedEx.build_index/2, SpecLedEx.verify/3, SpecLedEx.report/3, SpecLedEx.normalize_for_state/1, SpecLedEx.detect_spec_dir/1, SpecLedEx.detect_authored_dir/2, SpecLedEx.detect_decision_dir/2 as clean — informational only."
     }
   ],
-  "run_at": "2026-07-17T02:43:31.267404Z",
-  "run_id": "e08510ec6401af717314c9edac6475cf",
+  "run_at": "2026-07-17T02:47:07.319791Z",
+  "run_id": "8c144af60b02c33d2231c23b118d57e9",
   "schema_version": 1,
   "specled_version": "0.1.0",
   "tree_hash": "524a5591d7aa8aca623d54f9945cf4a77db845b9",
