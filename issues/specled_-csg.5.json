@@ -39,11 +39,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: 8384310d-16ba-4102-b635-60dea30661d7\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/8384310d-16ba-4102-b635-60dea30661d7.jsonl\n\nReasoning: VERIFY reported PASS with full stub coverage, full requirement coverage,\nzero mechanical or intent-level scope violations, and passing project verification.\nNo auditor was spawned per selective-audit policy.\n(Re-verification after AUDIT: BOUNCE 2026-07-17T03:03:52Z; all out-of-Allowed files\nare audit-sanctioned by that comment; the bounced coverage regression was remediated\nin 7b4ab82 and proven load-bearing by mutation test.)",
       "timestamp": "2026-07-17T03:23:24Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-csg/evidence-ledger-split (ff to 7b4ab82). Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-17T03:23:40Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "S5: Migration + hook installer + write-path removal + self-migration",
   "type": "task",
-  "updated_at": "2026-07-17T03:23:25Z"
+  "updated_at": "2026-07-17T03:23:40Z"
 }
