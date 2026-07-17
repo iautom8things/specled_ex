@@ -49,7 +49,7 @@ decisions:
   priority: should
   stability: evolving
 - id: specled.next.read_only
-  statement: mix spec.next shall stay read-only and return guidance output without writing current-truth files, derived local state, or evidence refs.
+  statement: mix spec.next shall stay read-only and return guidance output without writing current-truth files or derived state.
   priority: must
   stability: evolving
 ```
