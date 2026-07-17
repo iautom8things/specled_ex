@@ -29,11 +29,15 @@
     {
       "text": "APPROVED. Merged into specled_-csg/evidence-ledger-split (ff to a3da615). Closing per orchestrator sign-off.",
       "timestamp": "2026-07-17T01:31:17Z"
+    },
+    {
+      "text": "IMPLEMENTED\nSession: codex-991acad0\nLog: /tmp/specled_-csg.2-codex-991acad0.log (requested /Users/mz/.local/state/agentic-runs/specled_ex/specled_-csg.2/codex-991acad0/log path was outside the writable sandbox)\n\nCommit: 0fb4b12\nFiles touched: .spec/specs/implementation_tier.spec.md, .spec/specs/realized_by.spec.md, .spec/specs/severity.spec.md, .spec/state.json\nTests added: none (guard-ceremony co-updates, gate-forced)\nVerification stubs flipped: none\nAudit-expanded scope: .spec/specs/implementation_tier.spec.md, .spec/specs/realized_by.spec.md, .spec/specs/severity.spec.md (authorized by orchestrator gate-red comment on specled_-csg, 2026-07-17, after specled_-csg.2 close)\n\nSummary: implementation_tier now states that branch-check dispatch and its tagged implementation tests exercise the tier end to end; realized_by and severity now truthfully list the changed tagged-test files on their subject surfaces. The branch_guard_missing_subject_update error findings are now 0 vs origin/main; full mix spec.check passed with errors=0 warnings=0 and retained one pre-existing non-gating informational branch finding.",
+      "timestamp": "2026-07-17T01:45:54Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "S2: Local evidence store + spec.check write path",
   "type": "task",
-  "updated_at": "2026-07-17T01:31:17Z"
+  "updated_at": "2026-07-17T01:45:54Z"
 }
