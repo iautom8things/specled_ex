@@ -105,6 +105,9 @@ defmodule Mix.Tasks.Spec.CheckTest do
   defp scaffold_no_baseline_fixture(root) do
     init_git_repo(root)
 
+    write_files(root, %{"README.md" => "# Bootstrap\n"})
+    commit_all(root, "initial without spec workspace")
+
     write_subject_spec(
       root,
       "billing",
@@ -125,11 +128,9 @@ defmodule Mix.Tasks.Spec.CheckTest do
       ]
     )
 
-    commit_all(root, "initial spec, no state.json")
-
     index = SpecLedEx.index(root)
     SpecLedEx.write_state(index, nil, root)
-    commit_all(root, "add state.json")
+    commit_all(root, "add spec and state.json")
   end
 
   # Runs mix spec.check and treats an expected Mix.Error (when findings flip

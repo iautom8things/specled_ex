@@ -29,5 +29,11 @@ defmodule SpecLedEx.BranchCheck.LoadPriorStateTest do
 
       assert BranchCheck.classify_load_error(output) == :bad_ref
     end
+
+    test "ls-tree invalid object output resolves to :bad_ref" do
+      output = "fatal: not a tree object\n"
+
+      assert BranchCheck.classify_load_error(output) == :bad_ref
+    end
   end
 end

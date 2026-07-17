@@ -14,6 +14,7 @@ status: active
 summary: Builds the authored index and writes canonical derived state for the workspace.
 surface:
   - lib/specled_ex.ex
+  - lib/specled_ex/base_view.ex
   - lib/specled_ex/index.ex
   - lib/specled_ex/json.ex
 realized_by:
@@ -71,6 +72,17 @@ decisions:
   statement: When test-tag scanning is disabled, the `test_tags`, `test_tags_errors`, and `test_tags_config` keys shall be absent or nil on the index so downstream verifiers do not emit tag findings.
   priority: must
   stability: evolving
+- id: specled.index.base_view_parses_base_sources
+  statement: >-
+    `SpecLedEx.BaseView.build/3` shall enumerate the base tree's authored spec
+    and decision paths with `git ls-tree -r --name-only <base> -- <authored_dir>
+    <decision_dir>`, materialize the listed blobs into an isolated temporary
+    `.spec` workspace, parse that workspace with `SpecLedEx.Index.build/2` using
+    current parser code and disabled test-tag scanning, return
+    `SpecLedEx.normalize_for_state/1` plus parsed decisions, and remove the
+    temporary workspace before returning.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -126,6 +138,17 @@ decisions:
     - the regenerated state.json carries no `realization` key
   covers:
     - specled.index.legacy_baseline_hoist
+- id: specled.index.scenario.base_view_deleted_head_file
+  given:
+    - "a base commit with two authored spec files"
+    - "one of those files is deleted from the head working tree"
+  when:
+    - "`SpecLedEx.BaseView.build/3` parses the base ref"
+  then:
+    - "the deleted-at-head file still appears in the returned base state"
+    - "the returned base state matches a live parse of the same base content"
+  covers:
+    - specled.index.base_view_parses_base_sources
 ```
 
 ## Verification
@@ -147,4 +170,8 @@ decisions:
   covers:
     - specled.index.state_fully_derived
     - specled.index.legacy_baseline_hoist
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.index.base_view_parses_base_sources
 ```
