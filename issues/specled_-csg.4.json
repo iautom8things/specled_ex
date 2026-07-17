@@ -25,11 +25,15 @@
     {
       "text": "AUDIT: APPROVE\nSession: 8384310d-16ba-4102-b635-60dea30661d7\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/8384310d-16ba-4102-b635-60dea30661d7.jsonl\n\nReasoning: Independently confirmed the out-of-Allowed edit to html_layout_test.exs is genuinely behavior-forced and minimal. (a) The \"clean change\" test (html_layout_test.exs:289-330) asserts change_verdict.differential? == true AND clean? == true, and the overview \"introduces no findings\" / verdict-chip-clean copy. Its old seed committed .spec/state.json{\"findings\":[]}, which FindingsDelta.load_base_findings no longer reads (it now goes TreeHash.base -\u003e Store.read); with no Store entry the verdict degrades to non_differential_verdict (differential?==false, clean?==nil, findings_delta.ex:88-91) and the headline flips to \"Findings could not be attributed to this change.\" — those exact assertions would fail. So the edit is forced. (b) The edit is 10 lines: alias Evidence.{Entry,Store}, drop the committed-state seed, add tree_hash=git rev-parse HEAD^{tree} / Entry.build / Store.record moved after commit_all (correct — the store is keyed by the committed tree, and main^{tree}==HEAD^{tree} here, so seed key == the production read key). Nothing unrelated smuggled.\n\nCorroborating traces walked myself:\n- Classification byte-for-byte untouched: findings_delta.ex diff hunks are only the moduledoc and the load_base_findings region; signature/1, differential/2, differential_verdict, non_differential_verdict (clean?: nil), severity_counts all sit outside every hunk. @state_path/parse_findings/git_show_state deleted; base_reason splits :base_evidence_absent vs :base_tree_unresolvable.\n- Production path proven, not seam-faked: spec_review_task_test.exs drives Mix.Tasks.Spec.Review.run -\u003e Review.build -\u003e FindingsDelta.classify. Seeded evidence (record_base_evidence at main^{tree}) -\u003e \"This change introduces\" and refutes \"No base evidence is available\"; absent evidence -\u003e indeterminate copy naming mix spec.sync + mix spec.check. Both seed via the real Store.record at the exact key production reads.\n- state.json write path (S5) NOT removed: no lib/mix/tasks/** in the diff; only spec prose + regenerated .spec/state.json cache reference it.\n- Scope count verified against the actual diff: 8 files touched, exactly 1 outside Allowed (html_layout_test.exs, forced), 0 Out-of-Scope globs (evidence/**, lib/mix/tasks/**, base_view/branch_check/append_only, docs/priv/skills/.gitignore all clean). test/mix/tasks/ is the test tree and is explicitly Allowed, distinct from Out-of-Scope lib/mix/tasks/**.",
       "timestamp": "2026-07-17T02:23:13Z"
+    },
+    {
+      "text": "APPROVED. Rebased onto epic head and merged into specled_-csg/evidence-ledger-split (ff to 41e0257). Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-17T02:25:00Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "S4: Consumer rewiring: FindingsDelta reads base evidence",
   "type": "task",
-  "updated_at": "2026-07-17T02:23:42Z"
+  "updated_at": "2026-07-17T02:25:00Z"
 }
