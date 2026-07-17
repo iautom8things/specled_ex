@@ -5,6 +5,7 @@ Guided reconciliation for the current Git change set.
 ## Intent
 
 Give maintainers a deterministic, read-only next step after code, test, or docs changes.
+It reads the live-parsed spec index for guidance and does not write committed derived state.
 
 ```yaml spec-meta
 id: specled.next
