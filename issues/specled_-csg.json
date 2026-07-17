@@ -61,11 +61,15 @@
     {
       "text": "MERGE GATE GREEN for specled_-csg.6 (39d0295, final child): compile ✓, format ✓, deps ✓, spec.check validation errors=0 warnings=0 + branch guard errors=0 ✓. Full suite: first run had 1 failure whose identity was lost to orchestrator output truncation (process error, recorded for transparency); immediate full re-run 992 tests 0 failures exit 0. Adjudged environmental flake NOT introduced by .6: the diff is docs/templates/spec-prose only (zero lib/ or test/ changes), and the byte-identical test-relevant tree passed 992/0 at the .5 gate. Epic branch complete at 39d0295.\n\nMINI-RETRO\nbounces: 3 (other/format-scope-churn, untested-clause/deleted-assertion, stale-spec/additive-tightening)\nfull_suite_runs: 9\nfinals_gt1: 2\nflake_accepts: 3 (2x compiler_tracer tagged_tests signature [at cap], 1x unidentified at .6 gate)\nescalations: 0\nlessons_kept/retired: 4/0\n\nNotable non-bounce re-plans: 3 orchestrator-authorized gate-forced fixes (.1 pre-existing format debt from main; .2 cross-cutting subject co-updates unmasked when validation warnings cleared; .6 guard prose touch after audit-prescribed revert un-satisfied the branch guard). Pattern for planning: the branch guard evaluates the CUMULATIVE epic diff vs origin/main, so ceremony obligations surface at epic-gate time that no single stage ticket owns — future epics should budget a cross-cutting ceremony line item.",
       "timestamp": "2026-07-17T04:39:54Z"
+    },
+    {
+      "text": "ORCHESTRATED\nChildren closed: 6\nBOUNCEs encountered: 3\nUser escalations: 0\n\nDeliver cleanup: all 6 stage worktrees removed and stage branches deleted (each verified merged into epic HEAD 39d0295). Epic worktree /Users/mz/src/specled_ex-evidence-ledger-split preserved. Epic stays in_progress (phase:implementing) for the ship pipeline (/open-pr -\u003e /babysit-pr -\u003e /merge-pr); the final /deliver closes it post-deploy on merged-PR evidence. Epic branch specled_-csg/evidence-ledger-split is ready for a single PR to main — deliberate human checkpoint, not pushed.",
+      "timestamp": "2026-07-17T04:40:33Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-17T04:39:54Z"
+  "updated_at": "2026-07-17T04:40:33Z"
 }
