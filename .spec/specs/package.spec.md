@@ -17,6 +17,13 @@ surface:
   - CHANGELOG.md
   - docs/adoption.md
   - docs/concepts.md
+  - skills/spec-led-bootstrap/SKILL.md
+  - skills/spec-led-bootstrap/references/*.md
+  - priv/spec_init/README.md.eex
+  - priv/spec_init/AGENTS.md.eex
+  - priv/spec_init/agents/skills/spec-led-development/SKILL.md.eex
+  - priv/spec_init/specs/spec_system.spec.md.eex
+  - priv/spec_init/workflows/spec_review.yml.eex
   - mix.exs
   - lib/specled_ex.ex
   - test/test_helper.exs

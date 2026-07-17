@@ -85,8 +85,8 @@ not exist (intentional).
   least the public functions declared
 - All subjects flipped to `status: active`
 - `mix spec.check --base origin/main` clean
-- First run committed `.spec/state.json` so subsequent runs have a
-  baseline hash to compare against
+- First clean check committed `.spec/realization_hashes.json` so subsequent
+  runs have baseline hashes to compare against
 
 **Fan-out:** same shape as phase1. One child ticket per subject is
 recommended over a single sweep, because bindings need per-subject judgment
@@ -156,7 +156,7 @@ asks for it.
 **Stage-ticket done criteria:**
 - The subjects the user nominated have `realized_by.implementation:` blocks
 - `mix compile` runs (so the tracer fires) and `mix spec.check` is clean
-- Per-subject hash baselines committed in `.spec/state.json`
+- Per-subject hash baselines committed in `.spec/realization_hashes.json`
 
 ## Phase 6 — Lock down
 

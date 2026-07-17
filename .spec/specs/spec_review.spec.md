@@ -23,6 +23,7 @@ surface:
   - lib/specled_ex/review/html.ex
   - lib/specled_ex/review/spec_diff.ex
   - priv/spec_review_assets/*
+  - priv/spec_init/workflows/spec_review.yml.eex
   - test/specled_ex/review_test.exs
   - test/specled_ex/review/html_test.exs
   - test/mix/tasks/spec_review_task_test.exs

@@ -27,7 +27,7 @@ Process top-down; the first match wins.
 | T1   | `.spec/` exists, but `.spec/specs/` is empty or contains only template stubs |
 | T2   | At least one subject exists, but **all** subjects are `status: draft` and none has a `realized_by:` field |
 | T3   | At least one subject is `status: active` with `realized_by:` OR at least one test carries `@tag spec:` |
-| T4   | T3 AND `.spec/state.json` exists with `branch_guard_realization_drift` enabled at `warning` or `error` AND a CI workflow references `mix spec.check` |
+| T4   | T3 AND the workspace has realization baselines or a `spec-evidence` ref AND a CI workflow references `mix spec.check` |
 
 Template-stub detection (T1 vs T2): the files
 `.spec/specs/spec_system.spec.md` and `.spec/specs/package.spec.md` come from

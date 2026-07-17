@@ -121,12 +121,12 @@ decisions:
     - specled.index.state_fully_derived
 - id: specled.index.scenario.conflict_ritual_preserves_baseline
   given:
-    - "a committed `.spec/realization_hashes.json` baseline"
-    - "a `.spec/state.json` discarded during a merge-conflict resolution (take either side)"
+    - "a stored `.spec/realization_hashes.json` baseline"
+    - "a `.spec/state.json` file removed because derived state is regenerated locally"
   when:
     - state.json is explicitly regenerated
   then:
-    - HashStore.read/1 still returns the committed baseline (it is preserved, not recomputed)
+    - HashStore.read/1 still returns the stored baseline (it is preserved, not recomputed)
   covers: []
 - id: specled.index.scenario.legacy_hoist_on_regen
   given:

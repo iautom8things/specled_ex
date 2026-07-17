@@ -56,9 +56,9 @@ but they are not where a junior developer should start:
 
 - `mix spec.index`
   - reads `.spec/specs/*.spec.md` and `.spec/decisions/*.md`
-  - updates `.spec/state.json` with subject and ADR index data
+  - can write derived subject and ADR index data with `--output`
 - `mix spec.validate`
-  - validates authored specs, updates `.spec/state.json`, and exits non-zero when the verification report fails
+  - validates authored specs, can write derived state with `--output`, and exits non-zero when the verification report fails
   - keeps `kind: command` verification execution off by default for fast local runs
 
 ## Default Local Loop
@@ -271,14 +271,19 @@ Minimum strength precedence is:
 If a claim is below its effective minimum, `spec.validate` emits
 `verification_strength_below_minimum` as an error.
 
-## Canonical State
+## Derived State
 
-`.spec/state.json` is written as a canonical artifact to keep diffs small:
+When derived state is written for diagnostics, `.spec/state.json` uses a
+canonical layout to keep output stable:
 
 - object keys are sorted recursively
 - findings, claims, subjects, flattened index entries, and indexed ADRs are written in stable order
 - volatile fields such as timestamps and absolute workspace roots are not persisted
 - the file is only rewritten when the canonical bytes change
+
+Do not use `.spec/state.json` as source-of-truth data. Realization baselines
+live in `.spec/realization_hashes.json`; shared check evidence is reconciled
+through the `spec-evidence` ref with `mix spec.sync`.
 
 ## ADRs And Git History
 

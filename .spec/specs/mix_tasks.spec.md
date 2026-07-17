@@ -72,7 +72,7 @@ decisions:
   priority: must
   stability: stable
 - id: specled.tasks.init_local_skill
-  statement: In interactive runs, mix spec.init shall offer to scaffold a local Skill for Spec Led Development and write it when the prompt is accepted.
+  statement: In interactive runs, mix spec.init shall offer to scaffold a local Skill for Spec Led Development and write it when the prompt is accepted, including guidance that treats `.spec/state.json` as derived local state rather than shared source-of-truth data.
   priority: should
   stability: evolving
 - id: specled.tasks.decision_new_scaffold
