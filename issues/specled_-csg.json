@@ -41,11 +41,15 @@
     {
       "text": "MERGE GATE GREEN for specled_-csg.3 (4e60e97): compile ✓, 987 tests 0 failures ✓, format ✓, deps ✓, spec.check errors=0 warnings=0 (informational cross_cutting only). FLAKE ACCEPTED (#2 for signature specled.compiler_tracer verification_command_failed / tracer_test.exs:241 under multi-file tagged_tests run): standalone file re-run 21/0 and full spec.check re-run both green; does not intersect .3 diff. Per policy this signature is now AT CAP — a 3rd occurrence requires an investigation ticket and leaves the gate red. 3/6 closed; .4 in verification; .5 blocked on .4.",
       "timestamp": "2026-07-17T02:18:49Z"
+    },
+    {
+      "text": "MERGE GATE GREEN for specled_-csg.4 (41e0257, rebase-then-ff): compile ✓, 989 tests 0 failures ✓, format ✓, deps ✓, spec.check errors=0 warnings=0. 4/6 closed. Spawning .5.",
+      "timestamp": "2026-07-17T02:28:09Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-17T02:18:49Z"
+  "updated_at": "2026-07-17T02:28:09Z"
 }
