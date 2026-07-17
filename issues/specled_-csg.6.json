@@ -35,11 +35,15 @@
     {
       "text": "ORCHESTRATOR ADJUDICATION (re: VERIFY FAIL 2026-07-17, branch_guard_missing_subject_update priv/spec_init/README.md.eex -\u003e specled.next): Option (a) authorized — a minimal, truthful, NON-statement prose touch to .spec/specs/next.spec.md that re-satisfies the guard without changing any requirement/scenario semantics. Rationale: the guard error is a direct side effect of the audit-prescribed revert (next.spec.md became byte-identical to origin/main while this ticket's README.md.eex edit maps to specled.next); same guard-forced-minimal-co-change class as the two prior orchestrator-authorized gate fixes on this epic (.1 format, .2 subject co-updates). next.spec.md prose is within this ticket's Allowed .spec/specs/*.spec.md sweep; the prose-only contract forbids semantics changes, not truthful prose. Does NOT consume a bounce attempt (audit-induced, not implementer error). Statement fields must remain byte-identical to base.",
       "timestamp": "2026-07-17T04:16:42Z"
+    },
+    {
+      "text": "IMPLEMENTED\nSession: codex-008ce15f\nLog: /tmp/specled_-csg.6-codex-008ce15f.log (requested /Users/mz/.local/state/agentic-runs/specled_ex/specled_-csg.6/codex-008ce15f/log was not writable in this sandbox)\n\nCommit: 39d029524dbb70650be5f8ca43eb999c0c912c43\nFiles touched: .spec/specs/next.spec.md\nTests added: none (guard-satisfying prose touch, orchestrator-adjudicated)\nVerification stubs flipped: none\nAudit-expanded scope: .spec/specs/next.spec.md prose (authorized by ORCHESTRATOR ADJUDICATION comment on specled_-csg.6, 2026-07-17)\n\nSummary: Added one Intent prose sentence: \"It reads the live-parsed spec index for guidance and does not write committed derived state.\" mix spec.check is fully clean for validation (errors=0 warnings=0) and the branch guard error is gone (branch errors=0; only cross_cutting info remains); statement fields in .spec/specs/next.spec.md and .spec/specs/mix_tasks.spec.md remain byte-identical to base 7b4ab82.",
+      "timestamp": "2026-07-17T04:24:59Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "S6: Docs, templates, and ceremony deletion",
   "type": "task",
-  "updated_at": "2026-07-17T04:16:45Z"
+  "updated_at": "2026-07-17T04:24:59Z"
 }
