@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-csg.1",
     "specled_-csg.3",
@@ -14,8 +14,8 @@
   "labels": [],
   "parent": "specled_-csg",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "S5: Migration + hook installer + write-path removal + self-migration",
   "type": "task",
-  "updated_at": "2026-07-16T23:56:59Z"
+  "updated_at": "2026-07-17T02:28:34Z"
 }
