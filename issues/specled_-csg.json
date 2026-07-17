@@ -21,11 +21,15 @@
     {
       "text": "LESSONS\n- [other] Run mix format scoped to files you touched — tree-wide format reflows unrelated tests and trips the mechanical scope gate (from specled_-csg.1)\n- [fixture-leak] When a behavior change forces edits to a fixture file outside Allowed touches, disclose it explicitly in IMPLEMENTED instead of shipping it silently (from specled_-csg.1)",
       "timestamp": "2026-07-17T00:29:11Z"
+    },
+    {
+      "text": "MERGE GATE RED after specled_-csg.1 close: mix format --check-formatted fails on test/specled_ex/realization/implementation_test.exs. Classification: PRE-EXISTING — file is byte-identical to epic base 5912dea (unformatted @tag lists introduced on main by ab5beb6); not introduced by the merged diff. The AUDIT: BOUNCE on .1 offered \"revert or explicitly authorize\" the format fix; the gate failure is the authorization evidence. Action: respawning the just-closed implementer (gate-red rule) scoped to formatting this one file on the .1 stage branch, then re-merge + re-gate. DAG spawns held while gate is red.",
+      "timestamp": "2026-07-17T00:52:13Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-17T00:29:11Z"
+  "updated_at": "2026-07-17T00:52:13Z"
 }
