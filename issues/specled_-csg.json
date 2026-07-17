@@ -25,11 +25,15 @@
     {
       "text": "MERGE GATE RED after specled_-csg.1 close: mix format --check-formatted fails on test/specled_ex/realization/implementation_test.exs. Classification: PRE-EXISTING — file is byte-identical to epic base 5912dea (unformatted @tag lists introduced on main by ab5beb6); not introduced by the merged diff. The AUDIT: BOUNCE on .1 offered \"revert or explicitly authorize\" the format fix; the gate failure is the authorization evidence. Action: respawning the just-closed implementer (gate-red rule) scoped to formatting this one file on the .1 stage branch, then re-merge + re-gate. DAG spawns held while gate is red.",
       "timestamp": "2026-07-17T00:52:13Z"
+    },
+    {
+      "text": "MERGE GATE GREEN for specled_-csg.1 (post gate-fix 6372471): compile ✓, 968 tests 0 failures ✓, format ✓, deps.unlock ✓, spec.check = 0 errors + the 8 S1-baseline-adjudicated S2 evidence_store surface warnings ✓.\n\nFLAKE ACCEPTED (#1 for signature): specled.compiler_tracer verification_command_failed / tracer_test.exs:241 under the multi-file tagged_tests run. Standalone file re-run (21 tests, 0 failures) and full spec.check re-run both green; failure does not intersect the merged diff (no compiler/tracer files touched). Caveat: original run's seed was not recoverable from spec.check output, so same-seed evidence unavailable — accepted on non-reproduction across both re-runs plus known tagged_tests timing-flakiness. Third occurrence of this signature gets an investigation ticket per policy.",
+      "timestamp": "2026-07-17T00:58:59Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-17T00:52:13Z"
+  "updated_at": "2026-07-17T00:58:59Z"
 }
