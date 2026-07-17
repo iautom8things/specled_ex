@@ -730,10 +730,7 @@ defmodule SpecLedEx.Realization.ImplementationTest do
   # real hash → permanent wholesale branch_guard_realization_drift.
   # ---------------------------------------------------------------------------
   describe "silent-seed batching — hash_ref peers must share a world" do
-    @tag spec: [
-           "specled.implementation_tier.hash_ref_composition",
-           "specled.realized_by.silent_seed"
-         ]
+    @tag spec: ["specled.implementation_tier.hash_ref_composition", "specled.realized_by.silent_seed"]
     test "singleton seed of A differs from batch seed when A references B", %{root: root} do
       etf = write_fixture_etf!(root)
       [subject_a, subject_b] = seeding_subjects()
@@ -752,10 +749,7 @@ defmodule SpecLedEx.Realization.ImplementationTest do
              "seeding A alone must not match a full-graph seed when A hash-refs B"
     end
 
-    @tag spec: [
-           "specled.implementation_tier.hash_ref_composition",
-           "specled.realized_by.silent_seed"
-         ]
+    @tag spec: ["specled.implementation_tier.hash_ref_composition", "specled.realized_by.silent_seed"]
     test "batch seed then run/4 emits no drift on an empty baseline", %{root: root} do
       etf = write_fixture_etf!(root)
       subjects = seeding_subjects()
