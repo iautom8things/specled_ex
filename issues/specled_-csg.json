@@ -9,6 +9,12 @@
     "phase:implementing",
     "slug:evidence-ledger-split"
   ],
+  "comments": [
+    {
+      "text": "ORCHESTRATION START (comment mode). worker_mode=codex (team profile, 0% weekly; auto-recommended, user-confirmed). generated_state_paths=[.spec/state.json, .spec/realization_hashes.json], regen_command='mix spec.check'. DAG: .1 -\u003e .2 -\u003e {.3 || .4} -\u003e .5 -\u003e .6.",
+      "timestamp": "2026-07-17T00:06:34Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "evidence-ledger-split",
