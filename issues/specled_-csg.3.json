@@ -13,9 +13,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-csg",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: codex-551b2c74\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-csg.3/codex-551b2c74/log\n\nCommit: 4e60e97ef22124c3f6279a0e7b046b3933cf0f60\nFiles touched: .spec/realization_hashes.json, .spec/specs/evidence_store.spec.md, .spec/specs/mix_tasks.spec.md, .spec/state.json, lib/mix/tasks/spec.prune.ex, lib/mix/tasks/spec.sync.ex, lib/specled_ex/evidence/sync.ex, test/mix/tasks/spec_prune_task_test.exs, test/mix/tasks/spec_sync_task_test.exs, test/specled_ex/evidence/sync_test.exs\nTests added: SpecLedEx.Evidence.SyncTest — remote-absent pushes and local-absent adopts without checking out the evidence ref; tree union converges in both push orders and higher same-key stamp wins; lease rejection refetches, re-merges, and succeeds; three consecutive lease rejections exhaust the bounded retry. Mix.Tasks.SpecSyncTaskTest — task drives the production Sync.run/2 path through a real bare-origin push; default raises while best-effort emits exactly one warning and returns ok. Mix.Tasks.SpecPruneTaskTest — explicit prune keeps local-head and remote-tracking trees and drops only unreachable.\nVerification stubs flipped: specled.evidence_store sync-group command stub covering specled.evidence_store.sync_tree_union, specled.evidence_store.sync_failure_contracts, specled.evidence_store.prune_explicit_only, specled.evidence_store.drift_surfaced\n\nSummary: Added plumbing-only, content-based evidence synchronization with deterministic run-stamp conflict resolution, local/remote absence handling, bounded jittered force-with-lease retries, and drift counts labeled as of the last fetch. Added production mix spec.sync and explicit-only mix spec.prune paths with default/best-effort failure contracts, reachability-based pruning, fresh subject specs, and hermetic bare-origin/two-clone tests; the full 987-test suite and command-executing spec check pass.",
+      "timestamp": "2026-07-17T02:07:33Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "S3: Sync machinery: spec.sync + spec.prune + drift surfacing",
   "type": "task",
-  "updated_at": "2026-07-17T01:49:38Z"
+  "updated_at": "2026-07-17T02:07:33Z"
 }
