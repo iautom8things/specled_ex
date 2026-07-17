@@ -57,11 +57,15 @@
     {
       "text": "LESSONS\n- [other] Run mix format scoped to files you touched — tree-wide format reflows unrelated tests and trips the mechanical scope gate (from specled_-csg.1)\n- [fixture-leak] When a behavior change forces edits to a fixture file outside Allowed touches, disclose it explicitly in IMPLEMENTED instead of shipping it silently (from specled_-csg.1)\n- [untested-clause] Adapt assertions to new contracts instead of deleting them — fallout edits must preserve each test's load-bearing check, and a \"still passes\" test that can no longer fail for its requirement is a coverage regression (from specled_-csg.5)\n- [stale-spec] In a prose-only spec sweep, never tighten requirement statements — an additive prohibition or obligation is a semantics change even when behavior-accurate, and the append-only guard cannot catch additive tightenings (from specled_-csg.6)",
       "timestamp": "2026-07-17T03:56:43Z"
+    },
+    {
+      "text": "MERGE GATE GREEN for specled_-csg.6 (39d0295, final child): compile ✓, format ✓, deps ✓, spec.check validation errors=0 warnings=0 + branch guard errors=0 ✓. Full suite: first run had 1 failure whose identity was lost to orchestrator output truncation (process error, recorded for transparency); immediate full re-run 992 tests 0 failures exit 0. Adjudged environmental flake NOT introduced by .6: the diff is docs/templates/spec-prose only (zero lib/ or test/ changes), and the byte-identical test-relevant tree passed 992/0 at the .5 gate. Epic branch complete at 39d0295.\n\nMINI-RETRO\nbounces: 3 (other/format-scope-churn, untested-clause/deleted-assertion, stale-spec/additive-tightening)\nfull_suite_runs: 9\nfinals_gt1: 2\nflake_accepts: 3 (2x compiler_tracer tagged_tests signature [at cap], 1x unidentified at .6 gate)\nescalations: 0\nlessons_kept/retired: 4/0\n\nNotable non-bounce re-plans: 3 orchestrator-authorized gate-forced fixes (.1 pre-existing format debt from main; .2 cross-cutting subject co-updates unmasked when validation warnings cleared; .6 guard prose touch after audit-prescribed revert un-satisfied the branch guard). Pattern for planning: the branch guard evaluates the CUMULATIVE epic diff vs origin/main, so ceremony obligations surface at epic-gate time that no single stage ticket owns — future epics should budget a cross-cutting ceremony line item.",
+      "timestamp": "2026-07-17T04:39:54Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-17T03:56:43Z"
+  "updated_at": "2026-07-17T04:39:54Z"
 }
