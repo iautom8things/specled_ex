@@ -45,7 +45,7 @@ decisions:
   priority: should
   stability: evolving
 - id: specled.status.decision_index
-  statement: state output and mix spec.status shall summarize indexed ADRs and subject-to-ADR references.
+  statement: explicit state output and mix spec.status shall summarize indexed ADRs and subject-to-ADR references.
   priority: must
   stability: evolving
 ```

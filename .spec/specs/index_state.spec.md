@@ -1,17 +1,18 @@
 # Index And State
 
-Index building and canonical state persistence for the Spec Led Development workspace.
+Index building and explicit derived-state persistence for the Spec Led Development workspace.
 
 ## Intent
 
 Define how the package discovers authored current-truth subjects and ADRs, then
-persists a stable `.spec/state.json` artifact for later inspection and diffing.
+normalizes a stable derived state artifact only when a caller explicitly asks
+for one.
 
 ```yaml spec-meta
 id: specled.index_state
 kind: workflow
 status: active
-summary: Builds the authored index and writes canonical derived state for the workspace.
+summary: Builds the authored index and writes canonical derived state only on explicit request.
 surface:
   - lib/specled_ex.ex
   - lib/specled_ex/base_view.ex
@@ -38,7 +39,7 @@ decisions:
   priority: must
   stability: stable
 - id: specled.index.canonical_state_output
-  statement: State writing shall normalize indexed entities, findings, verification data, and decisions into a canonical `.spec/state.json` artifact with stable ordering and no volatile persisted fields.
+  statement: Explicit state writing shall normalize indexed entities, findings, verification data, and decisions into a canonical derived-state artifact with stable ordering and no volatile persisted fields; mix tasks shall not write `.spec/state.json` by default, and mix spec.index / mix spec.validate may write the artifact only when `--output` is supplied.
   priority: must
   stability: stable
 - id: specled.index.json_resilience
@@ -56,11 +57,11 @@ decisions:
   stability: evolving
 - id: specled.index.legacy_baseline_hoist
   statement: >-
-    When the canonical `.spec/state.json` still carries a legacy embedded
+    When the legacy `.spec/state.json` still carries an embedded
     `realization` section and `.spec/realization_hashes.json` is absent,
-    state writing shall hoist the embedded section into the dedicated
-    baseline file before regenerating state.json, so the committed hashes
-    survive the regeneration instead of being silently re-seeded from the
+    `mix spec.evidence.migrate` shall hoist the embedded section into the
+    dedicated baseline file before untracking state.json, so the committed
+    hashes survive the migration instead of being silently re-seeded from the
     current tree.
   priority: must
   stability: evolving
@@ -112,7 +113,7 @@ decisions:
   given:
     - "a committed `.spec/realization_hashes.json` baseline"
   when:
-    - write_state/4 regenerates `.spec/state.json`
+    - write_state/4 explicitly regenerates `.spec/state.json`
   then:
     - the baseline file's bytes are unchanged
     - the regenerated state.json carries no `realization` key
@@ -123,7 +124,7 @@ decisions:
     - "a committed `.spec/realization_hashes.json` baseline"
     - "a `.spec/state.json` discarded during a merge-conflict resolution (take either side)"
   when:
-    - state.json is regenerated
+    - state.json is explicitly regenerated
   then:
     - HashStore.read/1 still returns the committed baseline (it is preserved, not recomputed)
   covers: []
@@ -132,10 +133,10 @@ decisions:
     - "a `.spec/state.json` carrying a legacy embedded `realization` section"
     - "no `.spec/realization_hashes.json`"
   when:
-    - write_state/4 regenerates `.spec/state.json`
+    - mix spec.evidence.migrate hoists legacy realization
   then:
     - "`.spec/realization_hashes.json` is created carrying the embedded hashes unchanged"
-    - the regenerated state.json carries no `realization` key
+    - the dedicated baseline file is created without rewriting the legacy state file
   covers:
     - specled.index.legacy_baseline_hoist
 - id: specled.index.scenario.base_view_deleted_head_file

@@ -27,6 +27,9 @@ surface:
   - lib/mix/tasks/spec.dedup_realized_by.ex
   - lib/mix/tasks/spec.sync.ex
   - lib/mix/tasks/spec.prune.ex
+  - lib/mix/tasks/spec.evidence.migrate.ex
+  - lib/mix/tasks/spec.evidence.install_hook.ex
+  - priv/hooks/pre-push
   - lib/specled_ex/mix_runtime.ex
   - lib/specled_ex/prime.ex
   - priv/spec_init/agents/skills/spec-led-development/SKILL.md.eex
@@ -47,6 +50,8 @@ realized_by:
     - "Mix.Tasks.Spec.DedupRealizedBy.run/1"
     - "Mix.Tasks.Spec.Sync.run/1"
     - "Mix.Tasks.Spec.Prune.run/1"
+    - "Mix.Tasks.Spec.Evidence.Migrate.run/1"
+    - "Mix.Tasks.Spec.Evidence.InstallHook.run/1"
     - "SpecLedEx.MixRuntime.ensure_started!/0"
 decisions:
   - specled.decision.declarative_current_truth
@@ -75,7 +80,7 @@ decisions:
   priority: should
   stability: evolving
 - id: specled.tasks.index_writes_state
-  statement: mix spec.index shall build the authored subject and decision index and write .spec/state.json.
+  statement: mix spec.index shall build the authored subject and decision index, and shall write derived state only when the caller supplies `--output`.
   priority: must
   stability: stable
 - id: specled.tasks.prime_context
@@ -91,7 +96,7 @@ decisions:
   priority: should
   stability: evolving
 - id: specled.tasks.validate_findings
-  statement: mix spec.validate shall validate specs, derive findings, and write .spec/state.json with a verification report before returning.
+  statement: mix spec.validate shall validate specs and derive findings, and shall write derived state with the verification report only when the caller supplies `--output`.
   priority: must
   stability: stable
 - id: specled.tasks.validate_exit_status
@@ -109,7 +114,8 @@ decisions:
     `refs/heads/spec-evidence` using Git plumbing only. The write path shall
     perform zero network I/O, shall never check out the evidence ref, and
     shall emit an `evidence/local_write_failed` warning without changing the
-    task exit status if the local evidence write fails.
+    task exit status if the local evidence write fails. mix spec.check shall
+    not write `.spec/state.json`.
   priority: must
   stability: evolving
 - id: specled.tasks.status_summary
@@ -141,7 +147,23 @@ decisions:
   priority: must
   stability: evolving
 - id: specled.tasks.check_verbose_flag
-  statement: mix spec.check shall accept a `--verbose` flag and honor `SPECLED_SHOW_INFO=1` that together govern stdout filtering; without either, findings whose resolved severity is `:info` shall be suppressed from stdout while still being written to `.spec/state.json` unchanged. With either flag or env var, every finding regardless of severity shall be printed.
+  statement: mix spec.check shall accept a `--verbose` flag and honor `SPECLED_SHOW_INFO=1` that together govern stdout filtering; without either, findings whose resolved severity is `:info` shall be suppressed from stdout. With either flag or env var, every finding regardless of severity shall be printed.
+  priority: must
+  stability: evolving
+- id: specled.tasks.evidence_migrate
+  statement: >-
+    mix spec.evidence.migrate shall hoist any legacy embedded realization
+    baseline, untrack `.spec/state.json` while preserving the file, append
+    `.spec/state.json` to `.gitignore`, install the spec evidence pre-push
+    hook, and seed the local orphan evidence ref for the post-migration tree
+    without modifying `.spec/realization_hashes.json`.
+  priority: must
+  stability: evolving
+- id: specled.tasks.evidence_install_hook
+  statement: >-
+    mix spec.evidence.install_hook shall install the static pre-push shim from
+    `priv/hooks/pre-push` when no hook exists, and shall refuse to overwrite an
+    existing hook while printing the snippet to append manually.
   priority: must
   stability: evolving
 - id: specled.tasks.review_html_artifact
@@ -247,6 +269,8 @@ decisions:
   execute: true
   covers:
     - specled.tasks.check_evidence_write
+    - specled.tasks.evidence_migrate
+    - specled.tasks.evidence_install_hook
 - kind: command
   target: >-
     sh -c 'missing=$(grep -L "SpecLedEx.MixRuntime.ensure_started" lib/mix/tasks/*.ex); if [ -n "$missing" ]; then echo "tasks missing MixRuntime bootstrap:"; echo "$missing"; exit 1; fi'

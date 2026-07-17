@@ -35,6 +35,9 @@ surface:
   - lib/specled_ex/evidence/sync.ex
   - lib/mix/tasks/spec.sync.ex
   - lib/mix/tasks/spec.prune.ex
+  - lib/mix/tasks/spec.evidence.migrate.ex
+  - lib/mix/tasks/spec.evidence.install_hook.ex
+  - priv/hooks/pre-push
   - test/specled_ex/evidence/tree_hash_test.exs
   - test/specled_ex/evidence/entry_test.exs
   - test/specled_ex/evidence/store_test.exs
@@ -321,7 +324,7 @@ decisions:
     - specled.evidence_store.attestation_never_gates
 - kind: command
   target: mix test test/mix/tasks/spec_evidence_migrate_test.exs test/mix/tasks/spec_evidence_install_hook_test.exs
-  execute: false
+  execute: true
   covers:
     - specled.evidence_store.migration_one_shot
     - specled.evidence_store.hook_static_never_blocks

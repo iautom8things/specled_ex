@@ -71,7 +71,7 @@ realized_by:
     - "a subject file with a must requirement whose statement is `Does the thing.` (14 chars, 3 words)"
     - default prose thresholds (min_chars 40, min_words 6)
   when:
-    - mix spec.validate runs
+    - mix spec.validate runs with explicit derived-state output
   then:
     - a `spec_requirement_too_short` finding references that requirement id
     - the message names the failing dimension
@@ -82,7 +82,7 @@ realized_by:
     - the same too-short must requirement
     - "config.severities set to `spec_requirement_too_short: :off`"
   when:
-    - mix spec.validate runs
+    - mix spec.validate runs with explicit derived-state output
   then:
     - no `spec_requirement_too_short` finding is produced
   covers:
@@ -92,7 +92,7 @@ realized_by:
     - a subject with a `should` requirement whose statement is a single short sentence
     - default prose thresholds
   when:
-    - mix spec.validate runs
+    - mix spec.validate runs with explicit derived-state output
   then:
     - no prose-rot finding is produced for the `should` requirement
   covers:

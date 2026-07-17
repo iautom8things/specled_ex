@@ -99,7 +99,7 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     Mix.Tasks.Spec.Check.run(["--root", root])
 
-    assert read_state(root)["summary"]["findings"] == 0
+    refute File.exists?(Path.join(root, ".spec/state.json"))
   end
 
   test "spec.index writes state for malformed specs without crashing", %{root: root} do
@@ -121,7 +121,7 @@ defmodule Mix.Tasks.SpecTasksTest do
       """
     )
 
-    Mix.Tasks.Spec.Index.run(["--root", root])
+    Mix.Tasks.Spec.Index.run(["--root", root, "--output", ".spec/state.json"])
 
     state = read_state(root)
     messages = drain_shell_messages()
@@ -142,7 +142,14 @@ defmodule Mix.Tasks.SpecTasksTest do
       meta: %{"id" => "absolute.subject", "kind" => "module", "status" => "active"}
     )
 
-    Mix.Tasks.Spec.Index.run(["--root", root, "--spec-dir", abs_spec_dir])
+    Mix.Tasks.Spec.Index.run([
+      "--root",
+      root,
+      "--spec-dir",
+      abs_spec_dir,
+      "--output",
+      Path.join(abs_spec_dir, "state.json")
+    ])
 
     state = read_state(root, Path.join(abs_spec_dir, "state.json"))
 
@@ -159,7 +166,7 @@ defmodule Mix.Tasks.SpecTasksTest do
     )
 
     assert_raise Mix.Error, ~r/Spec validate failed: 1 finding/, fn ->
-      Mix.Tasks.Spec.Validate.run(["--root", root, "--strict"])
+      Mix.Tasks.Spec.Validate.run(["--root", root, "--strict", "--output", ".spec/state.json"])
     end
 
     state = read_state(root)
@@ -227,7 +234,13 @@ defmodule Mix.Tasks.SpecTasksTest do
     )
 
     assert_raise Mix.Error, ~r/Spec validate failed: 1 finding/, fn ->
-      Mix.Tasks.Spec.Validate.run(["--root", root, "--run-commands"])
+      Mix.Tasks.Spec.Validate.run([
+        "--root",
+        root,
+        "--run-commands",
+        "--output",
+        ".spec/state.json"
+      ])
     end
 
     refute File.exists?(Path.join(root, "ran.txt"))
@@ -271,7 +284,7 @@ defmodule Mix.Tasks.SpecTasksTest do
       ]
     )
 
-    Mix.Tasks.Spec.Validate.run(["--root", root])
+    Mix.Tasks.Spec.Validate.run(["--root", root, "--output", ".spec/state.json"])
 
     refute File.exists?(Path.join(root, "verify_only.txt"))
     assert read_state(root)["summary"]["findings"] == 0
@@ -367,7 +380,7 @@ defmodule Mix.Tasks.SpecTasksTest do
     )
 
     Mix.Tasks.Spec.Check.run(["--root", root])
-    assert read_state(root)["summary"]["findings"] == 0
+    refute File.exists?(Path.join(root, ".spec/state.json"))
   end
 
   test "spec.check fails when code changes do not update the impacted subject spec", %{
@@ -571,7 +584,9 @@ defmodule Mix.Tasks.SpecTasksTest do
       Mix.Tasks.Spec.Check.run(["--root", failing_root])
     end
 
-    assert read_state(failing_root)["summary"]["findings"] == 1
+    messages = drain_shell_messages()
+    assert message_contains?(messages, "requirement_without_verification")
+    refute File.exists?(Path.join(failing_root, ".spec/state.json"))
   end
 
   test "spec.check executes commands by default", %{root: root} do
@@ -594,7 +609,7 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     messages = drain_shell_messages()
 
-    assert read_state(root)["summary"]["findings"] == 0
+    refute File.exists?(Path.join(root, ".spec/state.json"))
     assert File.read!(Path.join(root, "checked.txt")) == "checked"
     assert message_contains?(messages, "debug_checks=")
     assert message_contains?(messages, "status=pass errors=0 warnings=0")
@@ -625,14 +640,24 @@ defmodule Mix.Tasks.SpecTasksTest do
     )
 
     assert_raise Mix.Error, ~r/Spec validate failed: 1 finding/, fn ->
-      Mix.Tasks.Spec.Validate.run(["--root", root, "--run-commands", "--strict"])
+      Mix.Tasks.Spec.Validate.run([
+        "--root",
+        root,
+        "--run-commands",
+        "--strict",
+        "--output",
+        ".spec/state.json"
+      ])
     end
 
-    assert [%{"code" => "verification_command_timeout", "message" => message}] =
-             read_state(root)["findings"]
+    messages = drain_shell_messages()
+
+    [message] =
+      for msg <- messages, String.contains?(msg, "verification_command_timeout"), do: msg
 
     assert message =~ "command exceeded 100ms"
     assert message =~ "--command-timeout-ms 200"
+    assert read_state(root)["findings"] != []
   end
 
   @tag spec: [
@@ -663,11 +688,14 @@ defmodule Mix.Tasks.SpecTasksTest do
       Mix.Tasks.Spec.Check.run(["--root", root])
     end
 
-    assert [%{"code" => "verification_command_timeout", "message" => message}] =
-             read_state(root)["findings"]
+    messages = drain_shell_messages()
+
+    [message] =
+      for msg <- messages, String.contains?(msg, "verification_command_timeout"), do: msg
 
     assert message =~ "command exceeded 100ms"
     assert message =~ "--command-timeout-ms 200"
+    refute File.exists?(Path.join(root, ".spec/state.json"))
   end
 
   @tag spec: [
@@ -689,12 +717,7 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     Mix.Tasks.Spec.Check.run(["--root", root])
 
-    assert [
-             %{
-               "code" => "requirement_without_verification",
-               "level" => "info"
-             }
-           ] = read_state(root)["findings"]
+    refute File.exists?(Path.join(root, ".spec/state.json"))
   end
 
   test "spec.check allows opting out of command execution", %{root: root} do
@@ -716,7 +739,7 @@ defmodule Mix.Tasks.SpecTasksTest do
     Mix.Tasks.Spec.Check.run(["--root", root, "--no-run-commands"])
 
     refute File.exists?(Path.join(root, "skipped.txt"))
-    assert read_state(root)["summary"]["findings"] == 0
+    refute File.exists?(Path.join(root, ".spec/state.json"))
   end
 
   test "spec.check forwards min strength to strict verify", %{root: root} do
@@ -736,11 +759,9 @@ defmodule Mix.Tasks.SpecTasksTest do
       Mix.Tasks.Spec.Check.run(["--root", root, "--min-strength", "executed"])
     end
 
-    state = read_state(root)
-
-    assert state["verification"]["cli_minimum_strength"] == "executed"
-    assert state["verification"]["threshold_failures"] == 1
-    assert Enum.map(state["findings"], & &1["code"]) == ["verification_strength_below_minimum"]
+    messages = drain_shell_messages()
+    assert message_contains?(messages, "verification_strength_below_minimum")
+    refute File.exists?(Path.join(root, ".spec/state.json"))
   end
 
   test "spec.check rejects strict toggles because it is always strict", %{root: root} do

@@ -32,9 +32,9 @@ defmodule Mix.Tasks.Spec.Check do
     * `--test-tags` / `--no-test-tags` - enable or disable test-tag scanning
       for this invocation, overriding `.spec/config.yml`
     * `--verbose` - print findings of every severity including `:info`. Without
-      this flag, `:info`-severity findings are suppressed from stdout (they
-      remain in `.spec/state.json`). `SPECLED_SHOW_INFO=1` in the environment
-      has the same effect as `--verbose`.
+      this flag, `:info`-severity findings are suppressed from stdout.
+      `SPECLED_SHOW_INFO=1` in the environment has the same effect as
+      `--verbose`.
   """
 
   @impl Mix.Task
@@ -46,7 +46,6 @@ defmodule Mix.Tasks.Spec.Check do
         args,
         strict: [
           root: :string,
-          output: :string,
           spec_dir: :string,
           debug: :boolean,
           run_commands: :boolean,
@@ -65,7 +64,6 @@ defmodule Mix.Tasks.Spec.Check do
     root = opts[:root] || File.cwd!()
     spec_dir = opts[:spec_dir] || SpecLedEx.detect_spec_dir(root)
     authored_dir = SpecLedEx.detect_authored_dir(root, spec_dir)
-    output = opts[:output] || "#{spec_dir}/state.json"
     config = Config.load(root, path: config_path(root, spec_dir))
     command_timeout_ms = opts[:command_timeout_ms] || config.verification.command_timeout_ms
     verification_severities = config.verification.severities
@@ -78,8 +76,6 @@ defmodule Mix.Tasks.Spec.Check do
       |> maybe_put_test_tags(opts)
 
     index = SpecLedEx.index(root, index_opts)
-    path = SpecLedEx.write_state(index, nil, root, output)
-    Mix.shell().info("spec.index wrote #{path}")
 
     Mix.shell().info(
       "authored_dir=#{index["authored_dir"]} subjects=#{index["summary"]["subjects"]} requirements=#{index["summary"]["requirements"]}"
@@ -94,9 +90,6 @@ defmodule Mix.Tasks.Spec.Check do
         severities: verification_severities,
         min_strength: min_strength
       )
-
-    path = SpecLedEx.write_state(index, report, root, output)
-    Mix.shell().info("spec.validate wrote #{path}")
 
     summary = report["summary"]
 

@@ -60,21 +60,20 @@ defmodule Mix.Tasks.Spec.CheckTest do
     end
 
     @tag spec: "specled.tasks.check_verbose_flag"
-    test "state.json written by spec.validate is unaffected by --verbose", %{root: root} do
-      # The --verbose flag only gates stdout printing. The state.json produced
-      # by the validate step must be identical whether or not --verbose is set.
+    test "spec.check does not write state.json with or without --verbose", %{root: root} do
+      # The --verbose flag only gates stdout printing. spec.check keeps the
+      # validation report in memory and records evidence, but it does not write
+      # the derived state artifact.
       scaffold_no_baseline_fixture(root)
+      state_path = Path.join(root, ".spec/state.json")
+      state_before = File.read!(state_path)
 
       run_spec_check(root, ["--base", "HEAD~1"])
-      default_state = read_state(root)
       Mix.Shell.Process.flush()
 
       run_spec_check(root, ["--base", "HEAD~1", "--verbose"])
-      verbose_state = read_state(root)
 
-      assert default_state == verbose_state,
-             "state.json must not differ based on --verbose; diff at keys: " <>
-               inspect(diff_keys(default_state, verbose_state))
+      assert File.read!(state_path) == state_before
     end
   end
 
@@ -145,13 +144,6 @@ defmodule Mix.Tasks.Spec.CheckTest do
         :ok
     end
   end
-
-  defp diff_keys(left, right) when is_map(left) and is_map(right) do
-    all_keys = (Map.keys(left) ++ Map.keys(right)) |> Enum.uniq()
-    Enum.filter(all_keys, &(Map.get(left, &1) != Map.get(right, &1)))
-  end
-
-  defp diff_keys(_, _), do: [:not_both_maps]
 end
 
 defmodule Mix.Tasks.Spec.CheckCommandTimeoutTest do
@@ -167,7 +159,7 @@ defmodule Mix.Tasks.Spec.CheckCommandTimeoutTest do
 
       Mix.Tasks.Spec.Check.run(["--root", root, "--command-timeout-ms", "5000"])
 
-      assert read_state(root)["summary"]["findings"] == 0
+      refute File.exists?(Path.join(root, ".spec/state.json"))
       assert File.read!(Path.join(root, marker)) == "done"
     end
 
@@ -183,11 +175,14 @@ defmodule Mix.Tasks.Spec.CheckCommandTimeoutTest do
         Mix.Tasks.Spec.Check.run(["--root", root])
       end
 
-      assert [%{"code" => "verification_command_timeout", "message" => message}] =
-               read_state(root)["findings"]
+      messages = drain_shell_messages()
+
+      [message] =
+        for msg <- messages, String.contains?(msg, "verification_command_timeout"), do: msg
 
       assert message =~ "command exceeded 1ms"
       assert message =~ "--command-timeout-ms 2"
+      refute File.exists?(Path.join(root, ".spec/state.json"))
     end
 
     @tag spec: "specled.verify.command_timeout_cli_precedence"
@@ -196,7 +191,7 @@ defmodule Mix.Tasks.Spec.CheckCommandTimeoutTest do
 
       Mix.Tasks.Spec.Check.run(["--root", root])
 
-      assert read_state(root)["summary"]["findings"] == 0
+      refute File.exists?(Path.join(root, ".spec/state.json"))
       assert File.read!(Path.join(root, marker)) == "done"
     end
   end
@@ -265,8 +260,6 @@ defmodule Mix.Tasks.Spec.CheckEvidenceTest do
       root
       |> git!(["ls-tree", "--name-only", "refs/heads/spec-evidence"])
       |> String.split("\n", trim: true)
-
-    commit_all(root, "commit checked state")
 
     assert filename == "#{String.trim(git!(root, ["rev-parse", "HEAD^{tree}"]))}.json"
 

@@ -9,6 +9,7 @@ affects:
   - specled.spec_review
   - specled.mix_tasks
   - specled.evidence_store
+  - specled.index.canonical_state_output
 change_type: deprecates
 reverses_what: >-
   The committed-.spec/state.json contract: spec.check/spec.index/spec.validate

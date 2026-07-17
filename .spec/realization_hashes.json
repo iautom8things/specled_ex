@@ -20,6 +20,14 @@
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
       "hasher_version": 1
     },
+    "Mix.Tasks.Spec.Evidence.InstallHook.run/1": {
+      "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
+      "hasher_version": 1
+    },
+    "Mix.Tasks.Spec.Evidence.Migrate.run/1": {
+      "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
+      "hasher_version": 1
+    },
     "Mix.Tasks.Spec.Index.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
       "hasher_version": 1
@@ -557,7 +565,7 @@
       "hasher_version": 1
     },
     "SpecLedEx.normalize_for_state/1": {
-      "hash": "544b2875e39b71002d07c31c930ec567cfcb6f7955f67081eeda1c39b430f615",
+      "hash": "3786668294c10d2e62cc95f83a9f25bb1c8e5b8bf4e45fe12f411837ac143c4c",
       "hasher_version": 1
     },
     "SpecLedEx.report/3": {

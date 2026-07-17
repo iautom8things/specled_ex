@@ -238,7 +238,7 @@ defmodule SpecLedEx.Config.ProseTest do
         ]
       )
 
-      Mix.Tasks.Spec.Validate.run(["--root", root])
+      Mix.Tasks.Spec.Validate.run(["--root", root, "--output", ".spec/state.json"])
 
       state = read_state(root)
       findings = state["findings"] || []
@@ -269,7 +269,7 @@ defmodule SpecLedEx.Config.ProseTest do
         ]
       )
 
-      Mix.Tasks.Spec.Validate.run(["--root", root])
+      Mix.Tasks.Spec.Validate.run(["--root", root, "--output", ".spec/state.json"])
 
       state = read_state(root)
       findings = state["findings"] || []
@@ -291,7 +291,7 @@ defmodule SpecLedEx.Config.ProseTest do
         ]
       )
 
-      Mix.Tasks.Spec.Validate.run(["--root", root])
+      Mix.Tasks.Spec.Validate.run(["--root", root, "--output", ".spec/state.json"])
 
       state = read_state(root)
       findings = state["findings"] || []
