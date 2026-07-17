@@ -40,11 +40,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: 8384310d-16ba-4102-b635-60dea30661d7\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/8384310d-16ba-4102-b635-60dea30661d7.jsonl\n\nReasoning: VERIFY reported PASS with full stub coverage, full requirement coverage,\nzero mechanical or intent-level scope violations, and passing project verification.\nNo auditor was spawned per selective-audit policy.",
       "timestamp": "2026-07-17T00:48:54Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-csg/evidence-ledger-split (ff to bb95578). Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-17T00:49:26Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "S1: Base-parse path + reversal ADR",
   "type": "task",
-  "updated_at": "2026-07-17T00:48:54Z"
+  "updated_at": "2026-07-17T00:49:26Z"
 }
