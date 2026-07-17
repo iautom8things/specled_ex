@@ -53,11 +53,15 @@
     {
       "text": "MERGE GATE GREEN (adjudicated) for specled_-csg.5 (7b4ab82): compile ✓, 992 tests 0 failures ✓, format ✓, deps ✓, spec.check errors=0 + exactly 1 warning (spec.system surface_target_missing .spec/state.json — the surface reference to the now-untracked state.json). ADJUDICATED expected-until-S6: .6's Allowed touches include the .spec/specs/*.spec.md prose sweep that removes narrative state.json references (spec_system named explicitly). Same adjudication pattern as the S1-baseline evidence_store warnings that S2 resolved. Self-migration landed: state.json untracked+ignored, evidence ref seeded, hook installer shipped. 5/6 closed; spawning .6 (final stage).",
       "timestamp": "2026-07-17T03:27:23Z"
+    },
+    {
+      "text": "LESSONS\n- [other] Run mix format scoped to files you touched — tree-wide format reflows unrelated tests and trips the mechanical scope gate (from specled_-csg.1)\n- [fixture-leak] When a behavior change forces edits to a fixture file outside Allowed touches, disclose it explicitly in IMPLEMENTED instead of shipping it silently (from specled_-csg.1)\n- [untested-clause] Adapt assertions to new contracts instead of deleting them — fallout edits must preserve each test's load-bearing check, and a \"still passes\" test that can no longer fail for its requirement is a coverage regression (from specled_-csg.5)\n- [stale-spec] In a prose-only spec sweep, never tighten requirement statements — an additive prohibition or obligation is a semantics change even when behavior-accurate, and the append-only guard cannot catch additive tightenings (from specled_-csg.6)",
+      "timestamp": "2026-07-17T03:56:43Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-17T03:27:23Z"
+  "updated_at": "2026-07-17T03:56:43Z"
 }
