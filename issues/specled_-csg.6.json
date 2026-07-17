@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-csg",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: codex-34c34e6e\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-csg.6/codex-34c34e6e/log\n\nCommit: 8beb7f9cee808e5ca32bb878958f2f832fadf8a9\nFiles touched: .spec/AGENTS.md, .spec/specs/index_state.spec.md, .spec/specs/mix_tasks.spec.md, .spec/specs/next.spec.md, .spec/specs/package.spec.md, .spec/specs/spec_review.spec.md, .spec/specs/spec_system.spec.md, CHANGELOG.md, README.md, docs/adoption.md, docs/concepts.md, priv/spec_init/README.md.eex, priv/spec_init/agents/skills/spec-led-development/SKILL.md.eex, priv/spec_init/workflows/spec_review.yml.eex, skills/spec-led-bootstrap/SKILL.md, skills/spec-led-bootstrap/references/adoption-phases.md, skills/spec-led-bootstrap/references/configurable-levers.md, skills/spec-led-bootstrap/references/detection-matrix.md, skills/spec-led-bootstrap/references/task-templates.md\nTests added: none (docs/templates/spec prose only)\nVerification stubs flipped: none\n\nSummary: Replaced state.json commit/merge ceremony in shipped docs, bootstrap references, and init templates with derived-state plus spec-evidence guidance, including the read-only fetch line and trust caveat. Updated current-truth spec surfaces/prose so the package-shipped docs/templates are covered and removed the stale spec.system surface entry for .spec/state.json. Final strict merge gate passed: compile, full tests, format check, deps unlock check, grep-clean assertion, and plain mix spec.check with errors=0 warnings=0.",
+      "timestamp": "2026-07-17T03:45:31Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "S6: Docs, templates, and ceremony deletion",
   "type": "task",
-  "updated_at": "2026-07-17T03:27:38Z"
+  "updated_at": "2026-07-17T03:45:31Z"
 }
