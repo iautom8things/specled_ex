@@ -28,11 +28,15 @@
     {
       "text": "IMPLEMENTED\nSession: codex-9695a997\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-csg.1/codex-9695a997/log\n\nCommit: bb95578f0c9c4dbba01688f196350daa66193e4b\nFiles touched: .spec/specs/append_only.spec.md, .spec/specs/branch_guard.spec.md, .spec/specs/index_state.spec.md, .spec/state.json, lib/specled_ex/base_view.ex, lib/specled_ex/branch_check.ex, test/mix/tasks/spec_check_test.exs, test/specled_ex/base_view_test.exs, test/specled_ex/branch_check/load_prior_state_test.exs, test/specled_ex/branch_check_test.exs\nTests added: SpecLedEx.BaseViewTest \"base tree specs and decisions parse to the same normalized view as the live tree\"; SpecLedEx.BaseViewTest \"base view includes a base spec file that was deleted at head\"; SpecLedEx.BaseViewTest \"base without authored spec paths degrades to first-run missing\"; SpecLedEx.BranchCheck.LoadPriorStateTest \"ls-tree invalid object output resolves to :bad_ref\"; SpecLedEx.BranchCheckTest \"base decisions parsed from source make ADR deletion visible\"\nVerification stubs flipped: specled.branch_guard.base_view_prior_state, specled.index.base_view_parses_base_sources\nAudit-expanded scope: test/mix/tasks/spec_check_test.exs (authorized by AUDIT: BOUNCE comment at 2026-07-17T00:34:30Z)\n\nSummary: Retained the BaseView source-parsing implementation and its behavior-forced spec.check no-baseline fixture, now consciously covered by the audit expansion. Reverted test/specled_ex/realization/implementation_test.exs exactly to the base ref, removing all unrelated-subject formatter churn from the net ticket diff. The final tier passed compilation, 968 tests, dependency and mechanical scope checks; net-diff formatting passed, while the repository-wide formatter reports only the audit-required base-identical file and spec.check reproduced the adjudicated S1 baseline of 0 errors plus the same 8 S2 evidence-store warnings.",
       "timestamp": "2026-07-17T00:42:10Z"
+    },
+    {
+      "text": "-F",
+      "timestamp": "2026-07-17T00:46:22Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "S1: Base-parse path + reversal ADR",
   "type": "task",
-  "updated_at": "2026-07-17T00:42:39Z"
+  "updated_at": "2026-07-17T00:46:22Z"
 }
