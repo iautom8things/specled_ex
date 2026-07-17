@@ -13,6 +13,8 @@ composable — when subject B's MFA changes, subject A's implementation hash
 flips via the referenced hash, and drift findings dedupe around the root
 cause.
 
+Branch-check dispatch and the tagged implementation tests exercise this tier end to end.
+
 ```yaml spec-meta
 id: specled.implementation_tier
 kind: workflow
