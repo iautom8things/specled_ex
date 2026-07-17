@@ -29,11 +29,15 @@
     {
       "text": "MERGE GATE GREEN for specled_-csg.1 (post gate-fix 6372471): compile ✓, 968 tests 0 failures ✓, format ✓, deps.unlock ✓, spec.check = 0 errors + the 8 S1-baseline-adjudicated S2 evidence_store surface warnings ✓.\n\nFLAKE ACCEPTED (#1 for signature): specled.compiler_tracer verification_command_failed / tracer_test.exs:241 under the multi-file tagged_tests run. Standalone file re-run (21 tests, 0 failures) and full spec.check re-run both green; failure does not intersect the merged diff (no compiler/tracer files touched). Caveat: original run's seed was not recoverable from spec.check output, so same-seed evidence unavailable — accepted on non-reproduction across both re-runs plus known tagged_tests timing-flakiness. Third occurrence of this signature gets an investigation ticket per policy.",
       "timestamp": "2026-07-17T00:58:59Z"
+    },
+    {
+      "text": "MERGE GATE RED after specled_-csg.2 close: mix spec.check = 3 branch_guard_missing_subject_update ERRORs (branch_check.ex -\u003e implementation_tier; branch_check_test.exs -\u003e severity; implementation_test.exs -\u003e implementation_tier, realized_by), base=origin/main, change_type=cross_cutting. Classification: REAL + deterministic, epic-cumulative ceremony unmasked by S2 — validation warnings (evidence_store surfaces) previously failed spec.check BEFORE the branch-guard stage ran; S2 fixed those warnings, so the guard now evaluates the epic's full diff vs origin/main for the first time. The changed files carry pre-existing @tag spec: references to subjects whose spec files were never co-updated in this epic. Not in S1 baseline (baseline errors were verification_command_failed only). Action: gate-forced respawn of the just-closed implementer (.2) authorized to make MINIMAL guard-satisfying co-updates to .spec/specs/implementation_tier.spec.md, realized_by.spec.md, severity.spec.md on the .2 stage branch (same authorization pattern as the .1 format fix: the gate failure is the authorization evidence). Does not consume a bounce attempt. DAG spawns held while gate is red.",
+      "timestamp": "2026-07-17T01:38:34Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-17T00:58:59Z"
+  "updated_at": "2026-07-17T01:38:34Z"
 }
