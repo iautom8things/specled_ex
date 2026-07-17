@@ -45,11 +45,15 @@
     {
       "text": "MERGE GATE GREEN for specled_-csg.4 (41e0257, rebase-then-ff): compile ✓, 989 tests 0 failures ✓, format ✓, deps ✓, spec.check errors=0 warnings=0. 4/6 closed. Spawning .5.",
       "timestamp": "2026-07-17T02:28:09Z"
+    },
+    {
+      "text": "LESSONS\n- [other] Run mix format scoped to files you touched — tree-wide format reflows unrelated tests and trips the mechanical scope gate (from specled_-csg.1)\n- [fixture-leak] When a behavior change forces edits to a fixture file outside Allowed touches, disclose it explicitly in IMPLEMENTED instead of shipping it silently (from specled_-csg.1)\n- [untested-clause] Adapt assertions to new contracts instead of deleting them — fallout edits must preserve each test's load-bearing check, and a \"still passes\" test that can no longer fail for its requirement is a coverage regression (from specled_-csg.5)",
+      "timestamp": "2026-07-17T03:04:28Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-17T02:28:09Z"
+  "updated_at": "2026-07-17T03:04:28Z"
 }
