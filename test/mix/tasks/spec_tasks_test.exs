@@ -703,11 +703,6 @@ defmodule Mix.Tasks.SpecTasksTest do
          "specled.verify.finding_severity_overrides"
        ]
   test "spec.check honors verifier finding severity overrides from config", %{root: root} do
-    write_files(root, %{
-      ".spec/config.yml" =>
-        "verification:\n  severities:\n    requirement_without_verification: info\n"
-    })
-
     write_subject_spec(
       root,
       "informational",
@@ -715,8 +710,46 @@ defmodule Mix.Tasks.SpecTasksTest do
       requirements: [%{"id" => "informational.requirement", "statement" => "Uncovered"}]
     )
 
+    assert_raise Mix.Error, ~r/Spec check failed: 1 validation finding/, fn ->
+      Mix.Tasks.Spec.Check.run(["--root", root])
+    end
+
+    messages = drain_shell_messages()
+
+    assert message_contains?(
+             messages,
+             "[WARNING] informational.subject requirement_without_verification"
+           )
+
+    write_files(root, %{
+      ".spec/config.yml" =>
+        "verification:\n  severities:\n    requirement_without_verification: info\n"
+    })
+
+    Mix.Tasks.Spec.Validate.run([
+      "--root",
+      root,
+      "--strict",
+      "--output",
+      ".spec/state.json"
+    ])
+
+    assert [
+             %{
+               "code" => "requirement_without_verification",
+               "level" => "info"
+             }
+           ] = read_state(root)["findings"]
+
+    File.rm!(Path.join(root, ".spec/state.json"))
+    drain_shell_messages()
+
     Mix.Tasks.Spec.Check.run(["--root", root])
 
+    messages = drain_shell_messages()
+
+    assert message_contains?(messages, "status=pass errors=0 warnings=0")
+    refute message_contains?(messages, "requirement_without_verification")
     refute File.exists?(Path.join(root, ".spec/state.json"))
   end
 
