@@ -43,11 +43,15 @@
     {
       "text": "APPROVED. Merged into specled_-csg/evidence-ledger-split (ff to bb95578). Closing per orchestrator sign-off.",
       "timestamp": "2026-07-17T00:49:26Z"
+    },
+    {
+      "text": "IMPLEMENTED\nSession: codex-4900c9dc\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-csg.1/codex-4900c9dc/log\n\nCommit: 6372471\nFiles touched: test/specled_ex/realization/implementation_test.exs\nTests added: none (format-only, gate-forced)\nVerification stubs flipped: none\nAudit-expanded scope: test/specled_ex/realization/implementation_test.exs (authorized by epic merge-gate failure comment on specled_-csg at 2026-07-17; AUDIT: BOUNCE 2026-07-17T00:34:30Z offered revert-or-authorize)\n\nSummary: Formatter-only reflow of the two @tag spec: lists in implementation_test.exs, fixing the pre-existing mix format --check-formatted violation inherited from main (ab5beb6) that turned the epic merge gate red. No semantic change; targeted test file passes.",
+      "timestamp": "2026-07-17T00:53:35Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "S1: Base-parse path + reversal ADR",
   "type": "task",
-  "updated_at": "2026-07-17T00:49:27Z"
+  "updated_at": "2026-07-17T00:53:35Z"
 }
