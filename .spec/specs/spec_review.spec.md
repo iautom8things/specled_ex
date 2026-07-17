@@ -29,6 +29,7 @@ surface:
 decisions:
   - specled.decision.spec_review_html_viewer
   - specled.decision.spec_review_change_scoped_master_detail
+  - specled.decision.evidence_orphan_branch_split
 ```
 
 ## Requirements
@@ -84,18 +85,21 @@ decisions:
     The Overview pane shall classify findings differentially as introduced
     (present at head, absent at base), resolved (present at base, absent at
     head), and pre-existing (present at both), computing the base-side
-    finding set from the committed verification state at the base ref
-    (`git show <base>:.spec/state.json`). The change verdict shall be
-    driven by introduced findings only.
+    finding set from the evidence-store entry keyed by the base ref's tree
+    (`git rev-parse <base>^{tree}`). The stored base findings list is
+    authoritative instead of a finding set recomputed with the current parser. The
+    change verdict shall be driven by introduced findings only.
   priority: must
   stability: evolving
 - id: specled.spec_review.findings_delta_base_fallback
   statement: >-
-    When the base state file is absent or unparseable the Overview pane
+    When the base tree cannot be resolved or its evidence entry is absent the Overview pane
     shall fall back to a non-differential findings presentation that is
     explicitly labeled as lacking base attribution — findings shall never
     be silently presented as introduced by the change when base attribution
-    is unavailable.
+    is unavailable. Its verdict shall be indeterminate (`clean?: nil`), and
+    the presentation shall name `mix spec.sync` or a check run on the base
+    content as the healing path.
   priority: must
   stability: evolving
 - id: specled.spec_review.findings_digest_dedup
@@ -341,7 +345,7 @@ decisions:
     - specled.spec_review.repo_state_health_pane
 - id: specled.spec_review.findings_delta_classifies
   given:
-    - the base ref's committed .spec/state.json records finding F1
+    - the evidence entry for the base ref's tree records finding F1
     - verification at head produces findings F1 and F2
   when:
     - mix spec.review renders the HTML artifact
@@ -352,13 +356,14 @@ decisions:
     - specled.spec_review.findings_delta
 - id: specled.spec_review.findings_delta_missing_base
   given:
-    - the base ref has no committed .spec/state.json
+    - the base ref's tree has no evidence entry
     - verification at head produces findings
   when:
     - mix spec.review renders the HTML artifact
   then:
     - the findings presentation is non-differential and explicitly labeled as lacking base attribution
     - no finding is presented as introduced by the change
+    - the verdict is indeterminate and names how to fetch or record base evidence
   covers:
     - specled.spec_review.findings_delta_base_fallback
 - id: specled.spec_review.duplicate_findings_dedup

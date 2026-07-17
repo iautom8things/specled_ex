@@ -118,10 +118,11 @@ defmodule SpecLedEx.Review do
     stats = compute_stats(all_changes)
 
     # covers: specled.spec_review.findings_delta
-    # Classify head findings against the committed verification state at the
-    # base ref. Base findings come from `git show <base>:.spec/state.json`,
-    # never from re-running the verifier at base. A missing or unparseable
-    # base state degrades to a non-differential fallback rather than
+    # Classify head findings against the stored verification evidence for the
+    # base tree. Base findings come from Evidence.Store, keyed by
+    # `git rev-parse <base>^{tree}`, never from re-running the verifier at base.
+    # Missing evidence or an unresolvable base tree degrades to a
+    # non-differential fallback rather than
     # misattributing findings as introduced by the change.
     findings_delta = FindingsDelta.classify(root, analysis.base, findings)
 

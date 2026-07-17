@@ -3,6 +3,7 @@ defmodule SpecLedEx.Review.FindingsDeltaTest do
 
   alias SpecLedEx.Review
   alias SpecLedEx.Review.FindingsDelta
+  alias SpecLedEx.Evidence.{Entry, Store}
 
   # A head-side finding carries the live verifier shape (subject_id / severity).
   defp head_finding(code, entity, file, message, severity \\ "warning") do
@@ -15,21 +16,17 @@ defmodule SpecLedEx.Review.FindingsDeltaTest do
     }
   end
 
-  # A base-side finding carries the normalized state.json shape
-  # (entity_id / level) that `SpecLedEx.normalize_for_state/1` writes.
-  defp base_finding(code, entity, file, message, level \\ "warning") do
-    %{
-      "code" => code,
-      "entity_id" => entity,
-      "file" => file,
-      "message" => message,
-      "level" => level
-    }
-  end
+  defp record_base_evidence(root, findings) do
+    tree_hash = root |> git!(["rev-parse", "HEAD^{tree}"]) |> String.trim()
 
-  defp commit_base_state(root, findings) do
-    write_files(root, %{".spec/state.json" => Jason.encode!(%{"findings" => findings})})
-    commit_all(root, "base state")
+    entry =
+      Entry.build(tree_hash, %{"findings" => findings},
+        run_at: "2026-07-16T12:00:00.000000Z",
+        run_id: String.duplicate("a", 32),
+        specled_version: "test"
+      )
+
+    assert :ok = Store.record(root, entry)
   end
 
   describe "FindingsDelta.classify/3 differential classification" do
@@ -42,7 +39,9 @@ defmodule SpecLedEx.Review.FindingsDeltaTest do
       f1_file = ".spec/specs/auth.spec.md"
       f1_msg = "Verification target missing reference"
 
-      commit_base_state(root, [base_finding(f1, "auth.subject", f1_file, f1_msg)])
+      write_files(root, %{"lib/auth.ex" => "defmodule Auth do\nend\n"})
+      commit_all(root, "base content")
+      record_base_evidence(root, [head_finding(f1, "auth.subject", f1_file, f1_msg)])
 
       head = [
         head_finding(f1, "auth.subject", f1_file, f1_msg),
@@ -78,7 +77,9 @@ defmodule SpecLedEx.Review.FindingsDeltaTest do
       msg = "identical finding text"
 
       # Base is normalized (entity_id/level); head is live (subject_id/severity).
-      commit_base_state(root, [base_finding(code, "auth.subject", file, msg)])
+      write_files(root, %{"lib/auth.ex" => "defmodule Auth do\nend\n"})
+      commit_all(root, "base content")
+      record_base_evidence(root, [head_finding(code, "auth.subject", file, msg)])
 
       result =
         FindingsDelta.classify(root, "main", [head_finding(code, "auth.subject", file, msg)])
@@ -95,7 +96,9 @@ defmodule SpecLedEx.Review.FindingsDeltaTest do
       file = ".spec/specs/auth.spec.md"
       msg = "was here at base only"
 
-      commit_base_state(root, [base_finding(code, "auth.subject", file, msg)])
+      write_files(root, %{"lib/auth.ex" => "defmodule Auth do\nend\n"})
+      commit_all(root, "base content")
+      record_base_evidence(root, [head_finding(code, "auth.subject", file, msg)])
 
       result = FindingsDelta.classify(root, "main", [])
 
@@ -108,7 +111,9 @@ defmodule SpecLedEx.Review.FindingsDeltaTest do
     @tag spec: "specled.spec_review.findings_delta"
     test "an empty base findings set makes every head finding introduced", %{root: root} do
       init_git_repo(root)
-      commit_base_state(root, [])
+      write_files(root, %{"lib/auth.ex" => "defmodule Auth do\nend\n"})
+      commit_all(root, "base content")
+      record_base_evidence(root, [])
 
       head = [head_finding("overlap_subject", "auth.subject", ".spec/specs/auth.spec.md", "new")]
       result = FindingsDelta.classify(root, "main", head)
@@ -117,22 +122,43 @@ defmodule SpecLedEx.Review.FindingsDeltaTest do
       assert length(result.introduced) == 1
       assert result.pre_existing == []
     end
-  end
 
-  describe "FindingsDelta.classify/3 non-differential fallback" do
     @tag spec: "specled.spec_review.findings_delta"
-    test "falls back to non-differential when the base ref has no committed state.json", %{
+    test "exposes parser-upgrade transients as resolved base kinds and introduced head kinds", %{
       root: root
     } do
       init_git_repo(root)
       write_files(root, %{"lib/auth.ex" => "defmodule Auth do\nend\n"})
-      commit_all(root, "initial without state")
+      commit_all(root, "base content")
+
+      record_base_evidence(root, [
+        head_finding("old_parser_kind", "auth.subject", "lib/auth.ex", "base-only kind")
+      ])
+
+      result =
+        FindingsDelta.classify(root, "main", [
+          head_finding("new_parser_kind", "auth.subject", "lib/auth.ex", "head-only kind")
+        ])
+
+      assert Enum.map(result.resolved, & &1["code"]) == ["old_parser_kind"]
+      assert Enum.map(result.introduced, & &1["code"]) == ["new_parser_kind"]
+    end
+  end
+
+  describe "FindingsDelta.classify/3 non-differential fallback" do
+    @tag spec: "specled.spec_review.findings_delta"
+    test "falls back to non-differential when the base tree has no evidence entry", %{
+      root: root
+    } do
+      init_git_repo(root)
+      write_files(root, %{"lib/auth.ex" => "defmodule Auth do\nend\n"})
+      commit_all(root, "base content")
 
       head = [head_finding("overlap_subject", "auth.subject", "lib/auth.ex", "some finding")]
       result = FindingsDelta.classify(root, "main", head)
 
       assert result.delta_available? == false
-      assert result.base_reason == :base_state_absent
+      assert result.base_reason == :base_evidence_absent
       # No finding is presented as introduced when base attribution is missing.
       assert result.introduced == []
       assert result.pre_existing == []
@@ -142,16 +168,16 @@ defmodule SpecLedEx.Review.FindingsDeltaTest do
     end
 
     @tag spec: "specled.spec_review.findings_delta"
-    test "falls back when the committed base state.json is unparseable", %{root: root} do
+    test "distinguishes an unresolvable base tree from absent evidence", %{root: root} do
       init_git_repo(root)
-      write_files(root, %{".spec/state.json" => "{not valid json"})
-      commit_all(root, "garbage state")
+      write_files(root, %{"lib/auth.ex" => "defmodule Auth do\nend\n"})
+      commit_all(root, "base content")
 
       head = [head_finding("overlap_subject", "auth.subject", "lib/auth.ex", "some finding")]
-      result = FindingsDelta.classify(root, "main", head)
+      result = FindingsDelta.classify(root, "missing-base-ref", head)
 
       assert result.delta_available? == false
-      assert result.base_reason == :base_state_unparseable
+      assert result.base_reason == :base_tree_unresolvable
       assert result.introduced == []
     end
 
@@ -160,7 +186,7 @@ defmodule SpecLedEx.Review.FindingsDeltaTest do
       result = FindingsDelta.classify(root, nil, [])
 
       assert result.delta_available? == false
-      assert result.base_reason == :base_state_absent
+      assert result.base_reason == :base_tree_unresolvable
     end
   end
 
@@ -170,9 +196,9 @@ defmodule SpecLedEx.Review.FindingsDeltaTest do
       root: root
     } do
       setup_repo(root, "auth_subject", "Auth.")
-      # Commit a base state.json with no findings so the head-side synthetic
+      # Record base evidence with no findings so the head-side synthetic
       # no_realized_by finding classifies as introduced.
-      commit_base_state(root, [])
+      record_base_evidence(root, [])
       change_subject_file(root)
 
       index = SpecLedEx.index(root)
@@ -186,7 +212,7 @@ defmodule SpecLedEx.Review.FindingsDeltaTest do
     end
 
     @tag spec: "specled.spec_review.findings_delta"
-    test "falls back to non-differential when no base state.json is committed", %{root: root} do
+    test "falls back to non-differential when no base evidence is stored", %{root: root} do
       setup_repo(root, "auth_subject", "Auth.")
       change_subject_file(root)
 

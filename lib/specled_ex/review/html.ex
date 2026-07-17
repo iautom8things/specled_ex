@@ -362,7 +362,7 @@ defmodule SpecLedEx.Review.Html do
   end
 
   defp render_overview_headline(%{change_verdict: %{differential?: false}}) do
-    ~S|<div class="overview-headline overview-headline-nondiff"><h2>Findings could not be attributed to this change.</h2><p>No committed <code>.spec/state.json</code> at the base ref, so findings below are shown for the head ref as a whole rather than as introduced by this change set.</p></div>|
+    ~S|<div class="overview-headline overview-headline-nondiff"><h2>Findings could not be attributed to this change.</h2><p>No base evidence is available for the base tree, so findings below are shown for the head ref as a whole rather than as introduced by this change set. Run <code>mix spec.sync</code> to fetch shared evidence, or run <code>mix spec.check</code> on that base content to record it locally.</p></div>|
   end
 
   defp render_overview_headline(%{change_verdict: %{clean?: true}}) do

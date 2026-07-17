@@ -12,6 +12,7 @@ defmodule SpecLedEx.Review.HtmlLayoutTest do
 
   use SpecLedEx.Case
 
+  alias SpecLedEx.Evidence.{Entry, Store}
   alias SpecLedEx.Review
   alias SpecLedEx.Review.Html
 
@@ -300,10 +301,13 @@ defmodule SpecLedEx.Review.HtmlLayoutTest do
       )
 
       write_files(root, %{"lib/auth.ex" => "defmodule Auth do\n  def run, do: :ok\nend\n"})
-      # Commit a base-side findings state so the delta is differential; with no
-      # findings at base and none introduced at head the verdict is clean.
-      write_files(root, %{".spec/state.json" => Jason.encode!(%{"findings" => []})})
       commit_all(root, "initial")
+
+      # Store base-side evidence so the delta is differential; with no findings
+      # at base and none introduced at head the verdict is clean.
+      tree_hash = root |> git!(["rev-parse", "HEAD^{tree}"]) |> String.trim()
+      entry = Entry.build(tree_hash, %{"findings" => []})
+      assert :ok = Store.record(root, entry)
 
       # A change set that touches the subject's code but introduces no findings.
       write_files(root, %{

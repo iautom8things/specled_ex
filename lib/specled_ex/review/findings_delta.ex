@@ -2,23 +2,23 @@ defmodule SpecLedEx.Review.FindingsDelta do
   @moduledoc """
   Differential findings classification for the Overview pane.
 
-  Classifies head-side findings against the committed verification state at the
-  base ref: `introduced` (present at head, absent at base), `resolved` (present
+  Classifies head-side findings against the stored verification evidence for
+  the base tree: `introduced` (present at head, absent at base), `resolved` (present
   at base, absent at head), and `pre_existing` (present at both). The change
   verdict is driven by `introduced` findings only.
 
-  Base findings are read from the committed `.spec/state.json` at the base ref
-  (`git show <base>:.spec/state.json`) — never recomputed by re-running the
-  verifier at base. When that committed state is absent or unparseable the
+  Base findings are read from the evidence store entry keyed by
+  `git rev-parse <base>^{tree}` — never recomputed by re-running the verifier at
+  base. When that base tree or its stored evidence is unavailable the
   classification degrades to a non-differential fallback
   (`delta_available?: false`): a finding is never presented as introduced by the
   change when base attribution is unavailable.
   """
 
-  @state_path ".spec/state.json"
+  alias SpecLedEx.Evidence.{Store, TreeHash}
 
   @doc """
-  Classify `head_findings` against the base ref's committed findings.
+  Classify `head_findings` against the base tree's stored findings.
 
   Returns a map with `:delta_available?`, the `:introduced` / `:resolved` /
   `:pre_existing` lists, `:base_reason` (nil when differential, otherwise the
@@ -101,29 +101,18 @@ defmodule SpecLedEx.Review.FindingsDelta do
   end
 
   defp load_base_findings(_root, base_ref) when base_ref in [nil, ""],
-    do: {:error, :base_state_absent}
+    do: {:error, :base_tree_unresolvable}
 
   defp load_base_findings(root, base_ref) do
-    case git_show_state(root, base_ref) do
-      {:ok, content} -> parse_findings(content)
-      :error -> {:error, :base_state_absent}
-    end
-  end
-
-  defp parse_findings(content) do
-    case Jason.decode(content) do
-      {:ok, %{"findings" => findings}} when is_list(findings) -> {:ok, findings}
-      {:ok, %{}} -> {:ok, []}
-      _ -> {:error, :base_state_unparseable}
-    end
-  end
-
-  defp git_show_state(root, base_ref) do
-    case System.cmd("git", ["-C", root, "show", "#{base_ref}:#{@state_path}"],
-           stderr_to_stdout: true
-         ) do
-      {out, 0} -> {:ok, out}
-      {_out, _nonzero} -> :error
+    with {:ok, tree_hash} <- TreeHash.base(root, base_ref) do
+      case Store.read(root, tree_hash) do
+        {:ok, %{"findings" => findings}} when is_list(findings) -> {:ok, findings}
+        {:ok, %{}} -> {:ok, []}
+        :absent -> {:error, :base_evidence_absent}
+        {:error, _reason} -> {:error, :base_evidence_absent}
+      end
+    else
+      {:error, _reason} -> {:error, :base_tree_unresolvable}
     end
   end
 end
