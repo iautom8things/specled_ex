@@ -13,11 +13,15 @@
     {
       "text": "ORCHESTRATION START (comment mode). worker_mode=codex (team profile, 0% weekly; auto-recommended, user-confirmed). generated_state_paths=[.spec/state.json, .spec/realization_hashes.json], regen_command='mix spec.check'. DAG: .1 -\u003e .2 -\u003e {.3 || .4} -\u003e .5 -\u003e .6.",
       "timestamp": "2026-07-17T00:06:34Z"
+    },
+    {
+      "text": "S1 baseline before specled_-csg.1 code changes:\n- mix spec.check status=fail\n- findings count=11 (errors=3, warnings=8)\n- error codes: specled.decisions verification_command_failed; specled.tagged_tests verification_command_failed; specled.verification verification_command_failed\n- warning codes: specled.evidence_store surface_target_missing x8\n- shared failing test reported by command failures: test/specled_ex/verifier_test.exs:1436",
+      "timestamp": "2026-07-17T00:12:15Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-17T00:06:34Z"
+  "updated_at": "2026-07-17T00:12:15Z"
 }
