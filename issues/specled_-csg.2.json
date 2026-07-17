@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-csg.1"
   ],
@@ -13,8 +13,8 @@
   "labels": [],
   "parent": "specled_-csg",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "S2: Local evidence store + spec.check write path",
   "type": "task",
-  "updated_at": "2026-07-16T23:56:58Z"
+  "updated_at": "2026-07-17T00:59:52Z"
 }
