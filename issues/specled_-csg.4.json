@@ -13,9 +13,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-csg",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: codex-fc422121\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-csg.4/codex-fc422121/log\n\nCommit: bb8ca6a8e5cc2b407561f57c5ed62f100f911994\nFiles touched: .spec/specs/spec_review.spec.md, .spec/state.json, lib/specled_ex/review.ex, lib/specled_ex/review/findings_delta.ex, lib/specled_ex/review/html.ex, test/mix/tasks/spec_review_task_test.exs, test/specled_ex/review/findings_delta_test.exs, test/specled_ex/review/html_layout_test.exs\nTests added: SpecLedEx.Review.FindingsDeltaTest “exposes parser-upgrade transients as resolved base kinds and introduced head kinds”; Mix.Tasks.SpecReviewTaskTest “renders an indeterminate verdict and evidence healing instructions when base evidence is absent”\nVerification stubs flipped: none (the existing findings-delta command stub was already execute: true)\n\nSummary: FindingsDelta now resolves the base tree and reads its authoritative findings from Evidence.Store while leaving signature, differential classification, and verdict logic unchanged; unavailable evidence and unresolvable base trees degrade distinctly and remain indeterminate. Review copy and production-path tests name the mix spec.sync/spec.check healing paths, and the final merge-gate tier passed after one rerun of the known timeout flake. Required fixture-leak disclosure: test/specled_ex/review/html_layout_test.exs is outside Allowed touches but its legacy committed-state fixture had to seed base evidence for the full suite to remain valid; the sandbox denied writes to the allocated transcript path, so output was durably mirrored at /private/tmp/specled_-csg.4-codex-fc422121.log during the run.",
+      "timestamp": "2026-07-17T02:08:21Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "S4: Consumer rewiring: FindingsDelta reads base evidence",
   "type": "task",
-  "updated_at": "2026-07-17T01:49:38Z"
+  "updated_at": "2026-07-17T02:08:21Z"
 }
