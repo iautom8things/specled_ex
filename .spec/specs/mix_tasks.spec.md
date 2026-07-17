@@ -98,6 +98,16 @@ decisions:
   statement: mix spec.check shall run indexing, strict validation, and branch-aware co-change enforcement, failing on any errors or warnings.
   priority: must
   stability: stable
+- id: specled.tasks.check_evidence_write
+  statement: >-
+    After validation and branch-aware co-change enforcement complete, mix
+    spec.check shall write a local evidence attestation to
+    `refs/heads/spec-evidence` using Git plumbing only. The write path shall
+    perform zero network I/O, shall never check out the evidence ref, and
+    shall emit an `evidence/local_write_failed` warning without changing the
+    task exit status if the local evidence write fails.
+  priority: must
+  stability: evolving
 - id: specled.tasks.status_summary
   statement: mix spec.status shall summarize coverage, verification strength, weak spots, and ADR usage for the current workspace, executing command verifications by default unless explicitly opted out.
   priority: should
@@ -213,6 +223,10 @@ decisions:
   execute: true
   covers:
     - specled.tasks.check_verbose_flag
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.tasks.check_evidence_write
 - kind: command
   target: >-
     sh -c 'missing=$(grep -L "SpecLedEx.MixRuntime.ensure_started" lib/mix/tasks/*.ex); if [ -n "$missing" ]; then echo "tasks missing MixRuntime bootstrap:"; echo "$missing"; exit 1; fi'

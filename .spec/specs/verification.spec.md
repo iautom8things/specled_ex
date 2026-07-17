@@ -19,6 +19,7 @@ surface:
   - lib/specled_ex/tag_findings.ex
   - lib/specled_ex/decision_parser.ex
   - lib/specled_ex/schema/decision.ex
+  - test/mix/tasks/spec_check_test.exs
 realized_by:
   implementation:
     - "SpecLedEx.Verifier.verify/3"

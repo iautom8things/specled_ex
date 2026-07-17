@@ -5,6 +5,7 @@ defmodule Mix.Tasks.Spec.Check do
 
   alias SpecLedEx.Compiler.Context
   alias SpecLedEx.Config
+  alias SpecLedEx.Evidence.{Entry, Store, TreeHash}
   alias SpecLedEx.VerificationStrength
 
   @shortdoc "Runs the full local Spec Led gate"
@@ -13,6 +14,12 @@ defmodule Mix.Tasks.Spec.Check do
 
   `mix spec.check` enables command execution by default. Use `--no-run-commands`
   to keep command verifications structural-only for a given run.
+
+  After the strict local gate completes, `mix spec.check` writes a local
+  evidence attestation to `refs/heads/spec-evidence`. This side effect uses
+  Git plumbing only, performs zero network I/O, never checks out the evidence
+  ref, and emits a warning without changing the task exit status if the local
+  write fails.
 
   ## Options
 
@@ -114,6 +121,8 @@ defmodule Mix.Tasks.Spec.Check do
     if branch_report["status"] == "fail" do
       Mix.raise("Spec check failed: #{length(branch_report["findings"] || [])} branch finding(s)")
     end
+
+    record_evidence(root, report, branch_report)
   end
 
   # covers: specled.tasks.check_builds_compile_context
@@ -230,6 +239,25 @@ defmodule Mix.Tasks.Spec.Check do
     Mix.shell().info("branch uncovered_policy_files=#{Enum.join(uncovered_policy_files, ", ")}")
 
     Mix.shell().info("branch next=#{guidance["suggested_command"]}")
+  end
+
+  defp record_evidence(root, report, branch_report) do
+    branch_findings = branch_report["findings"] || []
+    report = Map.update(report, "findings", branch_findings, &(&1 ++ branch_findings))
+
+    with {:ok, tree_hash} <- TreeHash.current(root),
+         entry <- Entry.build(tree_hash, report),
+         :ok <- Store.record(root, entry) do
+      :ok
+    else
+      {:warning, warning} ->
+        Mix.shell().error(warning.message)
+        :ok
+
+      {:error, reason} ->
+        Mix.shell().error("evidence/local_write_failed: #{inspect(reason)}")
+        :ok
+    end
   end
 
   defp validate_min_strength!(nil), do: nil

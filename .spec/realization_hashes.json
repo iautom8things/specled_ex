@@ -1,5 +1,9 @@
 {
   "api_boundary": {
+    "Mix.Tasks.Spec.Check": {
+      "hash": "1ce1de5bb6a0e0d062d50a4eb6c7974fb523ce5588323639fd53a74337119c0c",
+      "hasher_version": 1
+    },
     "Mix.Tasks.Spec.Check.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
       "hasher_version": 1
@@ -36,8 +40,16 @@
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
       "hasher_version": 1
     },
+    "Mix.Tasks.Spec.SuggestBinding": {
+      "hash": "a7005f2357d30f46cc35f11fb1cf72fa2b861f2d976b1599d0dfe1fe25e07105",
+      "hasher_version": 1
+    },
     "Mix.Tasks.Spec.Triangle.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
+      "hasher_version": 1
+    },
+    "Mix.Tasks.Spec.Validate": {
+      "hash": "cbb662e7a5572cf96a489271efe2b5acd36e0bc6d458e1e0dd439e90dc60c54e",
       "hasher_version": 1
     },
     "Mix.Tasks.Spec.Validate.run/1": {
@@ -46,6 +58,10 @@
     },
     "SpecLedEx.AppendOnly.analyze/4": {
       "hash": "1cc572802bf101238ac9ab62432c00a156f20dc63463256f9627d71a8539f013",
+      "hasher_version": 1
+    },
+    "SpecLedEx.BranchCheck.Severity": {
+      "hash": "7660012516f492a9b08320ba172802626a0d61191d909cdfb1be8d1f51e26e8d",
       "hasher_version": 1
     },
     "SpecLedEx.BranchCheck.Severity.resolve/3": {
@@ -112,6 +128,10 @@
       "hash": "84e7508ca24a05894feba8b980ee04579df2a991e9c2a401c34bc9d960c36e95",
       "hasher_version": 1
     },
+    "SpecLedEx.Config.BranchGuard": {
+      "hash": "46f1171cd947c6438154b0a11f5f0afac71d46a256ad4ca5e7c45f6d846b3205",
+      "hasher_version": 1
+    },
     "SpecLedEx.Config.Guardrails.parse/1": {
       "hash": "d0525e89a838b29f778ca4f0323d32d0d0a165ffd2303450a79b1f95d7d63504",
       "hasher_version": 1
@@ -150,6 +170,14 @@
     },
     "SpecLedEx.Config.parse_enforcement/2": {
       "hash": "7d219f6893e20fefdd5bf80ab841782be04b5d7dba1cca6a458b5ad4c2772a76",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage": {
+      "hash": "fad8733bb82cc00fea0ff8ae395040ee013f5c26400b1530963c9b1af84c54b7",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.Formatter": {
+      "hash": "a682c3acd680ca53c486fcb507c255420c3547cc47dfc30bfcb3dfec88aaa1a8",
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.Formatter.init/1": {
@@ -246,6 +274,10 @@
     },
     "SpecLedEx.Overlap.analyze/2": {
       "hash": "216a46b1f9e63e8ae5ffbea1cd824b796744a8471ce10f6112eaaa703bb20005",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Parser": {
+      "hash": "73023a2e888e74d3b229c4ee85a65037908a0a2679c7a7dff94943944941ba1c",
       "hasher_version": 1
     },
     "SpecLedEx.Parser.parse_file/2": {
@@ -368,8 +400,32 @@
       "hash": "5aa09417ee10b1d22f9d0284babdf2d209c06db59f02d903f5c747d5f02e1244",
       "hasher_version": 1
     },
+    "SpecLedEx.Schema.Decision": {
+      "hash": "d651e0eb0b26e18a41bc3f9b94cb409bcb37dcac8c9748c4f70017f89310881c",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Schema.Exception": {
+      "hash": "b730269fae76851b42134b66b0659ed63543c144b2e5e210ff647b458642b344",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Schema.Meta": {
+      "hash": "67f1d07b8806debd0c41c2d54c4ef52476c6fb8130707a4f16b8a906b8a49c2c",
+      "hasher_version": 1
+    },
     "SpecLedEx.Schema.RealizedBy.validate/1": {
       "hash": "d71abeb2263360332d4fba5534095760adfbb6d447a44b327d000446c2820d25",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Schema.Requirement": {
+      "hash": "8d64553ec9208bbdde4fa264b29f2662451bd395b85da5a66a5934483de1244c",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Schema.Scenario": {
+      "hash": "c7044709e17c79b0f9eec7e48a1a0958a526b5aa4c38680707be0d6910d55c9c",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Schema.Verification": {
+      "hash": "9eec9885299ea57e0e20271b8a89eef116bbd0d30c91bd4f899f973cd625e795",
       "hasher_version": 1
     },
     "SpecLedEx.Schema.maybe_normalize_realized_by/2": {
@@ -426,6 +482,10 @@
     },
     "SpecLedEx.TaggedTests.Attribution.read_artifact/1": {
       "hash": "f0cc83af5606d9a0a99eea0002d77571f5e5f8a87ca2039a7aa98bb31e422f75",
+      "hasher_version": 1
+    },
+    "SpecLedEx.TaggedTests.Formatter": {
+      "hash": "39773ecc645b3b8f0d0a204e9ef797b2a7c1bf09df53a7e0b3b02a0e24dd24d4",
       "hasher_version": 1
     },
     "SpecLedEx.TaggedTests.build_command/2": {

@@ -26,17 +26,15 @@ pass/fail gate.
 ```yaml spec-meta
 id: specled.evidence_store
 kind: module
-status: draft
+status: active
 summary: Orphan-branch evidence ledger — tree-hash-keyed entries written locally by spec.check, reconciled by mix spec.sync via plumbing-only tree-union merges.
 surface:
   - lib/specled_ex/evidence/tree_hash.ex
   - lib/specled_ex/evidence/entry.ex
   - lib/specled_ex/evidence/store.ex
-  - lib/specled_ex/evidence/sync.ex
   - test/specled_ex/evidence/tree_hash_test.exs
   - test/specled_ex/evidence/entry_test.exs
   - test/specled_ex/evidence/store_test.exs
-  - test/specled_ex/evidence/sync_test.exs
 decisions:
   - specled.decision.evidence_orphan_branch_split
 ```
@@ -224,7 +222,6 @@ decisions:
     - "the task emits an `evidence/local_write_failed` warning"
     - the task exit status is 0 and no fetch or push was attempted
   covers:
-    - specled.evidence_store.local_cas_bounded
     - specled.evidence_store.local_only_write_path
 - id: specled.evidence_store.scenario.sync_converges_in_both_push_orders
   given:
@@ -238,7 +235,6 @@ decisions:
     - no worktree ever had the spec-evidence branch checked out
   covers:
     - specled.evidence_store.sync_tree_union
-    - specled.evidence_store.run_stamp_wins
 - id: specled.evidence_store.scenario.sync_exhaustion_modes
   given:
     - an origin whose spec-evidence ref is moved by a competing writer before every push attempt (3 consecutive lease rejections)
@@ -296,9 +292,8 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
-- kind: command
-  target: mix test test/specled_ex/evidence/tree_hash_test.exs test/specled_ex/evidence/entry_test.exs test/specled_ex/evidence/store_test.exs test/mix/tasks/spec_check_test.exs
-  execute: false
+- kind: tagged_tests
+  execute: true
   covers:
     - specled.evidence_store.tree_hash_mirrors_add_all
     - specled.evidence_store.per_entry_isolation
@@ -314,9 +309,8 @@ decisions:
     - specled.evidence_store.sync_failure_contracts
     - specled.evidence_store.prune_explicit_only
     - specled.evidence_store.drift_surfaced
-- kind: command
-  target: mix test test/specled_ex/evidence/store_test.exs test/specled_ex/review/findings_delta_test.exs
-  execute: false
+- kind: tagged_tests
+  execute: true
   covers:
     - specled.evidence_store.attestation_never_gates
 - kind: command

@@ -85,5 +85,8 @@ are going away, which is exactly `deprecates`.
 - Negative: across a parser upgrade, finding kinds only the new parser emits
   transiently classify as "introduced" until base evidence refreshes
   (self-healing via last-write-wins).
+- The local write path is part of `mix spec.check`: after validation and
+  branch-aware co-change enforcement complete, the task writes a plumbing-only
+  local attestation and treats write failure as a warning rather than a gate.
 - Migration is one-shot per adopted repo; pre-migration history is not
   backfilled and degrades softly forever.

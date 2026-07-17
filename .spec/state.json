@@ -516,64 +516,7 @@
       }
     ]
   },
-  "findings": [
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.evidence_store",
-      "file": ".spec/specs/evidence_store.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/evidence/entry.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.evidence_store",
-      "file": ".spec/specs/evidence_store.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/evidence/store.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.evidence_store",
-      "file": ".spec/specs/evidence_store.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/evidence/sync.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.evidence_store",
-      "file": ".spec/specs/evidence_store.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: lib/specled_ex/evidence/tree_hash.ex"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.evidence_store",
-      "file": ".spec/specs/evidence_store.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/evidence/entry_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.evidence_store",
-      "file": ".spec/specs/evidence_store.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/evidence/store_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.evidence_store",
-      "file": ".spec/specs/evidence_store.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/evidence/sync_test.exs"
-    },
-    {
-      "code": "surface_target_missing",
-      "entity_id": "specled.evidence_store",
-      "file": ".spec/specs/evidence_store.spec.md",
-      "level": "warning",
-      "message": "Surface entry does not exist: test/specled_ex/evidence/tree_hash_test.exs"
-    }
-  ],
+  "findings": [],
   "index": {
     "exceptions": [],
     "requirements": [
@@ -1729,6 +1672,14 @@
         "priority": "must",
         "stability": "evolving",
         "statement": "mix spec.check shall construct the compile `Context` via `SpecLedEx.Compiler.Context.from_mix_project/1` when its effective root is the current working directory, and shall thread it into the branch guard so realization tiers receive the compile manifest. When `--root` points anywhere else, no context shall be passed (Mix.Project describes the cwd's project, not an arbitrary root — a wrong-project context is worse than none).",
+        "subject_id": "specled.mix_tasks"
+      },
+      {
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "id": "specled.tasks.check_evidence_write",
+        "priority": "must",
+        "stability": "evolving",
+        "statement": "After validation and branch-aware co-change enforcement complete, mix spec.check shall write a local evidence attestation to `refs/heads/spec-evidence` using Git plumbing only. The write path shall perform zero network I/O, shall never check out the evidence ref, and shall emit an `evidence/local_write_failed` warning without changing the task exit status if the local evidence write fails.",
         "subject_id": "specled.mix_tasks"
       },
       {
@@ -4640,7 +4591,6 @@
       },
       {
         "covers": [
-          "specled.evidence_store.local_cas_bounded",
           "specled.evidence_store.local_only_write_path"
         ],
         "file": ".spec/specs/evidence_store.spec.md",
@@ -4789,8 +4739,7 @@
       },
       {
         "covers": [
-          "specled.evidence_store.sync_tree_union",
-          "specled.evidence_store.run_stamp_wins"
+          "specled.evidence_store.sync_tree_union"
         ],
         "file": ".spec/specs/evidence_store.spec.md",
         "given": [
@@ -7693,17 +7642,15 @@
           "id": "specled.evidence_store",
           "kind": "module",
           "realized_by": null,
-          "status": "draft",
+          "status": "active",
           "summary": "Orphan-branch evidence ledger — tree-hash-keyed entries written locally by spec.check, reconciled by mix spec.sync via plumbing-only tree-union merges.",
           "surface": [
             "lib/specled_ex/evidence/tree_hash.ex",
             "lib/specled_ex/evidence/entry.ex",
             "lib/specled_ex/evidence/store.ex",
-            "lib/specled_ex/evidence/sync.ex",
             "test/specled_ex/evidence/tree_hash_test.exs",
             "test/specled_ex/evidence/entry_test.exs",
-            "test/specled_ex/evidence/store_test.exs",
-            "test/specled_ex/evidence/sync_test.exs"
+            "test/specled_ex/evidence/store_test.exs"
           ],
           "verification_minimum_strength": null
         },
@@ -8445,7 +8392,8 @@
             "lib/specled_ex/verification_strength.ex",
             "lib/specled_ex/tag_findings.ex",
             "lib/specled_ex/decision_parser.ex",
-            "lib/specled_ex/schema/decision.ex"
+            "lib/specled_ex/schema/decision.ex",
+            "test/mix/tasks/spec_check_test.exs"
           ],
           "verification_minimum_strength": null
         },
@@ -8937,11 +8885,11 @@
           "specled.evidence_store.self_create",
           "specled.evidence_store.local_only_write_path"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/evidence_store.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.evidence_store",
-        "target": "mix test test/specled_ex/evidence/tree_hash_test.exs test/specled_ex/evidence/entry_test.exs test/specled_ex/evidence/store_test.exs test/mix/tasks/spec_check_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -8960,11 +8908,11 @@
         "covers": [
           "specled.evidence_store.attestation_never_gates"
         ],
-        "execute": false,
+        "execute": true,
         "file": ".spec/specs/evidence_store.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "subject_id": "specled.evidence_store",
-        "target": "mix test test/specled_ex/evidence/store_test.exs test/specled_ex/review/findings_delta_test.exs"
+        "target": ""
       },
       {
         "covers": [
@@ -9157,6 +9105,16 @@
       {
         "covers": [
           "specled.tasks.check_verbose_flag"
+        ],
+        "execute": true,
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "subject_id": "specled.mix_tasks",
+        "target": ""
+      },
+      {
+        "covers": [
+          "specled.tasks.check_evidence_write"
         ],
         "execute": true,
         "file": ".spec/specs/mix_tasks.spec.md",
@@ -9878,11 +9836,11 @@
     "decision_parse_errors": 0,
     "decisions": 38,
     "exceptions": 0,
-    "findings": 8,
-    "requirements": 345,
+    "findings": 0,
+    "requirements": 346,
     "scenarios": 214,
     "subjects": 34,
-    "verifications": 114
+    "verifications": 115
   },
   "verification": {
     "claims": [
@@ -11308,67 +11266,67 @@
       {
         "cover_id": "specled.evidence_store.local_cas_bounded",
         "file": ".spec/specs/evidence_store.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.evidence_store",
-        "target": "mix test test/specled_ex/evidence/tree_hash_test.exs test/specled_ex/evidence/entry_test.exs test/specled_ex/evidence/store_test.exs test/mix/tasks/spec_check_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.evidence_store.local_only_write_path",
         "file": ".spec/specs/evidence_store.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.evidence_store",
-        "target": "mix test test/specled_ex/evidence/tree_hash_test.exs test/specled_ex/evidence/entry_test.exs test/specled_ex/evidence/store_test.exs test/mix/tasks/spec_check_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.evidence_store.per_entry_isolation",
         "file": ".spec/specs/evidence_store.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.evidence_store",
-        "target": "mix test test/specled_ex/evidence/tree_hash_test.exs test/specled_ex/evidence/entry_test.exs test/specled_ex/evidence/store_test.exs test/mix/tasks/spec_check_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.evidence_store.run_stamp_wins",
         "file": ".spec/specs/evidence_store.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.evidence_store",
-        "target": "mix test test/specled_ex/evidence/tree_hash_test.exs test/specled_ex/evidence/entry_test.exs test/specled_ex/evidence/store_test.exs test/mix/tasks/spec_check_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.evidence_store.self_create",
         "file": ".spec/specs/evidence_store.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.evidence_store",
-        "target": "mix test test/specled_ex/evidence/tree_hash_test.exs test/specled_ex/evidence/entry_test.exs test/specled_ex/evidence/store_test.exs test/mix/tasks/spec_check_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
         "cover_id": "specled.evidence_store.tree_hash_mirrors_add_all",
         "file": ".spec/specs/evidence_store.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.evidence_store",
-        "target": "mix test test/specled_ex/evidence/tree_hash_test.exs test/specled_ex/evidence/entry_test.exs test/specled_ex/evidence/store_test.exs test/mix/tasks/spec_check_test.exs",
+        "target": "",
         "verification_index": 0
       },
       {
@@ -11418,12 +11376,12 @@
       {
         "cover_id": "specled.evidence_store.attestation_never_gates",
         "file": ".spec/specs/evidence_store.spec.md",
-        "kind": "command",
+        "kind": "tagged_tests",
         "meets_minimum": true,
         "required_strength": "claimed",
-        "strength": "claimed",
+        "strength": "executed",
         "subject_id": "specled.evidence_store",
-        "target": "mix test test/specled_ex/evidence/store_test.exs test/specled_ex/review/findings_delta_test.exs",
+        "target": "",
         "verification_index": 2
       },
       {
@@ -11922,6 +11880,17 @@
         "verification_index": 3
       },
       {
+        "cover_id": "specled.tasks.check_evidence_write",
+        "file": ".spec/specs/mix_tasks.spec.md",
+        "kind": "tagged_tests",
+        "meets_minimum": true,
+        "required_strength": "claimed",
+        "strength": "executed",
+        "subject_id": "specled.mix_tasks",
+        "target": "",
+        "verification_index": 4
+      },
+      {
         "cover_id": "specled.tasks.dep_runtime_bootstrap",
         "file": ".spec/specs/mix_tasks.spec.md",
         "kind": "command",
@@ -11930,7 +11899,7 @@
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "sh -c 'missing=$(grep -L \"SpecLedEx.MixRuntime.ensure_started\" lib/mix/tasks/*.ex); if [ -n \"$missing\" ]; then echo \"tasks missing MixRuntime bootstrap:\"; echo \"$missing\"; exit 1; fi'",
-        "verification_index": 4
+        "verification_index": 5
       },
       {
         "cover_id": "specled.tasks.dedup_realized_by_exit_code",
@@ -11941,7 +11910,7 @@
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "",
-        "verification_index": 5
+        "verification_index": 6
       },
       {
         "cover_id": "specled.tasks.dedup_realized_by_no_write",
@@ -11952,7 +11921,7 @@
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "",
-        "verification_index": 5
+        "verification_index": 6
       },
       {
         "cover_id": "specled.tasks.dedup_realized_by_proposal",
@@ -11963,7 +11932,7 @@
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "",
-        "verification_index": 5
+        "verification_index": 6
       },
       {
         "cover_id": "specled.tasks.dedup_realized_by_shared_seam",
@@ -11974,7 +11943,7 @@
         "strength": "executed",
         "subject_id": "specled.mix_tasks",
         "target": "",
-        "verification_index": 5
+        "verification_index": 6
       },
       {
         "cover_id": "specled.modal_class.classify_case_and_punctuation_insensitive",
@@ -14356,8 +14325,8 @@
     "cli_minimum_strength": null,
     "default_minimum_strength": "claimed",
     "strength_summary": {
-      "claimed": 15,
-      "executed": 307,
+      "claimed": 8,
+      "executed": 315,
       "linked": 84
     },
     "threshold_failures": 0
