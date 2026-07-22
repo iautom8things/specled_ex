@@ -112,11 +112,15 @@
     {
       "text": "MINI-RETRO\nbounces: 0\nfull_suite_runs: 6\nfinals_gt1: 0\nflake_accepts: 0\nescalations: 0\nlessons_kept/retired: 4/0\n\nRun-2 notes: all six review-blocker tickets (F1-F6) landed first-pass — zero verification failures, zero audit bounces. One full audit ran (specled_-7vy) because its two disclosed out-of-scope spec touches (mix_tasks.spec.md co-update, new adds-exception ADR) disqualified the selective auto-approve fast path; audit approved with all seams traced. One grader retry (verify-pqs reposted a malformed bw comment — bw here lacks `-F`; body arrived as literal \"-F\"). File-overlap admission waves (737 refactor-first -\u003e {43y,7xz} -\u003e 7vy) avoided all real rebase conflicts: both rebases (pqs, g00, 7xz) were conflict-free. Follow-up opened during run: specled_-6j7 (CLI surfacing of sync quarantine warnings).",
       "timestamp": "2026-07-22T12:35:36Z"
+    },
+    {
+      "text": "ORCHESTRATED\nChildren closed: 6\nBOUNCEs encountered: 0\nUser escalations: 0\n\nRun-2 deliver cleanup: all 6 stage worktrees removed and stage branches deleted (each verified clean + merged into epic HEAD a70ed41 before removal). Epic worktree /Users/mz/src/specled_ex-evidence-ledger-split preserved. Follow-up specled_-6j7 (CLI surfacing of sync quarantine warnings) left open for normal triage. Epic stays in_progress (phase:implementing) for the ship pipeline (/open-pr -\u003e /babysit-pr -\u003e /merge-pr); the final /deliver closes it post-deploy on merged-PR evidence. Epic branch specled_-csg/evidence-ledger-split at a70ed41 is ready for its single PR to main — deliberate human checkpoint, not pushed.",
+      "timestamp": "2026-07-22T12:58:02Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-22T12:35:36Z"
+  "updated_at": "2026-07-22T12:58:02Z"
 }
