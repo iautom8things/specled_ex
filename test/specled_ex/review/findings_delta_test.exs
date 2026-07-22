@@ -143,6 +143,53 @@ defmodule SpecLedEx.Review.FindingsDeltaTest do
       assert Enum.map(result.resolved, & &1["code"]) == ["old_parser_kind"]
       assert Enum.map(result.introduced, & &1["code"]) == ["new_parser_kind"]
     end
+
+    @tag spec: "specled.spec_review.findings_delta"
+    test "classifies the review-only no_realized_by synthetic finding as pre-existing even though base never recorded it",
+         %{root: root} do
+      init_git_repo(root)
+      write_files(root, %{"lib/auth.ex" => "defmodule Auth do\nend\n"})
+      commit_all(root, "base content")
+      record_base_evidence(root, [])
+
+      no_realized_by =
+        head_finding("detector_unavailable", "auth.subject", nil, "no realized_by", "info")
+        |> Map.put("reason", "no_realized_by")
+
+      real_introduced =
+        head_finding("overlap_subject", "auth.subject", ".spec/specs/auth.spec.md", "brand new")
+
+      result = FindingsDelta.classify(root, "main", [no_realized_by, real_introduced])
+
+      assert result.delta_available? == true
+      assert no_realized_by in result.pre_existing
+      refute no_realized_by in result.introduced
+      assert real_introduced in result.introduced
+      # The synthetic finding never having a base attestation must not
+      # suppress a genuinely new, producer-comparable finding alongside it.
+      assert result.change_verdict.introduced_count == 1
+    end
+
+    @tag spec: "specled.spec_review.findings_delta"
+    test "a detector_unavailable finding with a real verifier reason still classifies normally",
+         %{root: root} do
+      init_git_repo(root)
+      write_files(root, %{"lib/auth.ex" => "defmodule Auth do\nend\n"})
+      commit_all(root, "base content")
+      record_base_evidence(root, [])
+
+      # Unlike no_realized_by, this reason is emitted by Verifier.verify
+      # itself (Realization.ExpandedBehavior), so it is the same producer
+      # that seeds base evidence and must classify like any other finding.
+      debug_info_stripped =
+        head_finding("detector_unavailable", "auth.subject", nil, "debug info stripped", "info")
+        |> Map.put("reason", "debug_info_stripped")
+
+      result = FindingsDelta.classify(root, "main", [debug_info_stripped])
+
+      assert debug_info_stripped in result.introduced
+      refute debug_info_stripped in result.pre_existing
+    end
   end
 
   describe "FindingsDelta.classify/3 non-differential fallback" do
@@ -192,12 +239,14 @@ defmodule SpecLedEx.Review.FindingsDeltaTest do
 
   describe "build_view/3 findings delta integration" do
     @tag spec: "specled.spec_review.findings_delta"
-    test "attaches a differential delta and marks a head-only finding as introduced", %{
-      root: root
-    } do
+    test "folds the synthetic no_realized_by finding into pre-existing instead of introduced, keeping the verdict clean",
+         %{root: root} do
       setup_repo(root, "auth_subject", "Auth.")
-      # Record base evidence with no findings so the head-side synthetic
-      # no_realized_by finding classifies as introduced.
+      # Base evidence records no findings — mix spec.check never computes
+      # the no_realized_by synthetic finding, so an empty base entry is the
+      # only base state that can ever exist for it. The subject's lack of
+      # realized_by predates this change; the diff below merely touches its
+      # file, so it must not read as introduced by this change.
       record_base_evidence(root, [])
       change_subject_file(root)
 
@@ -206,9 +255,10 @@ defmodule SpecLedEx.Review.FindingsDeltaTest do
 
       assert view.findings_delta.delta_available? == true
 
-      assert Enum.any?(view.findings_delta.introduced, &(&1["reason"] == "no_realized_by"))
-      assert view.findings_delta.change_verdict.clean? == false
-      assert view.findings_delta.change_verdict.introduced_count >= 1
+      assert Enum.any?(view.findings_delta.pre_existing, &(&1["reason"] == "no_realized_by"))
+      refute Enum.any?(view.findings_delta.introduced, &(&1["reason"] == "no_realized_by"))
+      assert view.findings_delta.change_verdict.clean? == true
+      assert view.findings_delta.change_verdict.introduced_count == 0
     end
 
     @tag spec: "specled.spec_review.findings_delta"
