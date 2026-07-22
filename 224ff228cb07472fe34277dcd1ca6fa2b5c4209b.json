@@ -7,8 +7,8 @@
       "message": "Changed file lib/mix/tasks/spec.prune.ex impacts subject specled.mix_tasks; spec.md not co-changed, but realization attested binding(s) Mix.Tasks.Spec.Prune.run/1 as clean — informational only."
     }
   ],
-  "run_at": "2026-07-22T12:09:24.195556Z",
-  "run_id": "6085947f6864c0d883a40e7cd9e0bd5e",
+  "run_at": "2026-07-22T12:09:38.051294Z",
+  "run_id": "5e0485fe1b5f3e2d629c0d1dfa6cc6b3",
   "schema_version": 1,
   "specled_version": "0.1.0",
   "tree_hash": "224ff228cb07472fe34277dcd1ca6fa2b5c4209b",
