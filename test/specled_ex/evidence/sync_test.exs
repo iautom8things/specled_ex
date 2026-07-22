@@ -9,7 +9,9 @@ defmodule SpecLedEx.Evidence.SyncTest do
                "specled.evidence_store.sync_tree_union",
                "specled.evidence_store.sync_failure_contracts",
                "specled.evidence_store.drift_surfaced",
-               "specled.evidence_store.sync_entry_tolerance"
+               "specled.evidence_store.sync_entry_tolerance",
+               "specled.evidence_store.sync_noop_short_circuit",
+               "specled.evidence_store.sync_auto_prune"
              ]
 
   @tag spec: "specled.evidence_store.sync_tree_union"
@@ -182,6 +184,60 @@ defmodule SpecLedEx.Evidence.SyncTest do
     assert evidence_ids(fixture.a) == Enum.sort([hash("1"), hash("2"), hash("9")])
   end
 
+  @tag spec: "specled.evidence_store.sync_noop_short_circuit"
+  test "a no-op sync (local and remote already equal) never re-reads an entry, even a quarantined one",
+       %{root: fixture_root} do
+    fixture = sync_fixture(fixture_root, "noop-shortcut")
+    assert :ok = Store.record(fixture.a, entry(hash("1"), "10", "a"))
+    inject_raw_entry(fixture.a, "notes.txt", "not an evidence entry\n")
+
+    assert {:ok, pushed} = Sync.run(fixture.a, sleep: fn _ -> :ok end)
+    assert pushed.action == :pushed
+    assert length(pushed.warnings) == 1
+
+    assert {:ok, noop} = Sync.run(fixture.a, sleep: fn _ -> :ok end)
+    assert noop.action == :noop
+    assert noop.ahead == 0
+    assert noop.behind == 0
+    assert noop.warnings == []
+  end
+
+  @tag spec: "specled.evidence_store.sync_auto_prune"
+  test "a real reconciliation folds the reachable-set keep-set in once the merged entry count crosses the threshold",
+       %{root: fixture_root} do
+    fixture = sync_fixture(fixture_root, "auto-prune-over")
+    reachable = fixture.a |> git!(["rev-parse", "HEAD^{tree}"]) |> String.trim()
+    unreachable = String.duplicate("f", 40)
+
+    assert :ok = Store.record(fixture.a, entry(reachable, "10", "a"))
+    assert :ok = Store.record(fixture.a, entry(unreachable, "20", "b"))
+
+    assert {:ok, result} =
+             Sync.run(fixture.a, auto_prune_threshold: 1, sleep: fn _ -> :ok end)
+
+    assert result.action == :pushed
+    assert evidence_ids(fixture.a) == [reachable]
+  end
+
+  @tag spec: "specled.evidence_store.sync_auto_prune"
+  test "a real reconciliation below the threshold leaves unreachable entries for explicit spec.prune",
+       %{
+         root: fixture_root
+       } do
+    fixture = sync_fixture(fixture_root, "auto-prune-under")
+    reachable = fixture.a |> git!(["rev-parse", "HEAD^{tree}"]) |> String.trim()
+    unreachable = String.duplicate("e", 40)
+
+    assert :ok = Store.record(fixture.a, entry(reachable, "10", "a"))
+    assert :ok = Store.record(fixture.a, entry(unreachable, "20", "b"))
+
+    assert {:ok, result} =
+             Sync.run(fixture.a, auto_prune_threshold: 10, sleep: fn _ -> :ok end)
+
+    assert result.action == :pushed
+    assert evidence_ids(fixture.a) == Enum.sort([reachable, unreachable])
+  end
+
   defp inject_raw_entry(root, filename, content) do
     index_path = Path.join(System.tmp_dir!(), "raw-index-#{System.unique_integer([:positive])}")
     blob_path = Path.join(System.tmp_dir!(), "raw-blob-#{System.unique_integer([:positive])}")
@@ -236,7 +292,7 @@ defmodule SpecLedEx.Evidence.SyncTest do
   defp sync_fixture(root, name) do
     origin = Path.join(root, "#{name}-origin.git")
     seed = Path.join(root, "#{name}-seed")
-    git!(root, ["init", "--bare", origin])
+    git!(root, ["init", "--bare", "-b", "main", origin])
     File.mkdir_p!(seed)
     init_git_repo(seed)
     write_files(seed, %{"README.md" => "fixture\n"})

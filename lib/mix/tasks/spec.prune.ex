@@ -25,7 +25,7 @@ defmodule Mix.Tasks.Spec.Prune do
     root = opts[:root] || File.cwd!()
 
     with {:ok, _fetched} <- SpecLedEx.Evidence.Sync.fetch(root),
-         {:ok, keep} <- reachable_tree_hashes(root),
+         {:ok, keep} <- SpecLedEx.Evidence.Sync.reachable_keep_set(root),
          {:ok, result} <- SpecLedEx.Evidence.Sync.run(root, keep: keep) do
       Mix.shell().info(
         "spec-evidence pruned and synced as of last fetch: ahead=#{result.ahead} behind=#{result.behind}"
@@ -37,36 +37,6 @@ defmodule Mix.Tasks.Spec.Prune do
     end
   end
 
-  defp reachable_tree_hashes(root) do
-    with {:ok, refs_output} <-
-           git(root, [
-             "for-each-ref",
-             "--format=%(refname)",
-             "refs/heads",
-             "refs/remotes"
-           ]) do
-      refs =
-        refs_output
-        |> String.split("\n", trim: true)
-        |> Enum.reject(&evidence_ref?/1)
-
-      case refs do
-        [] ->
-          {:ok, MapSet.new()}
-
-        refs ->
-          case git(root, ["log", "--format=%T" | refs]) do
-            {:ok, output} -> {:ok, output |> String.split("\n", trim: true) |> MapSet.new()}
-            error -> error
-          end
-      end
-    end
-  end
-
-  defp evidence_ref?(ref) do
-    ref == "refs/heads/spec-evidence" or String.ends_with?(ref, "/spec-evidence")
-  end
-
   defp validate_args!([], []), do: :ok
 
   defp validate_args!(rest, invalid) do
@@ -76,12 +46,5 @@ defmodule Mix.Tasks.Spec.Prune do
       |> Enum.join(", ")
 
     Mix.raise("Invalid arguments for spec.prune: #{details}")
-  end
-
-  defp git(root, args) do
-    case System.cmd("git", ["-C", root | args], stderr_to_stdout: true) do
-      {output, 0} -> {:ok, output}
-      {output, status} -> {:error, {:git, args, output, status}}
-    end
   end
 end

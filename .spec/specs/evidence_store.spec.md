@@ -47,6 +47,7 @@ surface:
   - test/mix/tasks/spec_prune_task_test.exs
 decisions:
   - specled.decision.evidence_orphan_branch_split
+  - specled.decision.sync_noop_short_circuit_and_auto_prune
 ```
 
 ## Requirements
@@ -129,11 +130,36 @@ decisions:
   stability: evolving
 - id: specled.evidence_store.prune_explicit_only
   statement: >-
-    Evidence entries shall be deleted only by an explicit `mix spec.prune`
-    invocation; sync shall never prune. Prune's reachable set is the tree
-    hashes of commits reachable from local branch heads and remote-tracking
-    refs after a fetch; entries outside that set are dropped and the pruned
-    tree is pushed via the same lease-guarded sync path.
+    Evidence entries shall be dropped only through one shared reachable-set
+    computation — the tree hashes of commits reachable from local branch
+    heads and remote-tracking refs after a fetch — never by any other
+    deletion path. That computation is invoked explicitly by `mix
+    spec.prune`, and automatically by sync's size-threshold trigger (see
+    `specled.evidence_store.sync_auto_prune`); either way the pruned tree is
+    pushed via the same lease-guarded sync path.
+  priority: must
+  stability: evolving
+- id: specled.evidence_store.sync_auto_prune
+  statement: >-
+    During a real reconciliation (local and remote `spec-evidence` refs
+    differ) where no explicit keep-set was supplied, sync shall compare the
+    merged entry count against a size threshold; once crossed, it shall
+    compute the same reachable-tree-hash keep-set `mix spec.prune` uses and
+    apply it to the merged tree before writing and pushing, folding
+    retention into the sync hot path without requiring a separate `mix
+    spec.prune` invocation. Below the threshold, or when the keep-set
+    computation fails, sync shall proceed as a plain unpruned merge rather
+    than fail the attempt.
+  priority: must
+  stability: evolving
+- id: specled.evidence_store.sync_noop_short_circuit
+  statement: >-
+    When the fetched remote commit already equals the local `spec-evidence`
+    commit and no explicit keep-set was supplied, `Sync.run` shall return
+    `action: :noop` (ahead 0, behind 0, no warnings) without performing any
+    per-entry read — no tree listing, no blob read, no decode — on either
+    ref. The common no-drift outcome the pre-push hook hits on nearly every
+    push is O(1) in store size, not O(entries).
   priority: must
   stability: evolving
 - id: specled.evidence_store.attestation_never_gates
@@ -290,9 +316,29 @@ decisions:
     - mix spec.prune runs after a fetch
   then:
     - entries A and B remain; entry C is gone
-    - a plain mix spec.sync run never removed C beforehand
+    - a plain mix spec.sync run below the auto-prune threshold never removed C beforehand
   covers:
     - specled.evidence_store.prune_explicit_only
+- id: specled.evidence_store.scenario.sync_auto_prunes_over_threshold
+  given:
+    - a repo whose evidence holds one entry for a reachable tree and one for an unreachable tree, with no explicit keep-set supplied
+  when:
+    - a real (non-no-op) sync runs with the auto-prune size threshold set below the merged entry count
+  then:
+    - the unreachable entry is dropped from the pushed tree using the same reachable-set computation mix spec.prune uses
+    - the same setup with the threshold set above the merged entry count leaves the unreachable entry in place
+  covers:
+    - specled.evidence_store.sync_auto_prune
+- id: specled.evidence_store.scenario.sync_noop_never_reads_an_entry
+  given:
+    - a repo whose local and remote spec-evidence refs already point at the same commit, which contains a quarantined (invalid-path) entry
+  when:
+    - mix spec.sync runs again with no explicit keep-set
+  then:
+    - the result reports action noop, ahead 0, behind 0, and an empty warnings list
+    - no quarantine warning is re-emitted for the entry already present in the unchanged tree, proving no entry was re-read
+  covers:
+    - specled.evidence_store.sync_noop_short_circuit
 - id: specled.evidence_store.scenario.evidence_never_gates
   given:
     - a repo where the base tree's evidence entry classifies a live finding as pre-existing
@@ -348,6 +394,8 @@ decisions:
     - specled.evidence_store.prune_explicit_only
     - specled.evidence_store.drift_surfaced
     - specled.evidence_store.sync_entry_tolerance
+    - specled.evidence_store.sync_auto_prune
+    - specled.evidence_store.sync_noop_short_circuit
 - kind: tagged_tests
   execute: true
   covers:

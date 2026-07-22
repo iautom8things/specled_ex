@@ -62,6 +62,7 @@ decisions:
   - specled.decision.configurable_test_tag_enforcement
   - specled.decision.realized_by_tier_implication
   - specled.decision.verification_runtime_config
+  - specled.decision.sync_noop_short_circuit_and_auto_prune
 ```
 
 ## Requirements
@@ -223,10 +224,13 @@ decisions:
   stability: evolving
 - id: specled.tasks.prune_evidence
   statement: >-
-    mix spec.prune shall be an explicit-only command that fetches before
-    computing trees reachable from local branch heads and remote-tracking
-    refs, removes only evidence outside that set, and pushes through the
-    lease-guarded Sync production path.
+    mix spec.prune shall be an explicit command that fetches, then computes
+    the reachable-tree-hash keep-set (trees reachable from local branch
+    heads and remote-tracking refs) via the same
+    `SpecLedEx.Evidence.Sync.reachable_keep_set/1` that sync's own
+    size-threshold auto-prune uses (see
+    specled.evidence_store.sync_auto_prune), removes only evidence outside
+    that set, and pushes through the lease-guarded Sync production path.
   priority: must
   stability: evolving
 ```

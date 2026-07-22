@@ -10,6 +10,20 @@ defmodule SpecLedEx.Evidence.Sync do
   a schema version it does not recognize) never halts reconciliation for
   every peer: it is quarantined — carried through the union byte-identical
   under its original path — and reported as a warning instead.
+
+  When the fetched remote commit already equals the local commit and no
+  explicit `:keep` was supplied, `run/2` short-circuits before reading a
+  single entry: no `ls-tree`, no `cat-file`, no decode on either ref. This
+  keeps the pre-push hook's near-universal outcome (nothing changed since
+  the last sync) O(1) in store size instead of O(entries).
+
+  When real reconciliation does happen (local and remote refs differ) and
+  the merged entry count crosses `@auto_prune_entry_threshold`, sync folds
+  in the same reachable-tree-hash keep-set `mix spec.prune` computes and
+  applies it before writing and pushing the merged tree, so the store stops
+  growing without bound even when nobody runs `mix spec.prune` by hand. A
+  failure to compute the keep-set degrades to a plain (unpruned) sync rather
+  than failing the attempt.
   """
 
   alias SpecLedEx.Evidence.{Entry, Git}
@@ -18,6 +32,7 @@ defmodule SpecLedEx.Evidence.Sync do
   @remote_ref "refs/remotes/origin/spec-evidence"
   @remote_head "refs/heads/spec-evidence"
   @max_attempts 3
+  @auto_prune_entry_threshold 500
   @zero String.duplicate("0", 40)
 
   @type warning :: %{code: String.t(), message: String.t()}
@@ -57,14 +72,47 @@ defmodule SpecLedEx.Evidence.Sync do
   end
 
   @doc """
+  Computes the reachable-tree-hash keep-set: tree hashes of commits reachable
+  from local branch heads and remote-tracking refs (excluding `spec-evidence`
+  refs themselves), after the caller has fetched. Shared by `mix spec.prune`'s
+  explicit invocation and `run/2`'s automatic size-threshold pruning.
+  """
+  @spec reachable_keep_set(Path.t()) :: {:ok, MapSet.t()} | {:error, term()}
+  def reachable_keep_set(root) do
+    with {:ok, refs_output} <-
+           Git.run(root, ["for-each-ref", "--format=%(refname)", "refs/heads", "refs/remotes"]) do
+      refs =
+        refs_output
+        |> String.split("\n", trim: true)
+        |> Enum.reject(&evidence_ref?/1)
+
+      case refs do
+        [] ->
+          {:ok, MapSet.new()}
+
+        refs ->
+          case Git.run(root, ["log", "--format=%T" | refs]) do
+            {:ok, output} -> {:ok, output |> String.split("\n", trim: true) |> MapSet.new()}
+            error -> error
+          end
+      end
+    end
+  end
+
+  @doc """
   Reconciles and pushes evidence, retrying lease races at most three times.
 
   `:keep` may be a `MapSet` of tree hashes; when present, entries outside that
-  set are removed after each fetched union. This is used only by explicit
-  pruning. `:before_push` is a test seam called immediately before each push.
+  set are removed after each fetched union. This is set explicitly by
+  pruning, and computed automatically (see the moduledoc) once the merged
+  entry count crosses the auto-prune size threshold. `:auto_prune_threshold`
+  overrides that threshold (default `#{@auto_prune_entry_threshold}`, mainly
+  for tests). `:before_push` is a test seam called immediately before each
+  push.
 
   The result's `:warnings` list carries one entry per quarantined path
-  encountered on either side of this attempt.
+  encountered on either side of this attempt. It is empty when the no-op
+  short circuit applies, since no entry is read in that case.
   """
   @spec run(Path.t(), keyword()) :: {:ok, result()} | {:error, term()}
   def run(root, opts \\ []) do
@@ -79,8 +127,17 @@ defmodule SpecLedEx.Evidence.Sync do
     remote = Keyword.get(opts, :remote, "origin")
 
     with {:ok, remote_commit} <- fetch(root, remote: remote),
-         {:ok, local_commit} <- ref_commit(root, @local_ref),
-         {:ok, local_entries, local_warnings} <- entries(root, local_commit),
+         {:ok, local_commit} <- ref_commit(root, @local_ref) do
+      if local_commit == remote_commit and not is_struct(Keyword.get(opts, :keep), MapSet) do
+        {:ok, %{ahead: 0, behind: 0, attempts: attempt, action: :noop, warnings: []}}
+      else
+        reconcile_attempt(root, opts, attempt, remote, local_commit, remote_commit)
+      end
+    end
+  end
+
+  defp reconcile_attempt(root, opts, attempt, remote, local_commit, remote_commit) do
+    with {:ok, local_entries, local_warnings} <- entries(root, local_commit),
          {:ok, remote_entries, remote_warnings} <- entries(root, remote_commit) do
       drift = drift(local_entries, remote_entries)
       warnings = local_warnings ++ remote_warnings
@@ -113,15 +170,38 @@ defmodule SpecLedEx.Evidence.Sync do
   end
 
   defp reconcile_entries(root, local, remote, local_entries, remote_entries, opts) do
-    merged_entries =
-      local_entries
-      |> Map.merge(remote_entries, &merge_entry/3)
-      |> keep_entries(Keyword.get(opts, :keep))
+    merged = Map.merge(local_entries, remote_entries, &merge_entry/3)
+    keep = resolve_keep(root, merged, opts)
+    merged_entries = keep_entries(merged, keep)
 
     with {:ok, tree} <- write_tree(root, merged_entries),
          {:ok, commit} <- commit_tree(root, tree, local, remote),
          :ok <- update_local_ref(root, commit, local) do
       {:push, commit}
+    end
+  end
+
+  # An explicit `:keep` (from `mix spec.prune`) always wins. Otherwise, once
+  # the merged entry count crosses the auto-prune threshold, sync folds in
+  # the same reachable-tree-hash keep-set `mix spec.prune` computes. A
+  # failure to compute it degrades to an unpruned sync rather than failing
+  # the attempt — auto-prune is housekeeping, never a correctness gate.
+  defp resolve_keep(root, merged_entries, opts) do
+    case Keyword.get(opts, :keep) do
+      %MapSet{} = keep ->
+        keep
+
+      nil ->
+        threshold = Keyword.get(opts, :auto_prune_threshold, @auto_prune_entry_threshold)
+
+        if map_size(merged_entries) > threshold do
+          case reachable_keep_set(root) do
+            {:ok, keep} -> keep
+            {:error, _reason} -> nil
+          end
+        else
+          nil
+        end
     end
   end
 
@@ -404,6 +484,10 @@ defmodule SpecLedEx.Evidence.Sync do
 
   defp remote_tracking_ref("origin"), do: @remote_ref
   defp remote_tracking_ref(remote), do: "refs/remotes/#{remote}/spec-evidence"
+
+  defp evidence_ref?(ref) do
+    ref == @local_ref or String.ends_with?(ref, "/spec-evidence")
+  end
 
   defp remote_absent?(output) do
     String.contains?(output, "couldn't find remote ref") or
