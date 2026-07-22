@@ -121,7 +121,9 @@ decisions:
     then push with `--force-with-lease` pinned to the fetched sha. On lease
     rejection it shall refetch, re-merge, and retry, bounded at 3 attempts.
     Independently self-created orphan roots (no merge base) shall merge by
-    the same content-based path.
+    the same content-based path. Ledger pushes shall bypass git hooks
+    (`--no-verify`): the installed pre-push hook itself invokes `mix
+    spec.sync`, so a hook-honoring ledger push would recurse without bound.
   priority: must
   stability: evolving
 - id: specled.evidence_store.sync_failure_contracts

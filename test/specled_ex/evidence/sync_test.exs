@@ -267,6 +267,23 @@ defmodule SpecLedEx.Evidence.SyncTest do
     assert evidence_ids(fixture.a) == Enum.sort([reachable, unreachable])
   end
 
+  @tag spec: "specled.evidence_store.sync_tree_union"
+  test "the ledger push bypasses pre-push hooks so a sync-invoking hook cannot recurse", %{
+    root: fixture_root
+  } do
+    fixture = sync_fixture(fixture_root, "hook-bypass")
+
+    hook_path = Path.join(fixture.a, ".git/hooks/pre-push")
+    File.mkdir_p!(Path.dirname(hook_path))
+    File.write!(hook_path, "#!/bin/sh\nexit 1\n")
+    File.chmod!(hook_path, 0o755)
+
+    assert :ok = Store.record(fixture.a, entry(hash("1"), "10", "a"))
+
+    assert {:ok, %{action: :pushed}} = Sync.run(fixture.a, sleep: fn _ -> :ok end)
+    assert git!(fixture.a, ["ls-remote", "origin", "refs/heads/spec-evidence"]) != ""
+  end
+
   @tag spec: [
          "specled.evidence_store.sync_auto_prune",
          "specled.evidence_store.prune_reachability_floor"

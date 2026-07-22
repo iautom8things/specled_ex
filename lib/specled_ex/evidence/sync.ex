@@ -340,8 +340,13 @@ defmodule SpecLedEx.Evidence.Sync do
        ),
        do: {:error, reason}
 
+  # Ledger pushes always bypass hooks (`--no-verify`): the installed
+  # pre-push hook itself invokes `mix spec.sync`, so a hook-honoring ledger
+  # push would recurse — hook runs sync, sync pushes the ledger, that push
+  # fires the hook again — forever. The ledger push is internal plumbing;
+  # only the developer's own code pushes should see their hooks.
   defp push(root, remote, :absent) do
-    case Git.run(root, ["push", remote, "#{@local_ref}:#{@remote_head}"]) do
+    case Git.run(root, ["push", "--no-verify", remote, "#{@local_ref}:#{@remote_head}"]) do
       {:ok, _} ->
         :ok
 
@@ -353,6 +358,7 @@ defmodule SpecLedEx.Evidence.Sync do
   defp push(root, remote, fetched) do
     case Git.run(root, [
            "push",
+           "--no-verify",
            "--force-with-lease=#{@remote_head}:#{fetched}",
            remote,
            "#{@local_ref}:#{@remote_head}"

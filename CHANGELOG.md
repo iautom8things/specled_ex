@@ -2,6 +2,12 @@
 
 ## 0.2.0 — 2026-07-22
 
+- Fixed unbounded pre-push hook recursion on the first real evidence sync:
+  the installed pre-push hook runs `mix spec.sync`, whose ledger push
+  re-triggered the hook, which ran sync again — spawning nested pushes
+  forever and minting an endless chain of identical ledger commits. Ledger
+  pushes now run with `--no-verify`; the developer's own code pushes still
+  see their hooks, and the hook still runs sync exactly once per push.
 - Unified tree-blob reading on one primitive and deduplicated helpers.
   `BaseView` now materializes base spec files through `Git.ls_tree_entries/3`
   plus one `Git.cat_file_batch/3` call — the same batched plumbing `Sync`
