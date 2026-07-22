@@ -1,7 +1,9 @@
 {
   "assignee": "",
   "blocked_by": [],
-  "blocks": [],
+  "blocks": [
+    "specled_-csg"
+  ],
   "created": "2026-07-22T10:52:11Z",
   "description": "From /critical-review of specled_-csg, consensus finding F4 [Medium; idioms+simplicity]. The git/3, temp_path, random_hex etc. helper kit is copy-pasted across Evidence.Sync, Evidence.TreeHash, Evidence.Store, and the migrate task, with variants already diverging. Extract one shared SpecLedEx.Evidence.Git (or reuse an existing repo git helper) so behavior fixes land once.\nFiles: lib/specled_ex/evidence/{sync,tree_hash,store}.ex, lib/mix/tasks/spec.evidence.migrate.ex.\nFull report: /Users/mz/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-22/specled_-csg-evidence-ledger-split/20260722-062318-consolidated.md",
   "id": "specled_-737",
