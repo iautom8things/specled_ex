@@ -124,11 +124,15 @@
     {
       "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/3 (release 0.2.0). Two critical-review rounds adjudicated on-branch; ship-time fix: ledger pushes bypass hooks (pre-push recursion). Babysitting CI.",
       "timestamp": "2026-07-22T17:42:34Z"
+    },
+    {
+      "text": "MERGED to main as 966b28e (squash of PR #3, release 0.2.0). Post-merge Specs run on main: success (run 29945270272, manually dispatched — note: event-triggered Actions never fire on this repo, only workflow_dispatch; every CI run this ship was manual). Flake ticket specled_-epl filed for tracer_test.exs:241 3rd occurrence. Ready for /deliver.",
+      "timestamp": "2026-07-22T18:08:33Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-22T17:42:34Z"
+  "updated_at": "2026-07-22T18:08:33Z"
 }
