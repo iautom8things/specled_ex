@@ -12,6 +12,7 @@ defmodule SpecLedEx.Evidence.SyncTest do
                "specled.evidence_store.sync_failure_contracts",
                "specled.evidence_store.drift_surfaced",
                "specled.evidence_store.sync_entry_tolerance",
+               "specled.evidence_store.sync_tree_level_tolerance",
                "specled.evidence_store.sync_noop_short_circuit",
                "specled.evidence_store.sync_auto_prune",
                "specled.evidence_store.prune_reachability_floor",
@@ -308,7 +309,7 @@ defmodule SpecLedEx.Evidence.SyncTest do
     assert evidence_ids(fixture.a) == Enum.sort([unreachable_one, unreachable_two])
   end
 
-  @tag spec: "specled.evidence_store.sync_entry_tolerance"
+  @tag spec: "specled.evidence_store.sync_tree_level_tolerance"
   test "a crafted non-blob tree entry is carried through opaquely instead of halting", %{
     root: fixture_root
   } do
@@ -331,7 +332,7 @@ defmodule SpecLedEx.Evidence.SyncTest do
     assert git!(fixture.b, ["ls-tree", @ref]) =~ "160000 commit #{gitlink_oid}\tvendored"
   end
 
-  @tag spec: "specled.evidence_store.sync_entry_tolerance"
+  @tag spec: "specled.evidence_store.sync_tree_level_tolerance"
   test "an entry at a git-rejectable path is dropped from the union with a warning", %{
     root: fixture_root
   } do

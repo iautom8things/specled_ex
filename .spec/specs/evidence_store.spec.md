@@ -240,14 +240,19 @@ decisions:
     emitted naming the path and reason. All other entries in the same sync
     continue to reconcile normally, and a quarantined path present on both
     sides of a merge resolves deterministically so independently-created
-    orphan roots still converge. Tolerance extends to the tree layer: a
-    non-blob tree entry (e.g. a crafted gitlink) shall be carried through
-    the union byte-identical at the tree level — original mode and object
-    id, never read — with one warning, and an entry at a path git refuses
-    to stage (`..`, `.git`, empty components) shall be dropped from the
-    union with one `evidence/entry_skipped` warning so the store
-    self-heals on the next push. Only git-level read failures of the tree
-    listing or object database halt reconciliation.
+    orphan roots still converge.
+  priority: must
+  stability: evolving
+- id: specled.evidence_store.sync_tree_level_tolerance
+  statement: >-
+    Tolerance shall extend to the tree layer, beyond blob contents: a
+    non-blob tree entry (e.g. a crafted gitlink) is carried through the
+    union byte-identical at the tree level — original mode and object id,
+    never read — with one warning, and an entry at a path git refuses to
+    stage (`..`, `.git`, empty components) is dropped from the union with
+    one `evidence/entry_skipped` warning so the store self-heals on the
+    next push. Only git-level read failures of the tree listing or object
+    database halt reconciliation.
   priority: must
   stability: evolving
 ```
@@ -365,24 +370,15 @@ decisions:
     - the same setup with the threshold set above the merged entry count leaves the unreachable entry in place
   covers:
     - specled.evidence_store.sync_auto_prune
-- id: specled.evidence_store.scenario.prune_refuses_empty_keep_set
+- id: specled.evidence_store.scenario.prune_refuses_wiping_keep_set
   given:
     - a repo holding evidence entries whose only non-evidence refs have been deleted, so the reachable keep-set computes empty
+    - separately, a repo with intact refs whose stored evidence entries are all for trees no ref reaches, so the keep-set is non-empty but matches no stored key
   when:
     - mix spec.prune runs, and separately a real over-threshold sync runs with no explicit keep-set
   then:
-    - mix spec.prune raises evidence/prune_refused and every evidence entry survives on both refs
-    - the over-threshold sync pushes an unpruned merge and reports one evidence/auto_prune_degraded warning
-  covers:
-    - specled.evidence_store.prune_reachability_floor
-- id: specled.evidence_store.scenario.prune_refuses_disjoint_keep_set
-  given:
-    - a repo with intact refs whose stored evidence entries are all for trees no ref reaches, so the reachable keep-set is non-empty but matches no stored key
-  when:
-    - mix spec.prune runs, and separately a real over-threshold sync runs with no explicit keep-set
-  then:
-    - mix spec.prune raises evidence/prune_refused and every evidence entry survives on both refs
-    - the over-threshold sync pushes an unpruned merge and reports one evidence/auto_prune_degraded warning
+    - in both setups mix spec.prune raises evidence/prune_refused and every evidence entry survives on both refs
+    - in both setups the over-threshold sync pushes an unpruned merge and reports one evidence/auto_prune_degraded warning
   covers:
     - specled.evidence_store.prune_reachability_floor
 - id: specled.evidence_store.scenario.sync_tolerates_tree_level_corruption
@@ -395,7 +391,7 @@ decisions:
     - the unstageable-path entry is dropped from the pushed union with one evidence/entry_skipped warning
     - the valid entry reconciles normally and no peer's sync halts
   covers:
-    - specled.evidence_store.sync_entry_tolerance
+    - specled.evidence_store.sync_tree_level_tolerance
 - id: specled.evidence_store.scenario.sync_reconciles_across_chunk_boundary
   given:
     - a store holding more entries than one write chunk covers
@@ -472,6 +468,7 @@ decisions:
     - specled.evidence_store.prune_reachability_floor
     - specled.evidence_store.drift_surfaced
     - specled.evidence_store.sync_entry_tolerance
+    - specled.evidence_store.sync_tree_level_tolerance
     - specled.evidence_store.sync_auto_prune
     - specled.evidence_store.sync_noop_short_circuit
     - specled.evidence_store.sync_bounded_subprocesses
