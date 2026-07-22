@@ -14,11 +14,15 @@
     {
       "text": "ADMISSION SCOPE (orchestrator, run-2 W2)\nNote: specled_-737 has landed on the epic branch — tree_hash.ex is now rewired onto the shared SpecLedEx.Evidence.Git module; line numbers in the ticket body predate that refactor.\nAllowed touches:\n- lib/specled_ex/evidence/tree_hash.ex\n- lib/specled_ex/evidence/git.ex (only if the error-path temp cleanup rightly belongs in the shared helper)\n- test/specled_ex/evidence/** (tree_hash tests)\n- .spec/specs/evidence_store.spec.md (verification stubs only, if needed)\nOut of scope (intent): fix = temp index actually deleted on error paths (or the dead cleanup_temp_reason/1 dropped with real cleanup wired); no other behavior change. Do not touch sync.ex/entry.ex (owned by specled_-7xz this wave). Any file outside these globs must be disclosed in IMPLEMENTED.",
       "timestamp": "2026-07-22T11:25:54Z"
+    },
+    {
+      "text": "IMPLEMENTED\nSession: specled_-csg-evidence-ledger-split - implement (worktree specled_-43y/tree-hash-temp-cleanup)\nLog: n/a (interactive delegated worker, no separate log file)\n\nCommit: 5cc6456\nFiles touched: lib/specled_ex/evidence/tree_hash.ex, test/specled_ex/evidence/tree_hash_test.exs\nTests added: SpecLedEx.Evidence.TreeHashTest \"current removes the temporary index when a later git step fails\"\nVerification stubs flipped: none (no stub existed for this fix; requirement specled.evidence_store.tree_hash_mirrors_add_all already active)\nVerification tier: change-scoped — test/specled_ex/evidence/tree_hash_test.exs (3 tests, 0 failures), full mix test --stale (995 tests + 3 properties, 0 failures), mix compile --warnings-as-errors clean, mix format --check-formatted clean on touched files, mix spec.check --no-run-commands (0 errors, 0 warnings); full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: current/1 allocated a temp GIT_INDEX_FILE path but only cleaned it up on the success branch; the error branch piped the failure through cleanup_temp_reason/1, whose every clause was a no-op, so a failing `git add -A` or `git write-tree` leaked the temp index file under .git/specled-tmp. Restructured current/1 to allocate the temp path once via an outer with, delegate the fallible git steps to a new private current_with_index/2, and unconditionally File.rm the temp path before returning the result — mirroring the existing pattern in Sync.write_tree/2 — then dropped the dead cleanup_temp_reason/1. Added a regression test that chmods .git/objects read-only after seeding the index from HEAD so `git add -A` fails mid-flight with the index already on disk, confirmed it fails against the prior implementation (leaked index-* file) and passes against the fix (temp dir empty).",
+      "timestamp": "2026-07-22T11:36:33Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "review-F5: dead cleanup_temp_reason no-op masks temp-index leak on error paths",
   "type": "task",
-  "updated_at": "2026-07-22T11:27:46Z"
+  "updated_at": "2026-07-22T11:36:33Z"
 }
