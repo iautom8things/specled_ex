@@ -116,11 +116,15 @@
     {
       "text": "ORCHESTRATED\nChildren closed: 6\nBOUNCEs encountered: 0\nUser escalations: 0\n\nRun-2 deliver cleanup: all 6 stage worktrees removed and stage branches deleted (each verified clean + merged into epic HEAD a70ed41 before removal). Epic worktree /Users/mz/src/specled_ex-evidence-ledger-split preserved. Follow-up specled_-6j7 (CLI surfacing of sync quarantine warnings) left open for normal triage. Epic stays in_progress (phase:implementing) for the ship pipeline (/open-pr -\u003e /babysit-pr -\u003e /merge-pr); the final /deliver closes it post-deploy on merged-PR evidence. Epic branch specled_-csg/evidence-ledger-split at a70ed41 is ready for its single PR to main — deliberate human checkpoint, not pushed.",
       "timestamp": "2026-07-22T12:58:02Z"
+    },
+    {
+      "text": "MERGE GATE GREEN for specled_-6j7 (c79a7ae, post-epic follow-up landed on epic branch): compile ✓, 1003 tests 0 failures ✓, format ✓, deps.unlock ✓, spec.check errors=0 warnings=0 (informational cross_cutting note only). Quarantine warnings now surfaced in mix spec.sync + spec.prune CLI output. Epic branch PR-ready at c79a7ae.",
+      "timestamp": "2026-07-22T13:21:05Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-22T12:58:02Z"
+  "updated_at": "2026-07-22T13:21:05Z"
 }
