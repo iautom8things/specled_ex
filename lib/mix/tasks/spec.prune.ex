@@ -11,9 +11,12 @@ defmodule Mix.Tasks.Spec.Prune do
   Do not prune during active review windows: reviewers may still depend on
   evidence for commits that are temporarily unreachable from retained refs.
 
-  Refuses to run when the computed keep-set is empty (a checkout with no
-  non-evidence branch or remote-tracking refs): an empty keep-set would
-  delete every evidence entry for every peer rather than prune it.
+  Refuses to run when pruning would wipe the store: either the computed
+  keep-set is empty (a checkout with no non-evidence branch or
+  remote-tracking refs), or it is non-empty but matches none of the stored
+  evidence entries (a checkout whose refs reach none of the evidenced
+  trees). Both outcomes would delete every evidence entry for every peer
+  rather than prune it.
 
   ## Options
 
@@ -44,6 +47,13 @@ defmodule Mix.Tasks.Spec.Prune do
           "evidence/prune_refused: the reachable keep-set is empty (no non-evidence " <>
             "branch or remote-tracking refs found), so pruning would delete every " <>
             "evidence entry for every peer. Run from a checkout with normal refs."
+        )
+
+      {:error, :keep_set_would_wipe_store} ->
+        Mix.raise(
+          "evidence/prune_refused: the reachable keep-set matches none of the stored " <>
+            "evidence entries, so pruning would delete every evidence entry for every " <>
+            "peer. Run from a checkout whose refs reach the evidenced trees."
         )
 
       {:error, reason} ->

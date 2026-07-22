@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- Extended evidence-ledger hardening after a second review round. The prune
+  reachability floor now guards the outcome rather than only the computation:
+  a keep-set that would filter a non-empty store down to nothing — empty or
+  merely disjoint from every stored evidence key — makes `mix spec.prune`
+  refuse and auto-prune degrade to an unpruned merge with a warning. Sync
+  tolerance now extends to the tree layer: crafted non-blob entries
+  (gitlinks) are carried through byte-identical at the tree level with a
+  quarantine warning, and entries at paths git refuses to stage (`..`,
+  `.git`) are dropped from the union with an `evidence/entry_skipped`
+  warning so the store self-heals instead of wedging every peer's
+  reconcile. The batched-I/O contract is now falsifiable: a new
+  `specled.evidence_store.sync_bounded_subprocesses` requirement is backed
+  by a spawn-counting test and a 205-entry chunk-boundary reconcile test,
+  plus `cat_file_batch` protocol-edge tests (newline-bearing,
+  header-lookalike, empty, and >64KB multi-read blobs).
 - Hardened the evidence ledger following critical review. `Sync` now reads a
   ref's entries through one `ls-tree -r -z` plus one `git cat-file --batch`
   subprocess and writes merged trees through chunked `hash-object` /

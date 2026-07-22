@@ -83,6 +83,22 @@ defmodule Mix.Tasks.SpecPruneTaskTest do
     assert reachable in evidence_ids(repo)
   end
 
+  @tag spec: "specled.evidence_store.prune_reachability_floor"
+  test "prune refuses when the keep-set matches none of the stored entries", %{root: root} do
+    %{repo: repo} = fixture!(root)
+    unreachable = String.duplicate("f", 40)
+
+    entry = Entry.build(unreachable, %{}, run_at: "10", run_id: "10", specled_version: "test")
+    assert :ok = Store.record(repo, entry)
+    assert {:ok, _} = Sync.run(repo)
+
+    assert_raise Mix.Error, ~r/evidence\/prune_refused/, fn ->
+      Mix.Tasks.Spec.Prune.run(["--root", repo])
+    end
+
+    assert unreachable in evidence_ids(repo)
+  end
+
   defp drop_non_evidence_refs(repo) do
     System.cmd(
       "git",

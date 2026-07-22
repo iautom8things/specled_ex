@@ -141,12 +141,15 @@ decisions:
   stability: evolving
 - id: specled.evidence_store.prune_reachability_floor
   statement: >-
-    An empty reachable-set computation shall be treated as a failure, never
-    as a valid keep-set: a checkout with no non-evidence branch or
-    remote-tracking refs (detached or ref-less CI checkouts) must not be
-    able to delete every peer's evidence. `mix spec.prune` shall refuse
-    with an error and leave both refs untouched, and sync's auto-prune
-    shall degrade to a plain unpruned merge and surface one
+    Pruning shall never turn a non-empty store into an empty one. A
+    keep-set whose application would remove every stored entry is treated
+    as a failed computation, whether the set itself is empty (a checkout
+    with no non-evidence branch or remote-tracking refs, e.g. detached or
+    ref-less CI checkouts) or non-empty but disjoint from every stored
+    evidence key (a checkout whose reachable trees intersect none of the
+    evidenced trees). In both cases `mix spec.prune` shall refuse with an
+    error and leave both refs untouched, and sync's auto-prune shall
+    degrade to a plain unpruned merge and surface one
     `evidence/auto_prune_degraded` warning.
   priority: must
   stability: evolving
@@ -162,6 +165,16 @@ decisions:
     computation fails, sync shall proceed as a plain unpruned merge rather
     than fail the attempt.
   priority: must
+  stability: evolving
+- id: specled.evidence_store.sync_bounded_subprocesses
+  statement: >-
+    A real reconciliation shall read and write entries through batched git
+    plumbing: entry reads go through one tree listing plus one batch
+    object read per ref, and entry writes through chunked
+    `hash-object` / `update-index` invocations, so the total git
+    subprocess count for a reconcile is a small constant plus one
+    invocation per write chunk — never one or more subprocesses per entry.
+  priority: should
   stability: evolving
 - id: specled.evidence_store.sync_noop_short_circuit
   statement: >-
@@ -222,7 +235,14 @@ decisions:
     emitted naming the path and reason. All other entries in the same sync
     continue to reconcile normally, and a quarantined path present on both
     sides of a merge resolves deterministically so independently-created
-    orphan roots still converge.
+    orphan roots still converge. Tolerance extends to the tree layer: a
+    non-blob tree entry (e.g. a crafted gitlink) shall be carried through
+    the union byte-identical at the tree level — original mode and object
+    id, never read — with one warning, and an entry at a path git refuses
+    to stage (`..`, `.git`, empty components) shall be dropped from the
+    union with one `evidence/entry_skipped` warning so the store
+    self-heals on the next push. Only git-level read failures of the tree
+    listing or object database halt reconciliation.
   priority: must
   stability: evolving
 ```
@@ -350,6 +370,37 @@ decisions:
     - the over-threshold sync pushes an unpruned merge and reports one evidence/auto_prune_degraded warning
   covers:
     - specled.evidence_store.prune_reachability_floor
+- id: specled.evidence_store.scenario.prune_refuses_disjoint_keep_set
+  given:
+    - a repo with intact refs whose stored evidence entries are all for trees no ref reaches, so the reachable keep-set is non-empty but matches no stored key
+  when:
+    - mix spec.prune runs, and separately a real over-threshold sync runs with no explicit keep-set
+  then:
+    - mix spec.prune raises evidence/prune_refused and every evidence entry survives on both refs
+    - the over-threshold sync pushes an unpruned merge and reports one evidence/auto_prune_degraded warning
+  covers:
+    - specled.evidence_store.prune_reachability_floor
+- id: specled.evidence_store.scenario.sync_tolerates_tree_level_corruption
+  given:
+    - a spec-evidence tree crafted with raw plumbing to hold a gitlink entry and a blob entry at a path git refuses to stage, alongside one valid entry
+  when:
+    - a real sync reconciles and a peer then adopts the pushed result
+  then:
+    - the gitlink is carried through byte-identical at the tree level (same mode and object id) with one quarantine warning
+    - the unstageable-path entry is dropped from the pushed union with one evidence/entry_skipped warning
+    - the valid entry reconciles normally and no peer's sync halts
+  covers:
+    - specled.evidence_store.sync_entry_tolerance
+- id: specled.evidence_store.scenario.sync_reconciles_across_chunk_boundary
+  given:
+    - a store holding more entries than one write chunk covers
+  when:
+    - a real sync reconciles and pushes
+  then:
+    - every entry path on the pushed ref maps to exactly its original encoded content
+    - the number of git subprocesses spawned by the reconcile stays under a fixed bound instead of scaling with the entry count
+  covers:
+    - specled.evidence_store.sync_bounded_subprocesses
 - id: specled.evidence_store.scenario.sync_noop_never_reads_an_entry
   given:
     - a repo whose local and remote spec-evidence refs already point at the same commit, which contains a quarantined (invalid-path) entry
@@ -418,6 +469,7 @@ decisions:
     - specled.evidence_store.sync_entry_tolerance
     - specled.evidence_store.sync_auto_prune
     - specled.evidence_store.sync_noop_short_circuit
+    - specled.evidence_store.sync_bounded_subprocesses
 - kind: tagged_tests
   execute: true
   covers:

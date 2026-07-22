@@ -6,10 +6,15 @@ defmodule SpecLedEx.Evidence.Sync do
   entry paths use the same run-stamp ordering as local evidence writes, so
   independently-created orphan roots converge deterministically.
 
-  A single entry this build cannot validate (invalid path, malformed JSON, or
-  a schema version it does not recognize) never halts reconciliation for
-  every peer: it is quarantined — carried through the union byte-identical
-  under its original path — and reported as a warning instead.
+  A single entry this build cannot validate never halts reconciliation for
+  every peer. A blob it cannot decode (invalid filename, malformed JSON, or
+  a schema version it does not recognize) is quarantined — carried through
+  the union byte-identical under its original path — and reported as a
+  warning. A non-blob tree entry is carried through opaquely at the tree
+  level (original mode and object id), and an entry at a path git refuses
+  to stage is dropped from the union so the store self-heals; both are
+  reported as warnings. Only git-level failures of the tree listing or
+  object database halt.
 
   When the fetched remote commit already equals the local commit and no
   explicit `:keep` was supplied, `run/2` short-circuits before reading a
@@ -22,9 +27,10 @@ defmodule SpecLedEx.Evidence.Sync do
   in the same reachable-tree-hash keep-set `mix spec.prune` computes and
   applies it before writing and pushing the merged tree, so the store stops
   growing without bound even when nobody runs `mix spec.prune` by hand. A
-  failure to compute the keep-set — including the empty-keep-set
-  reachability floor (see `reachable_keep_set/1`) — degrades to a plain
-  (unpruned) sync with a warning rather than failing the attempt.
+  failure to compute the keep-set — including the reachability floor: a
+  keep-set that is empty or would filter a non-empty store down to nothing
+  — degrades to a plain (unpruned) sync with a warning rather than failing
+  the attempt.
   """
 
   alias SpecLedEx.Evidence.{Entry, Git}
@@ -187,43 +193,73 @@ defmodule SpecLedEx.Evidence.Sync do
 
   defp reconcile_entries(root, local, remote, local_entries, remote_entries, opts) do
     merged = Map.merge(local_entries, remote_entries, &merge_entry/3)
-    {keep, keep_warnings} = resolve_keep(root, merged, opts)
-    merged_entries = keep_entries(merged, keep)
 
-    action =
-      with {:ok, tree} <- write_tree(root, merged_entries),
-           {:ok, commit} <- commit_tree(root, tree, local, remote),
-           :ok <- update_local_ref(root, commit, local) do
-        {:push, commit}
-      end
+    case apply_keep(root, merged, opts) do
+      {:ok, merged_entries, keep_warnings} ->
+        action =
+          with {:ok, tree} <- write_tree(root, merged_entries),
+               {:ok, commit} <- commit_tree(root, tree, local, remote),
+               :ok <- update_local_ref(root, commit, local) do
+            {:push, commit}
+          end
 
-    {action, keep_warnings}
+        {action, keep_warnings}
+
+      {:error, reason} ->
+        {{:error, reason}, []}
+    end
   end
 
   # An explicit `:keep` (from `mix spec.prune`) always wins. Otherwise, once
   # the merged entry count crosses the auto-prune threshold, sync folds in
-  # the same reachable-tree-hash keep-set `mix spec.prune` computes. A
-  # failure to compute it — including the empty keep-set reachability floor —
-  # degrades to an unpruned sync with a warning rather than failing the
-  # attempt: auto-prune is housekeeping, never a correctness gate.
-  defp resolve_keep(root, merged_entries, opts) do
+  # the same reachable-tree-hash keep-set `mix spec.prune` computes.
+  #
+  # The reachability floor guards the OUTCOME, not just the computation: a
+  # keep-set that filters a non-empty store down to nothing — whether the
+  # set was empty or merely disjoint from every stored key (a checkout
+  # whose refs reach none of the evidenced trees) — must not wipe every
+  # peer's evidence. Explicit pruning fails the attempt so `mix spec.prune`
+  # can refuse; auto-prune degrades to an unpruned sync with a warning,
+  # since it is housekeeping, never a correctness gate.
+  defp apply_keep(root, merged, opts) do
     case Keyword.get(opts, :keep) do
       %MapSet{} = keep ->
-        {keep, []}
+        kept = keep_entries(merged, keep)
+
+        if wipes_store?(merged, kept) do
+          {:error, :keep_set_would_wipe_store}
+        else
+          {:ok, kept, []}
+        end
 
       nil ->
         threshold = Keyword.get(opts, :auto_prune_threshold, @auto_prune_entry_threshold)
 
-        if map_size(merged_entries) > threshold do
-          case reachable_keep_set(root) do
-            {:ok, keep} -> {keep, []}
-            {:error, reason} -> {nil, [auto_prune_degraded_warning(reason)]}
-          end
+        if map_size(merged) > threshold do
+          auto_prune(root, merged)
         else
-          {nil, []}
+          {:ok, merged, []}
         end
     end
   end
+
+  defp auto_prune(root, merged) do
+    case reachable_keep_set(root) do
+      {:ok, keep} ->
+        kept = keep_entries(merged, keep)
+
+        if wipes_store?(merged, kept) do
+          {:ok, merged, [auto_prune_degraded_warning(:keep_set_would_wipe_store)]}
+        else
+          {:ok, kept, []}
+        end
+
+      {:error, reason} ->
+        {:ok, merged, [auto_prune_degraded_warning(reason)]}
+    end
+  end
+
+  defp wipes_store?(merged, kept), do: map_size(kept) == 0 and map_size(merged) > 0
 
   defp auto_prune_degraded_warning(reason) do
     %{
@@ -244,6 +280,13 @@ defmodule SpecLedEx.Evidence.Sync do
   defp merge_entry(_path, {:raw, local_raw}, {:raw, remote_raw}) do
     {:raw, Enum.max([local_raw, remote_raw])}
   end
+
+  defp merge_entry(_path, {:opaque, _, _} = local_opaque, {:opaque, _, _} = remote_opaque) do
+    Enum.max([local_opaque, remote_opaque])
+  end
+
+  defp merge_entry(_path, {:opaque, _, _}, remote_entry), do: remote_entry
+  defp merge_entry(_path, local_entry, {:opaque, _, _}), do: local_entry
 
   defp push_result({:noop, _commit}, _root, _remote, _fetched, drift, warnings, _opts, attempt) do
     {:ok, Map.merge(drift, %{attempts: attempt, action: :noop, warnings: warnings})}
@@ -324,43 +367,59 @@ defmodule SpecLedEx.Evidence.Sync do
 
   # Reads a ref's entries with a constant number of subprocesses: one
   # `ls-tree -r -z` for the listing and one `cat-file --batch` for every
-  # blob, instead of one `cat-file` spawn per entry. A genuine git-level
-  # failure (unlistable tree, unreadable object database) halts, since that
-  # signals a structural problem rather than a single bad blob.
+  # blob, instead of one `cat-file` spawn per entry.
+  #
+  # Tolerance extends to the tree layer, not just blob contents: a non-blob
+  # entry (a crafted gitlink) is carried through the union byte-identical at
+  # the tree level as `{:opaque, mode, oid}` with one warning, and an entry
+  # at a path git refuses to stage (`..`, `.git`, and friends) is dropped
+  # from the union with one warning — so the store self-heals on the next
+  # push instead of wedging reconciliation for every peer. Only a genuine
+  # git-level failure (unlistable tree, unreadable object database) halts,
+  # since that signals a structural problem rather than a single bad entry.
   defp entries(_root, :absent), do: {:ok, %{}, []}
 
   defp entries(root, commit) do
     with {:ok, listing} <- Git.run(root, ["ls-tree", "-r", "-z", commit]),
-         {:ok, tree_entries} <- parse_tree_listing(listing),
-         {:ok, blobs} <- Git.cat_file_batch(root, Enum.map(tree_entries, fn {oid, _} -> oid end)) do
-      {acc, warnings} =
-        tree_entries
-        |> Enum.zip(blobs)
-        |> Enum.reduce({%{}, []}, fn {{_oid, path}, content}, {acc, warnings} ->
-          case classify_entry(path, content) do
-            {:ok, entry} ->
-              {Map.put(acc, path, {:known, entry}), warnings}
+         {:ok, tree_entries} <- parse_tree_listing(listing) do
+      {unsafe, stageable} = Enum.split_with(tree_entries, &unsafe_path?(&1.path))
+      {opaque, blobs} = Enum.split_with(stageable, &(&1.type != "blob"))
 
-            {:quarantine, raw, reason} ->
-              {Map.put(acc, path, {:raw, raw}), [quarantine_warning(path, reason) | warnings]}
-          end
-        end)
+      with {:ok, contents} <- Git.cat_file_batch(root, Enum.map(blobs, & &1.oid)) do
+        acc = Map.new(opaque, fn entry -> {entry.path, {:opaque, entry.mode, entry.oid}} end)
 
-      {:ok, acc, Enum.reverse(warnings)}
+        tree_warnings =
+          Enum.map(unsafe, &skipped_warning(&1.path)) ++
+            Enum.map(opaque, &quarantine_warning(&1.path, :non_blob_entry))
+
+        {acc, blob_warnings} =
+          blobs
+          |> Enum.zip(contents)
+          |> Enum.reduce({acc, []}, fn {%{path: path}, content}, {acc, warnings} ->
+            case classify_entry(path, content) do
+              {:ok, entry} ->
+                {Map.put(acc, path, {:known, entry}), warnings}
+
+              {:quarantine, raw, reason} ->
+                {Map.put(acc, path, {:raw, raw}), [quarantine_warning(path, reason) | warnings]}
+            end
+          end)
+
+        {:ok, acc, tree_warnings ++ Enum.reverse(blob_warnings)}
+      end
     end
   end
 
   # Each `ls-tree -r -z` record is `<mode> <type> <oid>\t<path>`,
-  # NUL-terminated and unquoted. Anything but a blob (a crafted gitlink or
-  # the like) is structural and halts, matching the pre-batch behavior of a
-  # failed per-entry read.
+  # NUL-terminated and unquoted. Only a record that does not parse at all
+  # halts; entry-level oddities are classified by the caller.
   defp parse_tree_listing(listing) do
     listing
     |> :binary.split(<<0>>, [:global, :trim_all])
     |> Enum.reduce_while({:ok, []}, fn record, {:ok, acc} ->
       with [meta, path] <- :binary.split(record, "\t"),
-           [_mode, "blob", oid] <- String.split(meta, " ", parts: 3) do
-        {:cont, {:ok, [{oid, path} | acc]}}
+           [mode, type, oid] <- String.split(meta, " ", parts: 3) do
+        {:cont, {:ok, [%{mode: mode, type: type, oid: oid, path: path} | acc]}}
       else
         _ -> {:halt, {:error, {:unexpected_tree_entry, record}}}
       end
@@ -369,6 +428,26 @@ defmodule SpecLedEx.Evidence.Sync do
       {:ok, acc} -> {:ok, Enum.reverse(acc)}
       error -> error
     end
+  end
+
+  # Mirrors git's own verify_path rejections closely enough to keep every
+  # union we write stageable by `update-index`: empty components, `.`,
+  # `..`, and `.git` (any case) are refused by git and would otherwise
+  # wedge the write for every peer.
+  defp unsafe_path?(path) do
+    path == "" or String.starts_with?(path, "/") or String.ends_with?(path, "/") or
+      Enum.any?(String.split(path, "/"), fn component ->
+        component in ["", ".", ".."] or String.downcase(component) == ".git"
+      end)
+  end
+
+  defp skipped_warning(path) do
+    %{
+      code: "evidence/entry_skipped",
+      message:
+        "evidence/entry_skipped: #{inspect(path)}: path is not stageable by git; " <>
+          "dropped from the union"
+    }
   end
 
   # A single malformed, unreadable, or unrecognized-schema entry must never
@@ -392,8 +471,6 @@ defmodule SpecLedEx.Evidence.Sync do
       message: "evidence/entry_quarantined: #{path}: #{inspect(reason)}"
     }
   end
-
-  defp keep_entries(entries, nil), do: entries
 
   defp keep_entries(entries, %MapSet{} = keep) do
     Map.filter(entries, fn {path, _entry} ->
@@ -426,9 +503,17 @@ defmodule SpecLedEx.Evidence.Sync do
   # blobs are hashed through chunked `hash-object -w` invocations and staged
   # through chunked `update-index --cacheinfo` invocations, instead of two
   # spawns per entry. Chunking keeps each argument list far below ARG_MAX.
+  # Opaque (non-blob) entries are staged directly from their listed mode and
+  # oid — carried through byte-identical at the tree level, never read.
   defp write_tree_with_index(root, index_path, entries) do
-    with {:ok, blob_pairs} <- hash_entries(root, entries),
-         :ok <- add_index_entries(root, index_path, blob_pairs),
+    {opaque_entries, content_entries} =
+      Enum.split_with(entries, fn {_path, entry} -> match?({:opaque, _, _}, entry) end)
+
+    opaque_stage =
+      Enum.map(opaque_entries, fn {path, {:opaque, mode, oid}} -> {path, mode, oid} end)
+
+    with {:ok, blob_stage} <- hash_entries(root, content_entries),
+         :ok <- add_index_entries(root, index_path, opaque_stage ++ blob_stage),
          {:ok, tree} <- Git.run(root, ["write-tree"], env: [{"GIT_INDEX_FILE", index_path}]) do
       {:ok, String.trim(tree)}
     end
@@ -437,7 +522,7 @@ defmodule SpecLedEx.Evidence.Sync do
   defp hash_entries(root, entries) do
     with {:ok, dir} <- Git.temp_path(root, "sync-entries"),
          :ok <- File.mkdir_p(dir),
-         result <- hash_entries_from(root, dir, Map.to_list(entries)) do
+         result <- hash_entries_from(root, dir, entries) do
       File.rm_rf(dir)
       result
     end
@@ -463,7 +548,11 @@ defmodule SpecLedEx.Evidence.Sync do
 
             if length(blobs) == length(chunk) do
               paths = Enum.map(chunk, fn {path, _file, _content} -> path end)
-              {:cont, {:ok, pairs ++ Enum.zip(paths, blobs)}}
+
+              staged =
+                Enum.zip_with(paths, blobs, fn path, blob -> {path, "100644", blob} end)
+
+              {:cont, {:ok, pairs ++ staged}}
             else
               {:halt, {:error, {:hash_object_output_mismatch, length(chunk), length(blobs)}}}
             end
@@ -489,12 +578,12 @@ defmodule SpecLedEx.Evidence.Sync do
 
   defp add_index_entries(_root, _index_path, []), do: :ok
 
-  defp add_index_entries(root, index_path, blob_pairs) do
-    blob_pairs
+  defp add_index_entries(root, index_path, staged_entries) do
+    staged_entries
     |> Enum.chunk_every(@update_index_chunk)
     |> Enum.reduce_while(:ok, fn chunk, :ok ->
       cacheinfo_args =
-        Enum.flat_map(chunk, fn {path, blob} -> ["--cacheinfo", "100644,#{blob},#{path}"] end)
+        Enum.flat_map(chunk, fn {path, mode, oid} -> ["--cacheinfo", "#{mode},#{oid},#{path}"] end)
 
       case Git.run(root, ["update-index", "--add" | cacheinfo_args],
              env: [{"GIT_INDEX_FILE", index_path}]

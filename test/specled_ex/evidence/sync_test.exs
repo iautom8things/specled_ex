@@ -12,7 +12,8 @@ defmodule SpecLedEx.Evidence.SyncTest do
                "specled.evidence_store.sync_entry_tolerance",
                "specled.evidence_store.sync_noop_short_circuit",
                "specled.evidence_store.sync_auto_prune",
-               "specled.evidence_store.prune_reachability_floor"
+               "specled.evidence_store.prune_reachability_floor",
+               "specled.evidence_store.sync_bounded_subprocesses"
              ]
 
   @tag spec: "specled.evidence_store.sync_tree_union"
@@ -262,6 +263,230 @@ defmodule SpecLedEx.Evidence.SyncTest do
     assert [warning] = result.warnings
     assert warning.code == "evidence/auto_prune_degraded"
     assert evidence_ids(fixture.a) == Enum.sort([reachable, unreachable])
+  end
+
+  @tag spec: [
+         "specled.evidence_store.sync_auto_prune",
+         "specled.evidence_store.prune_reachability_floor"
+       ]
+  test "auto-prune degrades instead of wiping when the keep-set matches no stored entry", %{
+    root: fixture_root
+  } do
+    fixture = sync_fixture(fixture_root, "auto-prune-disjoint")
+    unreachable_one = String.duplicate("a", 40)
+    unreachable_two = String.duplicate("b", 40)
+
+    assert :ok = Store.record(fixture.a, entry(unreachable_one, "10", "a"))
+    assert :ok = Store.record(fixture.a, entry(unreachable_two, "20", "b"))
+
+    assert {:ok, result} =
+             Sync.run(fixture.a, auto_prune_threshold: 1, sleep: fn _ -> :ok end)
+
+    assert result.action == :pushed
+    assert [warning] = result.warnings
+    assert warning.code == "evidence/auto_prune_degraded"
+    assert warning.message =~ "keep_set_would_wipe_store"
+    assert evidence_ids(fixture.a) == Enum.sort([unreachable_one, unreachable_two])
+  end
+
+  @tag spec: "specled.evidence_store.sync_entry_tolerance"
+  test "a crafted non-blob tree entry is carried through opaquely instead of halting", %{
+    root: fixture_root
+  } do
+    fixture = sync_fixture(fixture_root, "gitlink")
+    assert :ok = Store.record(fixture.a, entry(hash("1"), "10", "a"))
+
+    gitlink_oid = fixture.a |> git!(["rev-parse", "HEAD"]) |> String.trim()
+    inject_crafted_tree_entry(fixture.a, "160000 commit #{gitlink_oid}\tvendored")
+
+    assert {:ok, result} = Sync.run(fixture.a, sleep: fn _ -> :ok end)
+    assert result.action == :pushed
+    assert [warning] = result.warnings
+    assert warning.code == "evidence/entry_quarantined"
+    assert warning.message =~ "vendored"
+
+    assert git!(fixture.a, ["ls-tree", @ref]) =~ "160000 commit #{gitlink_oid}\tvendored"
+
+    assert {:ok, adopted} = Sync.run(fixture.b, sleep: fn _ -> :ok end)
+    assert adopted.action == :adopted
+    assert git!(fixture.b, ["ls-tree", @ref]) =~ "160000 commit #{gitlink_oid}\tvendored"
+  end
+
+  @tag spec: "specled.evidence_store.sync_entry_tolerance"
+  test "an entry at a git-rejectable path is dropped from the union with a warning", %{
+    root: fixture_root
+  } do
+    fixture = sync_fixture(fixture_root, "unstageable-path")
+    assert :ok = Store.record(fixture.a, entry(hash("1"), "10", "a"))
+
+    blob_oid =
+      fixture.a |> git!(["rev-parse", "#{@ref}:#{hash("1")}.json"]) |> String.trim()
+
+    inject_crafted_tree_entry(fixture.a, "100644 blob #{blob_oid}\t.git")
+
+    assert {:ok, result} = Sync.run(fixture.a, sleep: fn _ -> :ok end)
+    assert result.action == :pushed
+    assert [warning] = result.warnings
+    assert warning.code == "evidence/entry_skipped"
+    assert warning.message =~ ".git"
+
+    listing = git!(fixture.a, ["ls-tree", "--name-only", @ref])
+    refute listing =~ ~r/^\.git$/m
+    assert hash("1") in evidence_ids(fixture.a)
+  end
+
+  @tag spec: [
+         "specled.evidence_store.sync_tree_union",
+         "specled.evidence_store.sync_bounded_subprocesses"
+       ]
+  test "a reconcile crossing the write-chunk boundary preserves every path-content mapping", %{
+    root: fixture_root
+  } do
+    fixture = sync_fixture(fixture_root, "chunk-boundary")
+    entries = seed_bulk_entries(fixture.a, 205)
+
+    assert {:ok, result} =
+             Sync.run(fixture.a, auto_prune_threshold: 1_000, sleep: fn _ -> :ok end)
+
+    assert result.action == :pushed
+    assert result.warnings == []
+
+    assert evidence_ids(fixture.a) ==
+             entries |> Enum.map(fn {tree_hash, _} -> tree_hash end) |> Enum.sort()
+
+    for {tree_hash, content} <- entries do
+      assert git!(fixture.a, ["cat-file", "-p", "#{@ref}:#{tree_hash}.json"]) == content
+    end
+  end
+
+  @tag spec: "specled.evidence_store.sync_bounded_subprocesses"
+  test "reconcile git subprocess count stays bounded independent of entry count", %{
+    root: fixture_root
+  } do
+    fixture = sync_fixture(fixture_root, "spawn-bound")
+    seed_bulk_entries(fixture.a, 205)
+
+    task =
+      Task.async(fn ->
+        receive do
+          :go -> Sync.run(fixture.a, auto_prune_threshold: 1_000, sleep: fn _ -> :ok end)
+        end
+      end)
+
+    :erlang.trace(task.pid, true, [:call])
+    :erlang.trace_pattern({SpecLedEx.Evidence.Git, :run, 3}, true, [:local])
+    send(task.pid, :go)
+
+    assert {:ok, %{action: :pushed}} = Task.await(task, 120_000)
+
+    :erlang.trace_pattern({SpecLedEx.Evidence.Git, :run, 3}, false, [:local])
+    spawn_count = drain_trace_calls()
+
+    assert spawn_count <= 25,
+           "expected a bounded reconcile, got #{spawn_count} Git.run calls for 205 entries"
+  end
+
+  defp drain_trace_calls(count \\ 0) do
+    receive do
+      {:trace, _pid, :call, {SpecLedEx.Evidence.Git, :run, _args}} -> drain_trace_calls(count + 1)
+    after
+      0 -> count
+    end
+  end
+
+  # Seeds `count` valid entries directly into the local evidence ref with a
+  # handful of test-side git calls (temp files -> one hash-object -w -> one
+  # mktree), so bulk fixtures do not pay `count` full Store.record round
+  # trips. Returns the seeded [{tree_hash, encoded_json}] list.
+  defp seed_bulk_entries(root, count) do
+    entries =
+      for n <- 1..count do
+        tree_hash =
+          :crypto.hash(:sha, "bulk-#{n}") |> Base.encode16(case: :lower)
+
+        encoded =
+          tree_hash
+          |> Entry.build(%{},
+            run_at: "2026-07-16T10:00:00.#{String.pad_leading("#{n}", 6, "0")}Z",
+            run_id: String.pad_leading("#{n}", 32, "0"),
+            specled_version: "test"
+          )
+          |> Entry.encode!()
+
+        {tree_hash, encoded}
+      end
+
+    dir = Path.join(root, "bulk-entries")
+    File.mkdir_p!(dir)
+
+    files =
+      Enum.map(entries, fn {tree_hash, encoded} ->
+        file = Path.join(dir, tree_hash)
+        File.write!(file, encoded)
+        file
+      end)
+
+    oids =
+      root
+      |> git!(["hash-object", "-w", "--" | files])
+      |> String.split("\n", trim: true)
+
+    mktree_input =
+      entries
+      |> Enum.zip(oids)
+      |> Enum.map_join("", fn {{tree_hash, _}, oid} ->
+        "100644 blob #{oid}\t#{tree_hash}.json\n"
+      end)
+
+    write_crafted_tree(root, mktree_input, nil)
+    File.rm_rf!(dir)
+    entries
+  end
+
+  # Appends one raw `ls-tree`-format line to the current evidence tree via
+  # `git mktree` — the plumbing a hostile contributor could use, since
+  # `update-index` refuses these entries.
+  defp inject_crafted_tree_entry(root, mktree_line) do
+    parent =
+      case System.cmd("git", ["-C", root, "rev-parse", "--verify", "--quiet", @ref], []) do
+        {output, 0} -> String.trim(output)
+        _ -> nil
+      end
+
+    existing = if parent, do: git!(root, ["ls-tree", @ref]), else: ""
+    write_crafted_tree(root, existing <> mktree_line <> "\n", parent)
+  end
+
+  defp write_crafted_tree(root, mktree_input, parent) do
+    parent =
+      parent ||
+        case System.cmd("git", ["-C", root, "rev-parse", "--verify", "--quiet", @ref], []) do
+          {output, 0} -> String.trim(output)
+          _ -> nil
+        end
+
+    input_path = Path.join(root, "mktree-input")
+    File.write!(input_path, mktree_input)
+
+    {tree, 0} =
+      System.cmd("sh", ["-c", ~s(git -C "$1" mktree < "$2"), "sh", root, input_path],
+        stderr_to_stdout: true
+      )
+
+    File.rm!(input_path)
+    tree = String.trim(tree)
+
+    commit_args =
+      if parent do
+        ["commit-tree", tree, "-p", parent, "-m", "crafted evidence tree"]
+      else
+        ["commit-tree", tree, "-m", "crafted evidence tree"]
+      end
+
+    commit = root |> git!(commit_args) |> String.trim()
+    old = parent || String.duplicate("0", 40)
+    git!(root, ["update-ref", @ref, commit, old])
+    commit
   end
 
   defp drop_non_evidence_refs(repo) do
