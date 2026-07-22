@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-22T10:52:12Z",
+  "description": "From /critical-review of specled_-csg, consensus finding F5 [Medium; idioms+simplicity]. TreeHash.current/1 only File.rm's the temp index on success; the error path tap's cleanup_temp_reason/1 which is a no-op for every clause — temp index files leak into .git/specled-tmp on every failed run, and the function's name claims cleanup that never happens. Either actually delete the temp file on error or drop the dead function.\nFiles: lib/specled_ex/evidence/tree_hash.ex:12-24,63-64.\nFull report: /Users/mz/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-22/specled_-csg-evidence-ledger-split/20260722-062318-consolidated.md",
+  "id": "specled_-43y",
+  "labels": [],
+  "priority": 3,
+  "status": "open",
+  "title": "review-F5: dead cleanup_temp_reason no-op masks temp-index leak on error paths",
+  "type": "task",
+  "updated_at": "2026-07-22T10:52:12Z"
+}
