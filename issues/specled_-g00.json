@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [
     "specled_-csg"
@@ -15,8 +15,8 @@
     }
   ],
   "priority": 1,
-  "status": "open",
+  "status": "in_progress",
   "title": "review-F1: findings delta misclassifies pre-existing findings as introduced",
   "type": "bug",
-  "updated_at": "2026-07-22T11:04:31Z"
+  "updated_at": "2026-07-22T11:05:20Z"
 }
