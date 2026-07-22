@@ -24,6 +24,129 @@ defmodule SpecLedEx.Evidence.Git do
   end
 
   @doc """
+  Reads many git objects through a single `git cat-file --batch` subprocess.
+
+  Takes a list of object ids (any `rev-parse`-safe names; callers pass blob
+  OIDs) and returns their contents in request order. One subprocess handles
+  the whole batch, so reading N entries costs one spawn instead of N.
+
+  Any id the object database cannot resolve fails the whole call with
+  `{:error, {:missing_object, id}}` — callers request ids they just listed
+  from a tree, so a miss signals structural corruption, not a bad entry.
+  """
+  @spec cat_file_batch(Path.t(), [String.t()], keyword()) ::
+          {:ok, [binary()]} | {:error, term()}
+  def cat_file_batch(root, ids, opts \\ [])
+
+  def cat_file_batch(_root, [], _opts), do: {:ok, []}
+
+  def cat_file_batch(root, ids, opts) when is_list(ids) do
+    case System.find_executable("git") do
+      nil ->
+        {:error, :git_executable_not_found}
+
+      git ->
+        timeout = Keyword.get(opts, :timeout, 60_000)
+
+        port =
+          Port.open({:spawn_executable, git}, [
+            :binary,
+            :exit_status,
+            :hide,
+            args: ["-C", root, "cat-file", "--batch"]
+          ])
+
+        try do
+          Port.command(port, Enum.map(ids, &[&1, "\n"]))
+          collect_batch(port, length(ids), <<>>, [], timeout)
+        after
+          close_port(port)
+        end
+    end
+  end
+
+  defp collect_batch(_port, 0, _buffer, acc, _timeout), do: {:ok, Enum.reverse(acc)}
+
+  defp collect_batch(port, remaining, buffer, acc, timeout) do
+    case parse_batch_record(buffer) do
+      {:entry, content, rest} ->
+        collect_batch(port, remaining - 1, rest, [content | acc], timeout)
+
+      {:missing, id} ->
+        {:error, {:missing_object, id}}
+
+      {:bad_header, header} ->
+        {:error, {:cat_file_batch_bad_header, header}}
+
+      :incomplete ->
+        receive do
+          {^port, {:data, data}} ->
+            collect_batch(port, remaining, buffer <> data, acc, timeout)
+
+          {^port, {:exit_status, status}} ->
+            {:error, {:cat_file_batch_exited, status}}
+        after
+          timeout -> {:error, :cat_file_batch_timeout}
+        end
+    end
+  end
+
+  # `cat-file --batch` answers each request with either
+  # `<oid> <type> <size>\n<contents>\n` or `<id> missing\n`.
+  defp parse_batch_record(buffer) do
+    case :binary.split(buffer, "\n") do
+      [_incomplete_header] ->
+        :incomplete
+
+      [header, rest] ->
+        case String.split(header, " ") do
+          [id, "missing"] ->
+            {:missing, id}
+
+          [_oid, _type, size] ->
+            case Integer.parse(size) do
+              {bytes, ""} -> parse_batch_content(header, bytes, rest)
+              _ -> {:bad_header, header}
+            end
+
+          _ ->
+            {:bad_header, header}
+        end
+    end
+  end
+
+  defp parse_batch_content(header, bytes, rest) do
+    case rest do
+      <<content::binary-size(bytes), "\n", tail::binary>> ->
+        {:entry, content, tail}
+
+      _ when byte_size(rest) <= bytes ->
+        :incomplete
+
+      _ ->
+        {:bad_header, header}
+    end
+  end
+
+  defp close_port(port) do
+    try do
+      Port.close(port)
+    rescue
+      ArgumentError -> :ok
+    end
+
+    drain_port_messages(port)
+  end
+
+  defp drain_port_messages(port) do
+    receive do
+      {^port, _message} -> drain_port_messages(port)
+    after
+      0 -> :ok
+    end
+  end
+
+  @doc """
   Allocates a unique path under the repository's `.git/specled-tmp`
   directory, prefixed with `label`, creating the directory if needed.
   """

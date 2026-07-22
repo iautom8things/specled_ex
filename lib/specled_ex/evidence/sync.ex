@@ -22,8 +22,9 @@ defmodule SpecLedEx.Evidence.Sync do
   in the same reachable-tree-hash keep-set `mix spec.prune` computes and
   applies it before writing and pushing the merged tree, so the store stops
   growing without bound even when nobody runs `mix spec.prune` by hand. A
-  failure to compute the keep-set degrades to a plain (unpruned) sync rather
-  than failing the attempt.
+  failure to compute the keep-set — including the empty-keep-set
+  reachability floor (see `reachable_keep_set/1`) — degrades to a plain
+  (unpruned) sync with a warning rather than failing the attempt.
   """
 
   alias SpecLedEx.Evidence.{Entry, Git}
@@ -76,6 +77,12 @@ defmodule SpecLedEx.Evidence.Sync do
   from local branch heads and remote-tracking refs (excluding `spec-evidence`
   refs themselves), after the caller has fetched. Shared by `mix spec.prune`'s
   explicit invocation and `run/2`'s automatic size-threshold pruning.
+
+  An empty computation is a reachability-floor violation, not a valid
+  keep-set: a checkout with no non-evidence refs (detached or ref-less CI
+  checkouts) would otherwise "prune" every entry and force-push a wiped
+  store to every peer. It returns `{:error, :empty_keep_set}` instead, so
+  explicit pruning refuses and auto-prune degrades to an unpruned sync.
   """
   @spec reachable_keep_set(Path.t()) :: {:ok, MapSet.t()} | {:error, term()}
   def reachable_keep_set(root) do
@@ -88,12 +95,18 @@ defmodule SpecLedEx.Evidence.Sync do
 
       case refs do
         [] ->
-          {:ok, MapSet.new()}
+          {:error, :empty_keep_set}
 
         refs ->
           case Git.run(root, ["log", "--format=%T" | refs]) do
-            {:ok, output} -> {:ok, output |> String.split("\n", trim: true) |> MapSet.new()}
-            error -> error
+            {:ok, output} ->
+              case String.split(output, "\n", trim: true) do
+                [] -> {:error, :empty_keep_set}
+                tree_hashes -> {:ok, MapSet.new(tree_hashes)}
+              end
+
+            error ->
+              error
           end
       end
     end
@@ -140,20 +153,23 @@ defmodule SpecLedEx.Evidence.Sync do
     with {:ok, local_entries, local_warnings} <- entries(root, local_commit),
          {:ok, remote_entries, remote_warnings} <- entries(root, remote_commit) do
       drift = drift(local_entries, remote_entries)
-      warnings = local_warnings ++ remote_warnings
 
-      reconcile(root, local_commit, remote_commit, local_entries, remote_entries, opts)
-      |> push_result(root, remote, remote_commit, drift, warnings, opts, attempt)
+      {action, keep_warnings} =
+        reconcile(root, local_commit, remote_commit, local_entries, remote_entries, opts)
+
+      warnings = local_warnings ++ remote_warnings ++ keep_warnings
+
+      push_result(action, root, remote, remote_commit, drift, warnings, opts, attempt)
     end
   end
 
-  defp reconcile(_root, :absent, :absent, _local, _remote, _opts), do: {:noop, :absent}
+  defp reconcile(_root, :absent, :absent, _local, _remote, _opts), do: {{:noop, :absent}, []}
 
   defp reconcile(root, :absent, remote, local_entries, remote_entries, opts) do
     if is_struct(opts[:keep], MapSet) do
       reconcile_entries(root, :absent, remote, local_entries, remote_entries, opts)
     else
-      {:adopt, remote}
+      {{:adopt, remote}, []}
     end
   end
 
@@ -161,7 +177,7 @@ defmodule SpecLedEx.Evidence.Sync do
     if is_struct(opts[:keep], MapSet) do
       reconcile_entries(root, local, local, local_entries, remote_entries, opts)
     else
-      {:noop, local}
+      {{:noop, local}, []}
     end
   end
 
@@ -171,38 +187,51 @@ defmodule SpecLedEx.Evidence.Sync do
 
   defp reconcile_entries(root, local, remote, local_entries, remote_entries, opts) do
     merged = Map.merge(local_entries, remote_entries, &merge_entry/3)
-    keep = resolve_keep(root, merged, opts)
+    {keep, keep_warnings} = resolve_keep(root, merged, opts)
     merged_entries = keep_entries(merged, keep)
 
-    with {:ok, tree} <- write_tree(root, merged_entries),
-         {:ok, commit} <- commit_tree(root, tree, local, remote),
-         :ok <- update_local_ref(root, commit, local) do
-      {:push, commit}
-    end
+    action =
+      with {:ok, tree} <- write_tree(root, merged_entries),
+           {:ok, commit} <- commit_tree(root, tree, local, remote),
+           :ok <- update_local_ref(root, commit, local) do
+        {:push, commit}
+      end
+
+    {action, keep_warnings}
   end
 
   # An explicit `:keep` (from `mix spec.prune`) always wins. Otherwise, once
   # the merged entry count crosses the auto-prune threshold, sync folds in
   # the same reachable-tree-hash keep-set `mix spec.prune` computes. A
-  # failure to compute it degrades to an unpruned sync rather than failing
-  # the attempt — auto-prune is housekeeping, never a correctness gate.
+  # failure to compute it — including the empty keep-set reachability floor —
+  # degrades to an unpruned sync with a warning rather than failing the
+  # attempt: auto-prune is housekeeping, never a correctness gate.
   defp resolve_keep(root, merged_entries, opts) do
     case Keyword.get(opts, :keep) do
       %MapSet{} = keep ->
-        keep
+        {keep, []}
 
       nil ->
         threshold = Keyword.get(opts, :auto_prune_threshold, @auto_prune_entry_threshold)
 
         if map_size(merged_entries) > threshold do
           case reachable_keep_set(root) do
-            {:ok, keep} -> keep
-            {:error, _reason} -> nil
+            {:ok, keep} -> {keep, []}
+            {:error, reason} -> {nil, [auto_prune_degraded_warning(reason)]}
           end
         else
-          nil
+          {nil, []}
         end
     end
+  end
+
+  defp auto_prune_degraded_warning(reason) do
+    %{
+      code: "evidence/auto_prune_degraded",
+      message:
+        "evidence/auto_prune_degraded: keep-set computation failed " <>
+          "(#{inspect(reason)}); synced without pruning"
+    }
   end
 
   defp merge_entry(_path, {:known, local_entry}, {:known, remote_entry}) do
@@ -293,29 +322,52 @@ defmodule SpecLedEx.Evidence.Sync do
     end
   end
 
+  # Reads a ref's entries with a constant number of subprocesses: one
+  # `ls-tree -r -z` for the listing and one `cat-file --batch` for every
+  # blob, instead of one `cat-file` spawn per entry. A genuine git-level
+  # failure (unlistable tree, unreadable object database) halts, since that
+  # signals a structural problem rather than a single bad blob.
   defp entries(_root, :absent), do: {:ok, %{}, []}
 
   defp entries(root, commit) do
-    with {:ok, output} <- Git.run(root, ["ls-tree", "-r", "--name-only", commit]) do
-      output
-      |> String.split("\n", trim: true)
-      |> Enum.reduce_while({:ok, %{}, []}, fn path, {:ok, acc, warnings} ->
-        case entry_at(root, commit, path) do
-          {:ok, entry} ->
-            {:cont, {:ok, Map.put(acc, path, {:known, entry}), warnings}}
+    with {:ok, listing} <- Git.run(root, ["ls-tree", "-r", "-z", commit]),
+         {:ok, tree_entries} <- parse_tree_listing(listing),
+         {:ok, blobs} <- Git.cat_file_batch(root, Enum.map(tree_entries, fn {oid, _} -> oid end)) do
+      {acc, warnings} =
+        tree_entries
+        |> Enum.zip(blobs)
+        |> Enum.reduce({%{}, []}, fn {{_oid, path}, content}, {acc, warnings} ->
+          case classify_entry(path, content) do
+            {:ok, entry} ->
+              {Map.put(acc, path, {:known, entry}), warnings}
 
-          {:quarantine, raw, reason} ->
-            {:cont,
-             {:ok, Map.put(acc, path, {:raw, raw}), [quarantine_warning(path, reason) | warnings]}}
+            {:quarantine, raw, reason} ->
+              {Map.put(acc, path, {:raw, raw}), [quarantine_warning(path, reason) | warnings]}
+          end
+        end)
 
-          {:error, _reason} = error ->
-            {:halt, error}
-        end
-      end)
-      |> case do
-        {:ok, acc, warnings} -> {:ok, acc, Enum.reverse(warnings)}
-        error -> error
+      {:ok, acc, Enum.reverse(warnings)}
+    end
+  end
+
+  # Each `ls-tree -r -z` record is `<mode> <type> <oid>\t<path>`,
+  # NUL-terminated and unquoted. Anything but a blob (a crafted gitlink or
+  # the like) is structural and halts, matching the pre-batch behavior of a
+  # failed per-entry read.
+  defp parse_tree_listing(listing) do
+    listing
+    |> :binary.split(<<0>>, [:global, :trim_all])
+    |> Enum.reduce_while({:ok, []}, fn record, {:ok, acc} ->
+      with [meta, path] <- :binary.split(record, "\t"),
+           [_mode, "blob", oid] <- String.split(meta, " ", parts: 3) do
+        {:cont, {:ok, [{oid, path} | acc]}}
+      else
+        _ -> {:halt, {:error, {:unexpected_tree_entry, record}}}
       end
+    end)
+    |> case do
+      {:ok, acc} -> {:ok, Enum.reverse(acc)}
+      error -> error
     end
   end
 
@@ -323,22 +375,14 @@ defmodule SpecLedEx.Evidence.Sync do
   # halt reconciliation for every peer (an evidence entry never gates). Any
   # entry this build cannot validate is quarantined: carried through the
   # tree union byte-identical under its original path, with one warning.
-  # A genuine git-level read failure still halts, since that signals a
-  # structural problem rather than a single bad blob.
-  defp entry_at(root, commit, path) do
-    case Git.run(root, ["cat-file", "-p", "#{commit}:#{path}"]) do
-      {:ok, json} ->
-        if Entry.valid_filename?(path) do
-          case Entry.decode_file(path, json) do
-            {:ok, entry} -> {:ok, entry}
-            {:error, reason} -> {:quarantine, json, reason}
-          end
-        else
-          {:quarantine, json, :invalid_evidence_path}
-        end
-
-      error ->
-        error
+  defp classify_entry(path, content) do
+    if Entry.valid_filename?(path) do
+      case Entry.decode_file(path, content) do
+        {:ok, entry} -> {:ok, entry}
+        {:error, reason} -> {:quarantine, content, reason}
+      end
+    else
+      {:quarantine, content, :invalid_evidence_path}
     end
   end
 
@@ -367,6 +411,9 @@ defmodule SpecLedEx.Evidence.Sync do
     }
   end
 
+  @hash_object_chunk 200
+  @update_index_chunk 200
+
   defp write_tree(root, entries) do
     with {:ok, index_path} <- Git.temp_path(root, "sync-index"),
          result <- write_tree_with_index(root, index_path, entries) do
@@ -375,45 +422,87 @@ defmodule SpecLedEx.Evidence.Sync do
     end
   end
 
+  # Builds the merged tree with a bounded number of subprocesses: entry
+  # blobs are hashed through chunked `hash-object -w` invocations and staged
+  # through chunked `update-index --cacheinfo` invocations, instead of two
+  # spawns per entry. Chunking keeps each argument list far below ARG_MAX.
   defp write_tree_with_index(root, index_path, entries) do
-    Enum.reduce_while(entries, :ok, fn {path, entry}, :ok ->
-      with {:ok, blob} <- hash_entry(root, entry),
-           {:ok, _} <-
-             Git.run(root, ["update-index", "--add", "--cacheinfo", "100644,#{blob},#{path}"],
-               env: [{"GIT_INDEX_FILE", index_path}]
-             ) do
-        {:cont, :ok}
-      else
-        error -> {:halt, error}
-      end
-    end)
-    |> case do
-      :ok ->
-        case Git.run(root, ["write-tree"], env: [{"GIT_INDEX_FILE", index_path}]) do
-          {:ok, tree} -> {:ok, String.trim(tree)}
-          error -> error
-        end
-
-      error ->
-        error
+    with {:ok, blob_pairs} <- hash_entries(root, entries),
+         :ok <- add_index_entries(root, index_path, blob_pairs),
+         {:ok, tree} <- Git.run(root, ["write-tree"], env: [{"GIT_INDEX_FILE", index_path}]) do
+      {:ok, String.trim(tree)}
     end
   end
 
-  defp hash_entry(root, {:known, entry}), do: write_and_hash(root, Entry.encode!(entry))
-  defp hash_entry(root, {:raw, raw}), do: write_and_hash(root, raw)
-
-  defp write_and_hash(root, content) do
-    with {:ok, path} <- Git.temp_path(root, "sync-entry.json"),
-         :ok <- File.write(path, content) do
-      result =
-        case Git.run(root, ["hash-object", "-w", path]) do
-          {:ok, blob} -> {:ok, String.trim(blob)}
-          error -> error
-        end
-
-      File.rm(path)
+  defp hash_entries(root, entries) do
+    with {:ok, dir} <- Git.temp_path(root, "sync-entries"),
+         :ok <- File.mkdir_p(dir),
+         result <- hash_entries_from(root, dir, Map.to_list(entries)) do
+      File.rm_rf(dir)
       result
     end
+  end
+
+  defp hash_entries_from(root, dir, entries) do
+    files =
+      entries
+      |> Enum.with_index()
+      |> Enum.map(fn {{path, entry}, position} ->
+        {path, Path.join(dir, Integer.to_string(position)), entry_content(entry)}
+      end)
+
+    with :ok <- write_entry_files(files) do
+      files
+      |> Enum.chunk_every(@hash_object_chunk)
+      |> Enum.reduce_while({:ok, []}, fn chunk, {:ok, pairs} ->
+        file_args = Enum.map(chunk, fn {_path, file, _content} -> file end)
+
+        case Git.run(root, ["hash-object", "-w", "--" | file_args]) do
+          {:ok, output} ->
+            blobs = String.split(output, "\n", trim: true)
+
+            if length(blobs) == length(chunk) do
+              paths = Enum.map(chunk, fn {path, _file, _content} -> path end)
+              {:cont, {:ok, pairs ++ Enum.zip(paths, blobs)}}
+            else
+              {:halt, {:error, {:hash_object_output_mismatch, length(chunk), length(blobs)}}}
+            end
+
+          error ->
+            {:halt, error}
+        end
+      end)
+    end
+  end
+
+  defp write_entry_files(files) do
+    Enum.reduce_while(files, :ok, fn {_path, file, content}, :ok ->
+      case File.write(file, content) do
+        :ok -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, {:entry_write_failed, file, reason}}}
+      end
+    end)
+  end
+
+  defp entry_content({:known, entry}), do: Entry.encode!(entry)
+  defp entry_content({:raw, raw}), do: raw
+
+  defp add_index_entries(_root, _index_path, []), do: :ok
+
+  defp add_index_entries(root, index_path, blob_pairs) do
+    blob_pairs
+    |> Enum.chunk_every(@update_index_chunk)
+    |> Enum.reduce_while(:ok, fn chunk, :ok ->
+      cacheinfo_args =
+        Enum.flat_map(chunk, fn {path, blob} -> ["--cacheinfo", "100644,#{blob},#{path}"] end)
+
+      case Git.run(root, ["update-index", "--add" | cacheinfo_args],
+             env: [{"GIT_INDEX_FILE", index_path}]
+           ) do
+        {:ok, _} -> {:cont, :ok}
+        error -> {:halt, error}
+      end
+    end)
   end
 
   defp commit_tree(root, tree, local, :absent) do

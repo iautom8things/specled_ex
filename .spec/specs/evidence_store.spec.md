@@ -139,6 +139,17 @@ decisions:
     pushed via the same lease-guarded sync path.
   priority: must
   stability: evolving
+- id: specled.evidence_store.prune_reachability_floor
+  statement: >-
+    An empty reachable-set computation shall be treated as a failure, never
+    as a valid keep-set: a checkout with no non-evidence branch or
+    remote-tracking refs (detached or ref-less CI checkouts) must not be
+    able to delete every peer's evidence. `mix spec.prune` shall refuse
+    with an error and leave both refs untouched, and sync's auto-prune
+    shall degrade to a plain unpruned merge and surface one
+    `evidence/auto_prune_degraded` warning.
+  priority: must
+  stability: evolving
 - id: specled.evidence_store.sync_auto_prune
   statement: >-
     During a real reconciliation (local and remote `spec-evidence` refs
@@ -329,6 +340,16 @@ decisions:
     - the same setup with the threshold set above the merged entry count leaves the unreachable entry in place
   covers:
     - specled.evidence_store.sync_auto_prune
+- id: specled.evidence_store.scenario.prune_refuses_empty_keep_set
+  given:
+    - a repo holding evidence entries whose only non-evidence refs have been deleted, so the reachable keep-set computes empty
+  when:
+    - mix spec.prune runs, and separately a real over-threshold sync runs with no explicit keep-set
+  then:
+    - mix spec.prune raises evidence/prune_refused and every evidence entry survives on both refs
+    - the over-threshold sync pushes an unpruned merge and reports one evidence/auto_prune_degraded warning
+  covers:
+    - specled.evidence_store.prune_reachability_floor
 - id: specled.evidence_store.scenario.sync_noop_never_reads_an_entry
   given:
     - a repo whose local and remote spec-evidence refs already point at the same commit, which contains a quarantined (invalid-path) entry
@@ -386,12 +407,13 @@ decisions:
     - specled.evidence_store.self_create
     - specled.evidence_store.local_only_write_path
 - kind: command
-  target: mix test test/specled_ex/evidence/sync_test.exs test/mix/tasks/spec_sync_task_test.exs test/mix/tasks/spec_prune_task_test.exs
+  target: mix test test/specled_ex/evidence/sync_test.exs test/specled_ex/evidence/git_test.exs test/mix/tasks/spec_sync_task_test.exs test/mix/tasks/spec_prune_task_test.exs
   execute: true
   covers:
     - specled.evidence_store.sync_tree_union
     - specled.evidence_store.sync_failure_contracts
     - specled.evidence_store.prune_explicit_only
+    - specled.evidence_store.prune_reachability_floor
     - specled.evidence_store.drift_surfaced
     - specled.evidence_store.sync_entry_tolerance
     - specled.evidence_store.sync_auto_prune

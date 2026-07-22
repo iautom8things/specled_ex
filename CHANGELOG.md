@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- Hardened the evidence ledger following critical review. `Sync` now reads a
+  ref's entries through one `ls-tree -r -z` plus one `git cat-file --batch`
+  subprocess and writes merged trees through chunked `hash-object` /
+  `update-index --cacheinfo` invocations — a bounded number of git spawns per
+  reconcile instead of roughly four per entry on the pre-push hot path. An
+  empty reachable keep-set is now a reachability-floor violation rather than a
+  valid prune: `mix spec.prune` refuses with `evidence/prune_refused` (a
+  detached or ref-less CI checkout can no longer wipe every peer's evidence)
+  and sync's auto-prune degrades to an unpruned merge with one
+  `evidence/auto_prune_degraded` warning. See the new
+  `specled.evidence_store.prune_reachability_floor` requirement. Also fixed
+  `Store.build_tree/3` leaking its temporary index file on error paths, and
+  added test coverage for the migrate task's legacy-realization hoist.
 - Updated docs, shipped bootstrap references, and `mix spec.init` templates for
   the evidence-ledger flow: `.spec/state.json` is described as derived local
   state, committed baselines live in `.spec/realization_hashes.json`, and CI

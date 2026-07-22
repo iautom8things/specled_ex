@@ -11,7 +11,8 @@ defmodule SpecLedEx.Evidence.SyncTest do
                "specled.evidence_store.drift_surfaced",
                "specled.evidence_store.sync_entry_tolerance",
                "specled.evidence_store.sync_noop_short_circuit",
-               "specled.evidence_store.sync_auto_prune"
+               "specled.evidence_store.sync_auto_prune",
+               "specled.evidence_store.prune_reachability_floor"
              ]
 
   @tag spec: "specled.evidence_store.sync_tree_union"
@@ -236,6 +237,45 @@ defmodule SpecLedEx.Evidence.SyncTest do
 
     assert result.action == :pushed
     assert evidence_ids(fixture.a) == Enum.sort([reachable, unreachable])
+  end
+
+  @tag spec: [
+         "specled.evidence_store.sync_auto_prune",
+         "specled.evidence_store.prune_reachability_floor"
+       ]
+  test "auto-prune degrades to an unpruned sync with a warning when the keep-set is empty", %{
+    root: fixture_root
+  } do
+    fixture = sync_fixture(fixture_root, "auto-prune-floor")
+    reachable = fixture.a |> git!(["rev-parse", "HEAD^{tree}"]) |> String.trim()
+    unreachable = String.duplicate("d", 40)
+
+    assert :ok = Store.record(fixture.a, entry(reachable, "10", "a"))
+    assert :ok = Store.record(fixture.a, entry(unreachable, "20", "b"))
+
+    drop_non_evidence_refs(fixture.a)
+
+    assert {:ok, result} =
+             Sync.run(fixture.a, auto_prune_threshold: 1, sleep: fn _ -> :ok end)
+
+    assert result.action == :pushed
+    assert [warning] = result.warnings
+    assert warning.code == "evidence/auto_prune_degraded"
+    assert evidence_ids(fixture.a) == Enum.sort([reachable, unreachable])
+  end
+
+  defp drop_non_evidence_refs(repo) do
+    System.cmd(
+      "git",
+      ["-C", repo, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD"],
+      stderr_to_stdout: true
+    )
+
+    repo
+    |> git!(["for-each-ref", "--format=%(refname)", "refs/heads", "refs/remotes"])
+    |> String.split("\n", trim: true)
+    |> Enum.reject(&String.ends_with?(&1, "/spec-evidence"))
+    |> Enum.each(&git!(repo, ["update-ref", "-d", &1]))
   end
 
   defp inject_raw_entry(root, filename, content) do

@@ -7,6 +7,7 @@ defmodule Mix.Tasks.SpecPruneTaskTest do
 
   @moduletag spec: [
                "specled.evidence_store.prune_explicit_only",
+               "specled.evidence_store.prune_reachability_floor",
                "specled.evidence_store.sync_entry_tolerance",
                "specled.tasks.prune_evidence"
              ]
@@ -60,6 +61,40 @@ defmodule Mix.Tasks.SpecPruneTaskTest do
     assert message_contains?(messages, "evidence/entry_quarantined")
     assert message_contains?(messages, "notes.txt")
     assert reachable in evidence_ids(repo)
+  end
+
+  @tag spec: "specled.evidence_store.prune_reachability_floor"
+  test "prune refuses when the reachable keep-set is empty instead of wiping the store", %{
+    root: root
+  } do
+    %{repo: repo} = fixture!(root)
+    reachable = repo |> git!(["rev-parse", "HEAD^{tree}"]) |> String.trim()
+
+    entry = Entry.build(reachable, %{}, run_at: "10", run_id: "10", specled_version: "test")
+    assert :ok = Store.record(repo, entry)
+    assert {:ok, _} = Sync.run(repo)
+
+    drop_non_evidence_refs(repo)
+
+    assert_raise Mix.Error, ~r/evidence\/prune_refused/, fn ->
+      Mix.Tasks.Spec.Prune.run(["--root", repo])
+    end
+
+    assert reachable in evidence_ids(repo)
+  end
+
+  defp drop_non_evidence_refs(repo) do
+    System.cmd(
+      "git",
+      ["-C", repo, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD"],
+      stderr_to_stdout: true
+    )
+
+    repo
+    |> git!(["for-each-ref", "--format=%(refname)", "refs/heads", "refs/remotes"])
+    |> String.split("\n", trim: true)
+    |> Enum.reject(&String.ends_with?(&1, "/spec-evidence"))
+    |> Enum.each(&git!(repo, ["update-ref", "-d", &1]))
   end
 
   defp fixture!(root) do
