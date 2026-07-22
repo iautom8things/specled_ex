@@ -120,6 +120,10 @@
     {
       "text": "MERGE GATE GREEN for specled_-6j7 (c79a7ae, post-epic follow-up landed on epic branch): compile ✓, 1003 tests 0 failures ✓, format ✓, deps.unlock ✓, spec.check errors=0 warnings=0 (informational cross_cutting note only). Quarantine warnings now surfaced in mix spec.sync + spec.prune CLI output. Epic branch PR-ready at c79a7ae.",
       "timestamp": "2026-07-22T13:21:05Z"
+    },
+    {
+      "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/3 (release 0.2.0). Two critical-review rounds adjudicated on-branch; ship-time fix: ledger pushes bypass hooks (pre-push recursion). Babysitting CI.",
+      "timestamp": "2026-07-22T17:42:34Z"
     }
   ],
   "priority": 2,
