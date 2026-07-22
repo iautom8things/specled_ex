@@ -1,6 +1,6 @@
 ---
 name: spec-led-bootstrap
-description: "Use when the user wants to adopt SpecLedEx in a repository — installing the dep, scaffolding `.spec/`, extracting initial subjects from existing code, and producing a phased beadwork epic the user (or /orchestrate-epic) can drive to completion. Trigger phrases: 'bootstrap spec-led', 'adopt specled', 'set up spec-led', 'install spec-led-development', 'extract specs for this repo', 'spec-led-bootstrap'. NOT for repos that already have a healthy `.spec/` — use /spec-led-development for ongoing maintenance."
+description: "Adopt SpecLedEx in a repo: install the dep, scaffold .spec/, extract initial subjects, produce a phased bw epic. For repos with a healthy .spec/, use /spec-led-development instead."
 argument-hint: "[--target greenfield|brownfield|infer] [--depth phase0|phase1|phase2|phase4|phase6]"
 ---
 
