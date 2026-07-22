@@ -86,21 +86,41 @@ defmodule SpecLedEx.Evidence.Entry do
   end
 
   defp normalized_findings(findings) do
-    state =
-      SpecLedEx.write_state(
-        %{"subjects" => [], "decisions" => [], "summary" => %{}},
-        %{"findings" => findings},
-        System.tmp_dir!(),
-        unique_state_path()
-      )
+    findings
+    |> Enum.flat_map(fn
+      f when is_map(f) ->
+        [
+          %{
+            "code" => f["code"],
+            "level" => f["severity"] || f["level"],
+            "message" => f["message"]
+          }
+          |> maybe_put("file", f["file"])
+          |> maybe_put("entity_id", f["subject_id"])
+        ]
 
-    decoded = Json.read(state)
-    File.rm(state)
-    decoded["findings"] || []
+      _ ->
+        []
+    end)
+    |> stable_sort(fn finding, index ->
+      {
+        finding["file"] || "",
+        finding["entity_id"] || "",
+        finding["code"] || "",
+        finding["message"] || "",
+        index
+      }
+    end)
   end
 
-  defp unique_state_path do
-    "specled-evidence-entry-#{System.unique_integer([:positive, :monotonic])}.json"
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
+
+  defp stable_sort(items, sorter) do
+    items
+    |> Enum.with_index()
+    |> Enum.sort_by(fn {item, index} -> sorter.(item, index) end)
+    |> Enum.map(&elem(&1, 0))
   end
 
   defp stamp(entry), do: {entry["run_at"] || "", entry["run_id"] || ""}
