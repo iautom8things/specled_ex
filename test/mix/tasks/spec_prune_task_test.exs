@@ -3,8 +3,11 @@ defmodule Mix.Tasks.SpecPruneTaskTest do
 
   alias SpecLedEx.Evidence.{Entry, Store, Sync}
 
+  @ref "refs/heads/spec-evidence"
+
   @moduletag spec: [
                "specled.evidence_store.prune_explicit_only",
+               "specled.evidence_store.sync_entry_tolerance",
                "specled.tasks.prune_evidence"
              ]
 
@@ -39,6 +42,26 @@ defmodule Mix.Tasks.SpecPruneTaskTest do
     assert evidence_ids(repo) == Enum.sort([local_tree, remote_tree])
   end
 
+  @tag spec: ["specled.tasks.prune_evidence", "specled.evidence_store.sync_entry_tolerance"]
+  test "task surfaces a quarantine warning without raising or changing exit status", %{
+    root: root
+  } do
+    %{repo: repo} = fixture!(root)
+    reachable = repo |> git!(["rev-parse", "HEAD^{tree}"]) |> String.trim()
+
+    entry = Entry.build(reachable, %{}, run_at: "10", run_id: "10", specled_version: "test")
+    assert :ok = Store.record(repo, entry)
+    inject_raw_entry(repo, "notes.txt", "not an evidence entry\n")
+
+    assert :ok = Mix.Tasks.Spec.Prune.run(["--root", repo])
+    messages = drain_shell_messages()
+
+    assert message_contains?(messages, "spec-evidence pruned and synced as of last fetch")
+    assert message_contains?(messages, "evidence/entry_quarantined")
+    assert message_contains?(messages, "notes.txt")
+    assert reachable in evidence_ids(repo)
+  end
+
   defp fixture!(root) do
     origin = Path.join(root, "origin.git")
     repo = Path.join(root, "repo")
@@ -62,5 +85,49 @@ defmodule Mix.Tasks.SpecPruneTaskTest do
     |> String.split("\n", trim: true)
     |> Enum.map(&Path.rootname(&1, ".json"))
     |> Enum.sort()
+  end
+
+  defp inject_raw_entry(root, filename, content) do
+    index_path = Path.join(System.tmp_dir!(), "raw-index-#{System.unique_integer([:positive])}")
+    blob_path = Path.join(System.tmp_dir!(), "raw-blob-#{System.unique_integer([:positive])}")
+    File.write!(blob_path, content)
+
+    parent =
+      case System.cmd("git", ["-C", root, "rev-parse", "--verify", "--quiet", @ref], []) do
+        {output, 0} -> String.trim(output)
+        _ -> nil
+      end
+
+    env = [{"GIT_INDEX_FILE", index_path}]
+
+    if parent do
+      raw_git!(root, ["read-tree", "#{parent}^{tree}"], env)
+    end
+
+    blob = raw_git!(root, ["hash-object", "-w", blob_path], env) |> String.trim()
+    raw_git!(root, ["update-index", "--add", "--cacheinfo", "100644,#{blob},#{filename}"], env)
+    tree = raw_git!(root, ["write-tree"], env) |> String.trim()
+
+    commit_args =
+      if parent do
+        ["commit-tree", tree, "-p", parent, "-m", "inject raw entry"]
+      else
+        ["commit-tree", tree, "-m", "inject raw entry"]
+      end
+
+    commit = raw_git!(root, commit_args, env) |> String.trim()
+    old = parent || String.duplicate("0", 40)
+    raw_git!(root, ["update-ref", @ref, commit, old], [])
+
+    File.rm(blob_path)
+    File.rm(index_path)
+    commit
+  end
+
+  defp raw_git!(root, args, env) do
+    case System.cmd("git", ["-C", root | args], stderr_to_stdout: true, env: env) do
+      {output, 0} -> output
+      {output, status} -> raise "git #{Enum.join(args, " ")} failed (#{status}): #{output}"
+    end
   end
 end

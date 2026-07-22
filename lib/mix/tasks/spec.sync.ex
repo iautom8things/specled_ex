@@ -33,6 +33,8 @@ defmodule Mix.Tasks.Spec.Sync do
           "spec-evidence drift as of last fetch: ahead=#{result.ahead} behind=#{result.behind}"
         )
 
+        print_warnings(result.warnings)
+
         :ok
 
       {:error, reason} ->
@@ -45,6 +47,10 @@ defmodule Mix.Tasks.Spec.Sync do
           Mix.raise(message)
         end
     end
+  end
+
+  defp print_warnings(warnings) do
+    Enum.each(warnings, fn warning -> Mix.shell().error(warning.message) end)
   end
 
   defp validate_args!([], []), do: :ok

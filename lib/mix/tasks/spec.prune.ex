@@ -31,10 +31,16 @@ defmodule Mix.Tasks.Spec.Prune do
         "spec-evidence pruned and synced as of last fetch: ahead=#{result.ahead} behind=#{result.behind}"
       )
 
+      print_warnings(result.warnings)
+
       :ok
     else
       {:error, reason} -> Mix.raise("evidence/prune_failed: #{inspect(reason)}")
     end
+  end
+
+  defp print_warnings(warnings) do
+    Enum.each(warnings, fn warning -> Mix.shell().error(warning.message) end)
   end
 
   defp validate_args!([], []), do: :ok
