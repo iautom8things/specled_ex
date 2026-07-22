@@ -76,6 +76,10 @@
     {
       "text": "CRITICAL REVIEW COMPLETE (2026-07-22, commit 39d0295): 30 raw -\u003e 25 calibrated findings, 0 Critical / 2 High / 12 Medium / 11 Low. Consolidated report: ~/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-22/specled_-csg-evidence-ledger-split/20260722-062318-consolidated.md. Tickets: pre-merge blockers specled_-g00 (F1 findings-delta misclassification) + specled_-7vy (F2 sync hot-path/unbounded store); follow-ups specled_-pqs (F3), specled_-737 (F4), specled_-43y (F5), specled_-7xz (F6). ADR safety property (evidence never gates) confirmed holding.",
       "timestamp": "2026-07-22T10:52:22Z"
+    },
+    {
+      "text": "Scope update per user: consensus findings F3-F6 (specled_-pqs, specled_-737, specled_-43y, specled_-7xz) promoted to pre-merge blockers alongside F1/F2 — all six review tickets now gate the csg ship pipeline.",
+      "timestamp": "2026-07-22T10:52:36Z"
     }
   ],
   "priority": 2,
