@@ -12,11 +12,15 @@
     {
       "text": "ADMISSION SCOPE (orchestrator, post-epic follow-up; lands on epic branch specled_-csg/evidence-ledger-split, base a70ed41)\nAllowed touches:\n- lib/mix/tasks/spec.sync.ex\n- lib/mix/tasks/spec.prune.ex\n- test/mix/tasks/spec_sync_task_test.exs\n- test/mix/tasks/spec_prune_task_test.exs\n- .spec/specs/evidence_store.spec.md (verification stubs only, if needed)\nOut of scope (intent): wire result.warnings into both tasks' CLI output following the existing spec.check record_evidence/2 convention (Mix.shell().error(warning.message)). No changes to Sync/Store/Entry behavior — the data path already exists; this is presentation only. Evidence still never gates: warnings must not change any exit status. Any file outside these globs must be disclosed in IMPLEMENTED.",
       "timestamp": "2026-07-22T13:02:57Z"
+    },
+    {
+      "text": "IMPLEMENTED\nSession: impl worker (delegated, specled_-6j7/surface-sync-warnings)\nLog: N/A (no separate log capture configured for this delegated run)\n\nCommit: c79a7ae\nFiles touched: lib/mix/tasks/spec.sync.ex, lib/mix/tasks/spec.prune.ex, test/mix/tasks/spec_sync_task_test.exs, test/mix/tasks/spec_prune_task_test.exs\nTests added:\n  - Mix.Tasks.SpecSyncTaskTest \"task surfaces a quarantine warning without raising or changing exit status\"\n  - Mix.Tasks.SpecPruneTaskTest \"task surfaces a quarantine warning without raising or changing exit status\"\nVerification stubs flipped: none — mix_tasks.spec.md's existing tagged_tests stub (execute: true) for specled.tasks.sync_evidence / specled.tasks.prune_evidence already targets these two test files.\nVerification tier: change-scoped — mix test test/mix/tasks/spec_sync_task_test.exs test/mix/tasks/spec_prune_task_test.exs (5 tests, 0 failures); mix compile --warnings-as-errors (clean); mix spec.check --no-run-commands (status=pass errors=0 warnings=0; the one branch-level INFO finding is pre-existing on lib/mix/tasks/spec.check.ex from the epic baseline, not touched by this diff); mix format --check-formatted on the four touched files (clean).\nFinal-tier runs: 1\nDeferred must requirements: none — ticket scope was presentation-only CLI wiring; no must requirement was omitted.\n\nSummary: Wired SpecLedEx.Evidence.Sync.run/2's result.warnings into both mix spec.sync and mix spec.prune CLI output, printing each warning.message via Mix.shell().error/1, matching spec.check's record_evidence/2 convention. Warnings are purely advisory: neither task's exit status changes, verified by tests that assert :ok while asserting the quarantine warning message is present in the drained shell output. Diff against base a70ed41 touches only the four files named above.",
+      "timestamp": "2026-07-22T13:11:02Z"
     }
   ],
   "priority": 3,
   "status": "in_progress",
   "title": "Surface Sync.run/2 quarantine warnings in mix spec.sync and spec.prune output",
   "type": "task",
-  "updated_at": "2026-07-22T13:03:12Z"
+  "updated_at": "2026-07-22T13:11:02Z"
 }
