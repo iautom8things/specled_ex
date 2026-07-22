@@ -7,7 +7,9 @@
   "created": "2026-07-22T10:52:11Z",
   "description": "From /critical-review of specled_-csg, consensus finding F4 [Medium; idioms+simplicity]. The git/3, temp_path, random_hex etc. helper kit is copy-pasted across Evidence.Sync, Evidence.TreeHash, Evidence.Store, and the migrate task, with variants already diverging. Extract one shared SpecLedEx.Evidence.Git (or reuse an existing repo git helper) so behavior fixes land once.\nFiles: lib/specled_ex/evidence/{sync,tree_hash,store}.ex, lib/mix/tasks/spec.evidence.migrate.ex.\nFull report: /Users/mz/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-22/specled_-csg-evidence-ledger-split/20260722-062318-consolidated.md",
   "id": "specled_-737",
-  "labels": [],
+  "labels": [
+    "phase:implementing"
+  ],
   "comments": [
     {
       "text": "ADMISSION SCOPE (orchestrator, run-2 W1)\nAllowed touches:\n- lib/specled_ex/evidence/sync.ex\n- lib/specled_ex/evidence/tree_hash.ex\n- lib/specled_ex/evidence/store.ex\n- lib/specled_ex/evidence/git.ex (new shared helper module; name may vary within lib/specled_ex/evidence/)\n- lib/mix/tasks/spec.evidence.migrate.ex\n- test/specled_ex/evidence/** (tests for the extracted helper + fallout)\n- test/mix/tasks/** (migrate task test fallout only)\n- .spec/specs/evidence_store.spec.md (verification stubs / guard-satisfying co-update only)\nOut of scope (intent): no behavior changes beyond consolidating the duplicated git/temp-path/random-hex helpers onto one module; F2/F5/F6 fixes belong to specled_-7vy/43y/7xz. Any file outside these globs must be disclosed in IMPLEMENTED.",
@@ -18,5 +20,5 @@
   "status": "in_progress",
   "title": "review-F4: git plumbing helpers duplicated across 4 evidence modules, already drifted",
   "type": "task",
-  "updated_at": "2026-07-22T11:05:20Z"
+  "updated_at": "2026-07-22T11:05:29Z"
 }
