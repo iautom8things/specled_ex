@@ -28,7 +28,7 @@ defmodule Mix.Tasks.Spec.Prune do
     SpecLedEx.MixRuntime.ensure_started!()
 
     {opts, rest, invalid} = OptionParser.parse(args, strict: [root: :string], aliases: [r: :root])
-    validate_args!(rest, invalid)
+    SpecLedEx.TaskArgs.validate!("spec.prune", rest, invalid)
     root = opts[:root] || File.cwd!()
 
     with {:ok, _fetched} <- SpecLedEx.Evidence.Sync.fetch(root),
@@ -38,7 +38,7 @@ defmodule Mix.Tasks.Spec.Prune do
         "spec-evidence pruned and synced as of last fetch: ahead=#{result.ahead} behind=#{result.behind}"
       )
 
-      print_warnings(result.warnings)
+      SpecLedEx.Evidence.Warnings.emit(result.warnings)
 
       :ok
     else
@@ -59,20 +59,5 @@ defmodule Mix.Tasks.Spec.Prune do
       {:error, reason} ->
         Mix.raise("evidence/prune_failed: #{inspect(reason)}")
     end
-  end
-
-  defp print_warnings(warnings) do
-    Enum.each(warnings, fn warning -> Mix.shell().error(warning.message) end)
-  end
-
-  defp validate_args!([], []), do: :ok
-
-  defp validate_args!(rest, invalid) do
-    details =
-      Enum.map(invalid, fn {flag, _value} -> flag end)
-      |> Kernel.++(Enum.map(rest, &inspect/1))
-      |> Enum.join(", ")
-
-    Mix.raise("Invalid arguments for spec.prune: #{details}")
   end
 end

@@ -25,7 +25,7 @@ defmodule Mix.Tasks.Spec.Evidence.Migrate do
     {opts, rest, invalid} =
       OptionParser.parse(args, strict: [root: :string, spec_dir: :string], aliases: [r: :root])
 
-    validate_args!(rest, invalid)
+    SpecLedEx.TaskArgs.validate!("spec.evidence.migrate", rest, invalid)
 
     root = opts[:root] || File.cwd!()
     spec_dir = opts[:spec_dir] || SpecLedEx.detect_spec_dir(root)
@@ -56,15 +56,6 @@ defmodule Mix.Tasks.Spec.Evidence.Migrate do
     else
       :ok
     end
-  end
-
-  defp validate_args!([], []), do: :ok
-
-  defp validate_args!(rest, invalid) do
-    invalid_flags = Enum.map(invalid, fn {flag, _value} -> flag end)
-    extra_args = Enum.map(rest, &inspect/1)
-    details = Enum.join(invalid_flags ++ extra_args, ", ")
-    Mix.raise("Invalid arguments for spec.evidence.migrate: #{details}")
   end
 
   defp untrack_state_json(root, spec_dir) do

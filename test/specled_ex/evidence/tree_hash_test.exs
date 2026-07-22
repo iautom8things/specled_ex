@@ -1,6 +1,8 @@
 defmodule SpecLedEx.Evidence.TreeHashTest do
   use SpecLedEx.Case
 
+  import SpecLedEx.EvidenceHelpers
+
   alias SpecLedEx.Evidence.TreeHash
 
   @moduletag spec: ["specled.evidence_store.tree_hash_mirrors_add_all"]
@@ -64,21 +66,5 @@ defmodule SpecLedEx.Evidence.TreeHashTest do
 
     tmp_dir = Path.join(root, ".git/specled-tmp")
     assert File.ls!(tmp_dir) == []
-  end
-
-  defp lock_down(objects_dir) do
-    for entry <- File.ls!(objects_dir), File.dir?(Path.join(objects_dir, entry)) do
-      File.chmod!(Path.join(objects_dir, entry), 0o500)
-    end
-
-    File.chmod!(objects_dir, 0o500)
-  end
-
-  defp unlock(objects_dir) do
-    File.chmod!(objects_dir, 0o700)
-
-    for entry <- File.ls!(objects_dir), File.dir?(Path.join(objects_dir, entry)) do
-      File.chmod!(Path.join(objects_dir, entry), 0o700)
-    end
   end
 end

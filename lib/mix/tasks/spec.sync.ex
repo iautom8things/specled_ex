@@ -24,7 +24,7 @@ defmodule Mix.Tasks.Spec.Sync do
         aliases: [r: :root]
       )
 
-    validate_args!(rest, invalid)
+    SpecLedEx.TaskArgs.validate!("spec.sync", rest, invalid)
     root = opts[:root] || File.cwd!()
 
     case SpecLedEx.Evidence.Sync.run(root) do
@@ -33,7 +33,7 @@ defmodule Mix.Tasks.Spec.Sync do
           "spec-evidence drift as of last fetch: ahead=#{result.ahead} behind=#{result.behind}"
         )
 
-        print_warnings(result.warnings)
+        SpecLedEx.Evidence.Warnings.emit(result.warnings)
 
         :ok
 
@@ -47,20 +47,5 @@ defmodule Mix.Tasks.Spec.Sync do
           Mix.raise(message)
         end
     end
-  end
-
-  defp print_warnings(warnings) do
-    Enum.each(warnings, fn warning -> Mix.shell().error(warning.message) end)
-  end
-
-  defp validate_args!([], []), do: :ok
-
-  defp validate_args!(rest, invalid) do
-    details =
-      Enum.map(invalid, fn {flag, _value} -> flag end)
-      |> Kernel.++(Enum.map(rest, &inspect/1))
-      |> Enum.join(", ")
-
-    Mix.raise("Invalid arguments for spec.sync: #{details}")
   end
 end

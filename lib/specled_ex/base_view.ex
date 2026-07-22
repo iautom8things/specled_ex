@@ -1,6 +1,7 @@
 defmodule SpecLedEx.BaseView do
   @moduledoc false
 
+  alias SpecLedEx.Evidence.Git
   alias SpecLedEx.Index
 
   @doc """
@@ -16,14 +17,14 @@ defmodule SpecLedEx.BaseView do
     authored_dir = opts[:authored_dir] || detect_authored_dir(root, spec_dir)
     decision_dir = opts[:decision_dir] || SpecLedEx.detect_decision_dir(root, spec_dir)
 
-    case list_base_paths(root, base, authored_dir, decision_dir) do
+    case list_base_entries(root, base, authored_dir, decision_dir) do
       {:ok, []} ->
         {:missing, :first_run}
 
-      {:ok, paths} ->
+      {:ok, entries} ->
         with_temp_root(fn temp_root ->
           with :ok <- seed_workspace_dirs(temp_root, authored_dir, decision_dir),
-               :ok <- materialize_paths(root, base, temp_root, paths) do
+               :ok <- materialize_entries(root, temp_root, entries) do
             index =
               Index.build(temp_root,
                 spec_dir: spec_dir,
@@ -63,24 +64,23 @@ defmodule SpecLedEx.BaseView do
     end
   end
 
-  defp list_base_paths(root, base, authored_dir, decision_dir) do
-    {output, exit_code} =
-      System.cmd(
-        "git",
-        ["-C", root, "ls-tree", "-r", "--name-only", base, "--", authored_dir, decision_dir],
-        stderr_to_stdout: true
-      )
+  defp list_base_entries(root, base, authored_dir, decision_dir) do
+    case Git.ls_tree_entries(root, base, [authored_dir, decision_dir]) do
+      {:ok, entries} ->
+        entries =
+          entries
+          |> Enum.filter(fn entry ->
+            entry.type == "blob" and base_spec_path?(entry.path, authored_dir, decision_dir)
+          end)
+          |> Enum.sort_by(& &1.path)
 
-    if exit_code == 0 do
-      paths =
-        output
-        |> String.split("\n", trim: true)
-        |> Enum.filter(&base_spec_path?(&1, authored_dir, decision_dir))
-        |> Enum.sort()
+        {:ok, entries}
 
-      {:ok, paths}
-    else
-      {:error, output}
+      {:error, {:git, _args, output, _status}} ->
+        {:error, output}
+
+      {:error, reason} ->
+        {:error, inspect(reason)}
     end
   end
 
@@ -102,26 +102,27 @@ defmodule SpecLedEx.BaseView do
     :ok
   end
 
-  defp materialize_paths(root, base, temp_root, paths) do
-    Enum.reduce_while(paths, :ok, fn path, :ok ->
-      case git_show(root, base, path) do
-        {:ok, blob} ->
+  # Materializes every base file through one `cat-file --batch` subprocess —
+  # the same batched read primitive `Evidence.Sync` uses — instead of one
+  # `git show` spawn per file. The blobs were listed from the base tree
+  # immediately prior, so a read failure here is structural (unreadable
+  # object database, truncated shallow clone), not a per-file condition.
+  defp materialize_entries(root, temp_root, entries) do
+    case Git.cat_file_batch(root, Enum.map(entries, & &1.oid)) do
+      {:ok, blobs} ->
+        entries
+        |> Enum.zip(blobs)
+        |> Enum.each(fn {%{path: path}, blob} ->
           destination = Path.join(temp_root, path)
           File.mkdir_p!(Path.dirname(destination))
           File.write!(destination, blob)
-          {:cont, :ok}
+        end)
 
-        {:error, output} ->
-          {:halt, {:missing, classify_missing(root, output)}}
-      end
-    end)
-  end
+        :ok
 
-  defp git_show(root, base, path) do
-    {output, exit_code} =
-      System.cmd("git", ["-C", root, "show", "#{base}:#{path}"], stderr_to_stdout: true)
-
-    if exit_code == 0, do: {:ok, output}, else: {:error, output}
+      {:error, reason} ->
+        {:missing, classify_missing(root, inspect(reason))}
+    end
   end
 
   defp with_temp_root(fun) do

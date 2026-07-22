@@ -1,6 +1,8 @@
 defmodule SpecLedEx.Evidence.SyncTest do
   use SpecLedEx.Case, async: false
 
+  import SpecLedEx.EvidenceHelpers
+
   alias SpecLedEx.Evidence.{Entry, Store, Sync}
 
   @ref "refs/heads/spec-evidence"
@@ -489,64 +491,6 @@ defmodule SpecLedEx.Evidence.SyncTest do
     commit
   end
 
-  defp drop_non_evidence_refs(repo) do
-    System.cmd(
-      "git",
-      ["-C", repo, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD"],
-      stderr_to_stdout: true
-    )
-
-    repo
-    |> git!(["for-each-ref", "--format=%(refname)", "refs/heads", "refs/remotes"])
-    |> String.split("\n", trim: true)
-    |> Enum.reject(&String.ends_with?(&1, "/spec-evidence"))
-    |> Enum.each(&git!(repo, ["update-ref", "-d", &1]))
-  end
-
-  defp inject_raw_entry(root, filename, content) do
-    index_path = Path.join(System.tmp_dir!(), "raw-index-#{System.unique_integer([:positive])}")
-    blob_path = Path.join(System.tmp_dir!(), "raw-blob-#{System.unique_integer([:positive])}")
-    File.write!(blob_path, content)
-
-    parent =
-      case System.cmd("git", ["-C", root, "rev-parse", "--verify", "--quiet", @ref], []) do
-        {output, 0} -> String.trim(output)
-        _ -> nil
-      end
-
-    env = [{"GIT_INDEX_FILE", index_path}]
-
-    if parent do
-      raw_git!(root, ["read-tree", "#{parent}^{tree}"], env)
-    end
-
-    blob = raw_git!(root, ["hash-object", "-w", blob_path], env) |> String.trim()
-    raw_git!(root, ["update-index", "--add", "--cacheinfo", "100644,#{blob},#{filename}"], env)
-    tree = raw_git!(root, ["write-tree"], env) |> String.trim()
-
-    commit_args =
-      if parent do
-        ["commit-tree", tree, "-p", parent, "-m", "inject raw entry"]
-      else
-        ["commit-tree", tree, "-m", "inject raw entry"]
-      end
-
-    commit = raw_git!(root, commit_args, env) |> String.trim()
-    old = parent || String.duplicate("0", 40)
-    raw_git!(root, ["update-ref", @ref, commit, old], [])
-
-    File.rm(blob_path)
-    File.rm(index_path)
-    commit
-  end
-
-  defp raw_git!(root, args, env) do
-    case System.cmd("git", ["-C", root | args], stderr_to_stdout: true, env: env) do
-      {output, 0} -> output
-      {output, status} -> raise "git #{Enum.join(args, " ")} failed (#{status}): #{output}"
-    end
-  end
-
   defp seed_divergent_entries(fixture) do
     assert :ok = Store.record(fixture.a, entry(hash("1"), "10", "a"))
     assert :ok = Store.record(fixture.a, entry(hash("3"), "20", "a"))
@@ -577,14 +521,6 @@ defmodule SpecLedEx.Evidence.SyncTest do
     git!(path, ["config", "user.name", "Spec Led Test"])
     git!(path, ["config", "user.email", "specled@example.com"])
     path
-  end
-
-  defp evidence_ids(root) do
-    root
-    |> git!(["ls-tree", "--name-only", "refs/heads/spec-evidence"])
-    |> String.split("\n", trim: true)
-    |> Enum.map(&Path.rootname(&1, ".json"))
-    |> Enum.sort()
   end
 
   defp current_branch(root), do: root |> git!(["branch", "--show-current"]) |> String.trim()

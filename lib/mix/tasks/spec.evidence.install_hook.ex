@@ -19,7 +19,7 @@ defmodule Mix.Tasks.Spec.Evidence.InstallHook do
     {opts, rest, invalid} =
       OptionParser.parse(args, strict: [root: :string], aliases: [r: :root])
 
-    validate_args!(rest, invalid)
+    SpecLedEx.TaskArgs.validate!("spec.evidence.install_hook", rest, invalid)
 
     root = opts[:root] || File.cwd!()
     hook_path = git_path!(root, "hooks/pre-push")
@@ -54,15 +54,6 @@ defmodule Mix.Tasks.Spec.Evidence.InstallHook do
       String.trim_trailing(shim)
     ]
     |> Enum.join("\n")
-  end
-
-  defp validate_args!([], []), do: :ok
-
-  defp validate_args!(rest, invalid) do
-    invalid_flags = Enum.map(invalid, fn {flag, _value} -> flag end)
-    extra_args = Enum.map(rest, &inspect/1)
-    details = Enum.join(invalid_flags ++ extra_args, ", ")
-    Mix.raise("Invalid arguments for spec.evidence.install_hook: #{details}")
   end
 
   defp git_path!(root, path) do

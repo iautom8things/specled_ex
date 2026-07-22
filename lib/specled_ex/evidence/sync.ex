@@ -380,8 +380,7 @@ defmodule SpecLedEx.Evidence.Sync do
   defp entries(_root, :absent), do: {:ok, %{}, []}
 
   defp entries(root, commit) do
-    with {:ok, listing} <- Git.run(root, ["ls-tree", "-r", "-z", commit]),
-         {:ok, tree_entries} <- parse_tree_listing(listing) do
+    with {:ok, tree_entries} <- Git.ls_tree_entries(root, commit) do
       {unsafe, stageable} = Enum.split_with(tree_entries, &unsafe_path?(&1.path))
       {opaque, blobs} = Enum.split_with(stageable, &(&1.type != "blob"))
 
@@ -407,26 +406,6 @@ defmodule SpecLedEx.Evidence.Sync do
 
         {:ok, acc, tree_warnings ++ Enum.reverse(blob_warnings)}
       end
-    end
-  end
-
-  # Each `ls-tree -r -z` record is `<mode> <type> <oid>\t<path>`,
-  # NUL-terminated and unquoted. Only a record that does not parse at all
-  # halts; entry-level oddities are classified by the caller.
-  defp parse_tree_listing(listing) do
-    listing
-    |> :binary.split(<<0>>, [:global, :trim_all])
-    |> Enum.reduce_while({:ok, []}, fn record, {:ok, acc} ->
-      with [meta, path] <- :binary.split(record, "\t"),
-           [mode, type, oid] <- String.split(meta, " ", parts: 3) do
-        {:cont, {:ok, [%{mode: mode, type: type, oid: oid, path: path} | acc]}}
-      else
-        _ -> {:halt, {:error, {:unexpected_tree_entry, record}}}
-      end
-    end)
-    |> case do
-      {:ok, acc} -> {:ok, Enum.reverse(acc)}
-      error -> error
     end
   end
 

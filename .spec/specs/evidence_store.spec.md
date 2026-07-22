@@ -34,6 +34,7 @@ surface:
   - lib/specled_ex/evidence/store.ex
   - lib/specled_ex/evidence/sync.ex
   - lib/specled_ex/evidence/git.ex
+  - lib/specled_ex/evidence/warnings.ex
   - lib/mix/tasks/spec.sync.ex
   - lib/mix/tasks/spec.prune.ex
   - lib/mix/tasks/spec.evidence.migrate.ex
@@ -43,6 +44,8 @@ surface:
   - test/specled_ex/evidence/entry_test.exs
   - test/specled_ex/evidence/store_test.exs
   - test/specled_ex/evidence/sync_test.exs
+  - test/specled_ex/evidence/git_test.exs
+  - test/test_support/evidence_helpers.ex
   - test/mix/tasks/spec_sync_task_test.exs
   - test/mix/tasks/spec_prune_task_test.exs
 decisions:

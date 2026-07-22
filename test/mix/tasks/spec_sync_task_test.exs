@@ -1,9 +1,9 @@
 defmodule Mix.Tasks.SpecSyncTaskTest do
   use SpecLedEx.Case, async: false
 
-  alias SpecLedEx.Evidence.{Entry, Store}
+  import SpecLedEx.EvidenceHelpers
 
-  @ref "refs/heads/spec-evidence"
+  alias SpecLedEx.Evidence.{Entry, Store}
 
   @moduletag spec: [
                "specled.evidence_store.sync_tree_union",
@@ -83,49 +83,5 @@ defmodule Mix.Tasks.SpecSyncTaskTest do
     git!(repo, ["remote", "add", "origin", origin])
     git!(repo, ["push", "-u", "origin", "main"])
     repo
-  end
-
-  defp inject_raw_entry(root, filename, content) do
-    index_path = Path.join(System.tmp_dir!(), "raw-index-#{System.unique_integer([:positive])}")
-    blob_path = Path.join(System.tmp_dir!(), "raw-blob-#{System.unique_integer([:positive])}")
-    File.write!(blob_path, content)
-
-    parent =
-      case System.cmd("git", ["-C", root, "rev-parse", "--verify", "--quiet", @ref], []) do
-        {output, 0} -> String.trim(output)
-        _ -> nil
-      end
-
-    env = [{"GIT_INDEX_FILE", index_path}]
-
-    if parent do
-      raw_git!(root, ["read-tree", "#{parent}^{tree}"], env)
-    end
-
-    blob = raw_git!(root, ["hash-object", "-w", blob_path], env) |> String.trim()
-    raw_git!(root, ["update-index", "--add", "--cacheinfo", "100644,#{blob},#{filename}"], env)
-    tree = raw_git!(root, ["write-tree"], env) |> String.trim()
-
-    commit_args =
-      if parent do
-        ["commit-tree", tree, "-p", parent, "-m", "inject raw entry"]
-      else
-        ["commit-tree", tree, "-m", "inject raw entry"]
-      end
-
-    commit = raw_git!(root, commit_args, env) |> String.trim()
-    old = parent || String.duplicate("0", 40)
-    raw_git!(root, ["update-ref", @ref, commit, old], [])
-
-    File.rm(blob_path)
-    File.rm(index_path)
-    commit
-  end
-
-  defp raw_git!(root, args, env) do
-    case System.cmd("git", ["-C", root | args], stderr_to_stdout: true, env: env) do
-      {output, 0} -> output
-      {output, status} -> raise "git #{Enum.join(args, " ")} failed (#{status}): #{output}"
-    end
   end
 end

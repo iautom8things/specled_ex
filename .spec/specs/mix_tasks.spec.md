@@ -31,6 +31,7 @@ surface:
   - lib/mix/tasks/spec.evidence.install_hook.ex
   - priv/hooks/pre-push
   - lib/specled_ex/mix_runtime.ex
+  - lib/specled_ex/task_args.ex
   - lib/specled_ex/prime.ex
   - priv/spec_init/agents/skills/spec-led-development/SKILL.md.eex
   - priv/spec_init/specs/spec_system.spec.md.eex

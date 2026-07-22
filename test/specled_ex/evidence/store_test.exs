@@ -1,6 +1,8 @@
 defmodule SpecLedEx.Evidence.StoreTest do
   use SpecLedEx.Case
 
+  import SpecLedEx.EvidenceHelpers
+
   alias SpecLedEx.Evidence.{Entry, Store}
 
   @moduletag spec: [
@@ -28,9 +30,7 @@ defmodule SpecLedEx.Evidence.StoreTest do
     assert :ok = Store.record(root, first)
     assert :ok = Store.record(root, second)
 
-    files = evidence_files(root)
-
-    assert Enum.sort(files) == Enum.sort(["#{hash("1")}.json", "#{hash("2")}.json"])
+    assert evidence_ids(root) == Enum.sort([hash("1"), hash("2")])
     assert {:ok, stored} = Store.read(root, hash("1"))
     assert stored["run_id"] == first["run_id"]
   end
@@ -84,8 +84,7 @@ defmodule SpecLedEx.Evidence.StoreTest do
 
     assert :ok = Store.record(root, first, before_update: hook)
 
-    assert Enum.sort(evidence_files(root)) ==
-             Enum.sort(["#{hash("1")}.json", "#{hash("2")}.json"])
+    assert evidence_ids(root) == Enum.sort([hash("1"), hash("2")])
   end
 
   @tag spec: [
@@ -140,28 +139,6 @@ defmodule SpecLedEx.Evidence.StoreTest do
 
     assert {:warning, %{code: "evidence/local_write_failed"}} = result
     assert File.ls!(Path.join(root, ".git/specled-tmp")) == []
-  end
-
-  defp lock_down(objects_dir) do
-    for entry <- File.ls!(objects_dir), File.dir?(Path.join(objects_dir, entry)) do
-      File.chmod!(Path.join(objects_dir, entry), 0o500)
-    end
-
-    File.chmod!(objects_dir, 0o500)
-  end
-
-  defp unlock(objects_dir) do
-    File.chmod!(objects_dir, 0o700)
-
-    for entry <- File.ls!(objects_dir), File.dir?(Path.join(objects_dir, entry)) do
-      File.chmod!(Path.join(objects_dir, entry), 0o700)
-    end
-  end
-
-  defp evidence_files(root) do
-    root
-    |> git!(["ls-tree", "--name-only", "refs/heads/spec-evidence"])
-    |> String.split("\n", trim: true)
   end
 
   defp entry(tree_hash, run_at, run_id) do

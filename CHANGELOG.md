@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Unified tree-blob reading on one primitive and deduplicated helpers.
+  `BaseView` now materializes base spec files through `Git.ls_tree_entries/3`
+  plus one `Git.cat_file_batch/3` call — the same batched plumbing `Sync`
+  uses — instead of one `git show` spawn per file on the `spec.check --base`
+  path. New `SpecLedEx.TaskArgs.validate!/3` and
+  `SpecLedEx.Evidence.Warnings.emit/1` replace the per-task copies of arg
+  validation and warning printing in the evidence-family mix tasks, and the
+  triplicated git-plumbing test helpers (`inject_raw_entry`, `evidence_ids`,
+  `drop_non_evidence_refs`, `lock_down`/`unlock`) now live once in
+  `SpecLedEx.EvidenceHelpers` under `test/test_support/`.
 - Extended evidence-ledger hardening after a second review round. The prune
   reachability floor now guards the outcome rather than only the computation:
   a keep-set that would filter a non-empty store down to nothing — empty or

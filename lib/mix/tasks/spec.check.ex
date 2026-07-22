@@ -58,7 +58,7 @@ defmodule Mix.Tasks.Spec.Check do
         aliases: [r: :root, o: :output, d: :debug]
       )
 
-    validate_args!(rest, invalid)
+    SpecLedEx.TaskArgs.validate!("spec.check", rest, invalid)
 
     min_strength = validate_min_strength!(opts[:min_strength])
     root = opts[:root] || File.cwd!()
@@ -132,15 +132,6 @@ defmodule Mix.Tasks.Spec.Check do
     else
       nil
     end
-  end
-
-  defp validate_args!([], []), do: :ok
-
-  defp validate_args!(rest, invalid) do
-    invalid_flags = Enum.map(invalid, fn {flag, _value} -> flag end)
-    extra_args = Enum.map(rest, &inspect/1)
-    details = Enum.join(invalid_flags ++ extra_args, ", ")
-    Mix.raise("Invalid arguments for spec.check: #{details}")
   end
 
   defp maybe_put_test_tags(index_opts, task_opts) do
@@ -244,7 +235,7 @@ defmodule Mix.Tasks.Spec.Check do
       :ok
     else
       {:warning, warning} ->
-        Mix.shell().error(warning.message)
+        SpecLedEx.Evidence.Warnings.emit(warning)
         :ok
 
       {:error, reason} ->

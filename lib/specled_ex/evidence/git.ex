@@ -24,6 +24,39 @@ defmodule SpecLedEx.Evidence.Git do
   end
 
   @doc """
+  Lists a tree recursively through one `ls-tree -r -z` subprocess, returning
+  each entry as `%{mode:, type:, oid:, path:}`. The `-z` framing keeps paths
+  unquoted, so crafted entry names round-trip byte-identical. Optional
+  `pathspecs` narrow the listing.
+  """
+  @spec ls_tree_entries(Path.t(), String.t(), [String.t()]) ::
+          {:ok, [%{mode: String.t(), type: String.t(), oid: String.t(), path: String.t()}]}
+          | {:error, term()}
+  def ls_tree_entries(root, treeish, pathspecs \\ []) do
+    args = ["ls-tree", "-r", "-z", treeish] ++ pathspec_args(pathspecs)
+
+    with {:ok, listing} <- run(root, args) do
+      listing
+      |> :binary.split(<<0>>, [:global, :trim_all])
+      |> Enum.reduce_while({:ok, []}, fn record, {:ok, acc} ->
+        with [meta, path] <- :binary.split(record, "\t"),
+             [mode, type, oid] <- String.split(meta, " ", parts: 3) do
+          {:cont, {:ok, [%{mode: mode, type: type, oid: oid, path: path} | acc]}}
+        else
+          _ -> {:halt, {:error, {:unexpected_tree_entry, record}}}
+        end
+      end)
+      |> case do
+        {:ok, acc} -> {:ok, Enum.reverse(acc)}
+        error -> error
+      end
+    end
+  end
+
+  defp pathspec_args([]), do: []
+  defp pathspec_args(pathspecs), do: ["--" | pathspecs]
+
+  @doc """
   Reads many git objects through a single `git cat-file --batch` subprocess.
 
   Takes a list of object ids (any `rev-parse`-safe names; callers pass blob
