@@ -7,7 +7,7 @@ defmodule SpecLedEx.Evidence.Sync do
   independently-created orphan roots converge deterministically.
   """
 
-  alias SpecLedEx.Evidence.Entry
+  alias SpecLedEx.Evidence.{Entry, Git}
 
   @local_ref "refs/heads/spec-evidence"
   @remote_ref "refs/remotes/origin/spec-evidence"
@@ -30,7 +30,7 @@ defmodule SpecLedEx.Evidence.Sync do
     remote = Keyword.get(opts, :remote, "origin")
     remote_ref = remote_tracking_ref(remote)
 
-    case git(root, [
+    case Git.run(root, [
            "fetch",
            remote,
            "+#{@remote_head}:#{remote_ref}"
@@ -40,7 +40,7 @@ defmodule SpecLedEx.Evidence.Sync do
 
       {:error, {:git, _args, output, _status}} = error ->
         if remote_absent?(output) do
-          _ = git(root, ["update-ref", "-d", remote_ref])
+          _ = Git.run(root, ["update-ref", "-d", remote_ref])
           {:ok, :absent}
         else
           error
@@ -150,7 +150,7 @@ defmodule SpecLedEx.Evidence.Sync do
     do: {:error, reason}
 
   defp push(root, remote, :absent) do
-    case git(root, ["push", remote, "#{@local_ref}:#{@remote_head}"]) do
+    case Git.run(root, ["push", remote, "#{@local_ref}:#{@remote_head}"]) do
       {:ok, _} ->
         :ok
 
@@ -160,7 +160,7 @@ defmodule SpecLedEx.Evidence.Sync do
   end
 
   defp push(root, remote, fetched) do
-    case git(root, [
+    case Git.run(root, [
            "push",
            "--force-with-lease=#{@remote_head}:#{fetched}",
            remote,
@@ -177,12 +177,12 @@ defmodule SpecLedEx.Evidence.Sync do
   defp entries(_root, :absent), do: {:ok, %{}}
 
   defp entries(root, commit) do
-    with {:ok, output} <- git(root, ["ls-tree", "-r", "--name-only", commit]) do
+    with {:ok, output} <- Git.run(root, ["ls-tree", "-r", "--name-only", commit]) do
       output
       |> String.split("\n", trim: true)
       |> Enum.reduce_while({:ok, %{}}, fn path, {:ok, acc} ->
         with true <- Entry.valid_filename?(path),
-             {:ok, json} <- git(root, ["cat-file", "-p", "#{commit}:#{path}"]),
+             {:ok, json} <- Git.run(root, ["cat-file", "-p", "#{commit}:#{path}"]),
              {:ok, entry} <- Entry.decode_file(path, json) do
           {:cont, {:ok, Map.put(acc, path, entry)}}
         else
@@ -212,7 +212,7 @@ defmodule SpecLedEx.Evidence.Sync do
   end
 
   defp write_tree(root, entries) do
-    with {:ok, index_path} <- temp_path(root, "sync-index"),
+    with {:ok, index_path} <- Git.temp_path(root, "sync-index"),
          result <- write_tree_with_index(root, index_path, entries) do
       File.rm(index_path)
       result
@@ -223,7 +223,7 @@ defmodule SpecLedEx.Evidence.Sync do
     Enum.reduce_while(entries, :ok, fn {path, entry}, :ok ->
       with {:ok, blob} <- hash_entry(root, entry),
            {:ok, _} <-
-             git(root, ["update-index", "--add", "--cacheinfo", "100644,#{blob},#{path}"],
+             Git.run(root, ["update-index", "--add", "--cacheinfo", "100644,#{blob},#{path}"],
                env: [{"GIT_INDEX_FILE", index_path}]
              ) do
         {:cont, :ok}
@@ -233,7 +233,7 @@ defmodule SpecLedEx.Evidence.Sync do
     end)
     |> case do
       :ok ->
-        case git(root, ["write-tree"], env: [{"GIT_INDEX_FILE", index_path}]) do
+        case Git.run(root, ["write-tree"], env: [{"GIT_INDEX_FILE", index_path}]) do
           {:ok, tree} -> {:ok, String.trim(tree)}
           error -> error
         end
@@ -244,10 +244,10 @@ defmodule SpecLedEx.Evidence.Sync do
   end
 
   defp hash_entry(root, entry) do
-    with {:ok, path} <- temp_path(root, "sync-entry.json"),
+    with {:ok, path} <- Git.temp_path(root, "sync-entry.json"),
          :ok <- File.write(path, Entry.encode!(entry)) do
       result =
-        case git(root, ["hash-object", "-w", path]) do
+        case Git.run(root, ["hash-object", "-w", path]) do
           {:ok, blob} -> {:ok, String.trim(blob)}
           error -> error
         end
@@ -283,7 +283,7 @@ defmodule SpecLedEx.Evidence.Sync do
   end
 
   defp commit_tree_command(root, args) do
-    case git(root, args) do
+    case Git.run(root, args) do
       {:ok, commit} -> {:ok, String.trim(commit)}
       error -> error
     end
@@ -292,7 +292,7 @@ defmodule SpecLedEx.Evidence.Sync do
   defp update_local_ref(root, commit, expected) do
     old = if expected == :absent, do: @zero, else: expected
 
-    case git(root, ["update-ref", @local_ref, commit, old]) do
+    case Git.run(root, ["update-ref", @local_ref, commit, old]) do
       {:ok, _} ->
         :ok
 
@@ -305,27 +305,9 @@ defmodule SpecLedEx.Evidence.Sync do
   end
 
   defp ref_commit(root, ref) do
-    case git(root, ["rev-parse", "--verify", "--quiet", ref]) do
+    case Git.run(root, ["rev-parse", "--verify", "--quiet", ref]) do
       {:ok, commit} -> {:ok, String.trim(commit)}
       {:error, _} -> {:ok, :absent}
-    end
-  end
-
-  defp temp_path(root, label) do
-    case git(root, ["rev-parse", "--git-path", "specled-tmp"]) do
-      {:ok, git_path} ->
-        directory = Path.expand(String.trim(git_path), root)
-
-        with :ok <- File.mkdir_p(directory) do
-          {:ok,
-           Path.join(
-             directory,
-             "#{label}-#{System.unique_integer([:positive, :monotonic])}-#{random_hex(8)}"
-           )}
-        end
-
-      error ->
-        error
     end
   end
 
@@ -354,16 +336,5 @@ defmodule SpecLedEx.Evidence.Sync do
       String.contains?(output, "fetch first") or
       String.contains?(output, "non-fast-forward") or
       String.contains?(output, "rejected")
-  end
-
-  defp random_hex(bytes), do: bytes |> :crypto.strong_rand_bytes() |> Base.encode16(case: :lower)
-
-  defp git(root, args, opts \\ []) do
-    env = Keyword.get(opts, :env, [])
-
-    case System.cmd("git", ["-C", root | args], stderr_to_stdout: true, env: env) do
-      {output, 0} -> {:ok, output}
-      {output, status} -> {:error, {:git, args, output, status}}
-    end
   end
 end

@@ -33,6 +33,7 @@ surface:
   - lib/specled_ex/evidence/entry.ex
   - lib/specled_ex/evidence/store.ex
   - lib/specled_ex/evidence/sync.ex
+  - lib/specled_ex/evidence/git.ex
   - lib/mix/tasks/spec.sync.ex
   - lib/mix/tasks/spec.prune.ex
   - lib/mix/tasks/spec.evidence.migrate.ex

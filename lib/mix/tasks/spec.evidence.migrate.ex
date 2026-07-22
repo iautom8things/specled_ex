@@ -3,7 +3,7 @@ defmodule Mix.Tasks.Spec.Evidence.Migrate do
 
   @requirements ["app.config"]
 
-  alias SpecLedEx.Evidence.{Store, TreeHash}
+  alias SpecLedEx.Evidence.{Git, Store, TreeHash}
   alias SpecLedEx.Json
   alias SpecLedEx.Realization.HashStore
 
@@ -70,11 +70,9 @@ defmodule Mix.Tasks.Spec.Evidence.Migrate do
   defp untrack_state_json(root, spec_dir) do
     rel = Path.join(spec_dir, "state.json")
 
-    case System.cmd("git", ["-C", root, "rm", "--cached", "--quiet", "--", rel],
-           stderr_to_stdout: true
-         ) do
-      {_output, 0} -> :ok
-      {_output, _status} -> :ok
+    case Git.run(root, ["rm", "--cached", "--quiet", "--", rel]) do
+      {:ok, _output} -> :ok
+      {:error, _reason} -> :ok
     end
   end
 

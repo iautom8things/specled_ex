@@ -3,7 +3,7 @@ defmodule SpecLedEx.Evidence.Store do
   Local plumbing-only evidence store backed by `refs/heads/spec-evidence`.
   """
 
-  alias SpecLedEx.Evidence.Entry
+  alias SpecLedEx.Evidence.{Entry, Git}
 
   @ref "refs/heads/spec-evidence"
   @max_attempts 5
@@ -20,7 +20,7 @@ defmodule SpecLedEx.Evidence.Store do
 
     with true <- Entry.valid_filename?(filename),
          {:ok, _commit} <- current_commit(root),
-         {:ok, json} <- git(root, ["cat-file", "-p", "#{@ref}:#{filename}"]),
+         {:ok, json} <- Git.run(root, ["cat-file", "-p", "#{@ref}:#{filename}"]),
          {:ok, entry} <- Entry.decode_file(filename, json) do
       {:ok, entry}
     else
@@ -72,13 +72,13 @@ defmodule SpecLedEx.Evidence.Store do
   end
 
   defp build_tree(root, expected, entry) do
-    with {:ok, index_path} <- temp_index_path(root),
+    with {:ok, index_path} <- Git.temp_path(root, "evidence-index"),
          :ok <- seed_tree(root, index_path, expected),
          {:ok, existing} <- existing_entry(root, expected, entry["tree_hash"]),
          winner <- Entry.latest(existing, entry),
          {:ok, blob} <- hash_entry(root, winner),
          {:ok, _} <-
-           git(
+           Git.run(
              root,
              [
                "update-index",
@@ -88,7 +88,7 @@ defmodule SpecLedEx.Evidence.Store do
              ],
              env: [{"GIT_INDEX_FILE", index_path}]
            ),
-         {:ok, tree} <- git(root, ["write-tree"], env: [{"GIT_INDEX_FILE", index_path}]) do
+         {:ok, tree} <- Git.run(root, ["write-tree"], env: [{"GIT_INDEX_FILE", index_path}]) do
       File.rm(index_path)
       {:ok, String.trim(tree)}
     else
@@ -97,7 +97,7 @@ defmodule SpecLedEx.Evidence.Store do
   end
 
   defp current_commit(root) do
-    case git(root, ["rev-parse", "--verify", "--quiet", @ref]) do
+    case Git.run(root, ["rev-parse", "--verify", "--quiet", @ref]) do
       {:ok, commit} -> {:ok, String.trim(commit)}
       {:error, _} -> :absent
     end
@@ -116,7 +116,7 @@ defmodule SpecLedEx.Evidence.Store do
   defp seed_tree(_root, _index_path, :absent), do: :ok
 
   defp seed_tree(root, index_path, {:ok, commit}) do
-    case git(root, ["read-tree", "#{commit}^{tree}"], env: [{"GIT_INDEX_FILE", index_path}]) do
+    case Git.run(root, ["read-tree", "#{commit}^{tree}"], env: [{"GIT_INDEX_FILE", index_path}]) do
       {:ok, _} -> :ok
       error -> error
     end
@@ -126,7 +126,7 @@ defmodule SpecLedEx.Evidence.Store do
     with {:ok, path} <- temp_blob_path(root),
          :ok <- File.write(path, Entry.encode!(entry)) do
       result =
-        case git(root, ["hash-object", "-w", path]) do
+        case Git.run(root, ["hash-object", "-w", path]) do
           {:ok, output} -> {:ok, String.trim(output)}
           error -> error
         end
@@ -137,14 +137,14 @@ defmodule SpecLedEx.Evidence.Store do
   end
 
   defp commit_tree(root, tree, :absent) do
-    case git(root, ["commit-tree", tree, "-m", "spec evidence"]) do
+    case Git.run(root, ["commit-tree", tree, "-m", "spec evidence"]) do
       {:ok, commit} -> {:ok, String.trim(commit)}
       error -> error
     end
   end
 
   defp commit_tree(root, tree, {:ok, parent}) do
-    case git(root, ["commit-tree", tree, "-p", parent, "-m", "spec evidence"]) do
+    case Git.run(root, ["commit-tree", tree, "-p", parent, "-m", "spec evidence"]) do
       {:ok, commit} -> {:ok, String.trim(commit)}
       error -> error
     end
@@ -153,32 +153,17 @@ defmodule SpecLedEx.Evidence.Store do
   defp update_ref(root, commit, expected) do
     old = if expected == :absent, do: @zero, else: elem(expected, 1)
 
-    case git(root, ["update-ref", @ref, commit, old]) do
+    case Git.run(root, ["update-ref", @ref, commit, old]) do
       {:ok, _} -> :ok
       {:error, {:git, ["update-ref" | _], _output, _status}} -> :cas_failed
       error -> error
     end
   end
 
-  defp temp_index_path(root) do
-    with {:ok, tmp_dir} <- git_path(root, "specled-tmp"),
-         :ok <- File.mkdir_p(tmp_dir) do
-      {:ok,
-       Path.join(
-         tmp_dir,
-         "evidence-index-#{System.unique_integer([:positive, :monotonic])}-#{random_hex(8)}"
-       )}
-    end
-  end
-
   defp temp_blob_path(root) do
-    with {:ok, tmp_dir} <- git_path(root, "specled-tmp"),
-         :ok <- File.mkdir_p(tmp_dir) do
-      {:ok,
-       Path.join(
-         tmp_dir,
-         "evidence-blob-#{System.unique_integer([:positive, :monotonic])}-#{random_hex(8)}.json"
-       )}
+    case Git.temp_path(root, "evidence-blob") do
+      {:ok, path} -> {:ok, path <> ".json"}
+      error -> error
     end
   end
 
@@ -191,23 +176,5 @@ defmodule SpecLedEx.Evidence.Store do
     base = 50 * attempt
     jitter = :rand.uniform(base) - div(base, 2)
     Process.sleep(max(base + jitter, 0))
-  end
-
-  defp random_hex(bytes), do: bytes |> :crypto.strong_rand_bytes() |> Base.encode16(case: :lower)
-
-  defp git_path(root, path) do
-    case git(root, ["rev-parse", "--git-path", path]) do
-      {:ok, git_path} -> {:ok, Path.expand(String.trim(git_path), root)}
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  defp git(root, args, opts \\ []) do
-    env = Keyword.get(opts, :env, [])
-
-    case System.cmd("git", ["-C", root | args], stderr_to_stdout: true, env: env) do
-      {output, 0} -> {:ok, output}
-      {output, status} -> {:error, {:git, args, output, status}}
-    end
   end
 end
