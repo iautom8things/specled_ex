@@ -19,11 +19,12 @@ Two assumptions shape every design decision:
    read this without tooling?" is never the deciding question; "does this
    help the agent stay grounded in repository evidence?" is.
 2. **The specs live in the repo, not a wiki.** Subject specs
-   (`.spec/specs/*.spec.md`), durable decisions (`.spec/decisions/*.md`),
-   and state (`.spec/state.json`) are version-controlled artifacts that
-   diff alongside the code. There is no in-flight proposal folder and no
-   separate timeline: Git is the time dimension, `.spec/` is the current
-   truth.
+   (`.spec/specs/*.spec.md`) and durable decisions
+   (`.spec/decisions/*.md`) are version-controlled artifacts that diff
+   alongside the code. Generated state is local and reproducible; shared
+   evidence lives in Git refs, not in a manually reconciled state file. There is no
+   in-flight proposal folder and no separate timeline: Git is the time
+   dimension, `.spec/` is the current truth.
 
 Everything that follows — the triangle, the tiers, the findings vocabulary,
 the graceful-degrade rule — is a consequence of those two assumptions.
@@ -125,9 +126,9 @@ The lifecycle has three steps:
    `implementation`, BEAM debug-info AST for `expanded_behavior`,
    `@spec` declarations for `typespecs` — canonicalizes it, and hashes
    the result. Each `(subject, tier, MFA)` triple produces one hash.
-2. **Commit.** The hash is written to `.spec/state.json` alongside the
-   binding. A committed hash is the author's signed-off snapshot:
-   "this is what the subject realizes, as of this commit."
+2. **Store.** The hash is written to `.spec/realization_hashes.json`
+   alongside the binding. That stored baseline is the author's signed-off
+   snapshot: "this is what the subject realizes, as of this commit."
 3. **Compare.** On the next run, the hash is recomputed from current
    code. If the new hash matches the committed one, the tier is quiet.
    If they differ, the tier's view of the subject changed since the
@@ -187,8 +188,9 @@ Three meta-questions hover over every code in the catalog:
 - **Where does the surrounding tooling fit?** Each tool plays a
   defined role:
 
-  - `mix spec.check` runs every detector and writes the unfiltered
-    set to `.spec/state.json`.
+  - `mix spec.check` runs every detector and records local evidence for the
+    current tree. `mix spec.sync` reconciles that evidence through the
+    `spec-evidence` ref.
   - `mix spec.next` orders unresolved findings into a single
     recommended next step.
   - `mix spec.validate` surfaces within-spec findings (overlap, prose
@@ -216,7 +218,7 @@ with it.*
 
 - `branch_guard_realization_drift` — For some `(subject, tier, MFA)`
   triple, the hash recomputed from current code does not match the
-  hash committed in `.spec/state.json`. The canonicalizer already
+  hash committed in `.spec/realization_hashes.json`. The canonicalizer already
   absorbed cosmetic changes, so a drift finding means something the
   tier cares about actually moved — and the subject has not been
   updated to acknowledge it.
@@ -426,8 +428,8 @@ The triangle is the core. Three support systems keep it honest:
 
 `.spec/decisions/*.md` are durable cross-cutting decisions. A spec change
 is rarely a pure addition — it often weakens a prior claim or replaces a
-scenario. `SpecLedEx.AppendOnly` compares the prior `state.json` (at the
-merge base) to the current state and emits findings for requirement
+scenario. `SpecLedEx.AppendOnly` compares the prior derived state (at the
+merge base) to the current derived state and emits findings for requirement
 deletions, modal downgrades (`must` → `should`), scenario regressions,
 polarity changes, `disabled:` without a reason, missing `change_type`,
 same-PR self-authorization, and ADR deletion. Weakenings are authorized
@@ -459,7 +461,8 @@ default in code. Nothing is implicit.
 The `:info` severity exists specifically so new checks can land hot
 without breaking CI. `mix spec.check` suppresses `:info` findings from
 stdout by default; `--verbose` or `SPECLED_SHOW_INFO=1` unfilters them.
-`.spec/state.json` always carries every finding unchanged.
+The local evidence artifact carries every finding unchanged, including
+findings hidden from default stdout.
 
 ### Policy-files zone classifier
 

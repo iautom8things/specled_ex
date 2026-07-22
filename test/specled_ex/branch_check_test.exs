@@ -285,10 +285,9 @@ defmodule SpecLedEx.BranchCheckTest do
         ]
       )
 
-      # Commit state.json alongside the spec so there is a prior baseline.
-      index = SpecLedEx.index(root)
-      SpecLedEx.write_state(index, nil, root)
-      commit_all(root, "initial: add billing subject + state.json")
+      # Commit only the authored spec source. The prior state is reconstructed
+      # from the base tree through BaseView, not from committed state.json.
+      commit_all(root, "initial: add billing subject")
 
       # Now delete the requirement. No authorizing ADR → AppendOnly must fire.
       write_subject_spec(
@@ -331,8 +330,6 @@ defmodule SpecLedEx.BranchCheckTest do
         ]
       )
 
-      index = SpecLedEx.index(root)
-      SpecLedEx.write_state(index, nil, root)
       commit_all(root, "initial")
 
       write_subject_spec(
@@ -359,11 +356,15 @@ defmodule SpecLedEx.BranchCheckTest do
     end
 
     @tag spec: "specled.append_only.no_baseline"
-    test "missing state.json at base yields append_only/no_baseline at :info", %{root: root} do
+    test "missing authored spec paths at base yields append_only/no_baseline at :info",
+         %{root: root} do
       init_git_repo(root)
 
-      # First commit has a spec but no state.json — simulates the bootstrap
-      # case (or a base ref predating spec-guardrails adoption).
+      # First commit has no authored spec paths — simulates a base ref
+      # predating spec-guardrails adoption.
+      write_files(root, %{"README.md" => "# Bootstrap\n"})
+      commit_all(root, "initial without spec workspace")
+
       write_subject_spec(
         root,
         "billing",
@@ -377,13 +378,8 @@ defmodule SpecLedEx.BranchCheckTest do
         ]
       )
 
-      commit_all(root, "initial spec, no state.json")
-
-      # Second commit adds state.json so head has one. Prior baseline still
-      # missing at HEAD~1 → no_baseline fires on this base.
       index = SpecLedEx.index(root)
-      SpecLedEx.write_state(index, nil, root)
-      commit_all(root, "add state.json")
+      commit_all(root, "add billing spec")
 
       report = BranchCheck.run(index, root, base: "HEAD~1")
 
@@ -392,6 +388,58 @@ defmodule SpecLedEx.BranchCheckTest do
       assert [finding] = findings
       assert finding["severity"] == "info"
       assert finding["message"] =~ "first-run"
+    end
+
+    @tag spec: "specled.append_only.decision_deleted"
+    test "base decisions parsed from source make ADR deletion visible", %{root: root} do
+      init_git_repo(root)
+
+      write_subject_spec(
+        root,
+        "billing",
+        meta: %{"id" => "billing.subject", "kind" => "module", "status" => "active"}
+      )
+
+      write_decision(root, "billing_split", """
+      ---
+      id: specled.decision.billing_split
+      status: accepted
+      date: 2026-07-16
+      affects:
+        - billing.subject
+      change_type: deprecates
+      reverses_what: Legacy billing subject.
+      ---
+
+      # Billing Split
+
+      ## Context
+
+      Billing changed.
+
+      ## Decision
+
+      Split it.
+
+      ## Consequences
+
+      The decision is durable.
+      """)
+
+      commit_all(root, "initial: spec and ADR source")
+
+      File.rm!(Path.join(root, ".spec/decisions/billing_split.md"))
+      commit_all(root, "delete ADR")
+
+      index = SpecLedEx.index(root)
+      report = BranchCheck.run(index, root, base: "HEAD~1")
+
+      findings = Enum.filter(report["findings"], &(&1["code"] == "append_only/decision_deleted"))
+
+      assert [finding] = findings
+      assert finding["severity"] == "error"
+      assert finding["entity_id"] == "specled.decision.billing_split"
+      assert report["status"] == "fail"
     end
   end
 
@@ -417,14 +465,10 @@ defmodule SpecLedEx.BranchCheckTest do
 
   describe "self-integration" do
     @tag :integration
-    test "git show HEAD:.spec/state.json parses against specled_ex's own repo" do
+    test "BaseView parses HEAD specs against specled_ex's own repo" do
       root = File.cwd!()
 
-      {output, exit_code} =
-        System.cmd("git", ["-C", root, "show", "HEAD:.spec/state.json"], stderr_to_stdout: true)
-
-      assert exit_code == 0, "git show HEAD:.spec/state.json failed: #{output}"
-      assert {:ok, state} = Jason.decode(output)
+      assert {:ok, %{"state" => state}} = SpecLedEx.BaseView.build(root, "HEAD")
       assert is_map(state)
       assert is_map(state["index"])
     end

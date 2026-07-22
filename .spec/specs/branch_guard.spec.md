@@ -12,6 +12,7 @@ kind: workflow
 status: active
 summary: Uses the current Git change set to enforce subject co-changes and cross-cutting ADR updates during the final local check.
 surface:
+  - lib/specled_ex/base_view.ex
   - lib/specled_ex/branch_check.ex
   - lib/specled_ex/coverage.ex
   - lib/mix/tasks/spec.check.ex
@@ -225,6 +226,16 @@ decisions:
     Detector failure shall not silently relax the guard.
   priority: must
   stability: evolving
+- id: specled.branch_guard.base_view_prior_state
+  statement: >-
+    `SpecLedEx.BranchCheck.run/3` shall reconstruct append-only prior state by
+    delegating to `SpecLedEx.BaseView.build/3`, so base requirements,
+    scenarios, and ADR ids come from authored base-tree sources parsed by the
+    current parser rather than from a committed `.spec/state.json` snapshot.
+    Missing base sources shall degrade to `append_only/no_baseline` with the
+    existing first-run, shallow-clone, and bad-ref variant tags.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -383,6 +394,16 @@ decisions:
     - "a `branch_guard.severities` override to `off` suppresses the finding"
   covers:
     - specled.branch_guard.realization_unknown_tier_finding
+- id: specled.branch_guard.scenario.base_view_prior_state
+  given:
+    - "a branch whose base commit has authored `.spec/specs` and `.spec/decisions` sources"
+  when:
+    - "`SpecLedEx.BranchCheck.run/3` performs append-only analysis against that base"
+  then:
+    - "prior requirements and ADR ids are reconstructed from the base sources"
+    - "deleting a base ADR at head emits `append_only/decision_deleted`"
+  covers:
+    - specled.branch_guard.base_view_prior_state
 ```
 
 ## Verification
@@ -429,4 +450,8 @@ decisions:
   covers:
     - specled.branch_guard.realization_tiers_from_config
     - specled.branch_guard.realization_unknown_tier_finding
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.branch_guard.base_view_prior_state
 ```

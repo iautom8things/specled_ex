@@ -23,12 +23,14 @@ surface:
   - lib/specled_ex/review/html.ex
   - lib/specled_ex/review/spec_diff.ex
   - priv/spec_review_assets/*
+  - priv/spec_init/workflows/spec_review.yml.eex
   - test/specled_ex/review_test.exs
   - test/specled_ex/review/html_test.exs
   - test/mix/tasks/spec_review_task_test.exs
 decisions:
   - specled.decision.spec_review_html_viewer
   - specled.decision.spec_review_change_scoped_master_detail
+  - specled.decision.evidence_orphan_branch_split
 ```
 
 ## Requirements
@@ -84,18 +86,29 @@ decisions:
     The Overview pane shall classify findings differentially as introduced
     (present at head, absent at base), resolved (present at base, absent at
     head), and pre-existing (present at both), computing the base-side
-    finding set from the committed verification state at the base ref
-    (`git show <base>:.spec/state.json`). The change verdict shall be
-    driven by introduced findings only.
+    finding set from the evidence-store entry keyed by the base ref's tree
+    (`git rev-parse <base>^{tree}`). The stored base findings list is
+    authoritative instead of a finding set recomputed with the current parser. The
+    change verdict shall be driven by introduced findings only. A finding
+    whose producer `mix spec.check` never runs as part of recording base
+    evidence — for example the review-only `no_realized_by`
+    `detector_unavailable` finding described in
+    `specled.spec_review.no_realized_by_degrades_spec_to_code`, which is
+    synthesized only inside the review artifact's own view-model build —
+    has no comparable base-side attestation and shall always classify as
+    pre-existing, never introduced and never resolved, regardless of
+    whether it is present at head.
   priority: must
   stability: evolving
 - id: specled.spec_review.findings_delta_base_fallback
   statement: >-
-    When the base state file is absent or unparseable the Overview pane
+    When the base tree cannot be resolved or its evidence entry is absent the Overview pane
     shall fall back to a non-differential findings presentation that is
     explicitly labeled as lacking base attribution — findings shall never
     be silently presented as introduced by the change when base attribution
-    is unavailable.
+    is unavailable. Its verdict shall be indeterminate (`clean?: nil`), and
+    the presentation shall name `mix spec.sync` or a check run on the base
+    content as the healing path.
   priority: must
   stability: evolving
 - id: specled.spec_review.findings_digest_dedup
@@ -135,7 +148,10 @@ decisions:
     confirmation when the change introduces none. A change set that
     introduces zero findings shall read as clean even when pre-existing
     findings or degraded verification exist at head, so clean change sets
-    feel clean.
+    feel clean. This includes findings that have no comparable base-side
+    attestation (see `specled.spec_review.findings_delta`): such a finding
+    is pre-existing by definition and shall never by itself make an
+    otherwise-clean change verdict read as not-clean.
   priority: must
   stability: evolving
 - id: specled.spec_review.inline_finding_badges
@@ -250,7 +266,12 @@ decisions:
     surfaces enumerate `no_realized_by` as a distinct reason. A subject
     that declares any non-empty tier in its subject-level or
     requirement-level `realized_by` shall not produce this synthetic
-    finding.
+    finding. Because `mix spec.check` never synthesizes this finding when
+    recording base evidence, it has no comparable base-side attestation:
+    per `specled.spec_review.findings_delta`, the findings differential
+    shall always classify it as pre-existing, never introduced, so a
+    subject's static lack of bindings is never misattributed to whichever
+    change happens to touch that subject next.
   priority: must
   stability: evolving
 - id: specled.spec_review.shared_file_fanin_collapse
@@ -341,7 +362,7 @@ decisions:
     - specled.spec_review.repo_state_health_pane
 - id: specled.spec_review.findings_delta_classifies
   given:
-    - the base ref's committed .spec/state.json records finding F1
+    - the evidence entry for the base ref's tree records finding F1
     - verification at head produces findings F1 and F2
   when:
     - mix spec.review renders the HTML artifact
@@ -350,15 +371,28 @@ decisions:
     - the verdict chip reflects only the introduced finding
   covers:
     - specled.spec_review.findings_delta
+- id: specled.spec_review.findings_delta_excludes_synthetic
+  given:
+    - a subject that has always declared no `realized_by` bindings
+    - the evidence entry for the base ref's tree records no findings for that subject
+    - the change set touches a file belonging to that subject but does not add any binding
+  when:
+    - mix spec.review renders the HTML artifact
+  then:
+    - the synthesized no_realized_by detector_unavailable finding for that subject classifies as pre-existing, not introduced
+    - the verdict chip and change verdict read as clean
+  covers:
+    - specled.spec_review.no_realized_by_degrades_spec_to_code
 - id: specled.spec_review.findings_delta_missing_base
   given:
-    - the base ref has no committed .spec/state.json
+    - the base ref's tree has no evidence entry
     - verification at head produces findings
   when:
     - mix spec.review renders the HTML artifact
   then:
     - the findings presentation is non-differential and explicitly labeled as lacking base attribution
     - no finding is presented as introduced by the change
+    - the verdict is indeterminate and names how to fetch or record base evidence
   covers:
     - specled.spec_review.findings_delta_base_fallback
 - id: specled.spec_review.duplicate_findings_dedup

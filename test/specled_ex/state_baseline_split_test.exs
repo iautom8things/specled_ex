@@ -2,8 +2,8 @@ defmodule SpecLedEx.StateBaselineSplitTest do
   @moduledoc """
   Covers the split of the committed realization baseline out of
   `.spec/state.json`: regenerating state.json must never alter
-  `.spec/realization_hashes.json`, and a legacy embedded baseline is hoisted
-  into the dedicated file before the regen would destroy it.
+  `.spec/realization_hashes.json`, and the migration task hoists a legacy
+  embedded baseline into the dedicated file before state.json is untracked.
   """
   use ExUnit.Case, async: true
 
@@ -70,7 +70,7 @@ defmodule SpecLedEx.StateBaselineSplitTest do
 
   describe "legacy baseline hoist" do
     @tag spec: ["specled.index.legacy_baseline_hoist"]
-    test "write_state hoists an embedded legacy baseline into the dedicated file",
+    test "migration hoists an embedded legacy baseline into the dedicated file",
          %{root: root} do
       entry = committed_entry("legacy-committed")
 
@@ -84,15 +84,16 @@ defmodule SpecLedEx.StateBaselineSplitTest do
 
       refute File.exists?(baseline_path(root))
 
-      SpecLedEx.write_state(%{}, nil, root)
+      Mix.Tasks.Spec.Evidence.Migrate.hoist_legacy_realization(root)
 
       # Hoisted with the committed hash intact — not recomputed.
       decoded = Jason.decode!(File.read!(baseline_path(root)))
       assert decoded["api_boundary"]["Foo.bar/1"]["hash"] == entry["hash"]
 
-      # The regenerated state.json no longer embeds a baseline.
-      regenerated = Jason.decode!(File.read!(state_path(root)))
-      refute Map.has_key?(regenerated, "realization")
+      # Hoisting alone does not rewrite the legacy file. The full migration
+      # untracks it after the fresh check seeds orphan evidence.
+      legacy = Jason.decode!(File.read!(state_path(root)))
+      assert Map.has_key?(legacy, "realization")
     end
 
     @tag spec: ["specled.index.legacy_baseline_hoist"]
@@ -110,7 +111,7 @@ defmodule SpecLedEx.StateBaselineSplitTest do
         })
       )
 
-      SpecLedEx.write_state(%{}, nil, root)
+      Mix.Tasks.Spec.Evidence.Migrate.hoist_legacy_realization(root)
 
       assert File.read!(baseline_path(root)) == before
     end

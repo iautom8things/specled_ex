@@ -31,11 +31,10 @@ Use this folder to maintain authored Spec Led Development subjects and generated
 
 ## Generated vs Committed State
 
-- `.spec/state.json` is fully derived — regenerable from spec files at any
-  time via `mix spec.check` / `mix spec.validate`. On a rebase or merge
-  conflict, take either side (`git checkout --theirs .spec/state.json`),
-  finish the merge, regenerate, and commit the result. This ritual is safe:
-  state.json carries no committed baseline.
+- `.spec/state.json` is fully derived local state. Generate it when you need
+  low-level diagnostics (`mix spec.index --output .spec/state.json` or
+  `mix spec.validate --output .spec/state.json`), but do not treat it as
+  shared source-of-truth data.
 - `.spec/realization_hashes.json` is the committed realization-hash
   baseline that drift detection compares against. Do NOT resolve conflicts
   in it by regenerating — that recomputes hashes from the merged tree and

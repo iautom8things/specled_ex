@@ -12,7 +12,7 @@ defmodule Mix.Tasks.Spec.CheckTestTagsTest do
       ".spec/config.yml" => "test_tags:\n  enabled: false\n"
     })
 
-    Mix.Tasks.Spec.Validate.run(["--root", root, "--test-tags"])
+    Mix.Tasks.Spec.Validate.run(["--root", root, "--test-tags", "--output", ".spec/state.json"])
 
     assert findings_have_code?(root, "requirement_without_test_tag")
   end
@@ -25,7 +25,13 @@ defmodule Mix.Tasks.Spec.CheckTestTagsTest do
       ".spec/config.yml" => "test_tags:\n  enabled: true\n"
     })
 
-    Mix.Tasks.Spec.Validate.run(["--root", root, "--no-test-tags"])
+    Mix.Tasks.Spec.Validate.run([
+      "--root",
+      root,
+      "--no-test-tags",
+      "--output",
+      ".spec/state.json"
+    ])
 
     refute findings_have_code?(root, "requirement_without_test_tag")
   end
@@ -38,7 +44,7 @@ defmodule Mix.Tasks.Spec.CheckTestTagsTest do
       ".spec/config.yml" => "test_tags:\n  enabled: true\n  paths:\n    - test\n"
     })
 
-    Mix.Tasks.Spec.Validate.run(["--root", root])
+    Mix.Tasks.Spec.Validate.run(["--root", root, "--output", ".spec/state.json"])
 
     assert findings_have_code?(root, "requirement_without_test_tag")
   end
@@ -49,7 +55,7 @@ defmodule Mix.Tasks.Spec.CheckTestTagsTest do
   } do
     scaffold_with_untagged_requirement(root)
 
-    Mix.Tasks.Spec.Validate.run(["--root", root])
+    Mix.Tasks.Spec.Validate.run(["--root", root, "--output", ".spec/state.json"])
 
     refute findings_have_code?(root, "requirement_without_test_tag")
   end

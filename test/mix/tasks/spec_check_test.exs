@@ -60,21 +60,20 @@ defmodule Mix.Tasks.Spec.CheckTest do
     end
 
     @tag spec: "specled.tasks.check_verbose_flag"
-    test "state.json written by spec.validate is unaffected by --verbose", %{root: root} do
-      # The --verbose flag only gates stdout printing. The state.json produced
-      # by the validate step must be identical whether or not --verbose is set.
+    test "spec.check does not write state.json with or without --verbose", %{root: root} do
+      # The --verbose flag only gates stdout printing. spec.check keeps the
+      # validation report in memory and records evidence, but it does not write
+      # the derived state artifact.
       scaffold_no_baseline_fixture(root)
+      state_path = Path.join(root, ".spec/state.json")
+      state_before = File.read!(state_path)
 
       run_spec_check(root, ["--base", "HEAD~1"])
-      default_state = read_state(root)
       Mix.Shell.Process.flush()
 
       run_spec_check(root, ["--base", "HEAD~1", "--verbose"])
-      verbose_state = read_state(root)
 
-      assert default_state == verbose_state,
-             "state.json must not differ based on --verbose; diff at keys: " <>
-               inspect(diff_keys(default_state, verbose_state))
+      assert File.read!(state_path) == state_before
     end
   end
 
@@ -105,6 +104,9 @@ defmodule Mix.Tasks.Spec.CheckTest do
   defp scaffold_no_baseline_fixture(root) do
     init_git_repo(root)
 
+    write_files(root, %{"README.md" => "# Bootstrap\n"})
+    commit_all(root, "initial without spec workspace")
+
     write_subject_spec(
       root,
       "billing",
@@ -125,11 +127,9 @@ defmodule Mix.Tasks.Spec.CheckTest do
       ]
     )
 
-    commit_all(root, "initial spec, no state.json")
-
     index = SpecLedEx.index(root)
     SpecLedEx.write_state(index, nil, root)
-    commit_all(root, "add state.json")
+    commit_all(root, "add spec and state.json")
   end
 
   # Runs mix spec.check and treats an expected Mix.Error (when findings flip
@@ -144,13 +144,6 @@ defmodule Mix.Tasks.Spec.CheckTest do
         :ok
     end
   end
-
-  defp diff_keys(left, right) when is_map(left) and is_map(right) do
-    all_keys = (Map.keys(left) ++ Map.keys(right)) |> Enum.uniq()
-    Enum.filter(all_keys, &(Map.get(left, &1) != Map.get(right, &1)))
-  end
-
-  defp diff_keys(_, _), do: [:not_both_maps]
 end
 
 defmodule Mix.Tasks.Spec.CheckCommandTimeoutTest do
@@ -166,7 +159,7 @@ defmodule Mix.Tasks.Spec.CheckCommandTimeoutTest do
 
       Mix.Tasks.Spec.Check.run(["--root", root, "--command-timeout-ms", "5000"])
 
-      assert read_state(root)["summary"]["findings"] == 0
+      refute File.exists?(Path.join(root, ".spec/state.json"))
       assert File.read!(Path.join(root, marker)) == "done"
     end
 
@@ -182,11 +175,14 @@ defmodule Mix.Tasks.Spec.CheckCommandTimeoutTest do
         Mix.Tasks.Spec.Check.run(["--root", root])
       end
 
-      assert [%{"code" => "verification_command_timeout", "message" => message}] =
-               read_state(root)["findings"]
+      messages = drain_shell_messages()
+
+      [message] =
+        for msg <- messages, String.contains?(msg, "verification_command_timeout"), do: msg
 
       assert message =~ "command exceeded 1ms"
       assert message =~ "--command-timeout-ms 2"
+      refute File.exists?(Path.join(root, ".spec/state.json"))
     end
 
     @tag spec: "specled.verify.command_timeout_cli_precedence"
@@ -195,7 +191,7 @@ defmodule Mix.Tasks.Spec.CheckCommandTimeoutTest do
 
       Mix.Tasks.Spec.Check.run(["--root", root])
 
-      assert read_state(root)["summary"]["findings"] == 0
+      refute File.exists?(Path.join(root, ".spec/state.json"))
       assert File.read!(Path.join(root, marker)) == "done"
     end
   end
@@ -232,5 +228,90 @@ defmodule Mix.Tasks.Spec.CheckCommandTimeoutTest do
     )
 
     marker
+  end
+end
+
+defmodule Mix.Tasks.Spec.CheckEvidenceTest do
+  use SpecLedEx.Case, async: false
+
+  @moduletag :capture_log
+  @moduletag spec: [
+               "specled.tasks.check_evidence_write",
+               "specled.evidence_store.tree_hash_mirrors_add_all",
+               "specled.evidence_store.per_entry_isolation",
+               "specled.evidence_store.self_create",
+               "specled.evidence_store.local_only_write_path",
+               "specled.evidence_store.attestation_never_gates"
+             ]
+
+  @tag spec: [
+         "specled.tasks.check_evidence_write",
+         "specled.evidence_store.tree_hash_mirrors_add_all",
+         "specled.evidence_store.per_entry_isolation",
+         "specled.evidence_store.self_create",
+         "specled.evidence_store.local_only_write_path"
+       ]
+  test "spec.check writes local evidence keyed by the git add -A tree", %{root: root} do
+    scaffold_passing_workspace(root)
+
+    Mix.Tasks.Spec.Check.run(["--root", root])
+
+    [filename] =
+      root
+      |> git!(["ls-tree", "--name-only", "refs/heads/spec-evidence"])
+      |> String.split("\n", trim: true)
+
+    assert filename == "#{String.trim(git!(root, ["rev-parse", "HEAD^{tree}"]))}.json"
+
+    json = git!(root, ["cat-file", "-p", "refs/heads/spec-evidence:#{filename}"])
+    decoded = Jason.decode!(json)
+
+    assert decoded["schema_version"] == 1
+    assert decoded["verification"]["workspace.requirement"]["strength"] == "linked"
+    assert decoded["verification"]["workspace.requirement"]["meets_minimum"] == true
+    assert decoded["findings"] == []
+  end
+
+  @tag spec: [
+         "specled.tasks.check_evidence_write",
+         "specled.evidence_store.local_cas_bounded",
+         "specled.evidence_store.local_only_write_path",
+         "specled.evidence_store.attestation_never_gates"
+       ]
+  test "spec.check evidence write warnings do not gate the task", %{root: root} do
+    scaffold_passing_workspace(root)
+
+    File.write!(Path.join(root, ".git/specled-tmp"), "blocks temp index directory")
+
+    Mix.Tasks.Spec.Check.run(["--root", root])
+
+    assert message_contains?(drain_shell_messages(), "evidence/local_write_failed")
+  end
+
+  defp scaffold_passing_workspace(root) do
+    init_git_repo(root)
+
+    write_files(root, %{"README.md" => "# Fixture\n"})
+
+    write_subject_spec(
+      root,
+      "workspace",
+      meta: %{"id" => "workspace.subject", "kind" => "module", "status" => "active"},
+      requirements: [
+        %{
+          "id" => "workspace.requirement",
+          "statement" => "The workspace fixture has a source-backed verification."
+        }
+      ],
+      verification: [
+        %{
+          "kind" => "source_file",
+          "target" => ".spec/specs/workspace.spec.md",
+          "covers" => ["workspace.requirement"]
+        }
+      ]
+    )
+
+    commit_all(root, "initial workspace")
   end
 end

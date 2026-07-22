@@ -4,7 +4,6 @@ defmodule SpecLedEx do
   """
 
   alias SpecLedEx.{BranchCheck, Index, Json, Next, Prime, Status, VerificationStrength, Verifier}
-  alias SpecLedEx.Realization.HashStore
 
   @default_state ".spec/state.json"
 
@@ -59,7 +58,6 @@ defmodule SpecLedEx do
 
   def write_state(index, report, root \\ File.cwd!(), output_path \\ @default_state) do
     path = Path.expand(output_path, root)
-    migrate_embedded_realization(root, path)
     findings = if report, do: report["findings"] || [], else: []
 
     state =
@@ -113,30 +111,6 @@ defmodule SpecLedEx do
       "findings" => [],
       "summary" => summary
     }
-  end
-
-  # One-shot legacy migration (`specled.index.state_fully_derived`): before
-  # the canonical `.spec/state.json` is regenerated — which drops any embedded
-  # `"realization"` section — hoist that section into the dedicated committed
-  # baseline (`.spec/realization_hashes.json`) so the committed hashes survive
-  # the regen instead of being silently re-seeded from the current tree. The
-  # hoist only runs while the dedicated file is absent; once it exists it is
-  # authoritative and a stale embedded section is ignored.
-  defp migrate_embedded_realization(root, path) do
-    canonical = Path.expand(@default_state, root)
-    baseline = Path.join(root, HashStore.baseline_rel())
-
-    if path == canonical and not File.exists?(baseline) do
-      case Json.read(path) do
-        %{"realization" => %{} = realization} when map_size(realization) > 0 ->
-          HashStore.merge(root, realization)
-
-        _ ->
-          :ok
-      end
-    else
-      :ok
-    end
   end
 
   def detect_spec_dir(root \\ File.cwd!()) do

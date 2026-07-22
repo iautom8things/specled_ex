@@ -3,6 +3,7 @@ defmodule SpecLedEx.BranchCheck do
   @moduledoc false
 
   alias SpecLedEx.AppendOnly
+  alias SpecLedEx.BaseView
   alias SpecLedEx.BranchCheck.Severity
   alias SpecLedEx.BranchCheck.Trailer
   alias SpecLedEx.ChangeAnalysis
@@ -152,6 +153,7 @@ defmodule SpecLedEx.BranchCheck do
       String.contains?(output, "bad revision") -> :shallow_clone
       String.contains?(output, "ambiguous argument") -> :bad_ref
       String.contains?(output, "unknown revision") -> :bad_ref
+      String.contains?(output, "not a tree object") -> :bad_ref
       true -> :first_run
     end
   end
@@ -341,7 +343,7 @@ defmodule SpecLedEx.BranchCheck do
     append_only_raw =
       if append_only_applicable?(root, base) do
         case fetch_prior_state(root, base) do
-          {:ok, prior_state} ->
+          {:ok, %{"state" => prior_state}} ->
             AppendOnly.analyze(prior_state, current_state, decisions)
 
           {:missing, variant} ->
@@ -570,36 +572,10 @@ defmodule SpecLedEx.BranchCheck do
   defp fetch_prior_state(_root, nil), do: {:missing, :first_run}
 
   defp fetch_prior_state(root, base) when is_binary(base) do
-    case git_show_state_json(root, base) do
-      {:ok, body} ->
-        case Jason.decode(body) do
-          {:ok, state} when is_map(state) -> {:ok, state}
-          _ -> {:missing, :first_run}
-        end
-
-      {:error, output} ->
-        variant =
-          cond do
-            shallow_clone?(root) -> :shallow_clone
-            true -> classify_load_error(output)
-          end
-
-        {:missing, variant}
-    end
+    BaseView.build(root, base)
   end
 
-  defp git_show_state_json(root, base) do
-    {output, exit_code} =
-      System.cmd(
-        "git",
-        ["-C", root, "show", "#{base}:.spec/state.json"],
-        stderr_to_stdout: true
-      )
-
-    if exit_code == 0, do: {:ok, output}, else: {:error, output}
-  end
-
-  defp shallow_clone?(root) do
+  def shallow_clone?(root) do
     {output, exit_code} =
       System.cmd("git", ["-C", root, "rev-parse", "--is-shallow-repository"], into: "")
 

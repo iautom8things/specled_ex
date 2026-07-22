@@ -59,6 +59,12 @@ jobs:
       - name: Install dependencies
         run: mix deps.get
 
+      - name: Fetch spec evidence
+        run: |
+          # Read-only setup. Evidence is an unauthenticated attestation and
+          # must never be used as the merge-gate or pass/fail input.
+          git fetch origin +refs/heads/spec-evidence:refs/remotes/origin/spec-evidence || true
+
       - name: Render spec.review
         run: |
           mix spec.review \

@@ -44,7 +44,7 @@ defmodule Mix.Tasks.Spec.Validate.RealizedByDedupTest do
         ]
       )
 
-      Mix.Tasks.Spec.Validate.run(["--root", root])
+      Mix.Tasks.Spec.Validate.run(["--root", root, "--output", ".spec/state.json"])
 
       state = read_state(root)
       findings = state["findings"] || []
@@ -96,7 +96,7 @@ defmodule Mix.Tasks.Spec.Validate.RealizedByDedupTest do
         ]
       )
 
-      Mix.Tasks.Spec.Validate.run(["--root", root])
+      Mix.Tasks.Spec.Validate.run(["--root", root, "--output", ".spec/state.json"])
 
       state = read_state(root)
       findings = state["findings"] || []
@@ -146,7 +146,7 @@ defmodule Mix.Tasks.Spec.Validate.RealizedByDedupTest do
         ]
       )
 
-      Mix.Tasks.Spec.Validate.run(["--root", root])
+      Mix.Tasks.Spec.Validate.run(["--root", root, "--output", ".spec/state.json"])
 
       state = read_state(root)
       findings = state["findings"] || []
@@ -173,7 +173,9 @@ defmodule Mix.Tasks.Spec.ValidateCommandTimeoutTest do
         "--run-commands",
         "--strict",
         "--command-timeout-ms",
-        "5000"
+        "5000",
+        "--output",
+        ".spec/state.json"
       ])
 
       assert read_state(root)["summary"]["findings"] == 0
@@ -189,7 +191,14 @@ defmodule Mix.Tasks.Spec.ValidateCommandTimeoutTest do
       write_slow_command_spec(root, "validate_config_timeout")
 
       assert_raise Mix.Error, ~r/Spec validate failed: 1 finding/, fn ->
-        Mix.Tasks.Spec.Validate.run(["--root", root, "--run-commands", "--strict"])
+        Mix.Tasks.Spec.Validate.run([
+          "--root",
+          root,
+          "--run-commands",
+          "--strict",
+          "--output",
+          ".spec/state.json"
+        ])
       end
 
       assert [%{"code" => "verification_command_timeout", "message" => message}] =
@@ -203,7 +212,14 @@ defmodule Mix.Tasks.Spec.ValidateCommandTimeoutTest do
     test "absent flag and config fall back to verifier default", %{root: root} do
       marker = write_slow_command_spec(root, "validate_default_timeout")
 
-      Mix.Tasks.Spec.Validate.run(["--root", root, "--run-commands", "--strict"])
+      Mix.Tasks.Spec.Validate.run([
+        "--root",
+        root,
+        "--run-commands",
+        "--strict",
+        "--output",
+        ".spec/state.json"
+      ])
 
       assert read_state(root)["summary"]["findings"] == 0
       assert File.read!(Path.join(root, marker)) == "done"

@@ -23,6 +23,7 @@ surface:
   - lib/specled_ex/realization/effective_binding.ex
   - test/specled_ex/parser_test.exs
   - test/specled_ex/realization/effective_binding_test.exs
+  - test/specled_ex/realization/implementation_test.exs
 realized_by:
   api_boundary:
     - "SpecLedEx.Schema.RealizedBy.validate/1"

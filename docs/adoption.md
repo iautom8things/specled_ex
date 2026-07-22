@@ -146,11 +146,16 @@ mix spec.triangle billing.invoice_numbering
 
 ```yaml
 # .github/workflows/spec.yml
+- run: git fetch origin +refs/heads/spec-evidence:refs/remotes/origin/spec-evidence || true
 - run: mix spec.cover.test
 - run: mix spec.check --base origin/main
 ```
 
 `scripts/check_specs.sh` in this repo is the reference shape.
+The `spec-evidence` fetch is read-only setup so the checker can see prior
+attestations when they exist. Evidence is an unauthenticated attestation:
+any repo writer can mint it, so it is forbidden as a merge-gate or pass/fail
+input. A fresh local check result is what gates the build.
 
 ### 6. Graduate severities
 
@@ -358,7 +363,7 @@ PR. Reach for them deliberately — every escape hatch is a small honesty debt.
 | Hatch                                            | Scope                          | When to use |
 |--------------------------------------------------|--------------------------------|-------------|
 | `:off` in `branch_guard.severities` or `guardrails.severities` | Workspace, durable | The finding code does not apply to your project (e.g. `umbrella_unsupported`). |
-| `:info` in either severity map                   | Workspace, durable             | You want the finding visible in `state.json` and under `--verbose` but not in default output. |
+| `:info` in either severity map                   | Workspace, durable             | You want the finding visible in local evidence and under `--verbose` but not in default output. |
 | `Spec-Drift: <code>=<severity>` git trailer      | One PR (any commit in the range) | Surgical, one-off downgrade for a specific PR. Cannot revive `:off`. |
 | `Spec-Drift: refactor`/`docs_only`/`test_only`   | One PR                         | Common shorthand for whole classes of low-risk changes. |
 | `mix spec.check --no-run-commands`               | One invocation                 | Local fast loop; CI should always run commands. |
@@ -422,3 +427,8 @@ The core loop never grows past four commands (`prime`, `next`,
 `cover.test`, `check`). Triangulation does not add steps — it adds
 diagnostics on the same `check` invocation, with `spec.triangle` available
 when you want to inspect one subject in isolation.
+
+Workflow tooling may call `mix spec.sync` at natural push points, such as a
+pre-push hook or release script, to reconcile local evidence before publishing.
+Calling `mix spec.sync` from both the tool and the installed hook is a no-op by
+construction when no new evidence was written.

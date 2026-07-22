@@ -91,7 +91,8 @@ ls .spec/                                 2>/dev/null
 ls .spec/config.yml                       2>/dev/null
 ls .spec/specs/*.spec.md                  2>/dev/null
 ls .spec/decisions/                       2>/dev/null
-ls .spec/state.json                       2>/dev/null
+ls .spec/realization_hashes.json          2>/dev/null
+git ls-remote --exit-code origin spec-evidence >/dev/null 2>&1
 ls .spec/_coverage/per_test.coverdata     2>/dev/null
 ```
 

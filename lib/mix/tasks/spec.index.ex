@@ -3,7 +3,7 @@ defmodule Mix.Tasks.Spec.Index do
 
   @requirements ["app.config"]
 
-  @shortdoc "Builds index state and writes .spec/state.json"
+  @shortdoc "Builds index state"
 
   @impl Mix.Task
   def run(args) do
@@ -21,12 +21,14 @@ defmodule Mix.Tasks.Spec.Index do
     root = opts[:root] || File.cwd!()
     spec_dir = opts[:spec_dir] || SpecLedEx.detect_spec_dir(root)
     authored_dir = SpecLedEx.detect_authored_dir(root, spec_dir)
-    output = opts[:output] || "#{spec_dir}/state.json"
-
     index = SpecLedEx.index(root, spec_dir: spec_dir, authored_dir: authored_dir)
-    path = SpecLedEx.write_state(index, nil, root, output)
 
-    Mix.shell().info("spec.index wrote #{path}")
+    if output = opts[:output] do
+      path = SpecLedEx.write_state(index, nil, root, output)
+      Mix.shell().info("spec.index wrote #{path}")
+    else
+      Mix.shell().info("spec.index built")
+    end
 
     Mix.shell().info(
       "authored_dir=#{index["authored_dir"]} subjects=#{index["summary"]["subjects"]} requirements=#{index["summary"]["requirements"]}"

@@ -1,12 +1,61 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-07-22
 
+- Fixed unbounded pre-push hook recursion on the first real evidence sync:
+  the installed pre-push hook runs `mix spec.sync`, whose ledger push
+  re-triggered the hook, which ran sync again — spawning nested pushes
+  forever and minting an endless chain of identical ledger commits. Ledger
+  pushes now run with `--no-verify`; the developer's own code pushes still
+  see their hooks, and the hook still runs sync exactly once per push.
+- Unified tree-blob reading on one primitive and deduplicated helpers.
+  `BaseView` now materializes base spec files through `Git.ls_tree_entries/3`
+  plus one `Git.cat_file_batch/3` call — the same batched plumbing `Sync`
+  uses — instead of one `git show` spawn per file on the `spec.check --base`
+  path. New `SpecLedEx.TaskArgs.validate!/3` and
+  `SpecLedEx.Evidence.Warnings.emit/1` replace the per-task copies of arg
+  validation and warning printing in the evidence-family mix tasks, and the
+  triplicated git-plumbing test helpers (`inject_raw_entry`, `evidence_ids`,
+  `drop_non_evidence_refs`, `lock_down`/`unlock`) now live once in
+  `SpecLedEx.EvidenceHelpers` under `test/test_support/`.
+- Extended evidence-ledger hardening after a second review round. The prune
+  reachability floor now guards the outcome rather than only the computation:
+  a keep-set that would filter a non-empty store down to nothing — empty or
+  merely disjoint from every stored evidence key — makes `mix spec.prune`
+  refuse and auto-prune degrade to an unpruned merge with a warning. Sync
+  tolerance now extends to the tree layer: crafted non-blob entries
+  (gitlinks) are carried through byte-identical at the tree level with a
+  quarantine warning, and entries at paths git refuses to stage (`..`,
+  `.git`) are dropped from the union with an `evidence/entry_skipped`
+  warning so the store self-heals instead of wedging every peer's
+  reconcile. The batched-I/O contract is now falsifiable: a new
+  `specled.evidence_store.sync_bounded_subprocesses` requirement is backed
+  by a spawn-counting test and a 205-entry chunk-boundary reconcile test,
+  plus `cat_file_batch` protocol-edge tests (newline-bearing,
+  header-lookalike, empty, and >64KB multi-read blobs).
+- Hardened the evidence ledger following critical review. `Sync` now reads a
+  ref's entries through one `ls-tree -r -z` plus one `git cat-file --batch`
+  subprocess and writes merged trees through chunked `hash-object` /
+  `update-index --cacheinfo` invocations — a bounded number of git spawns per
+  reconcile instead of roughly four per entry on the pre-push hot path. An
+  empty reachable keep-set is now a reachability-floor violation rather than a
+  valid prune: `mix spec.prune` refuses with `evidence/prune_refused` (a
+  detached or ref-less CI checkout can no longer wipe every peer's evidence)
+  and sync's auto-prune degrades to an unpruned merge with one
+  `evidence/auto_prune_degraded` warning. See the new
+  `specled.evidence_store.prune_reachability_floor` requirement. Also fixed
+  `Store.build_tree/3` leaking its temporary index file on error paths, and
+  added test coverage for the migrate task's legacy-realization hoist.
+- Updated docs, shipped bootstrap references, and `mix spec.init` templates for
+  the evidence-ledger flow: `.spec/state.json` is described as derived local
+  state, committed baselines live in `.spec/realization_hashes.json`, and CI
+  examples fetch `spec-evidence` read-only with the unauthenticated-attestation
+  caveat.
 - Fixed `SpecLedEx.Compiler.Tracer` truncating the callee-graph side-manifest on incremental compiles: flush now merges — the pre-session manifest (read once per compile session, seed-time pruned of callers absent from a non-empty compile manifest) minus entries whose caller module was compiled this session (tracked from `:on_module`, so a recompiled module with zero remote calls still drops its stale entries), unioned with the session's edges, callee lists sorted and deduplicated, written atomically via unique temp file + rename. The effective edge graph after an incremental compile now equals a forced full compile; consumers can drop `mix compile --force` workarounds from spec-check jobs. Trace-time tracer code is now self-contained (Mix/stdlib calls only) because Mix's compile-time code-path pruning strands lazily-loaded sibling modules for projects loading the tracer via `ERL_LIBS`. See `specled.decision.tracer_manifest_merge_on_flush`.
 - Added read-time ghost filtering in the implementation tier: when the compile `Context` carries a non-empty manifest, tracer edges whose caller module is outside the in-project set are dropped at world build (the authoritative prune; the tracer's seed-time prune only bounds file growth). A nil or empty manifest disables the filter. New `specled.implementation_tier.deterministic_hashes` contract: two consecutive runs over an unchanged tree produce identical hashes and findings.
 - **Breaking for committed implementation-tier baselines:** `mix spec.check` now constructs a compile `Context` via the new `Context.from_mix_project/1` whenever its root is the current working directory, so realization tiers receive the real compile manifest. Implementation-tier closures now walk the full in-project module set (surface-based ownership and shared-helper inlining are active in production for the first time), which changes committed implementation hashes. Consumers must re-seed once: delete the `implementation` section of `.spec/realization_hashes.json` and run `mix spec.check` on a clean tree (Atlas: re-enable the tier in `.spec/config.yml` first). `api_boundary` baselines are unaffected. Also fixed `Context.load/1`'s default manifest path, which resolved under `ebin/` and silently loaded zero modules; the default is now the app dir's sibling `.mix/compile.elixir`, and the integration canary asserts a non-empty manifest through the default derivation.
 
-- Split the committed realization-hash baseline out of `.spec/state.json` into a dedicated `.spec/realization_hashes.json` (canonical sorted output, atomic tmp+fsync+rename writes). `state.json` is now freely regenerable derived state — consumers may gitignore or regenerate it without defeating drift detection, and the take-either-side merge-conflict ritual is safe for it. Migration is one-shot and automatic: `HashStore.read/2` falls back to a legacy embedded `realization` section while the dedicated file is absent, `HashStore.merge/2` migrates legacy entries forward, and `SpecLedEx.write_state/4` hoists an embedded section into the dedicated file before regenerating state.json. This also fixes a latent bug where `mix spec.check` wiped the embedded baseline (via `write_state`) before the branch guard read it, so in-pipeline realization drift detection never fired. Both tool-managed files are excluded from branch-guard change sets. See `specled.decision.dedicated_realization_baseline`.
+- Split the committed realization-hash baseline out of `.spec/state.json` into a dedicated `.spec/realization_hashes.json` (canonical sorted output, atomic tmp+fsync+rename writes). `state.json` is now freely regenerable derived state — consumers may gitignore or regenerate it without defeating drift detection. Migration is one-shot and automatic: `HashStore.read/2` falls back to a legacy embedded `realization` section while the dedicated file is absent, `HashStore.merge/2` migrates legacy entries forward, and `SpecLedEx.write_state/4` hoists an embedded section into the dedicated file before regenerating state.json. This also fixes a latent bug where `mix spec.check` wiped the embedded baseline (via `write_state`) before the branch guard read it, so in-pipeline realization drift detection never fired. Both tool-managed files are excluded from branch-guard change sets. See `specled.decision.dedicated_realization_baseline`.
 
 - Migrated every `kind: command` `mix test <files>` verification in `.spec/specs/*.spec.md` to `kind: tagged_tests`, so the verifier issues a single merged `mix test --only spec:<id>... --include integration <files>` invocation instead of 53 separate BEAM boots. Test modules referenced by the old commands now carry `@moduletag spec: [...]` aggregating the covers list per file; `@tag spec: ...` annotations on individual tests compose additively. Enabled `test_tags` in `.spec/config.yml` (`enabled: true`, `paths: [test]`, `enforcement: warning`). `SpecLedEx.TaggedTests.build_command/2` appends `--include integration` as a defensive no-op for host projects that configure `ExUnit.configure(exclude: :integration)`. Helper migration scripts live under `priv/helper_scripts/` and are part of the `specled.tagged_tests` subject's surface. The non-`mix test` commands (`mix spec.index`, `mix spec.validate`, `mix run -e ...`) remain as `kind: command` because aggregation does not apply.
 - Extended `SpecLedEx.TagScanner` to recurse into `describe/2` blocks so `@moduletag spec:` attaches to tests nested under `describe`, and `@tag spec:` declared inside a `describe` block attaches to the following nested test. Pre-existing scans of top-level tests are unchanged. New `specled.tag_scanning.describe_block_recursion` requirement covers the behaviour.

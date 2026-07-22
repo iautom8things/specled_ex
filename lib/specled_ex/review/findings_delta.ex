@@ -2,23 +2,34 @@ defmodule SpecLedEx.Review.FindingsDelta do
   @moduledoc """
   Differential findings classification for the Overview pane.
 
-  Classifies head-side findings against the committed verification state at the
-  base ref: `introduced` (present at head, absent at base), `resolved` (present
+  Classifies head-side findings against the stored verification evidence for
+  the base tree: `introduced` (present at head, absent at base), `resolved` (present
   at base, absent at head), and `pre_existing` (present at both). The change
   verdict is driven by `introduced` findings only.
 
-  Base findings are read from the committed `.spec/state.json` at the base ref
-  (`git show <base>:.spec/state.json`) — never recomputed by re-running the
-  verifier at base. When that committed state is absent or unparseable the
+  Base findings are read from the evidence store entry keyed by
+  `git rev-parse <base>^{tree}` — never recomputed by re-running the verifier at
+  base. When that base tree or its stored evidence is unavailable the
   classification degrades to a non-differential fallback
   (`delta_available?: false`): a finding is never presented as introduced by the
   change when base attribution is unavailable.
+
+  The head-side findings this module classifies are not all attested by the
+  same producer that seeds the evidence store: `mix spec.check` never
+  computes or records the review-only `detector_unavailable` finding with
+  reason `no_realized_by` (synthesized by `Review.build_view/3` for subjects
+  that declare no `realized_by` bindings), so no base evidence entry can ever
+  contain it. Comparing it against base as if it could would misclassify a
+  subject's static, pre-existing lack of bindings as introduced by every
+  change that merely touches that subject. This module treats any such
+  producer-incomparable finding as always pre-existing — never introduced,
+  never resolved.
   """
 
-  @state_path ".spec/state.json"
+  alias SpecLedEx.Evidence.{Store, TreeHash}
 
   @doc """
-  Classify `head_findings` against the base ref's committed findings.
+  Classify `head_findings` against the base tree's stored findings.
 
   Returns a map with `:delta_available?`, the `:introduced` / `:resolved` /
   `:pre_existing` lists, `:base_reason` (nil when differential, otherwise the
@@ -32,11 +43,13 @@ defmodule SpecLedEx.Review.FindingsDelta do
   end
 
   defp differential(base_findings, head_findings) do
+    {synthetic, comparable} = Enum.split_with(head_findings, &producer_incomparable?/1)
+
     base_sigs = MapSet.new(base_findings, &signature/1)
-    head_sigs = MapSet.new(head_findings, &signature/1)
+    head_sigs = MapSet.new(comparable, &signature/1)
 
     {pre_existing, introduced} =
-      Enum.split_with(head_findings, &MapSet.member?(base_sigs, signature(&1)))
+      Enum.split_with(comparable, &MapSet.member?(base_sigs, signature(&1)))
 
     resolved = Enum.reject(base_findings, &MapSet.member?(head_sigs, signature(&1)))
 
@@ -45,9 +58,22 @@ defmodule SpecLedEx.Review.FindingsDelta do
       base_reason: nil,
       introduced: introduced,
       resolved: resolved,
-      pre_existing: pre_existing,
+      pre_existing: pre_existing ++ synthetic,
       change_verdict: differential_verdict(introduced)
     }
+  end
+
+  # `mix spec.check` is the sole producer that seeds base evidence, and it
+  # never computes the review-only `no_realized_by` synthetic finding (see
+  # `Review.build_no_realized_by_findings/2`) — that finding exists only
+  # inside the review artifact's own view-model build. Absence at base is
+  # therefore not evidence of anything the change did; it's absence of a
+  # producer that could ever have recorded it. Every other `detector_unavailable`
+  # reason (`debug_info_stripped`, `umbrella_unsupported`, `no_coverage_artifact`,
+  # …) is emitted by `Verifier.verify/3` itself, the same producer `mix
+  # spec.check` runs, so those stay in the normal comparable set.
+  defp producer_incomparable?(finding) do
+    finding["code"] == "detector_unavailable" and finding["reason"] == "no_realized_by"
   end
 
   defp fallback(reason, _head_findings) do
@@ -101,29 +127,18 @@ defmodule SpecLedEx.Review.FindingsDelta do
   end
 
   defp load_base_findings(_root, base_ref) when base_ref in [nil, ""],
-    do: {:error, :base_state_absent}
+    do: {:error, :base_tree_unresolvable}
 
   defp load_base_findings(root, base_ref) do
-    case git_show_state(root, base_ref) do
-      {:ok, content} -> parse_findings(content)
-      :error -> {:error, :base_state_absent}
-    end
-  end
-
-  defp parse_findings(content) do
-    case Jason.decode(content) do
-      {:ok, %{"findings" => findings}} when is_list(findings) -> {:ok, findings}
-      {:ok, %{}} -> {:ok, []}
-      _ -> {:error, :base_state_unparseable}
-    end
-  end
-
-  defp git_show_state(root, base_ref) do
-    case System.cmd("git", ["-C", root, "show", "#{base_ref}:#{@state_path}"],
-           stderr_to_stdout: true
-         ) do
-      {out, 0} -> {:ok, out}
-      {_out, _nonzero} -> :error
+    with {:ok, tree_hash} <- TreeHash.base(root, base_ref) do
+      case Store.read(root, tree_hash) do
+        {:ok, %{"findings" => findings}} when is_list(findings) -> {:ok, findings}
+        {:ok, %{}} -> {:ok, []}
+        :absent -> {:error, :base_evidence_absent}
+        {:error, _reason} -> {:error, :base_evidence_absent}
+      end
+    else
+      {:error, _reason} -> {:error, :base_tree_unresolvable}
     end
   end
 end

@@ -8,9 +8,10 @@ defmodule Mix.Tasks.Spec.Validate do
   alias SpecLedEx.Validator.RealizedByDedupCheck
   alias SpecLedEx.VerificationStrength
 
-  @shortdoc "Validates authored specs and writes .spec/state.json"
+  @shortdoc "Validates authored specs"
   @moduledoc """
-  Validates authored specs and writes `.spec/state.json`.
+  Validates authored specs. Use `--output <path>` to write a derived state
+  artifact.
 
   ## Options
 
@@ -51,7 +52,6 @@ defmodule Mix.Tasks.Spec.Validate do
     root = opts[:root] || File.cwd!()
     spec_dir = opts[:spec_dir] || SpecLedEx.detect_spec_dir(root)
     authored_dir = SpecLedEx.detect_authored_dir(root, spec_dir)
-    output = opts[:output] || "#{spec_dir}/state.json"
     config = Config.load(root, path: config_path(root, spec_dir))
     command_timeout_ms = opts[:command_timeout_ms] || config.verification.command_timeout_ms
     verification_severities = config.verification.severities
@@ -76,9 +76,10 @@ defmodule Mix.Tasks.Spec.Validate do
       )
       |> with_validator_findings(index, root, strict?)
 
-    path = SpecLedEx.write_state(index, report, root, output)
-
-    Mix.shell().info("spec.validate wrote #{path}")
+    if output = opts[:output] do
+      path = SpecLedEx.write_state(index, report, root, output)
+      Mix.shell().info("spec.validate wrote #{path}")
+    end
 
     summary = report["summary"]
 

@@ -82,8 +82,8 @@ branch_guard:
 
 `:off` → `:info` → `:warning` → `:error`
 
-- `:off` — does not run; not in `state.json`.
-- `:info` — runs and stores in `state.json` but hidden from default output.
+- `:off` — does not run; not recorded in local evidence.
+- `:info` — runs and stores in local evidence but hidden from default output.
   Show with `--verbose` or `SPECLED_SHOW_INFO=1`.
 - `:warning` — visible by default; does not fail the gate.
 - `:error` — fails `mix spec.check` (non-zero exit).
@@ -139,4 +139,4 @@ epic's phase2 ticket is what graduates them.
   the first run after wiring bindings will fire on every subject because
   no hashes exist yet to compare against.
 - Severities for tiers the project explicitly opted out of — write `:off`
-  instead, so the absence is visible in `state.json`.
+  instead, so the absence is visible in local evidence.

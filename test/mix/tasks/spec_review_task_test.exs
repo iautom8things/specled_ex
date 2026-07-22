@@ -1,9 +1,12 @@
 defmodule Mix.Tasks.SpecReviewTaskTest do
   use SpecLedEx.Case
 
+  alias SpecLedEx.Evidence.{Entry, Store}
+
   @tag spec: "specled.tasks.review_html_artifact"
   test "writes a self-contained HTML file with no external network references", %{root: root} do
     setup_repo(root)
+    record_base_evidence(root, [])
 
     Mix.Tasks.Spec.Review.run(["--root", root, "--base", "main"])
 
@@ -20,6 +23,23 @@ defmodule Mix.Tasks.SpecReviewTaskTest do
     # https:// URLs inside comments — that does not break self-containment.
     refute content =~ "<link rel=\"stylesheet\""
     refute content =~ "<script src="
+    assert content =~ "This change introduces"
+    refute content =~ "No base evidence is available"
+  end
+
+  @tag spec: "specled.spec_review.findings_delta_base_fallback"
+  test "renders an indeterminate verdict and evidence healing instructions when base evidence is absent",
+       %{root: root} do
+    setup_repo(root)
+
+    Mix.Tasks.Spec.Review.run(["--root", root, "--base", "main"])
+
+    content = File.read!(Path.join([root, "_build", "spec_review.html"]))
+    assert content =~ "Findings could not be attributed to this change."
+    assert content =~ "No base evidence is available for the base tree"
+    assert content =~ "mix spec.sync"
+    assert content =~ "mix spec.check"
+    refute content =~ "This change introduces no findings."
   end
 
   @tag spec: "specled.spec_review.same_artifact_local_and_ci"
@@ -62,5 +82,18 @@ defmodule Mix.Tasks.SpecReviewTaskTest do
 
     write_files(root, %{"lib/demo.ex" => "defmodule Demo do\n  def run, do: :ok\nend\n"})
     :ok
+  end
+
+  defp record_base_evidence(root, findings) do
+    tree_hash = root |> git!(["rev-parse", "main^{tree}"]) |> String.trim()
+
+    entry =
+      Entry.build(tree_hash, %{"findings" => findings},
+        run_at: "2026-07-16T12:00:00.000000Z",
+        run_id: String.duplicate("a", 32),
+        specled_version: "test"
+      )
+
+    assert :ok = Store.record(root, entry)
   end
 end

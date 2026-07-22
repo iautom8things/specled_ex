@@ -13,7 +13,6 @@ surface:
   - .spec/decisions/README.md
   - .spec/decisions/*.md
   - .spec/specs/*.spec.md
-  - .spec/state.json
 decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.local_skill_scaffold
