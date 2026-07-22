@@ -1,7 +1,9 @@
 {
   "assignee": "",
   "blocked_by": [],
-  "blocks": [],
+  "blocks": [
+    "specled_-csg"
+  ],
   "created": "2026-07-22T10:52:11Z",
   "description": "From /critical-review of specled_-csg, finding F2 [High, performance; held at High on the unbounded-growth ratchet]. Fix before wide pre-push hook adoption — pre-merge preferred.\n\nTwo parts:\n(a) Hot-path waste: Evidence.Sync.run_attempt eagerly loads+decodes EVERY entry on both refs (git cat-file per entry, both sides ~= 2-4N subprocesses) before reconcile, even when local==remote and the outcome is :noop — the case the pre-push hook hits on nearly every push. Short-circuit on equal commit SHAs makes the common path O(1) regardless of store size. Rebuild path is also batchable (git mktree from stdin vs N temp files + hash-object + update-index).\n(b) Unbounded ratchet: one entry per verified tree state (~2k within months for an active team; ~30-60s projected on the pre-push path). mix spec.prune already has the right reachability-based retention but is manual — fold its keep-set into sync periodically or on a size threshold. Misses fail safe by design (delta_available?: false fallback; evidence never gates), so retention costs nothing.\n\nFiles: lib/specled_ex/evidence/sync.ex:70-79,177-194,214-258; priv/hooks/pre-push; lib/mix/tasks/spec.prune.ex.\nFull report: /Users/mz/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-22/specled_-csg-evidence-ledger-split/20260722-062318-consolidated.md",
   "id": "specled_-7vy",
@@ -10,5 +12,5 @@
   "status": "open",
   "title": "review-F2: evidence sync loads every entry even on no-op; store unbounded without auto-prune",
   "type": "bug",
-  "updated_at": "2026-07-22T10:52:11Z"
+  "updated_at": "2026-07-22T10:52:22Z"
 }
