@@ -1,6 +1,7 @@
 {
   "assignee": "Manuel Zubieta",
   "blocked_by": [
+    "specled_-43y",
     "specled_-737",
     "specled_-7vy",
     "specled_-g00",
@@ -80,5 +81,5 @@
   "status": "in_progress",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-22T10:52:35Z"
+  "updated_at": "2026-07-22T10:52:36Z"
 }
