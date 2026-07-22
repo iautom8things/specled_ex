@@ -14,11 +14,15 @@
     {
       "text": "ADMISSION SCOPE (orchestrator, run-2 W1)\nAllowed touches:\n- lib/specled_ex/review/findings_delta.ex\n- lib/specled_ex/review.ex\n- .spec/specs/spec_review.spec.md (reconcile the contradictory findings_delta vs triage_panel sections)\n- test/specled_ex/review/** (incl. flipping the wrong-side assertion at findings_delta_test.exs:194)\nOut of scope (intent): no changes to evidence store/sync modules; no widening of spec.review gating semantics (evidence never gates — ADR holds). Any file outside these globs must be disclosed in IMPLEMENTED.",
       "timestamp": "2026-07-22T11:04:31Z"
+    },
+    {
+      "text": "IMPLEMENTED\nSession: 07261362-0355-433e-83a4-d8c98524294e\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/07261362-0355-433e-83a4-d8c98524294e.jsonl\n\nCommit: 6365cba\nFiles touched: lib/specled_ex/review/findings_delta.ex, lib/specled_ex/review.ex, .spec/specs/spec_review.spec.md, test/specled_ex/review/findings_delta_test.exs\nTests added: SpecLedEx.Review.FindingsDeltaTest \"classifies the review-only no_realized_by synthetic finding as pre-existing even though base never recorded it\", SpecLedEx.Review.FindingsDeltaTest \"a detector_unavailable finding with a real verifier reason still classifies normally\"\nVerification stubs flipped: none (existing findings_delta verification target already execute: true)\nVerification tier: change-scoped — test/specled_ex/review/findings_delta_test.exs, test/specled_ex/review_test.exs, test/specled_ex/review/html_layout_test.exs, test/mix/tasks/spec_review_task_test.exs (175 tests, 0 failures); mix spec.check --no-run-commands (pass); mix format --check-formatted on touched files; full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: mix spec.check never computes the review-only no_realized_by detector_unavailable finding, so base evidence recorded by spec.check can never contain it; FindingsDelta.classify/3 was diffing it against base anyway, so any subject that has ever lacked realized_by read as \"introduced\"/not-clean on every PR touching it. Fixed FindingsDelta.classify/3 to split head findings into producer-comparable and producer-incomparable sets, folding the latter (currently just the no_realized_by reason) unconditionally into pre_existing rather than diffing it against a base that structurally can never attest to it — a genuinely new, comparable finding alongside it still classifies as introduced normally. Reconciled the findings_delta, triage_panel, and no_realized_by_degrades_spec_to_code spec sections around this producer-comparability rule and added a scenario pinning it, and flipped the findings_delta_test.exs integration assertion that pinned the old (wrong) behavior to assert the corrected pre-existing/clean outcome.",
+      "timestamp": "2026-07-22T11:16:37Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "review-F1: findings delta misclassifies pre-existing findings as introduced",
   "type": "bug",
-  "updated_at": "2026-07-22T11:05:29Z"
+  "updated_at": "2026-07-22T11:16:37Z"
 }
