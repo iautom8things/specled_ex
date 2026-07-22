@@ -7,9 +7,7 @@
   "created": "2026-07-22T10:52:11Z",
   "description": "From /critical-review of specled_-csg, consensus finding F3 [Medium; idioms+simplicity+performance]. Entry.normalized_findings/1 calls SpecLedEx.write_state to a temp file in System.tmp_dir!, re-reads it with Json.read, deletes it — purely to normalize findings. Extract the normalization as a pure function and call it directly; also removes the System.unique_integer tmp-path collision surface across concurrent worktree checks (security M re-scope landed here too).\nFiles: lib/specled_ex/evidence/entry.ex:88-104.\nFull report: /Users/mz/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-22/specled_-csg-evidence-ledger-split/20260722-062318-consolidated.md",
   "id": "specled_-pqs",
-  "labels": [
-    "phase:merging"
-  ],
+  "labels": [],
   "comments": [
     {
       "text": "ADMISSION SCOPE (orchestrator, run-2 W1)\nAllowed touches:\n- lib/specled_ex/evidence/entry.ex\n- test/specled_ex/evidence/** (entry tests)\n- .spec/specs/evidence_store.spec.md (verification stubs only, if needed)\nOut of scope (intent): extract normalization as a pure function called directly — no temp-file round-trip, no System.unique_integer tmp paths. If the pure function must live outside entry.ex (e.g. shared with SpecLedEx.write_state), disclose the extra file in IMPLEMENTED rather than shipping silently. Do not touch sync.ex/tree_hash.ex/store.ex (owned by specled_-737 this wave).",
