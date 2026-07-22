@@ -100,11 +100,15 @@
     {
       "text": "MERGE GATE GREEN for specled_-43y (5cc6456): compile ✓, 995 tests 0 failures ✓, format ✓, deps.unlock ✓, spec.check errors=0 warnings=0 (informational cross_cutting note only). 4/6 closed; specled_-7xz in implementation, specled_-7vy queued behind it.",
       "timestamp": "2026-07-22T11:44:54Z"
+    },
+    {
+      "text": "MERGE GATE GREEN for specled_-7xz (99add6f, rebase-then-ff): compile ✓, 998 tests 0 failures ✓, format ✓, deps.unlock ✓, spec.check errors=0 warnings=0 (requirements 350-\u003e351: new specled.evidence_store.sync_entry_tolerance). 5/6 closed. Spawning W3: specled_-7vy (F2, final child) from base 99add6f. Follow-up specled_-6j7 (CLI warning surfacing) opened by 7xz implementer — deliver-phase triage.",
+      "timestamp": "2026-07-22T11:54:03Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-22T11:44:54Z"
+  "updated_at": "2026-07-22T11:54:03Z"
 }
