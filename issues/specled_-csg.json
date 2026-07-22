@@ -88,11 +88,15 @@
     {
       "text": "MERGE GATE GREEN for specled_-737 (59454d7): compile ✓, 992 tests 0 failures ✓, format ✓, deps.unlock ✓, spec.check errors=0 warnings=0 (1 informational cross_cutting branch-guard note only, non-gating). 1/6 closed. pqs + g00 approved and queued: rebase-then-ff next.",
       "timestamp": "2026-07-22T11:22:13Z"
+    },
+    {
+      "text": "MERGE GATE GREEN for specled_-pqs (9775007): compile ✓, 992 tests 0 failures ✓, format ✓, deps.unlock ✓, spec.check errors=0 warnings=0 (informational cross_cutting note only). 2/6 closed.",
+      "timestamp": "2026-07-22T11:25:26Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-22T11:22:13Z"
+  "updated_at": "2026-07-22T11:25:26Z"
 }
