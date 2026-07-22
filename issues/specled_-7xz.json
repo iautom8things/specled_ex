@@ -7,9 +7,7 @@
   "created": "2026-07-22T10:52:12Z",
   "description": "From /critical-review of specled_-csg, consensus finding F6 [Medium; spec+testing]. Sync.entries/2 halts the whole sync on the first invalid path or undecodable/future-schema entry ({:halt, {:error, ...}}) — one bad blob on the shared orphan branch (foreign tool write, future schema_version from a newer specled on a teammate's machine, manual damage) breaks evidence sync for EVERY peer until manually repaired. Skip-and-warn (carry unknown entries through untouched, or quarantine) instead of halting; spec the tolerance behavior in evidence_store.spec.md.\nFiles: lib/specled_ex/evidence/sync.ex:177-194; lib/specled_ex/evidence/entry.ex:42-54.\nFull report: /Users/mz/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-22/specled_-csg-evidence-ledger-split/20260722-062318-consolidated.md",
   "id": "specled_-7xz",
-  "labels": [
-    "phase:merging"
-  ],
+  "labels": [],
   "comments": [
     {
       "text": "ADMISSION SCOPE (orchestrator, run-2 W2)\nNote: specled_-737 has landed on the epic branch — sync.ex is now rewired onto the shared SpecLedEx.Evidence.Git module; line numbers in the ticket body predate that refactor.\nAllowed touches:\n- lib/specled_ex/evidence/sync.ex\n- lib/specled_ex/evidence/entry.ex\n- .spec/specs/evidence_store.spec.md (spec the tolerance behavior, as the ticket requires)\n- test/specled_ex/evidence/** (sync/entry tests)\nOut of scope (intent): one anomalous blob (invalid path, undecodable entry, future schema_version, foreign write) must no longer halt sync for every peer — skip-and-warn or quarantine, carrying unknown entries through untouched. Preserve the ADR safety property: evidence never gates; misses fail safe. Do not touch tree_hash.ex/git.ex (owned by specled_-43y this wave) beyond what compilation requires — disclose any such touch in IMPLEMENTED.",
