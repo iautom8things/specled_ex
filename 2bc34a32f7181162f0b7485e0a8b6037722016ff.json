@@ -7,8 +7,8 @@
       "message": "Changed file lib/mix/tasks/spec.check.ex impacts subject specled.api_boundary; spec.md not co-changed, but realization attested binding(s) Mix.Tasks.Spec.Check as clean — informational only."
     }
   ],
-  "run_at": "2026-07-22T11:15:08.606344Z",
-  "run_id": "0a3a12d71b4d46817a25f78aa17170e0",
+  "run_at": "2026-07-22T11:15:19.581637Z",
+  "run_id": "15e4100ae00201e85ee33a349baa432f",
   "schema_version": 1,
   "specled_version": "0.1.0",
   "tree_hash": "2bc34a32f7181162f0b7485e0a8b6037722016ff",
