@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [
     "specled_-csg"
@@ -15,8 +15,8 @@
     }
   ],
   "priority": 1,
-  "status": "open",
+  "status": "in_progress",
   "title": "review-F2: evidence sync loads every entry even on no-op; store unbounded without auto-prune",
   "type": "bug",
-  "updated_at": "2026-07-22T11:50:57Z"
+  "updated_at": "2026-07-22T11:54:03Z"
 }
