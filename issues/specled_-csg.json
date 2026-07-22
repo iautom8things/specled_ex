@@ -9,6 +9,7 @@
     "specled_-pqs"
   ],
   "blocks": [],
+  "closed_at": "2026-07-22T19:19:59Z",
   "created": "2026-07-16T23:53:38Z",
   "description": "Distilled from mini-plan (plan epic think-ziu; refined plan: LLMs/plans/-Users-mz-src-specled-ex/2026-07-16-evidence-ledger-split/runs/20260716-120519-claude-mini/05-refined-plan.md). Spec dir: .spec/\nWorktree: /Users/mz/src/specled_ex-evidence-ledger-split\nBranch: specled_-csg/evidence-ledger-split\n\nSplit .spec/state.json into never-committed live-parsed cache + orphan-branch spec-evidence store keyed by tree hash. DAG: S1 -\u003e S2 -\u003e {S3 || S4} -\u003e S5 -\u003e S6. Pre-migration stages (S1-S4) carry .spec/state.json + .spec/realization_hashes.json in Allowed touches as tool-managed regen artifacts (verifiers: not scope creep). S5 untracks state.json (self-migration/dogfood).",
   "id": "specled_-csg",
@@ -130,8 +131,8 @@
     }
   ],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-22T19:19:58Z"
+  "updated_at": "2026-07-22T19:19:59Z"
 }
