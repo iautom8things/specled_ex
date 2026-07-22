@@ -118,6 +118,46 @@ defmodule SpecLedEx.Evidence.StoreTest do
     assert message =~ "cas_exhausted"
   end
 
+  @tag spec: "specled.evidence_store.local_only_write_path"
+  test "record removes the temporary index when a later git step fails", %{root: root} do
+    init_git_repo(root)
+    write_files(root, %{"README.md" => "root\n"})
+    commit_all(root, "initial")
+
+    seeded = entry(hash("1"), "2026-07-16T10:00:00.000000Z", String.duplicate("a", 32))
+    assert :ok = Store.record(root, seeded)
+
+    objects_dir = Path.join(root, ".git/objects")
+    lock_down(objects_dir)
+
+    result =
+      Store.record(
+        root,
+        entry(hash("2"), "2026-07-16T10:01:00.000000Z", String.duplicate("b", 32))
+      )
+
+    unlock(objects_dir)
+
+    assert {:warning, %{code: "evidence/local_write_failed"}} = result
+    assert File.ls!(Path.join(root, ".git/specled-tmp")) == []
+  end
+
+  defp lock_down(objects_dir) do
+    for entry <- File.ls!(objects_dir), File.dir?(Path.join(objects_dir, entry)) do
+      File.chmod!(Path.join(objects_dir, entry), 0o500)
+    end
+
+    File.chmod!(objects_dir, 0o500)
+  end
+
+  defp unlock(objects_dir) do
+    File.chmod!(objects_dir, 0o700)
+
+    for entry <- File.ls!(objects_dir), File.dir?(Path.join(objects_dir, entry)) do
+      File.chmod!(Path.join(objects_dir, entry), 0o700)
+    end
+  end
+
   defp evidence_files(root) do
     root
     |> git!(["ls-tree", "--name-only", "refs/heads/spec-evidence"])

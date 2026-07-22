@@ -73,7 +73,14 @@ defmodule SpecLedEx.Evidence.Store do
 
   defp build_tree(root, expected, entry) do
     with {:ok, index_path} <- Git.temp_path(root, "evidence-index"),
-         :ok <- seed_tree(root, index_path, expected),
+         result <- build_tree_with_index(root, index_path, expected, entry) do
+      File.rm(index_path)
+      result
+    end
+  end
+
+  defp build_tree_with_index(root, index_path, expected, entry) do
+    with :ok <- seed_tree(root, index_path, expected),
          {:ok, existing} <- existing_entry(root, expected, entry["tree_hash"]),
          winner <- Entry.latest(existing, entry),
          {:ok, blob} <- hash_entry(root, winner),
@@ -89,10 +96,7 @@ defmodule SpecLedEx.Evidence.Store do
              env: [{"GIT_INDEX_FILE", index_path}]
            ),
          {:ok, tree} <- Git.run(root, ["write-tree"], env: [{"GIT_INDEX_FILE", index_path}]) do
-      File.rm(index_path)
       {:ok, String.trim(tree)}
-    else
-      error -> error
     end
   end
 
