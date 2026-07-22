@@ -26,11 +26,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: 07261362-0355-433e-83a4-d8c98524294e\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/07261362-0355-433e-83a4-d8c98524294e.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. No auditor was spawned per policy.",
       "timestamp": "2026-07-22T11:21:45Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-csg/evidence-ledger-split. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-22T11:25:27Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "review-F1: findings delta misclassifies pre-existing findings as introduced",
   "type": "bug",
-  "updated_at": "2026-07-22T11:21:45Z"
+  "updated_at": "2026-07-22T11:25:27Z"
 }
