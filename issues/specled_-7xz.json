@@ -6,9 +6,9 @@
   "description": "From /critical-review of specled_-csg, consensus finding F6 [Medium; spec+testing]. Sync.entries/2 halts the whole sync on the first invalid path or undecodable/future-schema entry ({:halt, {:error, ...}}) — one bad blob on the shared orphan branch (foreign tool write, future schema_version from a newer specled on a teammate's machine, manual damage) breaks evidence sync for EVERY peer until manually repaired. Skip-and-warn (carry unknown entries through untouched, or quarantine) instead of halting; spec the tolerance behavior in evidence_store.spec.md.\nFiles: lib/specled_ex/evidence/sync.ex:177-194; lib/specled_ex/evidence/entry.ex:42-54.\nFull report: /Users/mz/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-22/specled_-csg-evidence-ledger-split/20260722-062318-consolidated.md",
   "id": "specled_-7xz",
   "labels": [],
-  "priority": 2,
+  "priority": 1,
   "status": "open",
   "title": "review-F6: one anomalous evidence blob wedges sync for every peer",
   "type": "bug",
-  "updated_at": "2026-07-22T10:52:12Z"
+  "updated_at": "2026-07-22T10:52:36Z"
 }
