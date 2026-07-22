@@ -14,11 +14,15 @@
     {
       "text": "ADMISSION SCOPE (orchestrator, run-2 W1)\nAllowed touches:\n- lib/specled_ex/evidence/entry.ex\n- test/specled_ex/evidence/** (entry tests)\n- .spec/specs/evidence_store.spec.md (verification stubs only, if needed)\nOut of scope (intent): extract normalization as a pure function called directly — no temp-file round-trip, no System.unique_integer tmp paths. If the pure function must live outside entry.ex (e.g. shared with SpecLedEx.write_state), disclose the extra file in IMPLEMENTED rather than shipping silently. Do not touch sync.ex/tree_hash.ex/store.ex (owned by specled_-737 this wave).",
       "timestamp": "2026-07-22T11:04:31Z"
+    },
+    {
+      "text": "IMPLEMENTED\nSession: specled_-csg-evidence-ledger-split - implement (delegated impl-only worker, specled_-pqs)\nLog: n/a (interactive delegated session, no dedicated log path supplied by orchestrator)\n\nCommit: 79baa55\nFiles touched: lib/specled_ex/evidence/entry.ex\nTests added: none — existing test/specled_ex/evidence/entry_test.exs coverage\n  (\"builds canonical JSON with verification outcomes and normalized findings\")\n  already exercises the severity-\u003elevel, subject_id-\u003eentity_id, and maybe_put\n  nil-filtering behavior end to end and continues to pass unchanged against\n  the pure implementation.\nVerification stubs flipped: none (no execute:false stub existed for this\n  behavior; spec statements specled.evidence_store.per_entry_isolation and\n  .run_stamp_wins already have passing coverage, unaffected by this refactor)\nVerification tier: change-scoped — test/specled_ex/evidence/entry_test.exs (3/3\n  pass), mix test --stale (992 tests, 0 failures), mix spec.check\n  --no-run-commands (status=pass errors=0 warnings=0; the 1 reported finding is\n  an :info branch_guard_missing_subject_update note pre-existing on the epic\n  branch for lib/mix/tasks/spec.check.ex, unrelated to this change); full-system\n  proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\nAudit-expanded scope: none\nDeferred must requirements: none\n\nSummary: Replaced the temp-file round-trip in Entry.normalized_findings/1\n(write via SpecLedEx.write_state to System.tmp_dir!, re-read via Json.read,\ndelete) with an equivalent pure in-memory transform inlined in entry.ex\n(normalized_findings/1 + private maybe_put/3 and stable_sort/2 helpers). The\nnew code reproduces the exact same finding shape and stable sort order\n(file, entity_id, code, message, index) that SpecLedEx.normalize_findings/1\nalready produced via the round trip, without touching disk, eliminating the\nSystem.unique_integer tmp-path collision surface across concurrent worktree\nchecks. Kept the extraction local to entry.ex rather than sharing a module\nwith SpecLedEx.write_state, since the admission scope restricts touches to\nentry.ex/test/spec files and the two call sites don't need to share code to\nstay behaviorally identical — no extra files were touched.",
+      "timestamp": "2026-07-22T11:12:18Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "review-F3: Evidence.Entry round-trips findings through a temp state file for a pure transform",
   "type": "task",
-  "updated_at": "2026-07-22T11:05:29Z"
+  "updated_at": "2026-07-22T11:12:18Z"
 }
