@@ -24,11 +24,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: 07261362-0355-433e-83a4-d8c98524294e\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/07261362-0355-433e-83a4-d8c98524294e.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification (mutation-verified load-bearing\nassertions), complete seam disclosure, and no seam substituting production\nwiring. No auditor was spawned per policy.",
       "timestamp": "2026-07-22T13:17:44Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-csg/evidence-ledger-split. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-22T13:17:45Z"
     }
   ],
   "priority": 3,
   "status": "in_progress",
   "title": "Surface Sync.run/2 quarantine warnings in mix spec.sync and spec.prune output",
   "type": "task",
-  "updated_at": "2026-07-22T13:17:44Z"
+  "updated_at": "2026-07-22T13:17:45Z"
 }
