@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-07-22
 
 - Unified tree-blob reading on one primitive and deduplicated helpers.
   `BaseView` now materializes base spec files through `Git.ls_tree_entries/3`
