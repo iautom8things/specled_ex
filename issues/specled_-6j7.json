@@ -6,7 +6,7 @@
   "description": "Advances: specled.evidence_store\n\nspecled_-7xz (evidence-sync entry tolerance) added a warnings: [%{code:, message:}] field to SpecLedEx.Evidence.Sync.run/2's result map, populated when an entry is quarantined instead of halting sync (invalid path, malformed JSON, unsupported schema_version). The ADMISSION SCOPE for specled_-7xz restricted Allowed touches to lib/specled_ex/evidence/sync.ex, lib/specled_ex/evidence/entry.ex, .spec/specs/evidence_store.spec.md, and test/specled_ex/evidence/**, so lib/mix/tasks/spec.sync.ex and lib/mix/tasks/spec.prune.ex were intentionally left untouched.\n\nFollow-up: wire result.warnings into both tasks' CLI output, following the existing convention in lib/mix/tasks/spec.check.ex (record_evidence/2, around line 237), which prints Store.record/2's warning tuple via Mix.shell().error(warning.message). Sync.run/2 already returns the data; only the two mix task call sites need updating, plus test coverage in test/mix/tasks/spec_sync_task_test.exs and test/mix/tasks/spec_prune_task_test.exs.\n\nNot a functional gap (sync no longer halts either way) -- purely an operator-visibility improvement so a quarantined entry does not go unnoticed by whoever runs mix spec.sync or mix spec.prune.",
   "id": "specled_-6j7",
   "labels": [
-    "phase:implementing"
+    "phase:verifying"
   ],
   "comments": [
     {
@@ -22,5 +22,5 @@
   "status": "in_progress",
   "title": "Surface Sync.run/2 quarantine warnings in mix spec.sync and spec.prune output",
   "type": "task",
-  "updated_at": "2026-07-22T13:11:02Z"
+  "updated_at": "2026-07-22T13:11:29Z"
 }
