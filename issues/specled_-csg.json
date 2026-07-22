@@ -80,11 +80,15 @@
     {
       "text": "Scope update per user: consensus findings F3-F6 (specled_-pqs, specled_-737, specled_-43y, specled_-7xz) promoted to pre-merge blockers alongside F1/F2 — all six review tickets now gate the csg ship pipeline.",
       "timestamp": "2026-07-22T10:52:36Z"
+    },
+    {
+      "text": "ORCHESTRATION START (run 2, comment mode). Scope: 6 critical-review blocker tickets (F1-F6) gating the csg ship pipeline. worker_mode=claude-sonnet (user-confirmed; codex team token expired, codex/grok personal declined). Epic base: 39d0295. generated_state_paths=[.spec/realization_hashes.json, .spec/state.json (untracked post-S5)], regen_command='mix spec.check'. No beadwork deps between the 6 tickets; orchestrator admission waves sequence file overlap: W1={737 (F4 refactor-first), g00 (F1), pqs (F3)} -\u003e W2 after 737 merges={43y (F5), 7xz (F6)} -\u003e W3 after 7xz merges={7vy (F2, broadest sync.ex overlap)}. Concurrency cap 3 (no mix-slot tool on host).",
+      "timestamp": "2026-07-22T11:04:03Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-22T10:52:36Z"
+  "updated_at": "2026-07-22T11:04:03Z"
 }
