@@ -13,15 +13,17 @@ defmodule SpecLedEx.Evidence.TreeHash do
   @spec current(Path.t()) :: {:ok, hash()} | {:error, term()}
   def current(root) do
     with {:ok, index_path} <- Git.temp_path(root, "index"),
-         :ok <- seed_index(root, index_path),
+         result <- current_with_index(root, index_path) do
+      File.rm(index_path)
+      result
+    end
+  end
+
+  defp current_with_index(root, index_path) do
+    with :ok <- seed_index(root, index_path),
          {:ok, _} <- Git.run(root, ["add", "-A"], env: [{"GIT_INDEX_FILE", index_path}]),
          {:ok, tree_hash} <- Git.run(root, ["write-tree"], env: [{"GIT_INDEX_FILE", index_path}]) do
-      File.rm(index_path)
       {:ok, String.trim(tree_hash)}
-    else
-      {:error, reason} = error ->
-        error
-        |> tap(fn _ -> cleanup_temp_reason(reason) end)
     end
   end
 
@@ -48,7 +50,4 @@ defmodule SpecLedEx.Evidence.TreeHash do
         :ok
     end
   end
-
-  defp cleanup_temp_reason({:git, _args, _output, _status}), do: :ok
-  defp cleanup_temp_reason(_reason), do: :ok
 end
