@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-22T17:52:45Z",
+  "description": "No spec subject — flake investigation.\n\nThird occurrence of the signature, now AT CAP per the specled_-csg orchestration policy (comments on specled_-csg: FLAKE ACCEPTED #1 after .1, #2 after .3; policy said 3rd occurrence requires an investigation ticket).\n\nOccurrences:\n1. 2026-07-17 specled_-csg.1 merge gate (local) — standalone re-run green\n2. 2026-07-17 specled_-csg.3 merge gate (local) — standalone re-run green\n3. 2026-07-22 GitHub Actions run 29944042016 on feat/specled_-csg-evidence-ledger-split (bc6837b) — failing test tracer_test.exs:241 under the merged tagged_tests invocation (70+ files)\n\nSignature: only fires in the big merged tagged_tests run, never standalone or in plain 'mix test'. Never intersects the diffs it fails on. Likely suspects: compiler-tracer manifest state shared across the merged run, test-order dependence, or CI-runner timing. Related: specled_-f98 (flaky one-off failures in full-suite runs, 2026-07-02).",
+  "id": "specled_-epl",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Investigate flaky specled.compiler_tracer verification_command_failed (tracer_test.exs:241) under multi-file tagged_tests run",
+  "type": "task",
+  "updated_at": "2026-07-22T17:52:45Z"
+}
