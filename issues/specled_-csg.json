@@ -92,11 +92,15 @@
     {
       "text": "MERGE GATE GREEN for specled_-pqs (9775007): compile ✓, 992 tests 0 failures ✓, format ✓, deps.unlock ✓, spec.check errors=0 warnings=0 (informational cross_cutting note only). 2/6 closed.",
       "timestamp": "2026-07-22T11:25:26Z"
+    },
+    {
+      "text": "MERGE GATE GREEN for specled_-g00 (6836964): compile ✓, 994 tests 0 failures ✓, format ✓, deps.unlock ✓, spec.check errors=0 warnings=0 (informational cross_cutting note only). 3/6 closed; Wave 1 (F1/F3/F4) complete. Spawning W2: specled_-43y (F5), specled_-7xz (F6) from base 6836964.",
+      "timestamp": "2026-07-22T11:27:45Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "evidence-ledger-split",
   "type": "epic",
-  "updated_at": "2026-07-22T11:25:26Z"
+  "updated_at": "2026-07-22T11:27:45Z"
 }
