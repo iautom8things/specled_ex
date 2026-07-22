@@ -3,10 +3,13 @@ defmodule SpecLedEx.Evidence.SyncTest do
 
   alias SpecLedEx.Evidence.{Entry, Store, Sync}
 
+  @ref "refs/heads/spec-evidence"
+
   @moduletag spec: [
                "specled.evidence_store.sync_tree_union",
                "specled.evidence_store.sync_failure_contracts",
-               "specled.evidence_store.drift_surfaced"
+               "specled.evidence_store.drift_surfaced",
+               "specled.evidence_store.sync_entry_tolerance"
              ]
 
   @tag spec: "specled.evidence_store.sync_tree_union"
@@ -98,6 +101,129 @@ defmodule SpecLedEx.Evidence.SyncTest do
 
     assert {:error, {:sync_exhausted, _reason}} =
              Sync.run(fixture.a, before_push: before_push, sleep: fn _ -> :ok end)
+  end
+
+  @tag spec: "specled.evidence_store.sync_entry_tolerance"
+  test "quarantines an invalid path, unparsable JSON, and a future schema version without halting",
+       %{root: fixture_root} do
+    fixture = sync_fixture(fixture_root, "quarantine")
+    assert :ok = Store.record(fixture.a, entry(hash("1"), "10", "a"))
+
+    bad_path = "notes.txt"
+    bad_path_content = "not an evidence entry\n"
+    garbage_filename = "#{hash("9")}.json"
+    garbage_content = "{not json"
+    future_filename = "#{hash("8")}.json"
+
+    future_content =
+      Jason.encode!(%{
+        "schema_version" => 2,
+        "tree_hash" => hash("8"),
+        "run_at" => "20",
+        "run_id" => "future-peer"
+      })
+
+    inject_raw_entry(fixture.a, bad_path, bad_path_content)
+    inject_raw_entry(fixture.a, garbage_filename, garbage_content)
+    inject_raw_entry(fixture.a, future_filename, future_content)
+
+    assert {:ok, result} = Sync.run(fixture.a, sleep: fn _ -> :ok end)
+    assert result.action == :pushed
+    assert length(result.warnings) == 3
+    assert Enum.all?(result.warnings, &(&1.code == "evidence/entry_quarantined"))
+    assert Enum.any?(result.warnings, &String.contains?(&1.message, bad_path))
+    assert Enum.any?(result.warnings, &String.contains?(&1.message, garbage_filename))
+    assert Enum.any?(result.warnings, &String.contains?(&1.message, future_filename))
+
+    assert hash("1") in evidence_ids(fixture.a)
+
+    for {root, path, content} <- [
+          {fixture.a, bad_path, bad_path_content},
+          {fixture.a, garbage_filename, garbage_content},
+          {fixture.a, future_filename, future_content}
+        ] do
+      assert git!(root, ["cat-file", "-p", "refs/heads/spec-evidence:#{path}"]) == content
+    end
+
+    assert {:ok, adopted} = Sync.run(fixture.b, sleep: fn _ -> :ok end)
+    assert adopted.action == :adopted
+
+    for {path, content} <- [
+          {bad_path, bad_path_content},
+          {garbage_filename, garbage_content},
+          {future_filename, future_content}
+        ] do
+      assert git!(fixture.b, ["cat-file", "-p", "refs/heads/spec-evidence:#{path}"]) == content
+    end
+  end
+
+  @tag spec: "specled.evidence_store.sync_entry_tolerance"
+  test "quarantined entries independently written at the same path converge deterministically", %{
+    root: fixture_root
+  } do
+    fixture = sync_fixture(fixture_root, "quarantine-conflict")
+    path = "#{hash("9")}.json"
+    from_a = "{garbage from a"
+    from_b = "{garbage from b, a longer payload"
+
+    assert :ok = Store.record(fixture.a, entry(hash("1"), "10", "a"))
+    inject_raw_entry(fixture.a, path, from_a)
+
+    assert :ok = Store.record(fixture.b, entry(hash("2"), "10", "b"))
+    inject_raw_entry(fixture.b, path, from_b)
+
+    assert {:ok, _} = Sync.run(fixture.a, sleep: fn _ -> :ok end)
+    assert {:ok, _} = Sync.run(fixture.b, sleep: fn _ -> :ok end)
+    assert {:ok, _} = Sync.run(fixture.a, sleep: fn _ -> :ok end)
+
+    winner = Enum.max([from_a, from_b])
+    assert git!(fixture.a, ["cat-file", "-p", "refs/heads/spec-evidence:#{path}"]) == winner
+    assert git!(fixture.b, ["cat-file", "-p", "refs/heads/spec-evidence:#{path}"]) == winner
+    assert evidence_ids(fixture.a) == Enum.sort([hash("1"), hash("2"), hash("9")])
+  end
+
+  defp inject_raw_entry(root, filename, content) do
+    index_path = Path.join(System.tmp_dir!(), "raw-index-#{System.unique_integer([:positive])}")
+    blob_path = Path.join(System.tmp_dir!(), "raw-blob-#{System.unique_integer([:positive])}")
+    File.write!(blob_path, content)
+
+    parent =
+      case System.cmd("git", ["-C", root, "rev-parse", "--verify", "--quiet", @ref], []) do
+        {output, 0} -> String.trim(output)
+        _ -> nil
+      end
+
+    env = [{"GIT_INDEX_FILE", index_path}]
+
+    if parent do
+      raw_git!(root, ["read-tree", "#{parent}^{tree}"], env)
+    end
+
+    blob = raw_git!(root, ["hash-object", "-w", blob_path], env) |> String.trim()
+    raw_git!(root, ["update-index", "--add", "--cacheinfo", "100644,#{blob},#{filename}"], env)
+    tree = raw_git!(root, ["write-tree"], env) |> String.trim()
+
+    commit_args =
+      if parent do
+        ["commit-tree", tree, "-p", parent, "-m", "inject raw entry"]
+      else
+        ["commit-tree", tree, "-m", "inject raw entry"]
+      end
+
+    commit = raw_git!(root, commit_args, env) |> String.trim()
+    old = parent || String.duplicate("0", 40)
+    raw_git!(root, ["update-ref", @ref, commit, old], [])
+
+    File.rm(blob_path)
+    File.rm(index_path)
+    commit
+  end
+
+  defp raw_git!(root, args, env) do
+    case System.cmd("git", ["-C", root | args], stderr_to_stdout: true, env: env) do
+      {output, 0} -> output
+      {output, status} -> raise "git #{Enum.join(args, " ")} failed (#{status}): #{output}"
+    end
   end
 
   defp seed_divergent_entries(fixture) do

@@ -5,6 +5,11 @@ defmodule SpecLedEx.Evidence.Sync do
   Reconciliation is a union of tree entries, not a history merge. Conflicting
   entry paths use the same run-stamp ordering as local evidence writes, so
   independently-created orphan roots converge deterministically.
+
+  A single entry this build cannot validate (invalid path, malformed JSON, or
+  a schema version it does not recognize) never halts reconciliation for
+  every peer: it is quarantined — carried through the union byte-identical
+  under its original path — and reported as a warning instead.
   """
 
   alias SpecLedEx.Evidence.{Entry, Git}
@@ -15,11 +20,14 @@ defmodule SpecLedEx.Evidence.Sync do
   @max_attempts 3
   @zero String.duplicate("0", 40)
 
+  @type warning :: %{code: String.t(), message: String.t()}
+
   @type result :: %{
           ahead: non_neg_integer(),
           behind: non_neg_integer(),
           attempts: pos_integer(),
-          action: :adopted | :noop | :pushed
+          action: :adopted | :noop | :pushed,
+          warnings: [warning()]
         }
 
   @doc """
@@ -54,6 +62,9 @@ defmodule SpecLedEx.Evidence.Sync do
   `:keep` may be a `MapSet` of tree hashes; when present, entries outside that
   set are removed after each fetched union. This is used only by explicit
   pruning. `:before_push` is a test seam called immediately before each push.
+
+  The result's `:warnings` list carries one entry per quarantined path
+  encountered on either side of this attempt.
   """
   @spec run(Path.t(), keyword()) :: {:ok, result()} | {:error, term()}
   def run(root, opts \\ []) do
@@ -69,12 +80,13 @@ defmodule SpecLedEx.Evidence.Sync do
 
     with {:ok, remote_commit} <- fetch(root, remote: remote),
          {:ok, local_commit} <- ref_commit(root, @local_ref),
-         {:ok, local_entries} <- entries(root, local_commit),
-         {:ok, remote_entries} <- entries(root, remote_commit) do
+         {:ok, local_entries, local_warnings} <- entries(root, local_commit),
+         {:ok, remote_entries, remote_warnings} <- entries(root, remote_commit) do
       drift = drift(local_entries, remote_entries)
+      warnings = local_warnings ++ remote_warnings
 
       reconcile(root, local_commit, remote_commit, local_entries, remote_entries, opts)
-      |> push_result(root, remote, remote_commit, drift, opts, attempt)
+      |> push_result(root, remote, remote_commit, drift, warnings, opts, attempt)
     end
   end
 
@@ -103,9 +115,7 @@ defmodule SpecLedEx.Evidence.Sync do
   defp reconcile_entries(root, local, remote, local_entries, remote_entries, opts) do
     merged_entries =
       local_entries
-      |> Map.merge(remote_entries, fn _path, local_entry, remote_entry ->
-        Entry.latest(local_entry, remote_entry)
-      end)
+      |> Map.merge(remote_entries, &merge_entry/3)
       |> keep_entries(Keyword.get(opts, :keep))
 
     with {:ok, tree} <- write_tree(root, merged_entries),
@@ -115,22 +125,33 @@ defmodule SpecLedEx.Evidence.Sync do
     end
   end
 
-  defp push_result({:noop, _commit}, _root, _remote, _fetched, drift, _opts, attempt) do
-    {:ok, Map.merge(drift, %{attempts: attempt, action: :noop})}
+  defp merge_entry(_path, {:known, local_entry}, {:known, remote_entry}) do
+    {:known, Entry.latest(local_entry, remote_entry)}
   end
 
-  defp push_result({:adopt, commit}, root, _remote, _fetched, drift, _opts, attempt) do
+  defp merge_entry(_path, {:known, _} = local_entry, {:raw, _}), do: local_entry
+  defp merge_entry(_path, {:raw, _}, {:known, _} = remote_entry), do: remote_entry
+
+  defp merge_entry(_path, {:raw, local_raw}, {:raw, remote_raw}) do
+    {:raw, Enum.max([local_raw, remote_raw])}
+  end
+
+  defp push_result({:noop, _commit}, _root, _remote, _fetched, drift, warnings, _opts, attempt) do
+    {:ok, Map.merge(drift, %{attempts: attempt, action: :noop, warnings: warnings})}
+  end
+
+  defp push_result({:adopt, commit}, root, _remote, _fetched, drift, warnings, _opts, attempt) do
     case update_local_ref(root, commit, :absent) do
-      :ok -> {:ok, Map.merge(drift, %{attempts: attempt, action: :adopted})}
+      :ok -> {:ok, Map.merge(drift, %{attempts: attempt, action: :adopted, warnings: warnings})}
       {:cas_failed, reason} -> {:error, {:local_ref_changed, reason}}
       error -> error
     end
   end
 
-  defp push_result({:push, _commit}, root, remote, fetched, drift, opts, attempt) do
+  defp push_result({:push, _commit}, root, remote, fetched, drift, warnings, opts, attempt) do
     with :ok <- call_before_push(opts[:before_push], root, attempt, fetched),
          :ok <- push(root, remote, fetched) do
-      {:ok, Map.merge(drift, %{attempts: attempt, action: :pushed})}
+      {:ok, Map.merge(drift, %{attempts: attempt, action: :pushed, warnings: warnings})}
     else
       {:retry, reason} ->
         sleep(opts, attempt)
@@ -141,13 +162,31 @@ defmodule SpecLedEx.Evidence.Sync do
     end
   end
 
-  defp push_result({:cas_failed, reason}, root, _remote, _fetched, _drift, opts, attempt) do
+  defp push_result(
+         {:cas_failed, reason},
+         root,
+         _remote,
+         _fetched,
+         _drift,
+         _warnings,
+         opts,
+         attempt
+       ) do
     sleep(opts, attempt)
     run_attempt(root, opts, attempt + 1, {:local_ref_changed, reason})
   end
 
-  defp push_result({:error, reason}, _root, _remote, _fetched, _drift, _opts, _attempt),
-    do: {:error, reason}
+  defp push_result(
+         {:error, reason},
+         _root,
+         _remote,
+         _fetched,
+         _drift,
+         _warnings,
+         _opts,
+         _attempt
+       ),
+       do: {:error, reason}
 
   defp push(root, remote, :absent) do
     case Git.run(root, ["push", remote, "#{@local_ref}:#{@remote_head}"]) do
@@ -174,23 +213,60 @@ defmodule SpecLedEx.Evidence.Sync do
     end
   end
 
-  defp entries(_root, :absent), do: {:ok, %{}}
+  defp entries(_root, :absent), do: {:ok, %{}, []}
 
   defp entries(root, commit) do
     with {:ok, output} <- Git.run(root, ["ls-tree", "-r", "--name-only", commit]) do
       output
       |> String.split("\n", trim: true)
-      |> Enum.reduce_while({:ok, %{}}, fn path, {:ok, acc} ->
-        with true <- Entry.valid_filename?(path),
-             {:ok, json} <- Git.run(root, ["cat-file", "-p", "#{commit}:#{path}"]),
-             {:ok, entry} <- Entry.decode_file(path, json) do
-          {:cont, {:ok, Map.put(acc, path, entry)}}
-        else
-          false -> {:halt, {:error, {:invalid_evidence_path, path}}}
-          error -> {:halt, error}
+      |> Enum.reduce_while({:ok, %{}, []}, fn path, {:ok, acc, warnings} ->
+        case entry_at(root, commit, path) do
+          {:ok, entry} ->
+            {:cont, {:ok, Map.put(acc, path, {:known, entry}), warnings}}
+
+          {:quarantine, raw, reason} ->
+            {:cont,
+             {:ok, Map.put(acc, path, {:raw, raw}), [quarantine_warning(path, reason) | warnings]}}
+
+          {:error, _reason} = error ->
+            {:halt, error}
         end
       end)
+      |> case do
+        {:ok, acc, warnings} -> {:ok, acc, Enum.reverse(warnings)}
+        error -> error
+      end
     end
+  end
+
+  # A single malformed, unreadable, or unrecognized-schema entry must never
+  # halt reconciliation for every peer (an evidence entry never gates). Any
+  # entry this build cannot validate is quarantined: carried through the
+  # tree union byte-identical under its original path, with one warning.
+  # A genuine git-level read failure still halts, since that signals a
+  # structural problem rather than a single bad blob.
+  defp entry_at(root, commit, path) do
+    case Git.run(root, ["cat-file", "-p", "#{commit}:#{path}"]) do
+      {:ok, json} ->
+        if Entry.valid_filename?(path) do
+          case Entry.decode_file(path, json) do
+            {:ok, entry} -> {:ok, entry}
+            {:error, reason} -> {:quarantine, json, reason}
+          end
+        else
+          {:quarantine, json, :invalid_evidence_path}
+        end
+
+      error ->
+        error
+    end
+  end
+
+  defp quarantine_warning(path, reason) do
+    %{
+      code: "evidence/entry_quarantined",
+      message: "evidence/entry_quarantined: #{path}: #{inspect(reason)}"
+    }
   end
 
   defp keep_entries(entries, nil), do: entries
@@ -243,9 +319,12 @@ defmodule SpecLedEx.Evidence.Sync do
     end
   end
 
-  defp hash_entry(root, entry) do
+  defp hash_entry(root, {:known, entry}), do: write_and_hash(root, Entry.encode!(entry))
+  defp hash_entry(root, {:raw, raw}), do: write_and_hash(root, raw)
+
+  defp write_and_hash(root, content) do
     with {:ok, path} <- Git.temp_path(root, "sync-entry.json"),
-         :ok <- File.write(path, Entry.encode!(entry)) do
+         :ok <- File.write(path, content) do
       result =
         case Git.run(root, ["hash-object", "-w", path]) do
           {:ok, blob} -> {:ok, String.trim(blob)}

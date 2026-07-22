@@ -38,18 +38,45 @@ defmodule SpecLedEx.Evidence.Entry do
 
   @doc """
   Decodes and validates an entry filename and payload.
+
+  Failure reasons are distinguishable so callers can tell a foreign/corrupt
+  write (`:invalid_filename`, `:malformed_json`, `:tree_hash_mismatch`) apart
+  from an entry written by a schema version this build does not understand
+  (`{:unsupported_schema_version, version}`), e.g. a newer peer's specled.
   """
   @spec decode_file(String.t(), binary()) :: {:ok, t()} | {:error, term()}
   def decode_file(filename, json) when is_binary(filename) and is_binary(json) do
     with true <- valid_filename?(filename),
-         {:ok, decoded} when is_map(decoded) <- Jason.decode(json),
-         true <- decoded["schema_version"] == @schema_version,
-         true <- "#{decoded["tree_hash"]}.json" == filename do
+         {:ok, decoded} <- decode_json(json),
+         :ok <- check_schema_version(decoded),
+         :ok <- check_tree_hash(decoded, filename) do
       {:ok, decoded}
     else
-      false -> {:error, :invalid_entry}
+      false -> {:error, :invalid_filename}
       {:error, reason} -> {:error, reason}
-      _ -> {:error, :invalid_entry}
+    end
+  end
+
+  defp decode_json(json) do
+    case Jason.decode(json) do
+      {:ok, decoded} when is_map(decoded) -> {:ok, decoded}
+      {:ok, _other} -> {:error, :malformed_entry}
+      {:error, reason} -> {:error, {:malformed_json, reason}}
+    end
+  end
+
+  defp check_schema_version(%{"schema_version" => @schema_version}), do: :ok
+
+  defp check_schema_version(%{"schema_version" => version}),
+    do: {:error, {:unsupported_schema_version, version}}
+
+  defp check_schema_version(_decoded), do: {:error, :missing_schema_version}
+
+  defp check_tree_hash(decoded, filename) do
+    if "#{decoded["tree_hash"]}.json" == filename do
+      :ok
+    else
+      {:error, :tree_hash_mismatch}
     end
   end
 

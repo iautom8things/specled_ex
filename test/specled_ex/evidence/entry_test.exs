@@ -71,10 +71,31 @@ defmodule SpecLedEx.Evidence.EntryTest do
         run_id: String.duplicate("a", 32)
       )
 
-    assert {:error, :invalid_entry} = Entry.decode_file("../bad.json", Entry.encode!(entry))
+    assert {:error, :invalid_filename} = Entry.decode_file("../bad.json", Entry.encode!(entry))
 
-    assert {:error, :invalid_entry} =
+    assert {:error, :tree_hash_mismatch} =
              Entry.decode_file("#{String.duplicate("b", 40)}.json", Entry.encode!(entry))
+  end
+
+  @tag spec: "specled.evidence_store.per_entry_isolation"
+  test "distinguishes malformed JSON and unsupported schema versions from other decode failures" do
+    filename = "#{@tree}.json"
+
+    assert {:error, {:malformed_json, _reason}} = Entry.decode_file(filename, "{not json")
+
+    future =
+      Jason.encode!(%{
+        "schema_version" => 2,
+        "tree_hash" => @tree,
+        "run_at" => "x",
+        "run_id" => "y"
+      })
+
+    assert {:error, {:unsupported_schema_version, 2}} = Entry.decode_file(filename, future)
+
+    missing_version = Jason.encode!(%{"tree_hash" => @tree, "run_at" => "x", "run_id" => "y"})
+
+    assert {:error, :missing_schema_version} = Entry.decode_file(filename, missing_version)
   end
 
   @tag spec: "specled.evidence_store.run_stamp_wins"

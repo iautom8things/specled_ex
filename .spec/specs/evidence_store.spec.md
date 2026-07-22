@@ -173,6 +173,21 @@ decisions:
     evidence drift is visible without being a failure.
   priority: should
   stability: evolving
+- id: specled.evidence_store.sync_entry_tolerance
+  statement: >-
+    Sync shall never halt reconciliation because of a single entry it cannot
+    validate. An entry whose path fails the per-entry-isolation filename
+    pattern, whose payload does not parse as JSON, whose tree_hash does not
+    match its filename, or whose schema_version this build does not
+    recognize (older or newer, e.g. a peer running a future specled) shall
+    be quarantined: carried through the tree union byte-identical under its
+    original path rather than dropped or rewritten, with one warning
+    emitted naming the path and reason. All other entries in the same sync
+    continue to reconcile normally, and a quarantined path present on both
+    sides of a merge resolves deterministically so independently-created
+    orphan roots still converge.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -245,6 +260,19 @@ decisions:
     - no worktree ever had the spec-evidence branch checked out
   covers:
     - specled.evidence_store.sync_tree_union
+- id: specled.evidence_store.scenario.sync_quarantines_bad_entries
+  given:
+    - a bare origin repo and two clones A and B
+    - "the remote spec-evidence tree holds one valid entry alongside an entry at a non-hash path, an entry with unparsable JSON, and an entry with a future schema_version, all written directly with git plumbing (simulating a foreign tool or a newer peer's specled)"
+  when:
+    - A syncs against that origin, then B syncs against the result
+  then:
+    - both syncs complete successfully (no halt) and the valid entry reconciles as usual
+    - each malformed or unrecognized entry is present afterward with byte-identical content at its original path
+    - "the sync result's warnings list names each quarantined path and its reason"
+    - B's sync converges to the same tree A produced without altering the quarantined entries or re-raising
+  covers:
+    - specled.evidence_store.sync_entry_tolerance
 - id: specled.evidence_store.scenario.sync_exhaustion_modes
   given:
     - an origin whose spec-evidence ref is moved by a competing writer before every push attempt (3 consecutive lease rejections)
@@ -319,6 +347,7 @@ decisions:
     - specled.evidence_store.sync_failure_contracts
     - specled.evidence_store.prune_explicit_only
     - specled.evidence_store.drift_surfaced
+    - specled.evidence_store.sync_entry_tolerance
 - kind: tagged_tests
   execute: true
   covers:
