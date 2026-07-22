@@ -43,7 +43,40 @@ defmodule Mix.Tasks.Spec.Evidence.MigrateTest do
     assert File.read!(baseline_path) == baseline_before
   end
 
-  defp scaffold_legacy_workspace(root) do
+  test "hoists a legacy embedded realization baseline out of state.json", %{root: root} do
+    legacy_realization = %{
+      "api_boundary" => %{
+        "Workspace.run/0" => %{
+          "hash" => Base.encode16(:crypto.hash(:sha256, "legacy"), case: :lower),
+          "hasher_version" => HashStore.hasher_version()
+        }
+      }
+    }
+
+    scaffold_legacy_workspace(root, baseline: false, embedded_realization: legacy_realization)
+
+    baseline_path = Path.join(root, HashStore.baseline_rel())
+    refute File.exists?(baseline_path)
+
+    Mix.Tasks.Spec.Evidence.Migrate.run(["--root", root])
+
+    assert message_contains?(drain_shell_messages(), "hoisted legacy realization baseline")
+
+    assert File.exists?(baseline_path)
+    hoisted = SpecLedEx.Json.read(baseline_path)
+
+    assert hoisted["api_boundary"]["Workspace.run/0"]["hash"] ==
+             legacy_realization["api_boundary"]["Workspace.run/0"]["hash"]
+
+    hoisted_after_first_run = File.read!(baseline_path)
+
+    Mix.Tasks.Spec.Evidence.Migrate.run(["--root", root])
+
+    refute message_contains?(drain_shell_messages(), "hoisted legacy realization baseline")
+    assert File.read!(baseline_path) == hoisted_after_first_run
+  end
+
+  defp scaffold_legacy_workspace(root, opts \\ []) do
     init_git_repo(root)
 
     write_files(root, %{"README.md" => "# Fixture\n"})
@@ -67,19 +100,34 @@ defmodule Mix.Tasks.Spec.Evidence.MigrateTest do
       ]
     )
 
-    :ok =
-      HashStore.write(root, %{
-        "api_boundary" => %{
-          "Workspace.run/0" => %{
-            "hash" => Base.encode16(:crypto.hash(:sha256, "baseline"), case: :lower),
-            "hasher_version" => HashStore.hasher_version()
+    if Keyword.get(opts, :baseline, true) do
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            "Workspace.run/0" => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "baseline"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
           }
-        }
-      })
+        })
+    end
 
     root
     |> SpecLedEx.index()
     |> SpecLedEx.write_state(nil, root)
+
+    case Keyword.get(opts, :embedded_realization) do
+      nil ->
+        :ok
+
+      realization ->
+        state_path = Path.join(root, ".spec/state.json")
+
+        state_path
+        |> SpecLedEx.Json.read()
+        |> Map.put("realization", realization)
+        |> then(&SpecLedEx.Json.write!(state_path, &1))
+    end
 
     commit_all(root, "legacy state")
   end
