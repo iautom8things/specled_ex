@@ -8,7 +8,7 @@
   "description": "From /critical-review of specled_-csg (evidence-ledger-split), finding F1 [High, consensus of spec reviewer; calibrated]. MUST FIX BEFORE the csg epic branch merges — only finding producing user-visible wrong output today.\n\nBase evidence (written by mix spec.check: gated, green-only) and head findings (spec.review: ungated, includes synthetic no_realized_by findings) come from asymmetric producers, so a subject that never had realized_by shows as 'introduced'/not-clean on any PR touching it. Also an internal contradiction between the findings_delta and triage_panel sections of .spec/specs/spec_review.spec.md, and test/specled_ex/review/findings_delta_test.exs:194 pins the wrong side.\n\nFiles: lib/specled_ex/review/findings_delta.ex; lib/specled_ex/review.ex:44-49,127; .spec/specs/spec_review.spec.md; findings_delta_test.exs:194.\nFix shape: reconcile the two spec sections, align delta classification to compare like-for-like producers, flip the wrong test assertion.\nFull report: /Users/mz/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-22/specled_-csg-evidence-ledger-split/20260722-062318-consolidated.md",
   "id": "specled_-g00",
   "labels": [
-    "phase:verifying"
+    "phase:merging"
   ],
   "comments": [
     {
