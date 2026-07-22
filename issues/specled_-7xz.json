@@ -26,11 +26,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: 07261362-0355-433e-83a4-d8c98524294e\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/07261362-0355-433e-83a4-d8c98524294e.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. Deferred CLI warning surfacing is\ndisclosed with open follow-up specled_-6j7 and the warnings data path was\ntraced to real call sites. No auditor was spawned per policy.",
       "timestamp": "2026-07-22T11:50:36Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-csg/evidence-ledger-split. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-22T11:51:39Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "review-F6: one anomalous evidence blob wedges sync for every peer",
   "type": "bug",
-  "updated_at": "2026-07-22T11:50:36Z"
+  "updated_at": "2026-07-22T11:51:39Z"
 }
