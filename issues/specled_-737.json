@@ -26,11 +26,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: 07261362-0355-433e-83a4-d8c98524294e\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/07261362-0355-433e-83a4-d8c98524294e.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. No auditor was spawned per policy.",
       "timestamp": "2026-07-22T11:19:09Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-csg/evidence-ledger-split. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-22T11:19:27Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "review-F4: git plumbing helpers duplicated across 4 evidence modules, already drifted",
   "type": "task",
-  "updated_at": "2026-07-22T11:19:10Z"
+  "updated_at": "2026-07-22T11:19:27Z"
 }
