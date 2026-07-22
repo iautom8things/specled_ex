@@ -1,7 +1,14 @@
 {
-  "findings": [],
-  "run_at": "2026-07-22T12:23:41.361873Z",
-  "run_id": "a45e1ee44af485c507e88e02301885f7",
+  "findings": [
+    {
+      "code": "branch_guard_missing_subject_update",
+      "file": "lib/mix/tasks/spec.check.ex",
+      "level": "info",
+      "message": "Changed file lib/mix/tasks/spec.check.ex impacts subject specled.api_boundary; spec.md not co-changed, but realization attested binding(s) Mix.Tasks.Spec.Check as clean — informational only."
+    }
+  ],
+  "run_at": "2026-07-22T12:35:10.000954Z",
+  "run_id": "2a20a01709091a1a38a674c0a40e0ced",
   "schema_version": 1,
   "specled_version": "0.1.0",
   "tree_hash": "a01646bbde0f3899fc11b2a4721466a9cd384e7c",
