@@ -7,7 +7,9 @@
   "created": "2026-07-22T10:52:12Z",
   "description": "From /critical-review of specled_-csg, consensus finding F5 [Medium; idioms+simplicity]. TreeHash.current/1 only File.rm's the temp index on success; the error path tap's cleanup_temp_reason/1 which is a no-op for every clause — temp index files leak into .git/specled-tmp on every failed run, and the function's name claims cleanup that never happens. Either actually delete the temp file on error or drop the dead function.\nFiles: lib/specled_ex/evidence/tree_hash.ex:12-24,63-64.\nFull report: /Users/mz/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-22/specled_-csg-evidence-ledger-split/20260722-062318-consolidated.md",
   "id": "specled_-43y",
-  "labels": [],
+  "labels": [
+    "phase:implementing"
+  ],
   "comments": [
     {
       "text": "ADMISSION SCOPE (orchestrator, run-2 W2)\nNote: specled_-737 has landed on the epic branch — tree_hash.ex is now rewired onto the shared SpecLedEx.Evidence.Git module; line numbers in the ticket body predate that refactor.\nAllowed touches:\n- lib/specled_ex/evidence/tree_hash.ex\n- lib/specled_ex/evidence/git.ex (only if the error-path temp cleanup rightly belongs in the shared helper)\n- test/specled_ex/evidence/** (tree_hash tests)\n- .spec/specs/evidence_store.spec.md (verification stubs only, if needed)\nOut of scope (intent): fix = temp index actually deleted on error paths (or the dead cleanup_temp_reason/1 dropped with real cleanup wired); no other behavior change. Do not touch sync.ex/entry.ex (owned by specled_-7xz this wave). Any file outside these globs must be disclosed in IMPLEMENTED.",
