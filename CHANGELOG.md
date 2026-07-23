@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.0 — 2026-07-23
+
+- `mix spec.check --accept-drift`: a durable acceptance path for INTENTIONAL
+  realization drift. The accepting run refreshes the committed flat-tier baseline
+  in a single pass and downgrades the drift to `:info`, so intentional drift does
+  not resurface post-merge once the ephemeral `Spec-Drift:` trailer window closes.
+  The silencing is scoped to exactly the tiers the refresh heals: implementation-
+  tier drift stays at its configured severity (a signal, never accepted), and a
+  dangling binding blocks the refresh entirely so no baseline moves on a failing
+  run. (specled_-uv3)
+- Extended `realized_by` attestation coverage so internals-only edits — e.g.
+  editing a shared realization test that a subject binds via a `tagged_tests`
+  verification — no longer hard-error the branch guard's subject co-change check
+  for a subject whose contract did not change. (specled_-oyg)
+
 ## 0.3.4 — 2026-07-23
 
 - `SpecLedEx.Realization.ApiBoundary.hash/2` is now position-invariant: editing
