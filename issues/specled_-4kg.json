@@ -37,11 +37,15 @@
     {
       "text": "PR opened: release 0.3.0 from feat/specled_-4kg-spec-drift-fork. Babysitting CI.",
       "timestamp": "2026-07-23T08:36:17Z"
+    },
+    {
+      "text": "CI green (manual workflow_dispatch run 29991702967 — pull_request events still don't fire per specled_-dkh). 0 fix commits needed; no review feedback. Ready for merge.",
+      "timestamp": "2026-07-23T08:39:04Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "Advise the Spec-Drift trailer alternative in spec.next and the missing_decision_update finding",
   "type": "task",
-  "updated_at": "2026-07-23T08:36:17Z"
+  "updated_at": "2026-07-23T08:39:04Z"
 }
