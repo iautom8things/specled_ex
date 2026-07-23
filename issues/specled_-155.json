@@ -63,6 +63,10 @@
     {
       "text": "MERGE GATE 9 (after specled_-155.9, epic @ af16144): GREEN on re-run. First run: 1136 tests, 1 failure — did not reproduce (full re-run 1136/0 exit 0, --failed manifest empty); delta since green gate 8 is docs-only (specled_-155.9). FLAKE-ACCEPT #1, signature: tempfile command-runner race class (specled_-epl), 4th observation. PROCESS NOTE: exact failing test identity lost because the gate piped mix test through tail (pipeline masked exit code and discarded detail) — future gates must capture full output; deviation recorded. compile -Werror ok; format ok; deps.unlock ok; spec.check exit 0 status=pass findings=1 (info).",
       "timestamp": "2026-07-23T19:58:07Z"
+    },
+    {
+      "text": "MINI-RETRO\\nbounces: 1 (other — reconcile-ALL-claim-surfaces sweep incomplete, specled_-155.8)\\nfull_suite_runs: 10 (9 merge gates + 1 flake re-run)\\nfinals_gt1: 2 (specled_-155.6 stale-seed reseed; specled_-155.8 iter-1 spec.check x3)\\nflake_accepts: 1 (gate 9, tempfile command-runner race class specled_-epl, non-reproducing, docs-only delta)\\nescalations: 0\\nlessons_kept/retired: 3/0",
+      "timestamp": "2026-07-23T19:58:07Z"
     }
   ],
   "priority": 1,
