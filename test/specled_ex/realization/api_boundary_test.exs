@@ -72,6 +72,20 @@ defmodule SpecLedEx.Realization.ApiBoundaryTest do
     {:ok, root: root}
   end
 
+  # A BEAM-form resolved head — the shape `Binding.resolve/2` returns from a
+  # module's debug_info: `{fun, arity, [{args, guards, body}]}`. A remote-call
+  # guard (`is_map(x)`) is `{{:., meta, [:erlang, fun]}, meta, [var]}`; that inner
+  # `.` node is the leak site for specled_-o40. `line` places the whole head at a
+  # source position (as if lines were inserted above the function).
+  defp guarded_head(guard_fun, line) do
+    var = {:x, [version: 0, line: line, column: 11], nil}
+
+    guard =
+      {{:., [line: line, column: 20], [:erlang, guard_fun]}, [line: line, column: 20], [var]}
+
+    {:foo, 1, [{[var], [guard], {:ok, [line: line], nil}}]}
+  end
+
   describe "hash/2" do
     test "stable across whitespace and variable renames (no drift)" do
       {:ok, ast_v1} =
@@ -81,6 +95,23 @@ defmodule SpecLedEx.Realization.ApiBoundaryTest do
 
       # Same arity, same pattern — the hash is a function of head + shape
       assert h1 == ApiBoundary.hash(ast_v1)
+    end
+
+    test "invariant under a line shift of a remote-call guard's source position (specled_-o40)" do
+      # BEAM-form head with an `is_map/1` guard, at two source positions. Pre-fix,
+      # strip_meta left the guard's `.` callee node in `form` position un-recursed,
+      # so its line/column survived into the hash and this assertion FAILED.
+      # (Proven non-vacuous by reverting strip_meta: this test goes red.)
+      assert ApiBoundary.hash(guarded_head(:is_map, 10)) ==
+               ApiBoundary.hash(guarded_head(:is_map, 200)),
+             "a line shift must not change the api_boundary hash"
+    end
+
+    test "the guard's callee participates in the hash — guards are not dropped (specled_-o40)" do
+      # Rules out the vacuous mode: if the guard were ignored, the invariance
+      # above would be trivially true. A different guard function must change it.
+      refute ApiBoundary.hash(guarded_head(:is_map, 10)) ==
+               ApiBoundary.hash(guarded_head(:is_list, 10))
     end
 
     test "changes when arg pattern structure changes" do

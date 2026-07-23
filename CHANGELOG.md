@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.4 — 2026-07-23
+
+- `SpecLedEx.Realization.ApiBoundary.hash/2` is now position-invariant: editing
+  lines above a bound function (for example an unrelated moduledoc change) no
+  longer changes its api_boundary hash. The leak was `strip_meta/1` not
+  recursing into a call node's callee (`form`), so a remote-call guard such as
+  `is_map(x)` retained the `.` operator's line/column metadata; `strip_meta` now
+  recurses into `form` as well. A regression test (proven to fail on the
+  pre-fix code) guards the invariant, the `hash_function_head` requirement is
+  tightened to name the previously-broken case, and the 45 committed
+  api_boundary baselines whose functions carry a remote-call guard were
+  rebaselined to their new invariant values. (specled_-o40)
+
 ## 0.3.3 — 2026-07-23
 
 - The scaffolded `spec-review` GitHub Actions workflow
