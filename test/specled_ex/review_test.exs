@@ -303,7 +303,7 @@ defmodule SpecLedEx.ReviewTest do
           base: "main",
           closure_reach_opts: [
             tracer_edges: %{},
-            coverage_records: :no_coverage_artifact
+            envelope: :no_coverage_artifact
           ]
         )
 
@@ -327,7 +327,7 @@ defmodule SpecLedEx.ReviewTest do
             # An empty edges map degrades to :no_tracer_manifest first; pass
             # a non-empty map so the coverage status path is exercised.
             tracer_edges: %{{Auth, :login, 0} => []},
-            coverage_records: :no_coverage_artifact
+            envelope: :no_coverage_artifact
           ]
         )
 
@@ -347,14 +347,76 @@ defmodule SpecLedEx.ReviewTest do
         Review.build_view(index, root,
           base: "main",
           closure_reach_opts: [
-            tracer_edges: %{},
-            coverage_records: []
+            tracer_edges: %{}
           ]
         )
 
       html = view |> Html.render() |> IO.iodata_to_binary()
 
       assert html =~ "Binding closure unavailable"
+    end
+
+    @tag spec: "specled.spec_review.coverage_tab_v2_envelope_data_layer"
+    test "wires CoverageClosure.build_v2/2 into the Coverage pivot (v2 line format + generated_at)",
+         %{root: root} do
+      init_git_repo(root)
+
+      write_subject_spec(
+        root,
+        "auth_subject",
+        meta: %{
+          "id" => "auth.subject",
+          "kind" => "module",
+          "status" => "active",
+          "summary" => "Auth.",
+          "surface" => ["lib/auth.ex"],
+          "realized_by" => %{"implementation" => ["Auth.login/0"]}
+        },
+        requirements: [
+          %{
+            "id" => "auth.subject.req1",
+            "statement" => "Auth shall log in.",
+            "priority" => "must"
+          }
+        ]
+      )
+
+      write_files(root, %{"lib/auth.ex" => "defmodule Auth do\nend\n"})
+      commit_all(root, "initial")
+      change_subject_file(root, "auth_subject")
+
+      index = SpecLedEx.index(root)
+      generated_at = ~U[2026-07-23 00:00:00Z]
+
+      envelope = %{
+        version: 2,
+        mode: :aggregate,
+        generated_at: generated_at,
+        source: "test.coverdata",
+        files: [],
+        mfas: [%{mfa: "Auth.login/0", covered: true}],
+        payload: %{unmapped_modules: 0},
+        degraded: false
+      }
+
+      view =
+        Review.build_view(index, root,
+          base: "main",
+          closure_reach_opts: [
+            tracer_edges: %{{Auth, :login, 0} => []},
+            envelope: envelope
+          ]
+        )
+
+      assert [subject] = view.affected_subjects
+      assert subject.closure_reach.status == :ok_aggregate
+      assert subject.coverage_generated_at == generated_at
+
+      html = view |> SpecLedEx.Review.Html.render() |> IO.iodata_to_binary()
+
+      assert html =~ "executed (100.0%)"
+      assert html =~ "Coverage captured"
+      assert html =~ "badge-coverage-rollup"
     end
   end
 

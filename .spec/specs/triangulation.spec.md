@@ -115,8 +115,17 @@ realized_by:
     mix spec.triangle shall print per-requirement diagnostics for all
     indexed subject specs by default or when passed `--all`, and for one
     subject when passed `<subject.id>`. Diagnostics shall include effective
-    binding, closure MFAs, exercising tests, and execution_reach. It is a
-    read-only diagnostic; it shall not mutate state.json.
+    binding, closure MFAs, exercising tests, and execution_reach. It reads
+    the v2 coverage envelope and prints its `mode` (`aggregate` or
+    `per_test`); in `:aggregate` mode it additionally prints each
+    requirement's closure-coverage percentage from
+    `CoverageTriangulation.aggregate_requirement_reach/2` and labels the
+    per-test-only detectors `detector_unavailable` (reason
+    `aggregate_artifact_only`) via `CoverageTriangulation.envelope_findings/3`
+    rather than omitting them silently. A missing, legacy, invalid, or
+    async-contaminated per-test artifact each print their own distinct
+    `detector_unavailable` note. It is a read-only diagnostic; it shall not
+    mutate state.json.
   priority: should
   stability: evolving
 - id: specled.triangulation.envelope_legacy_and_invalid_distinct

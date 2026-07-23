@@ -1634,6 +1634,7 @@ defmodule SpecLedEx.Review.Html do
           <%= SpecLedEx.Review.Html.render_subject_change_badge(assigns[:s].spec_changes) %>
           <%= SpecLedEx.Review.Html.render_subject_finding_badges(assigns[:s].findings) %>
           <%= SpecLedEx.Review.Html.render_subject_binding_health(assigns[:s].bindings, assigns[:s].findings) %>
+          <%= SpecLedEx.Review.Html.render_subject_coverage_badge(Map.get(assigns[:s], :closure_reach)) %>
         </div>
         <%= SpecLedEx.Review.Html.render_subject_leg_chips(assigns[:s].findings) %>
       </header>
@@ -1975,6 +1976,47 @@ defmodule SpecLedEx.Review.Html do
   end
 
   defp count_dangling_findings(_), do: 0
+
+  # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
+  # Subject-card rollup badge: a one-glance summary of the v2 envelope's
+  # coverage status for this subject, alongside the binding-health badge.
+  # Degraded statuses (missing/legacy/invalid/no-tracer-manifest/async-
+  # contaminated) render a muted "coverage unavailable" chip rather than a
+  # fabricated count; a loaded envelope rolls up self-verified requirement
+  # count and names the mode (aggregate/per-test).
+  @doc false
+  def render_subject_coverage_badge(closure_reach) do
+    status = Map.get(closure_reach || %{}, :status, :ok_aggregate)
+    by_req = Map.get(closure_reach || %{}, :by_requirement, %{})
+
+    cond do
+      status in [
+        :no_coverage_artifact,
+        :no_tracer_manifest,
+        :legacy_artifact,
+        :invalid_artifact,
+        :async_contaminated
+      ] ->
+        ~s|<span class="badge badge-coverage-rollup badge-coverage-unavailable" title="Coverage data unavailable: #{h(to_string(status))}">coverage unavailable</span>|
+
+      map_size(by_req) == 0 ->
+        ""
+
+      true ->
+        reqs = Map.values(by_req)
+        total = length(reqs)
+        self_verified = Enum.count(reqs, & &1.self_verified?)
+        mode_label = if status == :ok_per_test, do: "per-test", else: "aggregate"
+        tone = coverage_rollup_tone(self_verified, total)
+
+        ~s|<span class="badge badge-coverage-rollup badge-coverage-#{tone}" title="#{self_verified} of #{total} requirements self-verified under #{mode_label} coverage">#{self_verified}/#{total} self-verified (#{mode_label})</span>|
+    end
+  end
+
+  defp coverage_rollup_tone(_self_verified, 0), do: "empty"
+  defp coverage_rollup_tone(self_verified, total) when self_verified == total, do: "valid"
+  defp coverage_rollup_tone(0, _total), do: "dangling"
+  defp coverage_rollup_tone(_self_verified, _total), do: "partial"
 
   @doc false
   def render_spec_tab(s) do
@@ -2611,11 +2653,12 @@ defmodule SpecLedEx.Review.Html do
   # Spec tab's changed-then-unchanged fold with coverage-specific wording.
   @doc false
   def render_coverage_tab(s) do
-    closure_reach = Map.get(s, :closure_reach, %{status: :ok, by_requirement: %{}})
+    closure_reach = Map.get(s, :closure_reach, %{status: :ok_aggregate, by_requirement: %{}})
     req_status = coverage_req_status(s)
 
     [
       render_coverage_help_link(),
+      render_coverage_generated_at(Map.get(s, :coverage_generated_at)),
       render_closure_reach_status(closure_reach),
       render_requirements_coverage(s.requirements, s.claims_by_req, closure_reach, req_status),
       render_bindings_section(s.bindings)
@@ -2663,7 +2706,83 @@ defmodule SpecLedEx.Review.Html do
     """
   end
 
+  # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
+  # :legacy_artifact / :invalid_artifact / :async_contaminated are distinct
+  # degraded reasons the v2 envelope can report (SpecLedEx.Coverage.Store's
+  # three-way read_v2/1 distinction, plus the per-test async-contamination
+  # guard) — each renders its own honest banner naming the specific problem
+  # and the re-run command, never collapsing into the generic "coverage
+  # artifact unavailable" banner above or a fake 0%/empty-but-ok result.
+  def render_closure_reach_status(%{status: :legacy_artifact}) do
+    ~S"""
+    <p class="cov-closure-unavailable" role="status">
+      <strong>Coverage artifact is a legacy format.</strong>
+      The artifact at <code>.spec/_coverage/per_test.coverdata</code>
+      predates the versioned v2 envelope and is never auto-migrated. Re-run
+      <code>mix spec.cover.test</code> to regenerate it.
+    </p>
+    """
+  end
+
+  def render_closure_reach_status(%{status: :invalid_artifact}) do
+    ~S"""
+    <p class="cov-closure-unavailable" role="status">
+      <strong>Coverage artifact is invalid.</strong>
+      The artifact at <code>.spec/_coverage/per_test.coverdata</code> is
+      undecodable or malformed. Re-run <code>mix spec.cover.test</code> to
+      regenerate it.
+    </p>
+    """
+  end
+
+  def render_closure_reach_status(%{status: :async_contaminated}) do
+    ~S"""
+    <p class="cov-closure-unavailable" role="status">
+      <strong>Per-test coverage is degraded.</strong>
+      The last <code>--per-test</code> capture reported async contamination,
+      so per-test attribution may be unreliable. Re-run
+      <code>mix spec.cover.test --per-test</code> without
+      <code>--allow-async</code> before trusting this data.
+    </p>
+    """
+  end
+
   def render_closure_reach_status(_), do: ""
+
+  # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
+  # The coverage artifact's own capture time, so a reviewer never mistakes
+  # coverage computed against an older checkout for coverage of the code
+  # under review. Silent (renders nothing) when there is no timestamp to
+  # show — the degraded-status banners above already explain why.
+  @coverage_stale_after_seconds 24 * 60 * 60
+
+  @doc false
+  def render_coverage_generated_at(nil), do: ""
+
+  def render_coverage_generated_at(%DateTime{} = generated_at) do
+    elapsed = DateTime.diff(DateTime.utc_now(), generated_at, :second)
+    stale? = elapsed > @coverage_stale_after_seconds
+
+    stale_class = if stale?, do: " cov-generated-stale", else: ""
+
+    stale_note =
+      if stale? do
+        ~S| <span class="cov-generated-stale-note">— possibly stale; re-run <code>mix spec.cover.test</code> to refresh.</span>|
+      else
+        ""
+      end
+
+    ~s"""
+    <p class="cov-generated-at#{stale_class}" role="status">
+      Coverage captured #{h(DateTime.to_iso8601(generated_at))} (#{h(format_elapsed(elapsed))} ago).#{stale_note}
+    </p>
+    """
+  end
+
+  defp format_elapsed(seconds) when seconds < 60, do: "#{seconds}s"
+  defp format_elapsed(seconds) when seconds < 3600, do: "#{div(seconds, 60)}m"
+  defp format_elapsed(seconds) when seconds < 86_400, do: "#{div(seconds, 3600)}h"
+  defp format_elapsed(seconds), do: "#{div(seconds, 86_400)}d"
 
   # Per-tab pointer back to the single page-level help disclosure. The full
   # legend used to re-render inside every Coverage tab; now there's exactly
@@ -2702,7 +2821,8 @@ defmodule SpecLedEx.Review.Html do
 
   defp render_requirements_coverage(requirements, claims_by_req, closure_reach, req_status) do
     by_req = Map.get(closure_reach || %{}, :by_requirement, %{})
-    status = Map.get(closure_reach || %{}, :status, :ok)
+    status = Map.get(closure_reach || %{}, :status, :ok_aggregate)
+    mode = closure_status_mode(status)
 
     render_one = fn req ->
       id = field(req, :id) || ""
@@ -2723,7 +2843,7 @@ defmodule SpecLedEx.Review.Html do
           #{render_strength_badge(best_strength, claims, meets_minimum?)}
         </div>
         <p class="cov-req-statement" title="#{h(statement)}">#{h(statement)}</p>
-        #{render_closure_reach(reach, status)}
+        #{render_closure_reach(reach, status, mode)}
         #{render_covering_claims(claims)}
       </li>
       """
@@ -2781,50 +2901,114 @@ defmodule SpecLedEx.Review.Html do
     ]
   end
 
-  # covers: specled.spec_review.coverage_tab_bind_closure
-  # Per-requirement bind-closure summary rendered beneath each requirement
-  # in the Coverage tab. Format: "Closure: N MFAs. Reached: M (by tests
-  # T1, T2). Unreached: K." When the artifact is missing the renderer
-  # falls through to render_closure_reach_status/1 at the tab level and
-  # this helper renders nothing per-row to avoid duplicate noise.
-  defp render_closure_reach(_reach, :no_coverage_artifact), do: ""
-  defp render_closure_reach(_reach, :no_tracer_manifest), do: ""
-  defp render_closure_reach(nil, _), do: ""
+  # Maps a v2_status atom to the mode gate used by render_closure_reach/3 and
+  # render_reached_by_tests_row/2: :per_test only for :ok_per_test, :aggregate
+  # for everything else (including the degraded statuses, which never reach
+  # render_closure_reach/3 with real data — see its :no_closure_mfas-style
+  # short-circuits below — so the fallback value there is inert).
+  defp closure_status_mode(:ok_per_test), do: :per_test
+  defp closure_status_mode(_), do: :aggregate
 
-  defp render_closure_reach(%{closure_mfa_count: 0, closure_file_count: 0}, _) do
+  # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
+  # Per-requirement bind-closure summary rendered beneath each requirement in
+  # the Coverage tab. Format: "Closure: N MFAs — K executed (X%). Self-
+  # verified: yes/no. Tagged tests: T1 (executed), T2 (linked)." plus a
+  # mode-gated "Reached by tests" row (per_test only — aggregate coverage has
+  # no per-test attribution to name). When the artifact is missing/legacy/
+  # invalid/degraded the renderer falls through to
+  # render_closure_reach_status/1 at the tab level and this helper renders
+  # nothing per-row to avoid duplicate noise.
+  defp render_closure_reach(_reach, status, _mode)
+       when status in [
+              :no_coverage_artifact,
+              :no_tracer_manifest,
+              :legacy_artifact,
+              :invalid_artifact,
+              :async_contaminated
+            ],
+       do: ""
+
+  defp render_closure_reach(nil, _status, _mode), do: ""
+
+  defp render_closure_reach(%{closure_mfa_count: 0}, _status, _mode) do
     ~S|<p class="cov-closure" data-empty="true"><span class="cov-closure-label">Closure:</span> 0 MFAs.</p>|
   end
 
-  defp render_closure_reach(reach, _) do
+  defp render_closure_reach(reach, _status, mode) do
     %{
       closure_mfa_count: mfa_count,
-      reached_files: reached,
-      unreached_files: unreached,
-      reaching_tests: tests
+      closure_coverage_pct: pct,
+      covered_mfas: covered,
+      tagged_tests: tagged_tests,
+      self_verified?: self_verified?
     } = reach
 
-    reached_count = length(reached)
-    unreached_count = length(unreached)
+    executed_count = length(covered)
+    self_str = if self_verified?, do: "yes", else: "no"
 
-    tests_segment =
-      case tests do
-        [] -> ""
-        list -> " (by tests #{render_reaching_tests(list)})"
+    tagged_str =
+      case tagged_tests do
+        [] -> "none"
+        list -> list |> Enum.map(&render_tagged_test/1) |> Enum.join(", ")
       end
 
-    ~s"""
-    <p class="cov-closure">
-      <span class="cov-closure-label">Closure:</span> #{mfa_count} MFA#{plural(mfa_count)}.
-      <span class="cov-closure-reached">Reached: #{reached_count}#{tests_segment}.</span>
-      <span class="cov-closure-unreached">Unreached: #{unreached_count}.</span>
-    </p>
-    """
+    [
+      ~s"""
+      <p class="cov-closure">
+        <span class="cov-closure-label">Closure:</span> #{mfa_count} MFA#{plural(mfa_count)} — #{executed_count} executed (#{format_closure_pct(pct)}).#{render_proxy_note(mode)}
+        <span class="cov-closure-self-verified">Self-verified: #{self_str}.</span>
+        <span class="cov-closure-tests">Tagged tests: #{tagged_str}.</span>
+      </p>
+      """,
+      render_reached_by_tests_row(tagged_tests, mode)
+    ]
   end
 
-  defp render_reaching_tests(tests) do
-    tests
-    |> Enum.map(fn t -> ~s|<code class="cov-closure-test">#{h(t)}</code>| end)
-    |> Enum.join(", ")
+  defp format_closure_pct(pct) when is_float(pct),
+    do: "#{:erlang.float_to_binary(pct, decimals: 1)}%"
+
+  defp format_closure_pct(_), do: "0.0%"
+
+  # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
+  # Flag 2 (specled_-155.7 orchestrator addendum): per_test-mode MFA coverage
+  # is currently computed via a file-level proxy pending the per-test lane
+  # rebuild (specled_-155.5) — see the comment on CoverageClosure's
+  # v2_by_requirement/5 (:per_test clause). Naming that here keeps the UI
+  # from over-claiming exact MFA attribution it does not yet have.
+  defp render_proxy_note(:per_test) do
+    ~S| <span class="cov-closure-proxy-note" title="Per-test MFA coverage is currently a file-level proxy pending the per-test lane rebuild (specled_-155.5); treat the percentage as approximate.">(file-level proxy)</span>|
+  end
+
+  defp render_proxy_note(_), do: ""
+
+  defp render_tagged_test(%{file: file, test_name: name, strength: strength}) do
+    ~s|<code class="cov-closure-test">#{h("#{file} :: #{name}")}</code> (#{h(strength)})|
+  end
+
+  # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
+  # "Reached by tests" names the tagged tests whose own coverage record
+  # reached the requirement's closure — exact per-test attribution that only
+  # exists under :ok_per_test (aggregate coverage's evidence strength tops
+  # out at "linked", never "executed"). Rendered only in per_test mode, per
+  # the ticket's mode-gate requirement — not merely omitted when the
+  # "executed" list happens to be empty.
+  defp render_reached_by_tests_row(_tagged_tests, :aggregate), do: ""
+
+  defp render_reached_by_tests_row(tagged_tests, :per_test) do
+    case Enum.filter(tagged_tests, &(&1.strength == "executed")) do
+      [] ->
+        ~S|<p class="cov-reached-by-tests" data-empty="true"><span class="cov-reached-by-tests-label">Reached by tests:</span> none.</p>|
+
+      executed ->
+        names =
+          executed
+          |> Enum.map(fn %{file: file, test_name: name} ->
+            ~s|<code class="cov-closure-test">#{h("#{file} :: #{name}")}</code>|
+          end)
+          |> Enum.join(", ")
+
+        ~s|<p class="cov-reached-by-tests"><span class="cov-reached-by-tests-label">Reached by tests:</span> #{names}.</p>|
+    end
   end
 
   defp plural(1), do: ""
@@ -5341,6 +5525,46 @@ defmodule SpecLedEx.Review.Html do
       padding: 1px 4px;
       border-radius: 3px;
     }
+
+    /* Coverage tab — v2 envelope additions: self-verified/tagged-tests line,
+       mode-gated "Reached by tests" row, file-level proxy qualifier, and the
+       coverage-artifact generated-at staleness note. */
+    .cov-closure-self-verified { margin-left: 8px; }
+    .cov-closure-tests { margin-left: 8px; }
+    .cov-closure-proxy-note {
+      margin-left: 4px;
+      font-style: italic;
+      color: var(--fg-faint);
+      cursor: help;
+    }
+    .cov-reached-by-tests {
+      margin: 0 0 8px 0;
+      font-size: 12px;
+      color: var(--fg-muted);
+      line-height: 1.55;
+    }
+    .cov-reached-by-tests-label { font-weight: 600; color: var(--fg); }
+    .cov-generated-at {
+      margin: 0 0 8px 0;
+      font-size: 12px;
+      color: var(--fg-muted);
+    }
+    .cov-generated-stale { color: var(--warning); }
+    .cov-generated-stale-note code {
+      font-family: var(--code-font);
+      font-size: 11px;
+      background: var(--neutral-bg);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    /* Subject-card coverage rollup badge, next to the binding-health badge. */
+    .badge-coverage-rollup { text-transform: none; letter-spacing: 0; }
+    .badge-coverage-unavailable { background: var(--neutral-bg); color: var(--fg-muted); }
+    .badge-coverage-empty { background: var(--neutral-bg); color: var(--fg-muted); }
+    .badge-coverage-valid { background: var(--success-bg); color: var(--success); }
+    .badge-coverage-partial { background: var(--warning-bg); color: var(--warning); }
+    .badge-coverage-dangling { background: var(--error-bg); color: var(--error); }
 
     .claim-list { list-style: none; margin: 4px 0 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
     .claim {

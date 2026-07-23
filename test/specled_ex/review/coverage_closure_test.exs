@@ -102,6 +102,30 @@ defmodule SpecLedEx.Review.CoverageClosureTest do
       assert aggregate_reach["subject_a"].status == :ok_aggregate
       assert per_test_reach["subject_a"].status == :ok_per_test
     end
+
+    # Flag 1 (specled_-155.7 orchestrator addendum): a degraded :per_test
+    # envelope must never report as trustworthy :ok_per_test — the renderer
+    # has no other channel to detect the async-contamination guard.
+    test "reports :async_contaminated for a degraded :per_test envelope — never :ok_per_test, with an empty by_requirement map" do
+      reach =
+        CoverageClosure.build_v2(fixture_index(),
+          tracer_edges: @edges,
+          envelope: %{mode: :per_test, payload: [], degraded: true}
+        )
+
+      assert reach["subject_a"] == %{status: :async_contaminated, by_requirement: %{}}
+      assert reach["subject_a"].status != :ok_per_test
+    end
+
+    test "a non-degraded :per_test envelope (degraded: false) still reports :ok_per_test with real data" do
+      reach =
+        CoverageClosure.build_v2(fixture_index(),
+          tracer_edges: @edges,
+          envelope: %{mode: :per_test, payload: [], degraded: false}
+        )
+
+      assert reach["subject_a"].status == :ok_per_test
+    end
   end
 
   describe "build_v2/2 — aggregate mode MFA coverage" do

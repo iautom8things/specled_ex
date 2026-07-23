@@ -27,6 +27,17 @@ defmodule Mix.Tasks.Spec.Triangle do
     * the per-test coverage records whose files intersect that closure, and
     * the subject's execution-reach ratio rendered as `"N/M (0.FF)"`.
 
+  Reads the v2 coverage envelope (`SpecLedEx.Coverage.Store.read_v2/1`) and
+  prints its `mode` (`aggregate` or `per_test`). In `:aggregate` mode each
+  requirement additionally prints `closure_coverage: K/N MFAs executed
+  (X.X%)` from `SpecLedEx.CoverageTriangulation.aggregate_requirement_reach/2`,
+  and the per-test-only detectors (`branch_guard_untethered_test`, the
+  per-test form of `branch_guard_underspecified_realization`, and
+  `reaching_tests`) are labeled `detector_unavailable` (reason
+  `aggregate_artifact_only`) rather than silently omitted. A missing,
+  legacy (pre-v2), invalid, or async-contaminated per-test artifact each
+  print their own distinct `detector_unavailable` note.
+
   Artifacts that are absent degrade gracefully: the task prints a note and
   continues rather than failing. This task never mutates `state.json` (per
   `specled.triangulation.spec_triangle_task`).
@@ -53,7 +64,7 @@ defmodule Mix.Tasks.Spec.Triangle do
     selected_subjects = select_subjects!(index, selection)
 
     artifact_path = opts[:artifact_path] || Store.default_path()
-    coverage = load_coverage(artifact_path)
+    envelope_result = load_envelope(artifact_path)
     edges = load_tracer_edges()
     tag_index = tag_index_from_index(index)
 
@@ -61,7 +72,9 @@ defmodule Mix.Tasks.Spec.Triangle do
     world = %{subjects: subjects, tracer_edges: edges}
 
     selected_subjects
-    |> Enum.map(fn subject -> build_diagnostic(subject, subjects, world, coverage, tag_index) end)
+    |> Enum.map(fn subject ->
+      build_diagnostic(subject, subjects, world, envelope_result, tag_index)
+    end)
     |> render_all()
   end
 
@@ -96,11 +109,20 @@ defmodule Mix.Tasks.Spec.Triangle do
   # Artifact loading
   # ---------------------------------------------------------------------------
 
-  defp load_coverage(path) do
+  # covers: specled.triangulation.envelope_legacy_and_invalid_distinct
+  # Mirrors SpecLedEx.Review.CoverageClosure's private load_envelope/1 —
+  # existence is checked before decoding so a genuinely-missing artifact
+  # reports :no_coverage_artifact rather than Store.read_v2/1's
+  # :invalid_artifact (which covers "present but undecodable").
+  defp load_envelope(path) do
     if File.regular?(path) do
-      {:ok, Store.read(path)}
+      case Store.read_v2(path) do
+        {:ok, envelope} -> {:ok, envelope}
+        {:error, :legacy_artifact, _message} -> {:degraded, :legacy_artifact}
+        {:error, :invalid_artifact} -> {:degraded, :invalid_artifact}
+      end
     else
-      :missing
+      {:degraded, :no_coverage_artifact}
     end
   end
 
@@ -227,7 +249,7 @@ defmodule Mix.Tasks.Spec.Triangle do
   # Diagnostic assembly
   # ---------------------------------------------------------------------------
 
-  defp build_diagnostic(subject, subjects, world, coverage, tag_index) do
+  defp build_diagnostic(subject, subjects, world, envelope_result, tag_index) do
     subject_id = subject_id_of(subject)
 
     normalized =
@@ -246,26 +268,138 @@ defmodule Mix.Tasks.Spec.Triangle do
     closure_map =
       closure_map_from_requirements(subject_id, normalized.surface, requirements)
 
-    reach =
-      case coverage do
-        {:ok, records} -> CoverageTriangulation.execution_reach_map(records, closure_map)
-        :missing -> %{subject_id => "n/a (coverage missing)"}
-      end
+    coverage = resolve_coverage(envelope_result, subject_id, closure_map, requirements, tag_index)
 
     %{
       subject_id: subject_id,
       surface: normalized.surface,
       impl_bindings: normalized.impl_bindings,
       closure_available?: closure != nil,
-      coverage_available?: coverage != :missing,
-      requirements: requirements,
-      execution_reach: Map.get(reach, subject_id, "n/a"),
-      coverage_records_count: coverage_count(coverage)
+      coverage_available?: coverage.available?,
+      mode: coverage.mode,
+      degraded_reason: coverage.degraded_reason,
+      requirements: coverage.requirements,
+      execution_reach: coverage.execution_reach,
+      coverage_records_count: coverage.records_count,
+      detector_unavailable_notes: coverage.detector_unavailable_notes
     }
   end
 
-  defp coverage_count({:ok, records}) when is_list(records), do: length(records)
-  defp coverage_count(_), do: 0
+  # covers: specled.triangulation.spec_triangle_task
+  # Resolves the loaded v2 envelope (or one of the three degraded statuses
+  # Store.read_v2/1 distinguishes, mirrored by load_envelope/1 above) into
+  # the fields render/1 prints. :aggregate mode computes per-requirement
+  # closure-coverage % via CoverageTriangulation.aggregate_requirement_reach/2
+  # and labels the per-test-only detectors detector_unavailable via
+  # CoverageTriangulation.envelope_findings/3 (reason aggregate_artifact_only)
+  # rather than silently omitting them. :per_test mode reuses the v1
+  # execution-reach diagnostic unchanged (the envelope's :payload IS the v1
+  # record list) unless the envelope itself is degraded (async
+  # contamination), which is labeled detector_unavailable instead of
+  # computing per-test findings over data that may be corrupted.
+  defp resolve_coverage(
+         {:degraded, status},
+         _subject_id,
+         closure_map,
+         requirements,
+         tag_index
+       )
+       when status in [:no_coverage_artifact, :legacy_artifact, :invalid_artifact] do
+    notes =
+      status
+      |> CoverageTriangulation.envelope_findings(closure_map, tag_index)
+      |> Enum.map(&detector_unavailable_note/1)
+
+    %{
+      available?: false,
+      mode: nil,
+      degraded_reason: status,
+      requirements: requirements,
+      execution_reach: "n/a (#{status})",
+      records_count: 0,
+      detector_unavailable_notes: notes
+    }
+  end
+
+  defp resolve_coverage(
+         {:ok, %{mode: :per_test, degraded: true} = envelope},
+         _subject_id,
+         closure_map,
+         requirements,
+         tag_index
+       ) do
+    notes =
+      envelope
+      |> CoverageTriangulation.envelope_findings(closure_map, tag_index)
+      |> Enum.map(&detector_unavailable_note/1)
+
+    %{
+      available?: false,
+      mode: :per_test,
+      degraded_reason: :async_contaminated,
+      requirements: requirements,
+      execution_reach: "n/a (per-test coverage degraded)",
+      records_count: 0,
+      detector_unavailable_notes: notes
+    }
+  end
+
+  defp resolve_coverage(
+         {:ok, %{mode: :per_test, payload: records}},
+         subject_id,
+         closure_map,
+         requirements,
+         _tag_index
+       ) do
+    reach = CoverageTriangulation.execution_reach_map(records, closure_map)
+
+    %{
+      available?: true,
+      mode: :per_test,
+      degraded_reason: nil,
+      requirements: requirements,
+      execution_reach: Map.get(reach, subject_id, "n/a"),
+      records_count: length(records),
+      detector_unavailable_notes: []
+    }
+  end
+
+  defp resolve_coverage(
+         {:ok, %{mode: :aggregate} = envelope},
+         subject_id,
+         closure_map,
+         requirements,
+         tag_index
+       ) do
+    reach = CoverageTriangulation.aggregate_requirement_reach(envelope, closure_map)
+
+    annotated =
+      Enum.map(requirements, fn req ->
+        case Map.get(reach, {subject_id, req.id}) do
+          nil -> req
+          r -> Map.put(req, :closure_coverage, r)
+        end
+      end)
+
+    notes =
+      envelope
+      |> CoverageTriangulation.envelope_findings(closure_map, tag_index)
+      |> Enum.filter(&(&1["code"] == "detector_unavailable"))
+      |> Enum.map(&detector_unavailable_note/1)
+
+    %{
+      available?: true,
+      mode: :aggregate,
+      degraded_reason: nil,
+      requirements: annotated,
+      execution_reach:
+        "n/a (aggregate mode has no per-subject execution_reach; see per-requirement closure_coverage)",
+      records_count: length(envelope.mfas),
+      detector_unavailable_notes: notes
+    }
+  end
+
+  defp detector_unavailable_note(finding), do: "#{finding["reason"]} — #{finding["message"]}"
 
   defp build_requirement_view(subject, req, closure, tag_index) do
     req_id = fetch_field(req, "id")
@@ -349,11 +483,16 @@ defmodule Mix.Tasks.Spec.Triangle do
     Mix.shell().info("execution_reach: #{d.execution_reach}")
     Mix.shell().info("coverage_records: #{d.coverage_records_count}")
 
+    if d.mode, do: Mix.shell().info("mode: #{d.mode}")
+
     if not d.closure_available?,
       do: Mix.shell().info("note: tracer manifest missing; closure walk skipped")
 
-    if not d.coverage_available?,
-      do: Mix.shell().info("note: coverage artifact missing; run `mix spec.cover.test`")
+    render_degraded_note(d.degraded_reason)
+
+    Enum.each(d.detector_unavailable_notes, fn note ->
+      Mix.shell().info("detector_unavailable: #{note}")
+    end)
 
     Mix.shell().info("")
 
@@ -366,8 +505,46 @@ defmodule Mix.Tasks.Spec.Triangle do
       Mix.shell().info("  closure_files: #{format_list(req.closure_files)}")
 
       Mix.shell().info("  exercising_tests: #{format_list(req.exercising_tests)}")
+
+      render_closure_coverage(Map.get(req, :closure_coverage))
     end)
   end
+
+  # Preserves the exact pre-v2 wording for the missing-artifact case (tests
+  # assert on it); legacy/invalid/async-contaminated are new distinct notes.
+  defp render_degraded_note(:no_coverage_artifact),
+    do: Mix.shell().info("note: coverage artifact missing; run `mix spec.cover.test`")
+
+  defp render_degraded_note(:legacy_artifact),
+    do:
+      Mix.shell().info(
+        "note: coverage artifact is a legacy (pre-v2) format; run `mix spec.cover.test` to regenerate it"
+      )
+
+  defp render_degraded_note(:invalid_artifact),
+    do:
+      Mix.shell().info(
+        "note: coverage artifact is invalid or undecodable; run `mix spec.cover.test` to regenerate it"
+      )
+
+  defp render_degraded_note(:async_contaminated),
+    do:
+      Mix.shell().info(
+        "note: per-test coverage is degraded (async contamination); re-run `mix spec.cover.test --per-test` without --allow-async"
+      )
+
+  defp render_degraded_note(nil), do: :ok
+
+  defp render_closure_coverage(nil), do: :ok
+
+  defp render_closure_coverage(reach) do
+    Mix.shell().info(
+      "  closure_coverage: #{reach.executed_mfa_count}/#{reach.closure_mfa_count} MFAs executed (#{format_pct(reach.line_coverage_pct)})"
+    )
+  end
+
+  defp format_pct(pct) when is_float(pct), do: "#{:erlang.float_to_binary(pct, decimals: 1)}%"
+  defp format_pct(_), do: "0.0%"
 
   defp render_all([]), do: Mix.shell().info("subjects: 0")
 

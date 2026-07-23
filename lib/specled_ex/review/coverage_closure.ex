@@ -286,6 +286,7 @@ defmodule SpecLedEx.Review.CoverageClosure do
           | :legacy_artifact
           | :invalid_artifact
           | :no_tracer_manifest
+          | :async_contaminated
 
   @type v2_tagged_test :: %{file: String.t(), test_name: String.t(), strength: String.t()}
 
@@ -324,6 +325,12 @@ defmodule SpecLedEx.Review.CoverageClosure do
     * `:no_tracer_manifest` — the compiler tracer manifest is missing, so the
       closure walk itself could not run (checked first, same precedence as
       `build/2`).
+    * `:async_contaminated` — the envelope loaded as `:per_test` but carries
+      `degraded: true` (the `--per-test` lane's async-contamination guard,
+      the same condition `CoverageTriangulation.envelope_findings/3` reports
+      under reason `:async_contaminated`). `by_requirement` is empty rather
+      than reporting untrustworthy per-test attribution as `:ok_per_test` —
+      see the flag-1 addendum on specled_-155.7.
 
   Each `by_requirement` entry carries:
 
@@ -379,6 +386,20 @@ defmodule SpecLedEx.Review.CoverageClosure do
       case resolve_envelope(opts, artifact_path) do
         {:degraded, status} ->
           Map.new(subjects, fn s -> {s.id, %{status: status, by_requirement: %{}}} end)
+
+        # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
+        # Flag 1 (specled_-155.7 orchestrator addendum): build_v2 previously
+        # tagged a degraded `:per_test` envelope `:ok_per_test` with no
+        # render-visible signal that per-test attribution may be corrupted
+        # by async contamination. Neither `:status` nor `:by_requirement`
+        # carried any other channel for this, so the renderer could not
+        # detect it without this minimal status special-case — a distinct
+        # `:async_contaminated` status, empty `by_requirement` (same shape
+        # as the other degraded statuses above).
+        {:ok, %{mode: :per_test, degraded: true}} ->
+          Map.new(subjects, fn s ->
+            {s.id, %{status: :async_contaminated, by_requirement: %{}}}
+          end)
 
         {:ok, envelope} ->
           world = %{subjects: subjects, tracer_edges: tracer_edges}
