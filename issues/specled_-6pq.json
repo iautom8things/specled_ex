@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T18:16:32Z",
+  "description": "No spec subject — evidence-preservation ops task. Freeze the l05 evidence corpus from Atlas (~/dev/mz/atlas) before it bumps spec_led_ex past 0.3.3 and accepts o40 drift. Atlas currently pins ca9cec8 (pre-0.2.0, pre-o40) — corpus intact. Capture: committed realization_hashes.json + provenance (SHA, dep pin, Elixir/OTP), full macOS mix spec.check drift output, tracer manifests (_build/*/.spec/xref_mfa.etf), Linux CI equivalent if obtainable, and git-history bracket SHAs around the 53/101 dep-bump incident (PR #60 era). Store under vault; comment path on specled_-l05. Until done, Atlas must not re-baseline.",
+  "id": "specled_-6pq",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Snapshot Atlas pre-o40 hash corpus for specled_-l05 attribution",
+  "type": "task",
+  "updated_at": "2026-07-23T18:16:32Z"
+}
