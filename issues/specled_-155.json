@@ -7,10 +7,12 @@
   "created": "2026-07-23T12:02:17Z",
   "description": "Remediation epic for specled_-47j (P1: Coverage.Formatter fabricated artifact + O(tests x modules) cost). Full validated root-cause report and design: workflow wf_a72896ee-645 (session 0a6853df); digest in specled_-47j comments.\n\nDesign: Aggregate-First hybrid. Default mode: mix spec.cover.test runs 'mix test --cover --export-coverage specled' with NO formatter, then ingests the coverdata into a versioned v2 envelope (async-safe, O(codebase)). mix spec.cover.ingest \u003cpath.coverdata\u003e is the coveralls/CI escape hatch. Per-test attribution is an opt-in --per-test lane on OTP 27+ native read-only coverage deltas (diff, NEVER :cover.reset — reset corrupts the wrapped --cover tally) with classic per-module fallback and fail-closed guardrails. Formatter is inert unless armed by the task via the :specled_ex app-env seam. Headline metric: % of realization-closure MFAs covered by ANY test; 'self-verified' composite verdict (closure covered + \u003e=1 executed tagged test) for spec-own-test semantics; exact attribution only in --per-test mode.\n\nMaintainer decisions (2026-07-23, all five resolved):\n1. Triangulation consumers are spec.triangle + spec.review ONLY — rescope spec text; do NOT wire triangulation into mix spec.check (spec.check stays fast). No gate-wiring follow-up ticket.\n2. Keep the name mix spec.cover.test; behavior change carried by loud 0.4.0 release notes.\n3. Ship the rebuilt --per-test lane in the same release.\n4. OTP posture: recommend \u003e= 27.2 for the native path, do not hard-gate; try/catch mitigates.\n5. Legacy artifacts rejected as :legacy_artifact with a clear message naming the re-run command; no auto-migrate/delete.\n\nSequencing:\n```mermaid\ngraph LR\n    T1[T1 store v2] --\u003e T2[T2 aggregate ingest]\n    T1 --\u003e T4[T4 formatter disarm]\n    T2 --\u003e T3[T3 cover.test rework]\n    T2 --\u003e T6[T6 triangulation]\n    T3 --\u003e T5[T5 per-test lane]\n    T4 --\u003e T5\n    T6 --\u003e T7[T7 review rendering]\n    T3 --\u003e T8[T8 spec+ADR edits]\n    T5 --\u003e T8\n    T7 --\u003e T8\n    T8 --\u003e T9[T9 docs sweep]\n```\nT4 is the minimal early-ship candidate (stops garbage production immediately).",
   "id": "specled_-155",
-  "labels": [],
+  "labels": [
+    "slug:aggregate-first-spec-coverage"
+  ],
   "priority": 1,
   "status": "open",
   "title": "Aggregate-first spec coverage — specled_-47j remediation",
   "type": "epic",
-  "updated_at": "2026-07-23T12:03:28Z"
+  "updated_at": "2026-07-23T19:57:53Z"
 }
