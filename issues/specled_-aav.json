@@ -31,11 +31,15 @@
     {
       "text": "VERIFY: PASS (re-verified at HEAD bef5400)\nSession: subagent verifier-aav\nLog: n/a — subagent\n\nCovers commits bf1a7b3 + bef5400 (base af16144). bef5400 is test-only, resolving the vacuous-pass surface noted in the prior VERIFY.\n\nMechanical checks (unchanged):\n- Files touched: 2 (.spec/specs/coverage_capture.spec.md, test/mix/tasks/spec_cover_test_test.exs)\n- Files outside Allowed globs: 0\n- Files matching Out-of-Scope globs: 0\n- mix.exs untouched (no new deps); no lib/**, .github/**, docs/**, or other test files.\n\nDelta introduced by bef5400 (all in the allowed test file, cumulative-parity tripwire):\n- Non-emptiness floor: asserts plain_counts != [] before the parity equality, so two empty decodes can no longer pass vacuously.\n- Covered-module presence: asserts the decoded totals include the fixture's Covered module (defmodule Covered at line 373, exercised via hello/0 + add/2) — tuple pattern {{mod, _line}, _count} matches :cover.analyse(_, :calls, :line) output.\n- Marker-presence guard: asserts output has both DECODE begin/end markers before String.split, converting a marker-less child decode into a clear failure rather than a MatchError.\n\nSemantic checks:\n- Spec stubs flipped by this ticket: 0 (spec-verification block byte-unchanged across both commits).\n- specled.coverage_capture.cumulative_parity: covered by test/mix/tasks/spec_cover_test_test.exs:178 (parity equality now at line 220, guarded by the non-emptiness + Covered-presence floors at lines 214-219). Would fail if arming the --per-test formatter perturbed cumulative per-module/per-line totals, OR — new — if the decode silently returned empty/Covered-less content. Seams: none (real scaffolded child-BEAM fixture + real elixir -e subprocess; no mocks/stubs).\n- Intent-level scope concerns: none.\n- Targeted verification: PASS — mix test test/mix/tasks/spec_cover_test_test.exs --include integration =\u003e 8 tests, 0 failures at HEAD bef5400.\n- Full-suite verification: not run by verifier (by design).\n\nVerdict: PASS\n\nNotes: The advisory vacuous-pass Note from the prior VERIFY is now closed by bef5400. No new concerns.",
       "timestamp": "2026-07-23T22:11:25Z"
+    },
+    {
+      "text": "AUDIT: APPROVE (auto — selective audit)\nSession: 9355be03-5df8-4ea9-b29e-3ee9a1cd4dcc\nLog: ~/.claude/projects/-Users-mzubieta-dev-mz-specled-ex/9355be03-5df8-4ea9-b29e-3ee9a1cd4dcc.jsonl\n\nReasoning: VERIFY reported PASS (re-verified at bef5400) with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. TEST_CRITIC: FIXED (1 blocking resolved, 0 waived). No auditor was spawned per policy.",
+      "timestamp": "2026-07-23T22:11:53Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fix decode_coverdata host :cover teardown in spec_cover_test_test.exs (run in child BEAM)",
   "type": "bug",
-  "updated_at": "2026-07-23T22:11:25Z"
+  "updated_at": "2026-07-23T22:11:53Z"
 }
