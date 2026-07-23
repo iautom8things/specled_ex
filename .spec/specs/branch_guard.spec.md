@@ -6,6 +6,8 @@ Diff-aware co-change validation for current-truth subject specs and durable ADRs
 
 Catch code, docs, and test changes that move ahead of current-truth specs or skip a needed cross-cutting ADR update.
 
+Realization findings enter the guard through `SpecLedEx.Realization.Orchestrator` — that is why orchestrator code and tests sit in this subject's surface. The orchestrator's silent-seed pass and clean-run refresh share a single api_boundary hasher (`Orchestrator.api_boundary_hashes/2`), so committed baselines in `.spec/realization_hashes.json` — including bare-module entries — cannot oscillate between the two passes. The guard depends on those baselines being stable: its file-touch findings yield to attestations derived from them (`specled.decision.file_touch_yields_to_realization`).
+
 ```yaml spec-meta
 id: specled.branch_guard
 kind: workflow
@@ -46,7 +48,7 @@ decisions:
 
 ```yaml spec-requirements
 - id: specled.branch_guard.subject_cochange
-  statement: The branch guard inside mix spec.check shall fail when changed code, tests, guides, templates, skills, or governed package files are not matched by current-truth subject spec updates for the impacted subjects, including unmapped changed policy files outside current subject coverage, and including orchestrator realization updates.
+  statement: The branch guard inside mix spec.check shall fail when changed code, tests, guides, templates, skills, or governed package files are not matched by current-truth subject spec updates for the impacted subjects, including unmapped changed policy files outside current subject coverage.
   priority: must
   stability: evolving
 - id: specled.branch_guard.cross_cutting_decision
