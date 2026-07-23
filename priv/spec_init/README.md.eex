@@ -22,6 +22,6 @@ This folder is the package-local Spec Led layer.
 3. add or tighten the smallest proof when behavior changed
 4. run `mix spec.next`
 5. if it says `needs subject updates`, update the right current-truth subject in `specs/`
-6. if it says `needs decision update`, add or revise an ADR only when the change is cross-cutting and durable
+6. if it says `needs decision update`, add or revise an ADR when the change is cross-cutting and durable; otherwise record `Spec-Drift: branch_guard_missing_decision_update=info` as a git trailer with a one-line reason
 7. when it says `ready for check`, run `mix spec.check --base ...`
 8. use `mix spec.status` when you need coverage or frontier summaries

@@ -13,7 +13,7 @@ composable — when subject B's MFA changes, subject A's implementation hash
 flips via the referenced hash, and drift findings dedupe around the root
 cause.
 
-Branch-check dispatch and the tagged implementation tests exercise this tier end to end.
+Branch-check dispatch and the tagged implementation tests exercise this tier end to end. Governance messaging inside branch-check (finding text and `fix:` blocks) sits outside this tier's semantics — only dispatch and hashing code affect it.
 
 ```yaml spec-meta
 id: specled.implementation_tier

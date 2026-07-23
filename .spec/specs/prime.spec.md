@@ -6,6 +6,8 @@ Session-start context for agents and maintainers.
 
 Give one read-only command that helps a maintainer or agent understand the current workspace and branch before editing current truth.
 
+The default loop line for `needs decision update` names both resolution arms: revise ADRs for durable cross-cutting rules, otherwise clear the finding with a `Spec-Drift: branch_guard_missing_decision_update=info` trailer plus a one-line reason.
+
 ```yaml spec-meta
 id: specled.prime
 kind: workflow
@@ -25,6 +27,7 @@ decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.guided_reconciliation_loop
   - specled.decision.no_app_start
+  - specled.decision.decision_fork_advertised_at_decision_points
 ```
 
 ## Requirements

@@ -915,6 +915,67 @@ defmodule SpecLedEx.BranchCheckTest do
     end
   end
 
+  describe "branch_guard_missing_decision_update message" do
+    @tag spec: "specled.branch_guard.missing_decision_fix_block"
+    test "ends with a fix block naming the ADR and trailer arms", %{root: root} do
+      init_git_repo(root)
+
+      write_files(root, %{
+        "lib/a.ex" => "defmodule A do\nend\n",
+        "lib/b.ex" => "defmodule B do\nend\n"
+      })
+
+      write_subject_spec(
+        root,
+        "a",
+        meta: %{
+          "id" => "a.subject",
+          "kind" => "module",
+          "status" => "active",
+          "surface" => ["lib/a.ex"]
+        }
+      )
+
+      write_subject_spec(
+        root,
+        "b",
+        meta: %{
+          "id" => "b.subject",
+          "kind" => "module",
+          "status" => "active",
+          "surface" => ["lib/b.ex"]
+        }
+      )
+
+      commit_all(root, "initial")
+
+      write_files(root, %{
+        "lib/a.ex" => "defmodule A do\n  def run, do: :ok\nend\n",
+        "lib/b.ex" => "defmodule B do\n  def run, do: :ok\nend\n"
+      })
+
+      # Touch both subject specs so only the decision co-change is missing.
+      for name <- ["a", "b"] do
+        path = Path.join(root, ".spec/specs/#{name}.spec.md")
+        File.write!(path, File.read!(path) <> "\n")
+      end
+
+      index = Index.build(root)
+      report = BranchCheck.run(index, root, base: "HEAD", commit_realization_hashes?: false)
+
+      assert [finding] =
+               Enum.filter(
+                 report["findings"],
+                 &(&1["code"] == "branch_guard_missing_decision_update")
+               )
+
+      assert finding["message"] =~
+               "```\nfix: if this branch changes durable cross-cutting policy, add or revise an ADR (`mix spec.decision.new <id> --title \"...\"`); if it does not, record `Spec-Drift: branch_guard_missing_decision_update=info` as a git trailer on a commit in this range, with a one-line reason in the commit body.\n```"
+
+      assert String.ends_with?(String.trim_trailing(finding["message"]), "```")
+    end
+  end
+
   # Helper for tests in the file-touch-yields-to-attestation describe block.
   # `write_subject_spec/3` is geared toward the existing tests' meta layout
   # (id/kind/status only); these tests need realized_by and surface inline.

@@ -58,7 +58,7 @@ defmodule SpecLedEx.Prime do
       "Make the smallest change and keep the regression proof in place.",
       "Run `mix spec.next --bugfix` after code, docs, or tests change.",
       "If next says `needs subject updates`, update the named subject before you finish.",
-      "If next says `needs decision update`, revise ADRs only when the rule is durable and cross-cutting.",
+      "If next says `needs decision update`, revise ADRs when the rule is durable and cross-cutting; otherwise clear the finding with a `Spec-Drift: branch_guard_missing_decision_update=info` trailer plus a one-line reason.",
       "When next says `ready for check`, run `#{check_command(base)}`."
     ]
   end
@@ -69,7 +69,7 @@ defmodule SpecLedEx.Prime do
       "Make the smallest change and tighten the smallest proof that matters.",
       "Run `mix spec.next` after code, docs, or tests change.",
       "If next says `needs subject updates`, update the named subject before you finish.",
-      "If next says `needs decision update`, revise ADRs only when the rule is durable and cross-cutting.",
+      "If next says `needs decision update`, revise ADRs when the rule is durable and cross-cutting; otherwise clear the finding with a `Spec-Drift: branch_guard_missing_decision_update=info` trailer plus a one-line reason.",
       "When next says `ready for check`, run `#{check_command(base)}`."
     ]
   end

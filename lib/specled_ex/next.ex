@@ -184,8 +184,10 @@ defmodule SpecLedEx.Next do
        ) do
     [
       "The subject updates are already in the change set: #{Enum.map_join(subject_refs, ", ", & &1["file"])}.",
-      "Add or revise an ADR if this branch changes durable cross-cutting policy.",
-      "Run `mix spec.check` after the ADR decision is settled."
+      "Decide whether this branch changes durable cross-cutting policy: does it constrain future changes, span subjects beyond this branch, or record a rejected alternative?",
+      "If it does, add or revise an ADR (`mix spec.decision.new <id> --title \"...\"`).",
+      "If it does not, record `Spec-Drift: branch_guard_missing_decision_update=info` as a git trailer on a commit in this range, with a one-line reason in the commit body.",
+      "Run `mix spec.check` after the ADR-or-trailer decision is settled."
     ]
   end
 

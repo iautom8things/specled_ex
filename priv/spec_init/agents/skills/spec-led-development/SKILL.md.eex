@@ -57,6 +57,7 @@ If a subject has no binding and you don't know where to start: `mix spec.suggest
 | `branch_guard_untested_realization`       | The closure has MFAs but no test exercised any of them                                                 | Add a test and tag it                                                                                                              |
 | `branch_guard_untethered_test`            | Test tagged for subject A but its coverage hits only subject B                                         | Tag is wrong, or test belongs in another file; opt out with `@tag spec_triangulation: :indirect` if intentional                    |
 | `branch_guard_underspecified_realization` | Coverage hits subject A but no exercising test names A's requirements                                  | Add `@tag spec: "<a.req>"` to the test                                                                                             |
+| `branch_guard_missing_decision_update`    | Cross-cutting change spans multiple subjects but no decision file changed                              | ADR if the change is durable cross-cutting policy; else `Spec-Drift: branch_guard_missing_decision_update=info` trailer with a one-line reason (see ADRs below)  |
 | `detector_unavailable`                    | A detector's prerequisite is missing                                                                   | Run the prerequisite (e.g., `mix spec.cover.test` for `:no_coverage_artifact`); umbrella projects are not yet supported            |
 | `append_only/*`                           | A spec was deleted, downgraded, or weakened without authorization                                      | Restore, or add an ADR with `change_type: weakens \| narrows-scope \| adds-exception \| deprecates` and `affects: [<requirement>]` |
 | `overlap/duplicate_covers`                | Two scenarios in the same subject `cover` the same requirement                                         | Merge, or rename one                                                                                                               |
@@ -78,7 +79,12 @@ Use these. Do not weaken the spec to silence the finding.
 
 ## ADRs (`.spec/decisions/*.md`)
 
-Only for durable cross-cutting policy. Required structured fields when the ADR weakens, narrows, deprecates, or supersedes:
+Only for durable cross-cutting policy. When `mix spec.next` says `needs decision update` or `mix spec.check` fires `branch_guard_missing_decision_update`, that is a fork, not an ADR mandate. Apply the rubric first — is the rule durable (constrains future changes), cross-cutting beyond this branch, or does it record a rejected alternative?
+
+- **Yes** → add or revise an ADR (`mix spec.decision.new <id> --title "..."`).
+- **No** → record `Spec-Drift: branch_guard_missing_decision_update=info` as a git trailer on a commit in the range, with a one-line reason in the commit body. The trailer is per-range and auditable in history; do not demote the finding code in config just to quiet it.
+
+Required structured fields when the ADR weakens, narrows, deprecates, or supersedes:
 
 - `change_type:` — `clarifies | weakens | narrows-scope | adds-exception | deprecates | reverses`
 - `affects:` — list of requirement ids the ADR authorizes change to

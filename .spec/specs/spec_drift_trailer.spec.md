@@ -26,6 +26,7 @@ realized_by:
     - "SpecLedEx.BranchCheck.Trailer.apply_pair/2"
 decisions:
   - specled.decision.spec_drift_base_to_head
+  - specled.decision.decision_fork_advertised_at_decision_points
 ```
 
 ## Requirements
