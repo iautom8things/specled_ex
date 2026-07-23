@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T12:03:11Z",
+  "description": "Advances: specled.coverage_capture, specled.triangulation, specled.spec_review, specled.decision_governance\n\n.spec/specs/coverage_capture.spec.md rewrite: aggregate-first intent; new must-requirements aggregate_ingest, versioned_artifact (supersedes the no-in-band-version clause), formatter_disarmed_by_default, line_level_delta_snapshots (per-test lane), cast_time_compaction, degenerate_artifact_rejected; serialized_run rescoped to --per-test and escalated warning-\u003efailure; keyed_by_test_pid rewritten to honest {module, name} key (pid claim confirmed fictional); new scenarios: never-executed function ABSENT from records; bare wiring produces no artifact. .spec/specs/triangulation.spec.md: restate untested_realization/execution_reach_metric over the envelope; gate untethered_test/underspecified_realization on mode :per_test; new closure_coverage_metric requirement; Decision 1: fix the cold_run_detector_unavailable scenario's false 'mix spec.check runs triangulation' premise — rescope to spec.triangle/spec.review, spec.check stays fast, NO gate wiring. .spec/specs/spec_review.spec.md: coverage_tab_bind_closure restated; degraded states. NEW ADR specled.decision.aggregate_first_spec_coverage.md superseding-in-part serialized_per_test_coverage (serialization rationale retained verbatim for the opt-in lane; the \u0026:cover.analyse/1 default and default-posture claims superseded; codifies headline-ANY-test + self-verified semantics, read-only/never-reset invariant, OTP recommend-\u003e=27.2-no-hard-gate matrix, versioned envelope). mix spec.check must pass for all touched subjects.",
+  "id": "specled_-155.8",
+  "labels": [],
+  "parent": "specled_-155",
+  "priority": 1,
+  "status": "open",
+  "title": "T8: Spec + ADR edits (coverage_capture, triangulation, spec_review; new aggregate-first ADR)",
+  "type": "task",
+  "updated_at": "2026-07-23T12:03:11Z"
+}
