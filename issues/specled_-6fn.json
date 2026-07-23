@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T08:39:00Z",
+  "description": "Advances: specled.package — cold verification of specled_-ci0 found the lint gate's corpus (skills/, docs/*.md, README.md) excludes .spec/: branch_guard_test_only_change (fabricated, same code specled_-ci0 removed from concepts.md) survives in .spec/specs/triangulation.spec.md:155 and .spec/decisions/specled.decision.finding_code_budget.md:47, and branch_guard_missing_subject_update_attested appears in a decision doc but is not emitted by lib. Extend test/docs_identifier_lint_test.exs corpus to .spec/**/*.md (decide policy for decision docs describing hypothetical/budgeted codes — maybe an explicit allow-marker), make docs glob recursive, and fix or annotate the three instances.",
+  "id": "specled_-6fn",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Extend doc-identifier lint to .spec/ and reconcile fabricated codes in spec corpus",
+  "type": "task",
+  "updated_at": "2026-07-23T08:39:00Z"
+}
