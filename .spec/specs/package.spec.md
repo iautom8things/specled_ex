@@ -80,6 +80,10 @@ decisions:
   statement: The package shall provide a concepts document at `docs/concepts.md` that explains the spec triangle (specs ↔ code ↔ tests), the `realized_by` tiers, and the graceful-degrade rule that emits `detector_unavailable` instead of failing when a detector's prerequisites are missing.
   priority: must
   stability: evolving
+- id: specled.package.doc_identifier_integrity
+  statement: Documentation and skill files shall reference only finding codes defined by the implementation and shall show config severity values in the bare YAML token form.
+  priority: must
+  stability: stable
 ```
 
 ## Verification
@@ -90,6 +94,7 @@ decisions:
   covers:
     - specled.package.index_and_state
     - specled.package.declarative_governance
+    - specled.package.doc_identifier_integrity
 - kind: readme_file
   target: README.md
   covers:

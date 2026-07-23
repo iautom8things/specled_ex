@@ -72,16 +72,16 @@ relevant codes so they do not nag forever:
 # Coverage triangulation skipped permanently
 branch_guard:
   severities:
-    branch_guard_untested_realization: :off
-    branch_guard_untethered_test: :off
-    branch_guard_underspecified_realization: :off
+    branch_guard_untested_realization: off
+    branch_guard_untethered_test: off
+    branch_guard_underspecified_realization: off
 
-# Umbrella project — these will degrade automatically but :off
+# Umbrella project — these will degrade automatically but off
 # is more explicit
 branch_guard:
   severities:
-    branch_guard_realization_drift: :off
-    branch_guard_dangling_binding: :off
+    branch_guard_realization_drift: off
+    branch_guard_dangling_binding: off
 ```
 
 ## Severity ladder
@@ -93,6 +93,13 @@ branch_guard:
   Show with `--verbose` or `SPECLED_SHOW_INFO=1`.
 - `:warning` — visible by default; does not fail the gate.
 - `:error` — fails `mix spec.check` (non-zero exit).
+
+> **Warning — YAML value form.** In `config.yml`, severity values are written
+> as **bare tokens** (`off`, `info`, `warning`, `error`), not Elixir atoms. The
+> leading-colon atom form is parsed by YAML as a string (`":off"`), which
+> `SpecLedEx.Config` drops with an unsurfaced diagnostic — the override is
+> a silent no-op and the code keeps its default severity. The atom notation used
+> in this prose describes the resolved severity; it is not the on-disk syntax.
 
 Bootstrap should never write `:info` for the high-trust codes
 (`branch_guard_realization_drift`, `branch_guard_dangling_binding`). Either

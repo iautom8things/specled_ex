@@ -210,6 +210,12 @@ evidence ledger, fetch the `spec-evidence` ref read-only before the check;
 treat its attestations as unauthenticated hints, not proof that
 verification commands ran.
 
+Security caveat: the scaffolded template builds untrusted PR code in the same
+job that carries a write-scoped token and deploys the artifact. On public
+repos, split the render job (read-only, runs PR code) from the deploy/comment
+job (write token, no PR-code execution) with an artifact handoff, or keep the
+render read-only until the template is hardened. Tracked in `specled_-3q1`.
+
 Verification:
 - Tests to pass: `mix spec.validate && mix spec.check --base origin/main`
 - Behaviors to demonstrate: artificially renaming a bound MFA in lib/ now
@@ -459,8 +465,9 @@ When the user opts out of a tier:
   ```yaml
   branch_guard:
     severities:
-      branch_guard_untested_realization: :off
-      branch_guard_underspecified_realization: :off
+      branch_guard_untested_realization: off
+      branch_guard_untethered_test: off
+      branch_guard_underspecified_realization: off
   ```
 - Umbrella project → omit phase4 and phase5; cap target_phase at phase3 or
   phase6 (with reduced severities — only test_tags and append_only graduate).

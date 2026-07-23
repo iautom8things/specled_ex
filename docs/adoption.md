@@ -170,7 +170,7 @@ test_tags:
 guardrails:
   severities:
     append_only/requirement_deleted: error
-    append_only/modal_downgraded: error
+    append_only/must_downgraded: error
     overlap/duplicate_covers: error
 
 branch_guard:
@@ -252,6 +252,13 @@ hashes disagree and `branch_guard_dangling_binding` when an MFA disappears.
 `branch_guard.severities.branch_guard_realization_drift: info` for one PR via
 config or use a per-commit `Spec-Drift:` trailer. Do not delete the binding to
 quiet the noise.
+
+**Wire CI here.** This is the phase that installs `mix spec.check --base
+<pr-base>` in CI and renders the `mix spec.review` artifact — the PR-facing
+review surface lands with the first bindings, not at lockdown. Severities are
+still warning-level, so the gate reports without hard-failing. Later phases
+(coverage, lockdown) add steps to this same workflow rather than introducing
+it.
 
 ### Phase 3 — Tag tests as you touch them
 
@@ -387,9 +394,13 @@ A few choices that come up often enough to call out:
   (`requirement_without_test_tag`). Triangulation costs a serialized
   `mix test --cover` run; teams that already run a slow test suite may decide
   the marginal signal is not worth it.
-- **Umbrella projects.** v1 emits `detector_unavailable :umbrella_unsupported`
-  for the realization tiers; tagged tests, ADR governance, overlap detection,
-  and append-only checks all still work. v1.1 will close this gap.
+- **Umbrella projects.** The realization tiers emit `detector_unavailable` with
+  reason `umbrella_unsupported`; tagged tests, ADR governance, overlap
+  detection, and append-only checks all still work. Do not gate this on a
+  version string — probe the installed dep's behavior: run `mix spec.check`
+  once and look for a `detector_unavailable` finding whose reason is
+  `umbrella_unsupported`. If it degrades cleanly, cap the target phase below the
+  realization tiers and write explicit `off` opt-outs for those codes.
 - **`mix spec.suggest_binding` for brownfield.** It only proposes
   `api_boundary` from `surface:` `lib/*.ex` entries. For `implementation`,
   `expanded_behavior`, `use`, and `typespecs` tiers, you author by hand (or

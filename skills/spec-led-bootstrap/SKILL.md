@@ -403,8 +403,9 @@ parent and depend phase2 on the fan-out).
 
 - `implementation` skipped → omit the phase5 ticket entirely.
 - `coverage triangulation` skipped → omit phase4 ticket; collapse phase3's
-  ticket to also write a permanent `:off` for `branch_guard_untested_realization`
-  and `branch_guard_underspecified_realization` in `.spec/config.yml`.
+  ticket to also write a permanent bare `off` for
+  `branch_guard_untested_realization`, `branch_guard_untethered_test`, and
+  `branch_guard_underspecified_realization` in `.spec/config.yml`.
 - Umbrella → phase2 ticket includes the note that `realized_by` tiers will
   emit `detector_unavailable :umbrella_unsupported`; omit the phase4/5
   tickets when the capability probe confirms the degrade (run

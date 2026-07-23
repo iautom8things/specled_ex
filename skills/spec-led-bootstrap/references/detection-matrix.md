@@ -85,17 +85,29 @@ rediscovered per contributor.
 Run `mix spec.validate` and `mix spec.check --base HEAD~1` (or `--base HEAD`
 on a fresh repo) and classify each finding.
 
-### Schema-fatal (parser/*)
+### Schema-fatal (identifier validator + parse errors)
 
-- `parser/missing_id`
-- `parser/duplicate_id`
-- `parser/yaml_error`
-- `parser/unsupported_block`
+The verifier emits these finding codes when a spec parses but its
+identifiers are wrong:
 
-These mean a spec file does not parse. Bootstrap must repair these before
-any new authoring — emit a **phase 0.5** ticket "Repair malformed spec files"
-that lists each affected path. Do not attempt to repair inline; the user
-authored those files and may have intent the skill cannot recover.
+- `missing_requirement_id`
+- `missing_scenario_id`
+- `duplicate_requirement_id`
+- `duplicate_scenario_id`
+
+Parse-level breakage is **not** a finding code. When a `spec-*` fenced block
+fails to decode — malformed YAML, wrong top-level shape (a mapping where a
+list is required), or a schema-validation failure — `SpecLedEx.Parser` records
+a `parse_errors` string on the spec (e.g. `"spec-meta decode failed: ..."`)
+rather than emitting a code. A fenced block whose info-string is not one of the
+recognized `spec-*` tags is silently ignored, so "unsupported block" is a
+no-op, not a diagnostic.
+
+These mean a spec file does not parse or carries broken ids. Bootstrap must
+repair them before any new authoring — emit a **phase 0.5** ticket "Repair
+malformed spec files" that lists each affected path. Do not attempt to repair
+inline; the user authored those files and may have intent the skill cannot
+recover.
 
 ### Corpus drift (validator/branch-guard)
 

@@ -489,10 +489,12 @@ A single session touches at most two sides of the triangle on purpose:
   `must` lands in a subject spec. Tests pick up a new `@tag spec:`
   pointing at the new requirement. Code implements it. All three sides
   move together; `mix spec.next` guides the order.
-- **Test-only change.** Coverage shifts but no tier hash does. The branch
-  guard notices (`branch_guard_test_only_change`) and does not demand a
-  spec update. Triangulation still runs, so mistagged or untethered
-  tests surface here.
+- **Test-only change.** Coverage shifts but no tier hash does. Touching a
+  subject's files without updating its spec would normally raise
+  `branch_guard_missing_subject_update`; a `Spec-Drift: test_only` commit
+  trailer downgrades that finding to `:info` for the range, so the guard does
+  not demand a spec update. Triangulation still runs, so mistagged or
+  untethered tests surface here.
 
 The verification command is aggregated: every `tagged_tests` entry across
 the repo is collapsed into a single

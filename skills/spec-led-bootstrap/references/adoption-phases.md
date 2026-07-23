@@ -111,6 +111,14 @@ not exist (intentional).
   start from the scaffolded workflow template
   (`deps/spec_led_ex/priv/spec_init/workflows/spec_review.yml.eex`, copied
   to `.github/workflows/spec-review.yml`)
+
+**Security caveat (scaffolded workflow).** The scaffolded template builds
+untrusted PR code in the same job that holds a write-scoped token and deploys
+the artifact. On a public repo that is a privilege-escalation surface: split
+the render (read-only, runs PR code) from the deploy/comment job (write token,
+no PR-code execution) and hand off via an uploaded artifact, or keep the render
+job read-only until the template is hardened. Tracked in follow-up ticket
+`specled_-3q1`.
 - If the repo uses the evidence ledger with a shared remote, CI fetches
   the `spec-evidence` ref read-only before checking. Caveat: attestations
   in that ref are unauthenticated — CI may consume them for reporting but
