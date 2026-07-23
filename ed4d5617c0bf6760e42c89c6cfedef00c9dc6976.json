@@ -7,8 +7,8 @@
       "message": "Changed file test/integration/guard_ergonomics_attestation_test.exs impacts subject specs that were not updated: specled.realized_by"
     }
   ],
-  "run_at": "2026-07-23T12:21:44.223386Z",
-  "run_id": "89c8c4eb75aba8ddad89b67ca1a8d55a",
+  "run_at": "2026-07-23T12:22:40.930078Z",
+  "run_id": "c17362bddb1684f20c826cb1d1ccb7fd",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "ed4d5617c0bf6760e42c89c6cfedef00c9dc6976",
