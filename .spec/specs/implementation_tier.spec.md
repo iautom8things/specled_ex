@@ -17,6 +17,8 @@ Branch-check dispatch and the tagged implementation tests exercise this tier end
 
 Within the orchestrator this tier is seed-only: bare-module `implementation` entries are hashed with the full-union envelope (`Canonical.hash_module_full_union/1`) during the silent-seed pass, and the clean-run flat-tier refresh — including the shared api_boundary head-union hasher (`Orchestrator.api_boundary_hashes/2`) — excludes the implementation tier entirely. Changes to the orchestrator's api_boundary hashing therefore cannot alter closure hashes or the boundary rules below.
 
+Because the implementation tier is opt-in, its subject-level `implementation` bindings do not attest under a default `mix spec.check` run — the implication surfaces them under `api_boundary` (attesting `implementation.ex`/`closure.ex` on internals-only edits), but those implied entries carry no requirement provenance, so they cannot drive `tagged_tests` attestation expansion (`specled.realized_by.attestation_tagged_tests_expansion`). The requirement covering the seed path therefore carries its own requirement-level `api_boundary` binding on `Implementation.hashes_for_seeding/3` (a stable, non-implied entry point) so an internals-only edit to a shared realization test tagged to it — e.g. `orchestrator_test.exs`, which sits in `specled.branch_guard`'s surface and this subject's tagged coverage — attests clean and downgrades the file-touch finding to `:info` rather than hard-erroring (`specled.decision.file_touch_yields_to_realization`).
+
 ```yaml spec-meta
 id: specled.implementation_tier
 kind: workflow
@@ -85,6 +87,9 @@ decisions:
     permanent spurious `branch_guard_realization_drift`.
   priority: must
   stability: evolving
+  realized_by:
+    api_boundary:
+      - "SpecLedEx.Realization.Implementation.hashes_for_seeding/3"
 - id: specled.implementation_tier.scenario_refactor_stable
   statement: >-
     Given a subject with an implementation closure C, a cosmetic
