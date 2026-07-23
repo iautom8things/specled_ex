@@ -71,6 +71,10 @@
     {
       "text": "ORCHESTRATED\\nChildren closed: 9\\nBOUNCEs encountered: 1\\nUser escalations: 0",
       "timestamp": "2026-07-23T19:58:07Z"
+    },
+    {
+      "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/13 (release 0.5.0, branch feat/specled_-155-aggregate-first-spec-coverage @ 8049442). Rebased onto 0.4.1 (baseline reconciled via --accept-drift after the o40 hasher migration); review-remediation children specled_-aav + specled_-36o landed. Babysitting CI.",
+      "timestamp": "2026-07-23T22:39:47Z"
     }
   ],
   "priority": 1,
