@@ -14,6 +14,15 @@ tests). `mix test --cover` continues to work in its traditional cumulative
 mode; only `mix spec.cover.test` produces the per-test artifact at
 `.spec/_coverage/per_test.coverdata`.
 
+The formatter is inert unless armed: registering it in `:formatters` is not
+by itself enough to run it (ExUnit forwards its entire `:ex_unit` application
+environment to every formatter it starts, so trusting a formatter's own init
+argument would let unrelated config smuggle in). Only `mix spec.cover.test`
+arms it, via a dedicated `:specled_ex` application-env seam. Once armed, the
+formatter never fabricates a record for a snapshot entry it cannot attribute
+to a real source line — unrecognized or function-level snapshot shapes are
+counted and surfaced as decode errors instead.
+
 ```yaml spec-meta
 id: specled.coverage_capture
 kind: workflow
@@ -72,10 +81,41 @@ decisions:
   stability: evolving
 - id: specled.coverage_capture.formatter_snapshot_fn_di
   statement: >-
-    SpecLedEx.Coverage.Formatter shall accept a `snapshot_fn` option at
-    init. Production default is `&:cover.analyse/1`. Tests pass a stub.
-    The formatter shall never call `:cover.analyse/1` directly; it
-    always routes through the injected function.
+    SpecLedEx.Coverage.Formatter shall accept a `snapshot_fn` option,
+    resolved only once armed (see
+    `specled.coverage_capture.formatter_arming_seam`). Production default
+    calls `:cover.analyse(target, :coverage, :line)` — explicit line-level
+    granularity. The bare arity-1 `:cover.analyse/1` form defaults to
+    function-level granularity and is never called: line-level is the only
+    granularity this formatter can honestly attribute to a source line.
+    Tests inject a stub via the arming seam.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.formatter_arming_seam
+  statement: >-
+    SpecLedEx.Coverage.Formatter's `init/1` shall be inert by default:
+    when `Application.get_env(:specled_ex, :spec_cover_run)` is unset or
+    `false`, it prints one stderr notice and returns `{:ok, :disabled}`,
+    after which every ExUnit event is handled as a no-op. Only `mix
+    spec.cover.test` arms it, via
+    `Application.put_env(:specled_ex, :spec_cover_run, true)` set before
+    installing the formatter. `init/1`'s own argument is never a trusted
+    config source — ExUnit forwards its entire `:ex_unit` application
+    environment as that argument to every formatter it starts. Once
+    armed, formatter config (`snapshot_fn`, `snapshot_target`,
+    `modules_fn`, `artifact_path`) is resolved only from the
+    `:specled_ex` arming value itself, never from `init/1`'s argument.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.formatter_no_fabrication
+  statement: >-
+    The formatter shall never fabricate a record for a snapshot entry it
+    cannot attribute to a source line. A function-level (MFA-shaped)
+    entry, a snapshot with no line-level entries at all, and any snapshot
+    shape other than `{:result, ok_results, failed}` are never turned
+    into a placeholder or a `{file, 0}` record. Each such occurrence
+    increments a per-flush decode-error count, surfaced via one stderr
+    notice at `suite_finished` whenever that count is non-zero.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.keyed_by_test_pid
@@ -205,6 +245,26 @@ decisions:
   covers:
     - specled.coverage_capture.formatter_snapshot_fn_di
     - specled.coverage_capture.keyed_by_test_pid
+- id: specled.coverage_capture.scenario.formatter_disarmed_by_default
+  given:
+    - "the formatter is registered in `:formatters` but `Application.get_env(:specled_ex, :spec_cover_run)` is unset"
+  when:
+    - "`init/1` runs, then every ExUnit event is dispatched to it"
+  then:
+    - "`init/1` returns `{:ok, :disabled}` after printing exactly one stderr notice"
+    - "every event handles as `{:noreply, :disabled}`; no artifact is written"
+  covers:
+    - specled.coverage_capture.formatter_arming_seam
+- id: specled.coverage_capture.scenario.formatter_no_fabrication
+  given:
+    - "a snapshot containing a function-level (MFA-shaped) entry, or one that is not a `{:result, _, _}` tuple at all"
+  when:
+    - the formatter flushes on `suite_finished`
+  then:
+    - "no `{file, 0}` or placeholder record is written for that entry"
+    - "the occurrence is counted and surfaced as a decode error via stderr"
+  covers:
+    - specled.coverage_capture.formatter_no_fabrication
 - id: specled.coverage_capture.scenario.store_round_trip
   given:
     - "a list of Elixir records built via `Coverage.Store.build_records/1`"
@@ -299,6 +359,11 @@ decisions:
     - specled.coverage_capture.formatter_snapshot_fn_di
     - specled.coverage_capture.keyed_by_test_pid
     - specled.coverage_capture.anonymous_ets
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.coverage_capture.formatter_arming_seam
+    - specled.coverage_capture.formatter_no_fabrication
 - kind: tagged_tests
   execute: true
   covers:

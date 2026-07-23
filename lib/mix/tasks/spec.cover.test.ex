@@ -42,6 +42,10 @@ defmodule Mix.Tasks.Spec.Cover.Test do
     Application.ensure_all_started(:ex_unit)
     ExUnit.configure(async: false)
 
+    # Arms SpecLedEx.Coverage.Formatter — see its moduledoc. Without this,
+    # installing it below is inert.
+    Application.put_env(:specled_ex, :spec_cover_run, true)
+
     # Ensure the formatter module is resident before ExUnit boots its
     # formatter GenServers; in a child BEAM (fixture run) the parent app's
     # ebin must already be on the code path for this to succeed.

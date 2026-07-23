@@ -77,7 +77,7 @@
       "hasher_version": 1
     },
     "SpecLedEx.AppendOnly.analyze/4": {
-      "hash": "dfab9ebdcb644d34bed667a28423040c6e3575e42f15e55c115abca2dc26e99e",
+      "hash": "1cc572802bf101238ac9ab62432c00a156f20dc63463256f9627d71a8539f013",
       "hasher_version": 1
     },
     "SpecLedEx.BranchCheck.Severity": {
@@ -85,7 +85,7 @@
       "hasher_version": 1
     },
     "SpecLedEx.BranchCheck.Severity.resolve/3": {
-      "hash": "5274689ca74cf07e26f57b5a27044a2b7e93592331004939153eed94211decd4",
+      "hash": "7bd15e87e0ccbe24876ed4cc1fd4c0c6ab46389322827af1ff21deed5ae76429",
       "hasher_version": 1
     },
     "SpecLedEx.BranchCheck.Severity.sanitized/3": {
@@ -101,11 +101,11 @@
       "hasher_version": 1
     },
     "SpecLedEx.BranchCheck.Trailer.parse/1": {
-      "hash": "3513ed0863b7c2d4f08df2e2ae5f750807684911a4894aa3410022384b47914e",
+      "hash": "35ec72f7a25ea78158da38b5c5e8572407f28340c57be39c41a7fd610c8163e1",
       "hasher_version": 1
     },
     "SpecLedEx.BranchCheck.Trailer.read/2": {
-      "hash": "e7904addec34b671274a1a3d300be8961744ef98730790f789c398a30f037f83",
+      "hash": "cdfb6c7b0f549ec15b654c5157a93681ac3b942a72273bea7f7243a21dc73ae4",
       "hasher_version": 1
     },
     "SpecLedEx.BranchCheck.run/3": {
@@ -121,11 +121,11 @@
       "hasher_version": 1
     },
     "SpecLedEx.Compiler.Manifest.load/1": {
-      "hash": "f817dd5b149ea98b1853d0743c426082dc043bcb0b967008a80ddec4f5eb5e7d",
+      "hash": "ca79a7f675a710f7f24580b87a96563f3e0d443f0d960ae9dee000ecf5421a60",
       "hasher_version": 1
     },
     "SpecLedEx.Compiler.Manifest.sources_for/2": {
-      "hash": "b20f9424c81fa721f3be442f76c8f45673dd7e6353054afa7bc13c1ac7f2bd89",
+      "hash": "cf0bc3db1e0bbbdd80a88ceabf01f2c0ffc058813cd2062220e9acf662afa58e",
       "hasher_version": 1
     },
     "SpecLedEx.Compiler.Tracer.ensure_table/0": {
@@ -145,7 +145,7 @@
       "hasher_version": 1
     },
     "SpecLedEx.Compiler.Xref.parse/1": {
-      "hash": "23ae84ae40a59e1fc1882b1638eba2e2cea65b0c3f8eb6ce0d376af960a4bc30",
+      "hash": "84e7508ca24a05894feba8b980ee04579df2a991e9c2a401c34bc9d960c36e95",
       "hasher_version": 1
     },
     "SpecLedEx.Config.BranchGuard": {
@@ -153,19 +153,19 @@
       "hasher_version": 1
     },
     "SpecLedEx.Config.Guardrails.parse/1": {
-      "hash": "9a62f5afdadcb8842e88911a1b311c3bc91b27df3b6775c1bc96f655a227bbf3",
+      "hash": "d0525e89a838b29f778ca4f0323d32d0d0a165ffd2303450a79b1f95d7d63504",
       "hasher_version": 1
     },
     "SpecLedEx.Config.Prose.findings/3": {
-      "hash": "2205c33223bbfbc727526be3648279b514a63caeb390baff19bccdb29b392d25",
+      "hash": "99ec86337dd712ac86ddfa52f3cb456b4b9cb06964081ff6157d7e3c83562cda",
       "hasher_version": 1
     },
     "SpecLedEx.Config.Prose.parse/1": {
-      "hash": "9a62f5afdadcb8842e88911a1b311c3bc91b27df3b6775c1bc96f655a227bbf3",
+      "hash": "edcf9ef26aafd3cdf6e6e7a723aa181dda2cc6c45cd45c6d4c0441f11d576071",
       "hasher_version": 1
     },
     "SpecLedEx.Config.Realization.parse/1": {
-      "hash": "9a62f5afdadcb8842e88911a1b311c3bc91b27df3b6775c1bc96f655a227bbf3",
+      "hash": "a7a2d910b475b0a1565c1a6599505b4eb4ca5f41c166b46bb711c7d15afdaa3b",
       "hasher_version": 1
     },
     "SpecLedEx.Config.build/1": {
@@ -193,7 +193,7 @@
       "hasher_version": 1
     },
     "SpecLedEx.Coverage": {
-      "hash": "fad8733bb82cc00fea0ff8ae395040ee013f5c26400b1530963c9b1af84c54b7",
+      "hash": "1ee4cf378d5f7abb3cc2ba3fcb13a1eaa3b265c5b76f2e7fb54a79551a9e4390",
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.Aggregate.ingest/2": {
@@ -201,7 +201,7 @@
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.Formatter": {
-      "hash": "a682c3acd680ca53c486fcb507c255420c3547cc47dfc30bfcb3dfec88aaa1a8",
+      "hash": "88ea56393ec2f1d5f238970e031a3f6818125229637b8689f83bcd519387d26b",
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.Formatter.init/1": {
@@ -221,11 +221,11 @@
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.Store.build_records/1": {
-      "hash": "ba61d4783a31c2b0d1c7ab3678f22981113e56eba6a1c9dfee88f0ac370eb896",
+      "hash": "32341d6f1673bf43a9ac66d62f4598e9e34a7f41a511fc97c7129ef4b49a044e",
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.Store.read/1": {
-      "hash": "0da17832dc52f898875e2b32b49043a85784a11f26537799eb205f66c3895d8d",
+      "hash": "5c0bd736fe4fa34421c62f225eef3ec095e3ee4bed53dda2219f58d0c614890e",
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.Store.read_status/1": {
@@ -237,7 +237,7 @@
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.Store.write/2": {
-      "hash": "516cc362f7630e717a575cdf28d3a962ecb1f0c8299867efd3b51a408dc5c098",
+      "hash": "61f7ef5859a691380eb601acd5e4fdfbaf3540339604bd9a1594c14c83e9c161",
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.Store.write_v2/2": {
@@ -261,11 +261,11 @@
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.init/2": {
-      "hash": "23f3a8be9287cc36731fa32e49c11f04cf1e4011156b0b54875025575a4b3f59",
+      "hash": "187f2ac74a015d1bfaef8fca011b76528fb86a75163fed30ab037b7f8450dba1",
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.install/1": {
-      "hash": "9ca6bcbf10b5f30b94efee7f2f33a986928d56cc7b9dada303972017a2cba1fd",
+      "hash": "a8ff2925a9d2c349bc7ab82c2636619bb0f8f3021515878910c063268364bca8",
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.subject_file_map/2": {
@@ -277,11 +277,11 @@
       "hasher_version": 1
     },
     "SpecLedEx.CoverageTriangulation.execution_reach_map/2": {
-      "hash": "badc145c6c8739cb563edc8710ba37c35bab579c3431854c8e7b64d8e5b55d05",
+      "hash": "10ce3e919b8fa6b89a45cddf859d7c965863a4dc1dd6cd91638db373b0551464",
       "hasher_version": 1
     },
     "SpecLedEx.CoverageTriangulation.findings/3": {
-      "hash": "c6f188765774c6065db4ba3ef72be0fb807f4d43166ab0fbd4eae8dff5e5b0e8",
+      "hash": "566d346c902806260be68dfe941027afff11eb2732c240cfab8dcf387148320a",
       "hasher_version": 1
     },
     "SpecLedEx.DecisionParser.CrossField.validate/3": {
@@ -309,11 +309,11 @@
       "hasher_version": 1
     },
     "SpecLedEx.ModalClass.classify/1": {
-      "hash": "7d651dd18af95d181ac9a0a9d293072eccf4854b30f2bc91294df9d9b64846bd",
+      "hash": "451877f40d0574e65c96ccdc9bed3d0a936d4d7b7dfc73a79df291fbf1eabf0a",
       "hasher_version": 1
     },
     "SpecLedEx.ModalClass.downgrade?/2": {
-      "hash": "82677735b6613b69ba6fe55a98a513997d69b492773d6bb265b422f78ae22eda",
+      "hash": "d38c5112b5e9a18fe09beb37f482df2a1a9182c810baa0d0984c4338d0011d75",
       "hasher_version": 1
     },
     "SpecLedEx.Next.run/3": {
@@ -321,7 +321,7 @@
       "hasher_version": 1
     },
     "SpecLedEx.Overlap.analyze/2": {
-      "hash": "6998220275ca25faf604dbbb87c685cd2c10a05a7f945ed54a689932607378c8",
+      "hash": "216a46b1f9e63e8ae5ffbea1cd824b796744a8471ce10f6112eaaa703bb20005",
       "hasher_version": 1
     },
     "SpecLedEx.Parser": {
@@ -333,11 +333,11 @@
       "hasher_version": 1
     },
     "SpecLedEx.PolicyFiles.classify/1": {
-      "hash": "04fb29dc74c21d3c4bae8f909745014c24cedeb43876ea927470f4246d8984cc",
+      "hash": "a8660ea66d0b40c3876b5925c29d8b3d57fcc2df9f484d59c05226e387c7bcea",
       "hasher_version": 1
     },
     "SpecLedEx.PolicyFiles.co_change_rule/1": {
-      "hash": "32ef413dd18e8caeebefa5161a58bf3758098648991c94700028bce8a235387b",
+      "hash": "a6930df144e9ae907b405c1788365e956e2832a9b901090733a3d190590c6e9c",
       "hasher_version": 1
     },
     "SpecLedEx.Prime.build/4": {
@@ -365,11 +365,11 @@
       "hasher_version": 1
     },
     "SpecLedEx.Realization.Canonical.hash_module_full_union/2": {
-      "hash": "98ec17f0ca1f67690cafa0fe857af8a861befaeb761c9c59cc913a3a13e78c9b",
+      "hash": "67a1ac2b435ada6ea091498fc4cd7e67c1fb6e25e436710689520eae0c46e677",
       "hasher_version": 1
     },
     "SpecLedEx.Realization.Canonical.hash_module_head_union/2": {
-      "hash": "caf3234060b10e15c8a94550c32a6a5edf22ff38dd7c5298ea1d7b4f2523aa7b",
+      "hash": "7c1ae5a3027132f6a7a2f249b5e49094133be2c7d29a7dad4c5d6f18a8d0c158",
       "hasher_version": 1
     },
     "SpecLedEx.Realization.Canonical.normalize/1": {
@@ -377,19 +377,19 @@
       "hasher_version": 1
     },
     "SpecLedEx.Realization.Closure.compute/2": {
-      "hash": "d29e17c1660652bf056b3be6ff29f693ae76209e6ce6578dad2014429a13c459",
+      "hash": "1b121c5e3b9bab64d54363514f344e74e2adc6beec0bd21b759bef881092aac5",
       "hasher_version": 1
     },
     "SpecLedEx.Realization.Closure.subject_for_mfa/2": {
-      "hash": "295e9d3172f38f217bfd9ed41a347d93909b51a0a85cd2d328b0bdd4b922cda6",
+      "hash": "efbd883a914ac811edabcdd024f816caa80183e3b86097c86bd7a0b3301e28cb",
       "hasher_version": 1
     },
     "SpecLedEx.Realization.Drift.dedupe/2": {
-      "hash": "a3400811999c865108bbe65c556ea80db31a581a1f3920f163942eb1c359da18",
+      "hash": "6385d0df7ba2970ffbdc141f6e1b532b21e7198db099322256e2c67d6fe1ca26",
       "hasher_version": 1
     },
     "SpecLedEx.Realization.EffectiveBinding.expand_implications/1": {
-      "hash": "defa2a3e241ba8a5dfac8dd9e393f367f1de711954e37f10df5cae12c7ed0caa",
+      "hash": "ab6f9b1cec3d9f845e6da135567b98734d6508d7484725c3879fbf1f90493524",
       "hasher_version": 1
     },
     "SpecLedEx.Realization.EffectiveBinding.for_requirement/2": {
@@ -397,7 +397,7 @@
       "hasher_version": 1
     },
     "SpecLedEx.Realization.ExpandedBehavior.hash/2": {
-      "hash": "43c7c9e0fd057b163950a8ffebd3625226948a7a9daee188052c83aa159794f7",
+      "hash": "97bdef5d0536895edfe526d7c735ca6f7cefaa5d30c13b54883568a5df2d6001",
       "hasher_version": 1
     },
     "SpecLedEx.Realization.ExpandedBehavior.run/3": {
@@ -405,7 +405,7 @@
       "hasher_version": 1
     },
     "SpecLedEx.Realization.HashStore.merge/2": {
-      "hash": "49ff510ce99af9e03b83a4016fb439e0982cf7bbdb1467931b2771e3d4dc6ee3",
+      "hash": "56ccc4d074ab10e90ce7a18c85f011cbab8f0ee8f06698022e59dfca107683ed",
       "hasher_version": 1
     },
     "SpecLedEx.Realization.HashStore.read/2": {
@@ -413,15 +413,11 @@
       "hasher_version": 1
     },
     "SpecLedEx.Realization.HashStore.write/2": {
-      "hash": "e5761fea5c676e737ae0a4776257d78d8fb618b4968a3e9060cf4790139b6bb0",
+      "hash": "afb5400e5addf26a52e9ac8218b3e67fa23ec6fdcdec01e0e73e3783d239adaf",
       "hasher_version": 1
     },
     "SpecLedEx.Realization.Implementation.hash_for_subject/3": {
       "hash": "e594ca56001035b51163800aeb7984da45e2c714c265b661d17f4e55d8afdc8c",
-      "hasher_version": 1
-    },
-    "SpecLedEx.Realization.Implementation.hashes_for_seeding/3": {
-      "hash": "d359e4235a31405c4509182d9a5e782ab5c0e7336fe4e617fe29633ef3a0a1f7",
       "hasher_version": 1
     },
     "SpecLedEx.Realization.Implementation.run/4": {
@@ -429,11 +425,11 @@
       "hasher_version": 1
     },
     "SpecLedEx.Realization.Orchestrator.run/2": {
-      "hash": "189fb7cac9a7d22e8e8a148d0bb8d796c4ba03569d5443b72b08d56ab51ee8e2",
+      "hash": "0415833469a3291ed32d881c72e4e2313551bd4783e4d4fce229932282c198a5",
       "hasher_version": 1
     },
     "SpecLedEx.Realization.Typespecs.hash/2": {
-      "hash": "43c7c9e0fd057b163950a8ffebd3625226948a7a9daee188052c83aa159794f7",
+      "hash": "fd3df1df5961b3e4799d0978f92c838f71f836cd40d2f0e7cd7694d8349403b8",
       "hasher_version": 1
     },
     "SpecLedEx.Realization.Typespecs.run/3": {
@@ -441,11 +437,11 @@
       "hasher_version": 1
     },
     "SpecLedEx.Realization.Use.consumers_for/2": {
-      "hash": "a945156fbf3131f89202641d7421eca81b96df2d5523c1f0ec79feeb2d9b3527",
+      "hash": "b4534baf20a0063761cd7deffa74e2e84bfacb59a7b61717c3de99dee41e4471",
       "hasher_version": 1
     },
     "SpecLedEx.Realization.Use.hash/2": {
-      "hash": "d44920003973e7efe0fa3cf923450036a0f33cc114dd5e7cf4a1ddc82e0ab50c",
+      "hash": "5bf1d0248b617bcca6c19ccde76c9f66e83f6d52f08b50dd7a0b164f8da83d41",
       "hasher_version": 1
     },
     "SpecLedEx.Realization.Use.run/3": {
@@ -465,7 +461,7 @@
       "hasher_version": 1
     },
     "SpecLedEx.Schema.RealizedBy.validate/1": {
-      "hash": "971a066044b2b076e4e24270916878bb29194c96f8fb82c51f7a8f4104fd12b7",
+      "hash": "d71abeb2263360332d4fba5534095760adfbb6d447a44b327d000446c2820d25",
       "hasher_version": 1
     },
     "SpecLedEx.Schema.Requirement": {
@@ -489,7 +485,7 @@
       "hasher_version": 1
     },
     "SpecLedEx.Schema.validate_block/2": {
-      "hash": "12b709c2a74a863b4b5b6030a8ffd4ccbb055d818a4c8e13ed730997da128c0d",
+      "hash": "51035afab9d2de682f513d7a3c31562ffec89f6ce8685faebecb99e1b1621526",
       "hasher_version": 1
     },
     "SpecLedEx.Status.build/3": {
@@ -533,7 +529,7 @@
       "hasher_version": 1
     },
     "SpecLedEx.TaggedTests.Attribution.read_artifact/1": {
-      "hash": "4318a6f7a9c46f169e6905b93bff488128673674485345ab78a3894a0dace19a",
+      "hash": "f0cc83af5606d9a0a99eea0002d77571f5e5f8a87ca2039a7aa98bb31e422f75",
       "hasher_version": 1
     },
     "SpecLedEx.TaggedTests.Formatter": {
@@ -541,15 +537,15 @@
       "hasher_version": 1
     },
     "SpecLedEx.TaggedTests.build_command/2": {
-      "hash": "87e09390b8f12931ea1a5ea373034c6bd6f1284babfdb39bc27dc831ef81b1ac",
+      "hash": "663bb0d503b6711ac062d2d400c3b1f83a6b53cfabc5112cf89c2ada9ab461b1",
       "hasher_version": 1
     },
     "SpecLedEx.TaggedTests.collect_entries/1": {
-      "hash": "b9fea2af2d9e463a5275d7ae72763d43b6793ce6edaa059affbe27c362be6711",
+      "hash": "cbf61c469c5a7c7a9e261ff2fc88f52966152686f7f39c297463eecce79f1fda",
       "hasher_version": 1
     },
     "SpecLedEx.Validator.RealizedByDedupCheck.findings/2": {
-      "hash": "d9ecf0062a46319ed6ac5a292ba35fe70a1db49f30ba7eb808b314992e8648b8",
+      "hash": "c70c91491887cca3ac646d1c7046530d943f964aa64e03e55fa7eebaab0342c5",
       "hasher_version": 1
     },
     "SpecLedEx.Validator.RealizedByDedupe.duplicates/1": {
@@ -565,11 +561,11 @@
       "hasher_version": 1
     },
     "SpecLedEx.VerificationStrength.meets_minimum?/2": {
-      "hash": "2811f4945311b67ab8c344980d38f9b3de17e856d1d8f33fd4a10ab8c8fe9d0e",
+      "hash": "052171a817952c65ee879423363d609160540cf0fb827c56051719999139bf5c",
       "hasher_version": 1
     },
     "SpecLedEx.VerificationStrength.normalize/1": {
-      "hash": "e4877dc5bee295feb4c51739b051ea1261e51bde19c146fb709fb0677cac9a00",
+      "hash": "8aaed212feb5f43dd88430d1fdbb12ce323c2a3e7bd64fd8050054626820373b",
       "hasher_version": 1
     },
     "SpecLedEx.Verifier.verify/3": {
@@ -601,7 +597,7 @@
       "hasher_version": 1
     },
     "SpecLedEx.normalize_for_state/1": {
-      "hash": "f309bbba1dd0b279adbee91d56143ffd0a7cea7201eb76137923c2b5e2563ea6",
+      "hash": "3786668294c10d2e62cc95f83a9f25bb1c8e5b8bf4e45fe12f411837ac143c4c",
       "hasher_version": 1
     },
     "SpecLedEx.report/3": {

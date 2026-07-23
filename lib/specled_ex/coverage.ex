@@ -30,19 +30,34 @@ defmodule SpecLedEx.Coverage do
   `opts` are caller-supplied; `env` is a keyword of host overrides (used by the
   Mix task to inject an `:artifact_path` or `:modules_fn` distinct from the
   formatter caller).
+
+  `:snapshot_fn` and `:snapshot_target` have no implicit default here — this
+  function raises `ArgumentError` if either is missing from `opts`. Silently
+  defaulting them would let any caller (including a formatter invoked without
+  real intent to capture coverage) get a live `:cover.analyse/1` wired in
+  just by omission. `SpecLedEx.Coverage.Formatter` is the sole production
+  caller and supplies both explicitly once armed.
   """
   @spec init(keyword(), keyword()) :: config()
   def init(opts, env \\ []) when is_list(opts) and is_list(env) do
     %{
-      snapshot_fn: opts[:snapshot_fn] || default_snapshot_fn(),
+      snapshot_fn: fetch_required!(opts, :snapshot_fn),
       modules_fn: opts[:modules_fn] || env[:modules_fn] || (&__MODULE__.cover_modules_safe/0),
-      snapshot_target: Keyword.get(opts, :snapshot_target, :_),
+      snapshot_target: fetch_required!(opts, :snapshot_target),
       artifact_path: opts[:artifact_path] || env[:artifact_path] || @default_artifact_path
     }
   end
 
-  defp default_snapshot_fn do
-    fn target -> apply(:cover, :analyse, [target]) end
+  defp fetch_required!(opts, key) do
+    case Keyword.fetch(opts, key) do
+      {:ok, value} ->
+        value
+
+      :error ->
+        raise ArgumentError,
+              "SpecLedEx.Coverage.init/2 requires an explicit #{inspect(key)} option; " <>
+                "no implicit default is provided"
+    end
   end
 
   @doc """
