@@ -2,7 +2,8 @@
   "assignee": "",
   "blocked_by": [],
   "blocks": [
-    "specled_-155.2"
+    "specled_-155.2",
+    "specled_-155.4"
   ],
   "created": "2026-07-23T12:03:10Z",
   "description": "Advances: specled.coverage_capture\n\nlib/specled_ex/coverage/store.ex: v2 envelope %{version, mode, generated_at, source, files, mfas, payload, degraded}; read/1 -\u003e {:ok, env} | {:error, :legacy_artifact | :invalid_artifact}; refuse writing empty-files envelopes; read_status/1 for the last_run.status sidecar ({:ok, stats} | {:refused, reason}) written on every flush/ingest. Decision 5: legacy artifacts are REJECTED with a clear message naming the re-run command (mix spec.cover.test) — no auto-migrate/delete. Include envelope round-trip tests + legacy-rejection tests.",
