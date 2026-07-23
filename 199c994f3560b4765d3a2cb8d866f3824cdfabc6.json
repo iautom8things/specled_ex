@@ -48,8 +48,8 @@
       "message": "Changed file is not covered by any current-truth subject: test/specled_ex/finding_message_test.exs"
     }
   ],
-  "run_at": "2026-07-23T11:30:00.742488Z",
-  "run_id": "c5a731d3f03ca21c5067aa7cdcd1fa82",
+  "run_at": "2026-07-23T11:30:08.811000Z",
+  "run_id": "78d3ad0575c62510020cfb8c3274426b",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "199c994f3560b4765d3a2cb8d866f3824cdfabc6",
