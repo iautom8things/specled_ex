@@ -35,30 +35,92 @@ Template-stub detection (T1 vs T2): the files
 SHA256 matches the upstream template (read from
 `deps/spec_led_ex/priv/spec_init/specs/`), classify as T1, not T2.
 
+### Pre-ledger legacy workspace (orthogonal to tier)
+
+```bash
+git ls-files .spec/state.json
+```
+
+Non-empty output means `.spec/state.json` is tracked — the workspace
+predates the evidence-ledger split, and its tracked state file is a stale
+snapshot, not current truth. Do not read a workspace tier or adoption phase
+out of a tracked `state.json`. Classify as **pre-ledger** and emit one
+migration ticket alongside whatever other tickets bootstrap produces:
+
+> Run `mix spec.evidence.migrate` — it hoists any legacy embedded
+> realization baseline, untracks `.spec/state.json` (preserving the
+> worktree file, adding it to `.gitignore`), installs the pre-push
+> evidence hook, and seeds the orphan `spec-evidence` ref.
+
+Every adopter that bootstrapped before the evidence-ledger split hits this
+path; skipping the migration leaves drift detection comparing against a
+frozen baseline.
+
+## Runtime split — host vs container
+
+```bash
+ls docker-compose.yml compose.yml Dockerfile.dev 2>/dev/null
+grep -E '\{:ecto' mix.exs
+```
+
+When a compose file or dev Dockerfile exists AND the app has a database
+dependency, the repo likely runs its test suite inside a container while
+Git lives on the host. This splits the verification loop:
+
+- **Host side** — `mix spec.prime`, `mix spec.next`, `mix spec.check` are
+  git-sensitive; they must run where the Git metadata is (the host).
+- **Container side** — command verifications that need the app runtime
+  (DB-backed tests, `mix test`) must run in the container.
+
+Record `runtime: containerized` and ask the user for the two commands at
+target-selection time: `<host_check_cmd>` (usually `mix spec.check
+--no-run-commands`) and `<container_verify_cmd>` (e.g.
+`docker compose exec app mix test`). Host-only repos collapse both to the
+same `<verify_cmd>`. The phase0 ticket writes the split loop into the
+scaffolded `.spec/AGENTS.md` so the friction is documented once, not
+rediscovered per contributor.
+
 ## Conformance findings — interpretation
 
 Run `mix spec.validate` and `mix spec.check --base HEAD~1` (or `--base HEAD`
 on a fresh repo) and classify each finding.
 
-### Schema-fatal (parser/*)
+### Schema-fatal (identifier validator + parse errors)
 
-- `parser/missing_id`
-- `parser/duplicate_id`
-- `parser/yaml_error`
-- `parser/unsupported_block`
+The verifier emits these finding codes when a spec parses but its
+identifiers are wrong:
 
-These mean a spec file does not parse. Bootstrap must repair these before
-any new authoring — emit a **phase 0.5** ticket "Repair malformed spec files"
-that lists each affected path. Do not attempt to repair inline; the user
-authored those files and may have intent the skill cannot recover.
+- `missing_requirement_id`
+- `missing_scenario_id`
+- `duplicate_requirement_id`
+- `duplicate_scenario_id`
+
+Parse-level breakage is **not** a finding code. When a `spec-*` fenced block
+fails to decode — malformed YAML, wrong top-level shape (a mapping where a
+list is required), or a schema-validation failure — `SpecLedEx.Parser` records
+a `parse_errors` string on the spec (e.g. `"spec-meta decode failed: ..."`)
+rather than emitting a code. A fenced block whose info-string is not one of the
+recognized `spec-*` tags is silently ignored, so "unsupported block" is a
+no-op, not a diagnostic.
+
+These mean a spec file does not parse or carries broken ids. Bootstrap must
+repair them before any new authoring — emit a **phase 0.5** ticket "Repair
+malformed spec files" that lists each affected path. Do not attempt to repair
+inline; the user authored those files and may have intent the skill cannot
+recover.
 
 ### Corpus drift (validator/branch-guard)
 
-- `append_only/requirement_deleted`, `append_only/modal_downgraded`,
+- `append_only/requirement_deleted`, `append_only/must_downgraded`,
   `append_only/scenario_regression`
-- `overlap/duplicate_covers`, `overlap/requirement_overlap`
+- `overlap/duplicate_covers`, `overlap/must_stem_collision`
 - `branch_guard_realization_drift`, `branch_guard_dangling_binding`
 - `branch_guard_unmapped_change`
+
+The code strings above are the resolver defaults in `SpecLedEx.BranchCheck`
+— use them exactly when classifying findings or writing severity overrides.
+Unknown config keys do not error loudly; a misspelled code silently never
+matches.
 
 These mean the spec corpus is internally inconsistent or has drifted from
 code. They are normal during a bootstrap on a stale repo. Group them by
@@ -132,8 +194,26 @@ These signals only matter when subject extraction will run (current_phase < 1).
   the prior attempt was rolled back. Classify as T0 but warn the user.
 - A repo can have `@tag spec:` tags in test files that point at requirement
   ids that no longer exist. These count as "tagged tests" for phase3
-  detection but will produce `requirement_without_test_tag` findings during
-  `spec.check`. Surface as `dangling tag` count in the detection summary.
-- Umbrella projects in v1 of SpecLedEx silently degrade most realization
-  tiers to `detector_unavailable`. If `mix.exs` declares `apps_path:`,
-  classify the repo as umbrella and recommend stopping at phase3.
+  detection, but they cover nothing — no finding names the dangling tag
+  itself, and any still-existing `must` requirements they were meant to
+  cover keep firing `requirement_without_test_tag`. Surface a
+  `dangling tag` count in the detection summary by diffing tag values
+  against current requirement ids.
+
+  Two related finding codes exist; do not use them interchangeably:
+  - `requirement_without_test_tag` — validator-side (`mix spec.validate`
+    and full checks). Fires for **every** `must` requirement covered by a
+    `tagged_tests` verification that has no backing tag.
+  - `branch_guard_requirement_without_test_tag` — branch-side
+    (`mix spec.check --base ...`). Fires only for `must` requirements
+    **newly added** relative to the base. This is the code
+    `branch_guard.severities` configures.
+- Umbrella projects degrade the `realized_by` tiers to
+  `detector_unavailable :umbrella_unsupported`. Do not gate this on a
+  version string — probe the capability instead: if `mix.exs` declares
+  `apps_path:`, run `mix spec.check` once and look for
+  `detector_unavailable` findings with reason `umbrella_unsupported`. If
+  they appear, the installed SpecLedEx cannot walk realization tiers on
+  this repo — classify as umbrella and recommend stopping at phase3. If a
+  future release removes the limitation, the probe comes back clean and no
+  advice changes are needed.

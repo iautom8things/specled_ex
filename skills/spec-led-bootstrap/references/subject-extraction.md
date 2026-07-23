@@ -176,10 +176,15 @@ surface:
 ```
 
 ```yaml spec-requirements
-- id: <candidate_id>.<function_or_callback>
-  statement: <function name>/<arity> shall <one-line behavioral claim derived from doc>.
+- id: <candidate_id>.draft
+  statement: Bootstrap draft — behavior to be specified in phase2 review.
   priority: should
   stability: evolving
+# Only when a @doc or @moduledoc makes a real behavioral claim, add:
+# - id: <candidate_id>.<function_or_callback>
+#   statement: <one-line behavioral claim taken from the doc, not the function name>.
+#   priority: should
+#   stability: evolving
 ```
 ````
 
@@ -190,9 +195,12 @@ surface:
   placeholder requirements do not fail CI.
 - `priority: should` (not `must`). Placeholder requirements should not gate
   on tag presence — a real review pass in phase2/3 elevates the priorities.
-- One requirement per public function or callback is a sane starter
-  granularity. The user (or `/implement` workers in subsequent phases) will
-  split / merge / refine.
+- The single "Bootstrap draft" placeholder is the default. Add per-function
+  requirements ONLY where a `@doc` or `@moduledoc` makes a real behavioral
+  claim you can restate — never derive a statement from a function name
+  (see anti-patterns below). Phase2 review replaces the placeholder with
+  real requirements or deletes the subject; no placeholder survives
+  promotion to `status: active`.
 - Do NOT write `spec-verification` yet. Verifications attach to real test
   files; phase4 wires them.
 - Do NOT write `realized_by:` yet. That is phase2.

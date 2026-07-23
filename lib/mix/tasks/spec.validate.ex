@@ -53,6 +53,7 @@ defmodule Mix.Tasks.Spec.Validate do
     spec_dir = opts[:spec_dir] || SpecLedEx.detect_spec_dir(root)
     authored_dir = SpecLedEx.detect_authored_dir(root, spec_dir)
     config = Config.load(root, path: config_path(root, spec_dir))
+    emit_config_diagnostics(config)
     command_timeout_ms = opts[:command_timeout_ms] || config.verification.command_timeout_ms
     verification_severities = config.verification.severities
     strict? = opts[:strict] || false
@@ -137,6 +138,18 @@ defmodule Mix.Tasks.Spec.Validate do
     else
       Path.join([root, spec_dir, "config.yml"])
     end
+  end
+
+  # covers: specled.tasks.config_diagnostics_surfaced
+  #
+  # A broken `.spec/config.yml` override (e.g. a severity token specled cannot
+  # parse) is dropped by Config.load and recorded as a diagnostic. Surface each
+  # one as a stderr warning so the maintainer notices before the normal report;
+  # these lines never change the task exit status.
+  defp emit_config_diagnostics(%Config{diagnostics: diagnostics}) do
+    Enum.each(diagnostics, fn %{message: message} ->
+      Mix.shell().error("[CONFIG] #{message}")
+    end)
   end
 
   defp validate_min_strength!(nil), do: nil

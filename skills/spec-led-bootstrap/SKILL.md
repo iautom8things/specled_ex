@@ -1,7 +1,7 @@
 ---
 name: spec-led-bootstrap
 description: "Adopt SpecLedEx in a repo: install the dep, scaffold .spec/, extract initial subjects, produce a phased bw epic. For repos with a healthy .spec/, use /spec-led-development instead."
-argument-hint: "[--target greenfield|brownfield|infer] [--depth phase0|phase1|phase2|phase4|phase6]"
+argument-hint: "[--target greenfield|brownfield|infer] [--depth phase0..phase6; common stops: phase0|phase1|phase2|phase4|phase6]"
 ---
 
 # /spec-led-bootstrap — Land SpecLedEx in a Repository
@@ -94,7 +94,15 @@ ls .spec/decisions/                       2>/dev/null
 ls .spec/realization_hashes.json          2>/dev/null
 git ls-remote --exit-code origin spec-evidence >/dev/null 2>&1
 ls .spec/_coverage/per_test.coverdata     2>/dev/null
+git ls-files .spec/state.json             # non-empty = pre-ledger workspace
 ```
+
+**Pre-ledger workspace:** if `.spec/state.json` is *tracked*, the repo
+adopted before the evidence-ledger split. Do not read tier or phase from
+that file — it is a stale snapshot. Classify as pre-ledger and plan a
+migration ticket (`mix spec.evidence.migrate`; template in
+[references/task-templates.md](references/task-templates.md)). See the
+detection matrix for details.
 
 Classify into one of five **workspace tiers** (see detection matrix for the
 exact decision rules):
@@ -174,6 +182,22 @@ grep -rlE '^\s*(use Phoenix\.Controller|use Ecto\.Schema|@behaviour|defmacro)' l
 
 The output of 1.5 feeds Phase 3 (subject extraction).
 
+### 1.6 Runtime split (host vs container)
+
+```bash
+ls docker-compose.yml compose.yml Dockerfile.dev 2>/dev/null
+grep -E '\{:ecto' mix.exs
+```
+
+Compose file (or dev Dockerfile) present AND a database dep → the test
+suite likely runs in a container while Git lives on the host. Record
+`runtime: containerized`; Phase 2 must then ask for the split commands
+(`<host_check_cmd>` / `<container_verify_cmd>`) instead of a single
+`<verify_cmd>`. This was the biggest tribal-knowledge friction in the
+reference adoption — git-sensitive `spec.prime`/`spec.next`/`spec.check`
+belong on the host; DB-backed command verifications belong in the
+container. See the detection matrix for the full rationale.
+
 ### Detection summary
 
 Print one short table to the user:
@@ -181,7 +205,8 @@ Print one short table to the user:
 ```
 Repo: <repo-name> @ <bootstrap-branch>
 Dep: <installed|missing|locked-only>
-Workspace: <T0|T1|T2|T3|T4>
+Workspace: <T0|T1|T2|T3|T4> (+ pre-ledger flag if .spec/state.json is tracked)
+Runtime: <host-only|containerized>
 Conformance: <clean|N validator findings|schema-fatal>
 Current phase: phase<N> (<one-line rationale>)
 Modules / tests: <M> / <T>
@@ -202,7 +227,7 @@ version:
 |---------|------------------------------------------------------------|----------------|
 | phase0  | Install dep + scaffold `.spec/`. No subjects yet.          | <1 hour        |
 | phase1  | Carve N subjects with `surface:`, `status: draft`.         | 1–2 PRs        |
-| phase2  | `realized_by.api_boundary:` on every subject; status active. | 1 PR per subject cluster |
+| phase2  | `realized_by.api_boundary:` on every subject; status active; CI gate (`spec.check --base` + `spec.review` artifact). | 1 PR per subject cluster |
 | phase3  | Test-tag scanner enabled (warning); start tagging tests.   | Ongoing        |
 | phase4  | Coverage formatter wired; full triangle online.            | 1 PR + CI wire |
 | phase5  | `realized_by.implementation:` for refactor-heavy subjects. | Optional       |
@@ -226,7 +251,21 @@ they will never use (see [references/configurable-levers.md](references/configur
   `detector_unavailable :umbrella_unsupported`; tagged-tests and ADR
   governance still work — bootstrap should target phase3, not phase4.
 
-Record `target_phase` and any per-tier opt-outs.
+**Containerized runtime (from detection 1.6):** when `runtime:
+containerized`, ask for the two commands in the same exchange as the
+target question — `<host_check_cmd>` (git-sensitive checks on the host,
+usually `mix spec.check --no-run-commands`) and `<container_verify_cmd>`
+(runtime verification in the container, e.g. `docker compose exec app mix
+test`). These substitute into every stage-ticket template and into the
+split daily loop the phase0 ticket writes into `.spec/AGENTS.md`.
+
+Any phase0–phase6 is a valid `--depth`; the argument-hint lists only the
+common stops. phase3 and phase5 are omitted there deliberately — phase3 is
+usually a pass-through on the way to phase4 (except umbrellas, where it is
+the cap) and phase5 is opt-in for refactor-heavy codebases — but both are
+accepted targets.
+
+Record `target_phase`, the runtime commands, and any per-tier opt-outs.
 
 ---
 
@@ -279,10 +318,15 @@ For each accepted candidate, write `.spec/specs/<id>.spec.md` with:
   - `status: draft` — explicit; do not promote until phase2 wires bindings
   - `summary:` one-liner
   - `surface:` paths from the cluster
-- A `spec-requirements` block with **one starter requirement per public
-  function the candidate exports**, marked `priority: should` and
-  `stability: evolving`. These are placeholders the user (or `/implement`
-  worker) will refine. The draft status keeps them from gating CI.
+- A `spec-requirements` block with **one placeholder requirement**:
+  "Bootstrap draft — behavior to be specified in phase2 review.", marked
+  `priority: should` and `stability: evolving`. Add per-function
+  requirements ONLY where a `@doc` makes a real behavioral claim you can
+  restate — never one-per-exported-function, which manufactures
+  inventory-flavored specs that restate the code (the exact anti-pattern
+  [references/subject-extraction.md](references/subject-extraction.md)
+  forbids). The draft status keeps placeholders from gating CI; the phase2
+  merge gate ensures none survive promotion to `status: active`.
 - No `spec-verification` block yet — added in Phase 4/5 of the emitted epic
   (phase2 work in the adoption ladder).
 
@@ -359,11 +403,34 @@ parent and depend phase2 on the fan-out).
 
 - `implementation` skipped → omit the phase5 ticket entirely.
 - `coverage triangulation` skipped → omit phase4 ticket; collapse phase3's
-  ticket to also write a permanent `:off` for `branch_guard_untested_realization`
-  and `branch_guard_underspecified_realization` in `.spec/config.yml`.
+  ticket to also write a permanent bare `off` for
+  `branch_guard_untested_realization`, `branch_guard_untethered_test`, and
+  `branch_guard_underspecified_realization` in `.spec/config.yml`.
 - Umbrella → phase2 ticket includes the note that `realized_by` tiers will
-  emit `detector_unavailable :umbrella_unsupported`; phase4/5 tickets are
-  omitted unless v1.1 of SpecLedEx is in the dep.
+  emit `detector_unavailable :umbrella_unsupported`; omit the phase4/5
+  tickets when the capability probe confirms the degrade (run
+  `mix spec.check` once and look for `detector_unavailable` findings with
+  reason `umbrella_unsupported` — probe the installed dep's behavior, not
+  its version string).
+- Pre-ledger workspace (detection 1.2) → insert the migration ticket from
+  [references/task-templates.md](references/task-templates.md) after
+  phase0 and wire it to block phase1+.
+
+### 4.5 Deferred graduation-review ticket
+
+Whenever `target_phase < phase6`, emit ONE standalone deferred ticket
+(template in [references/task-templates.md](references/task-templates.md)):
+
+```bash
+bw create "Graduation review: graduate spec.check severities or write explicit opt-outs" --description "..."
+bw defer <new-id> "4 weeks"
+```
+
+Rationale: severities parked at `:warning` "until the corpus is clean" is
+the observed failure mode of staged adoption — the graduation date recedes
+forever. The deferred ticket converts "graduate later" from an intention
+into a scheduled artifact. It is standalone, not an epic child — the epic
+closes at its target phase; graduation runs on its own clock.
 
 ---
 
@@ -466,6 +533,8 @@ suspect candidates with a note "shares surface with existing subject
 - [ ] Stage tickets cover phase0..target_phase, in order, with dependencies wired
 - [ ] Every stage ticket has all five sections: Advances, Deliverable, Verification, Out of Scope (files), Out of Scope (intent), Merge gate
 - [ ] If subject extraction ran, the user saw the list before drafts were written
+- [ ] If the workspace was pre-ledger (tracked `.spec/state.json`): migration ticket created and wired to block phase1+
+- [ ] If `target_phase < phase6`: standalone graduation-review ticket created and deferred ~4 weeks
 - [ ] Handoff summary printed with epic id and next-step command
 
 ---

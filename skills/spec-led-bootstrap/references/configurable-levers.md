@@ -29,15 +29,21 @@ SpecLedEx.Config; override here only when bootstrap is graduating.
 guardrails:
   severities:
     append_only/requirement_deleted: error      # ← phase6
-    append_only/modal_downgraded: error         # ← phase6
+    append_only/must_downgraded: error          # ← phase6
     append_only/scenario_regression: error      # ← phase6
     overlap/duplicate_covers: error             # ← phase6
-    overlap/requirement_overlap: warning        # leave at warning during bootstrap
+    overlap/must_stem_collision: warning        # ← downgrade during bootstrap; restore at phase6
 ```
 
-`overlap/requirement_overlap` is intentionally noisy on partially-authored
-specs (e.g. during phase2 review). Keep at `warning` indefinitely unless
-the team specifically wants overlap to gate.
+Code strings must match the resolver defaults in `SpecLedEx.BranchCheck`
+exactly — unknown keys are silently ignored, so a misspelled code is an
+override that never fires.
+
+`overlap/must_stem_collision` (two `must` requirements in one subject
+sharing a normalized statement stem) defaults to `:error`. On a
+partially-authored corpus — phase2 review, where placeholder statements
+still look alike — it is noisy, so bootstrap may downgrade it to `warning`
+until phase6 restores the default.
 
 ## branch_guard.severities
 
@@ -66,16 +72,16 @@ relevant codes so they do not nag forever:
 # Coverage triangulation skipped permanently
 branch_guard:
   severities:
-    branch_guard_untested_realization: :off
-    branch_guard_untethered_test: :off
-    branch_guard_underspecified_realization: :off
+    branch_guard_untested_realization: off
+    branch_guard_untethered_test: off
+    branch_guard_underspecified_realization: off
 
-# Umbrella project — these will degrade automatically but :off
+# Umbrella project — these will degrade automatically but off
 # is more explicit
 branch_guard:
   severities:
-    branch_guard_realization_drift: :off
-    branch_guard_dangling_binding: :off
+    branch_guard_realization_drift: off
+    branch_guard_dangling_binding: off
 ```
 
 ## Severity ladder
@@ -87,6 +93,13 @@ branch_guard:
   Show with `--verbose` or `SPECLED_SHOW_INFO=1`.
 - `:warning` — visible by default; does not fail the gate.
 - `:error` — fails `mix spec.check` (non-zero exit).
+
+> **Warning — YAML value form.** In `config.yml`, severity values are written
+> as **bare tokens** (`off`, `info`, `warning`, `error`), not Elixir atoms. The
+> leading-colon atom form is parsed by YAML as a string (`":off"`), which
+> `SpecLedEx.Config` drops with an unsurfaced diagnostic — the override is
+> a silent no-op and the code keeps its default severity. The atom notation used
+> in this prose describes the resolved severity; it is not the on-disk syntax.
 
 Bootstrap should never write `:info` for the high-trust codes
 (`branch_guard_realization_drift`, `branch_guard_dangling_binding`). Either
@@ -109,6 +122,22 @@ Trailer downgrades apply to one PR (all commits in the range). They can
 demote `:error` → `:warning`/`:info` but cannot revive `:off`. The shorthand
 trailers (`refactor`, `docs_only`, `test_only`) downgrade common classes
 of low-risk codes — read SpecLedEx.Config for the exact mapping.
+
+### The two-armed decision rubric
+
+Trailers are one arm of a fork; ADRs are the other. Bootstrap must write
+the whole rubric into BOTH the scaffolded `.spec/AGENTS.md` and the
+scaffolded `.spec/decisions/README.md` (the phase0 ticket owns this):
+
+> **Durable, cross-cutting rule change** (affects how future PRs are
+> judged) → write an ADR in `.spec/decisions/`.
+> **Ticket-local deviation** (this PR only) → use a `Spec-Drift:` trailer
+> with a one-line reason in the commit body. No ADR.
+
+Setting this norm at bootstrap time is the point: without it, teams
+default to an ADR for every deviation and the decisions directory fills
+with commit-grade noise that buries the real policy records. Bootstrap is
+the one moment the norm can be installed before the corpus exists.
 
 ## Local-only escape
 

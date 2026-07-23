@@ -21,7 +21,8 @@ will suggest based on detected codebase shape.
 ## Phase 0 — Install and scaffold
 
 **Adds:** dep, `.spec/README.md`, `.spec/AGENTS.md`, `.spec/config.yml`,
-`.spec/decisions/README.md`, two template specs.
+`.spec/decisions/README.md`, two template specs, the evidence-ledger
+pre-push hook.
 
 **Gate behavior:** `mix spec.check` runs but only the file-touch branch
 guard can fire — and only against template subjects, so it is effectively
@@ -35,7 +36,17 @@ is opt-in via the mix tasks.
 - `mix compile --warnings-as-errors` passes (catches dep version mismatch)
 - `mix spec.check` exits 0 with no findings beyond `detector_unavailable`
 - `.spec/AGENTS.md` references the project verification command (replace
-  the `<PROJECT_VERIFICATION_COMMAND>` placeholder)
+  the `<PROJECT_VERIFICATION_COMMAND>` placeholder); on containerized
+  repos, document the split loop (`<host_check_cmd>` on the host,
+  `<container_verify_cmd>` in the container)
+- `mix spec.evidence.install_hook` has run (pre-push hook installed, or
+  the append-snippet printed for repos with an existing hook)
+- The daily-loop guidance in `.spec/AGENTS.md` mentions `mix spec.sync`
+  as the evidence reconciliation step (the pre-push hook runs it
+  best-effort; a manual run recovers from skipped hooks)
+- The two-armed decision rubric (durable/cross-cutting → ADR;
+  ticket-local → `Spec-Drift:` trailer with a one-line reason) is written
+  into `.spec/AGENTS.md` and `.spec/decisions/README.md`
 
 ## Phase 1 — Carve subjects (drafts)
 
@@ -66,7 +77,11 @@ tickets, one per subject. Children run in parallel under
 
 **Adds:** `realized_by.api_boundary:` lists on every subject that wants
 function-head drift detection. Subjects promote from `status: draft` to
-`status: active`.
+`status: active`. The CI gate itself: this is the phase that installs
+`mix spec.check --base <pr-base>` in CI and wires the `mix spec.review`
+artifact — the PR-facing review surface is the most immediately visible
+value of the whole adoption, so it lands with the first bindings, not at
+lockdown.
 
 **Gate behavior:** `branch_guard_realization_drift` fires when a bound MFA's
 function head changes (arity, arg pattern, defaults).
@@ -84,9 +99,30 @@ not exist (intentional).
 - Every subject from phase1 has a `realized_by.api_boundary:` block with at
   least the public functions declared
 - All subjects flipped to `status: active`
+- No placeholder requirements ("Bootstrap draft — …") survive promotion to
+  `status: active` — each is either refined into a real behavioral claim
+  or deleted
 - `mix spec.check --base origin/main` clean
 - First clean check committed `.spec/realization_hashes.json` so subsequent
   runs have baseline hashes to compare against
+- CI runs `mix spec.check --base <pr-base>` on pull requests (severities
+  still warning-level, so it reports without hard-failing)
+- CI renders `mix spec.review` and uploads/deploys the HTML artifact —
+  start from the scaffolded workflow template
+  (`deps/spec_led_ex/priv/spec_init/workflows/spec_review.yml.eex`, copied
+  to `.github/workflows/spec-review.yml`)
+
+**Security caveat (scaffolded workflow).** The scaffolded template builds
+untrusted PR code in the same job that holds a write-scoped token and deploys
+the artifact. On a public repo that is a privilege-escalation surface: split
+the render (read-only, runs PR code) from the deploy/comment job (write token,
+no PR-code execution) and hand off via an uploaded artifact, or keep the render
+job read-only until the template is hardened. Tracked in follow-up ticket
+`specled_-3q1`.
+- If the repo uses the evidence ledger with a shared remote, CI fetches
+  the `spec-evidence` ref read-only before checking. Caveat: attestations
+  in that ref are unauthenticated — CI may consume them for reporting but
+  must not treat them as proof that verification commands ran
 
 **Fan-out:** same shape as phase1. One child ticket per subject is
 recommended over a single sweep, because bindings need per-subject judgment
@@ -99,7 +135,10 @@ about what is "API" vs "internal".
 
 **Gate behavior:** `branch_guard_requirement_without_test_tag` warns when a
 new `must` requirement on a subject covered by a `tagged_tests` verification
-has no backing tag.
+has no backing tag. Its validator-side sibling `requirement_without_test_tag`
+(no `branch_guard_` prefix) fires on **every** untagged `must`, not just new
+ones — expect a backlog-sized count from `mix spec.validate` on day one of
+phase3; only the branch-side code gates PRs.
 
 **Escape hatch:** `@tag spec_triangulation: :indirect` for integration tests
 that tag one subject while legitimately exercising others. The whole
@@ -188,8 +227,9 @@ config level, but socially expensive — landing phase6 is a commitment.
 - Severities raised
 - Two consecutive PRs land without any `Spec-Drift:` trailer (proof the
   team can work under the new gates without escape hatches)
-- `mix spec.check` is the rightmost gate in the CI pipeline (so PRs
-  fail clearly on drift rather than getting blamed on a flaky earlier step)
+- The `mix spec.check --base <pr-base>` CI step installed in phase2 is
+  moved to be the rightmost gate in the pipeline (so PRs fail clearly on
+  drift rather than getting blamed on a flaky earlier step)
 
 ---
 
@@ -204,6 +244,13 @@ The epic closes when:
 4. `/spec-led-development` is documented somewhere in the project (usually
    `.spec/AGENTS.md` or a CLAUDE.md addition) as the ongoing-maintenance
    skill.
+5. If `target_phase < phase6`, a deferred **graduation review** ticket
+   exists (`bw defer`, ~4 weeks out). Severities parked at
+   `:warning`/`:info` "until the corpus is clean" is the observed failure
+   mode of staged adoption — the graduation date recedes forever. The
+   deferred ticket converts "graduate later" from an intention into a
+   scheduled artifact; see the template in
+   [task-templates.md](task-templates.md).
 
 Once those four hold, future spec work flows through `/spec-led-development`
 and `/distill` rather than this skill.

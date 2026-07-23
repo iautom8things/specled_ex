@@ -111,6 +111,10 @@ decisions:
   statement: mix spec.check shall run indexing, strict validation, and branch-aware co-change enforcement, failing on any errors or warnings.
   priority: must
   stability: stable
+- id: specled.tasks.config_diagnostics_surfaced
+  statement: mix spec.validate and mix spec.check shall print each config diagnostic recorded by SpecLedEx.Config.load (for example an invalid `.spec/config.yml` severity override that was dropped) as a visible `[CONFIG]`-prefixed warning line before their normal report output, and shall do so without altering the task exit status.
+  priority: must
+  stability: stable
 - id: specled.tasks.check_evidence_write
   statement: >-
     After validation and branch-aware co-change enforcement complete, mix
@@ -268,6 +272,10 @@ decisions:
     - specled.tasks.test_tags_precedence
     - specled.tasks.command_timeout_config
     - specled.tasks.verification_severity_config
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.tasks.config_diagnostics_surfaced
 - kind: tagged_tests
   execute: true
   covers:
