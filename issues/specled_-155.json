@@ -67,6 +67,10 @@
     {
       "text": "MINI-RETRO\\nbounces: 1 (other — reconcile-ALL-claim-surfaces sweep incomplete, specled_-155.8)\\nfull_suite_runs: 10 (9 merge gates + 1 flake re-run)\\nfinals_gt1: 2 (specled_-155.6 stale-seed reseed; specled_-155.8 iter-1 spec.check x3)\\nflake_accepts: 1 (gate 9, tempfile command-runner race class specled_-epl, non-reproducing, docs-only delta)\\nescalations: 0\\nlessons_kept/retired: 3/0",
       "timestamp": "2026-07-23T19:58:07Z"
+    },
+    {
+      "text": "ORCHESTRATED\\nChildren closed: 9\\nBOUNCEs encountered: 1\\nUser escalations: 0",
+      "timestamp": "2026-07-23T19:58:07Z"
     }
   ],
   "priority": 1,
