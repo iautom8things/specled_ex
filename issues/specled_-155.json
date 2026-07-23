@@ -27,11 +27,15 @@
     {
       "text": "MERGE GATE 2 (after specled_-155.2, epic @ 68f7c68): GREEN. compile -Werror ok; 3 properties + 1057 tests, 0 failures; format ok; deps.unlock ok; spec.check exit 0 status=pass (findings=1 = the trailer-downgraded branch_guard_missing_decision_update at info — ratified by verify pass, non-blocking). ADMISSION NOTE: T3 (specled_-155.3) intentionally held until T4 merges — both edit lib/mix/tasks/spec.cover.test.ex and admitting T3 pre-T4 guarantees a real-code rebase conflict. T6 admitted now.",
       "timestamp": "2026-07-23T19:57:57Z"
+    },
+    {
+      "text": "MERGE GATE 3 (after specled_-155.4, epic @ 81006e9): GREEN. compile -Werror ok; 3 properties + 1068 tests, 0 failures; format ok; deps.unlock ok; spec.check exit 0 status=pass (findings=2 = the two ratified info-severity Spec-Drift self-reports from 155.2/155.4). T4 landed via clean rebase (no real conflicts). Hotfix milestone: fabrication clauses deleted, formatter disarmed-by-default, line-level snapshots on the armed path — the specled_-47j garbage-production mechanism is dead on this branch. T3 hold released.",
+      "timestamp": "2026-07-23T19:57:58Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Aggregate-first spec coverage — specled_-47j remediation",
   "type": "epic",
-  "updated_at": "2026-07-23T19:57:57Z"
+  "updated_at": "2026-07-23T19:57:58Z"
 }
