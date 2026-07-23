@@ -25,8 +25,8 @@
       "message": "Changed file lib/specled_ex/realization/orchestrator.ex impacts subject specled.branch_guard; spec.md not co-changed, but realization attested binding(s) SpecLedEx.Realization.Orchestrator.run/2 as clean — informational only."
     }
   ],
-  "run_at": "2026-07-23T14:55:04.223623Z",
-  "run_id": "37d8b57977dd520ef9d27f4e068ee91f",
+  "run_at": "2026-07-23T15:00:10.611066Z",
+  "run_id": "10363011d596837dcef2d4a0ba0dd62e",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "5dc3f982a9f5f378f37a15e9923b6fc00adc1dc2",
