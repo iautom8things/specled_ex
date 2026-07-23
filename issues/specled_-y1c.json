@@ -18,11 +18,15 @@
     {
       "text": "VERIFY: PASS\nSession: verify-y1c (delegated agent)\nLog: delegated agent, no log path\n\nMechanical checks:\n- Files touched: 1 (.github/workflows/specs.yml)\n- Files outside Allowed globs: 0\n- Files matching Out-of-Scope globs: 0 (ticket has no explicit Out-of-Scope/Allowed sections; sole file is squarely in the ticket's stated concern)\n\nSemantic checks:\n- Spec stubs run: 0, passed: 0 (no spec subject — CI workflow config, none expected)\n- Requirements coverage:\n  - pull_request diffs against origin/main: covered by specs.yml if-block (GITHUB_EVENT_NAME=pull_request -\u003e check_specs.sh --base \"origin/${GITHUB_BASE_REF}\") + live CI run 29968310586 logging 'branch base=origin/main changed_files=1 findings=0'; change_analysis diff_against_base uses \"base...HEAD\" (three-dot merge base) and branch_check append_only_applicable? activates for a real base but returns false for \"HEAD\". Would fail if the branch were inverted/omitted: guard would no-op on --base HEAD (branch base=HEAD, changed_files=0). Seams: none.\n  - push/workflow_dispatch keep bare default: covered by else branch (bash ./scripts/check_specs.sh, no --base). Would fail if all events got --base: dispatch has no GITHUB_BASE_REF, yielding 'origin/' (invalid ref) and a spec.check error. Seams: none.\n  - fetch-depth must expose base ref: covered by actions/checkout@v4 with fetch-depth: 0 + CI checkout log '* [new branch] main -\u003e origin/main'. Would fail under default depth-1 clone: origin/main unresolvable, spec.check errors. Seams: none.\n- Intent-level scope concerns: none — diff touches only specs.yml; no unrelated changes.\n- Targeted verification: PASS. Ran 'MIX_ENV=test mix spec.check --base origin/main --no-run-commands' in worktree -\u003e exit 0, 'status=pass errors=0 warnings=0', 'branch base=origin/main changed_files=1 findings=0'. Read-only gh api on run 29968310586 confirmed real-CI PR path executed with 'branch base=origin/main'. No GitHub state mutated.\n- Full-suite verification: not run by verifier (by design)\n\nVerdict: PASS\n\nNotes: scripts/check_specs.sh forwards \"$@\" to mix spec.check, so --base flows through unchanged; it was not modified this ticket, correctly. check_specs.sh passes the PR head ref rather than the exact merge-base SHA, but spec.check's three-dot base...HEAD semantics compute the merge base internally, satisfying the ticket's 'ideally the PR merge base' note. Ticket is BLOCKED BY specled_-dkh (event triggers must fire for the PR path to matter) — out of scope here.",
       "timestamp": "2026-07-23T00:16:13Z"
+    },
+    {
+      "text": "-F",
+      "timestamp": "2026-07-23T00:20:08Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "specs.yml: PR gate should run spec.check --base origin/main (needs fetch-depth: 0)",
   "type": "task",
-  "updated_at": "2026-07-23T00:18:16Z"
+  "updated_at": "2026-07-23T00:20:08Z"
 }
