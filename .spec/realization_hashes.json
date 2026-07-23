@@ -276,6 +276,14 @@
       "hash": "2c7b1f35af4b91a8088719fbc6879275c83be7c8e42194c45d621288213ed436",
       "hasher_version": 1
     },
+    "SpecLedEx.CoverageTriangulation.aggregate_requirement_reach/2": {
+      "hash": "dc2c8465899a1b15a837d33cf47e351fb9f17ddc5af679d5cd8568ff24934c8a",
+      "hasher_version": 1
+    },
+    "SpecLedEx.CoverageTriangulation.envelope_findings/3": {
+      "hash": "4822a5c5b6f1c0dddadf1a7047e81a95c201d7d6766b4fcbd84c6b098ec7c506",
+      "hasher_version": 1
+    },
     "SpecLedEx.CoverageTriangulation.execution_reach_map/2": {
       "hash": "10ce3e919b8fa6b89a45cddf859d7c965863a4dc1dd6cd91638db373b0551464",
       "hasher_version": 1
@@ -446,6 +454,10 @@
     },
     "SpecLedEx.Realization.Use.run/3": {
       "hash": "5aa09417ee10b1d22f9d0284babdf2d209c06db59f02d903f5c747d5f02e1244",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Review.CoverageClosure.build_v2/2": {
+      "hash": "6f1c6943c8ee67fc74fdaff226b4e7655f290deccf1101d4b11309fb98cf9d28",
       "hasher_version": 1
     },
     "SpecLedEx.Schema.Decision": {

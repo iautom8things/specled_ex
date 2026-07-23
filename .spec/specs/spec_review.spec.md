@@ -18,6 +18,7 @@ summary: Renders a Git change set as a self-contained HTML PR review surface. Ma
 surface:
   - lib/mix/tasks/spec.review.ex
   - lib/specled_ex/review.ex
+  - lib/specled_ex/review/coverage_closure.ex
   - lib/specled_ex/review/file_diff.ex
   - lib/specled_ex/review/findings_delta.ex
   - lib/specled_ex/review/html.ex
@@ -25,6 +26,7 @@ surface:
   - priv/spec_review_assets/*
   - priv/spec_init/workflows/spec_review.yml.eex
   - test/specled_ex/review_test.exs
+  - test/specled_ex/review/coverage_closure_test.exs
   - test/specled_ex/review/html_test.exs
   - test/mix/tasks/spec_review_task_test.exs
 decisions:
@@ -263,6 +265,24 @@ decisions:
     render a single "Binding closure unavailable" banner. Both degraded states piggyback
     the page-level `:degraded` leg state machinery rather than rendering empty closure
     rows that would be misread as the absence of test coverage.
+  priority: must
+  stability: evolving
+- id: specled.spec_review.coverage_tab_v2_envelope_data_layer
+  statement: >-
+    `SpecLedEx.Review.CoverageClosure.build_v2/2` shall provide the v2
+    envelope-based counterpart to `build/2` — reading
+    `SpecLedEx.Coverage.Store.read_v2/1` instead of the v1 record list, and
+    returning, per requirement, `closure_coverage_pct`, `covered_mfas` /
+    `uncovered_mfas` (via `SpecLedEx.Coverage.MfaKey`), and `tagged_tests`
+    with an evidence `:strength` (`"claimed"` / `"linked"` / `"executed"`).
+    Subject-level status distinguishes `:ok_aggregate` from `:ok_per_test`
+    coverage, and `:no_coverage_artifact` / `:legacy_artifact` /
+    `:invalid_artifact` / `:no_tracer_manifest` degrade distinctly rather
+    than collapsing into one empty-but-ok result. This is additive: `build/2`
+    is unchanged, and `Review.build_view/3` keeps calling it until the
+    rendering migration (a later ticket) wires `build_v2/2` into the Coverage
+    pivot and updates this requirement's `coverage_tab_bind_closure` sibling
+    accordingly.
   priority: must
   stability: evolving
 - id: specled.spec_review.no_realized_by_degrades_spec_to_code
@@ -591,6 +611,11 @@ decisions:
   execute: true
   covers:
     - specled.spec_review.coverage_tab_bind_closure
+- kind: command
+  target: mix test test/specled_ex/review/coverage_closure_test.exs
+  execute: true
+  covers:
+    - specled.spec_review.coverage_tab_v2_envelope_data_layer
 - kind: command
   target: mix test test/specled_ex/review/file_diff_test.exs
   execute: true

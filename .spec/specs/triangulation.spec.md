@@ -22,10 +22,18 @@ summary: >-
   findings `branch_guard_untested_realization`, `branch_guard_untethered_test`,
   `branch_guard_underspecified_realization`, plus `detector_unavailable` on
   missing inputs; `mix spec.triangle` prints targeted or all-subject diagnostics.
+  Additive v2 envelope path (`envelope_findings/3`,
+  `aggregate_requirement_reach/2`) consumes a `Coverage.Store` v2 envelope
+  directly instead of a raw per-test record list — see
+  `specled.triangulation.envelope_*` requirements below. The v1 functions and
+  `mix spec.triangle` are unchanged; only `mix spec.triangle` and `mix
+  spec.review` may ever consume either path (Decision: never `mix spec.check`).
 surface:
   - lib/specled_ex/coverage_triangulation.ex
+  - lib/specled_ex/review/coverage_closure.ex
   - lib/mix/tasks/spec.triangle.ex
   - test/specled_ex/coverage_triangulation_test.exs
+  - test/specled_ex/review/coverage_closure_test.exs
   - test/integration/scenario_test_only_change_test.exs
   - test/integration/scenario_mistagged_test_test.exs
 realized_by:
@@ -33,6 +41,9 @@ realized_by:
     - "Mix.Tasks.Spec.Triangle.run/1"
   implementation:
     - "SpecLedEx.CoverageTriangulation.findings/3"
+    - "SpecLedEx.CoverageTriangulation.envelope_findings/3"
+    - "SpecLedEx.CoverageTriangulation.aggregate_requirement_reach/2"
+    - "SpecLedEx.Review.CoverageClosure.build_v2/2"
     - "SpecLedEx.CoverageTriangulation.execution_reach_map/2"
 ```
 
@@ -108,6 +119,71 @@ realized_by:
     read-only diagnostic; it shall not mutate state.json.
   priority: should
   stability: evolving
+- id: specled.triangulation.envelope_legacy_and_invalid_distinct
+  statement: >-
+    `CoverageTriangulation.envelope_findings/3` shall emit a single
+    `detector_unavailable` finding whose `reason` is `no_coverage_artifact`,
+    `legacy_artifact`, or `invalid_artifact` for the matching degraded input
+    (mirroring `Coverage.Store.read_v2/1`'s three-way distinction), and these
+    three reasons shall never collapse into one another or into an
+    empty-but-ok findings list.
+  priority: must
+  stability: evolving
+- id: specled.triangulation.envelope_aggregate_untested_realization
+  statement: >-
+    Given an `:aggregate` v2 envelope, `envelope_findings/3` shall emit
+    `branch_guard_untested_realization` for a requirement whose realization
+    closure has one or more MFAs (`closure_mfas`) but where none of them are
+    marked `covered: true` in the envelope's `:mfas` list. It shall not use
+    the v1 per-record `lines_hit != []` heuristic — coverage in aggregate
+    mode is read directly from each MFA's `:covered` boolean.
+  priority: must
+  stability: evolving
+- id: specled.triangulation.envelope_per_test_only_detectors_unavailable
+  statement: >-
+    Given an `:aggregate` v2 envelope, `envelope_findings/3` shall emit
+    exactly one `detector_unavailable` finding with reason
+    `aggregate_artifact_only`, naming `branch_guard_untethered_test`, the
+    per-test form of `branch_guard_underspecified_realization`, and
+    `reaching_tests` as unavailable — aggregate coverage carries no per-test
+    attribution, so these detectors cannot run. `aggregate_requirement_reach/2`
+    shall never include a `:reaching_tests` field in its return value (that
+    field is exclusive to the `:per_test`-path `per_requirement_reach/2`).
+  priority: must
+  stability: evolving
+- id: specled.triangulation.envelope_aggregate_underspecified_realization
+  statement: >-
+    Given an `:aggregate` v2 envelope, `envelope_findings/3` shall emit an
+    aggregate-specific `branch_guard_underspecified_realization` finding
+    (tagged `"mode" => "aggregate"`) for a subject where the envelope shows
+    at least one requirement's closure with a nonzero `executed_mfa_count`,
+    but the tag index carries zero `@tag spec:` entries for any of that
+    subject's requirements. This is derived from the tag index alone, not
+    per-test coverage, and is distinct from the v1 file-attributed
+    `branch_guard_underspecified_realization` emitted by `findings/3`.
+  priority: must
+  stability: evolving
+- id: specled.triangulation.envelope_async_contaminated
+  statement: >-
+    Given a `:per_test` v2 envelope with `degraded: true` (the `--per-test`
+    lane's async-contamination guard), `envelope_findings/3` shall emit a
+    single `detector_unavailable` finding with reason `async_contaminated`
+    instead of computing per-test findings over data that may be corrupted.
+    A non-degraded `:per_test` envelope shall delegate its `:payload` to
+    `findings/3` unchanged.
+  priority: must
+  stability: evolving
+- id: specled.triangulation.aggregate_requirement_reach_mfa_intersection
+  statement: >-
+    `aggregate_requirement_reach/2` shall return, per `{subject_id,
+    requirement_id}`, `closure_mfa_count`, `executed_mfa_count`,
+    `covered_mfas`/`uncovered_mfas` (sorted MFA strings via
+    `SpecLedEx.Coverage.MfaKey`) computed as the intersection of the
+    requirement's closure MFAs with the envelope's `:mfas` list, and
+    `line_coverage_pct` computed from the envelope's `:files` entries whose
+    module is reached by an intersecting covered MFA.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -156,6 +232,57 @@ realized_by:
     - no `branch_guard_realization_drift` fires
   covers:
     - specled.triangulation.pure_function
+- id: specled.triangulation.scenario.envelope_degraded_statuses_distinct
+  given:
+    - "the three degraded envelope statuses `:no_coverage_artifact`, `:legacy_artifact`, `:invalid_artifact`"
+  when:
+    - CoverageTriangulation.envelope_findings/3 is called with each in turn
+  then:
+    - each call returns exactly one `detector_unavailable` finding naming its own reason
+    - no two of the three share the same reason
+  covers:
+    - specled.triangulation.envelope_legacy_and_invalid_distinct
+- id: specled.triangulation.scenario.envelope_aggregate_untested_and_unavailable
+  given:
+    - "an `:aggregate` envelope whose `:mfas` marks a requirement's only closure MFA `covered: false`"
+  when:
+    - CoverageTriangulation.envelope_findings/3 is called
+  then:
+    - "the returned list contains a `branch_guard_untested_realization` finding for that requirement"
+    - "the returned list contains exactly one `detector_unavailable` finding with reason `aggregate_artifact_only`"
+    - no `branch_guard_untethered_test` finding is ever emitted
+  covers:
+    - specled.triangulation.envelope_aggregate_untested_realization
+    - specled.triangulation.envelope_per_test_only_detectors_unavailable
+- id: specled.triangulation.scenario.envelope_aggregate_underspecified_from_tag_index
+  given:
+    - "an `:aggregate` envelope where subject A's closure MFA is `covered: true`"
+    - a tag index with zero `@tag spec:` entries for any of subject A's requirements
+  when:
+    - CoverageTriangulation.envelope_findings/3 is called
+  then:
+    - "the returned list contains a `branch_guard_underspecified_realization` finding tagged `\"mode\" => \"aggregate\"` naming subject A"
+  covers:
+    - specled.triangulation.envelope_aggregate_underspecified_realization
+- id: specled.triangulation.scenario.envelope_per_test_async_contaminated
+  given:
+    - "a `:per_test` envelope with `degraded: true`"
+  when:
+    - CoverageTriangulation.envelope_findings/3 is called
+  then:
+    - "the returned list is exactly one `detector_unavailable` finding with reason `async_contaminated`"
+  covers:
+    - specled.triangulation.envelope_async_contaminated
+- id: specled.triangulation.scenario.aggregate_reach_covered_uncovered_split
+  given:
+    - "an `:aggregate` envelope's `:mfas` list and a closure map whose requirements declare `closure_mfas`"
+  when:
+    - CoverageTriangulation.aggregate_requirement_reach/2 is called
+  then:
+    - "each `{subject_id, requirement_id}` entry's `covered_mfas`/`uncovered_mfas` partition the requirement's closure MFAs by the envelope's `:covered` flag"
+    - "`line_coverage_pct` reflects the envelope `:files` entries for modules reached by a covered closure MFA"
+  covers:
+    - specled.triangulation.aggregate_requirement_reach_mfa_intersection
 ```
 
 ## Verification
@@ -184,4 +311,13 @@ realized_by:
   execute: true
   covers:
     - specled.triangulation.spec_triangle_task
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.triangulation.envelope_legacy_and_invalid_distinct
+    - specled.triangulation.envelope_aggregate_untested_realization
+    - specled.triangulation.envelope_per_test_only_detectors_unavailable
+    - specled.triangulation.envelope_aggregate_underspecified_realization
+    - specled.triangulation.envelope_async_contaminated
+    - specled.triangulation.aggregate_requirement_reach_mfa_intersection
 ```

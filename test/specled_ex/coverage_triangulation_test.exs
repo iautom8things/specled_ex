@@ -5,6 +5,12 @@ defmodule SpecLedEx.CoverageTriangulationTest do
   # covers: specled.triangulation.underspecified_realization
   # covers: specled.triangulation.execution_reach_metric
   # covers: specled.triangulation.detector_unavailable_on_missing_coverage
+  # covers: specled.triangulation.envelope_legacy_and_invalid_distinct
+  # covers: specled.triangulation.envelope_aggregate_untested_realization
+  # covers: specled.triangulation.envelope_per_test_only_detectors_unavailable
+  # covers: specled.triangulation.envelope_aggregate_underspecified_realization
+  # covers: specled.triangulation.envelope_async_contaminated
+  # covers: specled.triangulation.aggregate_requirement_reach_mfa_intersection
   use ExUnit.Case, async: true
 
   @moduletag spec: [
@@ -14,7 +20,13 @@ defmodule SpecLedEx.CoverageTriangulationTest do
                "specled.triangulation.underspecified_realization",
                "specled.triangulation.untested_realization",
                "specled.triangulation.untethered_test",
-               "specled.triangulation.untethered_test_opt_out"
+               "specled.triangulation.untethered_test_opt_out",
+               "specled.triangulation.envelope_legacy_and_invalid_distinct",
+               "specled.triangulation.envelope_aggregate_untested_realization",
+               "specled.triangulation.envelope_per_test_only_detectors_unavailable",
+               "specled.triangulation.envelope_aggregate_underspecified_realization",
+               "specled.triangulation.envelope_async_contaminated",
+               "specled.triangulation.aggregate_requirement_reach_mfa_intersection"
              ]
 
   alias SpecLedEx.CoverageTriangulation
@@ -395,8 +407,285 @@ defmodule SpecLedEx.CoverageTriangulationTest do
   end
 
   # ---------------------------------------------------------------------------
+  # envelope_findings/3 — v2 envelope path (epic specled_-155, T6)
+  # ---------------------------------------------------------------------------
+
+  describe "envelope_findings/3 — degraded statuses" do
+    test "surfaces :no_coverage_artifact as a distinct detector_unavailable" do
+      assert [finding] =
+               CoverageTriangulation.envelope_findings(
+                 :no_coverage_artifact,
+                 fixture_closure_map(),
+                 fixture_tag_index()
+               )
+
+      assert finding["code"] == "detector_unavailable"
+      assert finding["reason"] == "no_coverage_artifact"
+    end
+
+    test "surfaces :legacy_artifact as a distinct detector_unavailable, not empty-but-ok" do
+      assert [finding] =
+               CoverageTriangulation.envelope_findings(
+                 :legacy_artifact,
+                 fixture_closure_map(),
+                 fixture_tag_index()
+               )
+
+      assert finding["code"] == "detector_unavailable"
+      assert finding["reason"] == "legacy_artifact"
+    end
+
+    test "surfaces :invalid_artifact as a distinct detector_unavailable, not empty-but-ok" do
+      assert [finding] =
+               CoverageTriangulation.envelope_findings(
+                 :invalid_artifact,
+                 fixture_closure_map(),
+                 fixture_tag_index()
+               )
+
+      assert finding["code"] == "detector_unavailable"
+      assert finding["reason"] == "invalid_artifact"
+    end
+
+    test ":no_coverage_artifact, :legacy_artifact, and :invalid_artifact never collapse into the same reason" do
+      reasons =
+        for status <- [:no_coverage_artifact, :legacy_artifact, :invalid_artifact] do
+          [finding] =
+            CoverageTriangulation.envelope_findings(
+              status,
+              fixture_closure_map(),
+              fixture_tag_index()
+            )
+
+          finding["reason"]
+        end
+
+      assert Enum.uniq(reasons) == reasons
+    end
+  end
+
+  describe "envelope_findings/3 — :per_test envelope" do
+    test "delegates to findings/3 using the envelope payload as the record list" do
+      records = [
+        coverage_record(test_id: "B.t1", file: "lib/b.ex", lines_hit: [1])
+      ]
+
+      envelope = %{mode: :per_test, degraded: false, payload: records}
+
+      via_envelope =
+        CoverageTriangulation.envelope_findings(
+          envelope,
+          fixture_closure_map(),
+          fixture_tag_index()
+        )
+
+      via_records =
+        CoverageTriangulation.findings(records, fixture_closure_map(), fixture_tag_index())
+
+      assert via_envelope == via_records
+    end
+
+    test "a degraded (async-contaminated) :per_test envelope surfaces detector_unavailable instead of per-test findings" do
+      envelope = %{mode: :per_test, degraded: true, payload: []}
+
+      assert [finding] =
+               CoverageTriangulation.envelope_findings(
+                 envelope,
+                 fixture_closure_map(),
+                 fixture_tag_index()
+               )
+
+      assert finding["code"] == "detector_unavailable"
+      assert finding["reason"] == "async_contaminated"
+    end
+  end
+
+  describe "envelope_findings/3 — :aggregate envelope" do
+    test "would fail if untested_realization used lines_hit instead of the envelope's per-MFA :covered flag: emits untested_realization when zero closure MFAs are covered" do
+      envelope = aggregate_envelope(mfas: [%{mfa: "Elixir.B.run/1", covered: false}], files: [])
+
+      findings =
+        CoverageTriangulation.envelope_findings(
+          envelope,
+          fixture_closure_map(),
+          fixture_tag_index()
+        )
+
+      untested =
+        Enum.filter(findings, fn f ->
+          f["code"] == "branch_guard_untested_realization" and
+            f["requirement_id"] == "subject_a.req1"
+        end)
+
+      assert [finding] = untested
+      assert finding["mode"] == "aggregate"
+    end
+
+    test "does not emit untested_realization when the closure MFA is covered" do
+      envelope = aggregate_envelope(mfas: [%{mfa: "Elixir.A.run/1", covered: true}], files: [])
+
+      findings =
+        CoverageTriangulation.envelope_findings(
+          envelope,
+          fixture_closure_map(),
+          fixture_tag_index()
+        )
+
+      refute Enum.any?(findings, fn f ->
+               f["code"] == "branch_guard_untested_realization" and
+                 f["requirement_id"] == "subject_a.req1"
+             end)
+    end
+
+    test "always emits a single detector_unavailable(:aggregate_artifact_only), naming the per-test-only detectors" do
+      envelope = aggregate_envelope(mfas: [], files: [])
+
+      findings =
+        CoverageTriangulation.envelope_findings(
+          envelope,
+          fixture_closure_map(),
+          fixture_tag_index()
+        )
+
+      assert [finding] =
+               Enum.filter(findings, fn f ->
+                 f["code"] == "detector_unavailable" and f["reason"] == "aggregate_artifact_only"
+               end)
+
+      assert finding["message"] =~ "untethered_test"
+      assert finding["message"] =~ "reaching_tests"
+    end
+
+    test "never emits branch_guard_untethered_test under an aggregate envelope" do
+      envelope = aggregate_envelope(mfas: [%{mfa: "Elixir.A.run/1", covered: true}], files: [])
+
+      findings =
+        CoverageTriangulation.envelope_findings(
+          envelope,
+          fixture_closure_map(),
+          fixture_tag_index()
+        )
+
+      refute Enum.any?(findings, &(&1["code"] == "branch_guard_untethered_test"))
+    end
+
+    test "aggregate-form underspecified_realization: closure covered but zero tagged tests for the subject" do
+      closure_map = fixture_closure_map()
+      # subject_b's requirement (subject_b.req1) IS tagged in fixture_tag_index/0,
+      # so only subject_a (untagged in this scenario) should trip the finding.
+      tag_index = %{
+        spec: %{"subject_b.req1" => [%{file: "test/b_test.exs", test_name: "t1"}]},
+        opt_out: []
+      }
+
+      envelope =
+        aggregate_envelope(
+          mfas: [
+            %{mfa: "Elixir.A.run/1", covered: true},
+            %{mfa: "Elixir.B.run/1", covered: true}
+          ],
+          files: []
+        )
+
+      findings = CoverageTriangulation.envelope_findings(envelope, closure_map, tag_index)
+
+      underspecified =
+        Enum.filter(findings, &(&1["code"] == "branch_guard_underspecified_realization"))
+
+      assert [finding] = underspecified
+      assert finding["subject_id"] == "subject_a"
+      assert finding["mode"] == "aggregate"
+    end
+
+    test "no aggregate-form underspecified_realization when the subject has zero executed closure MFAs" do
+      closure_map = fixture_closure_map()
+      tag_index = %{spec: %{}, opt_out: []}
+
+      envelope =
+        aggregate_envelope(
+          mfas: [
+            %{mfa: "Elixir.A.run/1", covered: false},
+            %{mfa: "Elixir.A.aux/0", covered: false}
+          ],
+          files: []
+        )
+
+      findings = CoverageTriangulation.envelope_findings(envelope, closure_map, tag_index)
+
+      refute Enum.any?(findings, fn f ->
+               f["code"] == "branch_guard_underspecified_realization" and
+                 f["subject_id"] == "subject_a"
+             end)
+    end
+  end
+
+  describe "aggregate_requirement_reach/2" do
+    test "computes closure_mfa_count, executed_mfa_count, and covered/uncovered MFA lists via MfaKey intersection" do
+      envelope =
+        aggregate_envelope(
+          mfas: [
+            %{mfa: "Elixir.A.run/1", covered: true},
+            %{mfa: "Elixir.A.aux/0", covered: false},
+            %{mfa: "Elixir.Unrelated.noise/2", covered: true}
+          ],
+          files: []
+        )
+
+      reach = CoverageTriangulation.aggregate_requirement_reach(envelope, fixture_closure_map())
+
+      req1 = reach[{"subject_a", "subject_a.req1"}]
+      assert req1.closure_mfa_count == 1
+      assert req1.executed_mfa_count == 1
+      assert req1.covered_mfas == ["Elixir.A.run/1"]
+      assert req1.uncovered_mfas == []
+
+      req2 = reach[{"subject_a", "subject_a.req2"}]
+      assert req2.closure_mfa_count == 1
+      assert req2.executed_mfa_count == 0
+      assert req2.covered_mfas == []
+      assert req2.uncovered_mfas == ["Elixir.A.aux/0"]
+    end
+
+    test "computes line_coverage_pct from the envelope files matched to the closure's intersecting modules" do
+      envelope =
+        aggregate_envelope(
+          mfas: [%{mfa: "Elixir.A.run/1", covered: true}],
+          files: [
+            %{file: "lib/a.ex", module: Elixir.A, lines_hit: [1, 2, 3], lines_total: 4},
+            %{file: "lib/unrelated.ex", module: Elixir.Unrelated, lines_hit: [1], lines_total: 1}
+          ]
+        )
+
+      reach = CoverageTriangulation.aggregate_requirement_reach(envelope, fixture_closure_map())
+      req1 = reach[{"subject_a", "subject_a.req1"}]
+
+      assert req1.line_coverage_pct == 75.0
+    end
+
+    test "does not carry a :reaching_tests field — per-test attribution is unavailable in aggregate mode" do
+      envelope = aggregate_envelope(mfas: [], files: [])
+      reach = CoverageTriangulation.aggregate_requirement_reach(envelope, fixture_closure_map())
+
+      refute Map.has_key?(reach[{"subject_a", "subject_a.req1"}], :reaching_tests)
+    end
+  end
+
+  # ---------------------------------------------------------------------------
   # Fixtures
   # ---------------------------------------------------------------------------
+
+  defp aggregate_envelope(fields) do
+    %{
+      version: 2,
+      mode: :aggregate,
+      generated_at: ~U[2026-07-23 00:00:00Z],
+      source: "test.coverdata",
+      files: Keyword.get(fields, :files, []),
+      mfas: Keyword.get(fields, :mfas, []),
+      payload: %{unmapped_modules: 0},
+      degraded: false
+    }
+  end
 
   defp fixture_closure_map do
     %{
