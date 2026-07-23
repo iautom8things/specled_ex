@@ -8,9 +8,10 @@
   "description": "No spec subject\n\nFrom critical review of specled_-155 branch (consolidated report: ~/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-23/specled_-155-aggregate-first-spec-coverage/20260723-161424-consolidated.md, review_commit af16144; raw finding TEST-H1, calibrated M).\n\ntest/mix/tasks/spec_cover_test_test.exs:225 decode_coverdata/1 calls :cover.stop/0 + :cover.start/0 in the HOST test BEAM (line 227), tearing down the coverage coordinator any outer 'mix test --cover' run depends on. This corrupts specled's own coverage measurement (mix.exs:10 configures test_coverage threshold: 90) and violates the child-BEAM quarantine discipline documented in aggregate_test.exs's own moduledoc.\n\nFix: move the :cover decode work into a child BEAM (reuse the existing child-BEAM ingest pattern from aggregate_test.exs), so the host suite's cover server is never stopped. Verify by running 'mix test --cover' and confirming the summary is sane / suite passes both with and without --cover.",
   "id": "specled_-aav",
   "labels": [],
+  "parent": "specled_-155",
   "priority": 2,
   "status": "open",
   "title": "Fix decode_coverdata host :cover teardown in spec_cover_test_test.exs (run in child BEAM)",
   "type": "bug",
-  "updated_at": "2026-07-23T20:58:39Z"
+  "updated_at": "2026-07-23T21:57:21Z"
 }
