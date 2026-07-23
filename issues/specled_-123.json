@@ -9,9 +9,15 @@
     "phase:implementing",
     "slug:spec-led-bootstrap-skill"
   ],
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: specled_-123-spec-led-bootstrap-skill - implement\nLog: (interactive session)\n\nCommit: e672e81 on specled_-123/bootstrap-gaps (worktree /Users/mz/src/specled_ex-bootstrap-gaps)\nFiles touched: skills/spec-led-bootstrap/SKILL.md, references/detection-matrix.md, references/configurable-levers.md, references/adoption-phases.md, references/task-templates.md, references/subject-extraction.md\nTests added: none (docs-only ticket; no code paths changed)\nVerification stubs flipped: none\nVerification tier: change-scoped — mix compile --warnings-as-errors, mix format --check-formatted, mix spec.next, mix spec.check --base origin/main --no-run-commands (exit 0); full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: All 8 ticket items landed. The finding-code bug (item 1) is fixed against the verified resolver defaults in branch_check.ex (append_only/must_downgraded, overlap/must_stem_collision), with an added warning that misspelled severity keys silently never match. CI wiring folded into phase2 (spec.check --base + spec.review artifact from the scaffolded workflow template, spec-evidence fetched read-only with the unauthenticated caveat); evidence-ledger integration completed (install_hook + spec.sync in phase0, pre-ledger detection via tracked state.json emitting a spec.evidence.migrate ticket template); phase1 placeholder-spec recipe replaced with the single Bootstrap-draft placeholder + @doc-backed exceptions and a phase2 no-placeholder promotion gate; runtime-split detection (1.6) with host_check_cmd/container_verify_cmd tokens; deferred graduation-review ticket (bw defer ~4 weeks) whenever target \u003c phase6; two-armed ADR rubric propagated to scaffolded AGENTS.md + decisions/README.md; consistency sweep done (argument-hint phase coverage, requirement_without_test_tag vs branch_guard_ sibling disambiguated everywhere incl. a wrong dangling-tag claim in detection-matrix, umbrella advice tied to a capability probe). File-touch guard finding on specled.package surface handled via Spec-Drift trailer (docs-only, no package contract change).",
+      "timestamp": "2026-07-23T00:16:56Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "spec-led-bootstrap skill: fix finding-code bug + close the adoption gaps a real brownfield adoption exposed",
   "type": "task",
-  "updated_at": "2026-07-23T00:05:12Z"
+  "updated_at": "2026-07-23T00:16:56Z"
 }
