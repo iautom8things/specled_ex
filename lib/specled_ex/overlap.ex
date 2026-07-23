@@ -111,7 +111,7 @@ defmodule SpecLedEx.Overlap do
       subject_id: subject_id,
       entity_id: req_id,
       message:
-        finalize_message(
+        SpecLedEx.FindingMessage.finalize(
           "Requirement `#{req_id}` is covered redundantly by multiple scenarios in subject `#{subject_id || "<unknown>"}`: #{list}. Scenarios in the same subject must not list the same requirement id in their `covers:` field.",
           "fix: delete or re-scope the duplicate scenario(s), or split the requirement so each scenario covers a distinct id."
         )
@@ -127,7 +127,7 @@ defmodule SpecLedEx.Overlap do
       subject_id: subject_id,
       entity_id: List.first(req_ids),
       message:
-        finalize_message(
+        SpecLedEx.FindingMessage.finalize(
           "Requirements #{list} in subject `#{subject_id || "<unknown>"}` share the same canonicalized MUST stem. Two `must`-priority requirements must not collapse to the same normative statement.",
           "fix: merge the requirements under a single id, or differentiate the statements so each captures a distinct obligation."
         )
@@ -212,16 +212,6 @@ defmodule SpecLedEx.Overlap do
       [_, modal, rest] -> String.trim(modal <> rest)
       _ -> normalized
     end
-  end
-
-  defp finalize_message(body, fix_line) do
-    """
-    #{String.trim_trailing(body)}
-
-    ```
-    #{fix_line}
-    ```\
-    """
   end
 
   defp sort_findings(findings) do

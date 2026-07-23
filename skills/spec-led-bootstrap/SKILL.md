@@ -193,10 +193,9 @@ Compose file (or dev Dockerfile) present AND a database dep → the test
 suite likely runs in a container while Git lives on the host. Record
 `runtime: containerized`; Phase 2 must then ask for the split commands
 (`<host_check_cmd>` / `<container_verify_cmd>`) instead of a single
-`<verify_cmd>`. This was the biggest tribal-knowledge friction in the
-reference adoption — git-sensitive `spec.prime`/`spec.next`/`spec.check`
-belong on the host; DB-backed command verifications belong in the
-container. See the detection matrix for the full rationale.
+`<verify_cmd>`. Which commands run host-side vs container-side, and why,
+is documented once in "Runtime split — host vs container" in
+[references/detection-matrix.md](references/detection-matrix.md).
 
 ### Detection summary
 
@@ -418,19 +417,16 @@ parent and depend phase2 on the fan-out).
 
 ### 4.5 Deferred graduation-review ticket
 
-Whenever `target_phase < phase6`, emit ONE standalone deferred ticket
-(template in [references/task-templates.md](references/task-templates.md)):
+Whenever `target_phase < phase6`, emit ONE standalone deferred ticket:
 
 ```bash
 bw create "Graduation review: graduate spec.check severities or write explicit opt-outs" --description "..."
 bw defer <new-id> "4 weeks"
 ```
 
-Rationale: severities parked at `:warning` "until the corpus is clean" is
-the observed failure mode of staged adoption — the graduation date recedes
-forever. The deferred ticket converts "graduate later" from an intention
-into a scheduled artifact. It is standalone, not an epic child — the epic
-closes at its target phase; graduation runs on its own clock.
+The full ticket body and the rationale (why it is standalone and why
+graduation must be a scheduled artifact) live in the "Graduation review"
+section of [references/task-templates.md](references/task-templates.md).
 
 ---
 

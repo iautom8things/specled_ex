@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.1 — 2026-07-23
+
+- Extracted the shared finding-message finalizer — previously byte-identical
+  across `AppendOnly`, `Overlap`, and `BranchCheck` — into
+  `SpecLedEx.FindingMessage.finalize/2`, the single producer of the prose +
+  fenced `fix:` block shape that `review/html.ex` parses. Pure refactor; no
+  message-shape change. (specled_-wr3)
+- Deduplicated three restated topics (graduation rationale, runtime host/container
+  split, and the `spec.evidence.migrate` behavior list) across the
+  spec-led-bootstrap skill files into single canonical homes with pointers,
+  eliminating the sync surface the skill itself preaches against. (specled_-m8y)
+
 ## 0.4.0 — 2026-07-23
 
 - `mix spec.check --accept-drift`: a durable acceptance path for INTENTIONAL
