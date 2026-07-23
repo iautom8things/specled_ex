@@ -707,24 +707,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
   end
 
   defp compute_seed_hashes(:api_boundary, bindings, context) do
-    Enum.reduce(bindings, %{}, fn %{mfa: mfa}, acc ->
-      case Binding.resolve(mfa, context) do
-        {:ok, {:module, mod}} ->
-          # Bare module under api_boundary — head-union envelope.
-          case Canonical.hash_module_head_union(mod) do
-            {:ok, hash_bin} -> Map.put(acc, mfa, hash_entry(hash_bin))
-            _ -> acc
-          end
-
-        {:ok, ast} ->
-          hash_bin = ApiBoundary.hash(ast)
-          Map.put(acc, mfa, hash_entry(hash_bin))
-
-        _ ->
-          # Dangling: do not seed. Detector will emit dangling on the run.
-          acc
-      end
-    end)
+    api_boundary_hashes(bindings, context)
   end
 
   defp compute_seed_hashes(:expanded_behavior, bindings, _context) do
@@ -870,19 +853,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
   end
 
   defp compute_tier_hashes(:api_boundary, bindings, context) do
-    Enum.reduce(bindings, %{}, fn %{mfa: mfa}, acc ->
-      case Binding.resolve(mfa, context) do
-        {:ok, {:module, _}} ->
-          acc
-
-        {:ok, ast} ->
-          hash_bin = ApiBoundary.hash(ast)
-          Map.put(acc, mfa, hash_entry(hash_bin))
-
-        _ ->
-          acc
-      end
-    end)
+    api_boundary_hashes(bindings, context)
   end
 
   defp compute_tier_hashes(:expanded_behavior, bindings, _context) do
@@ -913,6 +884,38 @@ defmodule SpecLedEx.Realization.Orchestrator do
   end
 
   defp compute_tier_hashes(_tier, _bindings, _context), do: %{}
+
+  # Single api_boundary hasher shared by the silent-seed pass and the post-run
+  # refresh. Seed and refresh MUST produce identical entries for the same
+  # bindings — a divergence (refresh skipping bare modules while seed hashed
+  # them) is what caused bare-module entries to oscillate out of
+  # `.spec/realization_hashes.json` (specled_-rot). Under `merge/2` semantics
+  # the refresh side of that parity is unobservable through `run/2` (seed
+  # re-covers anything missing), so parity is held here by construction and
+  # the bare-module/MFA contract is pinned by testing this function directly.
+  #
+  # Orchestrator-internal (`@doc false`): public only for testability.
+  @doc false
+  def api_boundary_hashes(bindings, context) do
+    Enum.reduce(bindings, %{}, fn %{mfa: mfa}, acc ->
+      case Binding.resolve(mfa, context) do
+        {:ok, {:module, mod}} ->
+          # Bare module under api_boundary — head-union envelope.
+          case Canonical.hash_module_head_union(mod) do
+            {:ok, hash_bin} -> Map.put(acc, mfa, hash_entry(hash_bin))
+            _ -> acc
+          end
+
+        {:ok, ast} ->
+          hash_bin = ApiBoundary.hash(ast)
+          Map.put(acc, mfa, hash_entry(hash_bin))
+
+        _ ->
+          # Dangling: do not seed. Detector will emit dangling on the run.
+          acc
+      end
+    end)
+  end
 
   defp dedupe_by_mfa(bindings, hash_fun) do
     bindings

@@ -287,6 +287,48 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
       assert HashStore.fetch(store, "api_boundary", mfa) == current
     end
 
+    test "writes api_boundary bare module baseline when no drift is detected", %{root: root} do
+      mod_string = "SpecLedEx.OrchestratorFixtures.Mod"
+
+      # Bare module under api_boundary
+      subject = subject("bare_mod.subject", %{"api_boundary" => [mod_string]}, [])
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary]
+        )
+
+      assert Enum.empty?(findings)
+
+      store = HashStore.read(root)
+      entry = get_in(store, ["api_boundary", mod_string])
+
+      assert is_map(entry),
+             "expected committed baseline hash for #{mod_string}, got #{inspect(store)}"
+
+      {:ok, {:module, mod}} = Binding.resolve(mod_string)
+      {:ok, current} = Canonical.hash_module_head_union(mod)
+      assert HashStore.fetch(store, "api_boundary", mod_string) == current
+    end
+
+    test "bare module baseline is stable across consecutive clean runs", %{root: root} do
+      mod_string = "SpecLedEx.OrchestratorFixtures.Mod"
+      subject = subject("bare_mod_stable.subject", %{"api_boundary" => [mod_string]}, [])
+      opts = [root: root, enabled_tiers: [:api_boundary]]
+      baseline_path = Path.join(root, HashStore.baseline_rel())
+
+      # Run 1 seeds the bare-module entry and commits the baseline.
+      assert Orchestrator.run(%{"subjects" => [subject]}, opts) == []
+      committed = File.read!(baseline_path)
+
+      # Run 2 must be clean and leave the committed baseline byte-identical:
+      # the entry neither drops out (refresh skipping bare modules) nor gets
+      # re-seeded with a different value (the specled_-rot oscillation).
+      assert Orchestrator.run(%{"subjects" => [subject]}, opts) == []
+      assert File.read!(baseline_path) == committed
+    end
+
     test "does NOT commit when drift is detected", %{root: root} do
       mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
       wrong = :crypto.hash(:sha256, "wrong")
@@ -314,6 +356,38 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
       # The wrong hash MUST still be in the store — we did not overwrite.
       store = HashStore.read(root)
       assert HashStore.fetch(store, "api_boundary", mfa) == wrong
+    end
+  end
+
+  describe "api_boundary_hashes/2 — shared seed/refresh hasher" do
+    # This is the discriminating test for the specled_-rot fix. Through
+    # `run/2` the refresh side is masked: `HashStore.merge/2` preserves
+    # whatever the silent-seed pass wrote, so an integration test stays green
+    # even if the refresh recompute skips bare modules again. Seed and refresh
+    # both delegate to `api_boundary_hashes/2`; pinning bare-module inclusion
+    # here pins it for both paths.
+    test "hashes bare-module and MFA-form entries, skips dangling" do
+      bare = "SpecLedEx.OrchestratorFixtures.Mod"
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+      dangling = "SpecLedEx.OrchestratorFixtures.Missing.nope/0"
+
+      hashes =
+        Orchestrator.api_boundary_hashes(
+          [%{mfa: bare}, %{mfa: mfa}, %{mfa: dangling}],
+          nil
+        )
+
+      assert Map.keys(hashes) |> Enum.sort() == [bare, mfa]
+
+      {:ok, {:module, mod}} = Binding.resolve(bare)
+      {:ok, head_union} = Canonical.hash_module_head_union(mod)
+      assert hashes[bare]["hash"] == Base.encode16(head_union, case: :lower)
+
+      {:ok, ast} = Binding.resolve(mfa)
+      assert hashes[mfa]["hash"] == Base.encode16(ApiBoundary.hash(ast), case: :lower)
+
+      assert hashes[bare]["hasher_version"] == HashStore.hasher_version()
+      assert hashes[mfa]["hasher_version"] == HashStore.hasher_version()
     end
   end
 

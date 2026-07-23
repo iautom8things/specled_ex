@@ -11,6 +11,11 @@ Shipped scaffold templates (README, local skill) advise the ADR-or-trailer
 fork wherever they describe the ADR obligation, so generated workspaces
 inherit the two-armed guidance.
 
+As of 0.3.1 the package guarantees a stable committed realization baseline
+for bare-module `api_boundary` entries: adopting repos no longer see
+`.spec/realization_hashes.json` churn (drop-and-reseed oscillation) across
+consecutive clean `mix spec.check` runs.
+
 ```yaml spec-meta
 id: specled.package
 kind: package

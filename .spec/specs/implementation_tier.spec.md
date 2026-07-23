@@ -15,6 +15,8 @@ cause.
 
 Branch-check dispatch and the tagged implementation tests exercise this tier end to end. Governance messaging inside branch-check (finding text and `fix:` blocks) sits outside this tier's semantics — only dispatch and hashing code affect it.
 
+Within the orchestrator this tier is seed-only: bare-module `implementation` entries are hashed with the full-union envelope (`Canonical.hash_module_full_union/1`) during the silent-seed pass, and the clean-run flat-tier refresh — including the shared api_boundary head-union hasher (`Orchestrator.api_boundary_hashes/2`) — excludes the implementation tier entirely. Changes to the orchestrator's api_boundary hashing therefore cannot alter closure hashes or the boundary rules below.
+
 ```yaml spec-meta
 id: specled.implementation_tier
 kind: workflow
