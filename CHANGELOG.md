@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.3.3 — 2026-07-23
+
+- The scaffolded `spec-review` GitHub Actions workflow
+  (`priv/spec_init/workflows/spec_review.yml.eex`) now splits the untrusted-PR
+  render from the write-scoped deploy. A read-only `render` job runs
+  `mix spec.review` against the PR head and uploads the HTML as a workflow
+  artifact; a separate write-scoped `deploy` job (`needs: render`) downloads
+  the artifact, pushes gh-pages, and posts the PR comment while checking out
+  only the trusted base branch (`ref: github.base_ref`). No single job both
+  executes pull-request-provided code and holds a `contents: write` /
+  `pull-requests: write` token, and top-level permissions default to
+  read-only. New `must` requirement
+  `specled.spec_review.gh_pages_privilege_separation` captures the invariant.
+  (specled_-3q1)
+
 ## 0.3.2 — 2026-07-23
 
 - Hardened two order/load-dependent test flakes surfaced by the
