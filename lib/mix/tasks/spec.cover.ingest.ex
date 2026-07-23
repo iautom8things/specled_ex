@@ -57,6 +57,21 @@ defmodule Mix.Tasks.Spec.Cover.Ingest do
         Mix.raise("no such file: #{coverdata_path}")
 
       {:error, :empty_coverage} ->
+        # Still record a refusal via Store.write_v2/2 (an empty envelope
+        # refuses with `{:error, :empty_files}`) so `Store.read_status/1`
+        # on `output` reports `{:refused, ...}` rather than leaving no
+        # sidecar at all — indistinguishable from "never ran".
+        empty_envelope =
+          Store.build_envelope(%{
+            mode: :aggregate,
+            source: coverdata_path,
+            files: [],
+            mfas: [],
+            degraded: true,
+            payload: %{unmapped_modules: 0}
+          })
+
+        {:error, :empty_files} = Store.write_v2(empty_envelope, output)
         Mix.raise("#{coverdata_path} carries no cover-compiled modules (empty coverage)")
 
       {:error, {:import_failed, reason}} ->

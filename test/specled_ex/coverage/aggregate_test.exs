@@ -92,6 +92,9 @@ defmodule SpecLedEx.Coverage.AggregateTest do
 
       assert ingest_output =~ "empty coverage",
              "expected the empty-coverage refusal message. Output was:\n#{ingest_output}"
+
+      status_target = Path.join(root, Store.default_path())
+      assert {:refused, _reason} = Store.read_status(status_target)
     end
   end
 

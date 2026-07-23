@@ -160,7 +160,12 @@ decisions:
   statement: >-
     `SpecLedEx.Coverage.Aggregate.ingest/2` shall return
     `{:error, :empty_coverage}` when the imported `.coverdata` carries zero
-    cover-compiled or imported modules, without writing any envelope.
+    cover-compiled or imported modules, without writing any envelope
+    itself. A caller (`mix spec.cover.ingest`) that still records this
+    outcome via `Store.write_v2/2` on an empty envelope gets the standard
+    `{:error, :empty_files}` refusal, so `Store.read_status/1` on the
+    target path reports `{:refused, ...}` rather than leaving no sidecar
+    at all.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.mfa_key_round_trip
@@ -247,9 +252,10 @@ decisions:
   given:
     - "an exported `.coverdata` file with zero cover-compiled modules"
   when:
-    - "`SpecLedEx.Coverage.Aggregate.ingest/2` ingests that file"
+    - "`SpecLedEx.Coverage.Aggregate.ingest/2` ingests that file via `mix spec.cover.ingest`"
   then:
-    - "the result is `{:error, :empty_coverage}`"
+    - "the ingest is refused with a message naming empty coverage"
+    - "`Store.read_status/1` on the target path returns `{:refused, ...}`"
   covers:
     - specled.coverage_capture.aggregate_empty_coverage
 - id: specled.coverage_capture.scenario.mfa_key_format_parse_round_trip
