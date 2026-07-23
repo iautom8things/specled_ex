@@ -18,8 +18,8 @@
       "message": "Changed file test/specled_ex/realization/api_boundary_test.exs impacts subject specs that were not updated: specled.realized_by"
     }
   ],
-  "run_at": "2026-07-23T16:55:44.602037Z",
-  "run_id": "d0656fd50aade5d0a0861ee545902776",
+  "run_at": "2026-07-23T16:56:21.126477Z",
+  "run_id": "84be30ce8272a457a0c865a2f41e79e6",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "107493c011b42c656995da6ee6c4ed50dc9cda63",
