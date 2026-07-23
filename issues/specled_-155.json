@@ -47,11 +47,15 @@
     {
       "text": "MERGE GATE 6 (after specled_-155.7, epic @ 28fe533): GREEN. compile -Werror ok; 3 properties + 1121 tests, 0 failures; format ok; deps.unlock ok; spec.check exit 0 status=pass (findings=2, ratified info pair; no temp-script flake this run). Rendering complete: spec.review Coverage tab + spec.triangle consume the v2 layer via real production call sites; degraded per-test states render honestly (:async_contaminated); file-level proxy carries a UI qualifier pending 155.5.",
       "timestamp": "2026-07-23T19:58:02Z"
+    },
+    {
+      "text": "MERGE GATE 7 (after specled_-155.5, epic @ 3abf5e1): GREEN. compile -Werror ok; 3 properties + 1136 tests, 0 failures; format ok; deps.unlock ok; spec.check exit 0 status=pass findings=1 (info). Engine complete: Snapshot native/classic dispatch, reset-free diffing, cast-time compaction, v2 :per_test envelopes, cumulative-parity tripwire. Cross-ticket integration proven at rebase (90/0). Carried into T8: reconcile 'exact per-test attribution' renderer/spec wording with the disclosed ExUnit cast-race bound (specled_-cpw).",
+      "timestamp": "2026-07-23T19:58:03Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Aggregate-first spec coverage — specled_-47j remediation",
   "type": "epic",
-  "updated_at": "2026-07-23T19:58:02Z"
+  "updated_at": "2026-07-23T19:58:03Z"
 }
