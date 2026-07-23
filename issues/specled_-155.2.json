@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-155.1"
   ],
@@ -13,7 +13,7 @@
   "labels": [],
   "parent": "specled_-155",
   "priority": 1,
-  "status": "open",
+  "status": "in_progress",
   "title": "T2: Aggregate.ingest/2, mix spec.cover.ingest, shared MFA-string helper",
   "type": "task",
   "updated_at": "2026-07-23T19:57:55Z"
