@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T08:51:30Z",
+  "description": "Critical-review 0.3.0 (specled_-4kg run, consensus finding): finalize_message/2 is byte-identical in lib/specled_ex/append_only.ex:498, lib/specled_ex/overlap.ex:217, and lib/specled_ex/branch_check.ex:181 (third copy added by specled_-4kg for the missing-decision fix: block). review/html.ex:3383 regex-parses the produced message shape (body + fenced fix: block), so the three copies plus the parser must stay in sync by convention. Extract to one shared named helper (e.g. SpecLedEx.FindingMessage.finalize/2) and point the html parser comment at it. Pure refactor; no message-shape change.",
+  "id": "specled_-wr3",
+  "labels": [],
+  "priority": 3,
+  "status": "open",
+  "title": "Extract shared finalize_message/2 — three byte-identical copies, shape regex-parsed by review/html.ex",
+  "type": "task",
+  "updated_at": "2026-07-23T08:51:30Z"
+}
