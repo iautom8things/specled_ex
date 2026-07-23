@@ -4,7 +4,8 @@
     "specled_-155.2"
   ],
   "blocks": [
-    "specled_-155.5"
+    "specled_-155.5",
+    "specled_-155.8"
   ],
   "created": "2026-07-23T12:03:10Z",
   "description": "Advances: specled.mix_tasks, specled.coverage_capture\n\nDecision 2: task KEEPS its name; behavior change goes in 0.4.0 release notes. Default mode: drop install_formatter/0, drop async forcing (ExUnit.configure(async: false) never actually serialized async modules — confirmed overclaim), drop the post-run stderr regex scan; run 'mix test --cover --export-coverage specled'; ingest in an after block guarded by coverdata existence; exit-code passthrough for red suites; non-zero exit on ingestion refusal or empty coverage. Include red-suite passthrough test.",
