@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T10:07:06Z",
+  "description": "Advances: specled.branch_guard\n\nGoodhart pressure found during critical review of specled_-rot's branch: the branch guard's subject co-change check fires on any surface/tagged file touch, and on internals-only refactors the cheapest path to green was padding must-requirement statements with non-falsifiable clauses (caught and reverted on that branch). The principled counter already exists in the guard — branch_check.ex missing_subject_update_findings/4 downgrades to :info when the changed file is attested clean for the subject (decision: specled.decision.file_touch_yields_to_realization) — but attestation coverage has holes, so the escape valve rarely fires.\n\nGaps observed:\n(1) specled.implementation_tier maps test/specled_ex/realization/orchestrator_test.exs into its coverage via a tagged test (implementation_tier.hash_ref_composition, orchestrator_test.exs:806) but attestation for test files flows through tagged_tests expansion from the covering requirement's realized_by bindings — which don't reach that file, so every orchestrator test edit hard-errors for this subject.\n(2) specled.branch_guard binds Orchestrator.run/2 (api_boundary) plus bare modules SpecLedEx.Coverage / SpecLedEx.Config.BranchGuard (implementation) — the bare-module entries were silent no-ops until specled_-rot's branch made bare-module hashing real; verify they now attest.\n\nWork: audit subjects whose coverage includes shared infrastructure files (orchestrator.ex sits in specled.branch_guard's surface; orchestrator_test.exs in two subjects' coverage); add api_boundary-tier bindings (head-union hashes are stable under internals-only change by design) for the entry points each subject actually depends on; verify the attested-clean downgrade fires end to end (scenario file_touch_attested_clean_downgrades exists) by exercising an internals-only orchestrator edit.\n\nPrereqs/related: needs specled_-rot's branch (fix-bare-module-api-boundary-refresh) merged — bare-module hashing + shared seed/refresh hasher. Related: specled_-uv3 — attestation only helps when drift is ABSENT; intentional-drift acceptance is the other half of removing Goodhart pressure from the guard.",
+  "id": "specled_-oyg",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Extend realized_by attestation coverage so internals-only changes don't demand spec co-change",
+  "type": "task",
+  "updated_at": "2026-07-23T10:07:06Z"
+}
