@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T22:50:31Z",
+  "description": "No spec subject\n\nReview security M1 (calibrated M). Store.safe_decode/read paths, spec.triangle tracer-manifest read (spec.triangle.ex:132-140), and coverage_closure decode :erlang.binary_to_term without [:safe] — atom-exhaustion/ETF-bomb DoS from a hostile committed artifact. Bounded (consumers sit downstream of code execution the operator controls) but the fix is one word at each site; keep non-safe only where decoding must resurrect module atoms and document why (MfaKey atoms come via String.to_atom separately — see idioms M3 for the to_existing_atom variant).",
+  "id": "specled_-q6l.4",
+  "labels": [],
+  "parent": "specled_-q6l",
+  "priority": 2,
+  "status": "open",
+  "title": "Use binary_to_term [:safe] for coverage/manifest artifact decodes",
+  "type": "task",
+  "updated_at": "2026-07-23T22:50:31Z"
+}
