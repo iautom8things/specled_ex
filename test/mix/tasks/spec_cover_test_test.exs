@@ -208,7 +208,17 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
       # per-module, per-line call-count totals `:cover.import/1` +
       # `:cover.analyse/3` recover from each file -- exactly what `mix
       # test.coverage` and `SpecLedEx.Coverage.Aggregate.ingest/2` read.
-      assert decode_coverdata(plain_coverdata) == decode_coverdata(per_test_coverdata),
+      plain_counts = decode_coverdata(plain_coverdata)
+      per_test_counts = decode_coverdata(per_test_coverdata)
+
+      assert plain_counts != [],
+             "plain coverdata decoded to no call counts — the parity assertion below " <>
+               "would pass vacuously on two empty decodes"
+
+      assert Enum.any?(plain_counts, fn {{mod, _line}, _count} -> mod == Covered end),
+             "expected decoded totals to include the fixture's Covered module"
+
+      assert plain_counts == per_test_counts,
              "would fail if arming the --per-test formatter (native or classic snapshot " <>
                "reads layered on top of the same :cover-instrumented modules) perturbed the " <>
                "cumulative totals `mix test --cover` exports on its own"
@@ -252,6 +262,9 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
 
     assert status == 0,
            "expected child-BEAM coverdata decode of #{path} to exit 0, got #{status}.\nOutput:\n#{output}"
+
+    assert output =~ @decode_begin and output =~ @decode_end,
+           "child decode exited 0 but produced no output markers.\nOutput:\n#{output}"
 
     [_before, rest] = String.split(output, @decode_begin, parts: 2)
     [encoded, _after] = String.split(rest, @decode_end, parts: 2)
