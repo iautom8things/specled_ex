@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T12:03:10Z",
+  "description": "Advances: specled.coverage_capture\n\nMINIMAL EARLY-SHIP CANDIDATE — stops garbage production immediately. lib/specled_ex/coverage/formatter.ex: init is inert (one-line stderr notice, no-op formatter) unless armed via Application.get_env(:specled_ex, :spec_cover_run) set by the mix task — closes the accidental :ex_unit-env smuggle and makes bare test_helper.exs wiring (the docs/adoption.md:134/:298 vector voyd_config followed) harmless. DELETE the MFA-\u003e{file,0} fabrication clause (formatter.ex:128-134), the empty-snapshot placeholder (103-104), and the group_by_file(_) -\u003e [] laundering catch-all (118); unknown shapes become counted decode_errors surfaced into envelope.degraded. lib/specled_ex/coverage.ex: remove default_snapshot_fn/snapshot_target :_ defaults; explicit opts validation. Disarmed-formatter tests.",
+  "id": "specled_-155.4",
+  "labels": [],
+  "parent": "specled_-155",
+  "priority": 1,
+  "status": "open",
+  "title": "T4: Formatter disarm-by-default + arming seam + delete fabrication clauses",
+  "type": "task",
+  "updated_at": "2026-07-23T12:03:10Z"
+}
