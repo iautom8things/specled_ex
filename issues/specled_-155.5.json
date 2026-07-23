@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T12:03:10Z",
+  "description": "Advances: specled.coverage_capture\n\nDecision 3: ships in the same release. Decision 4: recommend OTP \u003e= 27.2 for the native path, do NOT hard-gate; try/catch per module mitigates. NEW lib/specled_ex/coverage/snapshot.ex: runtime_mode/0 (:code.coverage_support/0 gated), scope_modules/0, native_snapshot/1 (:code.get_coverage(:line, Mod), try/catch), classic_snapshot/1 (per-module :cover.analyse(mod, :calls, :line) loop, ~6.5x cheaper than whole-table), diff/2 (count strictly increased); moduledoc codifies read-only one-owner invariant — NEVER :cover.reset (corrupts wrapped --cover tally, verified). Formatter: suite_started baseline, diff + compact to [{file, sorted_lines}] at cast time before :ets.insert, memoized module-\u003efile map, flag tags[:async] records. Task flags: --per-test (serialized flow + arming seam + async scan, non-zero exit on async contamination) and --allow-async (degrades instead). MUST verify :code.get_coverage(:line, Mod) return shape in-worktree BEFORE freezing the decoder. Include cumulative-totals-parity tripwire test (byte-identical --cover totals with and without the formatter) and negative-delta 'counters externally harvested' diagnostic.",
+  "id": "specled_-155.5",
+  "labels": [],
+  "parent": "specled_-155",
+  "priority": 1,
+  "status": "open",
+  "title": "T5: Rebuild --per-test lane on native read-only coverage deltas",
+  "type": "task",
+  "updated_at": "2026-07-23T12:03:10Z"
+}
