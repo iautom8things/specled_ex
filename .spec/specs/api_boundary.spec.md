@@ -44,8 +44,11 @@ decisions:
   statement: >-
     SpecLedEx.Realization.ApiBoundary.hash/2 shall produce a hash that
     is stable under formatting changes, variable renames, and line-
-    number shifts in the function body, but changes when the function's
-    arity, arg pattern shape, or literal default arguments change. A
+    number shifts of the function's source position — including edits
+    ABOVE the function (e.g. an unrelated moduledoc change) and the
+    line/column metadata carried by a remote-call guard's `.` operator
+    node — but changes when the function's arity, arg pattern shape, or
+    literal default arguments change. A
     `:non_literal_default` rule shall be applied uniformly to function-
     head defaults (not just defstruct): non-literal defaults do not
     change the hash. This weakening shall be documented in the module.

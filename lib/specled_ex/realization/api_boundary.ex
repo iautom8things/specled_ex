@@ -5,8 +5,10 @@ defmodule SpecLedEx.Realization.ApiBoundary do
   `branch_guard_realization_drift` and `branch_guard_dangling_binding` findings.
 
   `hash/2` produces a hash stable under formatting changes, variable renames,
-  and line-number shifts in the function body, but changing under arity, arg
-  pattern shape, or literal default argument changes. Non-literal defaults
+  and line-number shifts of the function's source position — including edits
+  above it and the line/column metadata on a remote-call guard's `.` operator
+  node — but changing under arity, arg pattern shape, or literal default
+  argument changes. Non-literal defaults
   (`\\\\ foo()`) do NOT change the hash — the same `:non_literal_default` rule
   that applies to defstruct defaults is applied uniformly here.
 
@@ -281,11 +283,16 @@ defmodule SpecLedEx.Realization.ApiBoundary do
 
   defp arg_shape(literal), do: literal
 
+  # Recurse into `form` as well as `args`: for a remote call the callee is
+  # itself a metadata-bearing node — `is_map(x)` is
+  # `{{:., meta, [:erlang, :is_map]}, _, [x]}` — so leaving `form` untouched let
+  # the `.` operator's `line:`/`column:` survive and made the hash
+  # position-sensitive (specled_-o40). Stripping `form` too makes it invariant.
   defp strip_meta({form, _meta, args}) when is_list(args) do
-    {form, [], Enum.map(args, &strip_meta/1)}
+    {strip_meta(form), [], Enum.map(args, &strip_meta/1)}
   end
 
-  defp strip_meta({form, _meta, ctx}) when is_atom(ctx), do: {form, [], ctx}
+  defp strip_meta({form, _meta, ctx}) when is_atom(ctx), do: {strip_meta(form), [], ctx}
   defp strip_meta({l, r}), do: {strip_meta(l), strip_meta(r)}
   defp strip_meta(list) when is_list(list), do: Enum.map(list, &strip_meta/1)
   defp strip_meta(other), do: other
