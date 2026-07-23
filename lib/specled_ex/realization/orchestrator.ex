@@ -95,6 +95,15 @@ defmodule SpecLedEx.Realization.Orchestrator do
     * `:commit_hashes?` — when true and no drift findings are emitted, refresh
       current hashes for the flat-binding tiers and persist via
       `HashStore.write/2`. Defaults to true.
+    * `:accept_drift?` — when true, run the flat-tier refresh even though drift
+      findings are present, committing the current hashes as the new baseline.
+      This is the durable acceptance path for INTENTIONAL realization drift
+      (`mix spec.check --accept-drift`): it self-heals the baseline in one run
+      so the drift does not resurface post-merge once the ephemeral
+      `Spec-Drift:` trailer's `base..HEAD` window has closed. Dangling bindings
+      are never accepted — `refresh_and_commit_hashes/3` only commits hashes for
+      bindings that resolve, so an unresolved binding keeps failing the run.
+      Defaults to false. See `specled.decision.realization_drift_acceptance`.
   """
   @spec run(map(), keyword()) :: [map()]
   def run(index, opts \\ []) when is_map(index) do
@@ -163,6 +172,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
     context = Keyword.get(opts, :context)
     umbrella? = Keyword.get(opts, :umbrella?, false)
     commit_hashes? = Keyword.get(opts, :commit_hashes?, true)
+    accept_drift? = Keyword.get(opts, :accept_drift?, false)
 
     tier_opts = [root: root, umbrella?: umbrella?]
     bindings_by_tier = collect_bindings(index, enabled)
@@ -178,7 +188,15 @@ defmodule SpecLedEx.Realization.Orchestrator do
 
     findings = normalize_use_findings(findings)
 
-    if commit_hashes? and not umbrella? and not has_drift?(findings) do
+    # Normally the refresh is gated behind a clean run — drift blocks the very
+    # refresh that would accept the new hash, which is why `mix spec.check`
+    # cannot self-heal INTENTIONAL drift on its own. `accept_drift?` opts out
+    # for DRIFT only: it refreshes under drift so the current flat-tier hashes
+    # become the committed baseline. A dangling binding is a genuine error, not
+    # intentional drift — it still blocks the refresh, so no baseline moves on a
+    # run that exits `fail`. See `specled.realized_by.drift_acceptance`.
+    if commit_hashes? and not umbrella? and
+         ((accept_drift? and not has_dangling?(findings)) or not has_drift?(findings)) do
       refresh_and_commit_hashes(bindings_by_tier, context, root)
     end
 
@@ -646,6 +664,20 @@ defmodule SpecLedEx.Realization.Orchestrator do
         code == "branch_guard_dangling_binding"
     end)
   end
+
+  defp has_dangling?(findings) do
+    Enum.any?(findings, fn f ->
+      code = Map.get(f, "code") || Map.get(f, :code)
+      code == "branch_guard_dangling_binding"
+    end)
+  end
+
+  @doc false
+  # The tiers `refresh_and_commit_hashes/3` rebaselines. `SpecLedEx.BranchCheck`
+  # references this to scope the `--accept-drift` `:info` downgrade to exactly
+  # the healed set (silence what you heal); the implementation tier is excluded
+  # by design, so its drift is reported, never accepted.
+  def flat_tiers, do: @flat_tiers
 
   # covers: specled.realized_by.silent_seed
   # covers: specled.realized_by.silent_seed_uses_merge

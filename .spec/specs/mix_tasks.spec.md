@@ -142,6 +142,16 @@ decisions:
   statement: mix spec.check and mix spec.validate shall accept `--test-tags` and `--no-test-tags` flags that enable or disable test-tag scanning for that invocation, overriding the config default.
   priority: must
   stability: evolving
+- id: specled.tasks.accept_drift_flag
+  statement: >-
+    mix spec.check shall accept an `--accept-drift` flag that threads
+    `accept_drift?: true` into the branch guard's realization run, accepting the
+    current flat-tier realization hashes as the new committed baseline for
+    intentional drift (see `specled.realized_by.drift_acceptance`). Without the
+    flag the branch guard shall not refresh committed hashes on a run that
+    produced drift.
+  priority: must
+  stability: evolving
 - id: specled.tasks.test_tags_precedence
   statement: When building the index, the effective test-tag enabled value shall follow CLI flag > `.spec/config.yml` > built-in default precedence.
   priority: must
@@ -272,6 +282,7 @@ decisions:
     - specled.tasks.test_tags_precedence
     - specled.tasks.command_timeout_config
     - specled.tasks.verification_severity_config
+    - specled.tasks.accept_drift_flag
 - kind: tagged_tests
   execute: true
   covers:

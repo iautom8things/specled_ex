@@ -35,6 +35,14 @@ defmodule Mix.Tasks.Spec.Check do
       this flag, `:info`-severity findings are suppressed from stdout.
       `SPECLED_SHOW_INFO=1` in the environment has the same effect as
       `--verbose`.
+    * `--accept-drift` - accept the current realization hashes as the new
+      committed baseline for INTENTIONAL drift. Refreshes and commits the
+      flat-tier hashes even though drift is present (so the drift self-heals in
+      one run and does not resurface post-merge), and downgrades
+      `branch_guard_realization_drift` to `:info` for this run so it passes.
+      Dangling bindings are never accepted. Commit the updated
+      `.spec/realization_hashes.json` afterward. See
+      `specled.decision.realization_drift_acceptance`.
   """
 
   @impl Mix.Task
@@ -53,7 +61,8 @@ defmodule Mix.Tasks.Spec.Check do
           min_strength: :string,
           command_timeout_ms: :integer,
           test_tags: :boolean,
-          verbose: :boolean
+          verbose: :boolean,
+          accept_drift: :boolean
         ],
         aliases: [r: :root, o: :output, d: :debug]
       )
@@ -108,7 +117,11 @@ defmodule Mix.Tasks.Spec.Check do
     end
 
     branch_report =
-      SpecLedEx.branch_check(index, root, base: opts[:base], context: default_context(root))
+      SpecLedEx.branch_check(index, root,
+        base: opts[:base],
+        context: default_context(root),
+        accept_drift?: opts[:accept_drift] || false
+      )
 
     print_branch_report(branch_report, verbose?)
 

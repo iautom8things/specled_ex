@@ -244,6 +244,43 @@ with it.*
   tracked behavior change into invisible drift, and the next reviewer
   has no way to tell whether the subject still describes the system.
 
+  **Accepting intentional drift durably.** Once the subject spec has
+  been updated to acknowledge the change (or you have deliberately
+  decided the new realization is correct), the committed hash must move
+  to the new value or the finding recurs. Three mechanisms, in order of
+  preference:
+
+  1. **`mix spec.check --accept-drift`** — the durable, one-run accept
+     for flat-tier drift (`api_boundary`, `expanded_behavior`,
+     `typespecs`, `use`, and bare-module `api_boundary` head-union
+     entries). It refreshes and commits the current hashes as the new
+     baseline *even though drift is present*, and downgrades the drift
+     finding to `:info` so the run passes. Commit the updated
+     `.spec/realization_hashes.json` alongside your code change. Because
+     the baseline itself moves, the drift does **not** resurface after
+     the branch merges. Review the drift report first — it accepts every
+     currently drifted flat-tier binding, like `git add -A` after
+     reading the diff. See
+     `specled.decision.realization_drift_acceptance`.
+
+  2. **`Spec-Drift: branch_guard_realization_drift=info` trailer** — a
+     *PR-scoped acknowledgment*, not a durable accept. It downgrades the
+     finding only while the carrying commit sits inside `base..HEAD`
+     (`specled.decision.spec_drift_base_to_head`). It is right for "this
+     drift is expected for this PR" while review happens, but it stops
+     applying once the commit merges to the tip of `main` — so pair it
+     with `--accept-drift` (or option 3) if you want the baseline
+     actually updated. Relying on the trailer alone means the drift
+     returns as an error on `main` forever.
+
+  3. **Delete-and-reseed** — for **implementation-tier** closure and
+     bare-module full-union hashes, which `--accept-drift` does not
+     refresh (they are seed-only). Delete the stale entry from the
+     `implementation` section of `.spec/realization_hashes.json` and run
+     `mix spec.check`; the silent-seed pass recomputes and commits the
+     new hash with no drift finding
+     (`specled.realized_by.silent_seed`). Commit the regenerated file.
+
 - `branch_guard_dangling_binding` — A binding names an MFA that no
   longer exists. Usually the symptom of a rename or removal that did
   not sweep `realized_by`.

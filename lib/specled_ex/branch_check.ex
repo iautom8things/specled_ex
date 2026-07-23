@@ -110,7 +110,7 @@ defmodule SpecLedEx.BranchCheck do
 
     realization_findings =
       realization_unknown_tier_findings(config, severity_opts) ++
-        realization_findings(realization_raw, severity_opts)
+        realization_findings(realization_raw, severity_opts, accept_drift?(opts))
 
     findings =
       Enum.sort_by(
@@ -219,7 +219,8 @@ defmodule SpecLedEx.BranchCheck do
       root: root,
       umbrella?: Keyword.get(opts, :umbrella?, false),
       context: Keyword.get(opts, :context),
-      commit_hashes?: Keyword.get(opts, :commit_realization_hashes?, true)
+      commit_hashes?: Keyword.get(opts, :commit_realization_hashes?, true),
+      accept_drift?: accept_drift?(opts)
     ]
 
     realization_opts =
@@ -250,12 +251,30 @@ defmodule SpecLedEx.BranchCheck do
   defp render_rejected_tier(token) when is_binary(token), do: token
   defp render_rejected_tier(token), do: inspect(token)
 
-  defp realization_findings(raw, severity_opts) do
+  # covers: specled.realized_by.drift_acceptance
+  #
+  # `--accept-drift` downgrades a `branch_guard_realization_drift` finding to
+  # `:info` (at trailer precedence, so it beats a `branch_guard.severities`
+  # `:error` pin; a config `:off` still absorbs) — but ONLY for the bindings the
+  # post-run refresh actually rebaselines. That healed set is exactly
+  # `Orchestrator.flat_tiers/0`, so silencing is scoped to the same tiers:
+  # silence exactly what you heal. Two exclusions fall out of that principle:
+  #
+  #   * implementation-tier drift is a SIGNAL, not a gate — its hashes are never
+  #     rebaselined (the refresh is flat-tier only), so it is never silenced and
+  #     stays at its configured severity.
+  #   * a dangling binding is a genuine error that blocks the refresh entirely
+  #     (see the `Orchestrator` refresh gate), so when any dangling is present
+  #     nothing is healed and therefore nothing is silenced this run.
+  defp realization_findings(raw, severity_opts, accept_drift?) do
+    healable? = accept_drift? and not Enum.any?(raw, &dangling_finding?/1)
+
     Enum.flat_map(raw, fn finding ->
       code = Map.get(finding, "code")
       default = Map.get(@per_code_defaults, code, :warning)
+      opts = drift_severity_opts(finding, code, severity_opts, healable?)
 
-      case Severity.resolve(code, severity_opts, default) do
+      case Severity.resolve(code, opts, default) do
         :off ->
           []
 
@@ -264,6 +283,32 @@ defmodule SpecLedEx.BranchCheck do
       end
     end)
   end
+
+  # Scope the accept-drift `:info` override to the tiers the refresh heals.
+  # Only a `branch_guard_realization_drift` finding in a flat (refreshed) tier is
+  # downgraded, and only on a healable run (accept + no dangling error).
+  defp drift_severity_opts(finding, "branch_guard_realization_drift", severity_opts, true) do
+    if Map.get(finding, "tier") in flat_tier_names() do
+      Keyword.update(
+        severity_opts,
+        :trailer_override,
+        %{"branch_guard_realization_drift" => :info},
+        &Map.put(&1, "branch_guard_realization_drift", :info)
+      )
+    else
+      severity_opts
+    end
+  end
+
+  defp drift_severity_opts(_finding, _code, severity_opts, _healable?), do: severity_opts
+
+  defp flat_tier_names,
+    do: Enum.map(SpecLedEx.Realization.Orchestrator.flat_tiers(), &Atom.to_string/1)
+
+  defp dangling_finding?(finding),
+    do: Map.get(finding, "code") == "branch_guard_dangling_binding"
+
+  defp accept_drift?(opts), do: Keyword.get(opts, :accept_drift?, false) == true
 
   # covers: specled.branch_guard.file_touch_yields_to_attested_file
   # covers: specled.branch_guard.file_touch_per_subject_independence
