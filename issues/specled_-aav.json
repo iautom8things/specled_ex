@@ -15,11 +15,15 @@
     {
       "text": "ADMISSION (specled_-155 epic policy):\nAllowed touches: test/mix/tasks/spec_cover_test_test.exs; .spec/specs/coverage_capture.spec.md (scenario co-update only)\nOut of Scope (files): lib/**, .github/**, docs/**, all other test files\nOut of Scope (intent): no new deps; no behavior change to mix spec.cover.test itself; no changes to snapshot_test.exs's additive cover usage (verified safe — tolerates already_started, never stops)\nVerification: (1) mix test test/mix/tasks/spec_cover_test_test.exs --include integration green; (2) same file under --cover produces a real per-module tally (host :cover server survives decode_coverdata) — counterfactual on epic branch af16144: vacuous 100.00% total with zero module rows; (3) mix spec.check --base specled_-155/aggregate-first-spec-coverage exit 0.",
       "timestamp": "2026-07-23T22:05:45Z"
+    },
+    {
+      "text": "IMPLEMENTED\nSession: 9355be03-5df8-4ea9-b29e-3ee9a1cd4dcc\nLog: ~/.claude/projects/-Users-mzubieta-dev-mz-specled-ex/9355be03-5df8-4ea9-b29e-3ee9a1cd4dcc.jsonl\n\nCommit: bf1a7b3 (branch specled_-aav/decode-child-beam, base af16144, worktree /Users/mzubieta/dev/mz/specled_ex-decode-child-beam)\nFiles touched: test/mix/tasks/spec_cover_test_test.exs, .spec/specs/coverage_capture.spec.md\nTests added: none new — rewrote private helper decode_coverdata/1 (child-BEAM quarantine); the covering test remains the existing cumulative-parity tripwire, assertions unchanged\nVerification stubs flipped: none\nVerification tier: change-scoped — mix test test/mix/tasks/spec_cover_test_test.exs --include integration (8/8); same file under --cover (real per-module tally, host cover server survives; epic-branch counterfactual shows vacuous 100.00%/zero-module summary); mix spec.check --base specled_-155/aggregate-first-spec-coverage (0 findings); mix format --check-formatted. Full-system proof deferred to the epic merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: decode_coverdata/1 no longer stops/starts the host BEAM's :cover server; the decode now runs in a child elixir -e process and returns sorted per-module per-line call counts as Base64-encoded ETF between output markers (immune to :cover.import stdout warnings). The cumulative_parity_tripwire scenario's when-clause is co-updated to pin the child-BEAM decode discipline, clearing branch_guard_missing_subject_update honestly rather than via trailer.",
+      "timestamp": "2026-07-23T22:05:56Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fix decode_coverdata host :cover teardown in spec_cover_test_test.exs (run in child BEAM)",
   "type": "bug",
-  "updated_at": "2026-07-23T22:05:45Z"
+  "updated_at": "2026-07-23T22:05:56Z"
 }
