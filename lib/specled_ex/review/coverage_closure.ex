@@ -26,7 +26,7 @@ defmodule SpecLedEx.Review.CoverageClosure do
   """
 
   alias SpecLedEx.Compiler.Tracer
-  alias SpecLedEx.Coverage.Store
+  alias SpecLedEx.Coverage.{MfaKey, Store}
   alias SpecLedEx.CoverageTriangulation
   alias SpecLedEx.Realization.Closure
 
@@ -233,7 +233,7 @@ defmodule SpecLedEx.Review.CoverageClosure do
     }
   end
 
-  defp mfa_to_string({mod, fun, arity}), do: "#{inspect(mod)}.#{fun}/#{arity}"
+  defp mfa_to_string({mod, fun, arity}), do: MfaKey.format({mod, fun, arity})
   defp mfa_to_string(other), do: to_string(other)
 
   defp mfa_source_file({mod, _fun, _arity}) do
@@ -264,4 +264,341 @@ defmodule SpecLedEx.Review.CoverageClosure do
   end
 
   defp fetch_field(_, _), do: nil
+
+  # ---------------------------------------------------------------------------
+  # v2 envelope path (epic specled_-155, T6)
+  #
+  # `build/2` above is the v1 path used today by `SpecLedEx.Review.build_view/3`
+  # — untouched, so review.ex/html.ex (T7's rendering migration, out of scope
+  # here) keep working exactly as before.
+  #
+  # `build_v2/2` below is the additive v2 counterpart: it reads
+  # `SpecLedEx.Coverage.Store.read_v2/1` instead of `Store.read/1` and adds
+  # per-requirement MFA-level closure coverage plus tagged-test evidence
+  # strength. It is not wired into `Review.build_view/3` yet — that wiring is
+  # T7's job.
+  # ---------------------------------------------------------------------------
+
+  @type v2_status ::
+          :ok_aggregate
+          | :ok_per_test
+          | :no_coverage_artifact
+          | :legacy_artifact
+          | :invalid_artifact
+          | :no_tracer_manifest
+          | :async_contaminated
+
+  @type v2_tagged_test :: %{file: String.t(), test_name: String.t(), strength: String.t()}
+
+  @type v2_requirement_reach :: %{
+          closure_mfa_count: non_neg_integer(),
+          closure_coverage_pct: float() | :no_closure_mfas,
+          covered_mfas: [String.t()],
+          uncovered_mfas: [String.t()],
+          tagged_tests: [v2_tagged_test()],
+          self_verified?: boolean()
+        }
+
+  @type v2_subject_reach :: %{
+          status: v2_status(),
+          by_requirement: %{optional(String.t()) => v2_requirement_reach()}
+        }
+
+  @doc """
+  Envelope-based counterpart to `build/2`.
+
+  Returns `%{subject_id => v2_subject_reach()}` for every subject in `index`,
+  reading the v2 coverage envelope (`SpecLedEx.Coverage.Store.read_v2/1`)
+  instead of the v1 record list.
+
+  Each subject's `:status` is one of:
+
+    * `:ok_aggregate` / `:ok_per_test` — envelope loaded; mode-tagged so
+      renderers can distinguish observed, race-bounded per-test attribution
+      (`:ok_per_test`) — itself currently a file-level proxy rather than true
+      per-test MFA data (specled_-jjq) — from cumulative MFA-level coverage
+      (`:ok_aggregate`); neither is exact (specled_-cpw).
+    * `:no_coverage_artifact` — no artifact on disk.
+    * `:legacy_artifact` — the artifact decodes as a pre-v2 (v1) list; per
+      Decision 5, never auto-migrated.
+    * `:invalid_artifact` — the artifact exists but is undecodable/malformed.
+      Distinct from `:no_coverage_artifact` and `:legacy_artifact` — none of
+      the three collapse into a silent empty-but-ok result.
+    * `:no_tracer_manifest` — the compiler tracer manifest is missing, so the
+      closure walk itself could not run (checked first, same precedence as
+      `build/2`).
+    * `:async_contaminated` — the envelope loaded as `:per_test` but carries
+      `degraded: true` (the `--per-test` lane's async-contamination guard,
+      the same condition `CoverageTriangulation.envelope_findings/3` reports
+      under reason `:async_contaminated`). `by_requirement` is empty rather
+      than reporting untrustworthy per-test attribution as `:ok_per_test` —
+      see the flag-1 addendum on specled_-155.7.
+
+  Each `by_requirement` entry carries:
+
+    * `:closure_mfa_count` / `:covered_mfas` / `:uncovered_mfas` — the
+      requirement's closure MFAs (via `SpecLedEx.Coverage.MfaKey`),
+      partitioned by coverage.
+    * `:closure_coverage_pct` — `covered / total * 100`, or the atom
+      `:no_closure_mfas` when the closure has zero MFAs. This is a
+      deliberately distinct value from `0.0`: a requirement with no closure
+      at all (no binding, or a binding that resolves to nothing) is a
+      different problem than a requirement whose closure exists and is
+      simply untested, and the two must not render identically as "0%".
+    * `:tagged_tests` — every test carrying `@tag spec:` for this
+      requirement, each with an evidence `:strength` (`"claimed"`,
+      `"linked"`, or `"executed"` — `SpecLedEx.VerificationStrength`'s
+      vocabulary). Aggregate coverage has no per-test attribution, so a
+      tagged test can only ever reach `"linked"` (tag exists, and the
+      envelope confirms *some* execution) or `"claimed"` (tag exists, zero
+      confirmed execution) under `:ok_aggregate`; `"executed"` (a specific
+      tagged test's own coverage record reached the closure) is only
+      reachable under `:ok_per_test`.
+    * `:self_verified?` — `closure_coverage_pct` is a positive number AND at
+      least one tagged test reached `"executed"` strength. Per the epic's
+      design, this composite is only ever true under `:ok_per_test` —
+      aggregate coverage's `"linked"` ceiling means it can never satisfy the
+      `"executed"` half on its own.
+
+  `opts` (all optional):
+
+    * `:tracer_edges` — pre-loaded tracer-edge map (skips disk read).
+    * `:envelope` — pre-loaded envelope, or one of `:no_coverage_artifact`,
+      `:legacy_artifact`, `:invalid_artifact` (skips disk read).
+    * `:tag_index` — pre-built `%{spec: %{requirement_id => [tag_entry]}}`
+      (skips reading `index["test_tags"]`).
+    * `:artifact_path` — override `.spec/_coverage/per_test.coverdata`.
+  """
+  @spec build_v2(map(), keyword()) :: %{optional(String.t()) => v2_subject_reach()}
+  def build_v2(index, opts \\ []) when is_map(index) do
+    tracer_edges =
+      case Keyword.fetch(opts, :tracer_edges) do
+        {:ok, edges} -> edges
+        :error -> load_tracer_edges()
+      end
+
+    subjects = normalized_subjects(index)
+
+    if tracer_edges == %{} do
+      Map.new(subjects, fn s -> {s.id, %{status: :no_tracer_manifest, by_requirement: %{}}} end)
+    else
+      artifact_path = Keyword.get(opts, :artifact_path) || Store.default_path()
+      tag_index = v2_tag_index(index, opts)
+
+      case resolve_envelope(opts, artifact_path) do
+        {:degraded, status} ->
+          Map.new(subjects, fn s -> {s.id, %{status: status, by_requirement: %{}}} end)
+
+        # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
+        # Flag 1 (specled_-155.7 orchestrator addendum): build_v2 previously
+        # tagged a degraded `:per_test` envelope `:ok_per_test` with no
+        # render-visible signal that per-test attribution may be corrupted
+        # by async contamination. Neither `:status` nor `:by_requirement`
+        # carried any other channel for this, so the renderer could not
+        # detect it without this minimal status special-case — a distinct
+        # `:async_contaminated` status, empty `by_requirement` (same shape
+        # as the other degraded statuses above).
+        {:ok, %{mode: :per_test, degraded: true}} ->
+          Map.new(subjects, fn s ->
+            {s.id, %{status: :async_contaminated, by_requirement: %{}}}
+          end)
+
+        {:ok, envelope} ->
+          world = %{subjects: subjects, tracer_edges: tracer_edges}
+          status = if envelope.mode == :aggregate, do: :ok_aggregate, else: :ok_per_test
+
+          Map.new(subjects, fn subject ->
+            closure = Closure.compute(subject, world)
+
+            requirements =
+              requirements_for(index, subject.id)
+              |> Enum.map(fn req -> requirement_view(req, closure) end)
+
+            closure_map = %{
+              subjects: %{
+                subject.id => %{owned_files: subject.surface, requirements: requirements}
+              }
+            }
+
+            by_req =
+              v2_by_requirement(envelope, closure_map, subject.id, requirements, tag_index)
+
+            {subject.id, %{status: status, by_requirement: by_req}}
+          end)
+      end
+    end
+  end
+
+  defp resolve_envelope(opts, path) do
+    case Keyword.fetch(opts, :envelope) do
+      {:ok, atom} when atom in [:no_coverage_artifact, :legacy_artifact, :invalid_artifact] ->
+        {:degraded, atom}
+
+      {:ok, %{} = envelope} ->
+        {:ok, envelope}
+
+      :error ->
+        load_envelope(path)
+    end
+  end
+
+  defp load_envelope(path) do
+    if File.regular?(path) do
+      case Store.read_v2(path) do
+        {:ok, envelope} -> {:ok, envelope}
+        {:error, :legacy_artifact, _message} -> {:degraded, :legacy_artifact}
+        {:error, :invalid_artifact} -> {:degraded, :invalid_artifact}
+      end
+    else
+      {:degraded, :no_coverage_artifact}
+    end
+  end
+
+  defp v2_tag_index(index, opts) do
+    case Keyword.fetch(opts, :tag_index) do
+      {:ok, tag_index} ->
+        tag_index
+
+      :error ->
+        raw_tags = Map.get(index, "test_tags") || %{}
+
+        spec =
+          Map.new(raw_tags, fn {req_id, entries} ->
+            {req_id,
+             Enum.map(entries, fn e ->
+               %{
+                 file: Map.get(e, "file") || Map.get(e, :file) || "",
+                 test_name: Map.get(e, "test_name") || Map.get(e, :test_name) || ""
+               }
+             end)}
+          end)
+
+        %{spec: spec, opt_out: []}
+    end
+  end
+
+  defp v2_by_requirement(
+         %{mode: :aggregate} = envelope,
+         closure_map,
+         subject_id,
+         requirements,
+         tag_index
+       ) do
+    reach = CoverageTriangulation.aggregate_requirement_reach(envelope, closure_map)
+    spec_tags = Map.get(tag_index, :spec, %{})
+
+    Map.new(requirements, fn req ->
+      r =
+        Map.get(reach, {subject_id, req.id}, %{
+          closure_mfa_count: 0,
+          executed_mfa_count: 0,
+          covered_mfas: [],
+          uncovered_mfas: []
+        })
+
+      tagged_tests =
+        spec_tags
+        |> Map.get(req.id, [])
+        |> Enum.map(fn entry ->
+          strength = if r.executed_mfa_count > 0, do: "linked", else: "claimed"
+
+          %{
+            file: Map.get(entry, :file, ""),
+            test_name: Map.get(entry, :test_name, ""),
+            strength: strength
+          }
+        end)
+
+      {req.id, v2_requirement_entry(r, tagged_tests)}
+    end)
+  end
+
+  defp v2_by_requirement(
+         %{mode: :per_test} = envelope,
+         closure_map,
+         subject_id,
+         requirements,
+         tag_index
+       ) do
+    per_req = CoverageTriangulation.per_requirement_reach(envelope.payload, closure_map)
+    spec_tags = Map.get(tag_index, :spec, %{})
+
+    Map.new(requirements, fn req ->
+      per_req_entry =
+        Map.get(per_req, {subject_id, req.id}, %{reached_files: [], reaching_tests: []})
+
+      reached_files = MapSet.new(per_req_entry.reached_files, &normalize_path/1)
+      reaching_tests = MapSet.new(per_req_entry.reaching_tests)
+
+      closure_mfas = req |> Map.get(:closure_mfas, []) |> Enum.uniq()
+
+      # Per-test v1 records carry file-level `lines_hit`, not MFA-level
+      # coverage — there is no per-test equivalent of the aggregate
+      # envelope's per-MFA `:covered` flag (that lands with T5's per-test
+      # lane rebuild). Until then this reuses the same static
+      # MFA->source-file mapping `requirement_view/2` used to build
+      # `closure_files`, at per-MFA granularity, and calls an MFA "covered"
+      # when its own source file was reached by some test.
+      {covered, uncovered} =
+        Enum.split_with(closure_mfas, fn mfa_str ->
+          case MfaKey.parse(mfa_str) do
+            {:ok, mfa_tuple} ->
+              mfa_tuple
+              |> mfa_source_file()
+              |> Enum.any?(&MapSet.member?(reached_files, normalize_path(&1)))
+
+            _ ->
+              false
+          end
+        end)
+
+      r = %{
+        closure_mfa_count: length(closure_mfas),
+        executed_mfa_count: length(covered),
+        covered_mfas: Enum.sort(covered),
+        uncovered_mfas: Enum.sort(uncovered)
+      }
+
+      tagged_tests =
+        spec_tags
+        |> Map.get(req.id, [])
+        |> Enum.map(fn entry ->
+          display = "#{Map.get(entry, :file, "")} :: #{Map.get(entry, :test_name, "")}"
+          strength = if MapSet.member?(reaching_tests, display), do: "executed", else: "linked"
+
+          %{
+            file: Map.get(entry, :file, ""),
+            test_name: Map.get(entry, :test_name, ""),
+            strength: strength
+          }
+        end)
+
+      {req.id, v2_requirement_entry(r, tagged_tests)}
+    end)
+  end
+
+  defp v2_requirement_entry(r, tagged_tests) do
+    closure_coverage_pct =
+      if r.closure_mfa_count == 0 do
+        :no_closure_mfas
+      else
+        Float.round(r.executed_mfa_count / r.closure_mfa_count * 100, 2)
+      end
+
+    self_verified? =
+      is_float(closure_coverage_pct) and closure_coverage_pct > 0.0 and
+        Enum.any?(tagged_tests, &(&1.strength == "executed"))
+
+    %{
+      closure_mfa_count: r.closure_mfa_count,
+      closure_coverage_pct: closure_coverage_pct,
+      covered_mfas: r.covered_mfas,
+      uncovered_mfas: r.uncovered_mfas,
+      tagged_tests: tagged_tests,
+      self_verified?: self_verified?
+    }
+  end
+
+  defp normalize_path(path) when is_binary(path), do: String.trim_leading(path, "./")
+  defp normalize_path(other), do: other
 end

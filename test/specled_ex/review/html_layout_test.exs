@@ -460,7 +460,7 @@ defmodule SpecLedEx.Review.HtmlLayoutTest do
           %{"id" => "subj.a.req2", "statement" => "Two.", "priority" => "must"}
         ],
         claims_by_req: %{},
-        closure_reach: %{status: :ok, by_requirement: %{}}
+        closure_reach: %{status: :ok_aggregate, by_requirement: %{}}
       }
 
       html = IO.iodata_to_binary(Html.render_coverage_tab(subject))
@@ -630,7 +630,7 @@ defmodule SpecLedEx.Review.HtmlLayoutTest do
         decision_refs: [],
         findings: [],
         claims_by_req: %{},
-        closure_reach: %{status: :ok, by_requirement: %{}},
+        closure_reach: %{status: :ok_aggregate, by_requirement: %{}},
         spec_diff: nil,
         spec_changes: %{
           file_changed?: false,

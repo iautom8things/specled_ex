@@ -8,6 +8,10 @@
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
       "hasher_version": 1
     },
+    "Mix.Tasks.Spec.Cover.Ingest.run/1": {
+      "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
+      "hasher_version": 1
+    },
     "Mix.Tasks.Spec.Cover.Test.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
       "hasher_version": 1
@@ -189,15 +193,55 @@
       "hasher_version": 1
     },
     "SpecLedEx.Coverage": {
-      "hash": "fad8733bb82cc00fea0ff8ae395040ee013f5c26400b1530963c9b1af84c54b7",
+      "hash": "a3e32221f2cb6a98beee662944453d492eb80984fc2587f716f66fddc72b2cf5",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.Aggregate.ingest/2": {
+      "hash": "193f4e4b6a5e308e5fc832e940be940ed30f033bfe7aa614f87631b4212adf07",
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.Formatter": {
-      "hash": "a682c3acd680ca53c486fcb507c255420c3547cc47dfc30bfcb3dfec88aaa1a8",
+      "hash": "918463ee2e8866f51302a1581b6dad1a92175d5e2e19854fc7db7a615f3bbf1d",
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.Formatter.init/1": {
       "hash": "d57f6ca9e4acd4a81e89d081d307b5a06fd530a1e3f5a22781c4651dfa0d288d",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.MfaKey.format/1": {
+      "hash": "76cb8f3cafb9a3b549e1e182359a791ea42fc2cce53442fcd70a120e38fd6bb4",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.MfaKey.parse/1": {
+      "hash": "91c2678b0d75ad03bed24765f408db8c92bee6c242d3a7a103f7e9fa408f8225",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.Snapshot.classic_snapshot/1": {
+      "hash": "7c9cb9429e35caa3bba34332a472f0fde1bfb61da9cc13874dc4e2ead8837088",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.Snapshot.diff/2": {
+      "hash": "14662a7b446c81bd2422516ac9363f3c0cf8a7d94b3354d4b5a20cf68e662090",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.Snapshot.native_snapshot/1": {
+      "hash": "54d292b1b5b5c80b36b14501051f03c3fed8b638406e281167595ab835043a4b",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.Snapshot.runtime_mode/0": {
+      "hash": "f38162438211d7a923a8ba5b6923284104df1e7f7d705edd77e730b11a5b6a22",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.Snapshot.scope_modules/0": {
+      "hash": "b8cadc4f52408d09a24e33c50096698fab08cef76c63f6e6dcd381372b68f19f",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.Snapshot.take/2": {
+      "hash": "c7a5f562b8d04d8204471c5208c4dbea0c9d3cdeab2cfe9b548f31ee7ac37f21",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.Store.build_envelope/1": {
+      "hash": "7daa9a18d71f55cc976e5d8b9656dda7de9ec634f662b2572549c5d81027904c",
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.Store.build_records/1": {
@@ -208,8 +252,20 @@
       "hash": "0da17832dc52f898875e2b32b49043a85784a11f26537799eb205f66c3895d8d",
       "hasher_version": 1
     },
+    "SpecLedEx.Coverage.Store.read_status/1": {
+      "hash": "4bf8292c8cfc2c87989a3af16cb6ad944d95771b115805daeb9123be1bc1ba0d",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.Store.read_v2/1": {
+      "hash": "3f70ea38738fa46892a1983f13e2f5f8443a4508f01b1a68d68c331aa94efdcd",
+      "hasher_version": 1
+    },
     "SpecLedEx.Coverage.Store.write/2": {
       "hash": "516cc362f7630e717a575cdf28d3a962ecb1f0c8299867efd3b51a408dc5c098",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.Store.write_v2/2": {
+      "hash": "158010539660738e3ec833d787a8b2329d90ea5cda5152e88297ee33168b74c1",
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.category_summary/3": {
@@ -242,6 +298,14 @@
     },
     "SpecLedEx.Coverage.subject_id/1": {
       "hash": "2c7b1f35af4b91a8088719fbc6879275c83be7c8e42194c45d621288213ed436",
+      "hasher_version": 1
+    },
+    "SpecLedEx.CoverageTriangulation.aggregate_requirement_reach/2": {
+      "hash": "ff21baf348d1aa93d4dc32b5bca1c23e3deae3a84315fffd5f315275a2b4af8b",
+      "hasher_version": 1
+    },
+    "SpecLedEx.CoverageTriangulation.envelope_findings/3": {
+      "hash": "e7822913d39d2b9b93c23f9044fb30497f89f9585123737854955fa1f1498e3d",
       "hasher_version": 1
     },
     "SpecLedEx.CoverageTriangulation.execution_reach_map/2": {
@@ -418,6 +482,10 @@
     },
     "SpecLedEx.Realization.Use.run/3": {
       "hash": "5aa09417ee10b1d22f9d0284babdf2d209c06db59f02d903f5c747d5f02e1244",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Review.CoverageClosure.build_v2/2": {
+      "hash": "580cdf1173a2c1554bfec7ab67dd166403f333e190c3c890bf415ec903057e61",
       "hasher_version": 1
     },
     "SpecLedEx.Schema.Decision": {

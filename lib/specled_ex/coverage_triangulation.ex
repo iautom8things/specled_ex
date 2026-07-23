@@ -537,4 +537,295 @@ defmodule SpecLedEx.CoverageTriangulation do
   end
 
   defp normalize_path(other), do: other
+
+  # ---------------------------------------------------------------------------
+  # v2 envelope path (epic specled_-155, T6)
+  #
+  # `findings/3` and `per_requirement_reach/2` above are the v1 path: they
+  # consume a raw per-test record list (or the `:no_coverage_artifact`
+  # sentinel) and stay byte-for-byte unchanged — `mix spec.triangle` and every
+  # test above still call them exactly as before.
+  #
+  # `envelope_findings/3` and `aggregate_requirement_reach/2` below are the
+  # additive v2 counterpart: they consume a
+  # `SpecLedEx.Coverage.Store.envelope/0` (or one of the three degraded
+  # statuses `Store.read_v2/1` can return) instead. Callers load the envelope
+  # themselves (this module stays pure — no filesystem access here).
+  #
+  # Aggregate-mode coverage has no per-test attribution: it is one cumulative
+  # tally over the whole `.coverdata` import, keyed by MFA, not by which test
+  # exercised it. That means the v1 per-test detectors that need "which test
+  # touched this" — `branch_guard_untethered_test` and the file-attributed
+  # form of `branch_guard_underspecified_realization`, plus the
+  # `reaching_tests` field of `per_requirement_reach/2` — are structurally
+  # unavailable under an `:aggregate` envelope; they surface as a single
+  # `detector_unavailable` (reason `:aggregate_artifact_only`) instead of
+  # being silently omitted. `branch_guard_untested_realization` and an
+  # aggregate-specific form of `branch_guard_underspecified_realization`
+  # (driven by the tag index alone, not per-test coverage) remain available
+  # and are computed from the envelope's MFA-level `:mfas` list.
+  #
+  # Note this deliberately does NOT reintroduce the v1
+  # `r.lines_hit != []` "did this record touch anything" heuristic (see
+  # `group_records_by_test/1` above) — that heuristic is what let a
+  # fabricated `lines_hit: [0]` sentinel from the pre-remediation formatter
+  # (specled_-47j) saturate all three v1 detectors with false coverage.
+  # Aggregate mode instead reads the envelope's own `mfas` boolean
+  # `:covered` flag directly; there is no lines_hit-style proxy to abuse.
+  # ---------------------------------------------------------------------------
+
+  @type envelope_status :: :no_coverage_artifact | :legacy_artifact | :invalid_artifact
+
+  @doc """
+  Envelope-based counterpart to `findings/3`.
+
+  Accepts a `SpecLedEx.Coverage.Store.envelope/0` or one of the three
+  degraded statuses `SpecLedEx.Coverage.Store.read_v2/1` can return
+  (`:no_coverage_artifact`, `:legacy_artifact`, `:invalid_artifact`) instead
+  of a raw record list. Each degraded status surfaces as its own
+  `detector_unavailable` finding (never collapsed into an empty-but-ok
+  result), per `specled.triangulation.envelope_legacy_and_invalid_distinct`.
+
+  For a `:per_test` envelope, delegates to `findings/3` with the envelope's
+  `:payload` as the record list — the per-test detectors are unaffected by
+  the envelope wrapper. A `:per_test` envelope with `degraded: true` (the
+  `--per-test` lane's async-contamination guard) surfaces as
+  `detector_unavailable` with reason `:async_contaminated` instead of
+  reporting on data that may be corrupted.
+
+  For an `:aggregate` envelope, computes `branch_guard_untested_realization`
+  and an aggregate-specific `branch_guard_underspecified_realization` from
+  the envelope's MFA coverage, plus one `detector_unavailable` (reason
+  `:aggregate_artifact_only`) naming the per-test-only detectors that cannot
+  run under aggregate coverage.
+  """
+  @spec envelope_findings(
+          SpecLedEx.Coverage.Store.envelope() | envelope_status(),
+          closure_map(),
+          tag_index()
+        ) ::
+          [finding()]
+  def envelope_findings(:no_coverage_artifact, _closure_map, _tag_index) do
+    [
+      envelope_unavailable(
+        :no_coverage_artifact,
+        "Coverage artifact missing; run `mix spec.cover.test` to enable triangulation."
+      )
+    ]
+  end
+
+  def envelope_findings(:legacy_artifact, _closure_map, _tag_index) do
+    [
+      envelope_unavailable(
+        :legacy_artifact,
+        "Coverage artifact is a pre-v2 (legacy) format; re-run `mix spec.cover.test` to regenerate it."
+      )
+    ]
+  end
+
+  def envelope_findings(:invalid_artifact, _closure_map, _tag_index) do
+    [
+      envelope_unavailable(
+        :invalid_artifact,
+        "Coverage artifact is undecodable or malformed; re-run `mix spec.cover.test` to regenerate it."
+      )
+    ]
+  end
+
+  def envelope_findings(%{mode: :per_test, degraded: true}, _closure_map, _tag_index) do
+    [
+      envelope_unavailable(
+        :async_contaminated,
+        "Per-test coverage lane reported async contamination; re-run without --allow-async " <>
+          "(or re-run `mix spec.cover.test`) before trusting per-test attribution."
+      )
+    ]
+  end
+
+  def envelope_findings(%{mode: :per_test, payload: records}, closure_map, tag_index)
+      when is_list(records) and is_map(closure_map) and is_map(tag_index) do
+    findings(records, closure_map, tag_index)
+  end
+
+  def envelope_findings(%{mode: :aggregate} = envelope, closure_map, tag_index)
+      when is_map(closure_map) and is_map(tag_index) do
+    aggregate_envelope_findings(envelope, closure_map, tag_index)
+  end
+
+  @doc """
+  Aggregate-mode counterpart to `per_requirement_reach/2`.
+
+  Given an `:aggregate` v2 envelope and a `closure_map()`, returns per-`{subject_id,
+  requirement_id}` MFA-level reach: `closure_mfa_count`, `executed_mfa_count`
+  (closure MFAs the envelope marks `covered: true`), `covered_mfas` /
+  `uncovered_mfas` (sorted MFA strings, via `SpecLedEx.Coverage.MfaKey`), and
+  `line_coverage_pct` (line coverage of the envelope's `:files` entries whose
+  module is reached by an intersecting closure MFA).
+
+  There is no `reaching_tests` field here — aggregate coverage carries no
+  per-test attribution, so "which test reached this" is unanswerable; that
+  field only ever appears from the `:per_test`-path `per_requirement_reach/2`.
+  """
+  @spec aggregate_requirement_reach(SpecLedEx.Coverage.Store.envelope(), closure_map()) :: %{
+          optional({subject_id(), requirement_id()}) => %{
+            closure_mfa_count: non_neg_integer(),
+            executed_mfa_count: non_neg_integer(),
+            covered_mfas: [mfa_string()],
+            uncovered_mfas: [mfa_string()],
+            line_coverage_pct: float()
+          }
+        }
+  def aggregate_requirement_reach(%{mode: :aggregate} = envelope, closure_map)
+      when is_map(closure_map) do
+    subjects = Map.get(closure_map, :subjects, %{})
+    mfa_covered = envelope_mfa_index(envelope)
+    files_by_module = envelope_files_by_module(envelope)
+
+    Enum.reduce(subjects, %{}, fn {subject_id, info}, acc ->
+      info
+      |> Map.get(:requirements, [])
+      |> Enum.reduce(acc, fn req, inner ->
+        Map.put(
+          inner,
+          {subject_id, req.id},
+          requirement_aggregate_reach(req, mfa_covered, files_by_module)
+        )
+      end)
+    end)
+  end
+
+  defp requirement_aggregate_reach(req, mfa_covered, files_by_module) do
+    closure_mfas = req |> Map.get(:closure_mfas, []) |> Enum.uniq()
+    {covered, uncovered} = Enum.split_with(closure_mfas, &Map.get(mfa_covered, &1, false))
+
+    modules =
+      closure_mfas
+      |> Enum.flat_map(&mfa_module/1)
+      |> Enum.uniq()
+
+    {hit, total} =
+      modules
+      |> Enum.flat_map(&Map.get(files_by_module, &1, []))
+      |> Enum.reduce({0, 0}, fn file_entry, {h, t} ->
+        {h + length(Map.get(file_entry, :lines_hit, [])),
+         t + Map.get(file_entry, :lines_total, 0)}
+      end)
+
+    %{
+      closure_mfa_count: length(closure_mfas),
+      executed_mfa_count: length(covered),
+      covered_mfas: Enum.sort(covered),
+      uncovered_mfas: Enum.sort(uncovered),
+      line_coverage_pct: line_pct(hit, total)
+    }
+  end
+
+  defp mfa_module(mfa_string) do
+    case SpecLedEx.Coverage.MfaKey.parse(mfa_string) do
+      {:ok, {mod, _fun, _arity}} -> [mod]
+      _ -> []
+    end
+  end
+
+  defp line_pct(_hit, 0), do: 0.0
+  defp line_pct(hit, total), do: Float.round(hit / total * 100, 2)
+
+  defp envelope_mfa_index(%{mfas: mfas}) do
+    Map.new(mfas, fn entry -> {Map.get(entry, :mfa), Map.get(entry, :covered, false)} end)
+  end
+
+  defp envelope_files_by_module(%{files: files}) do
+    Enum.group_by(files, &Map.get(&1, :module))
+  end
+
+  defp aggregate_envelope_findings(envelope, closure_map, tag_index) do
+    subjects = Map.get(closure_map, :subjects, %{})
+    reach = aggregate_requirement_reach(envelope, closure_map)
+    spec_tags = Map.get(tag_index, :spec, %{})
+
+    untested = aggregate_untested_findings(subjects, reach)
+    underspecified = aggregate_underspecified_findings(subjects, reach, spec_tags)
+
+    unavailable = [
+      envelope_unavailable(
+        :aggregate_artifact_only,
+        "Per-test attribution (branch_guard_untethered_test, the per-test form of " <>
+          "branch_guard_underspecified_realization, and reaching_tests) is unavailable " <>
+          "under an aggregate coverage envelope; only closure-level MFA coverage is available."
+      )
+    ]
+
+    untested ++ underspecified ++ unavailable
+  end
+
+  defp aggregate_untested_findings(subjects, reach) do
+    subjects
+    |> Enum.sort_by(fn {id, _} -> id end)
+    |> Enum.flat_map(fn {subject_id, info} ->
+      info
+      |> Map.get(:requirements, [])
+      |> Enum.filter(fn req ->
+        req.binding_present? and Map.get(req, :closure_mfas, []) != [] and
+          Map.fetch!(reach, {subject_id, req.id}).executed_mfa_count == 0
+      end)
+      |> Enum.map(fn req ->
+        r = Map.fetch!(reach, {subject_id, req.id})
+
+        %{
+          "code" => "branch_guard_untested_realization",
+          "severity" => "warning",
+          "subject_id" => subject_id,
+          "requirement_id" => req.id,
+          "closure_mfas" => Enum.sort(Map.get(req, :closure_mfas, [])),
+          "uncovered_mfas" => r.uncovered_mfas,
+          "mode" => "aggregate",
+          "message" =>
+            "Requirement #{req.id} has #{r.closure_mfa_count} closure MFA(s) but zero are " <>
+              "covered by the aggregate coverage envelope."
+        }
+      end)
+    end)
+  end
+
+  defp aggregate_underspecified_findings(subjects, reach, spec_tags) do
+    tagged_req_ids = spec_tags |> Map.keys() |> MapSet.new()
+
+    subjects
+    |> Enum.sort_by(fn {id, _} -> id end)
+    |> Enum.flat_map(fn {subject_id, info} ->
+      reqs = Map.get(info, :requirements, [])
+
+      subject_executed? =
+        Enum.any?(reqs, fn req ->
+          Map.get(reach, {subject_id, req.id}, %{executed_mfa_count: 0}).executed_mfa_count > 0
+        end)
+
+      subject_tagged? = Enum.any?(reqs, &MapSet.member?(tagged_req_ids, &1.id))
+
+      if reqs != [] and subject_executed? and not subject_tagged? do
+        [
+          %{
+            "code" => "branch_guard_underspecified_realization",
+            "severity" => "warning",
+            "subject_id" => subject_id,
+            "mode" => "aggregate",
+            "message" =>
+              "Aggregate coverage shows subject #{subject_id}'s code executed, but no test " <>
+                "carries `@tag spec:` referencing any of its requirements."
+          }
+        ]
+      else
+        []
+      end
+    end)
+  end
+
+  defp envelope_unavailable(reason, message) do
+    %{
+      "code" => "detector_unavailable",
+      "severity" => "info",
+      "reason" => Atom.to_string(reason),
+      "message" => message
+    }
+  end
 end

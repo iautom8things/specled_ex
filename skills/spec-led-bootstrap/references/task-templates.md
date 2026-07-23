@@ -300,21 +300,25 @@ Merge gate:
 Advances: <every subject opting into triangulation>
 
 Deliverable:
-1. Add SpecLedEx.Coverage.Formatter to test/test_helper.exs.
+1. No test_helper.exs wiring — never add SpecLedEx.Coverage.Formatter
+   there; it is inert unless `mix spec.cover.test` itself arms it.
 2. Run `mix spec.cover.test` locally to produce
    .spec/_coverage/per_test.coverdata; verify with `mix spec.triangle --all`.
-3. Update CI workflow(s) to run `mix spec.cover.test` before `mix spec.check`.
+3. Update CI workflow(s) to run `mix spec.cover.test` as its own step. Do
+   NOT append it to the `mix spec.check` step — spec.check never runs
+   triangulation and stays unaffected either way.
 
 Verification:
-- Tests to pass: `mix spec.cover.test && mix spec.check`
+- Tests to pass: `mix spec.cover.test && mix spec.triangle --all`
 - Behaviors to demonstrate: `mix spec.triangle <subject.id>` for any
-  active subject reports coverage status for every requirement.
+  active subject reports coverage status for every requirement. `mix
+  spec.check` exits identically with or without this ticket.
 
 Out of Scope (files):
 - lib/**/*
+- test/test_helper.exs   # no wiring belongs here
 - .spec/specs/**/*.spec.md
 Allowed touches:
-- test/test_helper.exs
 - .github/workflows/**/*.yml (or the equivalent CI files)
 - .gitignore   # likely add .spec/_coverage/
 
@@ -322,10 +326,11 @@ Out of Scope (intent):
 - No spec authoring — triangulation reads existing specs.
 - Do not add `@tag spec_triangulation: :indirect` blindly — only on tests
   that legitimately exercise more subjects than they tag.
+- Do not add a `test_helper.exs` formatter wiring step under any framing.
 
 Merge gate:
-- [ ] Coverage formatter wired in test_helper
-- [ ] CI runs cover.test before spec.check
+- [ ] No formatter wiring present in test_helper.exs
+- [ ] CI runs `mix spec.cover.test` on its own step
 - [ ] `mix spec.triangle --all` exits 0
 - [ ] Auditor APPROVE comment on the ticket
 ```
@@ -396,8 +401,11 @@ Allowed touches:
 Out of Scope (intent):
 - Do not raise severities on detector_unavailable codes — they should
   stay warning so legitimate gaps surface visibly.
-- Do not raise branch_guard_untested_realization to error in this PR;
-  keep it at warning a while longer (per docs/adoption.md).
+- Do not add `branch_guard_untested_realization` (or its two triangulation
+  siblings) to this ticket's severity block at all — `.spec/config.yml`'s
+  `branch_guard.severities` has no effect on them; they are fixed-severity
+  diagnostics from `mix spec.triangle`/`mix spec.review`, never part of the
+  `mix spec.check` gate this ticket graduates.
 
 Merge gate:
 - [ ] Severities raised in config
@@ -460,14 +468,13 @@ children, then serially advances through phase2..6.
 When the user opts out of a tier:
 
 - `implementation` skipped → omit phase5 ticket; wire phase4 → phase6 directly.
-- coverage triangulation skipped → omit phase4 ticket. In phase3, add the
-  following config to phase3's Deliverable:
-  ```yaml
-  branch_guard:
-    severities:
-      branch_guard_untested_realization: off
-      branch_guard_untethered_test: off
-      branch_guard_underspecified_realization: off
-  ```
+- coverage triangulation skipped → omit phase4 ticket. No config edit is
+  needed or possible: `branch_guard.severities` has no effect on
+  `branch_guard_untested_realization`, `branch_guard_untethered_test`, or
+  `branch_guard_underspecified_realization` — they are fixed-severity
+  diagnostics printed only by `mix spec.triangle`/`mix spec.review`, never
+  read from `.spec/config.yml` and never part of the `mix spec.check`
+  gate. Skipping the phase means the team simply never runs `mix
+  spec.cover.test` / `mix spec.triangle`.
 - Umbrella project → omit phase4 and phase5; cap target_phase at phase3 or
   phase6 (with reduced severities — only test_tags and append_only graduate).

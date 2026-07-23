@@ -8,6 +8,8 @@ Provide the user-facing Mix tasks that scaffold, guide, summarize, and strictly 
 
 The `spec.init` scaffold's local skill and README, and the `spec.prime` loop, describe the missing-ADR condition as a two-armed fork: an ADR for durable cross-cutting policy, otherwise a `Spec-Drift: branch_guard_missing_decision_update=info` trailer with a one-line reason.
 
+`mix spec.cover.test --per-test`'s child-BEAM preload list (see `specled.tasks.dep_runtime_bootstrap` below) also resident-loads `SpecLedEx.Coverage.Snapshot` — the native/classic per-test engine module owned by `specled.coverage_capture` — for the same reason it already preloads `Formatter`, `Store`, and `Coverage`: a fixture's own `app.config` rewrite would otherwise evict the parent's lazily-loaded ebin before the formatter's `suite_started` handler could reach it.
+
 ```yaml spec-meta
 id: specled.mix_tasks
 kind: workflow
@@ -23,6 +25,7 @@ surface:
   - lib/mix/tasks/spec.index.ex
   - lib/mix/tasks/spec.validate.ex
   - lib/mix/tasks/spec.cover.test.ex
+  - lib/mix/tasks/spec.cover.ingest.ex
   - lib/mix/tasks/spec.suggest_binding.ex
   - lib/mix/tasks/spec.triangle.ex
   - lib/mix/tasks/spec.review.ex
@@ -40,6 +43,7 @@ surface:
   - priv/spec_init/specs/package.spec.md.eex
   - skills/write-spec-led-specs/references/authoring-reference.md
   - test_support/specled_ex_case.ex
+  - test/mix/tasks/spec_cover_ingest_test.exs
 realized_by:
   implementation:
     - "Mix.Tasks.Spec.Init.run/1"
@@ -55,6 +59,7 @@ realized_by:
     - "Mix.Tasks.Spec.Prune.run/1"
     - "Mix.Tasks.Spec.Evidence.Migrate.run/1"
     - "Mix.Tasks.Spec.Evidence.InstallHook.run/1"
+    - "Mix.Tasks.Spec.Cover.Ingest.run/1"
     - "SpecLedEx.MixRuntime.ensure_started!/0"
 decisions:
   - specled.decision.declarative_current_truth
@@ -135,9 +140,21 @@ decisions:
   priority: must
   stability: stable
 - id: specled.tasks.dep_runtime_bootstrap
-  statement: Every mix spec.* task shall call SpecLedEx.MixRuntime.ensure_started!/0 as the first line of run/1, so the BEAM applications specled depends on at runtime (currently :yaml_elixir and :jason) are started even when specled is consumed as a Hex dependency. The shared helper shall remain the single source of truth for the dep list. Tasks shall additionally declare `@requirements ["app.config"]` to load host config, except `spec.cover.test`, which runs inside child-BEAM fixtures whose code path Mix's `app.config` would purge before the helper module could be lazily loaded.
+  statement: Every mix spec.* task shall call SpecLedEx.MixRuntime.ensure_started!/0 as the first line of run/1, so the BEAM applications specled depends on at runtime (currently :yaml_elixir and :jason) are started even when specled is consumed as a Hex dependency. The shared helper shall remain the single source of truth for the dep list. Tasks shall additionally declare `@requirements ["app.config"]` to load host config, except `spec.cover.test` and `spec.cover.ingest`, which run inside child-BEAM fixtures whose code path Mix's `app.config` would purge before the helper module could be lazily loaded.
   priority: must
   stability: stable
+- id: specled.tasks.cover_ingest_escape_hatch
+  statement: >-
+    mix spec.cover.ingest shall ingest an arbitrary exported `.coverdata`
+    file via `SpecLedEx.Coverage.Aggregate.ingest/2` and persist the
+    resulting v2 envelope via `SpecLedEx.Coverage.Store.write_v2/2`, so a CI
+    run that already produces `.coverdata` (for example for coveralls) gets
+    spec coverage without a second serialized test run. It shall exit 0 for
+    `mix help spec.cover.ingest` and for a successful ingest, and shall exit
+    non-zero with a clear message for a missing, garbage, or empty-coverage
+    input path.
+  priority: must
+  stability: evolving
 - id: specled.tasks.test_tags_flag
   statement: mix spec.check and mix spec.validate shall accept `--test-tags` and `--no-test-tags` flags that enable or disable test-tag scanning for that invocation, overriding the config default.
   priority: must
@@ -316,4 +333,8 @@ decisions:
   covers:
     - specled.tasks.sync_evidence
     - specled.tasks.prune_evidence
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.tasks.cover_ingest_escape_hatch
 ```

@@ -1126,7 +1126,7 @@ defmodule SpecLedEx.Review.HtmlTest do
   end
 
   # covers: specled.spec_review.coverage_tab_bind_closure
-  describe "render_coverage_tab — per-requirement bind-closure view" do
+  describe "render_coverage_tab — v2 envelope bind-closure view" do
     defp coverage_subject(opts) do
       %{
         id: Keyword.get(opts, :id, "subj.a"),
@@ -1145,55 +1145,67 @@ defmodule SpecLedEx.Review.HtmlTest do
             }
           ]),
         claims_by_req: Keyword.get(opts, :claims_by_req, %{}),
-        closure_reach: Keyword.get(opts, :closure_reach, %{status: :ok, by_requirement: %{}})
+        closure_reach:
+          Keyword.get(opts, :closure_reach, %{status: :ok_aggregate, by_requirement: %{}}),
+        coverage_generated_at: Keyword.get(opts, :coverage_generated_at)
       }
     end
 
-    test "renders \"Closure: N MFAs. Reached: M (by tests …). Unreached: K.\" per requirement" do
+    defp req_reach(overrides) do
+      Map.merge(
+        %{
+          closure_mfa_count: 4,
+          closure_coverage_pct: 75.0,
+          covered_mfas: ["Mod.a/1", "Mod.b/1", "Mod.c/1"],
+          uncovered_mfas: ["Mod.d/1"],
+          tagged_tests: [],
+          self_verified?: false
+        },
+        Map.new(overrides)
+      )
+    end
+
+    test "aggregate mode renders \"Closure: N MFAs — K executed (X.X%). Self-verified: yes/no. Tagged tests: …\"" do
       reach = %{
-        status: :ok,
+        status: :ok_aggregate,
         by_requirement: %{
-          "subj.a.req1" => %{
-            closure_mfa_count: 4,
-            closure_file_count: 2,
-            reached_files: ["lib/a.ex"],
-            unreached_files: ["lib/a_extra.ex"],
-            reaching_tests: ["test/a_test.exs :: alpha", "test/b_test.exs :: beta"]
-          },
-          "subj.a.req2" => %{
-            closure_mfa_count: 1,
-            closure_file_count: 1,
-            reached_files: [],
-            unreached_files: ["lib/x.ex"],
-            reaching_tests: []
-          }
+          "subj.a.req1" =>
+            req_reach(
+              tagged_tests: [
+                %{file: "test/a_test.exs", test_name: "t1", strength: "linked"},
+                %{file: "test/b_test.exs", test_name: "t2", strength: "claimed"}
+              ]
+            ),
+          "subj.a.req2" =>
+            req_reach(closure_mfa_count: 1, closure_coverage_pct: 0.0, covered_mfas: [])
         }
       }
 
       html = IO.iodata_to_binary(Html.render_coverage_tab(coverage_subject(closure_reach: reach)))
 
-      # Both requirement rows render their closure summary line.
-      assert html =~ "Closure:</span> 4 MFAs."
-      assert html =~ "Reached: 1"
-      assert html =~ "test/a_test.exs :: alpha"
-      assert html =~ "test/b_test.exs :: beta"
-      assert html =~ "Unreached: 1."
+      assert html =~ "Closure:</span> 4 MFAs — 3 executed (75.0%)."
+      assert html =~ "Self-verified: no."
+      assert html =~ "test/a_test.exs :: t1</code> (linked)"
+      assert html =~ "test/b_test.exs :: t2</code> (claimed)"
+      assert html =~ "Closure:</span> 1 MFA — 0 executed (0.0%)."
 
-      # The unreached requirement renders Reached: 0 and no test list.
-      assert html =~ "Closure:</span> 1 MFA."
+      # Aggregate mode has no per-test attribution, so evidence never
+      # reaches "executed" and the mode-gated row does not render.
+      refute html =~ "Reached by tests"
+      # Aggregate mode's covered_mfas come straight from the envelope, not a
+      # file-level proxy, so the qualifier does not render.
+      refute html =~ "file-level proxy"
     end
 
-    test "omits \"by tests …\" when no tests reach the requirement's closure" do
+    test "self-verified renders yes when self_verified? is true, with an executed tagged test" do
       reach = %{
-        status: :ok,
+        status: :ok_per_test,
         by_requirement: %{
-          "subj.a.req1" => %{
-            closure_mfa_count: 2,
-            closure_file_count: 1,
-            reached_files: [],
-            unreached_files: ["lib/a.ex"],
-            reaching_tests: []
-          }
+          "subj.a.req1" =>
+            req_reach(
+              self_verified?: true,
+              tagged_tests: [%{file: "test/a_test.exs", test_name: "t1", strength: "executed"}]
+            )
         }
       }
 
@@ -1209,21 +1221,78 @@ defmodule SpecLedEx.Review.HtmlTest do
           )
         )
 
-      assert html =~ "Reached: 0."
-      refute html =~ "by tests"
+      assert html =~ "Self-verified: yes."
+      assert html =~ "test/a_test.exs :: t1</code> (executed)"
+    end
+
+    test "\"Reached by tests\" row renders only in per_test mode, naming executed tagged tests" do
+      reach = %{
+        status: :ok_per_test,
+        by_requirement: %{
+          "subj.a.req1" =>
+            req_reach(
+              self_verified?: true,
+              tagged_tests: [
+                %{file: "test/a_test.exs", test_name: "t1", strength: "executed"},
+                %{file: "test/b_test.exs", test_name: "t2", strength: "linked"}
+              ]
+            )
+        }
+      }
+
+      html =
+        IO.iodata_to_binary(
+          Html.render_coverage_tab(
+            coverage_subject(
+              closure_reach: reach,
+              requirements: [
+                %{"id" => "subj.a.req1", "statement" => "S", "priority" => "must"}
+              ]
+            )
+          )
+        )
+
+      assert html =~
+               "Reached by tests:</span> <code class=\"cov-closure-test\">test/a_test.exs :: t1</code>."
+
+      # The non-executed tagged test is not listed on the reached-by row (it
+      # still appears in the "Tagged tests" line above).
+      refute html =~
+               "Reached by tests:</span> <code class=\"cov-closure-test\">test/a_test.exs :: t1</code>, <code class=\"cov-closure-test\">test/b_test.exs :: t2</code>."
+    end
+
+    test "per_test mode carries a file-level-proxy qualifier on the closure line" do
+      reach = %{
+        status: :ok_per_test,
+        by_requirement: %{"subj.a.req1" => req_reach(tagged_tests: [])}
+      }
+
+      html =
+        IO.iodata_to_binary(
+          Html.render_coverage_tab(
+            coverage_subject(
+              closure_reach: reach,
+              requirements: [
+                %{"id" => "subj.a.req1", "statement" => "S", "priority" => "must"}
+              ]
+            )
+          )
+        )
+
+      assert html =~ "file-level proxy"
     end
 
     test "renders the empty-closure form when the requirement has no closure MFAs" do
       reach = %{
-        status: :ok,
+        status: :ok_aggregate,
         by_requirement: %{
-          "subj.a.req1" => %{
-            closure_mfa_count: 0,
-            closure_file_count: 0,
-            reached_files: [],
-            unreached_files: [],
-            reaching_tests: []
-          }
+          "subj.a.req1" =>
+            req_reach(
+              closure_mfa_count: 0,
+              closure_coverage_pct: :no_closure_mfas,
+              covered_mfas: [],
+              uncovered_mfas: []
+            )
         }
       }
 
@@ -1265,6 +1334,70 @@ defmodule SpecLedEx.Review.HtmlTest do
       refute html =~ ~s|class="cov-closure"|
     end
 
+    test "renders a distinct banner naming mix spec.cover.test when status is :legacy_artifact" do
+      reach = %{status: :legacy_artifact, by_requirement: %{}}
+
+      html = IO.iodata_to_binary(Html.render_coverage_tab(coverage_subject(closure_reach: reach)))
+
+      assert html =~ "legacy format"
+      assert html =~ "mix spec.cover.test"
+      refute html =~ "Coverage artifact unavailable"
+      refute html =~ ~s|class="cov-closure"|
+    end
+
+    test "renders a distinct banner when status is :invalid_artifact" do
+      reach = %{status: :invalid_artifact, by_requirement: %{}}
+
+      html = IO.iodata_to_binary(Html.render_coverage_tab(coverage_subject(closure_reach: reach)))
+
+      assert html =~ "invalid"
+      refute html =~ "Coverage artifact unavailable"
+      refute html =~ "legacy format"
+      refute html =~ ~s|class="cov-closure"|
+    end
+
+    test "renders a distinct degraded banner when status is :async_contaminated (flag 1)" do
+      reach = %{status: :async_contaminated, by_requirement: %{}}
+
+      html = IO.iodata_to_binary(Html.render_coverage_tab(coverage_subject(closure_reach: reach)))
+
+      assert html =~ "degraded"
+      assert html =~ "async contamination"
+      refute html =~ "Coverage artifact unavailable"
+      refute html =~ ~s|class="cov-closure"|
+    end
+
+    test "renders the coverage artifact's generated_at with an elapsed-time note" do
+      generated_at = DateTime.add(DateTime.utc_now(), -300, :second)
+
+      html =
+        IO.iodata_to_binary(
+          Html.render_coverage_tab(coverage_subject(coverage_generated_at: generated_at))
+        )
+
+      assert html =~ "Coverage captured"
+      assert html =~ "5m ago"
+      refute html =~ "possibly stale"
+    end
+
+    test "flags the generated_at note as possibly stale past the age threshold" do
+      generated_at = DateTime.add(DateTime.utc_now(), -2 * 24 * 60 * 60, :second)
+
+      html =
+        IO.iodata_to_binary(
+          Html.render_coverage_tab(coverage_subject(coverage_generated_at: generated_at))
+        )
+
+      assert html =~ "possibly stale"
+      assert html =~ ~s|class="cov-generated-at cov-generated-stale"|
+    end
+
+    test "renders no generated_at note when the timestamp is absent" do
+      html = IO.iodata_to_binary(Html.render_coverage_tab(coverage_subject([])))
+
+      refute html =~ "Coverage captured"
+    end
+
     test "is backwards-compatible when the subject view-model has no closure_reach key" do
       subject = %{
         id: "subj.a",
@@ -1281,6 +1414,42 @@ defmodule SpecLedEx.Review.HtmlTest do
       assert html =~ "subj.a.req1"
       refute html =~ ~s|class="cov-closure"|
       refute html =~ "Coverage artifact unavailable"
+    end
+  end
+
+  # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
+  describe "render_subject_coverage_badge — subject-card rollup badge" do
+    test "renders a self-verified/total count and mode label when coverage data loaded" do
+      reach = %{
+        status: :ok_per_test,
+        by_requirement: %{
+          "a" => %{self_verified?: true},
+          "b" => %{self_verified?: false}
+        }
+      }
+
+      html = IO.iodata_to_binary(Html.render_subject_coverage_badge(reach))
+
+      assert html =~ "badge-coverage-rollup"
+      assert html =~ "1/2 self-verified (per-test)"
+    end
+
+    test "renders a muted coverage-unavailable chip for each degraded status" do
+      for status <- [
+            :no_coverage_artifact,
+            :legacy_artifact,
+            :invalid_artifact,
+            :no_tracer_manifest,
+            :async_contaminated
+          ] do
+        html =
+          IO.iodata_to_binary(
+            Html.render_subject_coverage_badge(%{status: status, by_requirement: %{}})
+          )
+
+        assert html =~ "badge-coverage-unavailable", "expected unavailable badge for #{status}"
+        assert html =~ "coverage unavailable"
+      end
     end
   end
 end

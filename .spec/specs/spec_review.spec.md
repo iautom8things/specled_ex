@@ -18,6 +18,7 @@ summary: Renders a Git change set as a self-contained HTML PR review surface. Ma
 surface:
   - lib/mix/tasks/spec.review.ex
   - lib/specled_ex/review.ex
+  - lib/specled_ex/review/coverage_closure.ex
   - lib/specled_ex/review/file_diff.ex
   - lib/specled_ex/review/findings_delta.ex
   - lib/specled_ex/review/html.ex
@@ -25,12 +26,14 @@ surface:
   - priv/spec_review_assets/*
   - priv/spec_init/workflows/spec_review.yml.eex
   - test/specled_ex/review_test.exs
+  - test/specled_ex/review/coverage_closure_test.exs
   - test/specled_ex/review/html_test.exs
   - test/mix/tasks/spec_review_task_test.exs
 decisions:
   - specled.decision.spec_review_html_viewer
   - specled.decision.spec_review_change_scoped_master_detail
   - specled.decision.evidence_orphan_branch_split
+  - specled.decision.aggregate_first_spec_coverage
 ```
 
 ## Requirements
@@ -253,16 +256,59 @@ decisions:
 - id: specled.spec_review.coverage_tab_bind_closure
   statement: |
     Each subject's Coverage pivot shall render, per requirement, a one-line bind-closure
-    summary of the form "Closure: N MFAs. Reached: M (by tests T1, T2). Unreached: K." —
-    where N is the size of the requirement's realization closure (the same closure the
-    implementation tier hashes), and Reached plus the test list are computed from the
-    `.spec/_coverage/per_test.coverdata` per-test artifact via
-    `SpecLedEx.CoverageTriangulation`. When the per-test coverage artifact is missing
-    the pivot shall render a single "Coverage artifact unavailable" banner in place of
-    the per-row summaries; when the compiler tracer manifest is missing the pivot shall
-    render a single "Binding closure unavailable" banner. Both degraded states piggyback
-    the page-level `:degraded` leg state machinery rather than rendering empty closure
-    rows that would be misread as the absence of test coverage.
+    summary sourced from `SpecLedEx.Review.CoverageClosure.build_v2/2`'s v2-envelope
+    reach data, of the form "Closure: N MFAs — K executed (X.X%). Self-verified:
+    yes/no. Tagged tests: T1 (executed), T2 (linked)." — where N is
+    `closure_mfa_count`, K is the count of `covered_mfas`, X.X% is
+    `closure_coverage_pct`, "Self-verified" reflects `self_verified?`, and the tagged
+    tests list every `tagged_tests` entry with its evidence `:strength` ("claimed" /
+    "linked" / "executed"). A "Reached by tests" row naming every `"executed"`-
+    strength tagged test shall render exclusively when the subject's coverage mode
+    is `:per_test` (`:ok_per_test`) — aggregate coverage has no per-test attribution
+    to name, so the row stays absent there. `"executed"` strength and the per_test
+    `closure_coverage_pct` both reflect the `--per-test` engine's observed
+    attribution, which is race-bounded (an ExUnit `test_finished` cast-timing race
+    can bleed coverage between adjacent tests regardless of the `degraded` flag;
+    see `specled_-cpw` and `specled.decision.aggregate_first_spec_coverage`) rather
+    than exact — the closure line and the "Reached by tests" row shall each be
+    discoverably qualified as observed/approximate, never asserted as exact
+    per-test isolation. Because `:ok_per_test`'s per-requirement MFA coverage is
+    still computed via a file-level proxy rather than the per-test engine's real
+    MFA-level data, the per_test closure line shall additionally carry a qualifier
+    noting the coverage percentage is approximate. Each subject card shall
+    additionally carry a rollup badge summarizing the subject's coverage status (a
+    self-verified/total count and mode when coverage data loaded, or a muted
+    "coverage unavailable" chip when degraded). The v2 envelope's own `generated_at`
+    timestamp shall render in the Coverage tab with an elapsed-time note, flagged as
+    possibly stale past a fixed age threshold. `:no_coverage_artifact`,
+    `:legacy_artifact` (naming `mix spec.cover.test` as the re-run command),
+    `:invalid_artifact`, and `:async_contaminated` (a degraded `:per_test` envelope)
+    shall each render their own distinct honest banner in place of the per-row
+    summaries — never collapsing into one another, into a fake 0%, or into an
+    empty-but-ok result; a missing compiler tracer manifest (`:no_tracer_manifest`)
+    shall render a single "Binding closure unavailable" banner. All degraded states
+    piggyback the page-level `:degraded` leg state machinery rather than rendering
+    empty closure rows that would be misread as the absence of test coverage.
+  priority: must
+  stability: evolving
+- id: specled.spec_review.coverage_tab_v2_envelope_data_layer
+  statement: >-
+    `SpecLedEx.Review.CoverageClosure.build_v2/2` shall provide the v2
+    envelope-based counterpart to `build/2` — reading
+    `SpecLedEx.Coverage.Store.read_v2/1` instead of the v1 record list, and
+    returning, per requirement, `closure_coverage_pct`, `covered_mfas` /
+    `uncovered_mfas` (via `SpecLedEx.Coverage.MfaKey`), and `tagged_tests`
+    with an evidence `:strength` (`"claimed"` / `"linked"` / `"executed"`).
+    Subject-level status distinguishes `:ok_aggregate` from `:ok_per_test`
+    coverage, and `:no_coverage_artifact` / `:legacy_artifact` /
+    `:invalid_artifact` / `:no_tracer_manifest` / `:async_contaminated`
+    (a `:per_test` envelope with `degraded: true` — the flag-1 special case
+    that keeps a corrupted per-test capture from misreporting as trustworthy
+    `:ok_per_test`) degrade distinctly rather than collapsing into one
+    empty-but-ok result. `build/2` remains unchanged and still available for
+    any caller that needs the v1 shape; `Review.build_view/3` now calls
+    `build_v2/2` and the Coverage pivot renders its v2 shape, per
+    `coverage_tab_bind_closure`.
   priority: must
   stability: evolving
 - id: specled.spec_review.no_realized_by_degrades_spec_to_code
@@ -591,6 +637,11 @@ decisions:
   execute: true
   covers:
     - specled.spec_review.coverage_tab_bind_closure
+- kind: command
+  target: mix test test/specled_ex/review/coverage_closure_test.exs
+  execute: true
+  covers:
+    - specled.spec_review.coverage_tab_v2_envelope_data_layer
 - kind: command
   target: mix test test/specled_ex/review/file_diff_test.exs
   execute: true

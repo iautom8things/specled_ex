@@ -9,6 +9,7 @@ defmodule SpecLedEx.Review do
   """
 
   alias SpecLedEx.{ChangeAnalysis, Coverage, Verifier}
+  alias SpecLedEx.Coverage.Store, as: CoverageStore
   alias SpecLedEx.Review.{CoverageClosure, FileDiff, FindingsDelta, SpecDiff}
 
   @doc """
@@ -53,12 +54,20 @@ defmodule SpecLedEx.Review do
     claims_by_subject = group_claims_by_subject(verifier_report)
 
     # covers: specled.spec_review.coverage_tab_bind_closure
-    # Per-requirement bind-closure reach: total MFAs, which closure files
-    # were reached, by which tests. Degrades to a status atom when the
-    # tracer manifest or coverage artifact is missing — the renderer
-    # surfaces that as a "coverage artifact unavailable" message.
+    # Per-requirement bind-closure reach, read from the v2 coverage envelope:
+    # closure-MFA coverage %, tagged-test evidence strength, and the
+    # self-verified composite. Degrades to a status atom when the tracer
+    # manifest or coverage artifact is missing/legacy/invalid/degraded — the
+    # renderer surfaces each distinctly rather than a generic empty state.
     closure_reach_opts = Keyword.get(opts, :closure_reach_opts, [])
-    closure_reach_by_subject = CoverageClosure.build(index, closure_reach_opts)
+    closure_reach_by_subject = CoverageClosure.build_v2(index, closure_reach_opts)
+
+    # covers: specled.spec_review.coverage_tab_bind_closure
+    # The coverage artifact's own `generated_at` (for the Coverage tab's
+    # staleness note) is fetched independently of CoverageClosure.build_v2/2,
+    # which does not expose it — this is a display-only concern, not a
+    # data-layer change to the coverage/triangulation modules.
+    coverage_generated_at = coverage_artifact_generated_at(closure_reach_opts)
 
     affected_subjects =
       Enum.flat_map(affected_subject_ids, fn id ->
@@ -76,7 +85,11 @@ defmodule SpecLedEx.Review do
                 findings_by_subject,
                 root,
                 Map.get(claims_by_subject, id, %{}),
-                Map.get(closure_reach_by_subject, id, %{status: :ok, by_requirement: %{}})
+                Map.get(closure_reach_by_subject, id, %{
+                  status: :ok_aggregate,
+                  by_requirement: %{}
+                }),
+                coverage_generated_at
               )
             ]
         end
@@ -323,7 +336,8 @@ defmodule SpecLedEx.Review do
          findings_by_subject,
          root,
          claims_by_req,
-         closure_reach
+         closure_reach,
+         coverage_generated_at
        ) do
     meta = subject["meta"]
     statement = meta_field(meta, :summary, "")
@@ -374,6 +388,7 @@ defmodule SpecLedEx.Review do
       findings: Map.get(findings_by_subject, id, []),
       claims_by_req: claims_by_req,
       closure_reach: closure_reach,
+      coverage_generated_at: coverage_generated_at,
       changed_files: changed_files,
       change_kind: change_kind(spec_file_changed?, code_changes != []),
       diffstat: diffstat_of(code_changes)
@@ -751,6 +766,37 @@ defmodule SpecLedEx.Review do
     case System.cmd("git", ["-C", root, "rev-parse", "--short", "HEAD"], stderr_to_stdout: true) do
       {out, 0} -> String.trim(out)
       _ -> "HEAD"
+    end
+  end
+
+  # covers: specled.spec_review.coverage_tab_bind_closure
+  # The Coverage tab's staleness note needs the v2 envelope's own
+  # `generated_at`, a field CoverageClosure.build_v2/2 does not expose (it
+  # returns only :status/:by_requirement — see the flag-1 addendum on
+  # specled_-155.7 for why that contract stays narrow). Mirrors the same
+  # existence-then-decode resolution build_v2/2 uses internally so the two
+  # never disagree about whether an artifact is present; returns nil for
+  # every degraded case (missing/legacy/invalid) since there is no envelope
+  # to read a timestamp from.
+  defp coverage_artifact_generated_at(opts) do
+    case Keyword.fetch(opts, :envelope) do
+      {:ok, %{generated_at: generated_at}} ->
+        generated_at
+
+      {:ok, _degraded_atom} ->
+        nil
+
+      :error ->
+        path = Keyword.get(opts, :artifact_path) || CoverageStore.default_path()
+
+        if File.regular?(path) do
+          case CoverageStore.read_v2(path) do
+            {:ok, %{generated_at: generated_at}} -> generated_at
+            _ -> nil
+          end
+        else
+          nil
+        end
     end
   end
 end
