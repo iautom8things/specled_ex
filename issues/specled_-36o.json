@@ -27,11 +27,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: 9355be03-5df8-4ea9-b29e-3ee9a1cd4dcc\nLog: ~/.claude/projects/-Users-mzubieta-dev-mz-specled-ex/9355be03-5df8-4ea9-b29e-3ee9a1cd4dcc.jsonl\n\nReasoning: VERIFY reported PASS with zero scope violations, 7/7 corpus-scoped claims validated (none false), passing targeted verification plus an independent full local suite run, and no seams (CI wiring only, no test doubles). No spec subject; no test-quality gate applicable. No auditor was spawned per policy.",
       "timestamp": "2026-07-23T22:20:29Z"
+    },
+    {
+      "text": "APPROVED. Merged 757f7b8 into specled_-155/aggregate-first-spec-coverage via --ff-only (epic now at 757f7b8); make smoke green; stage worktree specled_ex-ci-test-job cleaned up. Closing per auto-audit sign-off.",
+      "timestamp": "2026-07-23T22:20:40Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "CI never runs mix test — wire test job (decide plain vs --cover) into specs.yml",
   "type": "task",
-  "updated_at": "2026-07-23T22:20:29Z"
+  "updated_at": "2026-07-23T22:20:40Z"
 }
