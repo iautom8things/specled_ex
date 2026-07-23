@@ -14,11 +14,15 @@
     {
       "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/7 (release 0.3.1). Ticket was already closed; PR carries the fix + review remediations. Babysitting CI.",
       "timestamp": "2026-07-23T10:18:13Z"
+    },
+    {
+      "text": "Squash-merged to main (b6c8015) as release 0.3.1. Post-merge Specs run green (29999265337). Worktree + branches cleaned. Follow-ups: specled_-oyg (attestation coverage), new ticket for worktree-cleanup force path.",
+      "timestamp": "2026-07-23T10:29:06Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "bare-module api_boundary entries oscillate between seed and refresh passes",
   "type": "task",
-  "updated_at": "2026-07-23T10:18:13Z"
+  "updated_at": "2026-07-23T10:29:06Z"
 }
