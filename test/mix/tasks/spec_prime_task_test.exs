@@ -50,6 +50,30 @@ defmodule Mix.Tasks.SpecPrimeTaskTest do
     assert message_contains?(messages, "run_commands=false")
   end
 
+  @tag spec: "specled.prime.decision_fork_loop_line"
+  test "spec.prime loop names both ADR and trailer arms in default and bugfix variants",
+       %{root: root} do
+    write_subject_spec(
+      root,
+      "prime_fork",
+      meta: %{"id" => "prime.fork", "kind" => "module", "status" => "active"}
+    )
+
+    fork_line =
+      "If next says `needs decision update`, revise ADRs when the rule is durable and " <>
+        "cross-cutting; otherwise clear the finding with a " <>
+        "`Spec-Drift: branch_guard_missing_decision_update=info` trailer plus a one-line reason."
+
+    Mix.Tasks.Spec.Prime.run(["--root", root])
+    default_messages = drain_shell_messages()
+
+    Mix.Tasks.Spec.Prime.run(["--root", root, "--bugfix"])
+    bugfix_messages = drain_shell_messages()
+
+    assert message_contains?(default_messages, fork_line)
+    assert message_contains?(bugfix_messages, fork_line)
+  end
+
   test "spec.prime forwards branch options and supports json output", %{root: root} do
     init_git_repo(root)
 

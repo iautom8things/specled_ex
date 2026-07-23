@@ -45,8 +45,10 @@ first and then both resolution arms, with the ADR as the affirmative arm:
 
 Surfaces covered: `mix spec.next` `needs_decision_update` steps, the
 `branch_guard_missing_decision_update` finding's `fix:` block (same
-code-fenced convention as `append_only/*`), the `mix spec.prime` loop line,
-and the generated scaffold docs (`README.md`, local skill).
+code-fenced convention as `append_only/*`), the `mix spec.prime` loop line
+(both the default and `--bugfix` variants), the decisions READMEs
+(workspace and scaffold), and the generated scaffold docs (`README.md`,
+local skill).
 
 Per-code config demotion as the answer to filler-ADR pressure is rejected:
 it is policy-wide and silent, whereas trailers are per-range, carry a

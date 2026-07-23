@@ -6,7 +6,7 @@ Session-start context for agents and maintainers.
 
 Give one read-only command that helps a maintainer or agent understand the current workspace and branch before editing current truth.
 
-The default loop line for `needs decision update` names both resolution arms: revise ADRs for durable cross-cutting rules, otherwise clear the finding with a `Spec-Drift: branch_guard_missing_decision_update=info` trailer plus a one-line reason.
+Both default-loop variants (normal and `--bugfix`) name both resolution arms for the `needs decision update` step: revise ADRs for durable cross-cutting rules, otherwise clear the finding with a `Spec-Drift: branch_guard_missing_decision_update=info` trailer plus a one-line reason.
 
 ```yaml spec-meta
 id: specled.prime
@@ -45,6 +45,16 @@ decisions:
   statement: mix spec.prime shall support JSON output that nests the workspace status report, current-branch guidance, and loop steps for agent consumption.
   priority: should
   stability: evolving
+- id: specled.prime.decision_fork_loop_line
+  statement: >-
+    The mix spec.prime default loop, in both its normal and --bugfix
+    variants, shall state both resolution arms for the `needs decision
+    update` step — revising ADRs when the rule is durable and
+    cross-cutting, and otherwise clearing the finding with a
+    `Spec-Drift: branch_guard_missing_decision_update=info` trailer plus a
+    one-line reason.
+  priority: must
+  stability: evolving
 ```
 
 ## Verification
@@ -56,4 +66,5 @@ decisions:
     - specled.prime.session_context
     - specled.prime.command_execution_default
     - specled.prime.machine_output
+    - specled.prime.decision_fork_loop_line
 ```
