@@ -11,9 +11,15 @@
     "phase:implementing",
     "slug:ci-event-triggered-github"
   ],
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: specled_-dkh-ci-event-triggered-github (interactive implement session)\nLog: interactive session, no delegated log file\n\nCommit: 8e30724 (shared acceptance probe = PR #4 on branch specled_-y1c/ci-pr-base)\nFiles touched: .github/workflows/specs.yml (the y1c change; serves as this ticket's probe)\nTests added: none (CI/repo configuration ticket)\nVerification stubs flipped: none (no spec subject)\nVerification tier: live acceptance probe — opening PR #4 (touches .github/workflows/**, a filtered path) produced automatic pull_request-triggered Specs run 29968310586, the first event-triggered run in the repo's Actions history; run completed green after one rerun of the known-flaky tracer_test.exs:241 failure (tracked as specled_-epl, unrelated)\nFinal-tier runs: 1 (plus 1 rerun for the pre-existing specled_-epl flake)\n\nSummary: Diagnosis ruled out every configurable cause: workflow file on origin/main has correct pull_request/push triggers with matching path filters (PR #3 touched lib/**, .spec/**, mix.exs), workflow state=active, Actions enabled with allowed_actions=all, and GitHub received the PushEvent/PullRequestEvent for PR #3 without creating runs. Root cause is the forked-repo workflow-registration state: runs are not created retroactively for PRs opened before the fork's workflows were (re)enabled — PR #3 predated that. Acceptance now observed: new PRs trigger automatically. Push-to-main leg to be confirmed when PR #4 merges.",
+      "timestamp": "2026-07-23T00:14:20Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "CI: event-triggered GitHub Actions never fire (pull_request/push) — every run is manual workflow_dispatch",
   "type": "task",
-  "updated_at": "2026-07-23T00:07:29Z"
+  "updated_at": "2026-07-23T00:14:20Z"
 }
