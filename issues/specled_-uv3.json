@@ -22,11 +22,15 @@
     {
       "text": "STAGED (not merged). Branch specled_-oyg/guard-ergonomics = PR-1 (with oyg). uv3 commit 4968335 (was 95c5e37; replayed byte-identical over reworded oyg). Cold verify PASS + inline TEST_CRITIC PASS (0 blocking). PR-1 full merge gate GREEN (see oyg). CROSS-PR SEAM: lib/specled_ex/branch_check.ex is also edited by wr3 in PR-2 — whichever PR merges second must rebase over branch_check.ex. Follow-up specled_-o40 (api_boundary line-position leak) stands. Left in_progress pending PR merge.",
       "timestamp": "2026-07-23T13:59:57Z"
+    },
+    {
+      "text": "ACCEPT-DRIFT SCOPING FIX added (commit edec840) — closes the critical-review silencing-coarser-than-healing defect (idioms M1 + testing M1 consensus + spec M1). Encodes silence-exactly-what-you-heal: orchestrator gate excludes dangling runs + exposes flat_tiers/0; branch_check downgrade scoped to Orchestrator.flat_tiers/0 tiers AND no-dangling; realized_by.drift_acceptance must tightened; 2 real-detector tests (mixed drift+dangling; impl-tier not silenced). Cold-verified VERIFY: PASS (silence==heal no hole, regression intact, tests real). NOTE: PR-1 branch is now stale — origin/main advanced to 8f7abd3 (0.3.2/0.3.3); needs rebase before merge (the gh_pages append_only error is purely that stale base).",
+      "timestamp": "2026-07-23T15:03:13Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "intentional realization drift has no acceptance path",
   "type": "task",
-  "updated_at": "2026-07-23T13:59:57Z"
+  "updated_at": "2026-07-23T15:03:13Z"
 }
