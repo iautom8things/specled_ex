@@ -23,11 +23,15 @@
     {
       "text": "AUDIT: APPROVE\n\nSession: cold-audit agent (delegated, no uuid)\nLog: delegated agent, no log path\n\nReasoning: The acceptance (\"opening a PR that touches filtered paths produces an automatic Specs run\") is proven by independently re-read GitHub state, not by a claim. `gh run view 29968310586` returns event=pull_request, headBranch=specled_-y1c/ci-pr-base, headSha=8e30724, workflowName=Specs, conclusion=success — a genuine event-triggered run, not a workflow_dispatch passed off as one. `gh run list --limit 30` confirms it is the ONLY pull_request Specs run in the repo's entire history; every other Specs run (29945270272, 29944245057, 29944042016, 29943626118, 28630010862, 28622095868, 28620073734) is event=workflow_dispatch, and the only other non-dispatch runs are pages-build-deployment (event=dynamic, gh-pages). The path-filter premise is real: specs.yml:4-11 lists `.github/workflows/**` under on.pull_request.paths, and PR #4 touches only .github/workflows/specs.yml — so the run firing genuinely exercises the filter (a PR touching an unfiltered path would not trigger). The verifier's falsifiability is real and load-bearing: had the run been workflow_dispatch, absent, or had prior pull_request runs existed, acceptance fails; none hold.\n\nMechanical re-check: `git diff 966b28e..HEAD` touches exactly 1 file (.github/workflows/specs.yml), matching the verifier's count; the diff is purely the y1c CI change (fetch-depth: 0 + pull_request-conditional --base \"origin/${GITHUB_BASE_REF}\"). `gh pr view 4` confirms PR #4 OPEN, head specled_-y1c/ci-pr-base -\u003e main, one file modified (+11/-1). Scope at intent level: the ticket has no Allowed-touches/Out-of-Scope sections, but the entire diff is the CI gate change owned by y1c — dkh contributing zero code of its own is by design (its deliverable is diagnosis + live acceptance probe). No scope creep.\n\nThe two Notes are honest disclosures, not downgraded contradictions: (1) the push-to-main leg is genuinely not required by an \"opening a PR\" acceptance and is correctly deferred to merge; (2) the probe touching .github/workflows/** rather than lib/** is immaterial since both are equally in on.pull_request.paths. No adjacent-behavior substitution, no non-falsifiable claims, no scope creep.",
       "timestamp": "2026-07-23T00:17:53Z"
+    },
+    {
+      "text": "APPROVED. No stage merge-back (standalone ticket, no epic); fix lands via PR #4. Closing per auditor sign-off.",
+      "timestamp": "2026-07-23T00:18:14Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "CI: event-triggered GitHub Actions never fire (pull_request/push) — every run is manual workflow_dispatch",
   "type": "task",
-  "updated_at": "2026-07-23T00:17:53Z"
+  "updated_at": "2026-07-23T00:18:14Z"
 }
