@@ -37,11 +37,15 @@
     {
       "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/8 (release 0.3.2). Babysitting CI.",
       "timestamp": "2026-07-23T14:17:55Z"
+    },
+    {
+      "text": "Shipped as 0.3.3 — squash-merged to main (8f7abd3, PR #8). Post-merge Specs green. Rebased over #9 (which took 0.3.2). Follow-up specled_-vbo tracks the command-tier verification (critical-review F1).",
+      "timestamp": "2026-07-23T14:42:13Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "Harden spec_review.yml.eex: split untrusted-PR build from write-scoped deploy job",
   "type": "task",
-  "updated_at": "2026-07-23T14:17:55Z"
+  "updated_at": "2026-07-23T14:42:13Z"
 }
