@@ -65,7 +65,13 @@ real signal without becoming a footgun?
    When refreshing `api_boundary` entries on a clean run (`refresh_and_commit_hashes/3`),
    the orchestrator recomputes `Canonical.hash_module_head_union(Mod)` for
    bare modules rather than skipping them, preserving bare-module entries
-   in `.spec/realization_hashes.json`.
+   in `.spec/realization_hashes.json`. The silent-seed pass and the clean-run
+   refresh share a single `api_boundary` hasher
+   (`Orchestrator.api_boundary_hashes/2`), so seed/refresh parity holds by
+   construction: the refresh side of that parity is unobservable through
+   `run/2` under `merge/2` semantics (seed re-covers any missing entry), so
+   the bare-module/MFA hashing contract is pinned by testing the shared
+   hasher directly rather than by an integration test that cannot fail.
 
 3. **Runtime-only bare-module discovery.**
    `Canonical.discover_module_exports/2` enumerates exports via
