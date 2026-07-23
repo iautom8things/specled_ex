@@ -41,11 +41,15 @@
     {
       "text": "CI green (manual workflow_dispatch run 29991702967 — pull_request events still don't fire per specled_-dkh). 0 fix commits needed; no review feedback. Ready for merge.",
       "timestamp": "2026-07-23T08:39:04Z"
+    },
+    {
+      "text": "Squash-merged to main (028fa5a) as release 0.3.0. Watching post-merge Specs run.",
+      "timestamp": "2026-07-23T08:42:14Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "Advise the Spec-Drift trailer alternative in spec.next and the missing_decision_update finding",
   "type": "task",
-  "updated_at": "2026-07-23T08:39:04Z"
+  "updated_at": "2026-07-23T08:42:14Z"
 }
