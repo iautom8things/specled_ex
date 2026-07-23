@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-155",
+  "comments": [
+    {
+      "text": "ADMISSION (specled_-155 epic policy):\nAllowed touches: .github/workflows/specs.yml\nOut of Scope (files): lib/**, test/**, test_support/**, .spec/**, priv/**, mix.exs\nOut of Scope (intent): no new deps; no --cover arming (83.05% measured \u003c 90% threshold — deferred to specled_-6v6); no changes to the existing check job's behavior beyond shared paths filter\nVerification: (1) workflow YAML parses; (2) the exact CI command 'mix test --include integration' runs green locally on the native-path OTP (28.x); (3) mix spec.check --base specled_-155/aggregate-first-spec-coverage exit 0. The OTP 26 classic-fallback leg is provable only in CI (single local OTP) — first real proof is the epic PR's own workflow run.\n\nDECISIONS (per ticket): (a) plain 'mix test --include integration', NOT --cover — measured true coverage 83.05% @ bef5400 plus the snapshot fixture-module cover leak (HTML crash + masked exit code) make arming the gate a follow-up: specled_-6v6. (b) OTP \u003c27 matrix leg INCLUDED: Elixir 1.18.4 / OTP 26.2.5 exercises Snapshot.runtime_mode/0's :classic branch. Also fixed latent gap: workflow paths filters lacked test/**, test_support/**, priv/** — test-only changes previously didn't trigger CI at all.",
+      "timestamp": "2026-07-23T22:16:09Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "CI never runs mix test — wire test job (decide plain vs --cover) into specs.yml",
   "type": "task",
-  "updated_at": "2026-07-23T22:12:53Z"
+  "updated_at": "2026-07-23T22:16:09Z"
 }
