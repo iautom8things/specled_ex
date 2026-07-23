@@ -3,7 +3,9 @@
   "blocked_by": [
     "specled_-155.2"
   ],
-  "blocks": [],
+  "blocks": [
+    "specled_-155.7"
+  ],
   "created": "2026-07-23T12:03:11Z",
   "description": "Advances: specled.triangulation\n\nlib/specled_ex/coverage_triangulation.ex: consume v2 envelope; drop the lines_hit != [] validity heuristic (line 264 — fabricated [0] passed it, saturating all three detectors); add :executed_mfa_count + :line_coverage_pct from envelope.mfas INTERSECT closure_mfas; reaching_tests only when mode == :per_test; detector_unavailable reasons :aggregate_artifact_only, :legacy_artifact, :async_contaminated; aggregate-form underspecified finding (closure covered + zero tagged tests, from tag_index). lib/specled_ex/review/coverage_closure.ex: new Store contract; per-requirement closure_coverage_pct, covered/uncovered MFA lists, tagged_tests with evidence strengths; statuses :ok_aggregate | :ok_per_test | :no_coverage_artifact | :invalid_artifact | :no_tracer_manifest; use the shared MFA-string helper (T2); distinct 'zero closure MFAs matched' degraded status (silent-zero guard). Decision 1: consumers are spec.triangle + spec.review ONLY — nothing here wires into mix spec.check.",
   "id": "specled_-155.6",
@@ -13,5 +15,5 @@
   "status": "open",
   "title": "T6: Triangulation + CoverageClosure on the v2 envelope",
   "type": "task",
-  "updated_at": "2026-07-23T12:03:11Z"
+  "updated_at": "2026-07-23T12:03:12Z"
 }

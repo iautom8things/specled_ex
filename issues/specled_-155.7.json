@@ -1,6 +1,8 @@
 {
   "assignee": "",
-  "blocked_by": [],
+  "blocked_by": [
+    "specled_-155.6"
+  ],
   "blocks": [],
   "created": "2026-07-23T12:03:11Z",
   "description": "Advances: specled.spec_review\n\nlib/specled_ex/review.ex + review/html.ex: Coverage tab per requirement — 'Closure: N MFAs — K executed (X%). Self-verified: yes/no. Tagged tests: T1 (executed), T2 (linked).'; subject-card rollup badge; 'Reached by tests' row only when mode == :per_test; honest banners for :invalid_artifact / :legacy_artifact (incl. generated_at staleness display). lib/mix/tasks/spec.triangle.ex: read envelope; print mode + closure-coverage %; label per-test detectors unavailable in aggregate mode.",
@@ -11,5 +13,5 @@
   "status": "open",
   "title": "T7: spec.review + spec.triangle rendering of spec coverage",
   "type": "task",
-  "updated_at": "2026-07-23T12:03:11Z"
+  "updated_at": "2026-07-23T12:03:12Z"
 }
