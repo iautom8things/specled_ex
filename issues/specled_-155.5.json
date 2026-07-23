@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-155.3",
     "specled_-155.4"
@@ -13,7 +13,7 @@
   "labels": [],
   "parent": "specled_-155",
   "priority": 1,
-  "status": "open",
+  "status": "in_progress",
   "title": "T5: Rebuild --per-test lane on native read-only coverage deltas",
   "type": "task",
   "updated_at": "2026-07-23T19:57:59Z"
