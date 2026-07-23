@@ -29,6 +29,10 @@
     {
       "text": "REBASED\\nSession: rebase-1\\nNew HEAD: 81006e9e957081e03b1b0f5682ca77595c7691a6\\nConflicts encountered: none\\nSmoke: green; spec.check: exit 0",
       "timestamp": "2026-07-23T19:57:57Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-155/aggregate-first-spec-coverage. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-23T19:57:57Z"
     }
   ],
   "priority": 1,
