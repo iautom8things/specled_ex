@@ -8,6 +8,10 @@
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
       "hasher_version": 1
     },
+    "Mix.Tasks.Spec.Cover.Ingest.run/1": {
+      "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
+      "hasher_version": 1
+    },
     "Mix.Tasks.Spec.Cover.Test.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
       "hasher_version": 1
@@ -192,12 +196,24 @@
       "hash": "fad8733bb82cc00fea0ff8ae395040ee013f5c26400b1530963c9b1af84c54b7",
       "hasher_version": 1
     },
+    "SpecLedEx.Coverage.Aggregate.ingest/2": {
+      "hash": "e01f0a97461d4cab821c0985e9244b745d45fe95bbab19109f3ea87f52a763ab",
+      "hasher_version": 1
+    },
     "SpecLedEx.Coverage.Formatter": {
       "hash": "a682c3acd680ca53c486fcb507c255420c3547cc47dfc30bfcb3dfec88aaa1a8",
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.Formatter.init/1": {
       "hash": "d57f6ca9e4acd4a81e89d081d307b5a06fd530a1e3f5a22781c4651dfa0d288d",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.MfaKey.format/1": {
+      "hash": "4b7d521508b28fefb97fc40b8aeec7b4926f981850f7c06510850e6a194c93af",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.MfaKey.parse/1": {
+      "hash": "481eac7de15ca76a151403778e3c5cc019509b872414ef5d55f8cf8727bf85ca",
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.Store.build_envelope/1": {

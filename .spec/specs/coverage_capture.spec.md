@@ -23,9 +23,14 @@ surface:
   - lib/specled_ex/coverage.ex
   - lib/specled_ex/coverage/formatter.ex
   - lib/specled_ex/coverage/store.ex
+  - lib/specled_ex/coverage/aggregate.ex
+  - lib/specled_ex/coverage/mfa_key.ex
   - lib/mix/tasks/spec.cover.test.ex
+  - lib/mix/tasks/spec.cover.ingest.ex
   - test/specled_ex/coverage/formatter_test.exs
   - test/specled_ex/coverage/store_test.exs
+  - test/specled_ex/coverage/aggregate_test.exs
+  - test/specled_ex/coverage/mfa_key_test.exs
   - test/mix/tasks/spec_cover_test_test.exs
   - test_support/specled_ex_integration_case.ex
 realized_by:
@@ -41,6 +46,9 @@ realized_by:
     - "SpecLedEx.Coverage.Store.read_v2/1"
     - "SpecLedEx.Coverage.Store.read_status/1"
     - "Mix.Tasks.Spec.Cover.Test.run/1"
+    - "SpecLedEx.Coverage.Aggregate.ingest/2"
+    - "SpecLedEx.Coverage.MfaKey.format/1"
+    - "SpecLedEx.Coverage.MfaKey.parse/1"
   implementation:
     - "SpecLedEx.Coverage.Formatter.init/1"
     - "SpecLedEx.Coverage.Store.build_records/1"
@@ -136,6 +144,34 @@ decisions:
     artifacts are never auto-migrated or deleted.
   priority: must
   stability: evolving
+- id: specled.coverage_capture.aggregate_ingest
+  statement: >-
+    `SpecLedEx.Coverage.Aggregate.ingest/2` shall stop, restart, and import
+    an exported `.coverdata` file into `:cover` (never `:cover.reset/0`),
+    run two analyse passes per module (`:coverage, :line` and `:coverage,
+    :function`), map each covered module to a repo-relative source path,
+    and return `{:ok, envelope}` where `envelope` is a v2 envelope
+    (`SpecLedEx.Coverage.Store.build_envelope/1`) with `:mode` `:aggregate`.
+    Modules whose source cannot be mapped under the given root are excluded
+    from `:files` and `:mfas` and counted toward `envelope.degraded`.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.aggregate_empty_coverage
+  statement: >-
+    `SpecLedEx.Coverage.Aggregate.ingest/2` shall return
+    `{:error, :empty_coverage}` when the imported `.coverdata` carries zero
+    cover-compiled or imported modules, without writing any envelope.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.mfa_key_round_trip
+  statement: >-
+    `SpecLedEx.Coverage.MfaKey.format/1` and `parse/1` shall round-trip:
+    for every `{module, function, arity}` triple, `parse(format(mfa)) ==
+    {:ok, mfa}`. This is the string format `SpecLedEx.Coverage.Aggregate`
+    writes into envelope `:mfas` entries and the one downstream consumers
+    (coverage triangulation) parse back.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -197,6 +233,34 @@ decisions:
   covers:
     - specled.coverage_capture.serialized_run
     - specled.coverage_capture.integration_case
+- id: specled.coverage_capture.scenario.aggregate_ingest_child_beam
+  given:
+    - "a child-BEAM fixture project compiled and run via `mix test --cover --export-coverage <name>`, producing a real `.coverdata` file"
+  when:
+    - "`SpecLedEx.Coverage.Aggregate.ingest/2` ingests that `.coverdata` file"
+  then:
+    - "the returned envelope has nonempty `:files` and `:mfas`"
+    - "the envelope persists via `Store.write_v2/2` and reads back identically via `Store.read_v2/1`"
+  covers:
+    - specled.coverage_capture.aggregate_ingest
+- id: specled.coverage_capture.scenario.aggregate_ingest_empty_coverage
+  given:
+    - "an exported `.coverdata` file with zero cover-compiled modules"
+  when:
+    - "`SpecLedEx.Coverage.Aggregate.ingest/2` ingests that file"
+  then:
+    - "the result is `{:error, :empty_coverage}`"
+  covers:
+    - specled.coverage_capture.aggregate_empty_coverage
+- id: specled.coverage_capture.scenario.mfa_key_format_parse_round_trip
+  given:
+    - "an MFA triple `{Module, :fun, 2}`"
+  when:
+    - "the triple is formatted via `MfaKey.format/1` then parsed via `MfaKey.parse/1`"
+  then:
+    - "the parsed result is `{:ok, {Module, :fun, 2}}`"
+  covers:
+    - specled.coverage_capture.mfa_key_round_trip
 ```
 
 ## Verification
@@ -223,4 +287,10 @@ decisions:
   covers:
     - specled.coverage_capture.serialized_run
     - specled.coverage_capture.integration_case
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.coverage_capture.aggregate_ingest
+    - specled.coverage_capture.aggregate_empty_coverage
+    - specled.coverage_capture.mfa_key_round_trip
 ```
