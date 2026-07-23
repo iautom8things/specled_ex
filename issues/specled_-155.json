@@ -23,11 +23,15 @@
     {
       "text": "MERGE GATE 1 (after specled_-155.1, epic @ 14a22d4): GREEN. compile -Werror ok; mix test 3 properties + 1041 tests, 0 failures; format ok; deps.unlock ok; mix spec.check exit 0 findings=0. Advisory: one stray 'specled_cmd_*.sh: No such file or directory' line mid-suite (tempfile command-exec race, specled_-epl class) — no test failed, not a flake-accept.",
       "timestamp": "2026-07-23T19:57:55Z"
+    },
+    {
+      "text": "MERGE GATE 2 (after specled_-155.2, epic @ 68f7c68): GREEN. compile -Werror ok; 3 properties + 1057 tests, 0 failures; format ok; deps.unlock ok; spec.check exit 0 status=pass (findings=1 = the trailer-downgraded branch_guard_missing_decision_update at info — ratified by verify pass, non-blocking). ADMISSION NOTE: T3 (specled_-155.3) intentionally held until T4 merges — both edit lib/mix/tasks/spec.cover.test.ex and admitting T3 pre-T4 guarantees a real-code rebase conflict. T6 admitted now.",
+      "timestamp": "2026-07-23T19:57:57Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Aggregate-first spec coverage — specled_-47j remediation",
   "type": "epic",
-  "updated_at": "2026-07-23T19:57:55Z"
+  "updated_at": "2026-07-23T19:57:57Z"
 }
