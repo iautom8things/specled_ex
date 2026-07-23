@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T22:50:31Z",
+  "description": "Advances: specled.spec_review\n\nReview spec M1 (owner: spec defect). specled.spec_review.coverage_tab_bind_closure fuses ~8 independently-testable contracts (closure-line format, per-test-only 'Reached by tests' row, observed/approximate qualifier, file-level-proxy note, rollup badge, generated_at staleness, five degraded banners, no_tracer_manifest banner) verified via whole-file command tests — a regression in one clause can ship green at requirement granularity. Split into per-contract requirement ids with their own covering scenarios/tests.",
+  "id": "specled_-q6l.5",
+  "labels": [],
+  "parent": "specled_-q6l",
+  "priority": 2,
+  "status": "open",
+  "title": "Split over-compound spec_review.coverage_tab_bind_closure requirement",
+  "type": "task",
+  "updated_at": "2026-07-23T22:50:31Z"
+}
