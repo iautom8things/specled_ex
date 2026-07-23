@@ -265,22 +265,29 @@ decisions:
 - id: specled.realized_by.drift_acceptance
   statement: >-
     `mix spec.check --accept-drift` shall provide a durable acceptance path for
-    INTENTIONAL realization drift. When the orchestrator is run with
-    `accept_drift?: true`, it shall run `refresh_and_commit_hashes/3` even
-    though `branch_guard_realization_drift` findings are present, committing the
-    current flat-tier hashes as the new baseline via `HashStore.merge/2`, so a
-    subsequent `mix spec.check` sees committed == current and emits no drift for
-    those bindings. Bindings that do not resolve shall NOT be accepted: the
-    refresh only commits hashes for resolvable bindings, so a
-    `branch_guard_dangling_binding` finding continues to fail the run. For the
-    accepting run, `SpecLedEx.BranchCheck` shall inject a run-scoped
-    `branch_guard_realization_drift => :info` override at trailer precedence in
-    `Severity.resolve/3`, so the finding resolves to `:info` and the run passes
-    even when `branch_guard.severities` pins the code to `:error`; a config
-    `:off` still absorbs it. Acceptance thus completes in a single run without
-    depending on the `Spec-Drift:` trailer, whose `base..HEAD` window closes
-    once the carrying commit merges. See
-    `specled.decision.realization_drift_acceptance`.
+    INTENTIONAL realization drift, scoped to exactly the bindings the refresh
+    rebaselines — silence only what you heal. When the orchestrator is run with
+    `accept_drift?: true` and no `branch_guard_dangling_binding` finding is
+    present, it shall run `refresh_and_commit_hashes/3` even though
+    `branch_guard_realization_drift` findings are present, committing the current
+    flat-tier hashes as the new baseline via `HashStore.merge/2`, so a subsequent
+    `mix spec.check` sees committed == current and emits no drift for those
+    bindings. The refresh rebaselines flat tiers only
+    (`SpecLedEx.Realization.Orchestrator.flat_tiers/0`); the implementation tier
+    is excluded by design. `SpecLedEx.BranchCheck` shall therefore downgrade a
+    `branch_guard_realization_drift` finding to `:info` — via a run-scoped
+    override at trailer precedence in `Severity.resolve/3`, so it beats a
+    `branch_guard.severities` `:error` pin while a config `:off` still absorbs —
+    ONLY when the finding's `tier` is a flat tier AND no dangling finding is
+    present on the run. Implementation-tier drift is a signal, not a gate: it is
+    never downgraded and keeps its configured severity, so a run that merely
+    silenced it could otherwise falsely pass and then resurface as `:error`
+    post-merge. A `branch_guard_dangling_binding` is a genuine error, not
+    intentional drift: it blocks the refresh entirely (no baseline moves for any
+    binding on that run) and is never downgraded, so the run still fails.
+    Acceptance thus completes in a single run without depending on the
+    `Spec-Drift:` trailer, whose `base..HEAD` window closes once the carrying
+    commit merges. See `specled.decision.realization_drift_acceptance`.
   priority: must
   stability: evolving
 - id: specled.realized_by.redundant_dup_warning
@@ -563,6 +570,25 @@ decisions:
   then:
     - "no hash is committed for the unresolved binding"
     - "a `branch_guard_dangling_binding` finding still fires at `:error` and the run fails"
+  covers: []
+- id: specled.realized_by.scenario.accept_drift_leaves_impl_tier_drift
+  given:
+    - "a subject whose `implementation`-tier binding has drifted (committed hash no longer matches current), with the implementation tier enabled"
+  when:
+    - "the orchestrator runs with `accept_drift?: true` and `commit_hashes?: true`"
+  then:
+    - "the `branch_guard_realization_drift` finding for the implementation-tier binding is NOT downgraded to `:info` — it keeps its configured severity"
+    - "no implementation-tier hash is rebaselined (the refresh is flat-tier only)"
+  covers: []
+- id: specled.realized_by.scenario.accept_drift_dangling_blocks_flat_refresh
+  given:
+    - "a subject with an intentionally-drifted `realized_by.api_boundary` (flat-tier) binding AND a second binding that does not resolve (dangling), on the same run"
+  when:
+    - "the orchestrator runs with `accept_drift?: true` and `commit_hashes?: true`"
+  then:
+    - "no hash is committed for the drifted binding — the dangling error blocks the refresh entirely, so no baseline moves on the failing run"
+    - "the drifted binding's `branch_guard_realization_drift` finding is NOT downgraded to `:info`"
+    - "the `branch_guard_dangling_binding` finding fires at `:error` and the run fails"
   covers: []
 ```
 

@@ -149,6 +149,154 @@ defmodule SpecLedEx.Integration.DriftAcceptanceTest do
            "no hash may be committed for an unresolved binding"
   end
 
+  @tag spec: "specled.realized_by.drift_acceptance"
+  test "--accept-drift with a dangling binding present blocks the refresh and does not downgrade drift",
+       %{root: root} do
+    ghost = "SpecLedEx.Nope.ghost/3"
+
+    init_git_repo(root)
+    seed_repo(root)
+
+    write_subject_spec(root, "mixed",
+      meta: %{
+        "id" => "mixed.subject",
+        "kind" => "module",
+        "status" => "active",
+        "surface" => ["lib/mixed.ex"],
+        "realized_by" => %{"api_boundary" => [@real_mfa, ghost]}
+      },
+      requirements: [
+        %{"id" => "mixed.req", "statement" => "x", "priority" => "must"}
+      ]
+    )
+
+    commit_all(root, "seed mixed drift+dangling subject")
+
+    wrong_hash = Base.encode16(:crypto.hash(:sha256, "wrong"), case: :lower)
+
+    :ok =
+      HashStore.write(root, %{
+        "api_boundary" => %{
+          @real_mfa => %{"hash" => wrong_hash, "hasher_version" => HashStore.hasher_version()}
+        }
+      })
+
+    index = Index.build(root)
+
+    report =
+      BranchCheck.run(index, root,
+        base: "HEAD",
+        commit_realization_hashes?: true,
+        accept_drift?: true
+      )
+
+    findings = report["findings"] || []
+
+    drift =
+      Enum.find(findings, fn f ->
+        f["code"] == "branch_guard_realization_drift" and f["mfa"] == @real_mfa
+      end)
+
+    assert drift != nil,
+           "expected the drift finding to still fire, got:\n" <> inspect(findings, pretty: true)
+
+    # A dangling error blocks the refresh, so nothing is healed this run and the
+    # drift is therefore NOT silenced — silence exactly what you heal.
+    refute drift["severity"] == "info",
+           "drift must NOT be downgraded when a dangling error is present, got " <>
+             inspect(drift["severity"])
+
+    assert Enum.any?(findings, fn f ->
+             f["code"] == "branch_guard_dangling_binding" and f["mfa"] == ghost
+           end)
+
+    assert report["status"] == "fail", "a run with a dangling binding must still fail"
+
+    # No baseline moved: the drifted binding still holds the wrong hash.
+    store = HashStore.read(root)
+
+    assert get_in(store, ["api_boundary", @real_mfa, "hash"]) == wrong_hash,
+           "no baseline may move on a failing (dangling) run"
+  end
+
+  @tag spec: "specled.realized_by.drift_acceptance"
+  test "--accept-drift does not downgrade or heal implementation-tier drift", %{root: root} do
+    init_git_repo(root)
+
+    write_files(root, %{
+      ".spec/config.yml" => """
+      branch_guard:
+        severities:
+          branch_guard_realization_drift: error
+      realization:
+        enabled_tiers:
+          - implementation
+      """
+    })
+
+    write_subject_spec(root, "impl_accept",
+      meta: %{
+        "id" => "impl_accept.subject",
+        "kind" => "module",
+        "status" => "active",
+        "surface" => ["lib/impl_accept.ex"],
+        "realized_by" => %{"implementation" => [@real_mfa]}
+      },
+      requirements: [
+        %{"id" => "impl_accept.req", "statement" => "x", "priority" => "must"}
+      ]
+    )
+
+    commit_all(root, "seed impl_accept subject")
+
+    wrong_hash = Base.encode16(:crypto.hash(:sha256, "wrong"), case: :lower)
+
+    :ok =
+      HashStore.write(root, %{
+        "implementation" => %{
+          "impl_accept.subject" => %{
+            "hash" => wrong_hash,
+            "hasher_version" => HashStore.hasher_version()
+          }
+        }
+      })
+
+    index = Index.build(root)
+
+    report =
+      BranchCheck.run(index, root,
+        base: "HEAD",
+        commit_realization_hashes?: true,
+        accept_drift?: true
+      )
+
+    findings = report["findings"] || []
+
+    drift =
+      Enum.find(findings, fn f ->
+        f["code"] == "branch_guard_realization_drift" and f["tier"] == "implementation"
+      end)
+
+    assert drift != nil,
+           "expected an implementation-tier drift finding, got:\n" <>
+             inspect(findings, pretty: true)
+
+    # Impl-tier drift is a signal, not a gate: --accept-drift must not silence it,
+    # so it keeps the configured :error and the run fails — no false pass.
+    assert drift["severity"] == "error",
+           "impl-tier drift must keep its configured :error under accept, got " <>
+             inspect(drift["severity"])
+
+    assert report["status"] == "fail",
+           "impl-tier drift is never accepted, so the accepting run must still fail"
+
+    # The impl-tier baseline is NOT rebaselined (the refresh is flat-tier only).
+    store = HashStore.read(root)
+
+    assert get_in(store, ["implementation", "impl_accept.subject", "hash"]) == wrong_hash,
+           "impl-tier hash must not be rebaselined by --accept-drift"
+  end
+
   defp seed_repo(root) do
     write_files(root, %{"README.md" => "init\n"})
     commit_all(root, "initial")
