@@ -7,9 +7,7 @@
   "created": "2026-07-23T20:58:39Z",
   "description": "No spec subject\n\nFrom critical review of specled_-155 branch (consolidated report: ~/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-23/specled_-155-aggregate-first-spec-coverage/20260723-161424-consolidated.md, review_commit af16144; finding TEST-M1).\n\n.github/workflows/specs.yml runs ONLY 'bash ./scripts/check_specs.sh' (mix spec.check) — never mix test — on a single OTP version. Consequences: (1) the 13 new coverage test files from epic specled_-155 never execute in CI; (2) the test_coverage threshold: 90 gate in mix.exs:10 is configured but exercised by no pipeline; (3) the :classic (pre-OTP-27) runtime-selection branch of SpecLedEx.Coverage.Snapshot is never exercised anywhere in CI.\n\nFix: add a test job to specs.yml running 'mix test' at minimum. Decisions to make at implementation: (a) plain 'mix test' vs 'mix test --cover' (arming the 90% gate may fail the build until true coverage is measured — depends on specled_-aav landing first if --cover); (b) whether to add an OTP \u003c27 matrix leg to exercise the classic snapshot fallback. Blocked-by relationship to specled_-aav only if --cover is chosen.",
   "id": "specled_-36o",
-  "labels": [
-    "phase:implementing"
-  ],
+  "labels": [],
   "parent": "specled_-155",
   "comments": [
     {
@@ -37,5 +35,5 @@
   "status": "in_progress",
   "title": "CI never runs mix test — wire test job (decide plain vs --cover) into specs.yml",
   "type": "task",
-  "updated_at": "2026-07-23T22:20:40Z"
+  "updated_at": "2026-07-23T22:20:41Z"
 }
