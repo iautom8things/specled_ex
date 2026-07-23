@@ -10,7 +10,15 @@ Substitution tokens:
 - `<repo_root>` — absolute path to the worktree
 - `<bootstrap_branch>` — branch the bootstrap is landing on
 - `<subject.id>` — a specific subject id (phase1+ uses real ids)
-- `<verify_cmd>` — the project verification command (default `mix spec.check`)
+- `<host_check_cmd>` — the git-sensitive check command, always run on the
+  host (default `mix spec.check`; on containerized repos usually
+  `mix spec.check --no-run-commands`)
+- `<container_verify_cmd>` — the runtime verification command (default
+  `mix test`; on containerized repos e.g. `docker compose exec app mix test`)
+- On host-only repos the two collapse into one command; detection's
+  runtime-split signal (see detection-matrix.md) decides which shape a
+  bootstrap gets. Older templates' `<verify_cmd>` means the collapsed
+  host-only form.
 
 ## phase0 — Install dep and scaffold .spec/
 
@@ -20,12 +28,22 @@ Advances: <none — meta phase>
 Deliverable:
 Install `spec_led_ex` as a dev/test dep and scaffold `.spec/` via
 `mix spec.init`. Replace the `<PROJECT_VERIFICATION_COMMAND>` placeholder
-in `.spec/AGENTS.md` with the project's actual verification command.
+in `.spec/AGENTS.md` with the project's actual verification command — on
+containerized repos, write the split loop instead (git-sensitive
+`<host_check_cmd>` on the host; `<container_verify_cmd>` in the container).
+Run `mix spec.evidence.install_hook` and add `mix spec.sync` to the
+daily-loop guidance in `.spec/AGENTS.md` (the hook runs it best-effort on
+push; the manual run recovers from skipped hooks). Write the two-armed
+decision rubric (durable/cross-cutting → ADR in `.spec/decisions/`;
+ticket-local → `Spec-Drift:` trailer with a one-line reason) into both
+`.spec/AGENTS.md` and `.spec/decisions/README.md`.
 
 Verification:
 - Tests to pass: `mix compile --warnings-as-errors && mix spec.check`
 - Behaviors to demonstrate: `mix spec.check` exits 0 with at most
-  `detector_unavailable` findings.
+  `detector_unavailable` findings; the pre-push hook (or the printed
+  append-snippet, when a hook already existed) runs `mix spec.sync
+  --best-effort`.
 
 Out of Scope (files):
 - lib/**/*
@@ -46,6 +64,48 @@ Merge gate:
 - [ ] `mix compile --warnings-as-errors` clean
 - [ ] `mix spec.check` exits 0
 - [ ] `.spec/AGENTS.md` has no `<PROJECT_VERIFICATION_COMMAND>` placeholder remaining
+- [ ] `mix spec.evidence.install_hook` ran; `.spec/AGENTS.md` daily loop mentions `mix spec.sync`
+- [ ] Decision rubric present in `.spec/AGENTS.md` and `.spec/decisions/README.md`
+- [ ] Auditor APPROVE comment on the ticket
+```
+
+## Pre-ledger migration (emitted only when detection classifies the workspace as pre-ledger)
+
+When `git ls-files .spec/state.json` is non-empty (see detection-matrix.md),
+emit this ticket immediately after phase0 (or standalone when phase0 is
+already done) and wire it to block phase1+:
+
+```
+Advances: <none — meta phase>
+
+Deliverable:
+Migrate this pre-evidence-ledger workspace: run `mix spec.evidence.migrate`.
+It hoists any legacy embedded realization baseline, untracks
+`.spec/state.json` (preserving the worktree file and appending it to
+`.gitignore`), installs the pre-push evidence hook, and seeds the orphan
+`spec-evidence` ref when the current tree is not already attested.
+
+Verification:
+- Tests to pass: `mix spec.check` after migration
+- Behaviors to demonstrate: `git ls-files .spec/state.json` is empty;
+  `.gitignore` covers `.spec/state.json`; the pre-push hook exists.
+
+Out of Scope (files):
+- lib/**/*
+- test/**/*
+- .spec/specs/**/*
+Allowed touches:
+- .gitignore
+- .spec/state.json (untrack only)
+- .git/hooks/pre-push
+
+Out of Scope (intent):
+- No spec authoring, no severity changes — this is plumbing only.
+
+Merge gate:
+- [ ] `.spec/state.json` untracked and gitignored
+- [ ] Pre-push hook installed
+- [ ] `mix spec.check` exits 0
 - [ ] Auditor APPROVE comment on the ticket
 ```
 
@@ -137,7 +197,18 @@ For every subject from phase1, add a `realized_by.api_boundary:` block in
 its spec-meta and promote `status: draft` → `status: active`. Use
 `mix spec.suggest_binding` to generate proposals; review each one (it
 proposes from `surface: lib/*.ex` only, so non-lib paths and internal
-modules need human judgment).
+modules need human judgment). Refine or delete every placeholder
+requirement ("Bootstrap draft — …") as part of promotion.
+
+Install the CI gate: a workflow step running
+`mix spec.check --base <pr-base>` on pull requests, and a `mix spec.review`
+render whose HTML artifact is uploaded/deployed per PR — start from the
+scaffolded template
+(`deps/spec_led_ex/priv/spec_init/workflows/spec_review.yml.eex`, copied to
+`.github/workflows/spec-review.yml`). When the repo shares a remote
+evidence ledger, fetch the `spec-evidence` ref read-only before the check;
+treat its attestations as unauthenticated hints, not proof that
+verification commands ran.
 
 Verification:
 - Tests to pass: `mix spec.validate && mix spec.check --base origin/main`
@@ -152,6 +223,7 @@ Out of Scope (files):
 Allowed touches:
 - .spec/specs/**/*.spec.md
 - .spec/realization_hashes.json   # committed realization baseline
+- .github/workflows/**/*.yml (or the equivalent CI files)
 
 Out of Scope (intent):
 - No code refactors to make bindings cleaner. The bindings adapt to the
@@ -159,12 +231,17 @@ Out of Scope (intent):
 - No `implementation:` tier — phase5.
 - No `expanded_behavior:` / `use:` / `typespecs:` tiers — out of scope for
   bootstrap unless the user explicitly opted into them.
+- Do not raise severities in CI — the gate reports at warning level until
+  phase6.
 
 Merge gate:
 - [ ] Every phase1 subject has `realized_by.api_boundary` with ≥1 MFA
 - [ ] Every phase1 subject is `status: active`
+- [ ] No placeholder requirements survive promotion to `status: active`
 - [ ] `mix spec.check --base origin/main` clean
 - [ ] `.spec/realization_hashes.json` committed with the new baseline
+- [ ] CI runs `mix spec.check --base <pr-base>` and renders the
+      `mix spec.review` artifact on PRs
 - [ ] Auditor APPROVE comment on the ticket
 ```
 
@@ -184,8 +261,10 @@ Deliverable:
 Verification:
 - Tests to pass: `mix test` still green; `mix spec.check` still clean.
 - Behaviors to demonstrate: `mix spec.check` now emits no findings for
-  tagged requirements; deleting a tag re-fires
-  `branch_guard_requirement_without_test_tag` as a warning.
+  tagged requirements; deleting a tag re-fires the validator-side
+  `requirement_without_test_tag` as a warning (the branch-side
+  `branch_guard_requirement_without_test_tag` only fires for must
+  requirements newly added vs base).
 
 Out of Scope (files):
 - lib/**/*
@@ -320,6 +399,36 @@ Merge gate:
 - [ ] Synthetic-violation rehearsal documented in the ticket comments
 - [ ] Auditor APPROVE comment on the ticket
 ```
+
+## Graduation review (deferred ticket — emitted whenever target_phase < phase6)
+
+Staged adoption's observed failure mode: severities parked at
+`:warning`/`:info` "until the corpus is clean" and the graduation date
+recedes forever. Whenever the epic stops below phase6, emit ONE deferred
+ticket so graduation is a scheduled artifact, not an intention:
+
+```bash
+bw create "Graduation review: graduate spec.check severities or write explicit opt-outs" \
+  --description "$(cat <<'EOF'
+Bootstrap epic <epic-id> stopped at <target_phase>. Four weeks have passed.
+
+Run `mix spec.status` and review which finding codes stayed clean since
+bootstrap:
+- Codes with zero findings over the window → graduate to `:error` in
+  .spec/config.yml (phase6 of the ladder; see the phase6 template in the
+  spec-led-bootstrap skill).
+- Codes the team has decided will never gate → write explicit `:off`
+  opt-outs so the absence is visible, instead of leaving them parked at
+  `:warning`.
+- Codes still noisy → fix the underlying drift or re-defer THIS ticket
+  with a one-line reason. Do not silently close.
+EOF
+)"
+bw defer <new-id> --until "4 weeks"
+```
+
+This ticket is standalone (not an epic child) — the epic closes on its
+target phase; graduation is follow-on work with its own clock.
 
 ## Dependency wiring
 
