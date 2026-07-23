@@ -29,11 +29,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: specled_-123-spec-led-bootstrap-skill - implement\nLog: (interactive session)\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. No auditor was spawned per policy.",
       "timestamp": "2026-07-23T00:24:57Z"
+    },
+    {
+      "text": "APPROVED. No epic merge-back applicable — branch specled_-123/bootstrap-gaps (2 commits: e672e81 + ab19c95) is ready for a PR to main from worktree /Users/mz/src/specled_ex-bootstrap-gaps; note origin/main advanced to b00e02b so a trivial rebase is needed at PR time. Closing per auditor sign-off.",
+      "timestamp": "2026-07-23T00:25:19Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "spec-led-bootstrap skill: fix finding-code bug + close the adoption gaps a real brownfield adoption exposed",
   "type": "task",
-  "updated_at": "2026-07-23T00:24:57Z"
+  "updated_at": "2026-07-23T00:25:19Z"
 }
