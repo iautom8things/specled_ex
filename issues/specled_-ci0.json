@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T01:22:36Z",
+  "description": "Advances: specled.package — full scope will be set via bw update (hook-safe two-step)",
+  "id": "specled_-ci0",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Doc-identifier integrity: fix 4 proven fabricated/inert identifier defects + add corpus lint gate",
+  "type": "task",
+  "updated_at": "2026-07-23T01:22:36Z"
+}
