@@ -11,9 +11,8 @@ defmodule SpecLedEx.Coverage do
   Pure formatter configuration produced by `init/2`.
   """
   @type config :: %{
-          snapshot_fn: (term() -> term()),
+          snapshot_fn: ([module()] -> map()),
           modules_fn: (-> [module()]),
-          snapshot_target: term(),
           artifact_path: Path.t()
         }
 
@@ -31,19 +30,19 @@ defmodule SpecLedEx.Coverage do
   Mix task to inject an `:artifact_path` or `:modules_fn` distinct from the
   formatter caller).
 
-  `:snapshot_fn` and `:snapshot_target` have no implicit default here — this
-  function raises `ArgumentError` if either is missing from `opts`. Silently
-  defaulting them would let any caller (including a formatter invoked without
-  real intent to capture coverage) get a live `:cover.analyse/1` wired in
-  just by omission. `SpecLedEx.Coverage.Formatter` is the sole production
-  caller and supplies both explicitly once armed.
+  `:snapshot_fn` has no implicit default here — this function raises
+  `ArgumentError` if it is missing from `opts`. Silently defaulting it would
+  let any caller (including a formatter invoked without real intent to
+  capture coverage) get a live coverage engine wired in just by omission.
+  `SpecLedEx.Coverage.Formatter` is the sole production caller and supplies
+  it explicitly once armed (dispatching to
+  `SpecLedEx.Coverage.Snapshot.take/2`).
   """
   @spec init(keyword(), keyword()) :: config()
   def init(opts, env \\ []) when is_list(opts) and is_list(env) do
     %{
       snapshot_fn: fetch_required!(opts, :snapshot_fn),
       modules_fn: opts[:modules_fn] || env[:modules_fn] || (&__MODULE__.cover_modules_safe/0),
-      snapshot_target: fetch_required!(opts, :snapshot_target),
       artifact_path: opts[:artifact_path] || env[:artifact_path] || @default_artifact_path
     }
   end

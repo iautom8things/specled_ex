@@ -47,12 +47,14 @@ summary: `mix spec.cover.test` task + ExUnit formatter that captures per-test li
 surface:
   - lib/specled_ex/coverage.ex
   - lib/specled_ex/coverage/formatter.ex
+  - lib/specled_ex/coverage/snapshot.ex
   - lib/specled_ex/coverage/store.ex
   - lib/specled_ex/coverage/aggregate.ex
   - lib/specled_ex/coverage/mfa_key.ex
   - lib/mix/tasks/spec.cover.test.ex
   - lib/mix/tasks/spec.cover.ingest.ex
   - test/specled_ex/coverage/formatter_test.exs
+  - test/specled_ex/coverage/snapshot_test.exs
   - test/specled_ex/coverage/store_test.exs
   - test/specled_ex/coverage/aggregate_test.exs
   - test/specled_ex/coverage/mfa_key_test.exs
@@ -64,6 +66,12 @@ realized_by:
     - "SpecLedEx.Coverage.install/1"
     - "SpecLedEx.Coverage.default_artifact_path/0"
     - "SpecLedEx.Coverage.Formatter"
+    - "SpecLedEx.Coverage.Snapshot.runtime_mode/0"
+    - "SpecLedEx.Coverage.Snapshot.scope_modules/0"
+    - "SpecLedEx.Coverage.Snapshot.take/2"
+    - "SpecLedEx.Coverage.Snapshot.native_snapshot/1"
+    - "SpecLedEx.Coverage.Snapshot.classic_snapshot/1"
+    - "SpecLedEx.Coverage.Snapshot.diff/2"
     - "SpecLedEx.Coverage.Store.write/2"
     - "SpecLedEx.Coverage.Store.read/1"
     - "SpecLedEx.Coverage.Store.build_envelope/1"
@@ -144,12 +152,12 @@ decisions:
   statement: >-
     SpecLedEx.Coverage.Formatter shall accept a `snapshot_fn` option,
     resolved only once armed (see
-    `specled.coverage_capture.formatter_arming_seam`). Production default
-    calls `:cover.analyse(target, :coverage, :line)` — explicit line-level
-    granularity. The bare arity-1 `:cover.analyse/1` form defaults to
-    function-level granularity and is never called: line-level is the only
-    granularity this formatter can honestly attribute to a source line.
-    Tests inject a stub via the arming seam.
+    `specled.coverage_capture.formatter_arming_seam`). `snapshot_fn` is
+    `([module()] -> %{module() => [{line, count}]})`: production default
+    dispatches to `SpecLedEx.Coverage.Snapshot.take(Snapshot.runtime_mode(),
+    modules)`, so it takes a whole-scope module snapshot rather than
+    decoding one raw `:cover.analyse/3` result per call. Tests inject a
+    stub via the arming seam.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.formatter_arming_seam
@@ -158,25 +166,94 @@ decisions:
     when `Application.get_env(:specled_ex, :spec_cover_run)` is unset or
     `false`, it prints one stderr notice and returns `{:ok, :disabled}`,
     after which every ExUnit event is handled as a no-op. Only `mix
-    spec.cover.test` arms it, via
+    spec.cover.test --per-test` arms it, via
     `Application.put_env(:specled_ex, :spec_cover_run, true)` set before
     installing the formatter. `init/1`'s own argument is never a trusted
     config source — ExUnit forwards its entire `:ex_unit` application
     environment as that argument to every formatter it starts. Once
-    armed, formatter config (`snapshot_fn`, `snapshot_target`,
-    `modules_fn`, `artifact_path`) is resolved only from the
-    `:specled_ex` arming value itself, never from `init/1`'s argument.
+    armed, formatter config (`snapshot_fn`, `modules_fn`, `artifact_path`)
+    is resolved only from the `:specled_ex` arming value itself, never
+    from `init/1`'s argument.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.formatter_no_fabrication
   statement: >-
-    The formatter shall never fabricate a record for a snapshot entry it
-    cannot attribute to a source line. A function-level (MFA-shaped)
-    entry, a snapshot with no line-level entries at all, and any snapshot
-    shape other than `{:result, ok_results, failed}` are never turned
-    into a placeholder or a `{file, 0}` record. Each such occurrence
-    increments a per-flush decode-error count, surfaced via one stderr
-    notice at `suite_finished` whenever that count is non-zero.
+    The formatter shall never fabricate a per-test line hit. On
+    `suite_started` it takes a baseline module snapshot; on each
+    `test_finished` it takes a new snapshot and diffs it against the
+    previous boundary snapshot via `SpecLedEx.Coverage.Snapshot.diff/2`
+    (`specled.coverage_capture.snapshot_diff_strictly_increased`) — only a
+    strictly-increased count becomes a hit for that test. An unchanged
+    count is simply "not hit this test," never a placeholder; a
+    strictly-decreased count is a `"counters externally harvested"`
+    diagnostic (`specled.coverage_capture.snapshot_negative_delta_diagnostic`),
+    never a fabricated negative hit. Diagnostics increment a per-run count,
+    surfaced via one stderr notice at `suite_finished` whenever that count
+    is non-zero, and mark the flushed v2 envelope `degraded: true`.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.snapshot_runtime_mode
+  statement: >-
+    SpecLedEx.Coverage.Snapshot.runtime_mode/0 shall return `:native` when
+    `:code.coverage_support/0` reports true, otherwise `:classic`, and
+    shall never hard-gate on a specific OTP release (maintainer decision 4:
+    recommend OTP >= 27.2 for the native path, never require it).
+    `native_snapshot/1` shall read each module's line counts via
+    `:code.get_coverage(:line, Module)` inside a per-module try/catch,
+    treating a module that is not loaded or was never cover-compiled
+    (`ArgumentError` from the BIF) as `[]` for that module rather than
+    aborting the snapshot. `classic_snapshot/1` shall read each module's
+    line counts via `:cover.analyse(Module, :calls, :line)` looped per
+    module in scope rather than one whole-table `:cover.analyse(:_, :calls,
+    :line)` call, normalizing both engines' output to the same `%{module()
+    => [{line, count}]}` shape.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.snapshot_diff_strictly_increased
+  statement: >-
+    SpecLedEx.Coverage.Snapshot.diff/2 shall return `{hits_by_module,
+    diagnostics}` from two module snapshots: a line is included in
+    `hits_by_module` only when its count strictly increased relative to
+    the previous snapshot (a module or line absent from the previous
+    snapshot defaults its baseline count to `0`); an unchanged count
+    contributes nothing.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.snapshot_negative_delta_diagnostic
+  statement: >-
+    SpecLedEx.Coverage.Snapshot.diff/2 shall never turn a strictly-decreased
+    count into a negative or garbage hit. Each such occurrence is recorded
+    as a `%{reason: :counters_externally_harvested, module:, line:, prev:,
+    curr:}` diagnostic instead — read-only invariant: this module never
+    calls `:cover.reset/0` or `:code.reset_coverage/1` itself, so a
+    decrease can only mean something else drained the shared counters
+    between two of this module's own snapshots.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.per_test_v2_envelope
+  statement: >-
+    On `suite_finished`, the formatter shall persist the `--per-test`
+    artifact as a v2 envelope (`mode: :per_test`) via
+    `SpecLedEx.Coverage.Store.write_v2/2`, whose `:payload` is the
+    unchanged v1-shaped record list (`%{test_id, file, lines_hit, tags,
+    test_pid}`) and whose `:files` is that payload's distinct, sorted file
+    set. The envelope's `:degraded` field shall be `true` when any
+    captured test's tags carried `async: true`, or when any
+    `snapshot_negative_delta_diagnostic` occurred during the run,
+    otherwise `false`. When the payload carries no records at all, the
+    formatter shall not write an artifact (mirroring
+    `Store.write_v2/2`'s empty-files refusal) and shall print one stderr
+    notice.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.cumulative_parity
+  statement: >-
+    Arming the `--per-test` formatter (either snapshot engine) shall never
+    change the coverage totals `mix test --cover` itself exports: decoding
+    the exported `.coverdata` from a plain `mix test --cover
+    --export-coverage <name>` run and from a `mix spec.cover.test
+    --per-test --export-coverage <name>` run of the same suite shall yield
+    identical per-module, per-line call counts.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.keyed_by_test_pid
@@ -296,13 +373,13 @@ decisions:
 ```yaml spec-scenarios
 - id: specled.coverage_capture.scenario.formatter_stub_snapshot
   given:
-    - "a formatter initialized with `snapshot_fn: stub_fn`"
-    - a simulated ExUnit `test_finished` event for test `"my_test"` from pid P
+    - "a formatter initialized with `snapshot_fn: stub_fn` (`[module()] -> %{module() => [{line, count}]}`)"
+    - "a `suite_started` event establishing the baseline, then a simulated ExUnit `test_finished` event for test `\"my_test\"` from pid P"
   when:
-    - the formatter handles the event
+    - the formatter handles the events
   then:
-    - stub_fn was called exactly once with the cover module set
-    - the per-test record under P contains the stub's return value and the test tags
+    - stub_fn was called once for the baseline and once for the test
+    - the per-test record under P contains the diffed, file-compacted hits and the test tags
   covers:
     - specled.coverage_capture.formatter_snapshot_fn_di
     - specled.coverage_capture.keyed_by_test_pid
@@ -318,14 +395,51 @@ decisions:
     - specled.coverage_capture.formatter_arming_seam
 - id: specled.coverage_capture.scenario.formatter_no_fabrication
   given:
-    - "a snapshot containing a function-level (MFA-shaped) entry, or one that is not a `{:result, _, _}` tuple at all"
+    - "a baseline snapshot and a test snapshot where one line's count is unchanged and another's has strictly decreased"
   when:
-    - the formatter flushes on `suite_finished`
+    - the formatter diffs the two snapshots for that test
   then:
-    - "no `{file, 0}` or placeholder record is written for that entry"
-    - "the occurrence is counted and surfaced as a decode error via stderr"
+    - "the unchanged line is not recorded as a hit (no placeholder)"
+    - "the decreased line is counted as a `counters_externally_harvested` diagnostic, surfaced via stderr at `suite_finished`, and marks the envelope `degraded: true` — never recorded as a negative hit"
   covers:
     - specled.coverage_capture.formatter_no_fabrication
+    - specled.coverage_capture.snapshot_negative_delta_diagnostic
+- id: specled.coverage_capture.scenario.snapshot_runtime_mode_dispatch
+  given:
+    - "the current runtime's `:code.coverage_support/0` value"
+  when:
+    - "`Snapshot.runtime_mode/0` is called"
+  then:
+    - "it returns `:native` when coverage_support is true, `:classic` otherwise, never raising regardless of OTP release"
+  covers:
+    - specled.coverage_capture.snapshot_runtime_mode
+- id: specled.coverage_capture.scenario.snapshot_diff_strictly_increased
+  given:
+    - "two module snapshots where one line's count increased, one is unchanged, and one is absent from the previous snapshot"
+  when:
+    - "`Snapshot.diff/2` runs over them"
+  then:
+    - "the increased and newly-present lines appear in `hits_by_module`; the unchanged line does not"
+  covers:
+    - specled.coverage_capture.snapshot_diff_strictly_increased
+- id: specled.coverage_capture.scenario.per_test_v2_envelope_degraded
+  given:
+    - "a `--per-test` run where one captured test's tags carried `async: true`"
+  when:
+    - "the formatter flushes on `suite_finished`"
+  then:
+    - "the written v2 envelope has `mode: :per_test`, a `:payload` of v1-shaped records, and `degraded: true`"
+  covers:
+    - specled.coverage_capture.per_test_v2_envelope
+- id: specled.coverage_capture.scenario.cumulative_parity_tripwire
+  given:
+    - "a child-BEAM fixture run once as plain `mix test --cover --export-coverage <a>` and once as `mix spec.cover.test --per-test --export-coverage <b>`"
+  when:
+    - "both exported `.coverdata` files are decoded via `:cover.import/1` + per-module `:cover.analyse/3`"
+  then:
+    - "the decoded per-module, per-line call counts are identical between the two runs"
+  covers:
+    - specled.coverage_capture.cumulative_parity
 - id: specled.coverage_capture.scenario.store_round_trip
   given:
     - "a list of Elixir records built via `Coverage.Store.build_records/1`"
@@ -496,6 +610,8 @@ decisions:
     - specled.coverage_capture.default_aggregate_run
     - specled.coverage_capture.default_aggregate_red_suite_passthrough
     - specled.coverage_capture.default_aggregate_empty_refusal
+    - specled.coverage_capture.per_test_v2_envelope
+    - specled.coverage_capture.cumulative_parity
 - kind: tagged_tests
   execute: true
   covers:
@@ -503,4 +619,10 @@ decisions:
     - specled.coverage_capture.aggregate_empty_coverage
     - specled.coverage_capture.aggregate_unmapped_degraded
     - specled.coverage_capture.mfa_key_round_trip
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.coverage_capture.snapshot_runtime_mode
+    - specled.coverage_capture.snapshot_diff_strictly_increased
+    - specled.coverage_capture.snapshot_negative_delta_diagnostic
 ```

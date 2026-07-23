@@ -8,6 +8,8 @@ Provide the user-facing Mix tasks that scaffold, guide, summarize, and strictly 
 
 The `spec.init` scaffold's local skill and README, and the `spec.prime` loop, describe the missing-ADR condition as a two-armed fork: an ADR for durable cross-cutting policy, otherwise a `Spec-Drift: branch_guard_missing_decision_update=info` trailer with a one-line reason.
 
+`mix spec.cover.test --per-test`'s child-BEAM preload list (see `specled.tasks.dep_runtime_bootstrap` below) also resident-loads `SpecLedEx.Coverage.Snapshot` — the native/classic per-test engine module owned by `specled.coverage_capture` — for the same reason it already preloads `Formatter`, `Store`, and `Coverage`: a fixture's own `app.config` rewrite would otherwise evict the parent's lazily-loaded ebin before the formatter's `suite_started` handler could reach it.
+
 ```yaml spec-meta
 id: specled.mix_tasks
 kind: workflow

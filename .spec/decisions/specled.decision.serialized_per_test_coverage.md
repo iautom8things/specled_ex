@@ -112,3 +112,76 @@ Decision:
 - Negative: any external tooling or custom `snapshot_fn` written against the
   old function-level fallback or the old implicit `Coverage.init/2` defaults
   needs updating — both now require explicit configuration.
+
+## Amendment (specled_-155.5): native/classic snapshot-diff engine, read-only invariant
+
+The formatter's `snapshot_fn` no longer wraps a single whole-table
+`:cover.analyse(target, :coverage, :line)` call. `SpecLedEx.Coverage.Snapshot`
+replaces it with two engines, dispatched at runtime by `runtime_mode/0`:
+
+- **native** — `runtime_mode/0` gates on `:code.coverage_support/0`.
+  `native_snapshot/1` reads `:code.get_coverage(:line, Module)` per module in
+  the run's scope (try/catch per module: a module not cover-compiled raises
+  `ArgumentError`, caught and treated as `[]` rather than aborting the
+  snapshot — the mitigation this decision relies on instead of a hard OTP
+  version gate).
+- **classic** — `classic_snapshot/1` loops `:cover.analyse(Module, :calls,
+  :line)` per module in scope (empirically ~6.5x cheaper than one
+  `:cover.analyse(:_, :calls, :line)` whole-table call over every module
+  `:cover` knows about, most of which are irrelevant to the run).
+
+Both are normalized to the same `%{module => [{line, count}]}` shape so
+`Snapshot.diff/2` runs identically over either engine's output. The
+formatter takes a baseline snapshot at `suite_started` and diffs each
+test's snapshot against the previous test's (the baseline for test 1);
+only strictly-increased counts become a hit for that test.
+
+**Read-only invariant (binding, carries the prior amendment's "never
+fabricate" rule forward into count-based territory):** this engine never
+calls `:cover.reset/0` or `:code.reset_coverage/1` — both zero the counters
+the wrapped `mix test --cover` report ultimately reads. This was verified
+empirically in-worktree on OTP 27.2 (erts-15.2) before freezing the
+decoder, per the epic's maintainer decision 4 (recommend OTP >= 27.2 for
+the native path; never hard-gate): `:code.get_coverage(:line, Module)` is a
+pure, idempotent read of a module's native line counters — repeated calls
+with nothing else touching `:cover` in between return byte-identical
+results — while `:cover.analyse/3` is not: it drains the same native
+counters as a side effect (confirmed: a native read immediately after an
+`analyse/3` call on the same module reads all zeros), then folds the
+drained delta into `:cover`'s own persistent, summing tally, so
+`analyse/3`'s *return value* stays correctly cumulative regardless of how
+many times anything has drained the underlying counters. Consequence: this
+formatter's own repeated native reads never perturb `mix test --cover`'s
+final report (a child-BEAM tripwire test diffs decoded `.coverdata` content
+with and without `--per-test` armed and requires them equal) — but if
+anything *else* calls `:cover.analyse/3` (or otherwise drains) between two
+of this formatter's own snapshots, the next one legitimately reads lower
+than the last cached value. `Snapshot.diff/2` treats a strictly-decreased
+count as a `"counters externally harvested"` diagnostic, never as a
+negative or garbage hit, and the formatter marks the run's v2 envelope
+`degraded: true` when this occurs (or when any captured test's tags
+carried `async: true`, per the async-contamination guard above).
+
+The `--per-test` artifact upgrades from the v1 bare record list to a v2
+envelope (`mode: :per_test`, `Store.write_v2/2`) whose `:payload` is that
+same v1-shaped record list (unchanged schema — downstream consumers that
+already read `:test_id`/`:file`/`:lines_hit`/`:tags`/`:test_pid` are
+unaffected), with `:files` derived from the payload's distinct file set
+and `:degraded` carrying the async/diagnostic signal above.
+
+### Consequences (this amendment)
+
+- Positive: per-test capture on a native-coverage runtime no longer pays a
+  whole-table `:cover` coordinator round trip per test; classic mode
+  (older OTP, or a module the native path can't attribute) still avoids
+  the `:_` wildcard scan.
+- Positive: the "externally harvested" diagnostic makes a class of
+  interference (something else draining `:cover`'s counters mid-run)
+  visible and degrades gracefully instead of either crashing or silently
+  recording a wrong (negative) delta.
+- Negative: this engine now assumes nothing else in the process calls
+  `:cover.analyse/3` (or an equivalent drain) during a `--per-test` run
+  without expecting a possible diagnostic; the aggregate-mode ingest path
+  (`SpecLedEx.Coverage.Aggregate.ingest/2`) only ever runs after the suite
+  finishes, so the two do not interleave in `mix spec.cover.test`'s own
+  default vs. `--per-test` flows.

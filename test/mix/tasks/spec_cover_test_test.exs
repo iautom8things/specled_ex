@@ -11,7 +11,9 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
                "specled.coverage_capture.default_aggregate_empty_refusal",
                "specled.coverage_capture.serialized_run",
                "specled.coverage_capture.per_test_async_contamination",
-               "specled.coverage_capture.per_test_allow_async_degrade"
+               "specled.coverage_capture.per_test_allow_async_degrade",
+               "specled.coverage_capture.per_test_v2_envelope",
+               "specled.coverage_capture.cumulative_parity"
              ]
 
   alias SpecLedEx.Coverage.Store
@@ -110,7 +112,12 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
       artifact = Path.join(root, ".spec/_coverage/per_test.coverdata")
       assert File.exists?(artifact), "expected #{artifact} to exist. Output:\n#{output}"
 
-      records = Store.read(artifact)
+      assert {:ok, envelope} = Store.read_v2(artifact)
+      assert envelope.mode == :per_test
+      refute envelope.degraded
+      assert envelope.files != [], "expected at least one covered file"
+
+      records = envelope.payload
       assert is_list(records)
       assert records != [], "expected at least one per-test record"
 
@@ -156,7 +163,86 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
 
       artifact = Path.join(root, ".spec/_coverage/per_test.coverdata")
       assert File.exists?(artifact), "expected the degraded run to still write an artifact"
+
+      assert {:ok, envelope} = Store.read_v2(artifact)
+      assert envelope.mode == :per_test
+
+      assert envelope.degraded,
+             "would fail if the formatter didn't flag the async-contaminated test's records, " <>
+               "leaving the v2 envelope indistinguishable from a clean --per-test run"
     end
+  end
+
+  describe "cumulative-parity tripwire" do
+    @tag :integration
+    test "exported mix test --cover totals are byte-identical with and without --per-test armed" do
+      root = scaffold_fixture(failing?: false)
+      on_exit(fn -> File.rm_rf!(root) end)
+
+      {plain_output, plain_status} =
+        run_fixture_mix_test(root, ["test", "--cover", "--export-coverage", "parity_plain"])
+
+      assert plain_status == 0,
+             "expected plain mix test --cover to succeed. Output:\n#{plain_output}"
+
+      {per_test_output, per_test_status} =
+        run_fixture_mix_test(root, [
+          "spec.cover.test",
+          "--per-test",
+          "--export-coverage",
+          "parity_per_test"
+        ])
+
+      assert per_test_status == 0,
+             "expected mix spec.cover.test --per-test to succeed. Output:\n#{per_test_output}"
+
+      plain_coverdata = Path.join([root, "cover", "parity_plain.coverdata"])
+      per_test_coverdata = Path.join([root, "cover", "parity_per_test.coverdata"])
+
+      assert File.exists?(plain_coverdata)
+      assert File.exists?(per_test_coverdata)
+
+      # `:cover.export/1`'s own on-disk format embeds run-specific metadata
+      # (observed: two exports of byte-identical coverage still differ at
+      # the raw file level) so the meaningful comparison is the decoded
+      # per-module, per-line call-count totals `:cover.import/1` +
+      # `:cover.analyse/3` recover from each file -- exactly what `mix
+      # test.coverage` and `SpecLedEx.Coverage.Aggregate.ingest/2` read.
+      assert decode_coverdata(plain_coverdata) == decode_coverdata(per_test_coverdata),
+             "would fail if arming the --per-test formatter (native or classic snapshot " <>
+               "reads layered on top of the same :cover-instrumented modules) perturbed the " <>
+               "cumulative totals `mix test --cover` exports on its own"
+    end
+  end
+
+  # Decodes a `.coverdata` file's per-module, per-line call counts in
+  # isolation (fresh `:cover.stop/0` + `:cover.start/0` + `:cover.import/1`),
+  # for comparing two exports' actual coverage content rather than their
+  # raw bytes. Mirrors `SpecLedEx.Coverage.Aggregate`'s
+  # `:cover.modules/0` + `:cover.imported_modules/0` union: imported-only
+  # data (no local cover-compile in this process) only shows up under
+  # `imported_modules/0`.
+  defp decode_coverdata(path) do
+    Mix.ensure_application!(:tools)
+    _ = apply(:cover, :stop, [])
+    {:ok, _pid} = apply(:cover, :start, [])
+    :ok = apply(:cover, :import, [String.to_charlist(path)])
+
+    modules =
+      (apply(:cover, :modules, []) ++ apply(:cover, :imported_modules, [])) |> Enum.uniq()
+
+    result =
+      modules
+      |> Enum.flat_map(fn mod ->
+        case apply(:cover, :analyse, [mod, :calls, :line]) do
+          {:ok, entries} -> entries
+          _ -> []
+        end
+      end)
+      |> Enum.sort()
+
+    apply(:cover, :stop, [])
+    result
   end
 
   defp scaffold_fixture(opts \\ []) do

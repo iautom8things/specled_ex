@@ -2,12 +2,34 @@ defmodule SpecLedEx.Coverage.Formatter do
   @moduledoc """
   ExUnit formatter that captures per-test cover snapshots.
 
-  On `test_finished`, calls the injected `snapshot_fn` exactly once and writes
-  `{snapshot, tags, test_id}` into an anonymous ETS table keyed by `test_pid`.
-  On `suite_finished`, derives per-(test, file) records from the ETS state and
-  writes them via `SpecLedEx.Coverage.Store.write/2` to
-  `.spec/_coverage/per_test.coverdata` (overridable via the `:artifact_path`
-  init option).
+  On `suite_started`, takes a baseline module snapshot via
+  `SpecLedEx.Coverage.Snapshot` (native or classic, per
+  `Snapshot.runtime_mode/0`) and memoizes a module → source-file map for
+  the run's module scope (each computed exactly once for the whole run —
+  no per-test/per-flush `module_info/1` storm). On `test_finished`, takes
+  a new snapshot over the same scope, diffs it against the previous
+  boundary snapshot (the baseline for test 1, the prior test's snapshot
+  thereafter) via `Snapshot.diff/2`, compacts the resulting hits to
+  `[{file, sorted_lines}]` at cast time, and writes that compacted row
+  into an anonymous ETS table keyed by `test_pid`. On `suite_finished`,
+  derives per-test v1-shaped records (`%{test_id, file, lines_hit, tags,
+  test_pid}`) from the ETS state and writes them, wrapped in a v2
+  `:per_test` envelope, via `SpecLedEx.Coverage.Store.write_v2/2` to
+  `.spec/_coverage/per_test.coverdata` (overridable via the
+  `:artifact_path` init option). No raw `:cover`/native snapshot blob is
+  ever retained in the ETS table — only the compacted `{file, lines}`
+  pairs.
+
+  The envelope is marked `degraded: true` when either of two things is
+  observed during the run: a test's tags carried `async: true` (ExUnit
+  sets this per test from the enclosing module's real async status,
+  independent of `--per-test`'s forced `ExUnit.configure(async: false)` —
+  see `specled.decision.serialized_per_test_coverage`; a module that
+  declares `async: true` genuinely runs concurrently regardless), or
+  `Snapshot.diff/2` reported a "counters externally harvested" diagnostic
+  (something other than this formatter drained the shared counters
+  between two of its own snapshots). Either condition means per-test
+  attribution for the affected window cannot be trusted.
 
   ## Disarmed By Default
 
@@ -17,7 +39,7 @@ defmodule SpecLedEx.Coverage.Formatter do
   `Application.get_env(:specled_ex, :spec_cover_run)`; when that is unset or
   `false`, the formatter prints one notice to stderr and becomes a permanent
   no-op (`{:ok, :disabled}`, every event handled as `{:noreply, :disabled}`).
-  Only `mix spec.cover.test` arms it, via
+  Only `mix spec.cover.test --per-test` arms it, via
   `Application.put_env(:specled_ex, :spec_cover_run, true)` before installing
   the formatter.
 
@@ -30,33 +52,25 @@ defmodule SpecLedEx.Coverage.Formatter do
   itself:
 
     * `Application.put_env(:specled_ex, :spec_cover_run, true)` — production
-      config (`:cover.analyse(target, :coverage, :line)`, `snapshot_target:
-      :_`), as `mix spec.cover.test` sets it.
+      config (`snapshot_fn` dispatches to `Snapshot.take(Snapshot.runtime_mode(),
+      modules)`), as `mix spec.cover.test --per-test` sets it.
     * `Application.put_env(:specled_ex, :spec_cover_run, snapshot_fn: ..., ...)`
       — a keyword list is honored as an explicit config override, merged over
       the production defaults. Tests use this seam to inject a `snapshot_fn`
-      stub; nothing outside the `:specled_ex` namespace can reach the
-      formatter's config.
+      stub (`([module()] -> %{module() => [{line, count}]})`); nothing
+      outside the `:specled_ex` namespace can reach the formatter's config.
 
   ## Init Options
 
   None are read from `init/1`'s argument — see "Disarmed By Default" above.
   The resolved config carries:
 
-    * `:snapshot_fn` — `(target -> snapshot)`; production default calls
-      `:cover.analyse(target, :coverage, :line)` — explicit line-level
-      granularity. The bare arity-1 `:cover.analyse/1` defaults to
-      *function*-level granularity, which is what the deleted fabrication
-      clause used to paper over by stamping every function-level entry as
-      line 0; this formatter never calls it.
+    * `:snapshot_fn` — `([module()] -> %{module() => [{line, count}]})`;
+      production default is `Snapshot.take(Snapshot.runtime_mode(), modules)`
+      (see `SpecLedEx.Coverage.Snapshot` for the native/classic engines).
     * `:modules_fn` — `(-> [module()])`; default
-      `&SpecLedEx.Coverage.cover_modules_safe/0`. Computes the cover module
-      set passed to `snapshot_fn` (when `:snapshot_target` is left at its
-      default `:_`, the modules list is what gets passed).
-    * `:snapshot_target` — what to pass to `snapshot_fn`. When `:modules`,
-      the result of `modules_fn.()` is passed; otherwise the literal value
-      is passed (production default `:_`, matching `:cover.analyse/1`'s "all
-      modules" placeholder).
+      `&SpecLedEx.Coverage.cover_modules_safe/0`. Computes the module scope
+      snapshots are taken over; called once, at `suite_started`.
     * `:artifact_path` — destination for the on-suite-finish flush.
 
   ## Test PID Capture
@@ -76,7 +90,7 @@ defmodule SpecLedEx.Coverage.Formatter do
   use GenServer
 
   alias SpecLedEx.Coverage
-  alias SpecLedEx.Coverage.Store
+  alias SpecLedEx.Coverage.{Snapshot, Store}
 
   @arming_app :specled_ex
   @arming_key :spec_cover_run
@@ -94,7 +108,7 @@ defmodule SpecLedEx.Coverage.Formatter do
       seam_opts ->
         config = Coverage.init(Keyword.merge(production_defaults(), seam_opts))
         state = Coverage.install(config)
-        {:ok, state}
+        {:ok, run_init(state)}
     end
   end
 
@@ -107,14 +121,28 @@ defmodule SpecLedEx.Coverage.Formatter do
   end
 
   defp production_defaults do
-    [snapshot_fn: &default_snapshot_fn/1, snapshot_target: :_]
+    [snapshot_fn: &default_snapshot_fn/1]
   end
 
-  defp default_snapshot_fn(target), do: apply(:cover, :analyse, [target, :coverage, :line])
+  defp default_snapshot_fn(modules), do: Snapshot.take(Snapshot.runtime_mode(), modules)
+
+  # Per-run bookkeeping layered on top of the static config
+  # `Coverage.install/1` resolves. `:modules` and `:file_map` are populated
+  # once, at `suite_started` (see `handle_cast/2` below), and never
+  # recomputed per test.
+  defp run_init(state) do
+    Map.merge(state, %{
+      modules: nil,
+      file_map: %{},
+      last_snapshot: %{},
+      diagnostic_count: 0,
+      degraded_async?: false
+    })
+  end
 
   defp disarmed_notice do
     "[SpecLedEx.Coverage.Formatter] disabled: per-test coverage capture requires " <>
-      "`mix spec.cover.test` (it arms via " <>
+      "`mix spec.cover.test --per-test` (it arms via " <>
       "Application.put_env(:specled_ex, :spec_cover_run, true)). Wiring this " <>
       "formatter directly into ExUnit.start/1 without that task is a no-op."
   end
@@ -123,9 +151,22 @@ defmodule SpecLedEx.Coverage.Formatter do
   def handle_cast(_event, :disabled), do: {:noreply, :disabled}
 
   @impl GenServer
-  def handle_cast({:test_finished, %ExUnit.Test{} = test}, state) do
-    record_test(test, state)
+  def handle_cast({:suite_started, _opts}, state) do
+    modules = state.modules_fn.()
+    baseline = state.snapshot_fn.(modules)
+
+    state =
+      state
+      |> Map.put(:modules, modules)
+      |> Map.put(:file_map, build_file_map(modules))
+      |> Map.put(:last_snapshot, baseline)
+
     {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_cast({:test_finished, %ExUnit.Test{} = test}, state) do
+    {:noreply, record_test(test, state)}
   end
 
   @impl GenServer
@@ -137,108 +178,70 @@ defmodule SpecLedEx.Coverage.Formatter do
   @impl GenServer
   def handle_cast(_event, state), do: {:noreply, state}
 
-  defp record_test(%ExUnit.Test{} = test, state) do
-    target = snapshot_target(state)
-    snapshot = state.snapshot_fn.(target)
-    record = {snapshot, test.tags, test_id(test)}
-    :ets.insert(state.table, {extract_key(test), record})
+  # A `test_finished` event arriving with no prior `suite_started` (should
+  # not happen under real ExUnit, but is a cheap safety net) resolves
+  # modules/baseline lazily rather than crashing the formatter.
+  defp record_test(%ExUnit.Test{} = test, %{modules: nil} = state) do
+    record_test(test, %{
+      state
+      | modules: state.modules_fn.(),
+        file_map: build_file_map(state.modules_fn.()),
+        last_snapshot: %{}
+    })
   end
 
-  defp snapshot_target(%{snapshot_target: :modules, modules_fn: mods}), do: mods.()
-  defp snapshot_target(%{snapshot_target: target}), do: target
+  defp record_test(%ExUnit.Test{} = test, state) do
+    current = state.snapshot_fn.(state.modules)
+    {hits_by_module, diagnostics} = Snapshot.diff(state.last_snapshot, current)
+
+    files = compact_hits_to_files(hits_by_module, state.file_map)
+    async? = Map.get(test.tags, :async, false) == true
+
+    row = %{
+      test_id: test_id(test),
+      tags: test.tags,
+      test_pid: on_disk_pid(test.tags),
+      files: files
+    }
+
+    :ets.insert(state.table, {extract_key(test), row})
+
+    %{
+      state
+      | last_snapshot: current,
+        diagnostic_count: state.diagnostic_count + length(diagnostics),
+        degraded_async?: state.degraded_async? or async?
+    }
+  end
+
+  # Builds the module -> source-file map once, up front, so per-test
+  # attribution never re-derives it.
+  defp build_file_map(modules) do
+    Map.new(modules, fn mod -> {mod, source_file(mod)} end)
+  end
+
+  # Compacts `%{module => [line]}` hits into `[{file, sorted_lines}]`,
+  # merging lines from different modules that map to the same file and
+  # dropping modules this run couldn't attribute to a source file.
+  defp compact_hits_to_files(hits_by_module, file_map) do
+    hits_by_module
+    |> Enum.reduce(%{}, fn {mod, lines}, acc ->
+      case Map.get(file_map, mod) do
+        nil -> acc
+        file -> Map.update(acc, file, lines, &(&1 ++ lines))
+      end
+    end)
+    |> Enum.map(fn {file, lines} -> {file, lines |> Enum.uniq() |> Enum.sort()} end)
+    |> Enum.sort()
+  end
 
   defp extract_key(%ExUnit.Test{tags: %{test_pid: pid}}) when is_pid(pid), do: pid
   defp extract_key(%ExUnit.Test{module: mod, name: name}), do: {mod, name}
 
   defp test_id(%ExUnit.Test{module: mod, name: name}), do: "#{inspect(mod)}.#{name}"
 
-  defp flush(%{table: table, artifact_path: path}) do
-    {record_lists, error_counts} =
-      table
-      |> :ets.tab2list()
-      |> Enum.map(&records_for_test/1)
-      |> Enum.unzip()
-
-    decode_errors = Enum.sum(error_counts)
-
-    if decode_errors > 0 do
-      IO.puts(:stderr, decode_error_notice(decode_errors))
-    end
-
-    Store.write(List.flatten(record_lists), path)
-  end
-
-  defp decode_error_notice(count) do
-    "[SpecLedEx.Coverage.Formatter] #{count} snapshot decode error(s): unrecognized or " <>
-      "function-level (non-line) :cover snapshot entries were skipped, never fabricated " <>
-      "into records."
-  end
-
-  # Returns `{records, decode_error_count}` for one test's accumulated
-  # snapshot. A snapshot that decodes to no line-level entries at all (e.g.
-  # `{:result, [], []}` — genuinely nothing covered) yields zero records: no
-  # placeholder row is fabricated for it.
-  defp records_for_test({_key, {snapshot, tags, test_id}}) do
-    pid = on_disk_pid(tags)
-    base = %{test_id: test_id, tags: tags, test_pid: pid}
-    {per_file, decode_errors} = group_by_file(snapshot)
-
-    records =
-      Enum.map(per_file, fn {file, lines} ->
-        Map.merge(base, %{file: file, lines_hit: lines})
-      end)
-
-    {records, decode_errors}
-  end
-
   defp on_disk_pid(%{test_pid: pid}) when is_pid(pid), do: pid
   defp on_disk_pid(_), do: self()
-
-  defp group_by_file({:result, ok_results, _failed}) when is_list(ok_results) do
-    {file_lines, decode_errors} =
-      Enum.reduce(ok_results, {[], 0}, fn entry, {acc, errors} ->
-        case snapshot_entry_to_file_line(entry) do
-          {:ok, file_line} -> {[file_line | acc], errors}
-          :skip -> {acc, errors}
-          :decode_error -> {acc, errors + 1}
-        end
-      end)
-
-    per_file =
-      file_lines
-      |> Enum.reverse()
-      |> Enum.group_by(fn {file, _line} -> file end, fn {_file, line} -> line end)
-      |> Enum.map(fn {file, lines} -> {file, lines |> Enum.uniq() |> Enum.sort()} end)
-
-    {per_file, decode_errors}
-  end
-
-  # Any snapshot shape besides `{:result, ok_results, failed}` is unrecognized
-  # (e.g. `{:error, :not_cover_compiled}`, a stub returning garbage). It is
-  # counted as a decode error and surfaced, never laundered into `[]` as if
-  # it meant "nothing covered".
-  defp group_by_file(_unrecognized_snapshot), do: {[], 1}
-
-  # Line-level entry: the only shape that yields a real record.
-  defp snapshot_entry_to_file_line({{module, line}, _calls})
-       when is_atom(module) and is_integer(line) do
-    case source_file(module) do
-      nil -> :skip
-      file -> {:ok, {file, line}}
-    end
-  end
-
-  # Function-level (MFA) entry: `:cover.analyse/1` in `:calls`/`:function`
-  # mode returns these instead of line-level tuples. There is no line number
-  # to attribute, so this is never turned into a fabricated `{file, 0}`
-  # record — it is counted as a decode error instead. This also means a
-  # never-executed function (call count 0) never appears as a fake line hit.
-  defp snapshot_entry_to_file_line({{module, _fun, _arity}, _cov})
-       when is_atom(module) do
-    :decode_error
-  end
-
-  defp snapshot_entry_to_file_line(_unrecognized_entry), do: :decode_error
 
   defp source_file(module) do
     case Code.ensure_loaded(module) do
@@ -254,5 +257,61 @@ defmodule SpecLedEx.Coverage.Formatter do
     end
   rescue
     _ -> nil
+  end
+
+  defp flush(%{table: table, artifact_path: path} = state) do
+    records =
+      table
+      |> :ets.tab2list()
+      |> Enum.flat_map(&records_for_row/1)
+
+    if state.diagnostic_count > 0 do
+      IO.puts(:stderr, diagnostic_notice(state.diagnostic_count))
+    end
+
+    degraded? = state.degraded_async? or state.diagnostic_count > 0
+
+    envelope =
+      Store.build_envelope(%{
+        mode: :per_test,
+        source: path,
+        files: records |> Enum.map(& &1.file) |> Enum.uniq() |> Enum.sort(),
+        mfas: [],
+        payload: records,
+        degraded: degraded?
+      })
+
+    case Store.write_v2(envelope, path) do
+      :ok ->
+        :ok
+
+      {:error, :empty_files} ->
+        IO.puts(:stderr, empty_run_notice())
+    end
+  end
+
+  defp records_for_row({_key, %{files: files} = row}) do
+    Enum.map(files, fn {file, lines} ->
+      %{
+        test_id: row.test_id,
+        file: file,
+        lines_hit: lines,
+        tags: row.tags,
+        test_pid: row.test_pid
+      }
+    end)
+  end
+
+  defp diagnostic_notice(count) do
+    "[SpecLedEx.Coverage.Formatter] #{count} counters-externally-harvested " <>
+      "diagnostic(s): a snapshot read a lower count than the previous boundary " <>
+      "snapshot for the same line, meaning something other than this formatter " <>
+      "drained the shared coverage counters mid-run. The artifact is marked " <>
+      "degraded rather than treating the decrease as a real (negative) delta."
+  end
+
+  defp empty_run_notice do
+    "[SpecLedEx.Coverage.Formatter] no per-test coverage hits were captured " <>
+      "this run; no artifact was written."
   end
 end

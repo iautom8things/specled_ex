@@ -8,6 +8,8 @@ Catch code, docs, and test changes that move ahead of current-truth specs or ski
 
 Realization findings enter the guard through `SpecLedEx.Realization.Orchestrator` — that is why orchestrator code and tests sit in this subject's surface. The orchestrator's silent-seed pass and clean-run refresh share a single api_boundary hasher (`Orchestrator.api_boundary_hashes/2`), so committed baselines in `.spec/realization_hashes.json` — including bare-module entries — cannot oscillate between the two passes. The guard depends on those baselines being stable: its file-touch findings yield to attestations derived from them (`specled.decision.file_touch_yields_to_realization`).
 
+`lib/specled_ex/coverage.ex` is bound here as a bare-module `implementation` entry (`"SpecLedEx.Coverage"`) because the guard's own impacted-subject mapping (`subject_file_map/2`, `covered_files/2`, `subject_ids_for_path/2`) lives in that file, not because it implements any coverage-capture behavior itself — `specled.coverage_capture` owns the rest of the module (`init/2`, `install/1`, `cover_modules_safe/0`) for the unrelated per-test/aggregate coverage engine. A bare-module entry hashes the whole file, so an edit anywhere in `coverage.ex` (for example `init/2` narrowing its required options when `specled.coverage_capture`'s per-test engine changed) legitimately drifts this subject's realization hash too, even though the guard's own subject-mapping functions were untouched.
+
 ```yaml spec-meta
 id: specled.branch_guard
 kind: workflow
