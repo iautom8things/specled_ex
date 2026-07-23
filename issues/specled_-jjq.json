@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T19:58:04Z",
+  "description": "specled_-155.7 (spec.review + spec.triangle rendering of the v2 coverage envelope) shipped before specled_-155.5 (native/classic per-test snapshot-diff engine). Its :per_test clause of SpecLedEx.Review.CoverageClosure.v2_by_requirement/5 (lib/specled_ex/review/coverage_closure.ex) computes per-requirement MFA coverage via a file-level proxy: it calls an MFA \"covered\" when its source file was reached by some test, rather than reading real per-test MFA-level data. The code comment there says this is temporary \"until T5's per-test lane rebuild\" lands.\\n\\nT5 (specled_-155.5) has since landed (native/classic snapshot-diff engine, v2 :per_test envelopes with compacted {file, lines} hits per test) but coverage_closure.ex was never updated to consume it at MFA granularity — the review artifact's per_test closure percentage remains an approximate file-level proxy today, not the real per-test line/MFA data the engine now captures.\\n\\nAsk: wire CoverageClosure's :per_test clause to use the per-test engine's real line-hit data (via a closure-file -\u003e line-range -\u003e MFA mapping, or an equivalent MFA-level per-test aggregation) so the \"file-level proxy\" qualifier in the Coverage tab (lib/specled_ex/review/html.ex render_proxy_note/1) can eventually be retired, and closure_coverage_pct in per_test mode reflects genuine per-test MFA reach rather than file co-location.\\n\\nNote independently: per-test attribution itself is race-bounded regardless of this fix (specled_-cpw, ExUnit test_finished cast-timing race, ~1-in-3 measured on a trivial fixture) — this ticket only closes the file-level-proxy wiring gap, not the underlying attribution race.\\n\\nDiscovered during specled_-155.8 (spec/ADR consolidation) while reconciling the review artifact's per-test attribution wording to honest language.",
+  "id": "specled_-jjq",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Wire per_test review closure to real per-test MFA coverage (retire file-level proxy)",
+  "type": "bug",
+  "updated_at": "2026-07-23T19:58:04Z"
+}
