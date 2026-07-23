@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T14:41:58Z",
+  "description": "Advances: specled.spec_review\n\nFollow-up from critical-review F1 (Medium, test gap) on specled_-3q1 (merged as 0.3.3, PR #8). The must requirement specled.spec_review.gh_pages_privilege_separation is backed only by a workflow_file verification, which in SpecLedEx asserts only that the target file exists and contains the cover-id string (lib/specled_ex/verifier.ex: existence check ~L706, String.contains? cover-id ~L779). It asserts nothing about the YAML job structure, so mix spec.check stays green even if a future edit re-merges the render/deploy jobs, promotes top-level permissions to write, or drops the deploy ref pin. The invariant holds today; only its guard is weak. Proposed fix: add a command-tier verification that parses priv/spec_init/workflows/spec_review.yml.eex and asserts the two-job split (render has no write scope; deploy holds the write scopes, needs render, runs no PR code; top-level permissions read-only).",
+  "id": "specled_-vbo",
+  "labels": [],
+  "priority": 3,
+  "status": "open",
+  "title": "Command-tier verification for spec_review privilege-split (workflow_file only checks file presence)",
+  "type": "task",
+  "updated_at": "2026-07-23T14:41:58Z"
+}
