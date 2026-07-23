@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.3.1 — 2026-07-23
+
+- Bare-module `api_boundary` entries no longer oscillate out of
+  `.spec/realization_hashes.json`: the clean-run refresh recomputes their
+  head-union hashes instead of skipping them, and the silent-seed pass and
+  flat-tier refresh now share a single hasher
+  (`Orchestrator.api_boundary_hashes/2`) so seed/refresh parity holds by
+  construction. The shared hasher is pinned by a direct unit test (verified
+  to fail if bare modules are skipped again) and a two-run stability test
+  asserting the committed baseline stays byte-identical across consecutive
+  clean runs. (specled_-rot)
+- Post-review honesty pass on the co-change specs: reverted two
+  guard-appeasing clauses padded onto `must` requirements
+  (`specled.branch_guard.subject_cochange`,
+  `specled.implementation_tier.closure_walks_tracer_edges`) and recorded the
+  real current truth as Intent prose instead — the branch guard's dependence
+  on stable realization baselines via the shared hasher, and the
+  implementation tier's exclusion from the flat-tier refresh. Follow-up
+  `specled_-oyg` tracks extending `realized_by` attestation coverage so
+  internals-only changes stop demanding spec co-change ceremony.
+  (specled_-rot)
+
 ## 0.3.0 — 2026-07-23
 
 - The missing-ADR condition is now advised as a fork, not an ADR mandate.
