@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T01:23:11Z",
+  "description": "Advances: specled.spec_review — critical-review F2 (Medium): the scaffolded workflow builds untrusted PR code while holding contents:write/pull-requests:write in the same job that pushes gh-pages. Split render (read-only, untrusted code) from deploy/comment (write token, no PR code execution) via artifact handoff between jobs. Evidence: vault code_review/critical/specled_ex/2026-07-22/specled_-123-bootstrap-gaps/20260722-203631-security.md M1.",
+  "id": "specled_-3q1",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Harden spec_review.yml.eex: split untrusted-PR build from write-scoped deploy job",
+  "type": "task",
+  "updated_at": "2026-07-23T01:23:11Z"
+}
