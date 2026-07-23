@@ -21,7 +21,8 @@ defmodule SpecLedEx.Coverage.SnapshotTest do
 
   describe "runtime_mode/0" do
     test "reflects :code.coverage_support/0" do
-      assert Snapshot.runtime_mode() == if(:code.coverage_support(), do: :native, else: :classic)
+      assert Snapshot.runtime_mode() ==
+               if(native_coverage_supported?(), do: :native, else: :classic)
     end
   end
 
@@ -35,7 +36,7 @@ defmodule SpecLedEx.Coverage.SnapshotTest do
     @describetag :integration
 
     test "reads real line counts for a cover-compiled module via :code.get_coverage(:line, _)" do
-      unless :code.coverage_support() do
+      unless native_coverage_supported?() do
         # decision 4: never hard-gate. On a runtime without native support
         # this scenario simply cannot be exercised; classic_snapshot/1
         # below covers the fallback engine instead.
@@ -62,7 +63,7 @@ defmodule SpecLedEx.Coverage.SnapshotTest do
     end
 
     test "repeated reads with nothing else touching :cover are idempotent (no drain side effect)" do
-      unless :code.coverage_support() do
+      unless native_coverage_supported?() do
         :ok
       else
         mod = with_cover_compiled_module()
@@ -164,7 +165,7 @@ defmodule SpecLedEx.Coverage.SnapshotTest do
       hit_lines_classic =
         classic |> Enum.filter(fn {_l, c} -> c > 0 end) |> Enum.map(&elem(&1, 0))
 
-      if :code.coverage_support() do
+      if native_coverage_supported?() do
         assert Enum.sort(hit_lines_native) == Enum.sort(hit_lines_classic)
       end
     end
@@ -223,5 +224,13 @@ defmodule SpecLedEx.Coverage.SnapshotTest do
     on_exit(fn -> File.rm_rf(tmp_dir) end)
 
     mod_name
+  end
+
+  # `:code.coverage_support/0` only exists on OTP >= 27; calling it raw is an
+  # UndefinedFunctionError on the classic-fallback CI leg (OTP 26). Mirror the
+  # production guard (`Snapshot.coverage_support?/0`) without rescuing, so an
+  # unexpected raise on a modern runtime still fails loudly.
+  defp native_coverage_supported? do
+    function_exported?(:code, :coverage_support, 0) and :code.coverage_support()
   end
 end
