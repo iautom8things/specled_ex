@@ -215,34 +215,48 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
     end
   end
 
-  # Decodes a `.coverdata` file's per-module, per-line call counts in
-  # isolation (fresh `:cover.stop/0` + `:cover.start/0` + `:cover.import/1`),
-  # for comparing two exports' actual coverage content rather than their
-  # raw bytes. Mirrors `SpecLedEx.Coverage.Aggregate`'s
-  # `:cover.modules/0` + `:cover.imported_modules/0` union: imported-only
-  # data (no local cover-compile in this process) only shows up under
-  # `imported_modules/0`.
-  defp decode_coverdata(path) do
-    Mix.ensure_application!(:tools)
-    _ = apply(:cover, :stop, [])
-    {:ok, _pid} = apply(:cover, :start, [])
-    :ok = apply(:cover, :import, [String.to_charlist(path)])
+  # Decodes a `.coverdata` file's per-module, per-line call counts in a
+  # child BEAM (fresh `:cover` server + `:cover.import/1`), for comparing
+  # two exports' actual coverage content rather than their raw bytes.
+  # Runs out-of-process because a host-BEAM `:cover.stop/0` tears down the
+  # coverage coordinator an outer `mix test --cover` run of this very suite
+  # depends on — the same quarantine discipline as `run_fixture_mix_test/2`.
+  # Mirrors `SpecLedEx.Coverage.Aggregate`'s `:cover.modules/0` +
+  # `:cover.imported_modules/0` union: imported-only data (no local
+  # cover-compile in that process) only shows up under `imported_modules/0`.
+  @decode_begin "DECODE_COVERDATA_BEGIN"
+  @decode_end "DECODE_COVERDATA_END"
 
-    modules =
-      (apply(:cover, :modules, []) ++ apply(:cover, :imported_modules, [])) |> Enum.uniq()
+  defp decode_coverdata(path) do
+    script = """
+    [path] = System.argv()
+    {:ok, _pid} = :cover.start()
+    :ok = :cover.import(String.to_charlist(path))
 
     result =
-      modules
+      (:cover.modules() ++ :cover.imported_modules())
+      |> Enum.uniq()
       |> Enum.flat_map(fn mod ->
-        case apply(:cover, :analyse, [mod, :calls, :line]) do
+        case :cover.analyse(mod, :calls, :line) do
           {:ok, entries} -> entries
           _ -> []
         end
       end)
       |> Enum.sort()
 
-    apply(:cover, :stop, [])
-    result
+    encoded = result |> :erlang.term_to_binary() |> Base.encode64()
+    IO.write(["#{@decode_begin}", encoded, "#{@decode_end}"])
+    """
+
+    {output, status} = System.cmd("elixir", ["-e", script, path], stderr_to_stdout: true)
+
+    assert status == 0,
+           "expected child-BEAM coverdata decode of #{path} to exit 0, got #{status}.\nOutput:\n#{output}"
+
+    [_before, rest] = String.split(output, @decode_begin, parts: 2)
+    [encoded, _after] = String.split(rest, @decode_end, parts: 2)
+
+    encoded |> Base.decode64!() |> :erlang.binary_to_term()
   end
 
   defp scaffold_fixture(opts \\ []) do

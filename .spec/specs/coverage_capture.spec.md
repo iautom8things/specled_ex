@@ -463,7 +463,7 @@ decisions:
   given:
     - "a child-BEAM fixture run once as plain `mix test --cover --export-coverage <a>` and once as `mix spec.cover.test --per-test --export-coverage <b>`"
   when:
-    - "both exported `.coverdata` files are decoded via `:cover.import/1` + per-module `:cover.analyse/3`"
+    - "both exported `.coverdata` files are decoded via `:cover.import/1` + per-module `:cover.analyse/3` in a child BEAM — never by stopping or restarting the host BEAM's `:cover` server, which an enclosing `mix test --cover` run owns"
   then:
     - "the decoded per-module, per-line call counts are identical between the two runs"
   covers:
