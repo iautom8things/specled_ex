@@ -79,11 +79,15 @@
     {
       "text": "CI round 1: classic-fallback leg (OTP 26.2.5, first-ever run) caught a real portability bug — 4 raw :code.coverage_support/0 calls in snapshot_test.exs (BIF is OTP 27+). Production already guarded. Fix pushed (existence-guarded helper); native leg + Check Specs were green. Watching round 2.",
       "timestamp": "2026-07-23T22:44:15Z"
+    },
+    {
+      "text": "CI green after 1 fix commit (0caa02b — OTP 26 test guard). All 3 checks pass: Check Specs, Test OTP 28.3.1, Test OTP 26.2.5. Proceeding to squash-merge per /ship-it.",
+      "timestamp": "2026-07-23T22:46:19Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Aggregate-first spec coverage — specled_-47j remediation",
   "type": "epic",
-  "updated_at": "2026-07-23T22:44:15Z"
+  "updated_at": "2026-07-23T22:46:19Z"
 }
