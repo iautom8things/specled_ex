@@ -9,9 +9,15 @@
     "phase:implementing",
     "slug:advise-the-spec-drift"
   ],
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: specled_-4kg-advise-the-spec-drift\nLog: interactive session 68b444f8-0674-4f46-82e3-7b54e6fd6181\n\nCommit: 22c7ece\nFiles touched: lib/specled_ex/next.ex, lib/specled_ex/branch_check.ex, lib/specled_ex/prime.ex, priv/spec_init/README.md.eex, priv/spec_init/agents/skills/spec-led-development/SKILL.md.eex, .spec/README.md, .spec/decisions/specled.decision.decision_fork_advertised_at_decision_points.md, .spec/specs/{next,branch_guard,prime,mix_tasks,package,severity,append_only,implementation_tier,spec_drift_trailer}.spec.md, test/mix/tasks/spec_next_task_test.exs, test/specled_ex/branch_check_test.exs\nTests added: Mix.Tasks.SpecNextTaskTest \"spec.next names both ADR and trailer arms when only the decision is missing\" (@tag spec: specled.next.decision_fork_guidance); SpecLedEx.BranchCheckTest \"ends with a fix block naming the ADR and trailer arms\" (@tag spec: specled.branch_guard.missing_decision_fix_block)\nVerification stubs flipped: none — new requirement ids specled.next.decision_fork_guidance and specled.branch_guard.missing_decision_fix_block added to existing execute:true tagged_tests blocks\nVerification tier: change-scoped — mix test --stale (1019 tests), plus targeted branch_check_test.exs, spec_next_task_test.exs, severity_integration_test.exs, spec_tasks_test.exs, spec_prime_task_test.exs, trailer_test.exs (92 tests); mix spec.check --no-run-commands --base origin/main = 0 findings; mix format --check-formatted clean; full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: Both missing-ADR surfaces now present the durable-policy rubric and both resolution arms: spec.next needs_decision_update steps name the ADR command and the exact Spec-Drift trailer syntax with a required one-line reason, and branch_guard_missing_decision_update ends with a code-fenced fix: block matching the append_only convention. The spec.prime loop line, spec.init scaffold README + local skill (incl. a new triage-table row), and .spec/README.md carry the same fork, and ADR specled.decision.decision_fork_advertised_at_decision_points records the policy (per-range trailers preferred over config demotion). Trailer semantics untouched — range-wide, trailer \u003e config \u003e default, :off absorbing.",
+      "timestamp": "2026-07-23T00:19:22Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Advise the Spec-Drift trailer alternative in spec.next and the missing_decision_update finding",
   "type": "task",
-  "updated_at": "2026-07-23T00:05:13Z"
+  "updated_at": "2026-07-23T00:19:22Z"
 }
