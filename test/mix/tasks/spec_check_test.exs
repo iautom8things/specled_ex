@@ -6,6 +6,25 @@ defmodule Mix.Tasks.Spec.CheckTest do
 
   @moduletag :capture_log
 
+  # SPECLED_SHOW_INFO is VM-global and read lazily by spec.check at call time.
+  # Pin a known-clean baseline for every test so an ambient or leaked value
+  # cannot make the suppression tests fail out of order, and restore the prior
+  # value (not merely delete it) so this module never leaks env state to later
+  # modules.
+  setup do
+    prior = System.get_env("SPECLED_SHOW_INFO")
+    System.delete_env("SPECLED_SHOW_INFO")
+
+    on_exit(fn ->
+      case prior do
+        nil -> System.delete_env("SPECLED_SHOW_INFO")
+        value -> System.put_env("SPECLED_SHOW_INFO", value)
+      end
+    end)
+
+    :ok
+  end
+
   describe "--verbose flag and SPECLED_SHOW_INFO filter :info findings on stdout" do
     @tag spec: "specled.tasks.check_verbose_flag"
     test "default run suppresses :info branch findings from stdout", %{root: root} do
@@ -42,13 +61,11 @@ defmodule Mix.Tasks.Spec.CheckTest do
     test "SPECLED_SHOW_INFO=1 has the same effect as --verbose", %{root: root} do
       scaffold_no_baseline_fixture(root)
 
+      # setup/0 restores the prior SPECLED_SHOW_INFO on exit, so this test only
+      # needs to set the value it exercises.
       System.put_env("SPECLED_SHOW_INFO", "1")
 
-      try do
-        run_spec_check(root, ["--base", "HEAD~1"])
-      after
-        System.delete_env("SPECLED_SHOW_INFO")
-      end
+      run_spec_check(root, ["--base", "HEAD~1"])
 
       messages = drain_shell_messages()
 

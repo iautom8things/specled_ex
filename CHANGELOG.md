@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.3.2 — 2026-07-23
+
+- Hardened two order/load-dependent test flakes surfaced by the
+  full-suite/merged verification runs (specled_-f98). No product behavior
+  changed — both fixes are test-only:
+  - `test/specled_ex/verifier_test.exs` "a timeout with an empty artifact
+    reports likely compile cost" now budgets `2000ms` (was `300ms`), matching
+    its sibling timeout tests. The child must reach its first line to truncate
+    the attribution artifact to empty; under full-suite load the three-level
+    spawn lost that race against the 300ms process-group kill, leaving the
+    artifact absent rather than empty and flipping the classified message off
+    "likely compile cost".
+  - `test/mix/tasks/spec_check_test.exs` is now hermetic with respect to the
+    VM-global `SPECLED_SHOW_INFO`: a module `setup` deletes it for a clean
+    per-test baseline and restores the prior value on exit (the old mutation
+    test deleted rather than restored, and no baseline was asserted). An
+    ambient or leaked `SPECLED_SHOW_INFO=1` no longer makes the unrelated
+    ":info suppression" test fail seed-dependently.
+  - The remaining logged observation (the `tracer_test.exs` `merge_edges`
+    stream_data property one-off) was assessed as a sound property / likely
+    timeout artifact under load, not a defect; carried to follow-up
+    specled_-qvg for seed capture if it recurs.
+
 ## 0.3.1 — 2026-07-23
 
 - Bare-module `api_boundary` entries no longer oscillate out of
