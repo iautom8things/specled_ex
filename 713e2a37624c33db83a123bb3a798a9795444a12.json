@@ -1,0 +1,1473 @@
+{
+  "findings": [
+    {
+      "code": "branch_guard_missing_subject_update",
+      "file": "skills/spec-led-bootstrap/SKILL.md",
+      "level": "info",
+      "message": "Changed file skills/spec-led-bootstrap/SKILL.md impacts subject specs that were not updated: specled.package"
+    },
+    {
+      "code": "branch_guard_missing_subject_update",
+      "file": "skills/spec-led-bootstrap/references/adoption-phases.md",
+      "level": "info",
+      "message": "Changed file skills/spec-led-bootstrap/references/adoption-phases.md impacts subject specs that were not updated: specled.package"
+    },
+    {
+      "code": "branch_guard_missing_subject_update",
+      "file": "skills/spec-led-bootstrap/references/detection-matrix.md",
+      "level": "info",
+      "message": "Changed file skills/spec-led-bootstrap/references/detection-matrix.md impacts subject specs that were not updated: specled.package"
+    }
+  ],
+  "run_at": "2026-07-23T11:29:24.597556Z",
+  "run_id": "903dcd5d6c638f5f863a88c75038ac2a",
+  "schema_version": 1,
+  "specled_version": "0.2.0",
+  "tree_hash": "713e2a37624c33db83a123bb3a798a9795444a12",
+  "verification": {
+    "spec.workspace.agent_prime_context": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "spec.workspace.agents_present": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "spec.workspace.decisions_readme_present": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "spec.workspace.readme_present": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "spec.workspace.reconcile_loop": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "spec.workspace.state_generated": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.api_boundary.dangling_finding_emitted": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.api_boundary.dedupe_cyclic_tiebreak": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.api_boundary.drift_dedupe_narrow": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.api_boundary.drift_finding_emitted": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.api_boundary.hash_function_head": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.api_boundary.suggest_binding_proposal_only": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.api_boundary.umbrella_graceful_degrade": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.append_only.adr_affects_widened": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.append_only.decision_deleted": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.append_only.disabled_without_reason": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.append_only.findings_sorted": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.append_only.fix_block_discipline": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.append_only.identity": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.append_only.missing_change_type": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.append_only.must_downgraded": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.append_only.negative_removed": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.append_only.no_baseline": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.append_only.requirement_deleted": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.append_only.requirement_deleted_authorized": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.append_only.same_pr_self_authorization": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.append_only.scenario_regression": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.binding.canonical_deterministic_bytes": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.binding.canonical_reserved_idents_preserved": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.binding.canonical_strips_positions": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.binding.dangling_reported": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.binding.hash_store_atomic": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.binding.hash_store_dedicated_file": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.binding.hash_store_legacy_fallback": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.binding.hasher_version_internal": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.binding.locate_source_public": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.binding.resolve_beam_first": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.binding.resolve_sees_use_generated": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.binding.resolve_with_source_handles_use_generated": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.binding.resolve_with_source_returns_path": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.branch_guard.base_view_prior_state": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.branch_guard.cross_cutting_decision": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.branch_guard.file_touch_detector_failure_strict": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.branch_guard.file_touch_per_subject_independence": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.branch_guard.file_touch_severity_config_wins": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.branch_guard.file_touch_tagged_tests_attested": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.branch_guard.file_touch_yields_to_attested_file": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.branch_guard.guidance_output": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.branch_guard.missing_decision_fix_block": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.branch_guard.new_requirement_tag_warning": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.branch_guard.plan_docs_excluded": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.branch_guard.realization_tiers_from_config": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.branch_guard.realization_unknown_tier_finding": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.branch_guard.status_follows_error_severity": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.branch_guard.subject_cochange": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.branch_guard.tag_findings_respect_enforcement": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.branch_guard.tier_dispatch_commits_hashes_on_clean": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.branch_guard.tier_dispatch_impl_opt_in": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.branch_guard.tier_dispatch_surfaces_dangling": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.branch_guard.tier_dispatch_surfaces_drift": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.branch_guard.tier_dispatch_umbrella_degrades": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.branch_guard.tier_dispatch_wires_orchestrator": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.compiler_context.default_manifest_path": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.compiler_context.from_mix_project": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.compiler_context.load_from_opts": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.compiler_context.manifest_fixture_integration": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.compiler_context.manifest_wraps_stdlib": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.compiler_context.orchestrators_take_context": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.compiler_context.struct_shape": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.compiler_tracer.captures_remote_calls": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.compiler_tracer.etf_read_direct": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.compiler_tracer.merge_on_flush": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.compiler_tracer.registered_in_mix_exs": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.compiler_tracer.seed_time_ghost_prune": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.compiler_tracer.session_module_replacement": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.compiler_tracer.single_file_cap": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.compiler_tracer.xref_in_process": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.config.defaults_when_missing": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.config.guardrails_severities": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.config.init_scaffolds_config_yml": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.config.malformed_yaml_degrades": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.config.paths_filtered_to_strings": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.config.realization_enabled_tiers": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.config.unknown_enforcement_warns": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.config.yaml_parses_known_fields": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.coverage_capture.anonymous_ets": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.coverage_capture.artifact_path": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.coverage_capture.formatter_snapshot_fn_di": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.coverage_capture.integration_case": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.coverage_capture.keyed_by_test_pid": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.coverage_capture.serialized_run": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.coverage_capture.store_split": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.decisions.change_type_enum": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.decisions.change_type_optional": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.decisions.cross_field_adr_append_only": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.decisions.cross_field_affects_non_empty": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.decisions.cross_field_affects_resolve": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.decisions.cross_field_idempotent": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.decisions.cross_field_reverses_what": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.decisions.cross_field_supersedes_replaces": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.decisions.frontmatter_contract": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.decisions.reference_validation": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.decisions.weakening_set": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.evidence_store.attestation_never_gates": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.evidence_store.drift_surfaced": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.evidence_store.hook_static_never_blocks": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.evidence_store.local_cas_bounded": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.evidence_store.local_only_write_path": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.evidence_store.migration_one_shot": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.evidence_store.per_entry_isolation": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.evidence_store.prune_explicit_only": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.evidence_store.prune_reachability_floor": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.evidence_store.run_stamp_wins": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.evidence_store.self_create": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.evidence_store.sync_auto_prune": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.evidence_store.sync_bounded_subprocesses": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.evidence_store.sync_entry_tolerance": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.evidence_store.sync_failure_contracts": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.evidence_store.sync_noop_short_circuit": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.evidence_store.sync_tree_level_tolerance": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.evidence_store.sync_tree_union": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.evidence_store.tree_hash_mirrors_add_all": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.expanded_behavior_tier.hash_stable_on_refactor": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.expanded_behavior_tier.mixed_fixture_coverage": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.expanded_behavior_tier.no_debug_info_detector_unavailable": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.expanded_behavior_tier.reads_beam_debug_info": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.expanded_behavior_tier.typespecs_drift_finding": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.expanded_behavior_tier.typespecs_hashes_spec_and_type": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.implementation_tier.closure_walks_tracer_edges": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.implementation_tier.config_opt_in": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.implementation_tier.deterministic_hashes": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.implementation_tier.empty_manifest_no_filtering": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.implementation_tier.ghost_edges_filtered": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.implementation_tier.hash_ref_composition": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.implementation_tier.ownership_rule": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.implementation_tier.scenario_refactor_stable": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.implementation_tier.shared_helper_accounting": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.index.base_view_parses_base_sources": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.index.canonical_state_output": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.index.json_resilience": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.index.legacy_baseline_hoist": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.index.state_fully_derived": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.index.subject_and_decision_index": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.index.tag_data_absent_when_disabled": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.index.tag_data_conditional": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.modal_class.classify_case_and_punctuation_insensitive": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.modal_class.classify_deterministic": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.modal_class.classify_must": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.modal_class.classify_none": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.modal_class.classify_should": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.modal_class.classify_total": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.modal_class.cross_polarity_negative_to_positive_is_not_downgrade": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.modal_class.cross_polarity_positive_to_negative_is_downgrade": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.modal_class.downgrade_monotonic": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.modal_class.downgrade_must_to_weaker": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.modal_class.downgrade_total": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.modal_class.downgrade_weaker_to_stronger_is_false": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.next.bugfix_guidance": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.next.change_classification": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.next.decision_fork_guidance": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.next.read_only": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.next.reconciliation_status": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.overlap.duplicate_covers": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.overlap.findings_sorted": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.overlap.must_stem_collision": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.overlap.no_prior_state": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.overlap.within_subject_scope": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.package.adoption_guide": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.package.concepts_guide": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.package.declarative_governance": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.package.default_local_loop": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.package.doc_identifier_integrity": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.package.index_and_state": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.package.mix_tasks": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.package.test_tag_annotation_docs": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.parser.info_string_tokens": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.parser.resilient_errors": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.parser.resilient_on_decode_error": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.parser.resilient_on_duplicate_block": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.parser.standard_blocks": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.parser.title_extraction": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.policy_files.change_analysis_delegates": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.policy_files.classify_kinds": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.policy_files.co_change_rule_total": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.policy_files.plan_docs_excluded": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.policy_files.priv_defaults_to_lib": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.policy_files.priv_plts_is_generated": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.prime.command_execution_default": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.prime.decision_fork_loop_line": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.prime.machine_output": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.prime.session_context": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.prose_guard.config_thresholds": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.prose_guard.finding_emitted": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.prose_guard.non_must_exempt": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.prose_guard.severity_configurable": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.attestation_tagged_tests_expansion": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.bare_module_api_boundary_hash": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.bare_module_drift_after_seed": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.bare_module_export_drift": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.bare_module_export_filtering": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.bare_module_implementation_hash": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.bare_module_no_closure_walk": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.bare_module_runtime_only_discovery": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.binding_ref_inferred_no_leak": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.dedup_check_shared_seam": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.effective_binding_accepts_subject_shape": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.effective_binding_inherits_subject": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.effective_binding_requirement_replaces_tier": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.existing_surface_coexists": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.implication_amplification_dedup": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.implication_body_only_drift": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.implication_dangling_once": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.implication_drift_both_tiers": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.implication_invoked_per_layer": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.implication_one_way": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.meta_field": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.orchestrator_publishes_attestations": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.redundant_dup_warning": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.requirement_override": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.schema_shape": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.silent_seed": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.realized_by.silent_seed_uses_merge": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.schema.block_structs": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.schema.meta_contract": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.schema.tagged_tests_kind": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.schema.validation_errors": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.severity.known_values": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.severity.non_emitting": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.severity.off_is_absorbing": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.severity.resolve_precedence": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_drift_trailer.parse_unknown_token_warns": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_drift_trailer.parse_vocabulary": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_drift_trailer.scans_base_to_head": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_drift_trailer.self_report_documented": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.binary_content_safe": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.spec_review.change_scoped_overview": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.coverage_pivot_touched_first": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.coverage_tab_bind_closure": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.decisions_governance_inline": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.degraded_leg_state": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.diff_against_base": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.findings_delta": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.findings_delta_base_fallback": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.spec_review.findings_digest_dedup": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.gh_pages_distribution": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.html_artifact": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.inline_finding_badges": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.misc_panel": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.no_realized_by_degrades_spec_to_code": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.per_subject_tabs": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.read_only_viewer": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.repo_state_health_pane": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.review_queue_navigation": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.same_artifact_local_and_ci": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.shared_file_fanin_collapse": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.shared_file_group_pane": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.shared_file_spec_modal": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.spec_first_navigation": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.theme_tokens": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.triage_panel": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.spec_review.triangle_code_classification": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.status.coverage_summary": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.status.decision_index": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.status.frontier_summary": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tag_scanning.deduplicated_matches": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tag_scanning.describe_block_recursion": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tag_scanning.describetag_applies_to_describe_tests": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tag_scanning.dynamic_values_reported": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tag_scanning.form_keyword_list": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tag_scanning.form_list_of_ids": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tag_scanning.form_string_literal": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tag_scanning.ignored_non_spec_tags": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tag_scanning.moduletag_applies_to_all_tests": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tag_scanning.parse_errors_surfaced": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tag_scanning.scan_aggregates_results": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tag_scanning.supported_forms": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.attribution_degrades_to_shared_fate": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.attribution_partial_outcomes": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.build_command": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.build_command_appends_formatters": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.build_command_combines_backed_ids": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.build_command_drops_unbacked_ids": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.build_command_file_selectors_for_list_tags": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.build_command_includes_integration_flag": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.build_command_no_tests_when_all_unbacked": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.collect_entries": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.cover_not_executed_finding": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.formatter_noop_without_artifact_path": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.formatter_streams_jsonl": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.merged_run_attribution": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.missing_tag_finding": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.resume_double_timeout_signal": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.resume_pass_over_remainder": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.shared_run_finding_context": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.strength_claimed_on_untagged_cover": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.strength_executed_on_green_run": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.strength_progression": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tagged_tests.timeout_names_hang_suspects": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.check_builds_compile_context": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.check_evidence_write": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.check_strict_gate": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.check_verbose_flag": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.command_timeout_config": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.config_diagnostics_surfaced": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.decision_new_scaffold": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.dedup_realized_by_exit_code": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.dedup_realized_by_no_write": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.dedup_realized_by_proposal": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.dedup_realized_by_shared_seam": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.dep_runtime_bootstrap": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.tasks.evidence_install_hook": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.evidence_migrate": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.index_writes_state": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.init_local_skill": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.init_scaffold": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.next_guidance": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.no_app_start": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.prime_context": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.prime_json": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.prune_evidence": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.tasks.review_html_artifact": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.status_summary": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.sync_evidence": {
+      "meets_minimum": true,
+      "strength": "claimed"
+    },
+    "specled.tasks.test_tags_flag": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.test_tags_precedence": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.validate_exit_status": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.validate_findings": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.tasks.verification_severity_config": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.triangulation.detector_unavailable_on_missing_coverage": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.triangulation.execution_reach_metric": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.triangulation.pure_function": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.triangulation.spec_triangle_task": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.triangulation.underspecified_realization": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.triangulation.untested_realization": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.triangulation.untethered_test": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.triangulation.untethered_test_opt_out": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.use_tier.enumerate_consumers": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.use_tier.hash_prefix_length": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.use_tier.provider_hash_composes": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.use_tier.root_cause_dedupe": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.use_tier.scenario_macro_provider_drift": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.command_execution_resilience": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.command_exit_code_recorded": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.command_output_via_tempfile": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.command_timeout_cli_precedence": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.command_timeout_distinct_finding": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.command_timeout_enforced": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.coverage_warnings": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.decision_governance": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.finding_severity_overrides": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.malformed_entries_nonfatal": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.meta_required": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.reference_checks": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.requirement_without_test_tag": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.strength_semantics": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.tag_dynamic_value_skipped": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.tag_findings_respect_enforcement": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.tag_findings_suppressed_when_disabled": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.tag_scan_parse_error": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.target_existence": {
+      "meets_minimum": true,
+      "strength": "linked"
+    },
+    "specled.verify.verification_cover_untagged": {
+      "meets_minimum": true,
+      "strength": "linked"
+    }
+  }
+}
