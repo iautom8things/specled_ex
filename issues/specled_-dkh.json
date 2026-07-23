@@ -7,10 +7,12 @@
   "created": "2026-07-22T20:08:14Z",
   "description": "No spec subject — repo/CI configuration.\n\nObserved 2026-07-22 shipping PR #3: neither the pull_request event (specs.yml has matching path filters) nor the push-to-main event triggered a Specs run; the repo's ENTIRE Actions history is workflow_dispatch only. All 4 CI runs for the 0.2.0 ship were manually dispatched. Until fixed, merges get zero automatic CI.\n\nCheck: repo Settings -\u003e Actions (workflow permissions / allowed events), org-level Actions policy, and whether the workflow file on the default branch differs from expectations. Acceptance: opening a PR that touches lib/** produces an automatic Specs run.",
   "id": "specled_-dkh",
-  "labels": [],
+  "labels": [
+    "slug:ci-event-triggered-github"
+  ],
   "priority": 2,
   "status": "open",
   "title": "CI: event-triggered GitHub Actions never fire (pull_request/push) — every run is manual workflow_dispatch",
   "type": "task",
-  "updated_at": "2026-07-22T20:08:23Z"
+  "updated_at": "2026-07-23T00:04:18Z"
 }
