@@ -18,8 +18,11 @@ defmodule SpecLedEx.FindingMessageTest do
     end
 
     test "output round-trips through the review/html fix-block parser" do
-      # SpecLedEx.Review.HTML.split_fix_block/1 regex-parses the exact shape
-      # finalize/2 emits; this pins the two in lockstep.
+      # finalize/2's output must match the fix-block shape that the real parser,
+      # SpecLedEx.Review.Html.split_fix_block/1 (a private defp), expects. This
+      # asserts finalize's output against a snapshot of that regex — it does NOT
+      # pin the two modules in lockstep (editing the real regex would not fail
+      # here). The real parser path is covered end-to-end in review/html_test.exs.
       message =
         FindingMessage.finalize("Some prose here.", "fix: apply the sanctioned resolution.")
 

@@ -4,7 +4,7 @@ defmodule SpecLedEx.FindingMessage do
 
   `finalize/2` is the single source of truth for the "<prose>\\n\\n```\\nfix:
   ...\\n```" shape emitted by the append-only, overlap, and branch-check
-  detectors. `SpecLedEx.Review.HTML.split_fix_block/1` regex-parses that exact
+  detectors. `SpecLedEx.Review.Html.split_fix_block/1` regex-parses that exact
   shape, so any change here must stay in lockstep with that parser.
   """
 
