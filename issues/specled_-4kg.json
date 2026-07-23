@@ -45,11 +45,15 @@
     {
       "text": "Squash-merged to main (028fa5a) as release 0.3.0. Watching post-merge Specs run.",
       "timestamp": "2026-07-23T08:42:14Z"
+    },
+    {
+      "text": "Post-merge Specs run green on main@028fa5a (manual dispatch 29992077790). Remote + local branches deleted, worktree specled_ex-spec-drift-fork cleaned. Release 0.3.0 on main.",
+      "timestamp": "2026-07-23T08:50:57Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "Advise the Spec-Drift trailer alternative in spec.next and the missing_decision_update finding",
   "type": "task",
-  "updated_at": "2026-07-23T08:42:14Z"
+  "updated_at": "2026-07-23T08:50:57Z"
 }
