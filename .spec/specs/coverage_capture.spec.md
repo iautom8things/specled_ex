@@ -5,14 +5,30 @@ dedicated Mix task.
 
 ## Intent
 
-`:cover` has no per-pid surface and races under `async: true`. We do not try to
-make async-safe attribution work; instead, a new `mix spec.cover.test` task
-wraps `mix test --cover` and forces `ExUnit.configure(async: false)` globally
-before any test module loads. The formatter snapshots coverage per-test keyed
-by `test_pid`, using anonymous ETS (so multiple formatters can coexist in
-tests). `mix test --cover` continues to work in its traditional cumulative
-mode; only `mix spec.cover.test` produces the per-test artifact at
-`.spec/_coverage/per_test.coverdata`.
+`:cover` has no per-pid surface and races under `async: true`. By default
+`mix spec.cover.test` no longer tries to force serialization at all: it runs
+plain `mix test --cover --export-coverage specled` (no custom formatter, no
+async configuration changes) and, guarded by the exported `.coverdata` file's
+existence, ingests it via `SpecLedEx.Coverage.Aggregate.ingest/2` into a v2
+`:aggregate` envelope (`specled.coverage_capture.default_aggregate_run`).
+Forcing `ExUnit.configure(async: false)` globally never actually serialized a
+module that itself declared `async: true` (an explicit per-module setting
+overrides the global default) — an overclaim aggregate coverage does not need
+in the first place, since `:cover`'s tally is process-global and unaffected by
+concurrency for cumulative (non-per-test) attribution.
+
+The old serialized flow survives as the opt-in `--per-test` flag
+(`specled.coverage_capture.serialized_run`): it still forces
+`ExUnit.configure(async: false)` and arms the custom formatter, which
+snapshots coverage per-test keyed by `test_pid` using anonymous ETS (so
+multiple formatters can coexist in tests). Under `--per-test`, a test file
+that declares `async: true` genuinely does run concurrently despite the
+global default and corrupts serialized attribution, so the task exits
+non-zero naming it unless `--allow-async` degrades the run instead. `mix test
+--cover` continues to work in its traditional cumulative mode; only `mix
+spec.cover.test --per-test` produces the per-test artifact at
+`.spec/_coverage/per_test.coverdata` (the default aggregate mode's v2
+envelope targets the same path).
 
 The formatter is inert unless armed: registering it in `:formatters` is not
 by itself enough to run it (ExUnit forwards its entire `:ex_unit` application
@@ -71,12 +87,57 @@ decisions:
 ```yaml spec-requirements
 - id: specled.coverage_capture.serialized_run
   statement: >-
-    `mix spec.cover.test` shall call
+    `mix spec.cover.test --per-test` shall call
     `ExUnit.configure(async: false)` and
-    `Application.put_env(:ex_unit, :async, false)` before loading any
-    test module. Any test that sets `async: true` during a
-    spec.cover.test run is a user bug; the task shall log a warning on
-    exit naming all such test files.
+    `Application.put_env(:ex_unit, :async, false)` before loading any test
+    module, and shall arm `SpecLedEx.Coverage.Formatter` via the
+    `:specled_ex, :spec_cover_run` seam.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.per_test_async_contamination
+  statement: >-
+    Under `mix spec.cover.test --per-test`, a test file containing the
+    literal pragma `async: true` genuinely runs concurrently despite the
+    global `ExUnit.configure(async: false)` default and corrupts serialized
+    per-test `:cover` attribution; this is a user bug, so the task shall
+    exit non-zero naming every such file before running the suite.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.per_test_allow_async_degrade
+  statement: >-
+    `mix spec.cover.test --per-test --allow-async` shall degrade async
+    contamination instead of failing: the suite still runs and the task
+    still exits 0, but stderr carries a warning naming the contaminated
+    files.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.default_aggregate_run
+  statement: >-
+    By default (no `--per-test` flag), `mix spec.cover.test` shall run `mix
+    test --cover --export-coverage specled` with no custom formatter
+    registered and no async configuration changed. Guarded by the existence
+    of the exported `.coverdata` file, it shall then ingest that file via
+    `SpecLedEx.Coverage.Aggregate.ingest/2` and persist the resulting v2
+    envelope via `SpecLedEx.Coverage.Store.write_v2/2` at
+    `SpecLedEx.Coverage.Store.default_path/0`, exiting 0 with
+    `Store.read_status/1` reporting `{:ok, stats}`.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.default_aggregate_red_suite_passthrough
+  statement: >-
+    When the wrapped `mix test` suite fails, `mix spec.cover.test`'s exit
+    code shall pass through that failing status (non-zero) even though its
+    real, non-placeholder exported coverage is still ingested — a successful
+    ingest shall never overwrite a failing suite's exit code back to 0.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.default_aggregate_empty_refusal
+  statement: >-
+    When the wrapped `mix test` suite ran to completion but its exported
+    coverage carries zero cover-compiled modules (or ingestion is otherwise
+    refused), `mix spec.cover.test` shall exit non-zero naming the refusal
+    reason, and `Store.read_status/1` on the target artifact path shall
+    return `{:refused, ...}`.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.formatter_snapshot_fn_di
@@ -297,18 +358,69 @@ decisions:
     - "the garbage artifact yields `{:error, :invalid_artifact}`"
   covers:
     - specled.coverage_capture.store_v2_legacy_rejection
-- id: specled.coverage_capture.scenario.spec_cover_test_forces_serial
+- id: specled.coverage_capture.scenario.spec_cover_test_per_test_forces_serial
   given:
-    - "test/fixtures/sample_project with one `async: true` test module"
+    - "a child-BEAM fixture with no `async: true` test modules"
   when:
-    - mix spec.cover.test runs on the fixture (via IntegrationCase)
+    - "mix spec.cover.test --per-test runs on the fixture (via IntegrationCase)"
   then:
-    - "the run completes without :cover races"
-    - "stderr carries a warning naming the async: true test file"
+    - "the run completes, the formatter is armed via the :specled_ex seam"
     - "`.spec/_coverage/per_test.coverdata` exists with at least one record per test"
   covers:
     - specled.coverage_capture.serialized_run
     - specled.coverage_capture.integration_case
+- id: specled.coverage_capture.scenario.spec_cover_test_per_test_async_contamination
+  given:
+    - "a child-BEAM fixture with one `async: true` test module"
+  when:
+    - "mix spec.cover.test --per-test runs on the fixture without --allow-async"
+  then:
+    - "the task exits non-zero naming the async: true test file"
+  covers:
+    - specled.coverage_capture.per_test_async_contamination
+- id: specled.coverage_capture.scenario.spec_cover_test_per_test_allow_async_degrades
+  given:
+    - "the same async: true fixture"
+  when:
+    - "mix spec.cover.test --per-test --allow-async runs on the fixture"
+  then:
+    - "the run proceeds and exits 0"
+    - "stderr carries a degraded-run warning naming the async: true test file"
+    - "`.spec/_coverage/per_test.coverdata` is still written"
+  covers:
+    - specled.coverage_capture.per_test_allow_async_degrade
+- id: specled.coverage_capture.scenario.spec_cover_test_default_aggregate
+  given:
+    - "a child-BEAM fixture whose tests exercise real application code"
+  when:
+    - "mix spec.cover.test runs on the fixture with no flags"
+  then:
+    - "no formatter is registered and async config is untouched"
+    - "the exported `.coverdata` is ingested into a v2 `:aggregate` envelope at the default artifact path"
+    - "the task exits 0 and `Store.read_status/1` returns `{:ok, stats}`"
+  covers:
+    - specled.coverage_capture.default_aggregate_run
+- id: specled.coverage_capture.scenario.spec_cover_test_red_suite_passthrough
+  given:
+    - "a child-BEAM fixture with one failing test that still exercises application code"
+  when:
+    - "mix spec.cover.test runs on the fixture with no flags"
+  then:
+    - "the exported `.coverdata` still exists and is ingested (real coverage, not a placeholder)"
+    - "the task's exit code passes through the failing `mix test` status (non-zero) rather than being overwritten to 0 by the successful ingest"
+  covers:
+    - specled.coverage_capture.default_aggregate_red_suite_passthrough
+- id: specled.coverage_capture.scenario.spec_cover_test_empty_coverage_refusal
+  given:
+    - "a child-BEAM fixture whose test suite exercises no application module"
+  when:
+    - "mix spec.cover.test runs on the fixture with no flags"
+  then:
+    - "the exported `.coverdata` carries zero cover-compiled modules"
+    - "the task exits non-zero naming the empty-coverage refusal"
+    - "`Store.read_status/1` on the target artifact path returns `{:refused, ...}`"
+  covers:
+    - specled.coverage_capture.default_aggregate_empty_refusal
 - id: specled.coverage_capture.scenario.aggregate_ingest_child_beam
   given:
     - "a child-BEAM fixture project compiled and run via `mix test --cover --export-coverage <name>`, producing a real `.coverdata` file"
@@ -378,7 +490,12 @@ decisions:
   execute: true
   covers:
     - specled.coverage_capture.serialized_run
+    - specled.coverage_capture.per_test_async_contamination
+    - specled.coverage_capture.per_test_allow_async_degrade
     - specled.coverage_capture.integration_case
+    - specled.coverage_capture.default_aggregate_run
+    - specled.coverage_capture.default_aggregate_red_suite_passthrough
+    - specled.coverage_capture.default_aggregate_empty_refusal
 - kind: tagged_tests
   execute: true
   covers:
