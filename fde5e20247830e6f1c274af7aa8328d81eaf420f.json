@@ -7,8 +7,8 @@
       "message": "Changed file priv/spec_init/workflows/spec_review.yml.eex impacts subject specs that were not updated: specled.package"
     }
   ],
-  "run_at": "2026-07-23T14:12:38.607772Z",
-  "run_id": "5933cdf8ca29d063670d5714a27883dd",
+  "run_at": "2026-07-23T14:14:20.621354Z",
+  "run_id": "7f05710b5230adf92e2559dd97f6d72b",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "fde5e20247830e6f1c274af7aa8328d81eaf420f",
