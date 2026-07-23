@@ -21,11 +21,15 @@
     {
       "text": "TEST_CRITIC: PASS\nCritic session: test-critic-4kg (agent teammate, session 68b444f8)\nBlocking findings: 0 (resolved: 0, waived: 0)\nFiles reviewed: test/mix/tasks/spec_next_task_test.exs, test/specled_ex/branch_check_test.exs\nNotes: string-pinning judged correct contract coupling (the contract is the wording); async-safe isolation confirmed; acceptance bullets 3-4 covered by scaffold docs + existing trailer_test.exs, flagged for full-contract sign-off.",
       "timestamp": "2026-07-23T00:23:17Z"
+    },
+    {
+      "text": "AUDIT: APPROVE (auto — selective audit)\nSession: specled_-4kg-advise-the-spec-drift\nLog: ~/.claude-personal/projects/-Users-mz-src-specled-ex/68b444f8-0674-4f46-82e3-7b54e6fd6181.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. No auditor was spawned per policy.",
+      "timestamp": "2026-07-23T00:23:37Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Advise the Spec-Drift trailer alternative in spec.next and the missing_decision_update finding",
   "type": "task",
-  "updated_at": "2026-07-23T00:23:17Z"
+  "updated_at": "2026-07-23T00:23:37Z"
 }
