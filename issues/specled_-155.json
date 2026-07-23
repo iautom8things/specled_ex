@@ -59,11 +59,15 @@
     {
       "text": "MERGE GATE 8 (after specled_-155.8, epic @ 170c564): GREEN. compile -Werror ok; 3 properties + 1136 tests, 0 failures; format ok; deps.unlock ok; spec.check exit 0 status=pass findings=1 (info). Codification complete: aggregate_first_spec_coverage ADR landed (all 5 maintainer decisions), serialized ADR carries supersession amendment, every attribution claim surface race-bounded. Bounce 1 resolved in one iteration.",
       "timestamp": "2026-07-23T19:58:05Z"
+    },
+    {
+      "text": "MERGE GATE 9 (after specled_-155.9, epic @ af16144): GREEN on re-run. First run: 1136 tests, 1 failure — did not reproduce (full re-run 1136/0 exit 0, --failed manifest empty); delta since green gate 8 is docs-only (specled_-155.9). FLAKE-ACCEPT #1, signature: tempfile command-runner race class (specled_-epl), 4th observation. PROCESS NOTE: exact failing test identity lost because the gate piped mix test through tail (pipeline masked exit code and discarded detail) — future gates must capture full output; deviation recorded. compile -Werror ok; format ok; deps.unlock ok; spec.check exit 0 status=pass findings=1 (info).",
+      "timestamp": "2026-07-23T19:58:07Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Aggregate-first spec coverage — specled_-47j remediation",
   "type": "epic",
-  "updated_at": "2026-07-23T19:58:05Z"
+  "updated_at": "2026-07-23T19:58:07Z"
 }
