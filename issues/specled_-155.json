@@ -51,11 +51,15 @@
     {
       "text": "MERGE GATE 7 (after specled_-155.5, epic @ 3abf5e1): GREEN. compile -Werror ok; 3 properties + 1136 tests, 0 failures; format ok; deps.unlock ok; spec.check exit 0 status=pass findings=1 (info). Engine complete: Snapshot native/classic dispatch, reset-free diffing, cast-time compaction, v2 :per_test envelopes, cumulative-parity tripwire. Cross-ticket integration proven at rebase (90/0). Carried into T8: reconcile 'exact per-test attribution' renderer/spec wording with the disclosed ExUnit cast-race bound (specled_-cpw).",
       "timestamp": "2026-07-23T19:58:03Z"
+    },
+    {
+      "text": "LESSONS\\n- [other] When touching a file with api_boundary-bound functions, append new code below the existing bound functions — line shifts above them trigger spurious branch_guard_realization_drift via the strip_meta line-leak bug specled_-wp7 (from specled_-155.1)\\n- [stale-spec] Before letting mix spec.check seed realization hashes for brand-new bound functions, run mix compile --force — seeding against a stale _build records wrong hashes (from specled_-155.6)\\n- [other] A reconcile-ALL-claim-surfaces obligation requires a repo-wide grep that includes @doc strings and test names — a survivor in an out-of-scope file must be disclosed in the completion record and routed for a scope call, never silently skipped while claiming completion (from specled_-155.8)",
+      "timestamp": "2026-07-23T19:58:04Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Aggregate-first spec coverage — specled_-47j remediation",
   "type": "epic",
-  "updated_at": "2026-07-23T19:58:03Z"
+  "updated_at": "2026-07-23T19:58:04Z"
 }
