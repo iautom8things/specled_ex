@@ -422,7 +422,7 @@ Whenever `target_phase < phase6`, emit ONE standalone deferred ticket
 
 ```bash
 bw create "Graduation review: graduate spec.check severities or write explicit opt-outs" --description "..."
-bw defer <new-id> --until "4 weeks"
+bw defer <new-id> "4 weeks"
 ```
 
 Rationale: severities parked at `:warning` "until the corpus is clean" is

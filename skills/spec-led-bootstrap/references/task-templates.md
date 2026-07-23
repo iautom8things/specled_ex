@@ -424,7 +424,7 @@ bootstrap:
   with a one-line reason. Do not silently close.
 EOF
 )"
-bw defer <new-id> --until "4 weeks"
+bw defer <new-id> "4 weeks"
 ```
 
 This ticket is standalone (not an epic child) — the epic closes on its
