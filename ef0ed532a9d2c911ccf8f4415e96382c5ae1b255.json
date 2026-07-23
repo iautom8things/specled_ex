@@ -18,8 +18,8 @@
       "message": "Changed file test/specled_ex/verifier_test.exs impacts subject specs that were not updated: specled.decisions, specled.tagged_tests, specled.verification"
     }
   ],
-  "run_at": "2026-07-23T14:17:07.630503Z",
-  "run_id": "f6d956156c2ad41eedc9534f1d9e1a5c",
+  "run_at": "2026-07-23T14:18:48.784140Z",
+  "run_id": "8e428d88849c8da5b6c94e1c96694d5c",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "ef0ed532a9d2c911ccf8f4415e96382c5ae1b255",
