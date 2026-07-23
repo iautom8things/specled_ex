@@ -8,6 +8,9 @@ on:
       - "mix.exs"
       - "mix.lock"
       - "scripts/**"
+      - "test/**"
+      - "test_support/**"
+      - "priv/**"
       - ".github/workflows/**"
   push:
     branches:
@@ -18,6 +21,9 @@ on:
       - "mix.exs"
       - "mix.lock"
       - "scripts/**"
+      - "test/**"
+      - "test_support/**"
+      - "priv/**"
       - ".github/workflows/**"
   workflow_dispatch:
 
@@ -64,3 +70,47 @@ jobs:
           else
             bash ./scripts/check_specs.sh
           fi
+
+  test:
+    name: Test (Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }})
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Native coverage path: :code.coverage_support/0 is true on OTP >= 27,
+          # so SpecLedEx.Coverage.Snapshot.runtime_mode/0 selects :native.
+          - elixir: "1.19.5"
+            otp: "28.3.1"
+          # Classic fallback: OTP < 27 exercises the :classic branch of
+          # Snapshot.runtime_mode/0, which no other pipeline runs.
+          - elixir: "1.18.4"
+            otp: "26.2.5"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup BEAM
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+
+      - name: Install Hex and Rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Install dependencies
+        run: mix deps.get
+
+      - name: Run tests
+        # Includes :integration (child-BEAM fixture runs). Plain `mix test`,
+        # not `--cover`: measured true coverage is 83.05% (2026-07-23, epic
+        # bef5400) vs the configured 90% threshold, and cover-compiled tmp
+        # fixture modules leaked by snapshot tests crash the HTML report
+        # (:no_source_code_found) while masking the threshold exit code.
+        # Arming --cover in CI is tracked as a follow-up ticket.
+        run: mix test --include integration
