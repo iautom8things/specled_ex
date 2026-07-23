@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T22:50:30Z",
+  "description": "No spec subject\n\nReview CF1 (consensus: idioms M1 + simplicity M2 + distributed L). The File.regular?-then-read_v2-then-classify dance is copy-pasted verbatim (same private fn name load_envelope/1) across lib/mix/tasks/spec.triangle.ex:117, lib/specled_ex/review/coverage_closure.ex:445, and a variant in lib/specled_ex/review.ex:792, with comments admitting they must not disagree. Add public Store.load/1 owning the full vocabulary {:ok, env} | {:degraded, :no_coverage_artifact | :legacy_artifact | :invalid_artifact}; collapse the three call sites. Risk if unfixed: a new envelope status added to Store.read_v2/1 raises CaseClauseError in whichever consumer wasn't updated.",
+  "id": "specled_-q6l.1",
+  "labels": [],
+  "parent": "specled_-q6l",
+  "priority": 2,
+  "status": "open",
+  "title": "Consolidate envelope load-and-classify into Store.load/1",
+  "type": "task",
+  "updated_at": "2026-07-23T22:50:30Z"
+}
