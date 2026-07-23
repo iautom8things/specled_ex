@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-dkh"
   ],
@@ -21,8 +21,8 @@
     }
   ],
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "specs.yml: PR gate should run spec.check --base origin/main (needs fetch-depth: 0)",
   "type": "task",
-  "updated_at": "2026-07-23T00:16:13Z"
+  "updated_at": "2026-07-23T00:18:16Z"
 }
