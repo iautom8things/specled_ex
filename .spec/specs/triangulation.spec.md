@@ -239,7 +239,7 @@ decisions:
   when:
     - mix spec.check runs on the branch
   then:
-    - a `branch_guard_test_only_change` summary reflects the expected flow
+    - no `branch_guard_untested_realization` fires (the closure is still exercised)
     - no `branch_guard_realization_drift` fires
   covers:
     - specled.triangulation.pure_function
