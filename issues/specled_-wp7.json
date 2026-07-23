@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T19:57:53Z",
+  "description": "Advances: specled.api_boundary\\n\\nDiscovered while implementing specled_-155.1 (store v2 envelope).\\n\\nlib/specled_ex/realization/api_boundary.ex strip_meta/1 recurses into an\\nAST nodes trailing args list but does NOT recurse into the leading form\\nposition of a 3-tuple node. For a remote-call guard like is_binary(path)\\n(expanded to an {:erlang, :is_binary} dotted-call form), the form element\\nitself is {:., meta, [Module, :fun]} - its meta (carrying line/column) is\\ncopied into the canonical shape unstripped, since strip_metas\\n{form, _meta, args} clause keeps form as-is instead of also calling\\nstrip_meta(form).\\n\\nNet effect: ApiBoundary.hash/2 claims to be stable under line-number shifts\\nin the function body (its own moduledoc says so), but for ANY function\\nwhose head carries a remote-call guard (e.g. when is_binary(x), when\\nis_list(x) - both expand to :erlang.* remote calls), the hash silently\\ndepends on that guards source line/column. Any unrelated edit that shifts\\nlines above such a function in the same file produces a spurious\\nbranch_guard_realization_drift finding, even though the functions own\\narity/arg-pattern/guard semantics did not change.\\n\\nReproduced concretely: adding ~140 lines of new functions/moduledoc before\\nSpecLedEx.Coverage.Store.read/1, write/2, and build_records/1 (each guarded\\nwith is_binary/is_list) flipped their committed api_boundary hashes with\\nzero change to those functions own source. Confirmed by diffing the\\nresolved AST and by hashing on base vs branch with mix compile --force in\\nbetween (ruling out stale-build artifacts).\\n\\nFix direction: recurse into form too in the {form, _meta, args} clause of\\nstrip_meta/1 (and likely in normalize_clauses guard handling more\\ngenerally) so remote-call metadata is stripped consistently with the rest\\nof the AST.\\n\\nWorkaround used in specled_-155.1: restructured the diff so zero existing\\nlines shifted above the bound functions (all new content appended after\\nread/1, before the private fetch! helper) - avoided the bug rather than\\nfixing it, since api_boundary.ex is outside that tickets Allowed touches.",
+  "id": "specled_-wp7",
+  "labels": [],
+  "priority": 3,
+  "status": "open",
+  "title": "ApiBoundary strip_meta leaks line/column metadata from remote-call guard forms",
+  "type": "bug",
+  "updated_at": "2026-07-23T19:57:53Z"
+}
