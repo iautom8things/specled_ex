@@ -83,6 +83,10 @@
     {
       "text": "CI green after 1 fix commit (0caa02b — OTP 26 test guard). All 3 checks pass: Check Specs, Test OTP 28.3.1, Test OTP 26.2.5. Proceeding to squash-merge per /ship-it.",
       "timestamp": "2026-07-23T22:46:19Z"
+    },
+    {
+      "text": "Squash-merged to main (c90b32aa). Watching post-merge Specs run.",
+      "timestamp": "2026-07-23T22:46:59Z"
     }
   ],
   "priority": 1,
