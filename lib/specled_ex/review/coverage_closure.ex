@@ -314,8 +314,10 @@ defmodule SpecLedEx.Review.CoverageClosure do
   Each subject's `:status` is one of:
 
     * `:ok_aggregate` / `:ok_per_test` — envelope loaded; mode-tagged so
-      renderers can distinguish exact per-test attribution (`:ok_per_test`)
-      from cumulative MFA-level coverage (`:ok_aggregate`).
+      renderers can distinguish observed, race-bounded per-test attribution
+      (`:ok_per_test`) — itself currently a file-level proxy rather than true
+      per-test MFA data (specled_-jjq) — from cumulative MFA-level coverage
+      (`:ok_aggregate`); neither is exact (specled_-cpw).
     * `:no_coverage_artifact` — no artifact on disk.
     * `:legacy_artifact` — the artifact decodes as a pre-v2 (v1) list; per
       Decision 5, never auto-migrated.

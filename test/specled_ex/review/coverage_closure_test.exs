@@ -216,7 +216,7 @@ defmodule SpecLedEx.Review.CoverageClosureTest do
                claimed_reach["subject_a"].by_requirement["subject_a.req1"].tagged_tests
     end
 
-    test "aggregate mode never reaches \"executed\" strength — self_verified? stays false (exact attribution is per-test only)" do
+    test "aggregate mode never reaches \"executed\" strength — self_verified? stays false (observed per-test attribution is possible only under :ok_per_test)" do
       envelope = aggregate_envelope(mfas: [%{mfa: @fixture_a_mfa, covered: true}])
 
       tag_index = %{
