@@ -37,8 +37,8 @@
       "message": "Changed file skills/spec-led-bootstrap/references/task-templates.md impacts subject specs that were not updated: specled.package"
     }
   ],
-  "run_at": "2026-07-23T00:23:08.928951Z",
-  "run_id": "8440c458ddd5daece766606a1f3e6525",
+  "run_at": "2026-07-23T00:24:12.079406Z",
+  "run_id": "1bb9e2d62901b67d8a8f4f5c26e2a567",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "e0ac80bb304c50cfe0ec752a6e96eb8b58d2b4b5",
