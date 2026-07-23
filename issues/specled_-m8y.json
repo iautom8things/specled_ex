@@ -2,6 +2,7 @@
   "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-07-23T17:39:01Z",
   "created": "2026-07-23T01:23:11Z",
   "description": "No spec subject — doc quality refactor. Critical-review F5 (simplicity M1): graduation rationale, runtime host/container split, and spec.evidence.migrate behavior list are each restated verbatim across 3-4 of the 6 skill files, multiplying the sync surface (the drift failure the skill preaches against). Give each topic one canonical home + pointers (~-30 lines). Sketch in vault .../20260722-203631-simplicity.md M1.",
   "id": "specled_-m8y",
@@ -21,8 +22,8 @@
     }
   ],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "spec-led-bootstrap docs: single-source-of-truth dedup of restated rationale",
   "type": "task",
-  "updated_at": "2026-07-23T13:59:57Z"
+  "updated_at": "2026-07-23T17:39:01Z"
 }
