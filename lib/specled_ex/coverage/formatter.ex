@@ -31,6 +31,31 @@ defmodule SpecLedEx.Coverage.Formatter do
   between two of its own snapshots). Either condition means per-test
   attribution for the affected window cannot be trusted.
 
+  ## Known limitation: cross-test attribution race (not yet closed)
+
+  ExUnit's `Runner` notifies formatters of `test_started`/`test_finished`
+  via `GenServer.cast` and does not wait for formatters to process that
+  cast before spawning the next test (`ExUnit.Runner.run_test/2` casts
+  `test_finished`, then immediately proceeds to the next test in its
+  `Enum.reduce_while` loop). Because this formatter's snapshot for test N
+  is taken lazily, inside its own `handle_cast` for `test_finished`, on a
+  multi-scheduler BEAM the next test's freshly-spawned process can begin
+  executing (and incrementing the same shared `:cover`/native counters)
+  before this formatter's GenServer is scheduled to read them. When that
+  happens, test N's snapshot is contaminated with test N+1's already-begun
+  progress, and `Snapshot.diff/2` — correctly, given the (racy) inputs it
+  was handed — attributes the bled-through lines to the wrong test (or
+  drops them from test N's record entirely, since they no longer look like
+  an increase relative to test N's own baseline). This was measured
+  empirically on a two-test, near-instant fixture at roughly a 1-in-3
+  failure rate for exclusive per-test attribution. It affects the native
+  and classic engines identically — the race is about event timing, not
+  the read mechanism. Closing it fully likely requires a synchronous
+  per-test hook that runs inside each test's own process (e.g. a
+  `CaseTemplate`-based `setup`/`on_exit` pair, since `on_exit` callbacks
+  are the one thing `ExUnit.Runner` *does* wait on before advancing) rather
+  than a purely formatter-side, zero-test-code-change design.
+
   ## Disarmed By Default
 
   Registering this module in `:formatters` (e.g. a bare

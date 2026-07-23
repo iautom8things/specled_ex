@@ -185,3 +185,13 @@ and `:degraded` carrying the async/diagnostic signal above.
   (`SpecLedEx.Coverage.Aggregate.ingest/2`) only ever runs after the suite
   finishes, so the two do not interleave in `mix spec.cover.test`'s own
   default vs. `--per-test` flows.
+- Negative (known limitation, not closed by this amendment): `test_finished`
+  is a `GenServer.cast` the `ExUnit.Runner` does not wait on, so the next
+  test's freshly-spawned process can begin executing — and incrementing
+  the same shared counters — before this formatter's snapshot for the
+  current test is taken. Measured empirically at roughly 1-in-3 on a
+  trivial two-test fixture. This affects native and classic identically
+  (an event-timing race, not a read-mechanism defect) and is not fixable
+  from the formatter side alone; see `SpecLedEx.Coverage.Formatter`'s
+  moduledoc and the tracking follow-up ticket for the likely fix
+  (a synchronous per-test `on_exit` hook).
