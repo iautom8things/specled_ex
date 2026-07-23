@@ -138,6 +138,48 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
              Enum.join(offenders, "\n")
   end
 
+  # The corpus scans above only prove the corpus is clean TODAY — they never feed
+  # the rejection path a controlled input, so they cannot defend the allow-marker's
+  # contract. These do. Each states the regression it catches.
+
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "a real implementation code is never flagged" do
+    # Anchors the rest: proves unknown_tokens/1 isn't vacuously returning [].
+    assert unknown_tokens("see `branch_guard_realization_drift` for details") == []
+  end
+
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "a fabricated, unmarked finding code IS flagged" do
+    # Catches: the lint silently stops rejecting unknown codes at all.
+    assert unknown_tokens("see `branch_guard_totally_made_up` for details") ==
+             ["branch_guard_totally_made_up"]
+  end
+
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "an allow-marker exempts the exact token it names" do
+    # Catches: the marker stops working, so legitimately-budgeted codes in
+    # decision records start failing the suite.
+    line =
+      "a `branch_guard_totally_made_up` code " <>
+        "<!-- spec-lint:allow-code=branch_guard_totally_made_up budgeted, never emitted -->"
+
+    assert unknown_tokens(line) == []
+  end
+
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "an allow-marker does NOT rescue a different unmarked code on the same line" do
+    # THE safety property: per-token, not per-line. Catches a refactor of
+    # allowed_codes/1 or unknown_tokens/1 that exempts the whole line whenever any
+    # marker is present — which would let a genuine typo hide behind an unrelated
+    # marker. Without this test that regression is invisible: the live corpus has
+    # no line carrying a marker for one code and an unmarked fabricated other.
+    line =
+      "`branch_guard_marked_one` and `branch_guard_unmarked_two` " <>
+        "<!-- spec-lint:allow-code=branch_guard_marked_one budgeted -->"
+
+    assert unknown_tokens(line) == ["branch_guard_unmarked_two"]
+  end
+
   # Finding-code-shaped tokens on `line` that neither the implementation emits
   # (@known_codes) nor an on-line allow-marker exempts.
   defp unknown_tokens(line) do
