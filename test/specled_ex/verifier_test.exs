@@ -1439,9 +1439,13 @@ defmodule SpecLedEx.VerifierTest do
     sleep 5
     """
 
-    # Timeout is generous so the shim child reliably starts and writes the
-    # artifact before the process-group kill; the shim then sleeps past it.
-    report = run_two_subject_merged(root, shim, run_commands: true, command_timeout_ms: 300)
+    # Budget generous enough that the shim child reliably reaches its first line
+    # (truncating the artifact to empty) before the process-group kill even under
+    # a loaded merged run; the shim then sleeps past it. A tighter budget races
+    # the three-level spawn (Port -> sh -> setsid sh -> shim); losing that race
+    # leaves the artifact absent rather than empty, flipping the classified
+    # message off "likely compile cost". Matches the 2000ms sibling timeout tests.
+    report = run_two_subject_merged(root, shim, run_commands: true, command_timeout_ms: 2000)
 
     timeouts = findings(report, "verification_command_timeout")
     assert length(timeouts) == 2
