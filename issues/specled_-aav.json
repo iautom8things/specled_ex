@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-155",
+  "comments": [
+    {
+      "text": "ADMISSION (specled_-155 epic policy):\nAllowed touches: test/mix/tasks/spec_cover_test_test.exs; .spec/specs/coverage_capture.spec.md (scenario co-update only)\nOut of Scope (files): lib/**, .github/**, docs/**, all other test files\nOut of Scope (intent): no new deps; no behavior change to mix spec.cover.test itself; no changes to snapshot_test.exs's additive cover usage (verified safe — tolerates already_started, never stops)\nVerification: (1) mix test test/mix/tasks/spec_cover_test_test.exs --include integration green; (2) same file under --cover produces a real per-module tally (host :cover server survives decode_coverdata) — counterfactual on epic branch af16144: vacuous 100.00% total with zero module rows; (3) mix spec.check --base specled_-155/aggregate-first-spec-coverage exit 0.",
+      "timestamp": "2026-07-23T22:05:45Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fix decode_coverdata host :cover teardown in spec_cover_test_test.exs (run in child BEAM)",
   "type": "bug",
-  "updated_at": "2026-07-23T21:57:38Z"
+  "updated_at": "2026-07-23T22:05:45Z"
 }
