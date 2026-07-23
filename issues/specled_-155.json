@@ -35,6 +35,10 @@
     {
       "text": "LESSONS\\n- [other] When touching a file with api_boundary-bound functions, append new code below the existing bound functions — line shifts above them trigger spurious branch_guard_realization_drift via the strip_meta line-leak bug specled_-wp7 (from specled_-155.1)\\n- [stale-spec] Before letting mix spec.check seed realization hashes for brand-new bound functions, run mix compile --force — seeding against a stale _build records wrong hashes that surface as api_boundary mismatches on the next run (from specled_-155.6)",
       "timestamp": "2026-07-23T19:57:59Z"
+    },
+    {
+      "text": "MERGE GATE 4 (after specled_-155.3, epic @ 9607c97): GREEN. compile -Werror ok; 3 properties + 1074 tests, 0 failures; format ok; deps.unlock ok; spec.check exit 0 status=pass (findings=2, same ratified info pair). Default aggregate path complete: spec.cover.test default mode = plain 'mix test --cover --export-coverage' + ingest, exit-code passthrough, loud refusals; per-test capture is opt-in --per-test with async hard-fail/--allow-async degrade.",
+      "timestamp": "2026-07-23T19:57:59Z"
     }
   ],
   "priority": 1,
