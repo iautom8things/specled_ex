@@ -10,11 +10,15 @@
     {
       "text": "Reproduced live during /ship-it of specled_-f98 (2026-07-23): squash-merged PR #9, then `make worktree-cleanup NAME=specled_ex-flaky-test-hardening FORCE=1` refused with '2 unmerged commit(s) ... (vs main)'. Confirmed .claude/scripts/worktree-cleanup.sh has no force path (checked lines 68-80: unconditional `exit 1` when rev-list main..HEAD != 0), so the FORCE=1 var documented by the merge-pr flow is a no-op here. Worked around manually with `git worktree remove --force` + `git branch -D` (safe: pure-Elixir repo, no compose/volume teardown, branch verified merged at d300c21).",
       "timestamp": "2026-07-23T14:31:02Z"
+    },
+    {
+      "text": "Hit again during specled_-155 ship: 'make worktree-cleanup NAME=specled_ex-aggregate-first-spec-coverage FORCE=1' refused with '19 unmerged commit(s)' after squash-merge c90b32aa (FORCE=1 has no effect in worktree-cleanup.sh). Removed manually via git worktree remove --force + branch -D. Repro data for the fix.",
+      "timestamp": "2026-07-23T22:49:25Z"
     }
   ],
   "priority": 3,
   "status": "open",
   "title": "worktree-cleanup.sh cannot clean squash-merged worktrees (no force path)",
   "type": "task",
-  "updated_at": "2026-07-23T14:31:02Z"
+  "updated_at": "2026-07-23T22:49:25Z"
 }
