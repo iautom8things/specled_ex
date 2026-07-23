@@ -7,10 +7,12 @@
   "created": "2026-07-22T20:08:14Z",
   "description": "No spec subject — CI workflow configuration.\n\nscripts/check_specs.sh passes no --base, so CI runs spec.check's default --base HEAD: changed_files=0, append-only guard explicitly skipped (append_only_applicable?(_, \"HEAD\") -\u003e false), co-update/branch guards no-op. A PR deleting a must requirement or changing behavior without subject co-updates passes CI today. Only head-only checks (validation, verification commands, Overlap) run.\n\nFix: on pull_request events invoke check_specs.sh --base origin/main (ideally the PR merge base); keep the bare HEAD default for push-to-main and workflow_dispatch. actions/checkout@v4 is depth-1 by default, so add fetch-depth: 0 (or an explicit fetch of main) or the base ref won't exist. Depends on the event-trigger fix ticket (events must fire for the PR path to matter).",
   "id": "specled_-y1c",
-  "labels": [],
+  "labels": [
+    "phase:implementing"
+  ],
   "priority": 2,
   "status": "open",
   "title": "specs.yml: PR gate should run spec.check --base origin/main (needs fetch-depth: 0)",
   "type": "task",
-  "updated_at": "2026-07-22T20:08:23Z"
+  "updated_at": "2026-07-23T00:08:33Z"
 }
