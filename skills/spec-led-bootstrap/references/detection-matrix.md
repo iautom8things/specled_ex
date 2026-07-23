@@ -45,12 +45,10 @@ Non-empty output means `.spec/state.json` is tracked — the workspace
 predates the evidence-ledger split, and its tracked state file is a stale
 snapshot, not current truth. Do not read a workspace tier or adoption phase
 out of a tracked `state.json`. Classify as **pre-ledger** and emit one
-migration ticket alongside whatever other tickets bootstrap produces:
-
-> Run `mix spec.evidence.migrate` — it hoists any legacy embedded
-> realization baseline, untracks `.spec/state.json` (preserving the
-> worktree file, adding it to `.gitignore`), installs the pre-push
-> evidence hook, and seeds the orphan `spec-evidence` ref.
+migration ticket (running `mix spec.evidence.migrate`) alongside whatever
+other tickets bootstrap produces. The "Pre-ledger migration" section of
+[task-templates.md](task-templates.md) carries the ticket body and the
+canonical list of what the migration does.
 
 Every adopter that bootstrapped before the evidence-ledger split hits this
 path; skipping the migration leaves drift detection comparing against a

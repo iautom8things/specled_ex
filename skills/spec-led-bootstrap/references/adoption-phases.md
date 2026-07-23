@@ -245,12 +245,9 @@ The epic closes when:
    `.spec/AGENTS.md` or a CLAUDE.md addition) as the ongoing-maintenance
    skill.
 5. If `target_phase < phase6`, a deferred **graduation review** ticket
-   exists (`bw defer`, ~4 weeks out). Severities parked at
-   `:warning`/`:info` "until the corpus is clean" is the observed failure
-   mode of staged adoption — the graduation date recedes forever. The
-   deferred ticket converts "graduate later" from an intention into a
-   scheduled artifact; see the template in
-   [task-templates.md](task-templates.md).
+   exists (`bw defer`, ~4 weeks out). See the "Graduation review" section
+   of [task-templates.md](task-templates.md) for the ticket body and its
+   rationale.
 
 Once those four hold, future spec work flows through `/spec-led-development`
 and `/distill` rather than this skill.
