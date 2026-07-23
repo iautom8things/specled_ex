@@ -22,11 +22,15 @@
     {
       "text": "-F",
       "timestamp": "2026-07-23T00:20:08Z"
+    },
+    {
+      "text": "APPROVED. Merged to main as b00e02b via PR #4 (squash); merge gates green locally (compile -w-as-e, format, deps.unlock, 1017 tests 0 failures) and spec.check green in PR CI run 29968310586 exercising the new --base path. Closing per auditor sign-off.",
+      "timestamp": "2026-07-23T00:23:58Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "specs.yml: PR gate should run spec.check --base origin/main (needs fetch-depth: 0)",
   "type": "task",
-  "updated_at": "2026-07-23T00:20:08Z"
+  "updated_at": "2026-07-23T00:23:58Z"
 }
