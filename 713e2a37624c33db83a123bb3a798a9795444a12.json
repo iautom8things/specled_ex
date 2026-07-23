@@ -19,8 +19,8 @@
       "message": "Changed file skills/spec-led-bootstrap/references/detection-matrix.md impacts subject specs that were not updated: specled.package"
     }
   ],
-  "run_at": "2026-07-23T11:29:24.597556Z",
-  "run_id": "903dcd5d6c638f5f863a88c75038ac2a",
+  "run_at": "2026-07-23T12:07:58.098504Z",
+  "run_id": "61e4ddf20111b636363eadad3f08d8d1",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "713e2a37624c33db83a123bb3a798a9795444a12",
