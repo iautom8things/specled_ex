@@ -3,7 +3,7 @@
   "blocked_by": [],
   "blocks": [],
   "created": "2026-07-23T01:23:11Z",
-  "description": "Advances: specled.config — empirical audit proved SpecLedEx.Config records a config_warning diagnostic when it drops an invalid severity value (e.g. YAML ':off'), but config.diagnostics is read only by tests: neither spec.validate nor spec.check prints it, so a broken override fails 100% silently. This amplifier turned a doc typo class into an invisible failure. Emit config diagnostics as findings (or stderr warnings) in both tasks. Evidence: vault .../20260722-203631-empirical.md section 1.",
+  "description": "Advances: specled.mix_tasks — empirical audit proved SpecLedEx.Config records a config_warning diagnostic when it drops an invalid severity value (e.g. YAML ':off'), but config.diagnostics is read only by tests: neither spec.validate nor spec.check prints it, so a broken override fails 100% silently. This amplifier turned a doc typo class into an invisible failure. Emit config diagnostics as findings (or stderr warnings) in both tasks. Evidence: vault .../20260722-203631-empirical.md section 1.",
   "id": "specled_-80u",
   "labels": [
     "phase:implementing"
@@ -12,5 +12,5 @@
   "status": "in_progress",
   "title": "Surface config diagnostics in spec.validate and spec.check output",
   "type": "task",
-  "updated_at": "2026-07-23T09:23:20Z"
+  "updated_at": "2026-07-23T09:36:34Z"
 }
