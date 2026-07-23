@@ -75,11 +75,15 @@
     {
       "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/13 (release 0.5.0, branch feat/specled_-155-aggregate-first-spec-coverage @ 8049442). Rebased onto 0.4.1 (baseline reconciled via --accept-drift after the o40 hasher migration); review-remediation children specled_-aav + specled_-36o landed. Babysitting CI.",
       "timestamp": "2026-07-23T22:39:47Z"
+    },
+    {
+      "text": "CI round 1: classic-fallback leg (OTP 26.2.5, first-ever run) caught a real portability bug — 4 raw :code.coverage_support/0 calls in snapshot_test.exs (BIF is OTP 27+). Production already guarded. Fix pushed (existence-guarded helper); native leg + Check Specs were green. Watching round 2.",
+      "timestamp": "2026-07-23T22:44:15Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Aggregate-first spec coverage — specled_-47j remediation",
   "type": "epic",
-  "updated_at": "2026-07-23T22:39:47Z"
+  "updated_at": "2026-07-23T22:44:15Z"
 }
