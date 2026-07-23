@@ -20,15 +20,28 @@ concurrency for cumulative (non-per-test) attribution.
 The old serialized flow survives as the opt-in `--per-test` flag
 (`specled.coverage_capture.serialized_run`): it still forces
 `ExUnit.configure(async: false)` and arms the custom formatter, which
-snapshots coverage per-test keyed by `test_pid` using anonymous ETS (so
-multiple formatters can coexist in tests). Under `--per-test`, a test file
-that declares `async: true` genuinely does run concurrently despite the
-global default and corrupts serialized attribution, so the task exits
-non-zero naming it unless `--allow-async` degrades the run instead. `mix test
---cover` continues to work in its traditional cumulative mode; only `mix
-spec.cover.test --per-test` produces the per-test artifact at
-`.spec/_coverage/per_test.coverdata` (the default aggregate mode's v2
-envelope targets the same path).
+snapshots coverage per-test into anonymous ETS (so multiple formatters can
+coexist in tests), keyed by `{module, name}` by default — ExUnit does not
+expose a test's runtime pid inside `test.tags`, so a `test_pid`-keyed row
+exists only when the test itself opts in via `@tag test_pid: self()`.
+Either key is unique per test under serialized execution, but key
+uniqueness only rules out ETS-row collisions; it does not close the
+underlying `ExUnit.Runner` event-timing race (`test_finished` is a
+`GenServer.cast` the Runner does not wait on before starting the next
+test), which can bleed a test's in-flight coverage into its neighbor's
+snapshot — measured at roughly 1-in-3 exclusive-attribution failures on a
+trivial fixture (`specled_-cpw`). Per-test attribution under `--per-test`
+is therefore observed/approximate, never exact, even when the envelope is
+not marked `degraded` (`degraded` flags only async-tagged tests and
+externally-harvested counters, not this race — see
+`specled.decision.aggregate_first_spec_coverage`). Under `--per-test`, a
+test file that declares `async: true` genuinely does run concurrently
+despite the global default and corrupts serialized attribution, so the
+task exits non-zero naming it unless `--allow-async` degrades the run
+instead. `mix test --cover` continues to work in its traditional
+cumulative mode; only `mix spec.cover.test --per-test` produces the
+per-test artifact at `.spec/_coverage/per_test.coverdata` (the default
+aggregate mode's v2 envelope targets the same path).
 
 The formatter is inert unless armed: registering it in `:formatters` is not
 by itself enough to run it (ExUnit forwards its entire `:ex_unit` application
@@ -88,6 +101,7 @@ realized_by:
     - "SpecLedEx.Coverage.cover_modules_safe/0"
 decisions:
   - specled.decision.serialized_per_test_coverage
+  - specled.decision.aggregate_first_spec_coverage
 ```
 
 ## Requirements
@@ -258,11 +272,20 @@ decisions:
   stability: evolving
 - id: specled.coverage_capture.keyed_by_test_pid
   statement: >-
-    The formatter shall key per-test state by `test_pid` as reported in
-    the ExUnit event. The per-test record shall carry
-    `{snapshot, tags, test_id}`. Interleaved events from different
-    tests cannot collide because each serialized run has a unique
-    test_pid at any moment.
+    The formatter's ETS row key shall default to `{module, name}` — ExUnit
+    does not expose a test's runtime pid inside `test.tags`, so ExUnit
+    itself never supplies one by default; a `test_pid`-keyed row exists
+    only when the test opts in via `@tag test_pid: self()`. Either key is
+    unique per test under serialized (non-`async: true`) execution, so
+    interleaved `test_finished` events for different tests cannot collide
+    on the same ETS row. Key uniqueness does not by itself guarantee
+    exclusive attribution: the formatter's snapshot for test N is taken
+    lazily inside its own `test_finished` `GenServer.cast` handler, and
+    `ExUnit.Runner` does not wait for that cast before starting test N+1,
+    so the two tests' underlying `:cover`/native counter progress can
+    still interleave (`specled_-cpw`). Per-test attribution is therefore
+    observed/approximate, never exact, independent of key choice — see
+    `specled.decision.aggregate_first_spec_coverage`.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.anonymous_ets
@@ -275,11 +298,16 @@ decisions:
   stability: evolving
 - id: specled.coverage_capture.artifact_path
   statement: >-
-    The per-test coverage artifact shall be written to
-    `.spec/_coverage/per_test.coverdata` as ETF encoding a list of
-    records with fields `test_id`, `file`, `lines_hit`, `tags`, and
-    `test_pid`. The schema version is implicit in `hasher_version`-style
-    bumps; no in-band version field.
+    SpecLedEx.Coverage.Store shall keep the v1 record schema — `test_id`,
+    `file`, `lines_hit`, `tags`, `test_pid`, with no in-band version field
+    — available via `build_records/1`/`write/2`/`read/1` for test
+    authoring and as the shape of a v2 `:per_test` envelope's `:payload`.
+    The artifact `mix spec.cover.test --per-test` actually writes to
+    `.spec/_coverage/per_test.coverdata` shall be that versioned v2
+    envelope (`specled.coverage_capture.per_test_v2_envelope`), which does
+    carry an in-band `version` field — superseding this requirement's
+    original "no in-band version field" claim for the production write
+    path (see `specled.decision.aggregate_first_spec_coverage`).
   priority: must
   stability: evolving
 - id: specled.coverage_capture.store_split

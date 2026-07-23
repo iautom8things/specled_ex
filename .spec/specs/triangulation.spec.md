@@ -45,6 +45,8 @@ realized_by:
     - "SpecLedEx.CoverageTriangulation.aggregate_requirement_reach/2"
     - "SpecLedEx.Review.CoverageClosure.build_v2/2"
     - "SpecLedEx.CoverageTriangulation.execution_reach_map/2"
+decisions:
+  - specled.decision.aggregate_first_spec_coverage
 ```
 
 ## Requirements
@@ -223,7 +225,7 @@ realized_by:
   given:
     - a project with no `.spec/_coverage/per_test.coverdata`
   when:
-    - mix spec.check runs with triangulation enabled
+    - "`CoverageTriangulation.findings/3` is called directly, or `mix spec.triangle` / `mix spec.review` runs against the project — `mix spec.check` never runs triangulation and is not a consumer of this detector (Decision 1, `specled.decision.aggregate_first_spec_coverage`)"
   then:
     - "a single `detector_unavailable` finding references reason `:no_coverage_artifact`"
     - no `branch_guard_untested_realization` findings are emitted speculatively

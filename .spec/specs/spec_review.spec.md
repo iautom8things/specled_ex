@@ -33,6 +33,7 @@ decisions:
   - specled.decision.spec_review_html_viewer
   - specled.decision.spec_review_change_scoped_master_detail
   - specled.decision.evidence_orphan_branch_split
+  - specled.decision.aggregate_first_spec_coverage
 ```
 
 ## Requirements
@@ -264,10 +265,17 @@ decisions:
     "linked" / "executed"). A "Reached by tests" row naming every `"executed"`-
     strength tagged test shall render exclusively when the subject's coverage mode
     is `:per_test` (`:ok_per_test`) — aggregate coverage has no per-test attribution
-    to name, so the row stays absent there. Because `:ok_per_test`'s per-requirement
-    MFA coverage is currently computed via a file-level proxy (pending the per-test
-    lane's MFA-level rebuild), the per_test closure line shall carry a short
-    qualifier noting the coverage percentage is approximate. Each subject card shall
+    to name, so the row stays absent there. `"executed"` strength and the per_test
+    `closure_coverage_pct` both reflect the `--per-test` engine's observed
+    attribution, which is race-bounded (an ExUnit `test_finished` cast-timing race
+    can bleed coverage between adjacent tests regardless of the `degraded` flag;
+    see `specled_-cpw` and `specled.decision.aggregate_first_spec_coverage`) rather
+    than exact — the closure line and the "Reached by tests" row shall each be
+    discoverably qualified as observed/approximate, never asserted as exact
+    per-test isolation. Because `:ok_per_test`'s per-requirement MFA coverage is
+    still computed via a file-level proxy rather than the per-test engine's real
+    MFA-level data, the per_test closure line shall additionally carry a qualifier
+    noting the coverage percentage is approximate. Each subject card shall
     additionally carry a rollup badge summarizing the subject's coverage status (a
     self-verified/total count and mode when coverage data loaded, or a muted
     "coverage unavailable" chip when degraded). The v2 envelope's own `generated_at`

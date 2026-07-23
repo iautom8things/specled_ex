@@ -2971,12 +2971,14 @@ defmodule SpecLedEx.Review.Html do
 
   # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
   # Flag 2 (specled_-155.7 orchestrator addendum): per_test-mode MFA coverage
-  # is currently computed via a file-level proxy pending the per-test lane
-  # rebuild (specled_-155.5) — see the comment on CoverageClosure's
-  # v2_by_requirement/5 (:per_test clause). Naming that here keeps the UI
-  # from over-claiming exact MFA attribution it does not yet have.
+  # is computed via a file-level proxy — CoverageClosure's
+  # v2_by_requirement/5 (:per_test clause) has not yet been wired to the
+  # real per-test snapshot-diff engine specled_-155.5 shipped (tracked
+  # follow-up: specled_-jjq). Naming that here keeps the UI honest about the
+  # percentage's provenance rather than presenting it as exact MFA
+  # attribution.
   defp render_proxy_note(:per_test) do
-    ~S| <span class="cov-closure-proxy-note" title="Per-test MFA coverage is currently a file-level proxy pending the per-test lane rebuild (specled_-155.5); treat the percentage as approximate.">(file-level proxy)</span>|
+    ~S| <span class="cov-closure-proxy-note" title="Per-test MFA coverage is currently a file-level proxy, not real per-test MFA data (specled_-jjq); treat the percentage as approximate.">(file-level proxy)</span>|
   end
 
   defp render_proxy_note(_), do: ""
@@ -2987,17 +2989,30 @@ defmodule SpecLedEx.Review.Html do
 
   # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
   # "Reached by tests" names the tagged tests whose own coverage record
-  # reached the requirement's closure — exact per-test attribution that only
-  # exists under :ok_per_test (aggregate coverage's evidence strength tops
-  # out at "linked", never "executed"). Rendered only in per_test mode, per
-  # the ticket's mode-gate requirement — not merely omitted when the
-  # "executed" list happens to be empty.
+  # reached the requirement's closure — observed, race-bounded per-test
+  # attribution that only exists under :ok_per_test (aggregate coverage's
+  # evidence strength tops out at "linked", never "executed"). It is not
+  # exact: the underlying formatter takes each test's snapshot lazily inside
+  # an async `test_finished` GenServer.cast that ExUnit.Runner does not wait
+  # on, so a test's in-flight coverage can bleed into its neighbor's
+  # snapshot regardless of the envelope's `degraded` flag — measured at
+  # roughly 1-in-3 exclusive-attribution failures on a trivial fixture (see
+  # specled_-cpw and specled.decision.aggregate_first_spec_coverage). The
+  # label's title attribute below discloses this so "executed" reads as
+  # observed, not proven exact. Rendered only in per_test mode, per the
+  # ticket's mode-gate requirement — not merely omitted when the "executed"
+  # list happens to be empty.
   defp render_reached_by_tests_row(_tagged_tests, :aggregate), do: ""
+
+  @reached_by_tests_title "Per-test attribution can be affected by an ExUnit " <>
+                            "test_finished event-timing race across formatter " <>
+                            "casts (roughly 1-in-3 measured on a trivial fixture); " <>
+                            "treat as observed, not exact — see specled_-cpw."
 
   defp render_reached_by_tests_row(tagged_tests, :per_test) do
     case Enum.filter(tagged_tests, &(&1.strength == "executed")) do
       [] ->
-        ~S|<p class="cov-reached-by-tests" data-empty="true"><span class="cov-reached-by-tests-label">Reached by tests:</span> none.</p>|
+        ~s|<p class="cov-reached-by-tests" data-empty="true"><span class="cov-reached-by-tests-label" title="#{h(@reached_by_tests_title)}">Reached by tests:</span> none.</p>|
 
       executed ->
         names =
@@ -3007,7 +3022,7 @@ defmodule SpecLedEx.Review.Html do
           end)
           |> Enum.join(", ")
 
-        ~s|<p class="cov-reached-by-tests"><span class="cov-reached-by-tests-label">Reached by tests:</span> #{names}.</p>|
+        ~s|<p class="cov-reached-by-tests"><span class="cov-reached-by-tests-label" title="#{h(@reached_by_tests_title)}">Reached by tests:</span> #{names}.</p>|
     end
   end
 

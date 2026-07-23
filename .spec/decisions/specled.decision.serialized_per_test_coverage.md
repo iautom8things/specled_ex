@@ -195,3 +195,17 @@ and `:degraded` carrying the async/diagnostic signal above.
   from the formatter side alone; see `SpecLedEx.Coverage.Formatter`'s
   moduledoc and the tracking follow-up ticket for the likely fix
   (a synchronous per-test `on_exit` hook).
+
+## Amendment (specled_-155.8): superseded-in-part by aggregate-first coverage
+
+`specled.decision.aggregate_first_spec_coverage` supersedes this ADR's
+original Decision section insofar as it declared per-test, serialized
+capture the *default* posture for spec coverage. It does not touch this
+document's text: per its own "What is retained verbatim" section, the
+opt-in `--per-test` lane's design in the Decision section above, and both
+amendments above (arming seam / no fabrication; native/classic
+snapshot-diff / read-only invariant), remain authoritative for that lane
+unchanged. Read the two documents together: this one for the `--per-test`
+lane's technical design, the new one for why aggregate ingest is now the
+default and for the `specled_-cpw` race-bound disclosure that applies to
+this lane's per-test attribution regardless of the `degraded` flag.
