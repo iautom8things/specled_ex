@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T22:50:30Z",
+  "description": "No spec subject\n\nReview CF4 (consensus: distributed M1 + spec + testing). The specled_-cpw attribution race can flip a tagged test to 'executed' strength, so build_v2's self_verified? boolean (coverage_closure.ex:588) reaches html.ex:2012's rollup badge unqualified — the one artifact in the chain that drops the ADR's own 'race-bounded, not exact' disclaimer. Cheap fix: observed/approx qualifier + title-attribute caveat on the badge and per-requirement row under :ok_per_test mode only (aggregate mode's 'linked' ceiling is already honest). Real fix (synchronous on_exit hook) stays specled_-cpw.",
+  "id": "specled_-q6l.2",
+  "labels": [],
+  "parent": "specled_-q6l",
+  "priority": 2,
+  "status": "open",
+  "title": "Qualify self_verified? rendering under :ok_per_test as observed/approximate",
+  "type": "task",
+  "updated_at": "2026-07-23T22:50:30Z"
+}
