@@ -11,6 +11,12 @@
     "phase:implementing",
     "slug:aggregate-first-spec-coverage"
   ],
+  "comments": [
+    {
+      "text": "ORCHESTRATOR POLICY (applies to all children): each code ticket ships additively so every intermediate epic state stays green (merge gate = compile -Werror, test, format, deps.unlock, spec.check after every close). Callers migrate in their owning tickets. Spec co-change is limited to requirement text/stubs a diff directly invalidates; the consolidation rewrite + new ADR remain specled_-155.8. Allowed-touches / Out-of-Scope / Verification sections are appended to each child at admission time.",
+      "timestamp": "2026-07-23T19:57:53Z"
+    }
+  ],
   "priority": 1,
   "status": "in_progress",
   "title": "Aggregate-first spec coverage — specled_-47j remediation",
