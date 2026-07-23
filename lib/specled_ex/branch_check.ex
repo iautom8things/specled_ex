@@ -44,7 +44,7 @@ defmodule SpecLedEx.BranchCheck do
     config = Config.load(root)
     analysis = ChangeAnalysis.analyze(index, root, opts)
     changed_subject_ids = MapSet.new(analysis.changed_subject_ids)
-    severity_opts = severity_opts(config, root, analysis.base)
+    severity_opts = severity_opts(config, root, analysis.base, accept_drift?(opts))
 
     # Hoist the realization run so its attestation map is available to the
     # file-touch loop below. The same raw findings flow through
@@ -161,12 +161,29 @@ defmodule SpecLedEx.BranchCheck do
     end
   end
 
-  defp severity_opts(config, root, base) do
+  # covers: specled.realized_by.drift_acceptance
+  #
+  # `accept_drift?` injects a run-scoped `branch_guard_realization_drift => :info`
+  # entry at trailer precedence — the highest precedence in
+  # `Severity.resolve/3` — so `mix spec.check --accept-drift` passes in a single
+  # run even in repos that pin the code to `:error` in
+  # `branch_guard.severities`. The explicit flag is a stronger, deliberate
+  # acknowledgment than that standing config, exactly as a `Spec-Drift:` trailer
+  # overrides config. A config `:off` still absorbs it (off is absorbing), and
+  # only the drift code is touched — dangling bindings keep their `:error`.
+  defp severity_opts(config, root, base, accept_drift?) do
     trailer_overrides =
       if is_binary(base) and base != "HEAD" do
         Trailer.read(root, base).overrides
       else
         %{}
+      end
+
+    trailer_overrides =
+      if accept_drift? do
+        Map.put(trailer_overrides, "branch_guard_realization_drift", :info)
+      else
+        trailer_overrides
       end
 
     [
@@ -219,7 +236,8 @@ defmodule SpecLedEx.BranchCheck do
       root: root,
       umbrella?: Keyword.get(opts, :umbrella?, false),
       context: Keyword.get(opts, :context),
-      commit_hashes?: Keyword.get(opts, :commit_realization_hashes?, true)
+      commit_hashes?: Keyword.get(opts, :commit_realization_hashes?, true),
+      accept_drift?: accept_drift?(opts)
     ]
 
     realization_opts =
@@ -264,6 +282,8 @@ defmodule SpecLedEx.BranchCheck do
       end
     end)
   end
+
+  defp accept_drift?(opts), do: Keyword.get(opts, :accept_drift?, false) == true
 
   # covers: specled.branch_guard.file_touch_yields_to_attested_file
   # covers: specled.branch_guard.file_touch_per_subject_independence

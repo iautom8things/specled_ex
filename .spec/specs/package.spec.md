@@ -82,7 +82,7 @@ decisions:
   priority: must
   stability: evolving
 - id: specled.package.concepts_guide
-  statement: The package shall provide a concepts document at `docs/concepts.md` that explains the spec triangle (specs ↔ code ↔ tests), the `realized_by` tiers, and the graceful-degrade rule that emits `detector_unavailable` instead of failing when a detector's prerequisites are missing.
+  statement: The package shall provide a concepts document at `docs/concepts.md` that explains the spec triangle (specs ↔ code ↔ tests), the `realized_by` tiers, the graceful-degrade rule that emits `detector_unavailable` instead of failing when a detector's prerequisites are missing, and how to accept intentional realization drift (the durable `mix spec.check --accept-drift` path, the PR-scoped `Spec-Drift:` trailer, and the implementation-tier delete-and-reseed ritual).
   priority: must
   stability: evolving
 - id: specled.package.doc_identifier_integrity

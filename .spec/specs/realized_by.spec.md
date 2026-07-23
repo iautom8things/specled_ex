@@ -41,6 +41,7 @@ realized_by:
 decisions:
   - specled.decision.realized_by_tier_implication
   - specled.decision.file_touch_yields_to_realization
+  - specled.decision.realization_drift_acceptance
 ```
 
 ## Requirements
@@ -259,6 +260,27 @@ decisions:
     `refresh_and_commit_hashes/3`, the orchestrator shall recompute
     hashes for both MFA-form entries (`ApiBoundary.hash/1`) and bare-module
     entries (`Canonical.hash_module_head_union/1`).
+  priority: must
+  stability: evolving
+- id: specled.realized_by.drift_acceptance
+  statement: >-
+    `mix spec.check --accept-drift` shall provide a durable acceptance path for
+    INTENTIONAL realization drift. When the orchestrator is run with
+    `accept_drift?: true`, it shall run `refresh_and_commit_hashes/3` even
+    though `branch_guard_realization_drift` findings are present, committing the
+    current flat-tier hashes as the new baseline via `HashStore.merge/2`, so a
+    subsequent `mix spec.check` sees committed == current and emits no drift for
+    those bindings. Bindings that do not resolve shall NOT be accepted: the
+    refresh only commits hashes for resolvable bindings, so a
+    `branch_guard_dangling_binding` finding continues to fail the run. For the
+    accepting run, `SpecLedEx.BranchCheck` shall inject a run-scoped
+    `branch_guard_realization_drift => :info` override at trailer precedence in
+    `Severity.resolve/3`, so the finding resolves to `:info` and the run passes
+    even when `branch_guard.severities` pins the code to `:error`; a config
+    `:off` still absorbs it. Acceptance thus completes in a single run without
+    depending on the `Spec-Drift:` trailer, whose `base..HEAD` window closes
+    once the carrying commit merges. See
+    `specled.decision.realization_drift_acceptance`.
   priority: must
   stability: evolving
 - id: specled.realized_by.redundant_dup_warning
@@ -522,6 +544,26 @@ decisions:
   then:
     - "the map contains no entry for `(\"subj\", \"test/mod_test.exs\")`"
   covers: []
+- id: specled.realized_by.scenario.accept_drift_commits_baseline
+  given:
+    - "a subject with a `realized_by.api_boundary` binding whose committed hash no longer matches its current canonical AST (intentional drift)"
+  when:
+    - "the orchestrator runs with `accept_drift?: true` and `commit_hashes?: true`"
+  then:
+    - "the committed hash for that binding is refreshed to the current value in the hash store"
+    - "the `branch_guard_realization_drift` finding resolves to `:info` for the accepting run"
+    - "a subsequent run with committed == current emits no drift finding for that binding"
+  covers:
+    - specled.realized_by.drift_acceptance
+- id: specled.realized_by.scenario.accept_drift_does_not_absorb_dangling
+  given:
+    - "a subject with a `realized_by.api_boundary` binding that does not resolve to any live MFA"
+  when:
+    - "the orchestrator runs with `accept_drift?: true`"
+  then:
+    - "no hash is committed for the unresolved binding"
+    - "a `branch_guard_dangling_binding` finding still fires at `:error` and the run fails"
+  covers: []
 ```
 
 ## Verification
@@ -581,4 +623,8 @@ decisions:
   execute: true
   covers:
     - specled.realized_by.attestation_tagged_tests_expansion
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.realized_by.drift_acceptance
 ```
