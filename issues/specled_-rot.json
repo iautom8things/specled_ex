@@ -7,8 +7,8 @@
   "id": "specled_-rot",
   "labels": [],
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "bare-module api_boundary entries oscillate between seed and refresh passes",
   "type": "task",
-  "updated_at": "2026-07-02T21:03:24Z"
+  "updated_at": "2026-07-23T00:48:32Z"
 }
