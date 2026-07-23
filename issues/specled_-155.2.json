@@ -1,6 +1,8 @@
 {
   "assignee": "",
-  "blocked_by": [],
+  "blocked_by": [
+    "specled_-155.1"
+  ],
   "blocks": [],
   "created": "2026-07-23T12:03:10Z",
   "description": "Advances: specled.coverage_capture, specled.mix_tasks\n\nNEW lib/specled_ex/coverage/aggregate.ex: ingest/2 = :cover.stop/start/import + two analyse passes (:coverage,:line and :coverage,:function) -\u003e module-to-repo-relative source map -\u003e v2 envelope; {:error, :empty_coverage} on empty; unmapped-module diagnostic count. NEW lib/mix/tasks/spec.cover.ingest.ex: coveralls/CI escape hatch over any .coverdata (spec coverage for free from an existing --export-coverage run). Shared MFA-string format helper with round-trip test (pins the format CoverageClosure parses). Test via child-BEAM fixture exporting real coverdata.",
@@ -11,5 +13,5 @@
   "status": "open",
   "title": "T2: Aggregate.ingest/2, mix spec.cover.ingest, shared MFA-string helper",
   "type": "task",
-  "updated_at": "2026-07-23T12:03:10Z"
+  "updated_at": "2026-07-23T12:03:11Z"
 }
