@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-155.6"
   ],
@@ -12,7 +12,7 @@
   "labels": [],
   "parent": "specled_-155",
   "priority": 1,
-  "status": "open",
+  "status": "in_progress",
   "title": "T7: spec.review + spec.triangle rendering of spec coverage",
   "type": "task",
   "updated_at": "2026-07-23T19:58:01Z"
