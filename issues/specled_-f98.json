@@ -37,11 +37,15 @@
     {
       "text": "APPROVED. Branch specled_-f98/flaky-test-hardening (worktree specled_ex-flaky-test-hardening), commit 2a90f74 — not merged to main; this repo lands via PR + CI. Full merge gate green in the worktree: mix compile --warnings-as-errors clean, mix format --check-formatted ok, mix deps.unlock --check-unused ok, mix test 1029 tests + 3 properties 0 failures, mix spec.check (full, runs commands) status=pass errors=0 warnings=0 exit 0.\n\nObservations 2 (SPECLED_SHOW_INFO hermeticity) and 4 (empty-artifact timeout budget) fixed. Observation 1/3 (tracer merge_edges property) is a critic-confirmed non-defect (sound pure-function property; likely a timeout artifact under load) — carried to standalone follow-up specled_-qvg for seed capture if it recurs. Closing per auditor sign-off. Ready for /open-pr.",
       "timestamp": "2026-07-23T11:29:29Z"
+    },
+    {
+      "text": "Observation 2026-07-23 (from specled_-155.1 implementer, worktree specled_ex-store-v2-envelope @ 14a22d4): test/mix/tasks/spec_cover_test_test.exs failed once in a combined regression run, then passed 4 consecutive re-runs with different seeds and in isolation. :cover-state integration test (System.cmd child-BEAM); diff under test touched only Store file I/O + pure validation, so unrelated. Matches this ticket's signature class. Note for specled_-155 merge gates: if this file flakes at a gate, targeted re-run before flake-accept per protocol.",
+      "timestamp": "2026-07-23T19:57:54Z"
     }
   ],
   "priority": 3,
   "status": "closed",
   "title": "flaky one-off failures in full-suite/merged verification runs (2 observations 2026-07-02)",
   "type": "task",
-  "updated_at": "2026-07-23T14:10:05Z"
+  "updated_at": "2026-07-23T19:57:54Z"
 }
