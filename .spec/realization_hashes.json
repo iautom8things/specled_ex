@@ -200,6 +200,10 @@
       "hash": "d57f6ca9e4acd4a81e89d081d307b5a06fd530a1e3f5a22781c4651dfa0d288d",
       "hasher_version": 1
     },
+    "SpecLedEx.Coverage.Store.build_envelope/1": {
+      "hash": "c1b83bee225728b22ecd7338e581b8f1f313ce70547735aa22d4feac719bc5ca",
+      "hasher_version": 1
+    },
     "SpecLedEx.Coverage.Store.build_records/1": {
       "hash": "ba61d4783a31c2b0d1c7ab3678f22981113e56eba6a1c9dfee88f0ac370eb896",
       "hasher_version": 1
@@ -208,8 +212,20 @@
       "hash": "0da17832dc52f898875e2b32b49043a85784a11f26537799eb205f66c3895d8d",
       "hasher_version": 1
     },
+    "SpecLedEx.Coverage.Store.read_status/1": {
+      "hash": "4d211ad54451643487da93117e8dbb70e70a6cf6839f5a242ca7c5680d2fd9f5",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.Store.read_v2/1": {
+      "hash": "27aedfc7571be3e18c991e2fc10878738e8a82fc303cd1c8d98d86570a47f164",
+      "hasher_version": 1
+    },
     "SpecLedEx.Coverage.Store.write/2": {
       "hash": "516cc362f7630e717a575cdf28d3a962ecb1f0c8299867efd3b51a408dc5c098",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.Store.write_v2/2": {
+      "hash": "9930d30e2fdbfa20ab19d613c7f8afb62359534e95e06cac0d0b9cbaa58a6bec",
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.category_summary/3": {

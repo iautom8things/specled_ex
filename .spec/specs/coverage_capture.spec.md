@@ -36,6 +36,10 @@ realized_by:
     - "SpecLedEx.Coverage.Formatter"
     - "SpecLedEx.Coverage.Store.write/2"
     - "SpecLedEx.Coverage.Store.read/1"
+    - "SpecLedEx.Coverage.Store.build_envelope/1"
+    - "SpecLedEx.Coverage.Store.write_v2/2"
+    - "SpecLedEx.Coverage.Store.read_v2/1"
+    - "SpecLedEx.Coverage.Store.read_status/1"
     - "Mix.Tasks.Spec.Cover.Test.run/1"
   implementation:
     - "SpecLedEx.Coverage.Formatter.init/1"
@@ -108,6 +112,30 @@ decisions:
     child BEAM, preventing contamination of the outer `:cover` state.
   priority: must
   stability: evolving
+- id: specled.coverage_capture.store_v2_envelope
+  statement: >-
+    SpecLedEx.Coverage.Store shall additionally expose a versioned v2
+    envelope container (`build_envelope/1`, `write_v2/2`, `read_v2/1`,
+    `read_status/1`) targeting the same on-disk path as the v1 record list.
+    `write_v2/2` shall refuse (`{:error, :empty_files}`) an envelope whose
+    `:files` is empty, and shall (re)write a `last_run.status` sidecar next
+    to the artifact on every call (success or refusal), readable via
+    `read_status/1` as `{:ok, stats} | {:refused, reason}`. This is
+    additive: `write/2` and `read/1` (v1) are unchanged, and existing
+    callers (Formatter, triangulation, review) keep their current behavior
+    until their own tickets migrate them to v2.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.store_v2_legacy_rejection
+  statement: >-
+    `SpecLedEx.Coverage.Store.read_v2/1` shall return `{:ok, envelope}` for
+    a well-formed v2 envelope, `{:error, :legacy_artifact, message}` (with
+    `message` naming the re-run command `mix spec.cover.test`) when the
+    artifact decodes as a pre-v2 (v1) list, and `{:error, :invalid_artifact}`
+    for any other undecodable or malformed content. Per Decision 5, legacy
+    artifacts are never auto-migrated or deleted.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -136,6 +164,27 @@ decisions:
   covers:
     - specled.coverage_capture.store_split
     - specled.coverage_capture.artifact_path
+- id: specled.coverage_capture.scenario.store_v2_round_trip
+  given:
+    - "a v2 envelope built via `Coverage.Store.build_envelope/1` with a non-empty `:files` list"
+  when:
+    - "`Coverage.Store.write_v2/2` writes it to a temp path, then `Coverage.Store.read_v2/1` reads that same path"
+  then:
+    - "the decoded envelope is identical to the one written"
+    - "`Coverage.Store.read_status/1` on the same path returns `{:ok, stats}`"
+  covers:
+    - specled.coverage_capture.store_v2_envelope
+- id: specled.coverage_capture.scenario.store_v2_legacy_and_invalid_rejection
+  given:
+    - "a v1-format artifact (a bare list) written at a path"
+    - "a garbage-bytes artifact written at another path"
+  when:
+    - "`Coverage.Store.read_v2/1` is called on each path"
+  then:
+    - "the v1 artifact yields `{:error, :legacy_artifact, message}` where `message` names `mix spec.cover.test`"
+    - "the garbage artifact yields `{:error, :invalid_artifact}`"
+  covers:
+    - specled.coverage_capture.store_v2_legacy_rejection
 - id: specled.coverage_capture.scenario.spec_cover_test_forces_serial
   given:
     - "test/fixtures/sample_project with one `async: true` test module"
@@ -164,6 +213,11 @@ decisions:
   covers:
     - specled.coverage_capture.store_split
     - specled.coverage_capture.artifact_path
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.coverage_capture.store_v2_envelope
+    - specled.coverage_capture.store_v2_legacy_rejection
 - kind: tagged_tests
   execute: true
   covers:
