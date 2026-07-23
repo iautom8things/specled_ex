@@ -33,11 +33,15 @@
     {
       "text": "Post-close follow-up d8fb2f3 (same branch, pre-PR): critical-review consolidated findings F2 and F7 fixed. F2 — prime fork loop lines promoted to requirement specled.prime.decision_fork_loop_line with a tagged test covering both default and --bugfix variants; prime.spec.md prose corrected. F7 — both decisions READMEs (workspace + spec.init scaffold) made rubric-first two-armed; ADR covered-surfaces list updated to enumerate them; scaffold decisions README claimed in specled.package surface. Gates: mix spec.check --no-run-commands 0 findings, prime task tests 3/3, format clean. Review reports: ~/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-22/specled_-4kg-spec-drift-fork/",
       "timestamp": "2026-07-23T00:59:58Z"
+    },
+    {
+      "text": "PR opened: release 0.3.0 from feat/specled_-4kg-spec-drift-fork. Babysitting CI.",
+      "timestamp": "2026-07-23T08:36:17Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "Advise the Spec-Drift trailer alternative in spec.next and the missing_decision_update finding",
   "type": "task",
-  "updated_at": "2026-07-23T00:59:58Z"
+  "updated_at": "2026-07-23T08:36:17Z"
 }
