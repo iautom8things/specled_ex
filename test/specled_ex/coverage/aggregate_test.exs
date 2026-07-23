@@ -11,7 +11,8 @@ defmodule SpecLedEx.Coverage.AggregateTest do
 
   @moduletag spec: [
                "specled.coverage_capture.aggregate_ingest",
-               "specled.coverage_capture.aggregate_empty_coverage"
+               "specled.coverage_capture.aggregate_empty_coverage",
+               "specled.coverage_capture.aggregate_unmapped_degraded"
              ]
 
   alias SpecLedEx.Coverage.Store
@@ -98,6 +99,55 @@ defmodule SpecLedEx.Coverage.AggregateTest do
     end
   end
 
+  describe "aggregate_ingest_unmapped_degraded scenario" do
+    @tag :integration
+    test "a module whose source cannot be mapped is excluded from files/mfas and marked degraded" do
+      root = scaffold_two_module_fixture()
+      on_exit(fn -> File.rm_rf!(root) end)
+
+      {export_output, export_status} =
+        run_fixture_mix_test(root, ["test", "--cover", "--export-coverage", "specled"])
+
+      assert export_status == 0,
+             "expected fixture export to succeed. Output:\n#{export_output}"
+
+      # Simulate an unmappable module the way the CI escape hatch would
+      # encounter one: a `.coverdata` naming a module whose `.beam` is no
+      # longer on this BEAM's code path, so `Code.ensure_loaded/1` fails and
+      # `Aggregate.ingest/2` cannot resolve its source. `Covered` stays
+      # loadable so the envelope is not *entirely* empty.
+      app = fixture_app_name(root)
+      other_beam = Path.join([root, "_build", "test", "lib", app, "ebin", "Elixir.Other.beam"])
+      assert File.exists?(other_beam), "expected #{other_beam} to exist before removal"
+      File.rm!(other_beam)
+
+      envelope_path = Path.join(root, "out.coverdata")
+
+      {ingest_output, ingest_status} =
+        run_fixture_mix_test(root, [
+          "spec.cover.ingest",
+          "cover/specled.coverdata",
+          "--output",
+          "out.coverdata"
+        ])
+
+      assert ingest_status == 0,
+             "expected ingest to still succeed (degraded, not empty). Output:\n#{ingest_output}"
+
+      assert ingest_output =~ "degraded",
+             "expected the success message to note degradation. Output was:\n#{ingest_output}"
+
+      assert {:ok, envelope} = Store.read_v2(envelope_path)
+      assert envelope.degraded == true
+
+      assert Enum.find(envelope.files, &(&1.file == "lib/covered.ex")),
+             "expected the loadable module to still be present"
+
+      refute Enum.any?(envelope.mfas, &String.starts_with?(&1.mfa, "Other.")),
+             "expected the unmapped module's MFAs to be excluded"
+    end
+  end
+
   defp scaffold_fixture do
     base = new_fixture_root("specled_aggregate_fixture")
 
@@ -116,6 +166,26 @@ defmodule SpecLedEx.Coverage.AggregateTest do
     base = new_fixture_root("specled_aggregate_empty_fixture")
     File.write!(Path.join([base, "test", "noop_test.exs"]), noop_test_module())
     base
+  end
+
+  # A fixture with two lib modules, `Covered` and `Other`, both exercised.
+  # The unmapped_degraded test deletes `Other`'s compiled `.beam` after
+  # export so ingest can't map its source, while `Covered` stays mappable.
+  defp scaffold_two_module_fixture do
+    base = new_fixture_root("specled_aggregate_two_module_fixture")
+
+    File.write!(Path.join([base, "lib", "covered.ex"]), lib_module())
+    File.write!(Path.join([base, "lib", "other.ex"]), other_lib_module())
+    File.write!(Path.join([base, "test", "covered_test.exs"]), covered_test_module())
+    File.write!(Path.join([base, "test", "other_test.exs"]), other_test_module())
+
+    base
+  end
+
+  defp fixture_app_name(root) do
+    root
+    |> Path.basename()
+    |> String.replace(~r/_\d+$/, "")
   end
 
   defp new_fixture_root(prefix) do
@@ -156,6 +226,26 @@ defmodule SpecLedEx.Coverage.AggregateTest do
     defmodule Covered do
       def add(a, b), do: a + b
       def hello, do: :world
+    end
+    """
+  end
+
+  defp other_lib_module do
+    """
+    defmodule Other do
+      def noop, do: :ok
+    end
+    """
+  end
+
+  defp other_test_module do
+    """
+    defmodule OtherTest do
+      use ExUnit.Case, async: false
+
+      test "noop/0 is exercised" do
+        assert Other.noop() == :ok
+      end
     end
     """
   end

@@ -168,6 +168,17 @@ decisions:
     at all.
   priority: must
   stability: evolving
+- id: specled.coverage_capture.aggregate_unmapped_degraded
+  statement: >-
+    When `SpecLedEx.Coverage.Aggregate.ingest/2` cannot map a covered
+    module to a repo-relative source path (the module is not loaded, has
+    no `:source` compile metadata, or its source lies outside `:root`),
+    that module's data shall be excluded from `envelope.files` and
+    `envelope.mfas` and counted toward `envelope.degraded`, without
+    aborting the ingest as long as at least one other module is
+    mappable.
+  priority: must
+  stability: evolving
 - id: specled.coverage_capture.mfa_key_round_trip
   statement: >-
     `SpecLedEx.Coverage.MfaKey.format/1` and `parse/1` shall round-trip:
@@ -258,6 +269,16 @@ decisions:
     - "`Store.read_status/1` on the target path returns `{:refused, ...}`"
   covers:
     - specled.coverage_capture.aggregate_empty_coverage
+- id: specled.coverage_capture.scenario.aggregate_ingest_unmapped_degraded
+  given:
+    - "a child-BEAM fixture with two covered modules, one of which has its compiled `.beam` removed after export so its source cannot be mapped"
+  when:
+    - "`SpecLedEx.Coverage.Aggregate.ingest/2` ingests the resulting `.coverdata`"
+  then:
+    - "the ingest still succeeds, with the mappable module's files/mfas present"
+    - "the unmapped module's mfas are absent and `envelope.degraded` is `true`"
+  covers:
+    - specled.coverage_capture.aggregate_unmapped_degraded
 - id: specled.coverage_capture.scenario.mfa_key_format_parse_round_trip
   given:
     - "an MFA triple `{Module, :fun, 2}`"
@@ -298,5 +319,6 @@ decisions:
   covers:
     - specled.coverage_capture.aggregate_ingest
     - specled.coverage_capture.aggregate_empty_coverage
+    - specled.coverage_capture.aggregate_unmapped_degraded
     - specled.coverage_capture.mfa_key_round_trip
 ```
