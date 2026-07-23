@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T22:50:09Z",
+  "description": "Fast-follows specled_-155 (aggregate-first spec coverage), shipped in PR #13 / v0.5.0 (c90b32aa). Split out at delivery. Carries the calibrated Tier-2/Tier-3 items from the 7-persona critical review (consolidated report: ~/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-23/specled_-155-aggregate-first-spec-coverage/20260723-161424-consolidated.md) plus the CI --cover arming work surfaced during the ship.",
+  "id": "specled_-q6l",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Fast-follow: Aggregate-first spec coverage — specled_-47j remediation",
+  "type": "epic",
+  "updated_at": "2026-07-23T22:50:09Z"
+}
