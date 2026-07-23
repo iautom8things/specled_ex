@@ -22,12 +22,19 @@ is informationally redundant — the implementation tier's hash input strictly
 subsumes the api_boundary tier's for the same MFA — and it is a drift hazard
 in its own right when the two lists fall out of sync.
 
-Compounding this: bare-module entries under either tier are silent no-ops
-today. The parser accepts them, `Binding.resolve/2` returns
-`{:ok, {:module, _}}`, and the detectors return zero findings. Real specs
+Compounding this: bare-module entries under either tier were silent no-ops
+initially. The parser accepted them, `Binding.resolve/2` returned
+`{:ok, {:module, _}}`, and the detectors returned zero findings. Real specs
 (e.g., `branch_guard.spec.md` listing `SpecLedEx.Coverage` and
 `SpecLedEx.Config.BranchGuard` under `implementation`) contain bare-module
-entries the authors believe are tracked, and aren't.
+entries the authors believe are tracked.
+
+When bare-module hashing landed, the silent seed pass in `Orchestrator`
+wrote bare-module entries using `Canonical.hash_module_head_union/1`. However,
+`compute_tier_hashes(:api_boundary, ...)` in `refresh_and_commit_hashes/3`
+skipped bare modules (`{:ok, {:module, _}} -> acc`), causing a clean run
+to drop bare-module entries from `realization_hashes.json`. The next run would then
+silently re-seed them, resulting in oscillation.
 
 The product question: how should `realized_by` express "I want both kinds of
 drift findings on this entry," and how should bare-module entries become
@@ -55,6 +62,10 @@ real signal without becoming a footgun?
    Each envelope carries a distinct tag (`:__module_head_union__` vs
    `:__module_full_union__`) so the two tier hashes for the same module
    are guaranteed distinct bytes even on a degenerate module.
+   When refreshing `api_boundary` entries on a clean run (`refresh_and_commit_hashes/3`),
+   the orchestrator recomputes `Canonical.hash_module_head_union(Mod)` for
+   bare modules rather than skipping them, preserving bare-module entries
+   in `.spec/realization_hashes.json`.
 
 3. **Runtime-only bare-module discovery.**
    `Canonical.discover_module_exports/2` enumerates exports via

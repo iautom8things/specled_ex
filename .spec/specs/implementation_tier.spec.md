@@ -48,6 +48,8 @@ decisions:
     `implementation` MFAs. The walk shall stop at (a) subject boundaries
     (an MFA owned by another subject), (b) MFAs outside the project's
     in-tree modules, and (c) already-visited MFAs (cycle guard).
+    Updates to orchestrator hashing or branch guard dispatch shall preserve
+    this closure behavior.
   priority: must
   stability: evolving
 - id: specled.implementation_tier.ownership_rule

@@ -46,7 +46,7 @@ decisions:
 
 ```yaml spec-requirements
 - id: specled.branch_guard.subject_cochange
-  statement: The branch guard inside mix spec.check shall fail when changed code, tests, guides, templates, skills, or governed package files are not matched by current-truth subject spec updates for the impacted subjects, including unmapped changed policy files outside current subject coverage.
+  statement: The branch guard inside mix spec.check shall fail when changed code, tests, guides, templates, skills, or governed package files are not matched by current-truth subject spec updates for the impacted subjects, including unmapped changed policy files outside current subject coverage, and including orchestrator realization updates.
   priority: must
   stability: evolving
 - id: specled.branch_guard.cross_cutting_decision

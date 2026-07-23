@@ -287,6 +287,31 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
       assert HashStore.fetch(store, "api_boundary", mfa) == current
     end
 
+    test "writes api_boundary bare module baseline when no drift is detected", %{root: root} do
+      mod_string = "SpecLedEx.OrchestratorFixtures.Mod"
+
+      # Bare module under api_boundary
+      subject = subject("bare_mod.subject", %{"api_boundary" => [mod_string]}, [])
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary]
+        )
+
+      assert Enum.empty?(findings)
+
+      store = HashStore.read(root)
+      entry = get_in(store, ["api_boundary", mod_string])
+
+      assert is_map(entry),
+             "expected committed baseline hash for #{mod_string}, got #{inspect(store)}"
+
+      {:ok, {:module, mod}} = Binding.resolve(mod_string)
+      {:ok, current} = Canonical.hash_module_head_union(mod)
+      assert HashStore.fetch(store, "api_boundary", mod_string) == current
+    end
+
     test "does NOT commit when drift is detected", %{root: root} do
       mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
       wrong = :crypto.hash(:sha256, "wrong")

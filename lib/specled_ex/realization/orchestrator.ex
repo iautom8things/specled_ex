@@ -872,8 +872,11 @@ defmodule SpecLedEx.Realization.Orchestrator do
   defp compute_tier_hashes(:api_boundary, bindings, context) do
     Enum.reduce(bindings, %{}, fn %{mfa: mfa}, acc ->
       case Binding.resolve(mfa, context) do
-        {:ok, {:module, _}} ->
-          acc
+        {:ok, {:module, mod}} ->
+          case Canonical.hash_module_head_union(mod) do
+            {:ok, hash_bin} -> Map.put(acc, mfa, hash_entry(hash_bin))
+            _ -> acc
+          end
 
         {:ok, ast} ->
           hash_bin = ApiBoundary.hash(ast)

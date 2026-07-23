@@ -255,7 +255,10 @@ decisions:
     flat-tier refresh shall also use `merge/2` so the silent-seeded
     `implementation` section survives; `write/2` shall retain
     full-baseline replacement semantics for callers that intentionally
-    rewrite the entire file.
+    rewrite the entire file. When refreshing `api_boundary` entries in
+    `refresh_and_commit_hashes/3`, the orchestrator shall recompute
+    hashes for both MFA-form entries (`ApiBoundary.hash/1`) and bare-module
+    entries (`Canonical.hash_module_head_union/1`).
   priority: must
   stability: evolving
 - id: specled.realized_by.redundant_dup_warning
