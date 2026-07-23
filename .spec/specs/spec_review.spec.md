@@ -212,6 +212,19 @@ decisions:
   statement: A documented GitHub Actions workflow shall be provided that runs mix spec.review on PR open and synchronize, deploys the rendered HTML to a per-PR path on a GitHub Pages branch, and posts or updates a PR comment containing the link.
   priority: should
   stability: evolving
+- id: specled.spec_review.gh_pages_privilege_separation
+  statement: >-
+    The provided GitHub Actions workflow shall separate the job that executes
+    untrusted pull-request code — running mix spec.review to render the HTML
+    from the PR head — from the job that holds write-scoped tokens
+    (`contents: write` / `pull-requests: write`) to push the GitHub Pages
+    branch and post the PR comment, handing the rendered HTML between them as
+    a workflow artifact so that no single job both runs pull-request-provided
+    code and holds a write-scoped token. The workflow's top-level permissions
+    shall default to read-only, and the write-scoped job shall not check out
+    or execute pull-request-provided code.
+  priority: must
+  stability: evolving
 - id: specled.spec_review.triangle_code_classification
   statement: The HTML artifact's sync diagram and sync checklist shall classify findings using the triangle vocabulary documented in docs/concepts.md. Specifically, findings carrying realization-side codes (`branch_guard_realization_drift`, `branch_guard_dangling_binding`) shall flip the SPEC ↔ CODE leg; findings carrying coverage-claim codes (`branch_guard_untested_realization`, `requirement_without_test_tag`, `branch_guard_requirement_without_test_tag`) shall flip the SPEC ↔ TESTS leg; findings carrying observed-coverage codes (`branch_guard_untethered_test`, `branch_guard_underspecified_realization`) shall flip the CODE ↔ TESTS leg; within-spec consistency findings (`overlap/duplicate_covers`, `overlap/must_stem_collision`) shall flip the "spec files are well-formed" checklist row; and `append_only/*` findings shall flip a dedicated "Decisions / governance" checklist row.
   priority: must
@@ -646,4 +659,5 @@ decisions:
   target: priv/spec_init/workflows/spec_review.yml.eex
   covers:
     - specled.spec_review.gh_pages_distribution
+    - specled.spec_review.gh_pages_privilege_separation
 ```

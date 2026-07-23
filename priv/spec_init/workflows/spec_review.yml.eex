@@ -1,15 +1,34 @@
 # covers: specled.spec_review.gh_pages_distribution
+# covers: specled.spec_review.gh_pages_privilege_separation
 #
 # Renders mix spec.review on every pull request, deploys the resulting
 # HTML to a per-PR path on the `gh-pages` branch, and posts/updates a PR
 # comment linking to it.
 #
+# Security model: the workflow is split into two jobs so that untrusted PR
+# code never executes while a write-scoped token is available.
+#
+#   render  — runs `mix spec.review` against the PR head (untrusted code:
+#             deps, mix tasks, compiled sources). Holds `contents: read`
+#             ONLY and no PR-writable scopes. Its single output is the
+#             rendered HTML, handed off as a workflow artifact.
+#   deploy  — depends on render, downloads the HTML artifact, and pushes it
+#             to gh-pages plus posts the PR comment. Holds the write scopes
+#             (`contents: write`, `pull-requests: write`) but never checks
+#             out or executes PR-provided code — it only moves the already
+#             rendered artifact with trusted runner tooling (git, gh).
+#
+# This is the standard build/deploy privilege split: a compromised or
+# malicious PR can influence the rendered HTML, but cannot push to branches
+# or comment as the token, because the job that runs its code has no write
+# scopes and the job that holds write scopes runs no PR code.
+#
 # To use:
 #   1. Copy this file to .github/workflows/spec-review.yml in your repo.
 #   2. Enable GitHub Pages for the repo, source = "Deploy from a branch",
 #      branch = `gh-pages`, folder = `/ (root)`.
-#   3. Ensure the workflow has `contents: write` and `pull-requests: write`
-#      permissions (set below).
+#   3. Permissions are declared per-job below (top-level default is
+#      read-only). No repo-wide setting is required.
 #
 # The artifact lands at:
 #   https://<owner>.github.io/<repo>/pr/<PR>/
@@ -23,9 +42,9 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+# Least privilege by default; each job widens only what it needs.
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 concurrency:
   group: spec-review-${{ github.event.pull_request.number }}
@@ -34,6 +53,10 @@ concurrency:
 jobs:
   render:
     runs-on: ubuntu-latest
+    # Untrusted PR code executes in this job. It gets read-only scope and
+    # no PR-writable token, so it cannot push branches or comment.
+    permissions:
+      contents: read
     steps:
       - name: Checkout PR head with full history
         uses: actions/checkout@v4
@@ -71,6 +94,38 @@ jobs:
             --base origin/${{ github.base_ref }} \
             --output spec_review.html
 
+      - name: Upload rendered artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: spec-review-html
+          path: spec_review.html
+          if-no-files-found: error
+          retention-days: 7
+
+  deploy:
+    needs: render
+    runs-on: ubuntu-latest
+    # Holds the write scopes. Runs NO PR code — only downloads the rendered
+    # HTML artifact and moves it with trusted runner tooling (git, gh).
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout base branch
+        # Provides an authenticated git repo (origin remote + credentials)
+        # for the gh-pages push. Pinned to the trusted base branch so no
+        # pull-request-provided code is ever checked out into the
+        # write-scoped job — only the base ref and the downloaded artifact.
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+
+      - name: Download rendered artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: spec-review-html
+          path: rendered
+
       - name: Deploy to gh-pages under /pr/${{ github.event.pull_request.number }}/
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -81,7 +136,7 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Work in a sibling worktree so we don't disturb the PR checkout.
+          # Work in a sibling worktree so we don't disturb the checkout.
           DEPLOY_DIR="$(mktemp -d)"
           if git ls-remote --exit-code origin gh-pages >/dev/null 2>&1; then
             git fetch origin gh-pages:gh-pages
@@ -93,7 +148,7 @@ jobs:
           fi
 
           mkdir -p "$DEPLOY_DIR/$PR_DIR"
-          cp spec_review.html "$DEPLOY_DIR/$PR_DIR/index.html"
+          cp rendered/spec_review.html "$DEPLOY_DIR/$PR_DIR/index.html"
 
           (
             cd "$DEPLOY_DIR"
