@@ -31,11 +31,15 @@
     {
       "text": "Post-close confirmation: PR #4 merge (b00e02b) automatically triggered a push-event Specs run on main at 2026-07-23T00:22:32Z, completed success. Both pull_request and push legs of the acceptance now observed.",
       "timestamp": "2026-07-23T00:24:18Z"
+    },
+    {
+      "text": "Fresh evidence from the 0.3.0 ship (2026-07-23): push event DID fire for main@b00e02b (run 29968890502, event=push, created 2026-07-23T00:22Z) but did NOT fire for main@028fa5a (the #5 squash-merge, 08:42Z) — nothing after 60s polling; had to workflow_dispatch (run 29992077790). pull_request events also never fired on PR #5. So event delivery is intermittent, not uniformly dead — one push run exists.",
+      "timestamp": "2026-07-23T08:51:30Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "CI: event-triggered GitHub Actions never fire (pull_request/push) — every run is manual workflow_dispatch",
   "type": "task",
-  "updated_at": "2026-07-23T00:24:18Z"
+  "updated_at": "2026-07-23T08:51:30Z"
 }
