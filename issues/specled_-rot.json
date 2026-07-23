@@ -10,9 +10,15 @@
   "labels": [
     "slug:bare-module-api-boundary"
   ],
+  "comments": [
+    {
+      "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/7 (release 0.3.1). Ticket was already closed; PR carries the fix + review remediations. Babysitting CI.",
+      "timestamp": "2026-07-23T10:18:13Z"
+    }
+  ],
   "priority": 2,
   "status": "closed",
   "title": "bare-module api_boundary entries oscillate between seed and refresh passes",
   "type": "task",
-  "updated_at": "2026-07-23T10:13:30Z"
+  "updated_at": "2026-07-23T10:18:13Z"
 }
