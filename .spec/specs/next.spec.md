@@ -32,6 +32,7 @@ decisions:
   - specled.decision.guided_reconciliation_loop
   - specled.decision.explicit_subject_ownership
   - specled.decision.no_app_start
+  - specled.decision.decision_fork_advertised_at_decision_points
 ```
 
 ## Requirements
@@ -44,6 +45,16 @@ decisions:
 - id: specled.next.reconciliation_status
   statement: mix spec.next shall report whether the branch is ready for check, still needs subject updates, still needs a durable ADR update, or needs a new subject.
   priority: should
+  stability: evolving
+- id: specled.next.decision_fork_guidance
+  statement: >-
+    When reconciliation resolves to needs_decision_update, mix spec.next
+    guidance shall state the durable-policy rubric and name both resolution
+    arms — adding or revising an ADR for durable cross-cutting policy, and
+    recording a `Spec-Drift: branch_guard_missing_decision_update=info` git
+    trailer with a one-line reason in the commit body when the change is not
+    durable policy.
+  priority: must
   stability: evolving
 - id: specled.next.bugfix_guidance
   statement: mix spec.next --bugfix shall prefer regression proof first and direct the maintainer to confirm whether the current subject wording already captures the fix before adding new spec churn.
@@ -63,6 +74,7 @@ decisions:
   covers:
     - specled.next.change_classification
     - specled.next.reconciliation_status
+    - specled.next.decision_fork_guidance
     - specled.next.bugfix_guidance
     - specled.next.read_only
 ```

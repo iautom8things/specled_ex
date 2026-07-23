@@ -93,7 +93,10 @@ defmodule SpecLedEx.BranchCheck do
         emit(
           severity_opts,
           "branch_guard_missing_decision_update",
-          "Cross-cutting change spans multiple subjects but no decision file changed",
+          finalize_message(
+            "Cross-cutting change spans multiple subjects but no decision file changed. Durable cross-cutting policy (it constrains future changes, spans subjects beyond this branch, or records a rejected alternative) needs an ADR; a change that is not durable policy does not.",
+            "fix: if this branch changes durable cross-cutting policy, add or revise an ADR (`mix spec.decision.new <id> --title \"...\"`); if it does not, record `Spec-Drift: branch_guard_missing_decision_update=info` as a git trailer on a commit in this range, with a one-line reason in the commit body."
+          ),
           nil
         )
       else
@@ -171,6 +174,18 @@ defmodule SpecLedEx.BranchCheck do
       guardrails_severities: config.guardrails.severities,
       trailer_override: trailer_overrides
     ]
+  end
+
+  # Same message shape as AppendOnly/Overlap findings: prose body followed
+  # by a code-fenced `fix:` block naming the sanctioned resolutions.
+  defp finalize_message(body, fix_line) do
+    """
+    #{String.trim_trailing(body)}
+
+    ```
+    #{fix_line}
+    ```\
+    """
   end
 
   defp emit(severity_opts, code, message, file, subject_id \\ nil, default \\ nil) do

@@ -7,6 +7,10 @@ Local tooling package for Spec Led Development repositories.
 Provide Mix tasks and library functions that let Elixir projects
 adopt Spec Led Development with a single dependency.
 
+Shipped scaffold templates (README, local skill) advise the ADR-or-trailer
+fork wherever they describe the ADR obligation, so generated workspaces
+inherit the two-armed guidance.
+
 ```yaml spec-meta
 id: specled.package
 kind: package
@@ -21,6 +25,7 @@ surface:
   - skills/spec-led-bootstrap/references/*.md
   - priv/spec_init/README.md.eex
   - priv/spec_init/AGENTS.md.eex
+  - priv/spec_init/decisions/README.md.eex
   - priv/spec_init/agents/skills/spec-led-development/SKILL.md.eex
   - priv/spec_init/specs/spec_system.spec.md.eex
   - priv/spec_init/workflows/spec_review.yml.eex

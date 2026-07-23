@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.3.0 — 2026-07-23
+
+- The missing-ADR condition is now advised as a fork, not an ADR mandate.
+  `mix spec.next`'s `needs_decision_update` guidance and the
+  `branch_guard_missing_decision_update` finding state the durable-policy
+  rubric first (does the change constrain future changes, span subjects
+  beyond this branch, or record a rejected alternative?) and then both
+  resolution arms — add or revise an ADR (`mix spec.decision.new`), or
+  record `Spec-Drift: branch_guard_missing_decision_update=info` as a git
+  trailer with a one-line reason in the commit body. The finding message
+  now ends with a code-fenced `fix:` block matching the `append_only/*`
+  convention. The same fork appears everywhere the ADR obligation is
+  described: the `mix spec.prime` loop lines (default and `--bugfix`),
+  both decisions READMEs (workspace and `spec.init` scaffold), and the
+  scaffold README + local skill, which also gains a triage-table row for
+  the finding. ADR `specled.decision.decision_fork_advertised_at_decision_points`
+  records the policy — per-range, history-auditable trailers over silent
+  repo-wide config demotion. Existing trailer semantics are unchanged:
+  range-wide, `trailer > config > default`, config `:off` absorbing.
+  (specled_-4kg)
+- Post-review hardening from the six-agent critical review: the prime loop
+  advertisement is pinned by a new `must` requirement
+  (`specled.prime.decision_fork_loop_line`) with a tagged test covering
+  both loop variants, and the previously unmapped scaffold
+  `decisions/README.md.eex` is now claimed by `specled.package`'s surface
+  so future edits to it face the co-change guard. (specled_-4kg)
+
 ## 0.2.0 — 2026-07-22
 
 - Fixed unbounded pre-push hook recursion on the first real evidence sync:

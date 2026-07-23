@@ -14,6 +14,9 @@ list. The realization-hash baseline is out of append-only's scope: it lives in
 `SpecLedEx.write_state/4` hoists a legacy embedded `realization` section into
 that file before regenerating state.json.
 
+The code-fenced `fix:` block convention these findings established is shared
+by branch-guard governance findings (`branch_guard_missing_decision_update`).
+
 ```yaml spec-meta
 id: specled.append_only
 kind: module

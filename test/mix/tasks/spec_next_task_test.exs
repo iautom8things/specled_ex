@@ -106,6 +106,69 @@ defmodule Mix.Tasks.SpecNextTaskTest do
     assert message_contains?(messages, "add or revise an ADR")
   end
 
+  @tag spec: "specled.next.decision_fork_guidance"
+  test "spec.next names both ADR and trailer arms when only the decision is missing",
+       %{root: root} do
+    init_git_repo(root)
+
+    write_files(root, %{
+      "lib/a.ex" => "defmodule A do\nend\n",
+      "lib/b.ex" => "defmodule B do\nend\n"
+    })
+
+    write_subject_spec(
+      root,
+      "a",
+      meta: %{
+        "id" => "a.subject",
+        "kind" => "module",
+        "status" => "active",
+        "surface" => ["lib/a.ex"]
+      }
+    )
+
+    write_subject_spec(
+      root,
+      "b",
+      meta: %{
+        "id" => "b.subject",
+        "kind" => "module",
+        "status" => "active",
+        "surface" => ["lib/b.ex"]
+      }
+    )
+
+    commit_all(root, "initial")
+
+    write_files(root, %{
+      "lib/a.ex" => "defmodule A do\n  def run, do: :ok\nend\n",
+      "lib/b.ex" => "defmodule B do\n  def run, do: :ok\nend\n"
+    })
+
+    # Touch both subject specs so subjects are reconciled and only the
+    # decision question remains open.
+    for name <- ["a", "b"] do
+      path = Path.join(root, ".spec/specs/#{name}.spec.md")
+      File.write!(path, File.read!(path) <> "\n")
+    end
+
+    Mix.Tasks.Spec.Next.run(["--root", root, "--base", "HEAD"])
+    messages = drain_shell_messages()
+
+    assert message_contains?(messages, "reconciliation=needs decision update")
+    assert message_contains?(messages, "durable cross-cutting policy")
+
+    assert message_contains?(
+             messages,
+             "If it does, add or revise an ADR (`mix spec.decision.new <id> --title \"...\"`)."
+           )
+
+    assert message_contains?(
+             messages,
+             "If it does not, record `Spec-Drift: branch_guard_missing_decision_update=info` as a git trailer on a commit in this range, with a one-line reason in the commit body."
+           )
+  end
+
   test "spec.next guides uncovered frontier changes without failing", %{root: root} do
     init_git_repo(root)
     File.mkdir_p!(Path.join(root, ".spec/specs"))

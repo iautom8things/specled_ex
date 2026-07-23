@@ -37,7 +37,7 @@ This project uses its own tooling to specify itself.
 3. Add or tighten the smallest proof when behavior changed.
 4. Run `mix spec.next` to reconcile the current Git change set.
 5. If next says `needs subject updates`, update current-truth subjects in `specs/`.
-6. If next says `needs decision update`, update `decisions/*.md` only when the change should stay durable.
+6. If next says `needs decision update`, update `decisions/*.md` when the change should stay durable; otherwise record `Spec-Drift: branch_guard_missing_decision_update=info` as a git trailer with a one-line reason.
 7. When next says `ready for check`, run `mix spec.check --base ...` for the full local gate.
 8. Use Git history and pull requests as the time dimension for how a change evolved.
 9. Use `mix spec.status` when you want coverage and weak-spot summaries.

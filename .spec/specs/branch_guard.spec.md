@@ -39,6 +39,7 @@ decisions:
   - specled.decision.configurable_test_tag_enforcement
   - specled.decision.file_touch_yields_to_realization
   - specled.decision.realization_tiers_nil_default
+  - specled.decision.decision_fork_advertised_at_decision_points
 ```
 
 ## Requirements
@@ -50,6 +51,15 @@ decisions:
   stability: evolving
 - id: specled.branch_guard.cross_cutting_decision
   statement: The branch guard inside mix spec.check shall fail with an error finding when a cross-cutting change spans multiple impacted subjects without a matching ADR update.
+  priority: must
+  stability: evolving
+- id: specled.branch_guard.missing_decision_fix_block
+  statement: >-
+    The branch_guard_missing_decision_update finding message shall end with a
+    code-fenced `fix:` block naming both resolution arms — adding or revising
+    an ADR when the branch changes durable cross-cutting policy, and recording
+    a `Spec-Drift: branch_guard_missing_decision_update=info` git trailer with
+    a one-line reason in the commit body when it does not.
   priority: must
   stability: evolving
 - id: specled.branch_guard.guidance_output
@@ -414,6 +424,7 @@ decisions:
   covers:
     - specled.branch_guard.subject_cochange
     - specled.branch_guard.cross_cutting_decision
+    - specled.branch_guard.missing_decision_fix_block
     - specled.branch_guard.guidance_output
     - specled.branch_guard.status_follows_error_severity
     - specled.branch_guard.plan_docs_excluded

@@ -9,6 +9,10 @@ computed at check time: a per-commit trailer can escalate or relax a finding, co
 silences codes entirely with `:off`, and baked-in defaults cover anything else. Without
 this module, every finding-emitting call site re-invents its own policy.
 
+Guidance surfaces now advertise the trailer arm at the missing-decision decision
+point; the resolution precedence here (`trailer > config > default`, `:off`
+absorbing) is unchanged by that advertisement.
+
 ```yaml spec-meta
 id: specled.severity
 kind: module

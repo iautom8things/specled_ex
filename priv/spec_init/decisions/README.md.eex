@@ -19,5 +19,5 @@ Use this folder for durable cross-cutting decisions that shape the current Spec 
 ## Workflow
 
 1. Update the current-truth subject specs in `.spec/specs/`.
-2. Add or revise an ADR here only when the change is cross-cutting and should stay durable.
+2. Add or revise an ADR here when the change is cross-cutting and should stay durable; otherwise record `Spec-Drift: branch_guard_missing_decision_update=info` as a git trailer with a one-line reason instead of adding an ADR.
 3. Use Git history and pull requests as the time dimension for how the change evolved.

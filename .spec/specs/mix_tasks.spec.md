@@ -6,6 +6,8 @@ User-facing commands for the Spec Led Development workflow.
 
 Provide the user-facing Mix tasks that scaffold, guide, summarize, and strictly enforce the local Spec Led workflow.
 
+The `spec.init` scaffold's local skill and README, and the `spec.prime` loop, describe the missing-ADR condition as a two-armed fork: an ADR for durable cross-cutting policy, otherwise a `Spec-Drift: branch_guard_missing_decision_update=info` trailer with a one-line reason.
+
 ```yaml spec-meta
 id: specled.mix_tasks
 kind: workflow
