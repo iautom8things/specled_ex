@@ -10,11 +10,15 @@
     {
       "text": "Recurring observation (epic specled_-155 pipeline, 2026-07-23): the command-runner temp-script race now seen 3x — (1) merge gate 1 mix test stray 'specled_cmd_*.sh: No such file or directory'; (2) T3 verify mix test --stale same; (3) T7 verify spec.check run1 exit 127 'exs: command not found' on UNTOUCHED evidence_store target.sh, passing manually and on runs 2-3. Class: tempfile_command_execution race. All runs otherwise green; no flake-accepts consumed.",
       "timestamp": "2026-07-23T19:58:02Z"
+    },
+    {
+      "text": "4th observation (2026-07-23, epic specled_-155 merge gate 9, epic @ af16144): 1/1136 failure in full-suite run, did not reproduce on immediate full re-run (0 failures), --failed manifest empty, docs-only delta since prior green gate. Flake-accepted once at the gate per protocol. Exact test identity lost to output piping — orchestrator process fixed to capture full gate output going forward.",
+      "timestamp": "2026-07-23T19:58:07Z"
     }
   ],
   "priority": 2,
   "status": "open",
   "title": "Investigate flaky specled.compiler_tracer verification_command_failed (tracer_test.exs:241) under multi-file tagged_tests run",
   "type": "task",
-  "updated_at": "2026-07-23T19:58:02Z"
+  "updated_at": "2026-07-23T19:58:07Z"
 }
