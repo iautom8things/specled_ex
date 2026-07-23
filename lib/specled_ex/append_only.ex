@@ -322,7 +322,7 @@ defmodule SpecLedEx.AppendOnly do
       subject_id: nil,
       entity_id: nil,
       message:
-        finalize_message(
+        SpecLedEx.FindingMessage.finalize(
           "No prior state.json baseline is available for comparison: #{variant_note}.",
           "fix: commit .spec/state.json on the base branch, or deepen the clone so <base> resolves."
         )
@@ -338,7 +338,7 @@ defmodule SpecLedEx.AppendOnly do
       subject_id: subject_id,
       entity_id: id,
       message:
-        finalize_message(
+        SpecLedEx.FindingMessage.finalize(
           "Requirement `#{id}` was present at base and is absent at head. Deletion is only authorized when a head-side ADR in the weakening set names `#{id}` in its `affects:` list.",
           "fix: author an ADR with change_type in {deprecates, weakens, narrows-scope, adds-exception} and affects: [#{id}] — or restore the requirement in its spec file."
         )
@@ -354,7 +354,7 @@ defmodule SpecLedEx.AppendOnly do
       subject_id: subject_id,
       entity_id: id,
       message:
-        finalize_message(
+        SpecLedEx.FindingMessage.finalize(
           "Requirement `#{id}` was `#{format_modal(prior_modal)}` at base and classifies to `#{format_modal(current_modal)}` at head — normative force was reduced without an authorizing ADR.",
           "fix: author an ADR with change_type in {weakens, narrows-scope, adds-exception} and affects: [#{id}], or restore the prior modal strength in the statement."
         )
@@ -370,7 +370,7 @@ defmodule SpecLedEx.AppendOnly do
       subject_id: subject_id,
       entity_id: id,
       message:
-        finalize_message(
+        SpecLedEx.FindingMessage.finalize(
           "Scenarios covering `#{id}` dropped from #{prior_count} at base to #{current_count} at head without an authorizing ADR.",
           "fix: restore the missing scenario(s), or author an ADR with change_type in {weakens, narrows-scope, adds-exception} and affects: [#{id}]."
         )
@@ -386,7 +386,7 @@ defmodule SpecLedEx.AppendOnly do
       subject_id: subject_id,
       entity_id: id,
       message:
-        finalize_message(
+        SpecLedEx.FindingMessage.finalize(
           "Requirement `#{id}` carried `polarity: negative` at base (explicit or auto-inferred from MUST NOT / SHALL NOT) and no longer does at head.",
           "fix: restore the negative assertion, or author an ADR with change_type in {weakens, narrows-scope, adds-exception} and affects: [#{id}]."
         )
@@ -403,7 +403,7 @@ defmodule SpecLedEx.AppendOnly do
       subject_id: subject_id,
       entity_id: id,
       message:
-        finalize_message(
+        SpecLedEx.FindingMessage.finalize(
           "Scenario `#{id}` has `execute: false` but no `reason:` field — future readers have no record of why this scenario was stubbed out.",
           "fix: add a non-empty `reason:` field to the scenario block, or flip `execute:` back to `true` and add the coverage."
         )
@@ -429,7 +429,7 @@ defmodule SpecLedEx.AppendOnly do
             subject_id: nil,
             entity_id: id,
             message:
-              finalize_message(
+              SpecLedEx.FindingMessage.finalize(
                 "ADR `#{id}` was `status: accepted` at base but its structural fields changed at head (#{Enum.join(drifts, "; ")}). Accepted ADRs are immutable per specled.decision.adr_append_only.",
                 "fix: revert the field edit on the accepted ADR, or author a new ADR (change_type: supersedes with replaces: [#{id}]) that captures the new decision."
               )
@@ -456,7 +456,7 @@ defmodule SpecLedEx.AppendOnly do
       subject_id: nil,
       entity_id: id,
       message:
-        finalize_message(
+        SpecLedEx.FindingMessage.finalize(
           "ADR `#{id}` is new in this diff and its `affects:` list (#{inspect(affects)}) exactly matches the set of requirement ids removed in this same diff — the ADR is self-authorizing its own deletion. Visible but not blocked; review decides.",
           "fix: land the removal in a separate PR from the authorizing ADR, or confirm in review that the self-authorization is intentional."
         )
@@ -472,7 +472,7 @@ defmodule SpecLedEx.AppendOnly do
       subject_id: nil,
       entity_id: id,
       message:
-        finalize_message(
+        SpecLedEx.FindingMessage.finalize(
           "ADR `#{display_id}` was consulted during an authorization lookup but carries no `change_type:` field (v1 treats this as a warning per specled.decision.change_type_enum_v1).",
           "fix: add `change_type:` to the ADR frontmatter — one of deprecates, weakens, narrows-scope, adds-exception, supersedes, clarifies, refines."
         )
@@ -486,7 +486,7 @@ defmodule SpecLedEx.AppendOnly do
       subject_id: nil,
       entity_id: id,
       message:
-        finalize_message(
+        SpecLedEx.FindingMessage.finalize(
           "Decision `#{id}` was present at base and is absent at head. ADR files cannot be deleted — the only authorized removal is a status transition to `deprecated` or `superseded` on the existing file.",
           "fix: restore the ADR file and update its `status:` to `deprecated` or `superseded` instead of deleting it."
         )
@@ -494,16 +494,6 @@ defmodule SpecLedEx.AppendOnly do
   end
 
   ## ── Helpers ───────────────────────────────────────────────────────
-
-  defp finalize_message(body, fix_line) do
-    """
-    #{String.trim_trailing(body)}
-
-    ```
-    #{fix_line}
-    ```\
-    """
-  end
 
   defp format_modal(:must), do: "MUST"
   defp format_modal(:shall), do: "SHALL"

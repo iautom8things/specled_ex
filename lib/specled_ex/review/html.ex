@@ -3376,9 +3376,10 @@ defmodule SpecLedEx.Review.Html do
     """
   end
 
-  # AppendOnly messages are produced by `finalize_message/2` as
-  # "<prose>\n\n```\nfix: ...\n```\n". We split them so the prose flows as
-  # readable text and the fix line keeps its monospace, code-fenced shape.
+  # Governance messages are produced by `SpecLedEx.FindingMessage.finalize/2`
+  # (the canonical shape producer) as "<prose>\n\n```\nfix: ...\n```\n". We
+  # split them so the prose flows as readable text and the fix line keeps its
+  # monospace, code-fenced shape.
   defp split_fix_block(message) when is_binary(message) do
     case Regex.run(~r/^(.*?)\n*```\n(fix:[^\n]*(?:\n[^\n]*)*)\n```\s*$/s, message) do
       [_, prose, fix_text] -> {String.trim_trailing(prose), String.trim(fix_text)}
