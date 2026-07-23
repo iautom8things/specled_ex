@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T22:15:31Z",
+  "description": "No spec subject\n\nFollow-up from specled_-36o (CI test job wired plain 'mix test' instead of '--cover'). Two blockers to arming the threshold gate, measured 2026-07-23 on epic branch specled_-155/aggregate-first-spec-coverage @ bef5400:\n\n1. True full-suite coverage is 83.05% vs the configured threshold: 90 (mix.exs:10). Either raise coverage or consciously lower the threshold before wiring 'mix test --cover' into .github/workflows/specs.yml.\n\n2. test/specled_ex/coverage/snapshot_test.exs cover-compiles tmp fixture modules (SpecLedEx.Coverage.SnapshotTestFixtures.Live*) into the host BEAM's shared :cover server and its on_exit deletes their source dirs. Under an outer 'mix test --cover' these leak into the final tally as 100% rows AND the HTML report generator crashes with {:no_source_code_found, Live*} — and the observed run EXITED 0 despite 'Coverage test failed, threshold not met', i.e. the crash masks the gate's failing exit code. Fix the leak (quarantine like decode_coverdata in specled_-aav, or unregister the modules) and confirm threshold failure exits non-zero.\n\nWhen both are fixed, change the 'Run tests' step in specs.yml (native leg at least) from 'mix test --include integration' to add --cover.",
+  "id": "specled_-6v6",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Arm mix test --cover in CI: close 83.05%→90% coverage gap and fix snapshot fixture-module cover leak",
+  "type": "task",
+  "updated_at": "2026-07-23T22:15:31Z"
+}
