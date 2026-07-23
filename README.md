@@ -49,6 +49,18 @@ These are helpful, but they are not part of the default local loop:
   - same artifact runs locally and in CI; defaults to `_build/spec_review.html`
   - see [CI Integration](#ci-integration) for the GitHub Actions + GitHub Pages workflow
 
+## Coverage Commands
+
+Full contract, refusal-reason catalogue, and honest-attribution rules in
+[`docs/coverage.md`](docs/coverage.md).
+
+- `mix spec.cover.test`
+  - one command, no `test_helper.exs` wiring — default mode runs plain `mix test --cover --export-coverage` and ingests it into `.spec/_coverage/per_test.coverdata`
+  - `--per-test` opts into a serialized, race-bounded per-test attribution lane (`--allow-async` degrades instead of failing on `async: true` contamination)
+  - read by `mix spec.triangle` and `mix spec.review`'s Coverage tab only — `mix spec.check` never runs triangulation
+- `mix spec.cover.ingest <path.coverdata>`
+  - CI/coveralls escape hatch: ingests a `.coverdata` already exported by another run (e.g. your existing coveralls step) instead of running the suite a second time
+
 ## Advanced Commands
 
 These are low-level plumbing commands. They are useful for debugging and tooling,

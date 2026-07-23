@@ -11,7 +11,7 @@ escape hatches look like, and what "done" means for a stage ticket.
 | 1     | Subjects with `surface:` enable file-touch guard | Yes         | "I want some visibility"        |
 | 2     | `api_boundary` hashes detect surface drift       | Yes         | Common stopping point           |
 | 3     | Test tags enforce intent linkage                 | Yes         | After phase2 stabilizes         |
-| 4     | Coverage triangulation closes the third side     | Yes         | Full-triangle targets           |
+| 4     | Coverage triangulation closes the third side (diagnostic-only — `mix spec.triangle`/`mix spec.review`, not a `spec.check` gate) | Yes | Full-triangle targets |
 | 5     | `implementation` tier catches body drift         | Yes         | Refactor-heavy codebases only   |
 | 6     | Severities → error; CI hard-fails on drift       | Hard to undo | Mature adoption                 |
 
@@ -153,27 +153,42 @@ scanner can be disabled with `test_tags.enabled: false`.
 
 ## Phase 4 — Coverage triangulation
 
-**Adds:** `SpecLedEx.Coverage.Formatter` in `test/test_helper.exs`;
-`mix spec.cover.test` in CI; the third side of the triangle.
+**Adds:** `mix spec.cover.test` run regularly (locally and/or in CI); the
+third side of the triangle. No `test/test_helper.exs` wiring — never add
+`SpecLedEx.Coverage.Formatter` there, it is inert unless `mix
+spec.cover.test` itself arms it (one stderr notice, no artifact, if you
+wire it anyway). Default mode is aggregate (no serialized run, no
+async-config changes); `--per-test` is an additional opt-in for
+observed/approximate per-test attribution. See
+[`docs/coverage.md`](../../../docs/coverage.md) in the specled_ex repo for
+the full contract.
 
-**Gate behavior:** `branch_guard_untested_realization`,
-`branch_guard_untethered_test`, `branch_guard_underspecified_realization`
-all come online.
+**Gate behavior:** none — this is diagnostic-only.
+`branch_guard_untested_realization`, `branch_guard_untethered_test`, and
+`branch_guard_underspecified_realization` all come online, but only on
+`mix spec.triangle` and `mix spec.review`'s Coverage tab. `mix spec.check`
+never runs triangulation and is unaffected either way; do not add this
+phase's step to the `spec.check` CI job.
 
-**Escape hatch:** delete the formatter from `test_helper.exs` and the
-detectors degrade to `detector_unavailable :no_coverage_artifact`.
+**Escape hatch:** stop running `mix spec.cover.test` and the two diagnostic
+tools degrade to `detector_unavailable :no_coverage_artifact`. There is no
+`.spec/config.yml` severity to flip — these codes' severities are fixed in
+code, not read from config.
 
 **Stage-ticket done criteria:**
-- `test_helper.exs` includes the formatter
+- No formatter wiring added to `test_helper.exs`
 - One green local run of `mix spec.cover.test` produces
   `.spec/_coverage/per_test.coverdata` (commit if your repo wants to;
   usually `.gitignore` it)
-- CI runs `mix spec.cover.test` before `mix spec.check`
+- CI runs `mix spec.cover.test` on its own step (not appended to the
+  `spec.check` step)
 - `mix spec.triangle --all` runs cleanly (it diagnoses; it does not gate)
 
 **Skip-permanently option:** if the team decides triangulation is not worth
-the test-suite cost, write `:off` for the three new finding codes and skip
-this ticket entirely. The bootstrap epic accommodates this opt-out.
+the cost, simply never run `mix spec.cover.test` / `mix spec.triangle` and
+skip this ticket entirely — there is no config opt-out to author, because
+`.spec/config.yml` has no effect on whether these diagnostics print. The
+bootstrap epic accommodates this by omitting the ticket.
 
 ## Phase 5 — `implementation` tier
 

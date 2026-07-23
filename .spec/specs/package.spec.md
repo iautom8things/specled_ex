@@ -26,6 +26,7 @@ surface:
   - CHANGELOG.md
   - docs/adoption.md
   - docs/concepts.md
+  - docs/coverage.md
   - skills/spec-led-bootstrap/SKILL.md
   - skills/spec-led-bootstrap/references/*.md
   - priv/spec_init/README.md.eex

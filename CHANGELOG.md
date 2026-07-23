@@ -1,5 +1,68 @@
 # Changelog
 
+## Unreleased
+
+**Breaking behavior changes — read before upgrading:**
+
+- **`mix spec.cover.test`'s default mode changed.** It no longer forces
+  serialization or installs the custom coverage formatter. By default it
+  now runs plain `mix test --cover --export-coverage specled` (no custom
+  formatter, no `ExUnit.configure(async: false)`) and ingests the exported
+  `.coverdata` into a versioned v2 `:aggregate` envelope — async-safe and
+  O(codebase) instead of O(tests × modules). The old serialized,
+  formatter-driven capture survives as the opt-in `--per-test` flag. The
+  task keeps its name across this change (maintainer decision 2); see
+  [`docs/coverage.md`](docs/coverage.md) for the full contract.
+- **Wiring `SpecLedEx.Coverage.Formatter` into `test/test_helper.exs` now
+  no-ops loudly instead of running silently at pathological cost.**
+  Registering the formatter in `:formatters` without going through `mix
+  spec.cover.test --per-test` prints one stderr notice
+  (`[SpecLedEx.Coverage.Formatter] disabled: ...`) and the formatter
+  becomes a permanent no-op for the run — no artifact is written. This
+  closes the `specled_-47j` root cause: the old default fabricated
+  function-level `{file, 0}` records at O(tests × cover-compiled modules)
+  cost (~17 minutes added silently to a 1,480-test CI run in the reported
+  incident), and `docs/adoption.md` itself instructed the exact unsupported
+  wiring that triggered it. Every `test_helper.exs` wiring instruction has
+  been removed from this package's own docs and scaffolds; if you copied
+  one into your project, delete it.
+- **Async test files fail a `--per-test` run by default.** A test file
+  declaring `async: true` genuinely runs concurrently despite the forced
+  global `async: false` and corrupts serialized per-test attribution;
+  `mix spec.cover.test --per-test` now exits non-zero naming every such
+  file before running the suite. Pass `--allow-async` to degrade instead
+  of failing (the run proceeds, the envelope is marked `degraded: true`,
+  and stderr names the contaminated files).
+- **Legacy (pre-v2) coverage artifacts are now rejected, never
+  auto-migrated.** `SpecLedEx.Coverage.Store.read_v2/1` returns
+  `{:error, :legacy_artifact, message}` for a pre-v2 bare-list artifact,
+  naming `mix spec.cover.test` as the re-run command (maintainer
+  decision 5). Delete the stale `.spec/_coverage/per_test.coverdata` and
+  re-run `mix spec.cover.test` if you see this.
+
+**Also new:**
+
+- Coverage triangulation (`branch_guard_untested_realization`,
+  `branch_guard_untethered_test`, `branch_guard_underspecified_realization`)
+  is now documented as diagnostic-only, read by `mix spec.triangle` and
+  `mix spec.review`'s Coverage tab exclusively — `mix spec.check` has never
+  run triangulation and this release forecloses ever wiring it in
+  (maintainer decision 1; `specled.decision.aggregate_first_spec_coverage`).
+  Docs previously implied otherwise in several places; all known instances
+  are corrected.
+- `mix spec.cover.ingest <path.coverdata>` — the CI/coveralls escape hatch,
+  ingesting a `.coverdata` already exported by another run (e.g. an
+  existing coveralls step) into the same versioned envelope, instead of
+  requiring a second coverage-instrumented test run.
+- New `docs/coverage.md`: the adopter-facing coverage contract — what the
+  two headline numbers mean, the `--per-test` cost model and its
+  race-bounded (never "exact") attribution limits per `specled_-cpw`,
+  artifact hygiene, and the full refusal-reason catalogue with real
+  messages.
+- `priv/spec_init/workflows/spec_review.yml.eex` now runs
+  `mix spec.cover.test` before `mix spec.review` so newly-scaffolded CI
+  workflows populate the Coverage tab by default.
+
 ## 0.4.1 — 2026-07-23
 
 - Extracted the shared finding-message finalizer — previously byte-identical

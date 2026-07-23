@@ -13,9 +13,9 @@ Three sides have to agree for a subject to be honestly verified:
 
 1. **Spec → Code** — `spec-meta.realized_by` tiers point at MFAs (`api_boundary`, `implementation`, `expanded_behavior`, `use`, `typespecs`).
 2. **Spec → Tests** — ExUnit tests carry `@tag spec: "<requirement.id>"`.
-3. **Tests → Code** — per-test coverage from `mix spec.cover.test` shows which MFAs each test actually exercised.
+3. **Tests → Code** — coverage from `mix spec.cover.test` shows which MFAs were executed (aggregate, by default) or which MFAs each test actually exercised (opt-in `--per-test`, observed/approximate — never exact).
 
-`mix spec.check` cross-checks the three sides and emits a specific finding for each kind of disagreement (drift, dangling, untethered, untested, underspecified). When inputs are missing — no coverage artifact, umbrella project, etc. — a `detector_unavailable` finding fires instead of false positives.
+`mix spec.check` cross-checks the first two sides and emits drift and dangling findings. When inputs are missing — realization baseline absent, umbrella project, etc. — a `detector_unavailable` finding fires instead of false positives. The third side (coverage triangulation: untested, untethered, underspecified) is a separate, read-only diagnostic tier — `mix spec.check` never runs it; `mix spec.triangle` and `mix spec.review`'s Coverage tab do.
 
 The older `spec-meta.surface` field still works as a fallback when no `realized_by` is declared, but `realized_by` is the destination — surface is filesystem-level, `realized_by` is compiler-level.
 
@@ -27,8 +27,8 @@ The older `spec-meta.surface` field still works as a fallback when no `realized_
 4. Tag the test: `@tag spec: "<requirement.id>"`. Multiple ids: `@tag spec: ["a.one", "a.two"]`. Module-wide: `@moduletag spec: [...]`.
 5. If the change touched a new MFA on the public surface, add it to the subject's `realized_by` tier.
 6. `mix spec.next` — names what is missing (subject update, requirement, ADR, test tag).
-7. (Optional, but required for triangulation findings) `mix spec.cover.test` — captures per-test coverage to `.spec/_coverage/per_test.coverdata`. Skip for doc-only changes.
-8. `mix spec.check --base <ref>` — full gate. Triage findings by code (table below).
+7. (Optional — only needed to read triangulation diagnostics) `mix spec.cover.test` — ingests aggregate coverage (default) or opts into `--per-test` attribution, writing `.spec/_coverage/per_test.coverdata`. Skip for doc-only changes. `mix spec.check` never reads this artifact; only `mix spec.triangle`/`mix spec.review` do.
+8. `mix spec.check --base <ref>` — full gate. Triage findings by code (table below). This never includes triangulation findings — run `mix spec.triangle` separately for those.
 
 For a regression: `mix spec.next --bugfix`. For one focused workset inside a long-lived branch: `mix spec.next --base main --since <checkpoint>`.
 
@@ -54,17 +54,26 @@ If a subject has no binding and you don't know where to start: `mix spec.suggest
 |-------------------------------------------|--------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
 | `branch_guard_realization_drift`          | A bound MFA's hash flipped vs. the committed realization baseline                                      | Expected if behavior changed; if cosmetic, check whether arity or arg pattern actually changed                                     |
 | `branch_guard_dangling_binding`           | An MFA in `realized_by` no longer exists                                                               | Rename, remove from binding, or restore the function                                                                               |
-| `branch_guard_untested_realization`       | The closure has MFAs but no test exercised any of them                                                 | Add a test and tag it                                                                                                              |
-| `branch_guard_untethered_test`            | Test tagged for subject A but its coverage hits only subject B                                         | Tag is wrong, or test belongs in another file; opt out with `@tag spec_triangulation: :indirect` if intentional                    |
-| `branch_guard_underspecified_realization` | Coverage hits subject A but no exercising test names A's requirements                                  | Add `@tag spec: "<a.req>"` to the test                                                                                             |
 | `branch_guard_missing_decision_update`    | Cross-cutting change spans multiple subjects but no decision file changed                              | ADR if the change is durable cross-cutting policy; else `Spec-Drift: branch_guard_missing_decision_update=info` trailer with a one-line reason (see ADRs below)  |
-| `detector_unavailable`                    | A detector's prerequisite is missing                                                                   | Run the prerequisite (e.g., `mix spec.cover.test` for `:no_coverage_artifact`); umbrella projects are not yet supported            |
+| `detector_unavailable`                    | A detector's prerequisite is missing                                                                   | Run the prerequisite (e.g., `mix spec.cover.test` for `:no_coverage_artifact` on `spec.triangle`/`spec.review`); umbrella projects are not yet supported |
 | `append_only/*`                           | A spec was deleted, downgraded, or weakened without authorization                                      | Restore, or add an ADR with `change_type: weakens \| narrows-scope \| adds-exception \| deprecates` and `affects: [<requirement>]` |
 | `overlap/duplicate_covers`                | Two scenarios in the same subject `cover` the same requirement                                         | Merge, or rename one                                                                                                               |
 | `overlap/must_stem_collision`             | Two `must` requirements in the same subject share the same MUST stem                                   | Rewrite one statement                                                                                                              |
 | `requirement_without_test_tag`            | A `must` requirement covered by a `tagged_tests` verification has no backing `@tag spec:` (when tag scanning is on) | Tag a test, or add a `spec-exceptions` entry                                                                            |
 | `verification_strength_below_minimum`     | A claim is below the configured minimum strength (`claimed` / `linked` / `executed`)                   | Add an executed verification, or lower `--min-strength`                                                                            |
 | `spec_requirement_too_short`              | Prose is below the threshold (default 40 chars / 6 words)                                              | Write a real statement                                                                                                             |
+
+### Coverage triangulation findings — `mix spec.triangle` / `mix spec.review` only, never `mix spec.check`
+
+These carry the `branch_guard_` prefix by naming convention, but `mix
+spec.check` never emits or gates on them and `.spec/config.yml` has no
+effect on their severity — they are fixed-severity diagnostics.
+
+| Code                                      | What it means                                                                                          | Fix                                                                                                                                |
+|-------------------------------------------|--------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| `branch_guard_untested_realization`       | The closure has MFAs but no test exercised any of them                                                 | Add a test and tag it                                                                                                              |
+| `branch_guard_untethered_test`            | Test tagged for subject A but its coverage hits only subject B (`--per-test` artifact required)        | Tag is wrong, or test belongs in another file; opt out with `@tag spec_triangulation: :indirect` if intentional                    |
+| `branch_guard_underspecified_realization` | Coverage hits subject A but no exercising test names A's requirements                                  | Add `@tag spec: "<a.req>"` to the test                                                                                             |
 
 ## Severity Escape Hatches
 
@@ -103,7 +112,7 @@ When bolting `.spec/` onto an existing repo, the system is built to tolerate par
 3. `mix spec.suggest_binding` — proposes `realized_by` from existing `surface:` for unbound subjects.
 4. Start with `test_tags.enforcement: warning` and most `branch_guard.severities` at `:info` so the loop runs without blocking.
 5. `mix spec.status` — shows the frontier (subjects with weakest verification, untagged tests, missing closures).
-6. Graduate finding codes to `:warning` then `:error` per code as coverage closes. Triangulation findings only fire once `mix spec.cover.test` is part of CI / your loop.
+6. Graduate `mix spec.check` finding codes to `:warning` then `:error` per code as coverage closes. Triangulation findings (from `mix spec.triangle`/`mix spec.review` only, not `spec.check`) only have anything to show once `mix spec.cover.test` is part of CI / your loop — there is no severity to graduate for them.
 
 ## Diagnostic Tools
 

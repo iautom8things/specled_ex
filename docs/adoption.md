@@ -19,26 +19,43 @@ things attach to that claim:
 2. **`@tag spec: "<requirement.id>"`** on ExUnit tests — the test claims it
    covers a requirement. Verified statically by `SpecLedEx.TagScanner` (no
    compilation, no test run).
-3. **Per-test coverage** captured by `mix spec.cover.test` — the actual MFAs
-   each test executed, written to `.spec/_coverage/per_test.coverdata`.
+3. **Coverage** captured by `mix spec.cover.test` — one command, no wiring.
+   By default it ingests an aggregate run (which MFAs were executed by *any*
+   test, written to `.spec/_coverage/per_test.coverdata`); an opt-in
+   `--per-test` flag adds observed/approximate per-test attribution on top.
+   See [`docs/coverage.md`](coverage.md) for the full contract.
 
-`mix spec.check` cross-checks all three. Each side degrades to a single
-`detector_unavailable` finding when its inputs are missing rather than failing
-the build, which is what makes incremental adoption safe.
+`mix spec.check` cross-checks the first two sides — `realized_by:` hash
+drift and `@tag spec:` presence — and degrades each to a single
+`detector_unavailable` finding when its inputs are missing rather than
+failing the build, which is what makes incremental adoption safe. Coverage
+triangulation (the third side) is a separate, read-only diagnostic tier:
+`mix spec.check` never runs it and never gates on it, regardless of
+`.spec/config.yml`. Read triangulation from `mix spec.triangle` or `mix
+spec.review`'s Coverage tab instead.
 
-The full set of branch-guard codes you eventually want green:
+The full set of branch-guard codes `mix spec.check` gates on:
 
-| Code                                          | What disagrees                                          |
-|-----------------------------------------------|---------------------------------------------------------|
-| `branch_guard_realization_drift`              | Bound MFA hash changed without the spec acknowledging   |
-| `branch_guard_dangling_binding`               | `realized_by:` names an MFA the compiler cannot resolve |
-| `branch_guard_untested_realization`           | Requirement has a closure but no test reaches any MFA   |
-| `branch_guard_untethered_test`                | Test's `@tag spec:` names subject A but it executes B   |
-| `branch_guard_underspecified_realization`     | Test reaches subject A's MFAs but carries no `@tag`     |
-| `branch_guard_requirement_without_test_tag`   | New `must` requirement has no backing `@tag spec:`      |
-| `branch_guard_unmapped_change`                | Changed file does not belong to any subject's surface   |
-| `append_only/*`                               | Spec corpus regressed (deletion, downgrade, etc.)       |
-| `overlap/*`                                   | Two requirements/scenarios collide within a subject     |
+| Code                                          | What disagrees                                           |
+|------------------------------------------------|-----------------------------------------------------------|
+| `branch_guard_realization_drift`              | Bound MFA hash changed without the spec acknowledging    |
+| `branch_guard_dangling_binding`               | `realized_by:` names an MFA the compiler cannot resolve   |
+| `branch_guard_requirement_without_test_tag`   | New `must` requirement has no backing `@tag spec:`        |
+| `branch_guard_unmapped_change`                | Changed file does not belong to any subject's surface     |
+| `append_only/*`                               | Spec corpus regressed (deletion, downgrade, etc.)         |
+| `overlap/*`                                   | Two requirements/scenarios collide within a subject       |
+
+Coverage triangulation is diagnostic-only and never part of the
+`mix spec.check` gate, even though its codes carry the same `branch_guard_`
+prefix — `mix spec.check` does not emit them, and their severities are not
+read from `.spec/config.yml`. Read them from `mix spec.triangle` or
+`mix spec.review`'s Coverage tab:
+
+| Code                                          | What disagrees                                             |
+|------------------------------------------------|-------------------------------------------------------------|
+| `branch_guard_untested_realization`           | Requirement has a closure but no test reaches any MFA       |
+| `branch_guard_untethered_test`                | Test's `@tag spec:` names subject A but it executes B (per-test artifacts only) |
+| `branch_guard_underspecified_realization`     | Test reaches subject A's MFAs but carries no `@tag`          |
 
 ---
 
@@ -127,16 +144,21 @@ end
 Run `mix spec.check`. Both `realized_by.api_boundary` (function-head hashes)
 and `tagged_tests` (intent linkage) gate immediately.
 
-### 4. Wire per-test coverage into the test helper
+### 4. Capture coverage
 
-```elixir
-# test/test_helper.exs
-ExUnit.start(formatters: [ExUnit.CLIFormatter, SpecLedEx.Coverage.Formatter])
+Setup is one command:
+
+```bash
+mix spec.cover.test
 ```
 
-Run `mix spec.cover.test` to produce `.spec/_coverage/per_test.coverdata`. This
-unlocks `branch_guard_untested_realization`, `branch_guard_untethered_test`,
-and `branch_guard_underspecified_realization`. Inspect a subject directly:
+Never add `SpecLedEx.Coverage.Formatter` anywhere — it is inert unless the
+task arms it (see [`docs/coverage.md`](coverage.md)). This produces
+`.spec/_coverage/per_test.coverdata` and unlocks the triangulation
+diagnostics on `mix spec.triangle` and `mix spec.review`'s Coverage tab:
+`branch_guard_untested_realization`, `branch_guard_untethered_test`, and
+`branch_guard_underspecified_realization`. `mix spec.check` itself never
+runs triangulation. Inspect a subject directly:
 
 ```bash
 mix spec.triangle billing.invoice_numbering
@@ -291,26 +313,31 @@ boots.
 
 ### Phase 4 — Coverage triangulation
 
-Add the formatter to `test/test_helper.exs` and start running
-`mix spec.cover.test` in CI alongside `mix spec.check`:
-
-```elixir
-ExUnit.start(formatters: [ExUnit.CLIFormatter, SpecLedEx.Coverage.Formatter])
-```
+No wiring step: run `mix spec.cover.test` (in CI or locally) and read the
+result with `mix spec.triangle` or `mix spec.review`'s Coverage tab. `mix
+spec.check` never runs triangulation and stays exactly as fast whether or
+not this phase is adopted — do not add it to the `spec.check` step.
 
 ```bash
 mix spec.cover.test
-mix spec.check --base origin/main
+mix spec.triangle --all
 ```
 
-Without the coverage artifact, triangulation emits exactly one
-`detector_unavailable` finding (`reason: :no_coverage_artifact`) and falls
-silent. With it, the three new findings come online:
+Without the coverage artifact, `mix spec.triangle`/`mix spec.review` each
+emit exactly one `detector_unavailable` finding (`reason:
+:no_coverage_artifact`) and fall silent. With it, the three diagnostics
+come online:
 
 - `branch_guard_untested_realization` — closure exists, no test reaches it
 - `branch_guard_untethered_test` — `@tag spec:` claims A but execution hits B
+  (needs a `--per-test` artifact; see [`docs/coverage.md`](coverage.md))
 - `branch_guard_underspecified_realization` — silent execution coverage no
   requirement claims
+
+These carry the `branch_guard_` prefix by naming convention only — they are
+not part of the `mix spec.check` gate, and `.spec/config.yml` severities do
+not affect them; `mix spec.triangle`/`mix spec.review` print them
+unconditionally.
 
 For intentionally indirect coverage (an integration test that legitimately
 tags one subject while exercising several), use the per-test opt-out:
@@ -357,8 +384,13 @@ branch_guard:
   severities:
     branch_guard_dangling_binding: error
     branch_guard_realization_drift: error
-    branch_guard_untested_realization: warning   # keep at warning a while longer
 ```
+
+`branch_guard_untested_realization` and its two triangulation siblings are
+not listed here because `.spec/config.yml`'s `branch_guard.severities` does
+not affect them at all — they are diagnostics `mix spec.triangle`/`mix
+spec.review` print at a fixed severity, never part of the `mix spec.check`
+gate this block configures.
 
 ---
 
@@ -391,9 +423,14 @@ A few choices that come up often enough to call out:
   the closure walk is overhead you may never recoup.
 - **Skip coverage triangulation indefinitely.** `tagged_tests` alone gives
   intent linkage and the cheap branch-guard check
-  (`requirement_without_test_tag`). Triangulation costs a serialized
-  `mix test --cover` run; teams that already run a slow test suite may decide
-  the marginal signal is not worth it.
+  (`requirement_without_test_tag`). Default `mix spec.cover.test` is
+  async-safe and O(codebase) — no serialized run required — but it is still
+  one more command and artifact to keep fresh, and the per-test findings
+  (`branch_guard_untethered_test`) additionally require the opt-in
+  `--per-test` lane, which does force serialization. Teams that do not want
+  either cost simply never run `mix spec.cover.test`/`mix spec.triangle`;
+  there is no config lever to silence the diagnostics because they never run
+  without their input.
 - **Umbrella projects.** The realization tiers emit `detector_unavailable` with
   reason `umbrella_unsupported`; tagged tests, ADR governance, overlap
   detection, and append-only checks all still work. Do not gate this on a
@@ -427,17 +464,19 @@ mix spec.prime --base HEAD
 # ... edit code ...
 mix spec.next                       # "ready for check"
 # ... add @tag spec: ... to the new test ...
-mix spec.cover.test                 # capture per-test coverage
-mix spec.check --base origin/main   # may emit untested_realization
-mix spec.triangle billing.invoice_numbering   # diagnose the disagreement
+mix spec.cover.test                 # capture coverage (aggregate by default)
+mix spec.check --base origin/main   # green — spec.check never runs triangulation
+mix spec.triangle billing.invoice_numbering   # diagnose coverage disagreement
 # ... fix tag, binding, or test ...
-mix spec.check --base origin/main   # green
+mix spec.triangle billing.invoice_numbering   # confirm the disagreement is gone
 ```
 
 The core loop never grows past four commands (`prime`, `next`,
-`cover.test`, `check`). Triangulation does not add steps — it adds
-diagnostics on the same `check` invocation, with `spec.triangle` available
-when you want to inspect one subject in isolation.
+`cover.test`, `check`); `spec.check`'s own exit status never depends on
+triangulation. `spec.triangle` is a separate, always-available diagnostic
+step for when you want to inspect one subject's coverage disagreement in
+isolation — run it whenever you want the signal, not because `spec.check`
+demands it.
 
 Workflow tooling may call `mix spec.sync` at natural push points, such as a
 pre-push hook or release script, to reconcile local evidence before publishing.

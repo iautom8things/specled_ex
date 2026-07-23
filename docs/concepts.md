@@ -56,16 +56,20 @@ are three corners of a triangle. Each *side* of the triangle is a binding:
   ExUnit test (or `@moduletag spec: [...]` at the module level). The test
   is making a claim: "I exercise this requirement."
 - **Code ↔ Tests** is observed, not authored. `mix spec.cover.test` runs
-  the suite with a custom ExUnit formatter that snapshots per-test line
-  coverage and writes it to `.spec/_coverage/per_test.coverdata`. From
-  that, SpecLedEx can answer "which tests reached MFA `M`?" and
-  "which MFAs did test `T` touch?".
+  the suite and, by default, ingests a plain aggregate coverage export — no
+  custom formatter, no per-test bookkeeping — into a versioned envelope at
+  `.spec/_coverage/per_test.coverdata`, answering "was MFA `M` executed by
+  *any* test?". The opt-in `--per-test` flag adds an observed/approximate
+  "which tests reached MFA `M`?" mapping on top, at the cost of a
+  serialized run. See [`docs/coverage.md`](coverage.md) for the full
+  contract.
 
 When all three sides agree, you have triangulated proof: the spec claims a
 behavior, the code binding points at real MFAs, a test tags the
-requirement, and coverage confirms the test actually executed the MFAs
-inside that binding's closure. When the sides disagree, the disagreement
-has a name, and that name is the finding code.
+requirement, and coverage confirms the requirement's closure was actually
+executed. When the sides disagree, the disagreement has a name, and that
+name is a finding code from `mix spec.triangle` or `mix spec.review` —
+`mix spec.check` itself never computes this triangulation.
 
 ### Why three sides instead of one
 
@@ -188,19 +192,23 @@ Three meta-questions hover over every code in the catalog:
 - **Where does the surrounding tooling fit?** Each tool plays a
   defined role:
 
-  - `mix spec.check` runs every detector and records local evidence for the
-    current tree. `mix spec.sync` reconciles that evidence through the
-    `spec-evidence` ref.
+  - `mix spec.check` runs the drift, tag-scanning, append-only, and overlap
+    detectors and records local evidence for the current tree. It never runs
+    coverage triangulation. `mix spec.sync` reconciles that evidence through
+    the `spec-evidence` ref.
   - `mix spec.next` orders unresolved findings into a single
     recommended next step.
   - `mix spec.validate` surfaces within-spec findings (overlap, prose
     thresholds) without needing a base ref.
-  - `mix spec.cover.test` produces the per-test coverage artifact
-    triangulation reads; without it that tier degrades to
-    `detector_unavailable`.
+  - `mix spec.cover.test` produces the coverage artifact that `mix
+    spec.triangle` and `mix spec.review`'s Coverage tab read — the only two
+    consumers of coverage triangulation. Without the artifact, both degrade
+    to `detector_unavailable`.
   - ADRs in `.spec/decisions/` authorize weakenings; `Spec-Drift:`
     commit trailers signal author intent on a per-PR basis;
-    `.spec/config.yml` re-prices severities project-wide.
+    `.spec/config.yml` re-prices severities project-wide for the codes
+    `mix spec.check` actually emits — it has no effect on the triangulation
+    codes `mix spec.triangle`/`mix spec.review` print.
 
   Severity is policy; the finding code is structural.
 
@@ -296,10 +304,18 @@ with it.*
 ### Triangulation findings (coverage-side disagreement)
 
 These say: *the spec, the code, and the tests are individually fine,
-but they do not line up.* All three depend on a fresh per-test
-coverage artifact from `mix spec.cover.test`; without that artifact
-the whole tier reports `detector_unavailable` and these findings do
-not run.
+but they do not line up.* Unlike the drift findings above, these are never
+emitted by `mix spec.check` — they are read-only diagnostics from `mix
+spec.triangle` and `mix spec.review`'s Coverage tab only, and their
+severities are fixed in code rather than read from
+`.spec/config.yml`. All three depend on a fresh coverage artifact from
+`mix spec.cover.test`; without that artifact both tools report
+`detector_unavailable` and these findings do not run.
+`branch_guard_untested_realization` and the aggregate form of
+`branch_guard_underspecified_realization` work from the default aggregate
+artifact; `branch_guard_untethered_test` and the per-test form of
+`branch_guard_underspecified_realization` additionally require the opt-in
+`--per-test` artifact (see [`docs/coverage.md`](coverage.md)).
 
 - `branch_guard_untested_realization` — A requirement's binding
   closure contains MFAs but no test's coverage records reach any of
@@ -577,7 +593,8 @@ A few choices recur and are worth naming explicitly:
 
 - The triangle's three sides: `.spec/specs/realized_by.spec.md`,
   `.spec/specs/tag_scanning.spec.md`,
-  `.spec/specs/coverage_capture.spec.md`.
+  `.spec/specs/coverage_capture.spec.md` (adopter-facing walkthrough:
+  [`docs/coverage.md`](coverage.md)).
 - Triangulation itself: `.spec/specs/triangulation.spec.md`.
 - The tiers: `api_boundary.spec.md`, `implementation_tier.spec.md`,
   `expanded_behavior_tier.spec.md`, `use_tier.spec.md`.

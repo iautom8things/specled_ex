@@ -47,7 +47,7 @@ until phase6 restores the default.
 
 ## branch_guard.severities
 
-The triangle-side detectors. These come online in phases 2, 3, 4, 5 — each
+The `mix spec.check` gate codes. These come online in phases 1, 2, 3 — each
 phase's gate behavior is driven by which codes are at `warning` vs `error`
 vs `:off`.
 
@@ -56,12 +56,18 @@ branch_guard:
   severities:
     branch_guard_realization_drift: warning           # phase2 default; phase6 raises to error
     branch_guard_dangling_binding: warning            # phase2 default; phase6 raises to error
-    branch_guard_untested_realization: warning        # phase4 brings online; usually stays at warning
-    branch_guard_untethered_test: warning             # phase4 brings online
-    branch_guard_underspecified_realization: warning  # phase4 brings online
     branch_guard_requirement_without_test_tag: warning # phase3 brings online
     branch_guard_unmapped_change: info                # phase1 brings online; usually :info, not warning
 ```
+
+`branch_guard_untested_realization`, `branch_guard_untethered_test`, and
+`branch_guard_underspecified_realization` are deliberately **not** in this
+table — they are coverage-triangulation diagnostics printed only by `mix
+spec.triangle` and `mix spec.review`'s Coverage tab, at a severity fixed in
+code. `.spec/config.yml`'s `branch_guard.severities` has no effect on them
+and `mix spec.check` never emits them, so there is nothing here to
+configure for phase4. Do not write these three codes into this section —
+it is a no-op.
 
 ### Opt-out patterns
 
@@ -69,13 +75,6 @@ When the user skips a tier permanently, bootstrap writes `:off` for the
 relevant codes so they do not nag forever:
 
 ```yaml
-# Coverage triangulation skipped permanently
-branch_guard:
-  severities:
-    branch_guard_untested_realization: off
-    branch_guard_untethered_test: off
-    branch_guard_underspecified_realization: off
-
 # Umbrella project — these will degrade automatically but off
 # is more explicit
 branch_guard:

@@ -147,12 +147,20 @@ preconditions hold. Compute floor-zero.
 | 1     | at least one non-draft subject with non-empty `surface:`                  | parse `.spec/specs/*.spec.md`; count subjects with `status != draft` and `surface: [...]`        |
 | 2     | at least one subject has `realized_by.api_boundary:` with ≥1 MFA          | parse `.spec/specs/*.spec.md`; count subjects with `realized_by.api_boundary` populated         |
 | 3     | `test_tags.enabled: true` AND ≥1 `@tag spec:` in test files               | parse `.spec/config.yml`; grep `test/`                                                          |
-| 4     | coverage formatter wired AND coverdata artifact exists                    | grep `test/test_helper.exs` for `SpecLedEx.Coverage.Formatter`; check `.spec/_coverage/per_test.coverdata` |
+| 4     | coverage artifact exists AND CI runs the capture step                     | check `.spec/_coverage/per_test.coverdata` exists; grep `.github/` for `mix spec\.cover\.(test|ingest)` |
 | 5     | at least one subject has `realized_by.implementation:` with ≥1 MFA        | parse `.spec/specs/*.spec.md`                                                                   |
 | 6     | `test_tags.enforcement: error` AND `branch_guard_realization_drift: error` | parse `.spec/config.yml`                                                                        |
 
+Do not grep `test/test_helper.exs` for `SpecLedEx.Coverage.Formatter` as the
+phase4 signal. Since epic `specled_-155`, the default `mix spec.cover.test`
+needs no `test_helper.exs` wiring at all, and wiring the formatter in
+directly is now an inert anti-pattern (one stderr notice, no artifact) —
+its presence proves nothing about adoption level, and its absence is the
+expected, correct state even at phase4. Detect from the artifact and CI
+step instead.
+
 Mixed-phase repos are common. Example: workspace T3 + adoption-level signals
-say phase2 (because tags exist but the formatter is not wired) means the
+say phase2 (because tags exist but coverage was never captured) means the
 repo has skipped phase3/4 ordering. Treat the inferred phase as the floor
 when picking `target_phase` — bootstrap fills in missing prior phases before
 advancing.

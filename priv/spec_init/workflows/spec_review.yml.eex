@@ -88,6 +88,13 @@ jobs:
           # must never be used as the merge-gate or pass/fail input.
           git fetch origin +refs/heads/spec-evidence:refs/remotes/origin/spec-evidence || true
 
+      - name: Capture coverage
+        run: |
+          # Aggregate mode by default: no test_helper.exs wiring, async-safe,
+          # O(codebase). Feeds spec.review's Coverage tab; spec.review itself
+          # degrades to detector_unavailable if this step is skipped.
+          mix spec.cover.test
+
       - name: Render spec.review
         run: |
           mix spec.review \

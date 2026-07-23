@@ -143,12 +143,20 @@ grep -E 'enabled:\s*true' .spec/config.yml 2>/dev/null | head -1
 # @tag spec: present in tests?
 grep -rE '@(tag|moduletag)\s+spec:' test/ 2>/dev/null | head -5
 
-# coverage formatter wired?
-grep 'SpecLedEx.Coverage.Formatter' test/test_helper.exs 2>/dev/null
+# coverage artifact produced at least once, and CI runs the capture step?
+ls .spec/_coverage/per_test.coverdata 2>/dev/null
+grep -rE 'mix spec\.cover\.(test|ingest)' .github/ 2>/dev/null
 
 # CI integration?
 grep -rE 'mix spec\.(check|cover\.test)' .github/ 2>/dev/null
 ```
+
+Never grep for `SpecLedEx.Coverage.Formatter` in `test/test_helper.exs` as a
+detection signal — since epic `specled_-155`, wiring the formatter there is
+the anti-pattern this package's own docs used to (wrongly) instruct, and a
+bare wiring is inert by design (one stderr notice, no artifact) rather than
+a sign of adoption. Detect phase4 from the artifact's existence and CI
+actually running the capture step instead.
 
 Each line answered "yes" raises the inferred current phase by one. Compute
 the **current_phase** as the highest phase whose preconditions all hold,
@@ -158,7 +166,7 @@ floor at 0:
 - **phase1** — at least one non-draft subject with `surface:`
 - **phase2** — at least one subject with `realized_by.api_boundary:`
 - **phase3** — `test_tags.enabled: true` AND at least one `@tag spec:`
-- **phase4** — coverage formatter wired AND `.spec/_coverage/per_test.coverdata` produced at least once
+- **phase4** — `.spec/_coverage/per_test.coverdata` produced at least once AND CI runs `mix spec.cover.test` (or `spec.cover.ingest`)
 - **phase5** — at least one subject with `realized_by.implementation:`
 - **phase6** — `test_tags.enforcement: error` AND `branch_guard.severities.*: error` raised on the high-trust codes
 
@@ -401,10 +409,14 @@ parent and depend phase2 on the fan-out).
 ### 4.4 Per-tier opt-out handling
 
 - `implementation` skipped → omit the phase5 ticket entirely.
-- `coverage triangulation` skipped → omit phase4 ticket; collapse phase3's
-  ticket to also write a permanent bare `off` for
-  `branch_guard_untested_realization`, `branch_guard_untethered_test`, and
-  `branch_guard_underspecified_realization` in `.spec/config.yml`.
+- `coverage triangulation` skipped → omit phase4 ticket. There is no
+  `.spec/config.yml` opt-out to write for `branch_guard_untested_realization`,
+  `branch_guard_untethered_test`, or `branch_guard_underspecified_realization`
+  — they are `mix spec.triangle`/`mix spec.review`-only diagnostics with
+  fixed severities, never part of the `mix spec.check` gate, so
+  `branch_guard.severities` has no effect on them. Skipping the phase means
+  simply never running `mix spec.cover.test` / `mix spec.triangle`; note
+  this in the phase3 ticket instead of a config edit.
 - Umbrella → phase2 ticket includes the note that `realized_by` tiers will
   emit `detector_unavailable :umbrella_unsupported`; omit the phase4/5
   tickets when the capability probe confirms the degrade (run
