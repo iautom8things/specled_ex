@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T11:59:58Z",
+  "description": "Advances: specled.api_boundary\n\nDiscovered dogfooding specled_-uv3/oyg on branch specled_-oyg/guard-ergonomics. Adding blank lines above a bound function (e.g. editing an unrelated moduledoc) changes that function's api_boundary hash even though its head/args/guards/body are byte-identical. Proven: inserting 9 blank lines above SpecLedEx.Realization.Orchestrator.run/2 changed its ApiBoundary.hash from 0415833... to b3b822... with no source change to run/2. This contradicts ApiBoundary.hash's documented stability ('Stable under whitespace, variable renames, and line shifts', api_boundary.ex:51) and undermines the oyg premise that api_boundary bindings attest clean under internals-only edits — any edit above a bound function spuriously drifts it. canonicalize_head/normalize_clause/arg_shape appear to strip meta, so the leak is subtler (likely the resolved AST line meta surviving on some path, or head_from_def source-fallback). Fix: make canonicalize_head fully position-invariant and add a regression test asserting a pure line-shift above a bound MFA does not change its hash. Interim mitigation shipped in uv3: mix spec.check --accept-drift absorbs the spurious drift into the baseline.",
+  "id": "specled_-o40",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "api_boundary MFA hashes are line-position-sensitive — canonicalize_head leaks source position",
+  "type": "task",
+  "updated_at": "2026-07-23T11:59:58Z"
+}

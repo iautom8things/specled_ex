@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T11:29:18Z",
+  "description": "No spec subject — instrumentation/observation log carved out of specled_-f98 (closed) so the one remaining unfixed flake observation is not lost.\n\nspecled_-f98 observations 2 and 4 were root-caused as test-quality defects and fixed (commit 2a90f74: verifier_test timeout budget 300-\u003e2000ms; spec_check_test SPECLED_SHOW_INFO hermeticity). Observation 1/3 — test/specled_ex/compiler/tracer_test.exs:241 merge_edges stream_data property fails once under full-suite/merged load, passes 21/21 in isolation — was NOT fixed because it is not a defect.\n\nelixir-test-critic assessment (two independent passes): merge_edges/3 is a pure function over in-memory maps (no ETS, no file, no shared state, no real-manifest mutation). All four asserted invariants (key set, session-caller provenance, canonical callees, idempotence) hold universally by construction; no counterexample derivable by analysis. Given a fixed ExUnit seed, StreamData generation is deterministic and load-independent, so a genuine shrunk counterexample would reproduce in isolation at that seed, and none does. Most likely cause: under a saturated scheduler the 100-iteration check-all overran the 60s ExUnit test-slot timeout, surfacing as an EXIT/timeout in this test slot rather than an assertion failure — a suite-capacity artifact, not a property or product bug.\n\nInstrumentation-only. Do NOT weaken the property.\n\nIf it recurs (ExUnit prints the seed at run start), capture:\n- Failure MODE: assertion failure (prints a shrunk counterexample: previous / session_edges / session_modules) vs EXIT timeout. That single fact decides counterexample vs timeout-artifact.\n- If a counterexample: reproduce with mix test test/specled_ex/compiler/tracer_test.exs:241 --seed \u003cci_seed\u003e. Reproduces in isolation =\u003e the invariant or merge_edges has an edge the analysis missed. Does not =\u003e timeout-artifact theory confirmed.\n- Low-risk hardening if confirmed as timeout-under-load: bound the property runtime under a load profile (e.g. lower max_runs) or record the seed in CI output so flaked-once becomes flaked-at-seed-N.",
+  "id": "specled_-qvg",
+  "labels": [],
+  "priority": 3,
+  "status": "open",
+  "title": "Capture seed if tracer merge_edges property (tracer_test.exs:241) flakes again",
+  "type": "task",
+  "updated_at": "2026-07-23T11:29:18Z"
+}

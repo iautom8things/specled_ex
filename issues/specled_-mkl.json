@@ -6,9 +6,15 @@
   "description": "Found during specled_-rot ship (2026-07-23). .claude/scripts/worktree-cleanup.sh refuses any worktree whose branch has commits not in main's ancestry ('N unmerged commit(s)'), which is every squash-merged branch — the repo's own merge flow. There is no FORCE/override flag, so post-merge cleanup always requires manual 'git worktree remove' + 'git branch -D', bypassing the script. Fix: add a --force/-f flag (or auto-detect: branch tree content identical to a commit on main, e.g. empty 'git diff \u003cbranch\u003e main...' or PR mergedAt lookup) that permits cleanup after verified squash merges. The worktree.md rule says to always go through make worktree-cleanup, so the script needs to support the repo's actual merge strategy.",
   "id": "specled_-mkl",
   "labels": [],
+  "comments": [
+    {
+      "text": "Reproduced live during /ship-it of specled_-f98 (2026-07-23): squash-merged PR #9, then `make worktree-cleanup NAME=specled_ex-flaky-test-hardening FORCE=1` refused with '2 unmerged commit(s) ... (vs main)'. Confirmed .claude/scripts/worktree-cleanup.sh has no force path (checked lines 68-80: unconditional `exit 1` when rev-list main..HEAD != 0), so the FORCE=1 var documented by the merge-pr flow is a no-op here. Worked around manually with `git worktree remove --force` + `git branch -D` (safe: pure-Elixir repo, no compose/volume teardown, branch verified merged at d300c21).",
+      "timestamp": "2026-07-23T14:31:02Z"
+    }
+  ],
   "priority": 3,
   "status": "open",
   "title": "worktree-cleanup.sh cannot clean squash-merged worktrees (no force path)",
   "type": "task",
-  "updated_at": "2026-07-23T10:29:06Z"
+  "updated_at": "2026-07-23T14:31:02Z"
 }
