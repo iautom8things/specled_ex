@@ -87,11 +87,15 @@
     {
       "text": "Squash-merged to main (c90b32aa). Watching post-merge Specs run.",
       "timestamp": "2026-07-23T22:46:59Z"
+    },
+    {
+      "text": "Closed. Shipped as v0.5.0 (PR #13, squash c90b32aa, post-merge Specs green on both OTP legs). Fast-follow epic specled_-q6l carries: specled_-q6l.1..5 (calibrated review Tier-2/3 items) + specled_-6v6 (arm --cover). Root cause specled_-47j resolved by this epic.",
+      "timestamp": "2026-07-23T22:50:40Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Aggregate-first spec coverage — specled_-47j remediation",
   "type": "epic",
-  "updated_at": "2026-07-23T22:46:59Z"
+  "updated_at": "2026-07-23T22:50:40Z"
 }
