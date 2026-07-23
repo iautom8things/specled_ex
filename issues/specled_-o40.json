@@ -10,11 +10,15 @@
     {
       "text": "FIX IMPLEMENTED (commit c85e85e, branch specled_-o40/canonicalize-head-position off main 8f7abd3). Root cause: strip_meta/1 recursed into a call node args but NOT its form (callee), so a remote-call guard is_map(x) = {{:.,meta,[:erlang,:is_map]},_,[x]} kept the . node line/column. Fix: strip_meta recurses into form. Proven: run/2 hashes 189fb7 identically before/after a 9-line shift (was 0415833-\u003eb3b822). Added WithGuard fixture + a real line-shift regression test (replaces the old tautological same-AST-twice check). Tightened api_boundary.hash_function_head must to name the previously-broken case. Rebaselined 45 api_boundary hashes (145 total, 0 dropped/added) via silent-seed reseed. Gate: compile-w-as-errors, mix test 1030/0, format, deps.unlock all green; spec.check status=pass errors=0 (3 file-touch findings downgraded via Spec-Drift trailers; the full-command run hit only the known flaky compiler_tracer tagged_tests, specled_-epl). Cold-verify in flight. NOTE: retires the reason PR-1/uv3 accepted run/2 hash. Not pushed/opened.",
       "timestamp": "2026-07-23T16:44:17Z"
+    },
+    {
+      "text": "TEST BOUNCE FIXED (amended commit 0ee61a7). Cold-verify (verify-o40) confirmed the FIX correct+complete (8-construct BEAM probe: 6/8 leak on old, all invariant on new) and the 45-hash rebaseline sound (changed \u003c=\u003e has-guard, no masking) — but caught that the shipped regression test was VACUOUS: inside mix test, Binding.resolve returns SOURCE form for a fixture, whose guard head_from_def drops, so the test passed on old AND fixed code. Replaced with two tests over a synthetic BEAM-form resolved head (the shape real resolution produces): (1) hash invariant under a line-position shift of a remote-call guard; (2) guard callee participates in the hash (rules out the vacuous dropped-guard mode). PROVEN non-vacuous by execution: reverting strip_meta turns test (1) RED; restoring turns it GREEN. Also fixed the false commit claim and broadened the @moduledoc to match the tightened must. Gate: 17/0 targeted, format clean, spec.check status=pass errors=0.",
+      "timestamp": "2026-07-23T17:04:11Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "api_boundary MFA hashes are line-position-sensitive — canonicalize_head leaks source position",
   "type": "task",
-  "updated_at": "2026-07-23T16:44:17Z"
+  "updated_at": "2026-07-23T17:04:11Z"
 }
