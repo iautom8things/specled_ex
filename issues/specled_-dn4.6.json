@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-24T19:18:43Z",
+  "description": "F14: spec's 'two snapshot reads + one diff + one ETS insert' hot-path claim understates O(modules × lines) reads twice per test + ExUnit OnExitHandler deep-copies; fix boundary_hook_sync spec text + Boundary moduledoc + docs cost tables, then chain windows (tail(N) = head(N+1)) so the closure captures only {module, name}. F12: per_test_requirement_reach/3 recomputed once per subject — call once per review with full closure_map. F26: a formatter crash leaves the previous run's artifact on disk with task exit 0 — assert artifact freshness (generated_at vs pre-suite timestamp) and Mix.raise on miss. Report F14/F12/F26.",
+  "id": "specled_-dn4.6",
+  "labels": [],
+  "parent": "specled_-dn4",
+  "priority": 2,
+  "status": "open",
+  "title": "Correct the per-test cost model + artifact freshness guard (F14, F12, F26)",
+  "type": "task",
+  "updated_at": "2026-07-24T19:18:43Z"
+}
