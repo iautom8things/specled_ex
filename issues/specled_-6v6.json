@@ -7,9 +7,15 @@
   "id": "specled_-6v6",
   "labels": [],
   "parent": "specled_-q6l",
+  "comments": [
+    {
+      "text": "DECISION (user, 2026-07-24): arm the gate by LOWERING the threshold, not raising coverage. Change mix.exs test_coverage threshold 90 -\u003e 83 (just below measured 83.05%). Raising coverage to 90 is explicitly out of scope; a ratchet follow-up will be filed separately. Both ticket blockers still apply: fix the snapshot fixture-module cover leak (quarantine like decode_coverdata in specled_-aav, or unregister modules) and confirm threshold failure exits non-zero, then add --cover to the native 'Run tests' step in .github/workflows/specs.yml.",
+      "timestamp": "2026-07-24T12:14:22Z"
+    }
+  ],
   "priority": 2,
   "status": "open",
   "title": "Arm mix test --cover in CI: close 83.05%→90% coverage gap and fix snapshot fixture-module cover leak",
   "type": "task",
-  "updated_at": "2026-07-23T22:50:31Z"
+  "updated_at": "2026-07-24T12:14:22Z"
 }
