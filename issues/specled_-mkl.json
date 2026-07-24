@@ -14,6 +14,10 @@
     {
       "text": "Hit again during specled_-155 ship: 'make worktree-cleanup NAME=specled_ex-aggregate-first-spec-coverage FORCE=1' refused with '19 unmerged commit(s)' after squash-merge c90b32aa (FORCE=1 has no effect in worktree-cleanup.sh). Removed manually via git worktree remove --force + branch -D. Repro data for the fix.",
       "timestamp": "2026-07-23T22:49:25Z"
+    },
+    {
+      "text": "Triage 2026-07-24: raised P3-\u003eP2. Repo squash-merges 100% of PRs, so cleanup fails on EVERY post-merge teardown; the manual fallback (worktree remove --force + branch -D) bypasses the dirty-tree safety check and normalizes agents force-deleting unsupervised. Verified at HEAD: no --force path in worktree-cleanup.sh (args :18-38, unconditional exit :74-78, --all silent skip :79); Makefile:156 never passes FORCE. Fix must also switch line 134 branch -d to -D. Prefer squash-merge auto-detect (empty git diff main...branch on tree content, or gh PR mergedAt) over blind --force for unattended /ship-it runs.",
+      "timestamp": "2026-07-24T09:57:41Z"
     }
   ],
   "priority": 2,
