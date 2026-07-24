@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
   "created": "2026-07-24T12:19:47Z",
@@ -9,8 +9,8 @@
     "slug:per-test-sync-boundary"
   ],
   "priority": 1,
-  "status": "open",
+  "status": "in_progress",
   "title": "Per-test exact attribution via synchronous boundary hook",
   "type": "epic",
-  "updated_at": "2026-07-24T12:19:48Z"
+  "updated_at": "2026-07-24T12:37:22Z"
 }
