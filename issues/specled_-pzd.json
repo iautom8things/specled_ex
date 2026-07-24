@@ -25,11 +25,15 @@
     {
       "text": "GATE SKIP (unchanged test-relevant tree hash)\nPost-specled_-pzd.5-close full gate skipped: merge dec81ac..8ee2d19 touches only skills/spec-led-bootstrap/** (markdown); diff over lib, test, config, priv, mix.lock is empty. Last full gate (post-specled_-pzd.3, with one recorded flake-accept and green format/deps/spec.check completion) stands as the current whole-system proof. Epic smoke after the S5 merge: 1193 tests, 0 failures.",
       "timestamp": "2026-07-24T15:39:45Z"
+    },
+    {
+      "text": "MINI-RETRO\nbounces: 2 (other/scope-prose, stale-spec/gate-deadlock — both specled_-pzd.1)\nfull_suite_runs: 4 (post-close gates for .1/.2/.4/.3; .5 skipped via unchanged hash)\nfinals_gt1: 2 (pzd.1 iter-3: 3 runs incl. one StreamData flake; pzd.3: 2 runs, append-only guard)\nflake_accepts: 1 (scenario_refactor_stable realization-drift signature, linked specled_-l05)\nescalations: 0\nlessons_kept/retired: 2/1",
+      "timestamp": "2026-07-24T15:39:53Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Per-test exact attribution via synchronous boundary hook",
   "type": "epic",
-  "updated_at": "2026-07-24T15:39:45Z"
+  "updated_at": "2026-07-24T15:39:53Z"
 }
