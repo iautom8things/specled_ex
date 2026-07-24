@@ -63,7 +63,10 @@ defmodule SpecLedEx.Coverage.Store do
   def read(path) when is_binary(path) do
     path
     |> File.read!()
-    |> :erlang.binary_to_term()
+    # [:safe]: every atom this shape can carry (:test_id, :file, :lines_hit,
+    # :tags, :test_pid) is a literal declared in this module and therefore
+    # already interned; nothing here needs to resurrect a foreign atom.
+    |> :erlang.binary_to_term([:safe])
   end
 
   # ---------------------------------------------------------------------
@@ -186,10 +189,52 @@ defmodule SpecLedEx.Coverage.Store do
           {:ok, envelope()} | {:error, :legacy_artifact, String.t()} | {:error, :invalid_artifact}
   def read_v2(path) when is_binary(path) do
     with {:ok, bin} <- File.read(path),
+         # Not [:safe]: an aggregate-mode envelope's `:files` entries carry a
+         # raw `:module` atom (`SpecLedEx.Coverage.Aggregate.analyse_lines/2`),
+         # read downstream by `CoverageTriangulation`. `mix spec.cover.ingest`
+         # exists precisely to accept a `.coverdata` captured in another
+         # run/session, and a merged-in-place envelope can legitimately name
+         # a module renamed or deleted since capture — decode must not hard-
+         # fail just because that atom isn't interned in this BEAM yet.
          {:ok, term} <- safe_decode(bin) do
       classify_v2(term)
     else
       _ -> {:error, :invalid_artifact}
+    end
+  end
+
+  @doc """
+  Loads and classifies the v2 envelope at `path` in one call.
+
+  Three call sites (`mix spec.triangle`, `SpecLedEx.Review.CoverageClosure`,
+  and `SpecLedEx.Review`) used to copy-paste the same
+  existence-check-then-`read_v2/1`-then-classify dance under a private
+  `load_envelope/1`, with comments admitting the copies must not disagree.
+  This function owns that vocabulary so a new `read_v2/1` outcome only needs
+  to be taught here once.
+
+  Returns:
+
+    * `{:ok, envelope}` — a well-formed v2 envelope.
+    * `{:degraded, :no_coverage_artifact}` — `path` does not exist.
+    * `{:degraded, :legacy_artifact}` — the artifact decodes as the v1
+      bare-list shape.
+    * `{:degraded, :invalid_artifact}` — the file exists but is undecodable
+      or decodes to a term that is neither a v1 list nor a valid v2
+      envelope map.
+  """
+  @spec load(Path.t()) ::
+          {:ok, envelope()}
+          | {:degraded, :no_coverage_artifact | :legacy_artifact | :invalid_artifact}
+  def load(path) when is_binary(path) do
+    if File.regular?(path) do
+      case read_v2(path) do
+        {:ok, envelope} -> {:ok, envelope}
+        {:error, :legacy_artifact, _message} -> {:degraded, :legacy_artifact}
+        {:error, :invalid_artifact} -> {:degraded, :invalid_artifact}
+      end
+    else
+      {:degraded, :no_coverage_artifact}
     end
   end
 
@@ -204,7 +249,11 @@ defmodule SpecLedEx.Coverage.Store do
   @spec read_status(Path.t()) :: {:ok, map()} | {:refused, term()}
   def read_status(path) when is_binary(path) do
     with {:ok, bin} <- File.read(status_path(path)),
-         {:ok, term} <- safe_decode(bin) do
+         # [:safe]: the sidecar only ever holds `{:ok, envelope_stats}` (fixed
+         # keys, `:aggregate`/`:per_test`, integers, a `DateTime` struct — all
+         # always-loaded atoms) or `{:refused, fixed_atom_reason}` — never a
+         # project- or foreign-module atom, so nothing here needs resurrecting.
+         {:ok, term} <- safe_decode(bin, [:safe]) do
       case term do
         {:ok, stats} -> {:ok, stats}
         {:refused, reason} -> {:refused, reason}
@@ -249,8 +298,8 @@ defmodule SpecLedEx.Coverage.Store do
   defp classify_v2(term) when is_list(term), do: {:error, :legacy_artifact, @legacy_message}
   defp classify_v2(_other), do: {:error, :invalid_artifact}
 
-  defp safe_decode(bin) do
-    {:ok, :erlang.binary_to_term(bin)}
+  defp safe_decode(bin, opts \\ []) do
+    {:ok, :erlang.binary_to_term(bin, opts)}
   rescue
     ArgumentError -> :error
   end

@@ -64,7 +64,7 @@ defmodule Mix.Tasks.Spec.Triangle do
     selected_subjects = select_subjects!(index, selection)
 
     artifact_path = opts[:artifact_path] || Store.default_path()
-    envelope_result = load_envelope(artifact_path)
+    envelope_result = Store.load(artifact_path)
     edges = load_tracer_edges()
     tag_index = tag_index_from_index(index)
 
@@ -109,28 +109,17 @@ defmodule Mix.Tasks.Spec.Triangle do
   # Artifact loading
   # ---------------------------------------------------------------------------
 
-  # covers: specled.triangulation.envelope_legacy_and_invalid_distinct
-  # Mirrors SpecLedEx.Review.CoverageClosure's private load_envelope/1 —
-  # existence is checked before decoding so a genuinely-missing artifact
-  # reports :no_coverage_artifact rather than Store.read_v2/1's
-  # :invalid_artifact (which covers "present but undecodable").
-  defp load_envelope(path) do
-    if File.regular?(path) do
-      case Store.read_v2(path) do
-        {:ok, envelope} -> {:ok, envelope}
-        {:error, :legacy_artifact, _message} -> {:degraded, :legacy_artifact}
-        {:error, :invalid_artifact} -> {:degraded, :invalid_artifact}
-      end
-    else
-      {:degraded, :no_coverage_artifact}
-    end
-  end
-
   defp load_tracer_edges do
     path = Tracer.manifest_path()
 
     with true <- File.regular?(path),
          {:ok, binary} <- File.read(path),
+         # Not [:safe]: `Tracer` merges the manifest incrementally rather
+         # than replacing it, so a caller/callee module renamed or deleted
+         # since it was traced can legitimately linger as a "ghost" entry —
+         # per the tracer's own moduledoc, read-time filtering (not decode)
+         # is the authoritative prune. A fresh BEAM (this one) may not have
+         # interned that module's atom yet; resurrecting it here is correct.
          map when is_map(map) <- :erlang.binary_to_term(binary) do
       map
     else
@@ -287,9 +276,9 @@ defmodule Mix.Tasks.Spec.Triangle do
 
   # covers: specled.triangulation.spec_triangle_task
   # Resolves the loaded v2 envelope (or one of the three degraded statuses
-  # Store.read_v2/1 distinguishes, mirrored by load_envelope/1 above) into
-  # the fields render/1 prints. :aggregate mode computes per-requirement
-  # closure-coverage % via CoverageTriangulation.aggregate_requirement_reach/2
+  # Store.load/1 distinguishes) into the fields render/1 prints. :aggregate
+  # mode computes per-requirement closure-coverage % via
+  # CoverageTriangulation.aggregate_requirement_reach/2
   # and labels the per-test-only detectors detector_unavailable via
   # CoverageTriangulation.envelope_findings/3 (reason aggregate_artifact_only)
   # rather than silently omitting them. :per_test mode reuses the v1

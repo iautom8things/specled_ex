@@ -52,6 +52,24 @@ formatter never fabricates a record for a snapshot entry it cannot attribute
 to a real source line — unrecognized or function-level snapshot shapes are
 counted and surfaced as decode errors instead.
 
+`snapshot_test.exs`'s own fixture-compile helper (`cover_snapshot_in_child/1`)
+mirrors the same contamination-avoidance discipline
+`SpecLedEx.IntegrationCase.run_fixture_mix_test/2` documents
+(`specled.coverage_capture.integration_case`): compiling a fresh fixture
+module, cover-compiling it, exercising it, and reading its
+`native_snapshot/1`/`classic_snapshot/1` result all happen in a separate
+`elixir -e` child process (its own `:cover` coordinator), never the host test
+BEAM's shared `:cover` server an outer `mix test --cover` run depends on. An
+earlier revision did this in-process and deleted the fixture's tmp source
+directory on `on_exit`; the module stayed registered in the host's `:cover`
+coordinator after its source was gone, leaking a spurious 100% row into an
+outer `mix test --cover` tally and crashing its HTML report generator with
+`{:no_source_code_found, _}` — the same class of contamination
+`integration_case` exists to prevent, just via a bespoke `elixir -e`
+invocation rather than a scaffolded `mix` fixture project (there is no `mix`
+task to run here, only two library functions to call against a cover-compiled
+module).
+
 ```yaml spec-meta
 id: specled.coverage_capture
 kind: workflow
@@ -90,6 +108,7 @@ realized_by:
     - "SpecLedEx.Coverage.Store.build_envelope/1"
     - "SpecLedEx.Coverage.Store.write_v2/2"
     - "SpecLedEx.Coverage.Store.read_v2/1"
+    - "SpecLedEx.Coverage.Store.load/1"
     - "SpecLedEx.Coverage.Store.read_status/1"
     - "Mix.Tasks.Spec.Cover.Test.run/1"
     - "SpecLedEx.Coverage.Aggregate.ingest/2"

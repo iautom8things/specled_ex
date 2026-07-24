@@ -2009,7 +2009,11 @@ defmodule SpecLedEx.Review.Html do
         mode_label = if status == :ok_per_test, do: "per-test", else: "aggregate"
         tone = coverage_rollup_tone(self_verified, total)
 
-        ~s|<span class="badge badge-coverage-rollup badge-coverage-#{tone}" title="#{self_verified} of #{total} requirements self-verified under #{mode_label} coverage">#{self_verified}/#{total} self-verified (#{mode_label})</span>|
+        title =
+          "#{self_verified} of #{total} requirements self-verified under #{mode_label} coverage" <>
+            rollup_qualifier_title_suffix(status)
+
+        ~s|<span class="badge badge-coverage-rollup badge-coverage-#{tone}" title="#{h(title)}">#{self_verified}/#{total} self-verified (#{mode_label})#{rollup_qualifier_suffix(status)}</span>|
     end
   end
 
@@ -2017,6 +2021,23 @@ defmodule SpecLedEx.Review.Html do
   defp coverage_rollup_tone(self_verified, total) when self_verified == total, do: "valid"
   defp coverage_rollup_tone(0, _total), do: "dangling"
   defp coverage_rollup_tone(_self_verified, _total), do: "partial"
+
+  # covers: specled.spec_review.coverage_observed_approximate_qualifier
+  # The rollup badge's self-verified count is only ever nonzero under
+  # :ok_per_test (aggregate's "linked" evidence ceiling can never satisfy
+  # self_verified?'s "executed" half — see CoverageClosure.build_v2/2's
+  # doc), and that "executed" attribution is the same test_finished
+  # event-timing race the "Reached by tests" row discloses below. So the
+  # badge names itself observed, not exact, under :ok_per_test only —
+  # aggregate mode's badge is already honest and stays unqualified.
+  defp rollup_qualifier_suffix(:ok_per_test), do: " (observed)"
+  defp rollup_qualifier_suffix(_), do: ""
+
+  defp rollup_qualifier_title_suffix(:ok_per_test),
+    do:
+      "; per-test attribution is race-bounded (ExUnit test_finished event-timing race across formatter casts), treat as observed, not exact — see specled_-cpw"
+
+  defp rollup_qualifier_title_suffix(_), do: ""
 
   @doc false
   def render_spec_tab(s) do
@@ -2956,7 +2977,7 @@ defmodule SpecLedEx.Review.Html do
       ~s"""
       <p class="cov-closure">
         <span class="cov-closure-label">Closure:</span> #{mfa_count} MFA#{plural(mfa_count)} — #{executed_count} executed (#{format_closure_pct(pct)}).#{render_proxy_note(mode)}
-        <span class="cov-closure-self-verified">Self-verified: #{self_str}.</span>
+        <span class="cov-closure-self-verified">Self-verified: #{self_str}.#{render_self_verified_note(mode)}</span>
         <span class="cov-closure-tests">Tagged tests: #{tagged_str}.</span>
       </p>
       """,
@@ -3025,6 +3046,18 @@ defmodule SpecLedEx.Review.Html do
         ~s|<p class="cov-reached-by-tests"><span class="cov-reached-by-tests-label" title="#{h(@reached_by_tests_title)}">Reached by tests:</span> #{names}.</p>|
     end
   end
+
+  # covers: specled.spec_review.coverage_observed_approximate_qualifier
+  # self_verified? composes closure_coverage_pct with an "executed"-strength
+  # tagged test, and that "executed" determination is exactly what
+  # @reached_by_tests_title's race affects — so the same caveat applies here.
+  # Rendered only in per_test mode: aggregate coverage's "linked" ceiling
+  # means self_verified? is always false there, so the note would be inert.
+  defp render_self_verified_note(:per_test) do
+    ~s| <span class="cov-closure-self-verified-note" title="#{h(@reached_by_tests_title)}">(observed)</span>|
+  end
+
+  defp render_self_verified_note(_), do: ""
 
   defp plural(1), do: ""
   defp plural(_), do: "s"

@@ -42,13 +42,15 @@ defmodule SpecLedEx.Coverage.SnapshotTest do
         # below covers the fallback engine instead.
         :ok
       else
-        mod = with_cover_compiled_module()
+        {mod, snapshot} =
+          cover_snapshot_in_child("""
+          mod.a(1)
+          mod.a(1)
+          mod.b(2)
 
-        mod.a(1)
-        mod.a(1)
-        mod.b(2)
+          result = SpecLedEx.Coverage.Snapshot.native_snapshot([mod])
+          """)
 
-        snapshot = Snapshot.native_snapshot([mod])
         assert %{^mod => lines} = snapshot
         assert is_list(lines)
         assert Enum.all?(lines, fn {line, count} -> is_integer(line) and is_integer(count) end)
@@ -66,11 +68,14 @@ defmodule SpecLedEx.Coverage.SnapshotTest do
       unless native_coverage_supported?() do
         :ok
       else
-        mod = with_cover_compiled_module()
-        mod.a(1)
+        {_mod, {r1, r2}} =
+          cover_snapshot_in_child("""
+          mod.a(1)
 
-        r1 = Snapshot.native_snapshot([mod])
-        r2 = Snapshot.native_snapshot([mod])
+          r1 = SpecLedEx.Coverage.Snapshot.native_snapshot([mod])
+          r2 = SpecLedEx.Coverage.Snapshot.native_snapshot([mod])
+          result = {r1, r2}
+          """)
 
         assert r1 == r2
       end
@@ -81,13 +86,15 @@ defmodule SpecLedEx.Coverage.SnapshotTest do
     @describetag :integration
 
     test "reads real line counts for a cover-compiled module via :cover.analyse/3, normalized" do
-      mod = with_cover_compiled_module()
+      {mod, snapshot} =
+        cover_snapshot_in_child("""
+        mod.a(1)
+        mod.a(1)
+        mod.b(2)
 
-      mod.a(1)
-      mod.a(1)
-      mod.b(2)
+        result = SpecLedEx.Coverage.Snapshot.classic_snapshot([mod])
+        """)
 
-      snapshot = Snapshot.classic_snapshot([mod])
       assert %{^mod => lines} = snapshot
       assert is_list(lines)
       refute Enum.any?(lines, fn {line, _count} -> line == 0 end)
@@ -152,13 +159,15 @@ defmodule SpecLedEx.Coverage.SnapshotTest do
     @describetag :integration
 
     test "both engines agree on which lines were hit for the same exercised module" do
-      mod = with_cover_compiled_module()
+      {_mod, {native, classic}} =
+        cover_snapshot_in_child("""
+        mod.a(1)
+        mod.b(2)
 
-      mod.a(1)
-      mod.b(2)
-
-      native = Snapshot.native_snapshot([mod]) |> Map.get(mod, []) |> Map.new()
-      classic = Snapshot.classic_snapshot([mod]) |> Map.get(mod, []) |> Map.new()
+        native = SpecLedEx.Coverage.Snapshot.native_snapshot([mod]) |> Map.get(mod, []) |> Map.new()
+        classic = SpecLedEx.Coverage.Snapshot.classic_snapshot([mod]) |> Map.get(mod, []) |> Map.new()
+        result = {native, classic}
+        """)
 
       hit_lines_native = native |> Enum.filter(fn {_l, c} -> c > 0 end) |> Enum.map(&elem(&1, 0))
 
@@ -171,59 +180,99 @@ defmodule SpecLedEx.Coverage.SnapshotTest do
     end
   end
 
-  # Compiles a fresh copy of LiveFixture's source to a real .beam on disk
-  # (fresh module name per call so tests don't collide on shared cover
-  # state) and cover-compiles it via :cover.compile_beam/1 -- the same path
-  # `mix test --cover` uses for real application modules.
-  defp with_cover_compiled_module do
+  @child_begin "SNAPSHOT_CHILD_BEGIN"
+  @child_end "SNAPSHOT_CHILD_END"
+
+  # Compiles a fresh fixture module's source to a real .beam on disk,
+  # cover-compiles it, runs `exercise_source` against it, and reads back
+  # whatever `exercise_source` binds to `result` -- ALL inside a fully
+  # separate OS process (its own `:cover` coordinator), never the host
+  # BEAM's shared `:cover` server that an outer `mix test --cover` run
+  # depends on.
+  #
+  # An earlier revision did this cover-compile in-process (host BEAM) and
+  # deleted the fixture's source dir on `on_exit`. Harmless standalone,
+  # but under an outer `mix test --cover` the module stayed registered in
+  # the host's `:cover` coordinator after its source was gone: it leaked
+  # into the final tally as a spurious 100% row AND crashed the HTML
+  # report generator with `{:no_source_code_found, Live*}` -- which in
+  # turn masked the threshold gate's own non-zero exit code (`:cover`
+  # exposes no supported way to unregister a single already-compiled
+  # module short of stopping the whole coordinator, which would tear
+  # down the outer run's own coverage). Quarantining the whole
+  # compile+exercise+read cycle in a child process (mirroring
+  # `decode_coverdata/1`'s fix in specled_-aav) means the fixture module
+  # is never seen by the host's `:cover` server at all, so it can't leak
+  # into anything the host reports.
+  #
+  # `exercise_source` is spliced into the child script with `mod` already
+  # bound to the fixture module's name; it must assign its answer to
+  # `result` (any term -- round-tripped back to the host as
+  # `Base64(term_to_binary(result))`).
+  defp cover_snapshot_in_child(exercise_source) do
     unique = System.unique_integer([:positive])
     mod_name = Module.concat(SpecLedEx.Coverage.SnapshotTestFixtures, "Live#{unique}")
 
-    src = """
+    tmp_dir = System.tmp_dir!() |> Path.join("snapshot_child_fixture_#{unique}")
+    File.mkdir_p!(tmp_dir)
+    src_path = Path.join(tmp_dir, "fixture.ex")
+
+    File.write!(src_path, """
     defmodule #{inspect(mod_name)} do
       def a(x), do: x + 1
       def b(x), do: x * 2
     end
-    """
-
-    tmp_dir =
-      System.tmp_dir!() |> Path.join("snapshot_test_fixture_#{unique}")
-
-    File.mkdir_p!(tmp_dir)
-    src_path = Path.join(tmp_dir, "fixture.ex")
-    File.write!(src_path, src)
-
-    # `mix test` (no `--cover`) defaults `debug_info: false`, but
-    # `:cover.compile_beam/1` needs the abstract code that only debug_info
-    # embeds -- flip it on for this compile only, then restore, since it's
-    # a process-wide `Code` setting.
-    prior_debug_info = Code.compiler_options()[:debug_info]
-    Code.compiler_options(debug_info: true)
-    [{^mod_name, bin}] = Code.compile_file(src_path)
-    Code.compiler_options(debug_info: prior_debug_info)
-
-    beam_path = Path.join(tmp_dir, "#{mod_name}.beam")
-    File.write!(beam_path, bin)
-    Code.append_path(tmp_dir)
-
-    # `:cover` lives in the `:tools` OTP app, which plain `mix test` (no
-    # `--cover`) does not put on the code path. `mix test --cover` itself
-    # calls this before touching `:cover` (see
-    # `Mix.Tasks.Test.Coverage.start/1`); we mirror that here since these
-    # tests exercise the engine directly, without going through the real
-    # `--cover` task.
-    Mix.ensure_application!(:tools)
-
-    case apply(:cover, :start, []) do
-      {:ok, _pid} -> :ok
-      {:error, {:already_started, _pid}} -> :ok
-    end
-
-    {:ok, ^mod_name} = apply(:cover, :compile_beam, [String.to_charlist(beam_path)])
+    """)
 
     on_exit(fn -> File.rm_rf(tmp_dir) end)
 
-    mod_name
+    # ERL_LIBS (not -pa) so the child resolves SpecLedEx.Coverage.Snapshot
+    # (and any dependency it needs) the same way
+    # SpecLedEx.IntegrationCase.run_fixture_mix_test/2 already does for
+    # other quarantined child-BEAM runs in this suite.
+    parent_lib = Path.expand("_build/#{Mix.env()}/lib")
+
+    script = """
+    mod = #{inspect(mod_name)}
+    tmp_dir = #{inspect(tmp_dir)}
+    src_path = #{inspect(src_path)}
+
+    # `mix test` (no `--cover`) defaults `debug_info: false`, but
+    # `:cover.compile_beam/1` needs the abstract code that only debug_info
+    # embeds -- flip it on for this compile (a fresh, one-shot process, so
+    # there is nothing to restore it for afterwards).
+    Code.compiler_options(debug_info: true)
+    [{^mod, bin}] = Code.compile_file(src_path)
+
+    beam_path = Path.join(tmp_dir, "\#{mod}.beam")
+    File.write!(beam_path, bin)
+    Code.append_path(tmp_dir)
+
+    {:ok, _pid} = :cover.start()
+    {:ok, ^mod} = :cover.compile_beam(String.to_charlist(beam_path))
+
+    #{exercise_source}
+
+    encoded = result |> :erlang.term_to_binary() |> Base.encode64()
+    IO.write(["#{@child_begin}", encoded, "#{@child_end}"])
+    """
+
+    {output, status} =
+      System.cmd("elixir", ["-e", script],
+        env: [{"ERL_LIBS", parent_lib}],
+        stderr_to_stdout: true
+      )
+
+    assert status == 0,
+           "expected child-BEAM snapshot run to exit 0, got #{status}.\nOutput:\n#{output}"
+
+    assert output =~ @child_begin and output =~ @child_end,
+           "child run exited 0 but produced no output markers.\nOutput:\n#{output}"
+
+    [_before, rest] = String.split(output, @child_begin, parts: 2)
+    [encoded, _after] = String.split(rest, @child_end, parts: 2)
+
+    {mod_name, encoded |> Base.decode64!() |> :erlang.binary_to_term()}
   end
 
   # `:code.coverage_support/0` only exists on OTP >= 27; calling it raw is an

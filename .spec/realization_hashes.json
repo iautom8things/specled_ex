@@ -248,6 +248,10 @@
       "hash": "ba61d4783a31c2b0d1c7ab3678f22981113e56eba6a1c9dfee88f0ac370eb896",
       "hasher_version": 1
     },
+    "SpecLedEx.Coverage.Store.load/1": {
+      "hash": "46cd33f2fd0e8bb27f0eea47d91be518cae2006fc826ce939bbdaad7cc463c5d",
+      "hasher_version": 1
+    },
     "SpecLedEx.Coverage.Store.read/1": {
       "hash": "0da17832dc52f898875e2b32b49043a85784a11f26537799eb205f66c3895d8d",
       "hasher_version": 1

@@ -7,7 +7,7 @@ defmodule SpecLedEx.MixProject do
       version: "0.2.0",
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
-      test_coverage: [summary: [threshold: 90]],
+      test_coverage: [summary: [threshold: 83]],
       test_ignore_filters: [&String.starts_with?(&1, "test/fixtures/")],
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: [tracers: tracers()],

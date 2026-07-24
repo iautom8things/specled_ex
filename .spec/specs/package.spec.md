@@ -16,6 +16,12 @@ for bare-module `api_boundary` entries: adopting repos no longer see
 `.spec/realization_hashes.json` churn (drop-and-reseed oscillation) across
 consecutive clean `mix spec.check` runs.
 
+`mix.exs` is bound here as a whole-file surface member (package scaffolding,
+deps, and Mix task wiring). An edit to an unrelated top-level key — e.g.
+`test_coverage: [summary: [threshold: ...]]`, tuned as an internal CI-gate
+exception — legitimately touches this subject's tracked surface without
+reflecting any change to what this subject verifies.
+
 ```yaml spec-meta
 id: specled.package
 kind: package

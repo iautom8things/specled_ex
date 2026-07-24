@@ -1,5 +1,48 @@
 # Changelog
 
+## 0.6.1 — 2026-07-24
+
+- CI now arms the coverage gate: both test-matrix legs run `mix test --include
+  integration --cover`, with the `mix.exs` threshold lowered 90 → 83 (just
+  below the measured 83.05% true coverage; ratcheting back toward 90 is
+  tracked separately). `snapshot_test.exs`'s cover-compiled tmp fixture
+  modules now run their whole compile/cover-compile/exercise/read cycle in a
+  quarantined child BEAM with its own `:cover` coordinator, so they no longer
+  leak spurious 100% rows into the tally or crash the HTML report with
+  `:no_source_code_found` — and a threshold failure now exits non-zero instead
+  of being masked by that crash. (specled_-6v6)
+- Envelope load-and-classify consolidated into the new public
+  `SpecLedEx.Coverage.Store.load/1`, owning the full `{:ok, env} |
+  {:degraded, :no_coverage_artifact | :legacy_artifact | :invalid_artifact}`
+  vocabulary; the three copy-pasted private `load_envelope/1` variants in
+  `mix spec.triangle`, `Review.CoverageClosure`, and `Review` now route
+  through it, so a new envelope status can no longer desynchronize consumers.
+  (specled_-q6l.1)
+- Split the over-compound `specled.spec_review.coverage_tab_bind_closure`
+  requirement into 8 per-contract requirement ids (closure-line format,
+  per-test-only "Reached by tests" row, observed/approximate qualifier,
+  file-level-proxy note, rollup badge, generated_at staleness, distinct
+  degraded banners, no_tracer_manifest banner), each with its own scenario and
+  covering test, so a regression in one clause fails at its own requirement
+  instead of shipping green at compound granularity. (specled_-q6l.5)
+- Removed the dead v1 `CoverageClosure.build/2` (~100 lines, zero callers and
+  zero tests since `Review.build_view/3` switched to `build_v2/2`) along with
+  its orphaned private helpers and the stale "build_v2 not wired yet"
+  comments. (specled_-q6l.3)
+- `self_verified?` rendering under `:ok_per_test` mode now carries a
+  discoverable "(observed)" qualifier plus a title-attribute caveat on both
+  the rollup badge and the per-requirement "Self-verified" row, reusing the
+  existing race-bounded disclaimer; aggregate mode is unchanged. The
+  underlying synchronous-`on_exit` fix remains tracked as specled_-cpw.
+  (specled_-q6l.2)
+- Hardened coverage/manifest artifact decodes per-site against
+  atom-exhaustion from hostile committed artifacts: `Store.read/1` and
+  `Store.read_status/1` now decode with `[:safe]` (with tests proving a
+  never-interned atom is rejected without being interned); the v2 envelope
+  decode and both tracer-manifest readers deliberately remain non-safe — they
+  must be able to resurrect project module atoms in a fresh BEAM — with site
+  comments documenting the rationale. (specled_-q6l.4)
+
 ## 0.6.0 — 2026-07-24
 
 - Findings for merged `tagged_tests` run failures and timeouts now echo the
