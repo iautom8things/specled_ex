@@ -2368,7 +2368,12 @@ defmodule SpecLedEx.Verifier do
 
     if is_binary(dir) and dir != "" and (result.timed_out or result.exit_code != 0) do
       File.mkdir_p!(dir)
-      path = Path.join(dir, "specled_cmd_#{System.unique_integer([:positive])}.log")
+
+      # Same cross-VM-unique scheme as run_command's temp names: concurrent
+      # specled runs may share a capture dir, and a per-VM-only unique name
+      # could overwrite another run's forensic log.
+      suffix = "#{System.pid()}_#{Base.encode16(:crypto.strong_rand_bytes(6), case: :lower)}"
+      path = Path.join(dir, "specled_cmd_#{suffix}.log")
 
       File.write!(path, """
       command: #{target}
