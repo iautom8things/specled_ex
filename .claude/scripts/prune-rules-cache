@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# agent-rules: generated v0.3.0
+# SessionStart hook: prune stale rule-injection marker directories.
+#
+# Removes ${XDG_CACHE_HOME:-$HOME/.cache}/agent-rules/<agent>/<session>/
+# directories older than 7 days for both supported agent segments. This preserves
+# current-session markers across ordinary exits/resumes while bounding cache
+# growth for both Claude and Codex.
+
+set -euo pipefail
+
+# Consume the hook payload if one is provided. Pruning is age-based and does not
+# depend on a specific session_id.
+cat >/dev/null || true
+
+cache_root="${XDG_CACHE_HOME:-$HOME/.cache}/agent-rules"
+
+for agent in claude codex; do
+  agent_dir="$cache_root/$agent"
+  [ -d "$agent_dir" ] || continue
+
+  find "$agent_dir" -mindepth 1 -maxdepth 1 -type d -mtime +7 -prune -exec rm -rf -- {} +
+done
+
+exit 0

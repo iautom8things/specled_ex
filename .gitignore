@@ -26,3 +26,6 @@ erl_crash.dump
 spec_led_ex-*.tar
 .playwright-cli/
 .spec/state.json
+
+# Python bytecode (agent-rules hook scripts)
+__pycache__/

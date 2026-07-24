@@ -1,0 +1,369 @@
+#!/usr/bin/env python3
+# agent-rules: generated v0.3.0
+"""Debug helper: print which .claude/rules/*.md and .claude/dynamic-rules/*.md
+files would fire for a given path or command.
+
+Reads rule file frontmatter using the same parser the PreToolUse hook uses.
+Lets you verify a new rule's `paths:` / `match_content:` / structured gates /
+legacy `match_command:` without spinning up a Claude Code session.
+
+Usage:
+    rules-check <file_path> [<file_path> ...]
+    rules-check --command "<bash command>" [--command "..."]
+    rules-check --rules-dir DIR <file_path>  # scan only this one dir, instead of both defaults
+    rules-check --list                       # list all rules + provenance + gates + examples:N
+    rules-check --examples [name ...]        # run golden examples (PASS/FAIL; exit 1 on fail)
+    rules-check --render <file_path> [...]   # print matched rule bodies (for prompt embedding)
+
+In --list mode, each rule is annotated with its provenance:
+    generated  rendered from a central template; safe to re-sync
+    ejected    was central, now repo-owned; never re-rendered
+    repo-only  no provenance header; hand-authored
+
+Deny-only rules are labeled deny(once|always), never "no-autoload".
+
+In --render mode, output is a markdown block per matched rule (deduplicated across
+input paths), suitable for inlining into a prompt. Empty stdout + exit 0 if no
+rules matched.
+
+Exit status:
+    0  one or more rules matched (or --list / --render succeeded; --examples all PASS)
+    1  no rules matched any input path (non-render mode); or --examples had a FAIL
+    2  usage error / unreadable rule
+"""
+from __future__ import annotations
+
+import argparse
+import importlib.util
+import os
+import re
+import sys
+from pathlib import Path
+
+GENERATED_RE = re.compile(r"<!--\s*agent-rules:\s*generated\s+v([0-9A-Za-z._+-]+)\s*-->")
+EJECTED_RE = re.compile(r"<!--\s*agent-rules:\s*ejected\s+v([0-9A-Za-z._+-]+)")
+
+
+def classify_provenance(path: Path) -> tuple[str, str | None]:
+    """Read the first line and classify the rule's provenance.
+
+    Returns (label, version_or_none) where label is one of:
+        "generated", "ejected", "repo-only".
+    """
+    try:
+        first = path.read_text().splitlines()[0]
+    except (OSError, IndexError):
+        return "repo-only", None
+    m = GENERATED_RE.search(first)
+    if m:
+        return "generated", m.group(1)
+    m = EJECTED_RE.search(first)
+    if m:
+        return "ejected", m.group(1)
+    return "repo-only", None
+
+
+def load_inject_rules() -> "module":  # type: ignore[name-defined]
+    """Load inject-rules.py as a sibling module to reuse the matcher."""
+    here = Path(__file__).resolve().parent
+    target = here / "inject-rules.py"
+    spec = importlib.util.spec_from_file_location("inject_rules", target)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load matcher at {target}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)  # type: ignore[union-attr]
+    return module
+
+
+def _list_match_tag(matcher, fm: dict) -> str:
+    """Build the tag column for --list (deny-aware; never no-autoload for deny-only)."""
+    tags: list[str] = []
+    paths = fm.get("paths") or []
+    content = fm.get("match_content") or []
+    if paths:
+        tags.append("paths+content" if content else "paths")
+    if matcher.has_deny_surface(fm):
+        tags.append(f"deny({matcher.deny_strength(fm)})")
+    if matcher.has_context_surface(fm):
+        tags.append("commands")
+    if not tags:
+        tags.append("no-autoload")
+    tags.append(f"examples:{matcher.example_count(fm)}")
+    return "+".join(tags)
+
+
+def _print_list_rule(matcher, name: str, fm: dict, provenance: str, version: str | None) -> None:
+    prov_tag = provenance + (f" v{version}" if version else "")
+    print(f"{name:<24} {prov_tag:<22} {_list_match_tag(matcher, fm)}")
+    for p in fm.get("paths") or []:
+        print(f"  path:    {p}")
+    for c in fm.get("match_content") or []:
+        print(f"  content: {c}")
+
+    deny_cmds = list(fm.get("deny_gate_command") or [])
+    if deny_cmds:
+        short = matcher.format_gate_short(
+            deny_cmds,
+            list(fm.get("deny_gate_args_any") or []),
+            list(fm.get("deny_gate_args_all") or []),
+        )
+        print(f"  deny-gate: {short}  (deny: {matcher.deny_strength(fm)})")
+
+    gate_cmds = list(fm.get("gate_command") or [])
+    if gate_cmds:
+        short = matcher.format_gate_short(
+            gate_cmds,
+            list(fm.get("gate_args_any") or []),
+            list(fm.get("gate_args_all") or []),
+        )
+        print(f"  gate:     {short}")
+
+    for c in fm.get("deny_command") or []:
+        print(f"  deny-regex (legacy): {c}")
+    for c in fm.get("match_command") or []:
+        print(f"  command-regex (legacy): {c}")
+
+
+def _run_examples(matcher, rules: list, selected_names: list[str] | None) -> int:
+    """Run golden examples; print PASS/FAIL; exit 1 on any failure."""
+    any_fail = False
+    warned_zero = False
+    for name, fm, _body, _provenance, _version in rules:
+        if selected_names is not None and name not in selected_names:
+            continue
+
+        print(f"{name}:")
+        schema_errors = matcher.validate_rule_schema(fm, rule_name=name)
+        if schema_errors:
+            for err in schema_errors:
+                print(f"  FAIL schema: {err}")
+            any_fail = True
+
+        n_examples = matcher.example_count(fm)
+        if matcher.has_structured_gates(fm) and n_examples == 0:
+            print(
+                f"  warning: gate-bearing rule has zero golden examples",
+                file=sys.stderr,
+            )
+            warned_zero = True
+
+        results = matcher.run_golden_examples(fm, rule_name=name)
+        if not results and not schema_errors:
+            if n_examples == 0:
+                print("  (no golden examples)")
+            continue
+
+        for r in results:
+            status = "PASS" if r["ok"] else "FAIL"
+            print(
+                f"  {status} {r['key']}: {r['command']!r} "
+                f"→ expected {r['expected']}, got {r['actual']}"
+            )
+            if not r["ok"]:
+                any_fail = True
+
+    if selected_names is not None:
+        known = {name for name, *_ in rules}
+        for want in selected_names:
+            if want not in known:
+                print(f"rules-check: unknown rule name {want!r}", file=sys.stderr)
+                any_fail = True
+
+    # silence lint on warned_zero — side effect is stderr only
+    _ = warned_zero
+    return 1 if any_fail else 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Test which .claude/rules/*.md files would fire for the given paths."
+    )
+    parser.add_argument(
+        "files",
+        nargs="*",
+        help="One or more file paths to check (relative to repo root or absolute).",
+    )
+    parser.add_argument(
+        "--rules-dir",
+        default=None,
+        help="Scan only this one directory instead of the defaults "
+             "(<repo>/.claude/rules and <repo>/.claude/dynamic-rules).",
+    )
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        help="List all rules and their globs/gates/examples, then exit.",
+    )
+    parser.add_argument(
+        "--render",
+        action="store_true",
+        help="Print matched rule bodies as markdown blocks (for prompt embedding).",
+    )
+    parser.add_argument(
+        "--command",
+        action="append",
+        default=[],
+        help="Bash command string to test against the full matcher (structured "
+             "deny/context gates + legacy regexes). Deny hits are DENY-labeled. "
+             "May be repeated.",
+    )
+    parser.add_argument(
+        "--examples",
+        nargs="*",
+        metavar="NAME",
+        default=None,
+        help="Run golden examples for all rules, or only the named ones. "
+             "Prints per-example PASS/FAIL; exits 1 on any failure.",
+    )
+    args = parser.parse_args()
+
+    if args.render and args.list:
+        print("rules-check: --render and --list are mutually exclusive", file=sys.stderr)
+        return 2
+    if args.examples is not None and (args.list or args.render):
+        print(
+            "rules-check: --examples cannot be combined with --list or --render",
+            file=sys.stderr,
+        )
+        return 2
+
+    matcher = load_inject_rules()
+
+    repo_root = matcher.find_repo_root(Path.cwd())
+    if not repo_root:
+        print("rules-check: not inside a git repo", file=sys.stderr)
+        return 2
+
+    if args.rules_dir:
+        rule_dirs = [Path(args.rules_dir)]
+    else:
+        rule_dirs = [repo_root / ".claude" / "rules", repo_root / ".claude" / "dynamic-rules"]
+    rule_dirs = [d for d in rule_dirs if d.is_dir()]
+    if not rule_dirs:
+        checked = args.rules_dir or f"{repo_root / '.claude' / 'rules'} or {repo_root / '.claude' / 'dynamic-rules'}"
+        print(f"rules-check: no rules directory found (checked {checked})", file=sys.stderr)
+        return 2
+
+    rules = []
+    for rules_dir in rule_dirs:
+        for rule_file in sorted(rules_dir.glob("*.md")):
+            if rule_file.name == "README.md":
+                continue
+            try:
+                fm, body = matcher.parse_frontmatter(rule_file)
+            except matcher.FrontmatterError as exc:
+                print(f"rules-check: {rule_file.name}: {exc}", file=sys.stderr)
+                return 2
+            provenance, version = classify_provenance(rule_file)
+            rules.append((rule_file.stem, fm, body, provenance, version))
+
+    if args.list:
+        for name, fm, _body, provenance, version in rules:
+            _print_list_rule(matcher, name, fm, provenance, version)
+        return 0
+
+    if args.examples is not None:
+        selected = args.examples if args.examples else None
+        return _run_examples(matcher, rules, selected)
+
+    if not args.files and not args.command:
+        parser.print_usage(sys.stderr)
+        return 2
+
+    if args.render:
+        emitted: set[str] = set()
+        for raw in args.files:
+            try:
+                rel_path = str(Path(raw).resolve().relative_to(repo_root.resolve()))
+            except ValueError:
+                rel_path = raw
+            for name, fm, body, _provenance, _version in rules:
+                if name in emitted:
+                    continue
+                if matcher.match_rule(fm, raw, rel_path, "") is None:
+                    continue
+                emitted.add(name)
+                _print_rendered(name, fm, body)
+        for cmd in args.command:
+            for name, fm, body, _provenance, _version in rules:
+                if name in emitted:
+                    continue
+                if matcher.match_rule(fm, "", "", cmd) is None:
+                    continue
+                emitted.add(name)
+                _print_rendered(name, fm, body)
+        return 0
+
+    any_match = False
+    for raw in args.files:
+        try:
+            rel_path = str(Path(raw).resolve().relative_to(repo_root.resolve()))
+        except ValueError:
+            rel_path = raw
+
+        print(f"{rel_path}:")
+        matched_any = False
+        for name, fm, _body, _provenance, _version in rules:
+            paths = fm.get("paths") or []
+            if not paths:
+                continue
+            if not any(matcher.match_glob(g, rel_path) for g in paths):
+                continue
+
+            reasons = [f"path: {g}" for g in paths if matcher.match_glob(g, rel_path)]
+            content_patterns = fm.get("match_content") or []
+            if content_patterns:
+                try:
+                    file_text = Path(raw).read_text(errors="replace")
+                except OSError:
+                    print(f"  ? {name} (path matched, but file unreadable for content check)")
+                    continue
+                content_hits = [pat for pat in content_patterns if re.search(pat, file_text, re.MULTILINE)]
+                if not content_hits:
+                    continue
+                reasons.extend(f"content: {pat}" for pat in content_hits)
+
+            print(f"  ✓ {name} ({', '.join(reasons)})")
+            matched_any = True
+            any_match = True
+        if not matched_any:
+            print("  (no rules matched)")
+
+    for cmd in args.command:
+        print(f"$ {cmd}")
+        matched_any = False
+        token_cache: dict = {}
+        for name, fm, _body, _provenance, _version in rules:
+            matched = matcher.match_rule(
+                fm, "", "", cmd, rule_name=name, token_cache=token_cache
+            )
+            if matched is None:
+                continue
+            reason, surface = matched
+            if surface == "command-deny":
+                strength = matcher.deny_strength(fm)
+                print(f"  ✗ DENY {name} (deny: {strength}; {reason})")
+            else:
+                print(f"  ✓ {name} ({reason})")
+            matched_any = True
+            any_match = True
+        if not matched_any:
+            print("  (no rules matched)")
+
+    return 0 if any_match else 1
+
+
+def _print_rendered(name: str, fm: dict, body: str) -> None:
+    description = (fm.get("description") or "").strip()
+    print(f"## Rule: {name}")
+    if description:
+        print(f"> {description}")
+    print()
+    print(body.strip())
+    print()
+    print("---")
+    print()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

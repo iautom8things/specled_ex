@@ -2,13 +2,13 @@
 
 specled is a Spec Led Development library for Elixir — repo-resident behavioral specs (`.spec/specs/*.spec.md`) with a verification loop (`mix spec.check`). Pure-Elixir Mix project: no Phoenix, no database, no Docker.
 
+<!-- agentic.rules:start -->
 ## Rules
 
-Detailed rules live in `.claude/rules/`. Each file has frontmatter describing when it applies.
+Detailed rules live in `.claude/rules/` (always loaded) and `.claude/dynamic-rules/` (loaded on demand: when a matching command runs, when a matching file is edited (write-only rules), or reference-only material you pull in by reading the file). Each file has frontmatter describing when it applies.
 
-| Rule          | Covers                                                                     |
-| ------------- | -------------------------------------------------------------------------- |
-| `worktree.md` | Worktree-first workflow — all dev in worktrees, never main checkout        |
+Run `.claude/scripts/rules-check --list` to see every rule (hook-gated, write-only, and always-on) at a glance.
+<!-- agentic.rules:end -->
 
 ## Work Management
 
