@@ -9,7 +9,9 @@
   "created": "2026-07-23T22:50:30Z",
   "description": "No spec subject\n\nReview: simplicity M1 + spec L2. Review.build_view switched to build_v2 in the epic; v1 CoverageClosure.build/2 (~80 lines) now has zero callers and zero tests, yet its docstring claims it is 'used today', and coverage_closure.ex retains a stale 'build_v2 not wired yet — T7's job' comment the spec correctly contradicts. Delete the dead path (or ADR-note why it stays), fix the comments.",
   "id": "specled_-q6l.3",
-  "labels": [],
+  "labels": [
+    "phase:implementing"
+  ],
   "parent": "specled_-q6l",
   "comments": [
     {
@@ -21,5 +23,5 @@
   "status": "open",
   "title": "Remove dead v1 CoverageClosure.build/2 and stale wiring comments",
   "type": "task",
-  "updated_at": "2026-07-24T12:42:03Z"
+  "updated_at": "2026-07-24T12:52:24Z"
 }
