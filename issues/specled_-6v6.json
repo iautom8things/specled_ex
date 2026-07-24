@@ -11,11 +11,15 @@
     {
       "text": "DECISION (user, 2026-07-24): arm the gate by LOWERING the threshold, not raising coverage. Change mix.exs test_coverage threshold 90 -\u003e 83 (just below measured 83.05%). Raising coverage to 90 is explicitly out of scope; a ratchet follow-up will be filed separately. Both ticket blockers still apply: fix the snapshot fixture-module cover leak (quarantine like decode_coverdata in specled_-aav, or unregister modules) and confirm threshold failure exits non-zero, then add --cover to the native 'Run tests' step in .github/workflows/specs.yml.",
       "timestamp": "2026-07-24T12:14:22Z"
+    },
+    {
+      "text": "CONTRACT (orchestrator-synthesized)\n\nAllowed touches:\n- mix.exs (test_coverage threshold 90 -\u003e 83 only)\n- .github/workflows/specs.yml (add --cover to the native 'Run tests' step)\n- test/specled_ex/coverage/snapshot_test.exs\n- test/support/**\n- .spec/specs/** ONLY if the spec gate demands subject co-change for touched files\n- .spec/state.json, .spec/realization_hashes.json (tool-managed baselines; regenerate via documented command only, never hand-edit)\n\nOut of Scope (files): lib/**, all other workflows/steps, CHANGELOG, VERSION.\n\nOut of Scope (intent): no new deps; no writing new tests to raise coverage (threshold decision is 83, not 90); no ratchet mechanism; no refactors beyond the leak fix; do not touch the container leg of specs.yml beyond what the ticket names (native leg at least).\n\nVerification:\n1. Targeted: mix test test/specled_ex/coverage/snapshot_test.exs green.\n2. Leak proof: under an outer `mix test --cover`, no SpecLedEx.Coverage.SnapshotTestFixtures.Live* rows appear in the coverage tally and the HTML/report generation does not crash with {:no_source_code_found, ...}.\n3. Exit-code proof: demonstrate that a threshold failure exits non-zero (e.g. one run with threshold temporarily above measured coverage), and record the command + observed exit code in the completion record.\n4. FULL-SUITE EXCEPTION (explicitly authorized for this ticket only): one final `mix test --include integration --cover` run must be green with threshold 83 — the deliverable IS suite-level coverage behavior, so the change-scoped-only rule is waived for this single proof run.\n5. mix spec.check --no-run-commands green.",
+      "timestamp": "2026-07-24T12:15:18Z"
     }
   ],
   "priority": 2,
   "status": "open",
   "title": "Arm mix test --cover in CI: close 83.05%→90% coverage gap and fix snapshot fixture-module cover leak",
   "type": "task",
-  "updated_at": "2026-07-24T12:14:22Z"
+  "updated_at": "2026-07-24T12:15:18Z"
 }
