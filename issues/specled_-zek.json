@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-24T18:46:19Z",
+  "description": "Advances: specled.tagged_tests, specled.verification\n\nThree cheap optional items from the specled_-viv pre-ship consolidated review (~/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-24/specled_-viv-seed-echo-coverage/20260724-143147-consolidated.md, review_commit 601f829, Tier 1 empty, all findings Low):\n\n1. Add 'assert seeded' / 'assert seedless' nil-guards after the Enum.find calls in verifier_test.exs 'a generic command failure echoes the seed...' (testing L1; also flagged by the elixir-test-critic during implement) — robustness of the failure message only.\n2. Spec prose precision: findings_echo_exunit_seed says the resume suffix names the resume seed 'next to the resume run's hang suspects' but adjacency is not asserted; either weaken prose to 'shall also name' or assert ordering (spec L1).\n3. The stderr capture-failure warning is asserted for presence, not that it 'names the failure'; assert a substring of the actual Exception.message (spec L2).\n\nCross-cutting theme worth honoring: assertions are over-coupled to cosmetic prose yet under-assert dynamic clauses — prefer contract tokens.",
+  "id": "specled_-zek",
+  "labels": [],
+  "priority": 3,
+  "status": "open",
+  "title": "Seed-echo test/spec precision polish (viv pre-ship review Tier-2)",
+  "type": "task",
+  "updated_at": "2026-07-24T18:46:19Z"
+}
