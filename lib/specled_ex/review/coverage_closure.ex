@@ -40,6 +40,11 @@ defmodule SpecLedEx.Review.CoverageClosure do
 
     with true <- File.regular?(path),
          {:ok, binary} <- File.read(path),
+         # Not [:safe]: mirrors `Mix.Tasks.Spec.Triangle.load_tracer_edges/0`
+         # (see its comment) — `Tracer` merges the manifest incrementally, so
+         # a caller/callee module renamed or deleted since it was traced can
+         # legitimately linger as a "ghost" entry whose atom this fresh BEAM
+         # hasn't interned yet; read-time filtering, not decode, prunes it.
          map when is_map(map) <- :erlang.binary_to_term(binary) do
       map
     else

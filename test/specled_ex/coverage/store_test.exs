@@ -79,6 +79,22 @@ defmodule SpecLedEx.Coverage.StoreTest do
       assert :erlang.term_to_binary(decoded) == :erlang.term_to_binary(records)
     end
 
+    test "read raises rather than resurrecting a never-interned atom from a hostile artifact" do
+      tmp_path =
+        Path.join(
+          System.tmp_dir!(),
+          "store_hostile_#{System.unique_integer([:positive])}.coverdata"
+        )
+
+      on_exit(fn -> File.rm_rf!(tmp_path) end)
+
+      {hostile_name, hostile_binary} = hostile_atom_binary(fn atom -> [%{poison: atom}] end)
+      File.write!(tmp_path, hostile_binary)
+
+      assert_raise ArgumentError, fn -> Store.read(tmp_path) end
+      assert_raise ArgumentError, fn -> String.to_existing_atom(hostile_name) end
+    end
+
     test "write creates the parent directory if missing" do
       tmp_dir = Path.join(System.tmp_dir!(), "store_mkdir_#{System.unique_integer([:positive])}")
       tmp_path = Path.join([tmp_dir, "nested", "per_test.coverdata"])
@@ -269,6 +285,19 @@ defmodule SpecLedEx.Coverage.StoreTest do
     test "returns {:refused, :not_found} when no sidecar has ever been written", %{path: path} do
       assert {:refused, :not_found} = Store.read_status(path)
     end
+
+    test "rejects a hostile sidecar carrying a never-interned atom without interning it", %{
+      path: path
+    } do
+      {hostile_name, hostile_binary} = hostile_atom_binary(fn atom -> {:refused, atom} end)
+
+      sidecar_path = Path.join(Path.dirname(path), "last_run.status")
+      File.mkdir_p!(Path.dirname(sidecar_path))
+      File.write!(sidecar_path, hostile_binary)
+
+      assert {:refused, _reason} = Store.read_status(path)
+      assert_raise ArgumentError, fn -> String.to_existing_atom(hostile_name) end
+    end
   end
 
   describe "load/1" do
@@ -343,5 +372,20 @@ defmodule SpecLedEx.Coverage.StoreTest do
       tags: %{n: n},
       test_pid: pid
     }
+  end
+
+  # Builds ETF bytes for `term_builder.(atom)` where `atom` is guaranteed
+  # never to have been interned in this VM before this call — used to prove
+  # `[:safe]` decoding rejects a hostile artifact instead of resurrecting an
+  # attacker-chosen atom. The hostile name itself is never passed through
+  # `String.to_atom/1` (which would intern it and defeat the test): it's
+  # planted by patching raw bytes into an otherwise-identical placeholder
+  # encoding of the same byte length, so the returned binary is the only
+  # place the name exists.
+  defp hostile_atom_binary(term_builder) do
+    hostile_name = "hostile_never_interned_#{System.unique_integer([:positive, :monotonic])}"
+    placeholder_name = String.duplicate("x", byte_size(hostile_name))
+    encoded = :erlang.term_to_binary(term_builder.(String.to_atom(placeholder_name)))
+    {hostile_name, :binary.replace(encoded, placeholder_name, hostile_name)}
   end
 end

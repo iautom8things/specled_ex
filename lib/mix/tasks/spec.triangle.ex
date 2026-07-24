@@ -114,6 +114,12 @@ defmodule Mix.Tasks.Spec.Triangle do
 
     with true <- File.regular?(path),
          {:ok, binary} <- File.read(path),
+         # Not [:safe]: `Tracer` merges the manifest incrementally rather
+         # than replacing it, so a caller/callee module renamed or deleted
+         # since it was traced can legitimately linger as a "ghost" entry —
+         # per the tracer's own moduledoc, read-time filtering (not decode)
+         # is the authoritative prune. A fresh BEAM (this one) may not have
+         # interned that module's atom yet; resurrecting it here is correct.
          map when is_map(map) <- :erlang.binary_to_term(binary) do
       map
     else
