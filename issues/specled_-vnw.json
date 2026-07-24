@@ -37,11 +37,15 @@
     {
       "text": "Squash-merged to main: 699a503 (PR #15, release 0.5.2). Post-merge Specs run green (30092343326). Remote + local branches deleted, worktree cleaned.",
       "timestamp": "2026-07-24T12:16:59Z"
+    },
+    {
+      "text": "Delivered. Follow-up specled_-hyt filed for the attribution-sidecar temp naming (same collision class, verifier.ex:2131) surfaced by the cold verifier.",
+      "timestamp": "2026-07-24T12:18:05Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "Verifier run_command temp-script race: false verification_command_failed on untouched subjects",
   "type": "bug",
-  "updated_at": "2026-07-24T12:16:59Z"
+  "updated_at": "2026-07-24T12:18:05Z"
 }
