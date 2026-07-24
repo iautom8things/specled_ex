@@ -64,12 +64,25 @@ jobs:
       - name: Check specs
         # PR runs diff against the merge base (spec.check uses base...HEAD) so
         # append-only and co-update guards apply; push/dispatch keep bare HEAD.
+        # SPECLED_COMMAND_OUTPUT_DIR preserves the full output (ExUnit seed,
+        # counterexample) of any failing or timed-out verification command for
+        # the artifact upload below — findings alone truncate it.
+        env:
+          SPECLED_COMMAND_OUTPUT_DIR: ${{ runner.temp }}/specled-command-output
         run: |
           if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
             bash ./scripts/check_specs.sh --base "origin/${GITHUB_BASE_REF}"
           else
             bash ./scripts/check_specs.sh
           fi
+
+      - name: Upload failing verification command output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: specled-command-output
+          path: ${{ runner.temp }}/specled-command-output
+          if-no-files-found: ignore
 
   test:
     name: Test (Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }})

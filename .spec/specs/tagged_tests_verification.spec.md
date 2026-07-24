@@ -254,6 +254,17 @@ decisions:
     budget, is the likely problem.
   priority: must
   stability: evolving
+- id: specled.tagged_tests.findings_echo_exunit_seed
+  statement: >-
+    When the captured output of a merged tagged_tests run contains ExUnit's
+    `Running ExUnit with seed: N` line, every `verification_command_failed`
+    and `verification_command_timeout` finding for that run — in both the
+    attributed and shared-fate paths — shall echo the seed together with a
+    `--seed N` reproduction hint, so an order-dependent flake stays
+    reproducible even when output truncation or log loss discards the seed
+    line itself. When no seed line is present, findings shall be unchanged.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -452,6 +463,16 @@ decisions:
     - the timeout finding states the test, not the budget, is the likely problem
   covers:
     - specled.tagged_tests.resume_double_timeout_signal
+- id: specled.tagged_tests.scenario.findings_echo_seed
+  given:
+    - "merged runs whose output contains `Running ExUnit with seed: 424242`"
+    - one run records a failing spec-tagged test and exits non-zero, another times out past the configured budget
+  when:
+    - verification distributes each run result back to its entries
+  then:
+    - every `verification_command_failed` and `verification_command_timeout` finding echoes seed 424242 with a `--seed 424242` reproduction hint
+  covers:
+    - specled.tagged_tests.findings_echo_exunit_seed
 ```
 
 ## Verification
@@ -482,4 +503,5 @@ decisions:
     - specled.tagged_tests.timeout_names_hang_suspects
     - specled.tagged_tests.resume_pass_over_remainder
     - specled.tagged_tests.resume_double_timeout_signal
+    - specled.tagged_tests.findings_echo_exunit_seed
 ```

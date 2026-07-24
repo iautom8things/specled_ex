@@ -129,6 +129,19 @@ decisions:
     verification as failed.
   priority: must
   stability: stable
+- id: specled.verify.command_output_capture_dir
+  statement: >
+    When the SPECLED_COMMAND_OUTPUT_DIR environment variable names a
+    directory, each command verification that fails or times out shall
+    persist its full captured output, command target, exit code, and
+    timeout state to a uniquely named file in that directory (creating the
+    directory if needed) before temp-file cleanup, so CI can upload the
+    capture as an artifact. Passing commands shall write nothing. Capture
+    shall be best-effort: a capture failure (for example an unwritable
+    directory) shall not alter the verification result. When the variable
+    is unset or blank, no capture occurs.
+  priority: must
+  stability: evolving
 - id: specled.verify.requirement_without_test_tag
   statement: >-
     When test-tag data is present on the index, verification shall emit a
@@ -271,6 +284,18 @@ decisions:
     - the verification is reported as failed
   covers:
     - specled.verify.command_exit_code_recorded
+- id: specled.verify.scenario.command_output_capture_dir
+  given:
+    - SPECLED_COMMAND_OUTPUT_DIR names a writable directory
+    - a failing, a passing, and (with the variable re-pointed at an unwritable path) another failing command verification
+  when:
+    - verification runs with run_commands true
+  then:
+    - the failing command's capture file records the command target, exit code, timeout state, and full output
+    - the passing command writes no capture file
+    - the unwritable capture directory leaves the verification result unchanged
+  covers:
+    - specled.verify.command_output_capture_dir
 - id: specled.verify.scenario.requirement_without_tag_emits_finding
   given:
     - an index with a `must` requirement `billing.invoice`
@@ -353,6 +378,7 @@ decisions:
     - specled.verify.command_timeout_distinct_finding
     - specled.verify.command_timeout_cli_precedence
     - specled.verify.command_exit_code_recorded
+    - specled.verify.command_output_capture_dir
 - kind: tagged_tests
   execute: true
   covers:
