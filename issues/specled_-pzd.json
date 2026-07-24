@@ -2,6 +2,7 @@
   "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-07-24T19:19:01Z",
   "created": "2026-07-24T12:19:47Z",
   "description": "Distilled from mini-plan (think-3oy). Spec dir: .spec/\nWorktree: /Users/mz/src/specled_ex-per-test-sync-boundary\nBranch: specled_-pzd/per-test-sync-boundary\n\nCloses specled_-cpw (attribution race) and specled_-jjq (file-level proxy). Five release-PR stages: S1 boundary engine -\u003e S2 auditor+ADR -\u003e {S3 jjq closure, S4 adoption docs} -\u003e S5 bootstrap skill.\nRefined plan: /Users/mz/vaults/rmbrs-vault/plans/src-specled_ex/2026-07-24-per-test-sync-boundary/runs/20260724-072714-claude-mini/05-refined-plan.md",
   "id": "specled_-pzd",
@@ -51,7 +52,7 @@
     }
   ],
   "priority": 1,
-  "status": "in_progress",
+  "status": "closed",
   "title": "Per-test exact attribution via synchronous boundary hook",
   "type": "epic",
   "updated_at": "2026-07-24T19:19:01Z"
