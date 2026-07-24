@@ -290,8 +290,7 @@ defmodule SpecLedEx.Coverage.FormatterTest do
 
       tmp_path = tmp_artifact()
 
-      {:ok, agent} = Agent.start_link(fn -> snapshots end)
-      on_exit(fn -> if Process.alive?(agent), do: Agent.stop(agent) end)
+      agent = start_supervised!({Agent, fn -> snapshots end})
 
       snapshot_fn = fn _modules ->
         Agent.get_and_update(agent, fn
