@@ -4,6 +4,7 @@
     "specled_-pzd.1"
   ],
   "blocks": [
+    "specled_-cpw",
     "specled_-pzd.3",
     "specled_-pzd.4"
   ],
@@ -16,5 +17,5 @@
   "status": "open",
   "title": "S2: Formatter demoted to auditor; unhooked degrade; claim upgrade + superseding ADR",
   "type": "task",
-  "updated_at": "2026-07-24T12:21:53Z"
+  "updated_at": "2026-07-24T12:22:16Z"
 }
