@@ -773,11 +773,10 @@ defmodule SpecLedEx.Review do
   # The Coverage tab's staleness note needs the v2 envelope's own
   # `generated_at`, a field CoverageClosure.build_v2/2 does not expose (it
   # returns only :status/:by_requirement — see the flag-1 addendum on
-  # specled_-155.7 for why that contract stays narrow). Mirrors the same
-  # existence-then-decode resolution build_v2/2 uses internally so the two
-  # never disagree about whether an artifact is present; returns nil for
-  # every degraded case (missing/legacy/invalid) since there is no envelope
-  # to read a timestamp from.
+  # specled_-155.7 for why that contract stays narrow). Routes through
+  # Store.load/1 so this and build_v2/2 never disagree about whether an
+  # artifact is present; returns nil for every degraded case (missing/legacy/
+  # invalid) since there is no envelope to read a timestamp from.
   defp coverage_artifact_generated_at(opts) do
     case Keyword.fetch(opts, :envelope) do
       {:ok, %{generated_at: generated_at}} ->
@@ -789,13 +788,9 @@ defmodule SpecLedEx.Review do
       :error ->
         path = Keyword.get(opts, :artifact_path) || CoverageStore.default_path()
 
-        if File.regular?(path) do
-          case CoverageStore.read_v2(path) do
-            {:ok, %{generated_at: generated_at}} -> generated_at
-            _ -> nil
-          end
-        else
-          nil
+        case CoverageStore.load(path) do
+          {:ok, %{generated_at: generated_at}} -> generated_at
+          {:degraded, _reason} -> nil
         end
     end
   end

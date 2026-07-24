@@ -438,19 +438,7 @@ defmodule SpecLedEx.Review.CoverageClosure do
         {:ok, envelope}
 
       :error ->
-        load_envelope(path)
-    end
-  end
-
-  defp load_envelope(path) do
-    if File.regular?(path) do
-      case Store.read_v2(path) do
-        {:ok, envelope} -> {:ok, envelope}
-        {:error, :legacy_artifact, _message} -> {:degraded, :legacy_artifact}
-        {:error, :invalid_artifact} -> {:degraded, :invalid_artifact}
-      end
-    else
-      {:degraded, :no_coverage_artifact}
+        Store.load(path)
     end
   end
 

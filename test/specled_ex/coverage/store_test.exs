@@ -271,6 +271,70 @@ defmodule SpecLedEx.Coverage.StoreTest do
     end
   end
 
+  describe "load/1" do
+    @describetag spec: [
+                   "specled.coverage_capture.store_v2_envelope",
+                   "specled.coverage_capture.store_v2_legacy_rejection"
+                 ]
+
+    setup do
+      tmp_path =
+        Path.join(System.tmp_dir!(), "store_load_#{System.unique_integer([:positive])}.coverdata")
+
+      on_exit(fn ->
+        File.rm_rf!(tmp_path)
+        File.rm_rf!(Path.join(Path.dirname(tmp_path), "last_run.status"))
+      end)
+
+      {:ok, path: tmp_path}
+    end
+
+    test "returns {:ok, envelope} for a well-formed v2 artifact", %{path: path} do
+      envelope =
+        Store.build_envelope(%{
+          mode: :aggregate,
+          source: "mix spec.cover.test",
+          files: [%{file: "lib/a.ex", lines_hit: [1, 2]}],
+          mfas: [%{mfa: "A.f/1", covered: true}],
+          payload: %{raw: :cover_export}
+        })
+
+      assert :ok = Store.write_v2(envelope, path)
+      assert {:ok, decoded} = Store.load(path)
+      assert decoded == envelope
+    end
+
+    test "returns {:degraded, :no_coverage_artifact} when the file does not exist", %{
+      path: path
+    } do
+      refute File.exists?(path)
+      assert {:degraded, :no_coverage_artifact} = Store.load(path)
+    end
+
+    test "returns {:degraded, :legacy_artifact} for a pre-v2 (bare list) artifact", %{path: path} do
+      legacy_records = Store.build_records([record(1, self())])
+      assert :ok = Store.write(legacy_records, path)
+
+      assert {:degraded, :legacy_artifact} = Store.load(path)
+    end
+
+    test "returns {:degraded, :invalid_artifact} for undecodable bytes", %{path: path} do
+      File.mkdir_p!(Path.dirname(path))
+      File.write!(path, "not a valid ETF term")
+
+      assert {:degraded, :invalid_artifact} = Store.load(path)
+    end
+
+    test "returns {:degraded, :invalid_artifact} for a well-formed but non-envelope term", %{
+      path: path
+    } do
+      File.mkdir_p!(Path.dirname(path))
+      File.write!(path, :erlang.term_to_binary(%{unrelated: "map"}))
+
+      assert {:degraded, :invalid_artifact} = Store.load(path)
+    end
+  end
+
   defp record(n, pid) do
     %{
       test_id: "M.t#{n}",

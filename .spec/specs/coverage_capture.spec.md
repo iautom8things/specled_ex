@@ -90,6 +90,7 @@ realized_by:
     - "SpecLedEx.Coverage.Store.build_envelope/1"
     - "SpecLedEx.Coverage.Store.write_v2/2"
     - "SpecLedEx.Coverage.Store.read_v2/1"
+    - "SpecLedEx.Coverage.Store.load/1"
     - "SpecLedEx.Coverage.Store.read_status/1"
     - "Mix.Tasks.Spec.Cover.Test.run/1"
     - "SpecLedEx.Coverage.Aggregate.ingest/2"

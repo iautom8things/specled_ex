@@ -194,6 +194,41 @@ defmodule SpecLedEx.Coverage.Store do
   end
 
   @doc """
+  Loads and classifies the v2 envelope at `path` in one call.
+
+  Three call sites (`mix spec.triangle`, `SpecLedEx.Review.CoverageClosure`,
+  and `SpecLedEx.Review`) used to copy-paste the same
+  existence-check-then-`read_v2/1`-then-classify dance under a private
+  `load_envelope/1`, with comments admitting the copies must not disagree.
+  This function owns that vocabulary so a new `read_v2/1` outcome only needs
+  to be taught here once.
+
+  Returns:
+
+    * `{:ok, envelope}` — a well-formed v2 envelope.
+    * `{:degraded, :no_coverage_artifact}` — `path` does not exist.
+    * `{:degraded, :legacy_artifact}` — the artifact decodes as the v1
+      bare-list shape.
+    * `{:degraded, :invalid_artifact}` — the file exists but is undecodable
+      or decodes to a term that is neither a v1 list nor a valid v2
+      envelope map.
+  """
+  @spec load(Path.t()) ::
+          {:ok, envelope()}
+          | {:degraded, :no_coverage_artifact | :legacy_artifact | :invalid_artifact}
+  def load(path) when is_binary(path) do
+    if File.regular?(path) do
+      case read_v2(path) do
+        {:ok, envelope} -> {:ok, envelope}
+        {:error, :legacy_artifact, _message} -> {:degraded, :legacy_artifact}
+        {:error, :invalid_artifact} -> {:degraded, :invalid_artifact}
+      end
+    else
+      {:degraded, :no_coverage_artifact}
+    end
+  end
+
+  @doc """
   Reads the `last_run.status` sidecar for the v2 artifact at `path`
   (the sidecar lives alongside `path`, not at `path` itself).
 
