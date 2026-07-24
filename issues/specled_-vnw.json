@@ -29,11 +29,15 @@
     {
       "text": "APPROVED. No stage merge-back — standalone ticket branched from main; commit 95f3e78 sits on specled_-vnw/fix-tempscript-race in worktree /Users/mz/src/specled_ex-fix-tempscript-race, ready for a PR to main. Closing per auditor sign-off.",
       "timestamp": "2026-07-24T10:58:53Z"
+    },
+    {
+      "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/15 (release 0.5.2). CI running: Check Specs + Test matrix (1.18.4/OTP26, 1.19.5/OTP28).",
+      "timestamp": "2026-07-24T11:27:25Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "Verifier run_command temp-script race: false verification_command_failed on untouched subjects",
   "type": "bug",
-  "updated_at": "2026-07-24T10:58:53Z"
+  "updated_at": "2026-07-24T11:27:25Z"
 }
