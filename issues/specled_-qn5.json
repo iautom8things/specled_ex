@@ -3,11 +3,12 @@
   "blocked_by": [],
   "blocks": [],
   "created": "2026-04-22T17:34:21Z",
+  "defer_until": "2027-01-01",
   "description": "",
   "id": "specled_-qn5",
   "labels": [],
   "priority": 4,
-  "status": "open",
+  "status": "deferred",
   "title": "change alias for bw to drop the underscore _",
   "type": "task",
   "updated_at": "2026-07-24T09:57:38Z"
