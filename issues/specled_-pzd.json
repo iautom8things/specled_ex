@@ -21,11 +21,15 @@
     {
       "text": "GATE FLAKE ACCEPTED (1/2 for this signature)\nSignature: scenario_refactor_stable_test.exs:150 \"cosmetic refactor inside closure produces no drift finding\" — branch_guard_realization_drift implementation-tier hash instability\nGate run: post-specled_-pzd.3-close, seed 156172, 1193 tests / 1 failure\nTargeted re-run: same file, same seed — 1 test, 0 failures (does not reproduce)\nIntersection with touched files: none (S3 touched coverage/review/spec files; failing scenario is self-contained synthetic-repo harness)\nKnown-issue linkage: matches open ticket specled_-l05 (implementation-tier drift: cross-compile determinism + hash-input audit)\nPolicy: second acceptance of this signature is the last; a third occurrence creates an investigation ticket and leaves the gate red.",
       "timestamp": "2026-07-24T15:35:29Z"
+    },
+    {
+      "text": "GATE SKIP (unchanged test-relevant tree hash)\nPost-specled_-pzd.5-close full gate skipped: merge dec81ac..8ee2d19 touches only skills/spec-led-bootstrap/** (markdown); diff over lib, test, config, priv, mix.lock is empty. Last full gate (post-specled_-pzd.3, with one recorded flake-accept and green format/deps/spec.check completion) stands as the current whole-system proof. Epic smoke after the S5 merge: 1193 tests, 0 failures.",
+      "timestamp": "2026-07-24T15:39:45Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Per-test exact attribution via synchronous boundary hook",
   "type": "epic",
-  "updated_at": "2026-07-24T15:35:29Z"
+  "updated_at": "2026-07-24T15:39:45Z"
 }
