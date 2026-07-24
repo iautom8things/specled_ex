@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-pzd",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: impl-a1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-pzd.1/grok-impl-a1/log\n\nCommit: eb87d6f0becf6e48c6048207659be73866fa0a71\nFiles touched: lib/specled_ex/coverage/boundary.ex (new), lib/specled_ex/case.ex (new), lib/specled_ex/coverage.ex, lib/specled_ex/coverage/formatter.ex, lib/specled_ex/coverage/store.ex, lib/mix/tasks/spec.cover.test.ex, test/specled_ex/coverage/boundary_test.exs (new), test/specled_ex/case_test.exs (new), test/specled_ex/coverage/formatter_test.exs, test/specled_ex/coverage/store_test.exs, test/mix/tasks/spec_cover_test_test.exs, .spec/specs/coverage_capture.spec.md, .spec/specs/branch_guard.spec.md, .spec/specs/mix_tasks.spec.md, .spec/specs/package.spec.md, docs/coverage.md, CHANGELOG.md, VERSION (0.6.1), .spec/realization_hashes.json\nTests added: SpecLedEx.Coverage.BoundaryTest (head unarmed/armed, window diff, modules cache, diagnostics pass-through, tail unarmed); SpecLedEx.CaseTest (\"SpecLedEx.Case is a no-op under plain mix test\", production source injects setup, per_test_boundary armed returns :ok); SpecLedEx.Coverage.FormatterTest (flush prefers boundary row + meta.boundary; flush without boundary keeps lazy rows); SpecLedEx.Coverage.StoreTest (meta default/honor, read_v2 tolerant without meta); Mix.Tasks.Spec.Cover.TestTest (\"hooked tests get disjoint, self-confined records across three explicit seeds\")\nVerification stubs flipped: boundary_hook_sync, boundary_noop_unarmed, case_template, boundary_row_exclusive, per_test_exclusive_attribution, envelope_meta (all execute: true in coverage_capture.spec.md)\nVerification tier: full merge-gate (mix compile --warnings-as-errors \u0026\u0026 mix test \u0026\u0026 mix format --check-formatted \u0026\u0026 mix deps.unlock --check-unused \u0026\u0026 mix spec.check bare)\nFinal-tier runs: 1\n\nSummary: Stage 1 boundary engine ships SpecLedEx.Coverage.Boundary (head at setup, tail at on_exit, Runner-awaited), public setup {SpecLedEx.Coverage, :per_test_boundary} and SpecLedEx.Case, Mix.Tasks.Spec.Cover.Test.run_per_test/2 arms a public anonymous boundary ETS table via the keyword seam, and Formatter.flush/1 prefers boundary rows (meta.boundary: true). Seeded exclusivity integration (3 seeds) proves hooked tests get deterministic disjoint, self-confined records; cumulative_parity still green. Note: host-suite test_support still defines SpecLedEx.Case as workspace helpers and require_file-redefines the production template at runtime (compile-time warnings; suite green; child-BEAM fixtures load production SpecLedEx.Case from parent ebin). Rebased onto origin/main (0.6.0 flake diagnostics); this release is 0.6.1.",
+      "timestamp": "2026-07-24T13:08:04Z"
+    }
+  ],
   "priority": 1,
   "status": "in_progress",
   "title": "S1: Boundary engine, SpecLedEx.Case, deterministic exclusivity",
   "type": "task",
-  "updated_at": "2026-07-24T12:41:30Z"
+  "updated_at": "2026-07-24T13:08:04Z"
 }
