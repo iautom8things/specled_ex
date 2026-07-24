@@ -21,11 +21,15 @@
     {
       "text": "Board triage 2026-07-24 (verified against HEAD a509836): (1) The tempfile_command_execution race noted in comments here is now its own bug: specled_-vnw — it is unrelated to the tracer property flake. (2) specled_-qvg merged into this ticket and closed: its analysis found merge_edges/3 pure (tracer.ex:294-311), all four property invariants hold by construction, no derivable counterexample; leading hypothesis is a suite-capacity timeout artifact, not a real bug. (3) Occurrence 3 datum is permanently lost — CI run 29944042016 has 0 artifacts and no ExUnit seed/counterexample in logs. Remaining actionable work: adopt qvg capture-on-recurrence protocol (on next flake: record failure mode — timeout vs counterexample — plus seed, one-command repro), and add a seed-echo/capture step to specs.yml so the next occurrence is diagnosable. NOTE: flake is at accept-cap per specled_-csg policy — next occurrence hard-blocks a merge gate.",
       "timestamp": "2026-07-24T09:57:09Z"
+    },
+    {
+      "text": "CAPTURE-ON-RECURRENCE PROTOCOL (adopted per 2026-07-24 triage; qvg analysis)\n\nOn the next occurrence of the tracer_test.exs:241 flake (which hard-blocks the merge gate — accept-cap reached):\n\n1. Record the failure mode: verification_command_timeout (supports qvg's suite-capacity-timeout hypothesis) vs verification_command_failed with a StreamData counterexample (would falsify it).\n2. Record the ExUnit seed: findings for merged tagged_tests failures/timeouts now echo \"exunit seed: N\" with a --seed repro hint (both attributed and shared-fate paths).\n3. Record the one-command repro: the finding's command line + \" --seed N\".\n4. In CI: download the specled-command-output artifact (uploaded on failure by the Check specs job; SPECLED_COMMAND_OUTPUT_DIR) — it holds the full run output including the counterexample. Locally: set SPECLED_COMMAND_OUTPUT_DIR before the gate command to get the same capture.\n5. Post all of the above here, then attempt the seeded repro standalone and under the merged invocation.\n\nOnly after a diagnosable occurrence is captured does root-cause work proceed; do not consume further flake-accepts on this signature.",
+      "timestamp": "2026-07-24T11:01:52Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Investigate flaky specled.compiler_tracer verification_command_failed (tracer_test.exs:241) under multi-file tagged_tests run",
   "type": "task",
-  "updated_at": "2026-07-24T10:45:46Z"
+  "updated_at": "2026-07-24T11:01:52Z"
 }
