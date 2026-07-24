@@ -53,11 +53,15 @@
     {
       "text": "Squash-merged to main (9ce640e, release 0.6.0, PR #16). Remote branch deleted; primary main fast-forwarded. Watching post-merge Specs run.",
       "timestamp": "2026-07-24T12:50:57Z"
+    },
+    {
+      "text": "Post-ship validation datum (2026-07-24, ship preflight for 0.6.0): the seed echo produced its first real one-command repro on its first outing — a merged-run verification_command_failed echoed 'exunit seed: 354632', and 'mix test test/specled_ex/coverage/store_test.exs --seed 354632' reproduced the failure standalone, leading directly to root cause (specled_-ind: $TMPDIR/last_run.status shared sidecar, fixed in the same 0.6.0 release). The capture-on-recurrence protocol works as designed; the tracer signature itself did NOT recur during this ship (4 full merged runs).",
+      "timestamp": "2026-07-24T13:46:02Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "Investigate flaky specled.compiler_tracer verification_command_failed (tracer_test.exs:241) under multi-file tagged_tests run",
   "type": "task",
-  "updated_at": "2026-07-24T12:50:57Z"
+  "updated_at": "2026-07-24T13:46:02Z"
 }
