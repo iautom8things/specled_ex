@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-23T23:58:30Z",
+  "description": "Advances: specled.package — advisory findings from the specled_-6fn test-critic pass, deferred out of that ticket as future hardening of test/docs_identifier_lint_test.exs. (A3) The token patterns lead with a (?\u003c![\\w/]) negative lookbehind to keep a finding-code-shaped token from matching inside a file path. Its bounds are unbounded and untested: ANY token preceded by / is skipped, so e.g. foo/append_only/deep_fabricated is not flagged. Add boundary tests pinning both directions — the closure-file path segment .../config/branch_guard_test.exs stays suppressed AND a real backtick-delimited code is still caught — so tightening or loosening the lookbehind cannot silently change coverage. (A4) severity_corpus/0 deliberately excludes .spec/** because spec scenarios quote atom-form config as the input under test; real atom-form severities exist at .spec/specs/prose_guard.spec.md, branch_guard.spec.md and spec_drift_trailer.spec.md, so the exclusion is load-bearing but unasserted. Assert the asymmetry: an atom-form severity in a guidance doc trips, the same form under .spec/** does not. Collapsing severity_corpus into finding_code_corpus would start false-positiving with no test warning. (A5) The token char-class [a-z_] cannot represent a finding code containing a digit. Not a current defect (no emitted code has one), but if one is ever added the hand-maintained @known_codes mirror and the extraction pattern silently diverge. Decide whether to widen the class or assert that no emitted code contains a digit.",
+  "id": "specled_-vk0",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Harden doc-identifier lint: lookbehind bounds, severity-corpus asymmetry, digit-bearing codes",
+  "type": "task",
+  "updated_at": "2026-07-23T23:58:30Z"
+}
