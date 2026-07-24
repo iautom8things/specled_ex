@@ -271,3 +271,24 @@ coverage, not the technical design of the lane itself.
 - `specled.decision.adr_append_only` — governs how this supersession is
   recorded (the old ADR's file is not deleted or rewritten; this new ADR
   and a brief cross-reference amendment there are the mechanism).
+
+## Amendment (specled_-pzd.2): race-bound claim superseded by per-test sync boundary
+
+`specled.decision.per_test_sync_boundary` supersedes this ADR's
+"Per-test attribution is race-bounded, not exact (`specled_-cpw`)" section
+and the related Consequences bullet that adopters lack a supported path to
+provably-exact per-test attribution. That section remains in this file as
+historical context for why Stage 1/2 of epic `specled_-pzd` were needed; it
+is no longer the binding claim for the current `--per-test` lane.
+
+The binding claim for hooked tests under `--per-test` is now **exact up to
+escaped processes**, produced by the synchronous boundary hook (head at
+setup, tail at `on_exit`), with the formatter demoted to suite-lifecycle
+auditor and unhooked modules degrading honestly rather than failing. Read
+`specled.decision.per_test_sync_boundary` for the mechanism, degrade
+semantics, and wiring-cost consequence.
+
+Everything else in this ADR remains authoritative unchanged: aggregate-first
+default, headline metric, self-verified composite, v2 envelope, read-only
+never-`:cover.reset` invariant, OTP posture, legacy rejection, task name,
+and consumer scope (`mix spec.triangle` / `mix spec.review` only).

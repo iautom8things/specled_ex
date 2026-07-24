@@ -17,7 +17,10 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
                "specled.coverage_capture.per_test_exclusive_attribution",
                "specled.coverage_capture.boundary_row_exclusive",
                "specled.coverage_capture.boundary_hook_sync",
-               "specled.coverage_capture.case_template"
+               "specled.coverage_capture.case_template",
+               "specled.coverage_capture.formatter_auditor",
+               "specled.coverage_capture.unhooked_degrade",
+               "specled.coverage_capture.unhooked_remediation_notice"
              ]
 
   alias SpecLedEx.Coverage.Store
@@ -105,7 +108,11 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
   describe "--per-test mode (opt-in serialized capture)" do
     @tag :integration
     test "runs serialized, arms the formatter, writes per_test.coverdata" do
-      root = scaffold_fixture(async_true?: false)
+      # Fully-hooked fixture: without SpecLedEx.Case wiring the auditor folds
+      # all coverage to the remainder and degrades. The exclusive fixture is
+      # fully hooked; here we use that shape so a clean --per-test run still
+      # produces a non-degraded envelope with per-test records.
+      root = scaffold_exclusive_fixture()
       on_exit(fn -> File.rm_rf!(root) end)
 
       {output, status} = run_fixture_mix_test(root, ["spec.cover.test", "--per-test"])
@@ -174,6 +181,48 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
       assert envelope.degraded,
              "would fail if the formatter didn't flag the async-contaminated test's records, " <>
                "leaving the v2 envelope indistinguishable from a clean --per-test run"
+    end
+  end
+
+  describe "partial-hook unhooked degrade (auditor)" do
+    @tag :integration
+    @tag spec: [
+           "specled.coverage_capture.unhooked_degrade",
+           "specled.coverage_capture.unhooked_remediation_notice",
+           "specled.coverage_capture.formatter_auditor"
+         ]
+    test "unhooked module degrades the run and the notice names the setup line" do
+      # One hooked module (SpecLedEx.Case) + one unhooked bare ExUnit.Case.
+      # Would fail if the auditor still used lazy per-test snapshots for
+      # unhooked tests, or if unhooked modules failed the run instead of
+      # degrading with a remediation notice.
+      root = scaffold_partial_hook_fixture()
+      on_exit(fn -> File.rm_rf!(root) end)
+
+      {output, status} = run_fixture_mix_test(root, ["spec.cover.test", "--per-test"])
+
+      assert status == 0,
+             "expected partial-hook --per-test to exit 0 (degrade, never fail). Output:\n#{output}"
+
+      assert output =~ "UnhookedTest",
+             "expected stderr notice to name the unhooked module. Output:\n#{output}"
+
+      assert output =~ "setup {SpecLedEx.Coverage, :per_test_boundary}",
+             "expected notice to name the exact setup line. Output:\n#{output}"
+
+      artifact = Path.join(root, ".spec/_coverage/per_test.coverdata")
+      assert File.exists?(artifact), "expected degraded artifact. Output:\n#{output}"
+
+      assert {:ok, envelope} = Store.read_v2(artifact)
+      assert envelope.mode == :per_test
+      assert envelope.degraded
+
+      assert envelope.meta[:unhooked_modules] == [UnhookedTest] or
+               envelope.meta["unhooked_modules"] == [UnhookedTest]
+
+      hooked = find_record(envelope.payload, "path_a")
+      assert hooked, "missing hooked path_a record: #{inspect(envelope.payload)}"
+      assert is_list(hooked.lines_hit) and hooked.lines_hit != []
     end
   end
 
@@ -372,6 +421,48 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
         async_true_test_module()
       )
     end
+
+    base
+  end
+
+  # One hooked (SpecLedEx.Case) + one unhooked bare ExUnit.Case module.
+  defp scaffold_partial_hook_fixture do
+    base =
+      System.tmp_dir!()
+      |> Path.join("specled_cover_partial_#{System.unique_integer([:positive])}")
+
+    File.mkdir_p!(Path.join(base, "lib"))
+    File.mkdir_p!(Path.join(base, "test"))
+
+    File.write!(Path.join(base, "mix.exs"), mix_exs())
+    File.write!(Path.join([base, "lib", "covered.ex"]), exclusive_lib_module())
+    File.write!(Path.join([base, "test", "test_helper.exs"]), "ExUnit.start()\n")
+
+    File.write!(
+      Path.join([base, "test", "hooked_test.exs"]),
+      """
+      defmodule HookedTest do
+        use SpecLedEx.Case, async: false
+
+        test "path_a" do
+          assert Covered.path_a() == 3
+        end
+      end
+      """
+    )
+
+    File.write!(
+      Path.join([base, "test", "unhooked_test.exs"]),
+      """
+      defmodule UnhookedTest do
+        use ExUnit.Case, async: false
+
+        test "path_b" do
+          assert Covered.path_b() == 30
+        end
+      end
+      """
+    )
 
     base
   end

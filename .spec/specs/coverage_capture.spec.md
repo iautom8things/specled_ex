@@ -19,29 +19,32 @@ concurrency for cumulative (non-per-test) attribution.
 
 The old serialized flow survives as the opt-in `--per-test` flag
 (`specled.coverage_capture.serialized_run`): it still forces
-`ExUnit.configure(async: false)` and arms the custom formatter, which
-snapshots coverage per-test into anonymous ETS (so multiple formatters can
-coexist in tests), keyed by `{module, name}` by default — ExUnit does not
-expose a test's runtime pid inside `test.tags`, so a `test_pid`-keyed row
-exists only when the test itself opts in via `@tag test_pid: self()`.
-Either key is unique per test under serialized execution, but key
-uniqueness only rules out ETS-row collisions; it does not close the
-underlying `ExUnit.Runner` event-timing race (`test_finished` is a
-`GenServer.cast` the Runner does not wait on before starting the next
-test), which can bleed a test's in-flight coverage into its neighbor's
-snapshot — measured at roughly 1-in-3 exclusive-attribution failures on a
-trivial fixture (`specled_-cpw`). Per-test attribution under `--per-test`
-is therefore observed/approximate, never exact, even when the envelope is
-not marked `degraded` (`degraded` flags only async-tagged tests and
-externally-harvested counters, not this race — see
-`specled.decision.aggregate_first_spec_coverage`). Under `--per-test`, a
-test file that declares `async: true` genuinely does run concurrently
-despite the global default and corrupts serialized attribution, so the
-task exits non-zero naming it unless `--allow-async` degrades the run
-instead. `mix test --cover` continues to work in its traditional
-cumulative mode; only `mix spec.cover.test --per-test` produces the
-per-test artifact at `.spec/_coverage/per_test.coverdata` (the default
-aggregate mode's v2 envelope targets the same path).
+`ExUnit.configure(async: false)` and arms `SpecLedEx.Coverage.Formatter` as
+a suite-lifecycle auditor (inventory + flush; no per-test snapshots —
+`specled.coverage_capture.formatter_auditor`). Exclusive per-test
+attribution comes from the synchronous boundary hook
+(`setup {SpecLedEx.Coverage, :per_test_boundary}` or `use SpecLedEx.Case`):
+head snapshot at setup, tail snapshot in `on_exit`, which `ExUnit.Runner`
+awaits before spawning the next test. Hooked tests' `[head, tail]` windows
+are therefore disjoint — **exact up to escaped processes** (a process a
+test spawns that outlives its tail snapshot can still increment shared
+counters after the window closes). Unhooked tests never fail the run:
+their coverage folds into the run's aggregate remainder, the envelope is
+`degraded: true`, and one per-module stderr notice names the setup line to
+add (`specled.coverage_capture.unhooked_degrade`,
+`specled.coverage_capture.unhooked_remediation_notice`). Inventory is
+keyed by `{module, name}` by default — ExUnit does not expose a test's
+runtime pid inside `test.tags`, so a `test_pid`-keyed inventory row exists
+only when the test itself opts in via `@tag test_pid: self()`. Under
+`--per-test`, a test file that declares `async: true` genuinely does run
+concurrently despite the global default and corrupts serialized
+attribution, so the task exits non-zero naming it unless `--allow-async`
+degrades the run instead. `mix test --cover` continues to work in its
+traditional cumulative mode; only `mix spec.cover.test --per-test`
+produces the per-test artifact at `.spec/_coverage/per_test.coverdata`
+(the default aggregate mode's v2 envelope targets the same path). See
+`specled.decision.per_test_sync_boundary` (supersedes the race-bound claim
+in `specled.decision.aggregate_first_spec_coverage`).
 
 The formatter is inert unless armed: registering it in `:formatters` is not
 by itself enough to run it (ExUnit forwards its entire `:ex_unit` application
@@ -129,6 +132,7 @@ realized_by:
 decisions:
   - specled.decision.serialized_per_test_coverage
   - specled.decision.aggregate_first_spec_coverage
+  - specled.decision.per_test_sync_boundary
 ```
 
 ## Requirements
@@ -220,17 +224,20 @@ decisions:
 - id: specled.coverage_capture.formatter_no_fabrication
   statement: >-
     The formatter shall never fabricate a per-test line hit. On
-    `suite_started` it takes a baseline module snapshot; on each
-    `test_finished` it takes a new snapshot and diffs it against the
-    previous boundary snapshot via `SpecLedEx.Coverage.Snapshot.diff/2`
-    (`specled.coverage_capture.snapshot_diff_strictly_increased`) — only a
-    strictly-increased count becomes a hit for that test. An unchanged
-    count is simply "not hit this test," never a placeholder; a
+    `suite_started` it takes a baseline module snapshot; on
+    `suite_finished` it takes a final whole-scope snapshot and diffs via
+    `SpecLedEx.Coverage.Snapshot.diff/2`
+    (`specled.coverage_capture.snapshot_diff_strictly_increased`) to
+    compute the run-total — only a strictly-increased count becomes a hit.
+    An unchanged count is simply "not hit this run," never a placeholder; a
     strictly-decreased count is a `"counters externally harvested"`
     diagnostic (`specled.coverage_capture.snapshot_negative_delta_diagnostic`),
     never a fabricated negative hit. Diagnostics increment a per-run count,
     surfaced via one stderr notice at `suite_finished` whenever that count
     is non-zero, and mark the flushed v2 envelope `degraded: true`.
+    Per-test hits themselves come only from boundary windows (see
+    `formatter_auditor`); the formatter never invents per-test line hits
+    from inventory alone.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.snapshot_runtime_mode
@@ -277,14 +284,18 @@ decisions:
     artifact as a v2 envelope (`mode: :per_test`) via
     `SpecLedEx.Coverage.Store.write_v2/2`, whose `:payload` is the
     unchanged v1-shaped record list (`%{test_id, file, lines_hit, tags,
-    test_pid}`) and whose `:files` is that payload's distinct, sorted file
-    set. The envelope's `:degraded` field shall be `true` when any
-    captured test's tags carried `async: true`, or when any
-    `snapshot_negative_delta_diagnostic` occurred during the run,
-    otherwise `false`. When the payload carries no records at all, the
-    formatter shall not write an artifact (mirroring
+    test_pid}`) derived exclusively from hooked boundary rows, and whose
+    `:files` is the distinct, sorted union of payload files and
+    unattributed remainder files. The envelope's `:degraded` field shall
+    be `true` when any captured test's tags carried `async: true`, when
+    any `snapshot_negative_delta_diagnostic` occurred during the run, or
+    when any inventoried test was unhooked (`unhooked_degrade`); otherwise
+    `false`. A run with zero hooked rows but a non-empty aggregate
+    remainder still writes the (degraded) envelope — empty `:payload` alone
+    shall not refuse the write when `:files` is non-empty. The formatter
+    shall not write an artifact when `:files` is empty (mirroring
     `Store.write_v2/2`'s empty-files refusal) and shall print one stderr
-    notice.
+    notice in that case.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.cumulative_parity
@@ -299,20 +310,18 @@ decisions:
   stability: evolving
 - id: specled.coverage_capture.keyed_by_test_pid
   statement: >-
-    The formatter's ETS row key shall default to `{module, name}` — ExUnit
-    does not expose a test's runtime pid inside `test.tags`, so ExUnit
-    itself never supplies one by default; a `test_pid`-keyed row exists
-    only when the test opts in via `@tag test_pid: self()`. Either key is
-    unique per test under serialized (non-`async: true`) execution, so
-    interleaved `test_finished` events for different tests cannot collide
-    on the same ETS row. Key uniqueness does not by itself guarantee
-    exclusive attribution: the formatter's snapshot for test N is taken
-    lazily inside its own `test_finished` `GenServer.cast` handler, and
-    `ExUnit.Runner` does not wait for that cast before starting test N+1,
-    so the two tests' underlying `:cover`/native counter progress can
-    still interleave (`specled_-cpw`). Per-test attribution is therefore
-    observed/approximate, never exact, independent of key choice — see
-    `specled.decision.aggregate_first_spec_coverage`.
+    The formatter's inventory ETS row key shall default to `{module, name}`
+    — ExUnit does not expose a test's runtime pid inside `test.tags`, so
+    ExUnit itself never supplies one by default; a `test_pid`-keyed
+    inventory row exists only when the test opts in via `@tag test_pid:
+    self()`. Either key is unique per test under serialized
+    (non-`async: true`) execution, so interleaved `test_finished` events
+    for different tests cannot collide on the same inventory row. Boundary
+    rows are always keyed by `{module, name}` and matched on flush via
+    that stable test key. Exclusive per-test attribution for hooked tests
+    is exact up to escaped processes (see
+    `specled.decision.per_test_sync_boundary`); the inventory key choice
+    does not itself perform measurement.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.anonymous_ets
@@ -457,8 +466,10 @@ decisions:
     hooked test produced a boundary row for its `{module, name}` key,
     `SpecLedEx.Coverage.Formatter.flush/1` shall derive that test's flushed
     record exclusively from the boundary window (compacted via the
-    formatter's file map), never from the lazy `test_finished` snapshot row.
-    Unhooked tests (no boundary row) keep today's lazy-snapshot rows.
+    formatter's file map). Unhooked tests (no boundary row) produce no
+    per-test payload record — their coverage folds into the unattributed
+    remainder (`formatter_auditor` / `unhooked_degrade`); there is no
+    lazy-capture fallback.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.per_test_exclusive_attribution
@@ -479,7 +490,44 @@ decisions:
     `:meta` map (default `%{}`). `read_v2/1` shall tolerate envelopes written
     without `:meta` (older artifacts default `meta: %{}`). When
     `Formatter.flush/1` consumes any boundary row, the written envelope shall
-    carry `meta: %{boundary: true}`.
+    carry `meta.boundary: true`. When any inventoried test is unhooked, the
+    envelope shall carry `meta.unhooked_modules` (sorted module list). When
+    the unattributed remainder is non-empty, the envelope shall carry
+    `meta.unattributed` as `[{file, sorted_lines}]`.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.formatter_auditor
+  statement: >-
+    Under `mix spec.cover.test --per-test`, `SpecLedEx.Coverage.Formatter`
+    shall take no per-test snapshots: `test_finished` records inventory
+    only (`test_id`, `test_key`, `module`, `tags`, `test_pid`) and the
+    existing `degraded_async?` fold. On `suite_finished` it shall take one
+    final whole-scope snapshot, compute run-total hits via
+    `Snapshot.diff(baseline, final)`, attribute the union of boundary rows
+    to per-test payload records, and fold the unattributed remainder
+    (line-level set subtraction of attributed from run-total) into
+    `meta.unattributed` and `envelope.files`. There is no lazy-capture
+    fallback for unhooked tests.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.unhooked_degrade
+  statement: >-
+    When any inventoried test lacks a boundary row for its `{module, name}`
+    key, `Formatter.flush/1` shall never fail the run for that reason: the
+    unhooked test contributes no per-test payload record; its coverage
+    (if any) remains in the unattributed remainder; `meta.unhooked_modules`
+    lists each unhooked module; and the envelope is `degraded: true`. A
+    zero-hooked run with a non-empty remainder still writes the degraded
+    envelope.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.unhooked_remediation_notice
+  statement: >-
+    For each module that had at least one unhooked test, the formatter shall
+    print exactly one stderr remediation notice at `suite_finished` (never
+    per test), naming the module, the unhooked test count, and the literal
+    setup line `setup {SpecLedEx.Coverage, :per_test_boundary}` plus the
+    `use SpecLedEx.Case` alternative for bare `ExUnit.Case` modules.
   priority: must
   stability: evolving
 ```
@@ -494,8 +542,8 @@ decisions:
   when:
     - the formatter handles the events
   then:
-    - stub_fn was called once for the baseline and once for the test
-    - the per-test record under P contains the diffed, file-compacted hits and the test tags
+    - stub_fn was called once for the baseline (not again on test_finished)
+    - the inventory row under P carries test_id, tags, and test_key — no per-test files/hits
   covers:
     - specled.coverage_capture.formatter_snapshot_fn_di
     - specled.coverage_capture.keyed_by_test_pid
@@ -511,12 +559,12 @@ decisions:
     - specled.coverage_capture.formatter_arming_seam
 - id: specled.coverage_capture.scenario.formatter_no_fabrication
   given:
-    - "a baseline snapshot and a test snapshot where one line's count is unchanged and another's has strictly decreased"
+    - "a baseline snapshot and a final suite snapshot where one line's count is unchanged and another's has strictly decreased"
   when:
-    - the formatter diffs the two snapshots for that test
+    - the formatter diffs the two snapshots on suite_finished
   then:
     - "the unchanged line is not recorded as a hit (no placeholder)"
-    - "the decreased line is counted as a `counters_externally_harvested` diagnostic, surfaced via stderr at `suite_finished`, and marks the envelope `degraded: true` — never recorded as a negative hit"
+    - "the decreased line is counted as a `counters_externally_harvested` diagnostic, surfaced via stderr at `suite_finished`, and marks the run degraded — never recorded as a negative hit"
   covers:
     - specled.coverage_capture.formatter_no_fabrication
     - specled.coverage_capture.snapshot_negative_delta_diagnostic
@@ -540,11 +588,13 @@ decisions:
     - specled.coverage_capture.snapshot_diff_strictly_increased
 - id: specled.coverage_capture.scenario.per_test_v2_envelope_degraded
   given:
-    - "a `--per-test` run where one captured test's tags carried `async: true`"
+    - "a `--per-test` run where one captured test's tags carried `async: true`, or a zero-hooked run with a non-empty aggregate remainder"
   when:
     - "the formatter flushes on `suite_finished`"
   then:
-    - "the written v2 envelope has `mode: :per_test`, a `:payload` of v1-shaped records, and `degraded: true`"
+    - "the written v2 envelope has `mode: :per_test` and `degraded: true`"
+    - "when async contaminated, `:payload` is the v1-shaped record list"
+    - "when zero-hooked with a non-empty remainder, empty `:payload` alone does not refuse the write; `:files` is non-empty"
   covers:
     - specled.coverage_capture.per_test_v2_envelope
 - id: specled.coverage_capture.scenario.cumulative_parity_tripwire
@@ -745,9 +795,33 @@ decisions:
     - "`Store.read_v2/1` reads that path"
   then:
     - "the decoded envelope has `meta: %{}`"
-    - "when flush consumes a boundary row, the written envelope carries `meta: %{boundary: true}`"
+    - "when flush consumes a boundary row, the written envelope carries `meta.boundary: true`"
   covers:
     - specled.coverage_capture.envelope_meta
+- id: specled.coverage_capture.scenario.formatter_auditor_inventory_only
+  given:
+    - "an armed formatter with a stub snapshot_fn and no boundary rows"
+    - "suite_started then two test_finished events"
+  when:
+    - "suite_finished runs"
+  then:
+    - "snapshot_fn was called exactly twice (baseline + final), never per test"
+    - "payload is empty; inventory alone never fabricates per-test hits"
+  covers:
+    - specled.coverage_capture.formatter_auditor
+- id: specled.coverage_capture.scenario.unhooked_degrade_partial_hook
+  given:
+    - "a child-BEAM fixture with one hooked module (SpecLedEx.Case) and one unhooked bare ExUnit.Case module"
+  when:
+    - "`mix spec.cover.test --per-test` runs on the fixture"
+  then:
+    - "exit code is 0"
+    - "envelope is degraded: true with meta.unhooked_modules naming the unhooked module"
+    - "hooked test's payload row is present and exact"
+    - "stderr notice names the unhooked module and contains `setup {SpecLedEx.Coverage, :per_test_boundary}`"
+  covers:
+    - specled.coverage_capture.unhooked_degrade
+    - specled.coverage_capture.unhooked_remediation_notice
 ```
 
 ## Verification
@@ -808,4 +882,10 @@ decisions:
   covers:
     - specled.coverage_capture.boundary_noop_unarmed
     - specled.coverage_capture.envelope_meta
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.coverage_capture.formatter_auditor
+    - specled.coverage_capture.unhooked_degrade
+    - specled.coverage_capture.unhooked_remediation_notice
 ```

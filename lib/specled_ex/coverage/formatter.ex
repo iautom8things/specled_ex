@@ -1,60 +1,43 @@
 defmodule SpecLedEx.Coverage.Formatter do
   @moduledoc """
-  ExUnit formatter that captures per-test cover snapshots.
+  ExUnit formatter that audits per-test coverage capture under
+  `mix spec.cover.test --per-test`.
 
-  On `suite_started`, takes a baseline module snapshot via
-  `SpecLedEx.Coverage.Snapshot` (native or classic, per
-  `Snapshot.runtime_mode/0`) and memoizes a module → source-file map for
-  the run's module scope (each computed exactly once for the whole run —
-  no per-test/per-flush `module_info/1` storm). On `test_finished`, takes
-  a new snapshot over the same scope, diffs it against the previous
-  boundary snapshot (the baseline for test 1, the prior test's snapshot
-  thereafter) via `Snapshot.diff/2`, compacts the resulting hits to
-  `[{file, sorted_lines}]` at cast time, and writes that compacted row
-  into an anonymous ETS table keyed by `test_pid`. On `suite_finished`,
-  derives per-test v1-shaped records (`%{test_id, file, lines_hit, tags,
-  test_pid}`) from the ETS state and writes them, wrapped in a v2
-  `:per_test` envelope, via `SpecLedEx.Coverage.Store.write_v2/2` to
-  `.spec/_coverage/per_test.coverdata` (overridable via the
-  `:artifact_path` init option). No raw `:cover`/native snapshot blob is
-  ever retained in the ETS table — only the compacted `{file, lines}`
-  pairs.
+  This module is the suite-lifecycle owner for the opt-in per-test lane; it is
+  no longer the measurement engine. Exclusive per-test attribution comes from
+  the synchronous boundary hook (`SpecLedEx.Coverage.per_test_boundary/1` /
+  `use SpecLedEx.Case`) — head snapshot at setup, tail snapshot in `on_exit`,
+  which `ExUnit.Runner` awaits via `exec_on_exit/3` before spawning the next
+  test. Hooked tests' `[head, tail]` windows are therefore disjoint
+  (**exact up to escaped processes**: a process a test spawns that outlives
+  its tail snapshot can still increment shared counters after the window
+  closes, landing in a later window or the unattributed remainder).
 
-  The envelope is marked `degraded: true` when either of two things is
-  observed during the run: a test's tags carried `async: true` (ExUnit
-  sets this per test from the enclosing module's real async status,
-  independent of `--per-test`'s forced `ExUnit.configure(async: false)` —
-  see `specled.decision.serialized_per_test_coverage`; a module that
-  declares `async: true` genuinely runs concurrently regardless), or
-  `Snapshot.diff/2` reported a "counters externally harvested" diagnostic
-  (something other than this formatter drained the shared counters
-  between two of its own snapshots). Either condition means per-test
-  attribution for the affected window cannot be trusted.
+  ## Suite lifecycle (auditor)
 
-  ## Known limitation: cross-test attribution race (not yet closed)
+  On `suite_started`, takes one baseline whole-scope module snapshot and
+  memoizes the module → source-file map (each computed exactly once for the
+  run). On each `test_finished`, records inventory only (`{key, test_id,
+  tags, test_pid}`) — no per-test snapshot. On `suite_finished`:
 
-  ExUnit's `Runner` notifies formatters of `test_started`/`test_finished`
-  via `GenServer.cast` and does not wait for formatters to process that
-  cast before spawning the next test (`ExUnit.Runner.run_test/2` casts
-  `test_finished`, then immediately proceeds to the next test in its
-  `Enum.reduce_while` loop). Because this formatter's snapshot for test N
-  is taken lazily, inside its own `handle_cast` for `test_finished`, on a
-  multi-scheduler BEAM the next test's freshly-spawned process can begin
-  executing (and incrementing the same shared `:cover`/native counters)
-  before this formatter's GenServer is scheduled to read them. When that
-  happens, test N's snapshot is contaminated with test N+1's already-begun
-  progress, and `Snapshot.diff/2` — correctly, given the (racy) inputs it
-  was handed — attributes the bled-through lines to the wrong test (or
-  drops them from test N's record entirely, since they no longer look like
-  an increase relative to test N's own baseline). This was measured
-  empirically on a two-test, near-instant fixture at roughly a 1-in-3
-  failure rate for exclusive per-test attribution. It affects the native
-  and classic engines identically — the race is about event timing, not
-  the read mechanism. Closing it fully likely requires a synchronous
-  per-test hook that runs inside each test's own process (e.g. a
-  `CaseTemplate`-based `setup`/`on_exit` pair, since `on_exit` callbacks
-  are the one thing `ExUnit.Runner` *does* wait on before advancing) rather
-  than a purely formatter-side, zero-test-code-change design.
+    1. Takes one final whole-scope snapshot; run-total hits =
+       `Snapshot.diff(baseline, final)`.
+    2. Attributed hits = union of boundary-table rows (hooked tests).
+    3. Unattributed remainder = run-total minus attributed (line-level set
+       subtraction). Remainder lands in `meta.unattributed` as
+       `[{file, sorted_lines}]` and contributes to `envelope.files` so
+       file-level consumers still see the whole run.
+    4. Per-test `:payload` carries only hooked tests' boundary-derived
+       records.
+    5. Audit: inventory keys vs boundary-reported keys, grouped by module.
+       Unhooked modules are listed in `meta.unhooked_modules`; the envelope
+       is `degraded: true` whenever any test is unhooked (plus the existing
+       async / externally-harvested diagnostic conditions). One per-module
+       stderr notice names the literal setup line to add.
+
+  A run with zero hooked rows but a non-empty aggregate remainder still
+  writes the degraded envelope. Only a genuinely empty run (no files at
+  all) refuses via `Store.write_v2/2`'s empty-files gate.
 
   ## Disarmed By Default
 
@@ -65,8 +48,10 @@ defmodule SpecLedEx.Coverage.Formatter do
   `false`, the formatter prints one notice to stderr and becomes a permanent
   no-op (`{:ok, :disabled}`, every event handled as `{:noreply, :disabled}`).
   Only `mix spec.cover.test --per-test` arms it, via
-  `Application.put_env(:specled_ex, :spec_cover_run, true)` before installing
-  the formatter.
+  `Application.put_env(:specled_ex, :spec_cover_run, ...)` before installing
+  the formatter. Production arms with a keyword list that includes
+  `boundary_table: tid` (public anonymous ETS table for boundary rows);
+  tests may arm with `true` or a keyword override for DI seams.
 
   This closes an accidental smuggle path: ExUnit starts every formatter with
   `GenServer.start_link(handler, opts)` where `opts` is effectively the whole
@@ -77,13 +62,15 @@ defmodule SpecLedEx.Coverage.Formatter do
   itself:
 
     * `Application.put_env(:specled_ex, :spec_cover_run, true)` — production
-      config (`snapshot_fn` dispatches to `Snapshot.take(Snapshot.runtime_mode(),
-      modules)`), as `mix spec.cover.test --per-test` sets it.
-    * `Application.put_env(:specled_ex, :spec_cover_run, snapshot_fn: ..., ...)`
-      — a keyword list is honored as an explicit config override, merged over
-      the production defaults. Tests use this seam to inject a `snapshot_fn`
-      stub (`([module()] -> %{module() => [{line, count}]})`); nothing
-      outside the `:specled_ex` namespace can reach the formatter's config.
+      defaults (`snapshot_fn` dispatches to `Snapshot.take(Snapshot.runtime_mode(),
+      modules)`). Prefer the keyword form with `:boundary_table` in real
+      `--per-test` runs (the Mix task sets it).
+    * `Application.put_env(:specled_ex, :spec_cover_run, snapshot_fn: ...,
+      boundary_table: tid, ...)` — a keyword list is honored as an explicit
+      config override, merged over the production defaults. Tests use this
+      seam to inject a `snapshot_fn` stub
+      (`([module()] -> %{module() => [{line, count}]})`); nothing outside the
+      `:specled_ex` namespace can reach the formatter's config.
 
   ## Init Options
 
@@ -93,23 +80,29 @@ defmodule SpecLedEx.Coverage.Formatter do
     * `:snapshot_fn` — `([module()] -> %{module() => [{line, count}]})`;
       production default is `Snapshot.take(Snapshot.runtime_mode(), modules)`
       (see `SpecLedEx.Coverage.Snapshot` for the native/classic engines).
+      Called at `suite_started` (baseline) and `suite_finished` (final) only —
+      never per test.
     * `:modules_fn` — `(-> [module()])`; default
       `&SpecLedEx.Coverage.cover_modules_safe/0`. Computes the module scope
       snapshots are taken over; called once, at `suite_started`.
     * `:artifact_path` — destination for the on-suite-finish flush.
+    * `:boundary_table` — public anonymous ETS table for boundary rows
+      (armed by `mix spec.cover.test --per-test`).
 
-  ## Test PID Capture
+  ## Test key / inventory
 
-  The ETS row is keyed by `test_pid` when the test struct's tags carry one
-  (e.g. user setup that populates `@tag test_pid: ...`); otherwise the key
-  falls back to `{module, name}`, which is also unique per test. Either form
-  guarantees no collision under serialized execution.
+  Inventory rows are keyed by `test_pid` when the test struct's tags carry
+  one (e.g. user setup that populates `@tag test_pid: ...`); otherwise the
+  key falls back to `{module, name}`, which is also unique per test. Either
+  form guarantees no collision under serialized execution. Boundary rows
+  are always keyed by `{module, name}` (see `SpecLedEx.Coverage.Boundary`);
+  flush matches inventory to boundary via that stable test key.
 
   The on-disk record's `test_pid` field is the same `tags[:test_pid]` when
   present; otherwise the formatter's own pid (a valid pid for the field
   type) is recorded. ExUnit does not expose the test's runtime pid inside
   `test.tags` — it lives in the test's `context`, not its tags — so a
-  durable per-test attribution requires user opt-in via tags.
+  durable per-test pid in the artifact requires user opt-in via tags.
   """
 
   use GenServer
@@ -153,13 +146,14 @@ defmodule SpecLedEx.Coverage.Formatter do
 
   # Per-run bookkeeping layered on top of the static config
   # `Coverage.install/1` resolves. `:modules` and `:file_map` are populated
-  # once, at `suite_started` (see `handle_cast/2` below), and never
-  # recomputed per test.
+  # once, at `suite_started`, and never recomputed per test. `:baseline` is
+  # the suite_started snapshot; the formatter does not take per-test
+  # snapshots (auditor demotion — Stage 2).
   defp run_init(state) do
     Map.merge(state, %{
       modules: nil,
       file_map: %{},
-      last_snapshot: %{},
+      baseline: %{},
       diagnostic_count: 0,
       degraded_async?: false
     })
@@ -184,14 +178,14 @@ defmodule SpecLedEx.Coverage.Formatter do
       state
       |> Map.put(:modules, modules)
       |> Map.put(:file_map, build_file_map(modules))
-      |> Map.put(:last_snapshot, baseline)
+      |> Map.put(:baseline, baseline)
 
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_cast({:test_finished, %ExUnit.Test{} = test}, state) do
-    {:noreply, record_test(test, state)}
+    {:noreply, record_inventory(test, state)}
   end
 
   @impl GenServer
@@ -203,47 +197,37 @@ defmodule SpecLedEx.Coverage.Formatter do
   @impl GenServer
   def handle_cast(_event, state), do: {:noreply, state}
 
-  # A `test_finished` event arriving with no prior `suite_started` (should
-  # not happen under real ExUnit, but is a cheap safety net) resolves
-  # modules/baseline lazily rather than crashing the formatter.
-  defp record_test(%ExUnit.Test{} = test, %{modules: nil} = state) do
-    record_test(test, %{
+  # Inventory only — no per-test snapshot. A `test_finished` arriving with no
+  # prior `suite_started` resolves module scope lazily rather than crashing.
+  defp record_inventory(%ExUnit.Test{} = test, %{modules: nil} = state) do
+    modules = state.modules_fn.()
+
+    record_inventory(test, %{
       state
-      | modules: state.modules_fn.(),
-        file_map: build_file_map(state.modules_fn.()),
-        last_snapshot: %{}
+      | modules: modules,
+        file_map: build_file_map(modules),
+        baseline: %{}
     })
   end
 
-  defp record_test(%ExUnit.Test{} = test, state) do
-    current = state.snapshot_fn.(state.modules)
-    {hits_by_module, diagnostics} = Snapshot.diff(state.last_snapshot, current)
-
-    files = compact_hits_to_files(hits_by_module, state.file_map)
+  defp record_inventory(%ExUnit.Test{} = test, state) do
     async? = Map.get(test.tags, :async, false) == true
 
     row = %{
       test_id: test_id(test),
-      # Stable match key for boundary-table preference on flush (independent of
-      # whether the ETS row itself is keyed by test_pid or {module, name}).
       test_key: {test.module, test.name},
+      module: test.module,
       tags: test.tags,
-      test_pid: on_disk_pid(test.tags),
-      files: files
+      test_pid: on_disk_pid(test.tags)
     }
 
     :ets.insert(state.table, {extract_key(test), row})
 
-    %{
-      state
-      | last_snapshot: current,
-        diagnostic_count: state.diagnostic_count + length(diagnostics),
-        degraded_async?: state.degraded_async? or async?
-    }
+    %{state | degraded_async?: state.degraded_async? or async?}
   end
 
-  # Builds the module -> source-file map once, up front, so per-test
-  # attribution never re-derives it.
+  # Builds the module -> source-file map once, up front, so flush never
+  # re-derives it.
   defp build_file_map(modules) do
     Map.new(modules, fn mod -> {mod, source_file(mod)} end)
   end
@@ -288,30 +272,63 @@ defmodule SpecLedEx.Coverage.Formatter do
   end
 
   defp flush(%{table: table, artifact_path: path} = state) do
-    boundary_index = load_boundary_index()
+    modules = state.modules || state.modules_fn.()
+    final = state.snapshot_fn.(modules)
+    {run_total_hits, suite_diagnostics} = Snapshot.diff(state.baseline || %{}, final)
 
-    {records, boundary_diagnostics, used_boundary?} =
-      table
-      |> :ets.tab2list()
-      |> Enum.reduce({[], 0, false}, fn entry, {acc, diag_acc, used?} ->
-        {recs, diag, from_boundary?} = records_for_entry(entry, boundary_index, state.file_map)
-        {acc ++ recs, diag_acc + diag, used? or from_boundary?}
+    boundary_index = load_boundary_index()
+    inventory = :ets.tab2list(table)
+
+    {records, boundary_diagnostics, used_boundary?, unhooked_by_module} =
+      Enum.reduce(inventory, {[], 0, false, %{}}, fn entry, {acc, diag_acc, used?, unhooked} ->
+        {recs, diag, from_boundary?, unhooked} =
+          records_for_inventory(entry, boundary_index, state.file_map, unhooked)
+
+        {acc ++ recs, diag_acc + diag, used? or from_boundary?, unhooked}
       end)
 
-    total_diagnostics = state.diagnostic_count + boundary_diagnostics
+    attributed_hits = union_boundary_hits(boundary_index)
+    unattributed_hits = subtract_hits(run_total_hits, attributed_hits)
+    unattributed_files = compact_hits_to_files(unattributed_hits, state.file_map)
+
+    total_diagnostics = state.diagnostic_count + boundary_diagnostics + length(suite_diagnostics)
 
     if total_diagnostics > 0 do
       IO.puts(:stderr, diagnostic_notice(total_diagnostics))
     end
 
-    degraded? = state.degraded_async? or total_diagnostics > 0
-    meta = if used_boundary?, do: %{boundary: true}, else: %{}
+    unhooked_modules =
+      unhooked_by_module
+      |> Map.keys()
+      |> Enum.sort_by(&to_string/1)
+
+    Enum.each(unhooked_modules, fn mod ->
+      count = Map.fetch!(unhooked_by_module, mod)
+      IO.puts(:stderr, unhooked_notice(mod, count))
+    end)
+
+    degraded? =
+      state.degraded_async? or total_diagnostics > 0 or unhooked_modules != []
+
+    payload_files = records |> Enum.map(& &1.file) |> Enum.uniq()
+    remainder_file_paths = Enum.map(unattributed_files, fn {file, _lines} -> file end)
+
+    files =
+      (payload_files ++ remainder_file_paths)
+      |> Enum.uniq()
+      |> Enum.sort()
+
+    meta =
+      %{}
+      |> maybe_put(:boundary, used_boundary?, true)
+      |> maybe_put(:unhooked_modules, unhooked_modules != [], unhooked_modules)
+      |> maybe_put(:unattributed, unattributed_files != [], unattributed_files)
 
     envelope =
       Store.build_envelope(%{
         mode: :per_test,
         source: path,
-        files: records |> Enum.map(& &1.file) |> Enum.uniq() |> Enum.sort(),
+        files: files,
         mfas: [],
         payload: records,
         degraded: degraded?,
@@ -327,15 +344,23 @@ defmodule SpecLedEx.Coverage.Formatter do
     end
   end
 
-  # Prefer a boundary-table row when present for a test's `{module, name}` key
-  # (Stage 1 transitional: hooked tests derive exclusively from their
-  # [head, tail] window; unhooked tests keep today's lazy-snapshot rows).
-  defp records_for_entry({key, row}, boundary_index, file_map) do
+  # Prefer a boundary-table row when present for a test's `{module, name}`
+  # key. Unhooked inventory entries produce no payload records — their
+  # coverage folds into the suite remainder via set subtraction.
+  defp records_for_inventory({key, row}, boundary_index, file_map, unhooked) do
     test_key = Map.get(row, :test_key) || fallback_test_key(key)
+    module = Map.get(row, :module) || inventory_module_from_key(test_key)
 
     case test_key && Map.get(boundary_index, test_key) do
       nil ->
-        {records_for_row({key, row}), 0, false}
+        unhooked =
+          if is_atom(module) do
+            Map.update(unhooked, module, 1, &(&1 + 1))
+          else
+            unhooked
+          end
+
+        {[], 0, false, unhooked}
 
       boundary_row ->
         files = compact_hits_to_files(boundary_row.hits, file_map)
@@ -351,21 +376,12 @@ defmodule SpecLedEx.Coverage.Formatter do
             }
           end)
 
-        {recs, boundary_row.diagnostics, true}
+        {recs, boundary_row.diagnostics, true, unhooked}
     end
   end
 
-  defp records_for_row({_key, %{files: files} = row}) do
-    Enum.map(files, fn {file, lines} ->
-      %{
-        test_id: row.test_id,
-        file: file,
-        lines_hit: lines,
-        tags: row.tags,
-        test_pid: row.test_pid
-      }
-    end)
-  end
+  defp inventory_module_from_key({mod, _name}) when is_atom(mod), do: mod
+  defp inventory_module_from_key(_), do: nil
 
   defp fallback_test_key({mod, name}) when is_atom(mod) and is_atom(name), do: {mod, name}
   defp fallback_test_key(_), do: nil
@@ -400,12 +416,52 @@ defmodule SpecLedEx.Coverage.Formatter do
     end
   end
 
+  defp union_boundary_hits(boundary_index) do
+    Enum.reduce(boundary_index, %{}, fn {_key, row}, acc ->
+      hits = Map.get(row, :hits, %{})
+
+      Enum.reduce(hits, acc, fn {mod, lines}, acc2 ->
+        Map.update(acc2, mod, MapSet.new(lines), fn set ->
+          Enum.reduce(lines, set, &MapSet.put(&2, &1))
+        end)
+      end)
+    end)
+    |> Map.new(fn {mod, set} -> {mod, MapSet.to_list(set) |> Enum.sort()} end)
+  end
+
+  # Line-level set subtraction: run-total hits minus attributed hits.
+  defp subtract_hits(run_total, attributed) when is_map(run_total) and is_map(attributed) do
+    Enum.reduce(run_total, %{}, fn {mod, lines}, acc ->
+      attr = MapSet.new(Map.get(attributed, mod, []))
+      remaining = lines |> Enum.reject(&MapSet.member?(attr, &1)) |> Enum.sort()
+
+      if remaining == [] do
+        acc
+      else
+        Map.put(acc, mod, remaining)
+      end
+    end)
+  end
+
+  defp maybe_put(map, _key, false, _value), do: map
+  defp maybe_put(map, key, true, value), do: Map.put(map, key, value)
+
   defp diagnostic_notice(count) do
     "[SpecLedEx.Coverage.Formatter] #{count} counters-externally-harvested " <>
       "diagnostic(s): a snapshot read a lower count than the previous boundary " <>
       "snapshot for the same line, meaning something other than this formatter " <>
       "drained the shared coverage counters mid-run. The artifact is marked " <>
       "degraded rather than treating the decrease as a real (negative) delta."
+  end
+
+  defp unhooked_notice(module, count) do
+    tests = if count == 1, do: "1 test", else: "#{count} tests"
+
+    "[SpecLedEx.Coverage.Formatter] #{tests} in #{inspect(module)} ran without the " <>
+      "per-test boundary hook; their coverage was folded into the run's " <>
+      "aggregate remainder and the artifact is marked degraded. Add to the case " <>
+      "(or its case template): setup {SpecLedEx.Coverage, :per_test_boundary} " <>
+      "— or use SpecLedEx.Case for bare ExUnit.Case modules."
   end
 
   defp empty_run_notice do

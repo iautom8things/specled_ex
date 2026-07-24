@@ -97,17 +97,20 @@ interchangeable:
   requirement" figure — `self_verified?` is a yes/no composite, not a
   percentage.
 
-## `--per-test`: opt-in, race-bounded, never "exact"
+## `--per-test`: opt-in, exact up to escaped processes
 
 ```bash
 mix spec.cover.test --per-test
 mix spec.cover.test --per-test --allow-async
 ```
 
-This is the old serialized-capture design, now opt-in. It forces
+This is the opt-in serialized per-test lane. It forces
 `Application.put_env(:ex_unit, :async, false)` and
 `ExUnit.configure(async: false)` before any test module loads, then arms
-`SpecLedEx.Coverage.Formatter` to snapshot coverage per test:
+`SpecLedEx.Coverage.Formatter` as a suite-lifecycle **auditor** (inventory
++ flush — not a per-test snapshotter). Exclusive per-test hits come from
+the synchronous **boundary hook** (see "Wiring the per-test boundary hook"
+below).
 
 ```
 Cover compiling modules ...
@@ -147,26 +150,31 @@ is marked `degraded: true`:
   - test/async_true_test.exs
 ```
 
-**Even on a clean, non-degraded run, per-test attribution is
-observed/approximate — never exact (`specled_-cpw`).** `ExUnit.Runner`
-notifies formatters of `test_finished` via `GenServer.cast` and does not
-wait for the formatter to process it before starting the next test. Because
-this formatter's snapshot for test N is taken lazily inside its own
-`test_finished` handler, test N+1's freshly-spawned process can begin
-executing — and incrementing the same shared `:cover`/native counters —
-before the formatter reads them for test N. Measured empirically at
-roughly 1-in-3 exclusive-attribution failures on a trivial two-test
-fixture. The `degraded` flag catches async-tagged tests and
-externally-harvested counters; it cannot catch this race, since the race
-can occur on an otherwise well-behaved serialized run. Any claim about
-`--per-test` data in your own docs or code comments should say "observed"
-or "approximate," never "exact."
+**Hooked tests: exact up to escaped processes.** A hooked test's
+`[head, tail]` window is taken inside the test process and awaited by
+`ExUnit.Runner` before the next test starts, so two hooked tests that
+exercise disjoint code produce disjoint `lines_hit` sets. The only
+disclosed bound is **escaped processes**: a process a test spawns that
+outlives its tail snapshot can still increment shared `:cover`/native
+counters after the window closes, landing in a later window or the
+unattributed remainder. No runtime detection of escaped processes is
+promised. See `specled.decision.per_test_sync_boundary`.
+
+**Unhooked modules degrade, never fail.** Tests that do not run the
+boundary hook contribute no per-test payload row. Their coverage folds
+into the run's aggregate remainder (`meta.unattributed`); the envelope is
+`degraded: true` with `meta.unhooked_modules` listing the modules; and
+stderr prints one per-module remediation notice naming the setup line.
+A fully unhooked run still writes the degraded envelope when the remainder
+is non-empty — it does not refuse as "empty payload."
 
 **Cost model.** Arming `--per-test` never changes the coverage totals
 `mix test --cover` itself exports (a tripwire test diffs decoded
 `.coverdata` content with and without it armed and requires them equal).
-The cost is the forced serialized run itself, plus one coverage snapshot
-per test — proportional to test count, unlike the aggregate default.
+The cost is the forced serialized run itself, plus two suite-level
+snapshots from the formatter and two snapshots per hooked test from the
+boundary hook — proportional to hooked test count for the exclusive path,
+unlike the aggregate default.
 
 **Scoping knobs.** `SpecLedEx.Coverage.Formatter` accepts `snapshot_fn`
 (default dispatches to `SpecLedEx.Coverage.Snapshot.take/2`) and
@@ -204,10 +212,9 @@ The hook no-ops unless `mix spec.cover.test --per-test` has armed the
 `:specled_ex, :spec_cover_run` seam with a `:boundary_table`, so it is
 safe to leave wired under plain `mix test` (zero cost, zero output).
 
-Attribution for hooked tests under this wiring is still described as
-observed/approximate in this document until Stage 2 upgrades the claim
-surface; the deterministic exclusivity property for hooked windows is
-covered by the seeded exclusivity integration test.
+Without this wiring, `--per-test` still completes: all coverage lands in
+the aggregate remainder, the envelope is `degraded: true`, and each
+unhooked module gets one stderr notice naming the setup line above.
 
 ## OTP posture
 
@@ -271,7 +278,9 @@ Every way a coverage command can refuse, with the real message and the fix.
 | Artifact on disk is pre-v2 (bare record list) | any reader (`Store.read_v2/1`) | `{:error, :legacy_artifact, "Legacy per-test coverage artifact detected (pre-v2 format). specled does not auto-migrate or delete it -- re-run \`mix spec.cover.test\` to regenerate a v2 artifact."}` | Re-run `mix spec.cover.test`. specled never auto-migrates or deletes the stale file (maintainer decision 5). |
 | Artifact on disk does not decode as any known coverage shape | any reader (`Store.read_v2/1`) | `{:error, :invalid_artifact}` | Delete the file and re-run `mix spec.cover.test`; something outside specled wrote or corrupted it. |
 | Formatter registered in `:formatters` but not armed by the task | plain `mix test` / `ExUnit.start(formatters: [..., SpecLedEx.Coverage.Formatter])` | `[SpecLedEx.Coverage.Formatter] disabled: per-test coverage capture requires \`mix spec.cover.test --per-test\` (it arms via Application.put_env(:specled_ex, :spec_cover_run, true)). Wiring this formatter directly into ExUnit.start/1 without that task is a no-op.` — one stderr notice, suite proceeds normally, no coverage artifact written | Delete the wiring. Never add the formatter to `test_helper.exs`; run `mix spec.cover.test` (or `--per-test`) instead. |
-| `--per-test` flush produces zero records | `mix spec.cover.test --per-test` | `[SpecLedEx.Coverage.Formatter] no per-test coverage hits were captured this run; no artifact was written.` | The suite ran but touched no scoped module from any test's perspective; check `modules_fn`/scope if customized. |
+| `--per-test` flush produces zero files (no hits at all) | `mix spec.cover.test --per-test` | `[SpecLedEx.Coverage.Formatter] no per-test coverage hits were captured this run; no artifact was written.` | The suite ran but touched no scoped module; check `modules_fn`/scope if customized. A fully unhooked run with a non-empty remainder still writes (see next rows). |
+| Unhooked module under `--per-test` | `mix spec.cover.test --per-test` | `[SpecLedEx.Coverage.Formatter] N tests in MyApp.FooTest ran without the per-test boundary hook; their coverage was folded into the run's aggregate remainder and the artifact is marked degraded. Add to the case (or its case template): setup {SpecLedEx.Coverage, :per_test_boundary} — or use SpecLedEx.Case for bare ExUnit.Case modules.` — envelope written with `degraded: true`, `meta.unhooked_modules` names the module | Add the setup line (or `use SpecLedEx.Case`) to the named module's case template. Never a hard failure. |
+| Fully unhooked `--per-test` run | `mix spec.cover.test --per-test` | One remediation notice per unhooked module (same text as above); envelope written with empty per-test payload, non-empty `meta.unattributed` / `files`, `degraded: true` | Wire the boundary hook on every test module you care about attributing; remainder coverage is still captured for file-level consumers. |
 | A snapshot read a lower count than the prior boundary | `mix spec.cover.test --per-test` | `[SpecLedEx.Coverage.Formatter] N counters-externally-harvested diagnostic(s): a snapshot read a lower count than the previous boundary snapshot for the same line, meaning something other than this formatter drained the shared coverage counters mid-run. The artifact is marked degraded rather than treating the decrease as a real (negative) delta.` — envelope written with `degraded: true` | Something else in the same BEAM called `:cover.reset/0` / `:code.reset_coverage/1` (this module never does). Find and remove that call. |
 
 All of the above (except the diagnostic-notice row, which needs a
