@@ -6,9 +6,15 @@
   "description": "Fast-follows specled_-q6l (aggregate-first spec coverage fast-follow), shipped in PR #17 / v0.6.1 (4a374be). Carries the calibrated Medium findings from the 5-persona critical review (consolidated: ~/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-24/specled_-q6l-fast-follow-aggregate-first/20260724-094831-consolidated.md) plus follow-ups surfaced during orchestration.",
   "id": "specled_-xkn",
   "labels": [],
+  "comments": [
+    {
+      "text": "Split from specled_-q6l at delivery; original shipped as PR #17 / v0.6.1 (4a374be).",
+      "timestamp": "2026-07-24T14:22:06Z"
+    }
+  ],
   "priority": 2,
   "status": "open",
   "title": "Fast-follow: q6l coverage-gate remediation — review mediums",
   "type": "epic",
-  "updated_at": "2026-07-24T14:22:04Z"
+  "updated_at": "2026-07-24T14:22:06Z"
 }
