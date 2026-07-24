@@ -19,11 +19,13 @@ things attach to that claim:
 2. **`@tag spec: "<requirement.id>"`** on ExUnit tests — the test claims it
    covers a requirement. Verified statically by `SpecLedEx.TagScanner` (no
    compilation, no test run).
-3. **Coverage** captured by `mix spec.cover.test` — one command, no wiring.
-   By default it ingests an aggregate run (which MFAs were executed by *any*
-   test, written to `.spec/_coverage/per_test.coverdata`); an opt-in
-   `--per-test` flag adds observed/approximate per-test attribution on top.
-   See [`docs/coverage.md`](coverage.md) for the full contract.
+3. **Coverage** captured by `mix spec.cover.test` — one command, no wiring
+   for the default aggregate lane. By default it ingests an aggregate run
+   (which MFAs were executed by *any* test, written to
+   `.spec/_coverage/per_test.coverdata`); an opt-in `--per-test` flag adds
+   exclusive per-test attribution on top (exact up to escaped processes
+   when the boundary hook is wired — Phase 4b). See
+   [`docs/coverage.md`](coverage.md) for the full contract.
 
 `mix spec.check` cross-checks the first two sides — `realized_by:` hash
 drift and `@tag spec:` presence — and degrades each to a single
@@ -311,7 +313,7 @@ Aggregation across all subjects collapses to one `mix test --only spec:...`
 invocation per `spec.check` run, which is materially cheaper than N cold BEAM
 boots.
 
-### Phase 4 — Coverage triangulation
+### Phase 4a — Aggregate coverage (zero wiring)
 
 No wiring step: run `mix spec.cover.test` (in CI or locally) and read the
 result with `mix spec.triangle` or `mix spec.review`'s Coverage tab. `mix
@@ -330,7 +332,8 @@ come online:
 
 - `branch_guard_untested_realization` — closure exists, no test reaches it
 - `branch_guard_untethered_test` — `@tag spec:` claims A but execution hits B
-  (needs a `--per-test` artifact; see [`docs/coverage.md`](coverage.md))
+  (needs a `--per-test` artifact; see Phase 4b and
+  [`docs/coverage.md`](coverage.md))
 - `branch_guard_underspecified_realization` — silent execution coverage no
   requirement claims
 
@@ -350,6 +353,56 @@ test "...", do: ...
 
 `mix spec.triangle <subject.id>` (or `mix spec.triangle --all`) prints the
 per-requirement diagnostic so you can read the disagreement before triaging.
+
+### Phase 4b — Per-test attribution (opt-in)
+
+Phase 4a is enough for file-level and subject-level triangulation. Opt into
+Phase 4b only when you want exclusive per-test attribution
+(`branch_guard_untethered_test` and per-test "Reached by" rows).
+
+**Wiring cost.** Add one setup line per case template (2–4 places in a
+typical app). In a Phoenix-style app case template:
+
+```elixir
+setup {SpecLedEx.Coverage, :per_test_boundary}
+```
+
+For bare `ExUnit.Case` modules, prefer the package case:
+
+```elixir
+defmodule MyApp.SomeTest do
+  use SpecLedEx.Case, async: false
+
+  test "example" do
+    assert true
+  end
+end
+```
+
+The hook no-ops unless `mix spec.cover.test --per-test` has armed it, so
+it is safe to leave wired under plain `mix test`. Full contract:
+["Wiring the per-test boundary hook"](coverage.md#wiring-the-per-test-boundary-hook)
+in [`docs/coverage.md`](coverage.md).
+
+**Claim.** Hooked tests are **exact up to escaped processes** — two hooked
+tests that exercise disjoint code produce disjoint `lines_hit` sets. The
+only disclosed bound is a process a test spawns that outlives its tail
+snapshot; no runtime detection of escaped processes is promised.
+
+**Unhooked modules degrade, never fail.** Run `--per-test` without wiring
+and every unhooked module still contributes coverage to the aggregate
+remainder; the envelope is `degraded: true` with `meta.unhooked_modules`
+listing them; stderr prints one remediation notice per module, e.g.:
+
+```
+[SpecLedEx.Coverage.Formatter] 3 tests in MyApp.FooTest ran without the per-test boundary hook; their coverage was folded into the run's aggregate remainder and the artifact is marked degraded. Add to the case (or its case template): setup {SpecLedEx.Coverage, :per_test_boundary} — or use SpecLedEx.Case for bare ExUnit.Case modules.
+```
+
+Capture with the opt-in flag:
+
+```bash
+mix spec.cover.test --per-test
+```
 
 ### Phase 5 — `implementation` tier (closure)
 
@@ -423,14 +476,16 @@ A few choices that come up often enough to call out:
   the closure walk is overhead you may never recoup.
 - **Skip coverage triangulation indefinitely.** `tagged_tests` alone gives
   intent linkage and the cheap branch-guard check
-  (`requirement_without_test_tag`). Default `mix spec.cover.test` is
-  async-safe and O(codebase) — no serialized run required — but it is still
-  one more command and artifact to keep fresh, and the per-test findings
-  (`branch_guard_untethered_test`) additionally require the opt-in
-  `--per-test` lane, which does force serialization. Teams that do not want
-  either cost simply never run `mix spec.cover.test`/`mix spec.triangle`;
-  there is no config lever to silence the diagnostics because they never run
-  without their input.
+  (`requirement_without_test_tag`). Phase 4a (`mix spec.cover.test`
+  aggregate) is async-safe and O(codebase) — no serialized run and no
+  wiring — but it is still one more command and artifact to keep fresh.
+  Phase 4b (`--per-test`) additionally costs the boundary wiring (one setup
+  line per case template, or `SpecLedEx.Case` for bare modules) and forces
+  serialization; the unhooked remediation notice teaches that wiring lazily
+  when you run `--per-test` without it. Teams that do not want either cost
+  simply never run `mix spec.cover.test`/`mix spec.triangle`; there is no
+  config lever to silence the diagnostics because they never run without
+  their input.
 - **Umbrella projects.** The realization tiers emit `detector_unavailable` with
   reason `umbrella_unsupported`; tagged tests, ADR governance, overlap
   detection, and append-only checks all still work. Do not gate this on a
