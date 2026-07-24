@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-24T19:18:44Z",
+  "description": "F27: FormatterTest async: true while mutating a production-read Application global + asserting exact stderr line counts. F28: MfaLinesTest async: true while flipping VM-global :debug_info. F30: 175-line per_test_requirement_reach/3 engine has no direct unit test. F38: the rewrite dropped the only assertion that a counters-harvested diagnostic marks the envelope degraded via a boundary row (note: 731b686 added a harvest-only degraded_reasons test — verify whether it fully restores this evidence before writing more). F31: five untested defensive branches (nil-source silently drops coverage). Report F27/F28/F30/F38/F31.",
+  "id": "specled_-dn4.7",
+  "labels": [],
+  "parent": "specled_-dn4",
+  "priority": 2,
+  "status": "open",
+  "title": "Coverage test isolation + missing evidence (F27, F28, F30, F38, F31)",
+  "type": "task",
+  "updated_at": "2026-07-24T19:18:44Z"
+}
