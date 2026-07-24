@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.6.2 — 2026-07-24
+
+- The streaming attribution sidecar (`specled_attr_*.jsonl`) and every other
+  cross-VM-visible temp path in `lib/` — command temp scripts, forensic
+  capture logs, ADR/diff parse temps, the base-view temp root — now derive
+  uniqueness from the new `SpecLedEx.TempName.cross_vm_suffix/0` (OS pid +
+  48 bits of entropy) instead of the VM-local `System.unique_integer/1`.
+  This closes the collision class where a nested or parallel specled run
+  sharing tmp could delete or truncate another run's in-flight file: for the
+  sidecar, a completed merged run silently degraded to shared fate with mass
+  `tagged_tests_cover_not_executed` warnings (observed in the wild as a
+  266-finding anomaly that was clean on serial re-run). The compile tracer
+  inlines a dependency-free pid+counter variant because sibling specled
+  modules are not loadable inside a host project's compile. Durable policy
+  recorded in ADR `specled.decision.cross_vm_temp_names`; a new must
+  requirement + scenario pin the sidecar name shape. (specled_-hyt)
+
 ## 0.6.1 — 2026-07-24
 
 - CI now arms the coverage gate: both test-matrix legs run `mix test --include

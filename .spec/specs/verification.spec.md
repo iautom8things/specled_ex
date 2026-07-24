@@ -15,6 +15,7 @@ status: active
 summary: Validates authored specs, checks references, derives findings, and writes state.
 surface:
   - lib/specled_ex/verifier.ex
+  - lib/specled_ex/temp_name.ex
   - lib/specled_ex/verification_strength.ex
   - lib/specled_ex/tag_findings.ex
   - lib/specled_ex/decision_parser.ex
@@ -28,11 +29,13 @@ realized_by:
     - "SpecLedEx.VerificationStrength.default/0"
     - "SpecLedEx.VerificationStrength.levels/0"
     - "SpecLedEx.TagFindings.findings/1"
+    - "SpecLedEx.TempName.cross_vm_suffix/0"
 decisions:
   - specled.decision.declarative_current_truth
   - specled.decision.file_backed_linked_strength
   - specled.decision.explicit_subject_ownership
   - specled.decision.tempfile_command_execution
+  - specled.decision.cross_vm_temp_names
   - specled.decision.configurable_test_tag_enforcement
   - specled.decision.tagged_tests_file_selectors
   - specled.decision.verification_runtime_config
@@ -81,7 +84,8 @@ decisions:
 - id: specled.verify.command_temp_names_cross_vm_unique
   statement: >
     Command verification temp file names shall be collision-proof across
-    concurrently running BEAM VMs (OS pid plus random entropy), so one
+    concurrently running BEAM VMs (OS pid plus random entropy, via the
+    shared SpecLedEx.TempName.cross_vm_suffix/0 helper), so one
     specled run's cleanup can never delete another run's in-flight temp
     scripts and misattribute the resulting failure to an innocent subject.
   priority: must

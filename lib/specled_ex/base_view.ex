@@ -128,7 +128,7 @@ defmodule SpecLedEx.BaseView do
   defp with_temp_root(fun) do
     temp_root =
       System.tmp_dir!()
-      |> Path.join("specled_base_view_#{System.unique_integer([:positive, :monotonic])}")
+      |> Path.join("specled_base_view_#{SpecLedEx.TempName.cross_vm_suffix()}")
 
     File.rm_rf!(temp_root)
     File.mkdir_p!(temp_root)

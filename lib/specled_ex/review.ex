@@ -741,7 +741,7 @@ defmodule SpecLedEx.Review do
 
   defp parse_decision_content(content, file) do
     tmp_dir = System.tmp_dir!()
-    tmp = Path.join(tmp_dir, "specled_adr_#{System.unique_integer([:positive])}.md")
+    tmp = Path.join(tmp_dir, "specled_adr_#{SpecLedEx.TempName.cross_vm_suffix()}.md")
     File.write!(tmp, content)
 
     try do

@@ -333,7 +333,13 @@ defmodule SpecLedEx.Compiler.Tracer do
   defp live_caller?(_other, _live_modules), do: false
 
   defp write_atomic(path, binary) do
-    tmp = "#{path}.tmp.#{System.unique_integer([:positive])}"
+    # Inlined cross-VM-unique scheme rather than SpecLedEx.TempName: the
+    # tracer executes inside a host project's compile, where sibling specled
+    # modules may not be loadable (Mix prunes undeclared deps from the code
+    # path). OS pid separates concurrent VMs; unique_integer suffices within
+    # one VM, and there is no cross-run cleanup here that could delete a
+    # colliding leftover.
+    tmp = "#{path}.tmp.#{System.pid()}_#{System.unique_integer([:positive])}"
     File.write!(tmp, binary)
     File.rename!(tmp, path)
   end

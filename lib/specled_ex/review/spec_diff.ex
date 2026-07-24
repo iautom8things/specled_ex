@@ -75,7 +75,7 @@ defmodule SpecLedEx.Review.SpecDiff do
         tmp =
           Path.join(
             System.tmp_dir!(),
-            "specled_diff_#{System.unique_integer([:positive])}.spec.md"
+            "specled_diff_#{SpecLedEx.TempName.cross_vm_suffix()}.spec.md"
           )
 
         File.write!(tmp, content)
