@@ -294,7 +294,7 @@ Merge gate:
 - [ ] Auditor APPROVE comment on the ticket
 ```
 
-## phase4 — Coverage triangulation
+## phase4 — Coverage triangulation (aggregate / 4a)
 
 ```
 Advances: <every subject opting into triangulation>
@@ -327,11 +327,75 @@ Out of Scope (intent):
 - Do not add `@tag spec_triangulation: :indirect` blindly — only on tests
   that legitimately exercise more subjects than they tag.
 - Do not add a `test_helper.exs` formatter wiring step under any framing.
+- Per-test boundary wiring is a separate optional ticket (phase-4b) —
+  do not land case-template setup lines here.
 
 Merge gate:
 - [ ] No formatter wiring present in test_helper.exs
 - [ ] CI runs `mix spec.cover.test` on its own step
 - [ ] `mix spec.triangle --all` exits 0
+- [ ] Auditor APPROVE comment on the ticket
+```
+
+## phase-4b — Per-test boundary wiring (optional)
+
+Emit this ticket when the user wants coverage **and** `realized_by` — the
+skill pushes for phase 4b in that case. Skip when coverage triangulation is
+opted out, or when the user wants aggregate-only (Phase 4a) without exclusive
+per-test attribution. See [`docs/adoption.md`](../../../docs/adoption.md)
+Phase 4b and [adoption-phases.md](adoption-phases.md) Phase 4b.
+
+Detect existing wiring before emitting (skip if already present):
+
+```bash
+grep -rE 'per_test_boundary|SpecLedEx\.Case' test/support test/ --include='*.ex' --include='*.exs'
+```
+
+```
+Advances: <every subject opting into triangulation / per-test attribution>
+
+Deliverable:
+1. Wire the per-test boundary hook into every case template used by the
+   suite. Prefer composing into existing case templates:
+
+   setup {SpecLedEx.Coverage, :per_test_boundary}
+
+   For bare ExUnit.Case modules, use SpecLedEx.Case instead.
+2. Do NOT wire SpecLedEx.Coverage.Formatter into test/test_helper.exs —
+   that remains an inert anti-pattern (one stderr notice, no artifact).
+3. Run `mix spec.cover.test --per-test` once green with a non-degraded
+   envelope (degraded: false; no unhooked-module notices on stderr).
+
+Verification:
+- Tests to pass: `mix test` still green; `mix spec.cover.test --per-test`
+  exits 0 with a non-degraded envelope.
+- Behaviors to demonstrate: every case template includes the boundary hook;
+  unhooked-module remediation notices are absent after the green run.
+
+Out of Scope (files):
+- lib/**/*
+- test/test_helper.exs   # formatter wiring never belongs here
+- .spec/specs/**/*.spec.md
+- .github/workflows/**/*  # CI capture step is phase4 (aggregate)
+Allowed touches:
+- test/support/**/*
+- test/**/*_case.ex
+- test/**/*_case.exs
+- other case-template modules under test/ that the suite uses
+
+Out of Scope (intent):
+- No product/library behavior changes — wiring only.
+- Do not weaken or reverse the Formatter-in-test_helper anti-pattern.
+- Aggregate capture (phase4 / 4a) and CI capture step are separate; this
+  ticket only lands the boundary hook for exclusive per-test attribution.
+- The hook no-ops when unarmed — leaving or removing setup lines are both
+  safe escape hatches.
+
+Merge gate:
+- [ ] Boundary hook present in every case template
+- [ ] No SpecLedEx.Coverage.Formatter wiring in test_helper.exs
+- [ ] `mix spec.cover.test --per-test` green with non-degraded envelope
+- [ ] Notices clean (no unhooked-module remediation lines)
 - [ ] Auditor APPROVE comment on the ticket
 ```
 
@@ -467,14 +531,21 @@ children, then serially advances through phase2..6.
 
 When the user opts out of a tier:
 
-- `implementation` skipped → omit phase5 ticket; wire phase4 → phase6 directly.
-- coverage triangulation skipped → omit phase4 ticket. No config edit is
-  needed or possible: `branch_guard.severities` has no effect on
-  `branch_guard_untested_realization`, `branch_guard_untethered_test`, or
+- `implementation` skipped → omit phase5 ticket; wire phase4 → phase6 directly
+  (and omit phase-4b if it was going to be emitted).
+- coverage triangulation skipped → omit phase4 **and** phase-4b tickets. No
+  config edit is needed or possible: `branch_guard.severities` has no effect
+  on `branch_guard_untested_realization`, `branch_guard_untethered_test`, or
   `branch_guard_underspecified_realization` — they are fixed-severity
   diagnostics printed only by `mix spec.triangle`/`mix spec.review`, never
   read from `.spec/config.yml` and never part of the `mix spec.check`
   gate. Skipping the phase means the team simply never runs `mix
   spec.cover.test` / `mix spec.triangle`.
-- Umbrella project → omit phase4 and phase5; cap target_phase at phase3 or
-  phase6 (with reduced severities — only test_tags and append_only graduate).
+- coverage triangulation on, but per-test attribution not wanted → emit
+  phase4 (aggregate / 4a) only; omit phase-4b.
+- coverage + `realized_by` both wanted → emit phase4 **and** the optional
+  phase-4b wiring ticket (skill pushes for 4b); wire phase4 → phase-4b →
+  next phase.
+- Umbrella project → omit phase4, phase-4b, and phase5; cap target_phase at
+  phase3 or phase6 (with reduced severities — only test_tags and append_only
+  graduate).

@@ -26,7 +26,7 @@ reflecting any change to what this subject verifies.
 id: specled.package
 kind: package
 status: active
-summary: Elixir package for Spec Led Development. Provides Mix tasks to scaffold, orient, index, guide, validate, summarize, and strictly check authored specs.
+summary: Elixir package for Spec Led Development. Provides Mix tasks to scaffold, orient, index, guide, validate, summarize, and strictly check authored specs. Docs include coverage capture (docs/coverage.md), including the per-test boundary-hook wiring subsection and Stage-2 auditor/unhooked-degrade claim (exact up to escaped processes).
 surface:
   - README.md
   - CHANGELOG.md
@@ -85,7 +85,7 @@ decisions:
   priority: must
   stability: stable
 - id: specled.package.adoption_guide
-  statement: The package shall provide an adoption guide at `docs/adoption.md` that walks both the greenfield path (starting from `mix new`) and the brownfield path (bolting onto an existing tree), and that names the severity-graduation step where `branch_guard` and `guardrails` codes move from `:warning` to `:error`.
+  statement: The package shall provide an adoption guide at `docs/adoption.md` that walks both the greenfield path (starting from `mix new`) and the brownfield path (bolting onto an existing tree), that names the severity-graduation step where `branch_guard` and `guardrails` codes move from `:warning` to `:error`, and that splits coverage triangulation into Phase 4a (aggregate, zero wiring) and Phase 4b (per-test attribution, opt-in boundary wiring).
   priority: must
   stability: evolving
 - id: specled.package.concepts_guide

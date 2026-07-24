@@ -43,10 +43,12 @@ realized_by:
     - "SpecLedEx.CoverageTriangulation.findings/3"
     - "SpecLedEx.CoverageTriangulation.envelope_findings/3"
     - "SpecLedEx.CoverageTriangulation.aggregate_requirement_reach/2"
+    - "SpecLedEx.CoverageTriangulation.per_test_requirement_reach/3"
     - "SpecLedEx.Review.CoverageClosure.build_v2/2"
     - "SpecLedEx.CoverageTriangulation.execution_reach_map/2"
 decisions:
   - specled.decision.aggregate_first_spec_coverage
+  - specled.decision.per_test_sync_boundary
 ```
 
 ## Requirements
@@ -176,10 +178,15 @@ decisions:
   stability: evolving
 - id: specled.triangulation.envelope_async_contaminated
   statement: >-
-    Given a `:per_test` v2 envelope with `degraded: true` (the `--per-test`
-    lane's async-contamination guard), `envelope_findings/3` shall emit a
-    single `detector_unavailable` finding with reason `async_contaminated`
-    instead of computing per-test findings over data that may be corrupted.
+    Given a `:per_test` v2 envelope degraded by a window-invalidating
+    reason (`:async` or `:counters_harvested` in
+    `Store.degraded_reasons/1`, including the legacy no-reasons fallback),
+    `envelope_findings/3` shall emit a single `detector_unavailable`
+    finding with reason `async_contaminated` — with cause-accurate message
+    text per reason — instead of computing per-test findings over data
+    that may be corrupted. An unhooked-only degrade
+    (`degraded_reasons == [:unhooked]`) keeps its hooked windows
+    trustworthy: the detectors shall still run over the hooked payload.
     A non-degraded `:per_test` envelope shall delegate its `:payload` to
     `findings/3` unchanged.
   priority: must
@@ -193,6 +200,20 @@ decisions:
     requirement's closure MFAs with the envelope's `:mfas` list, and
     `line_coverage_pct` computed from the envelope's `:files` entries whose
     module is reached by an intersecting covered MFA.
+  priority: must
+  stability: evolving
+- id: specled.triangulation.per_test_requirement_reach
+  statement: >-
+    `per_test_requirement_reach/3` shall return, per `{subject_id,
+    requirement_id}`, MFA-level reach over per-test coverage records and a
+    `SpecLedEx.Coverage.MfaLines` line index: an MFA is covered by test T
+    iff T's record for the MFA's source file intersects the MFA's line set;
+    `covered_mfas` / `uncovered_mfas` / `executed_mfa_count` /
+    `reaching_tests` all derive from that same intersection. MFAs whose
+    module is `:no_debug_info` (or whose `{fun, arity}` is absent from the
+    index) land in `no_debug_info_mfas`, never silently as uncovered via a
+    file-level proxy. The v1 file-level `per_requirement_reach/2` remains
+    for the v1 path and is not replaced by this function.
   priority: must
   stability: evolving
 ```
@@ -277,11 +298,12 @@ decisions:
     - specled.triangulation.envelope_aggregate_underspecified_realization
 - id: specled.triangulation.scenario.envelope_per_test_async_contaminated
   given:
-    - "a `:per_test` envelope with `degraded: true`"
+    - "a `:per_test` envelope degraded by a window-invalidating reason (`[:async]`, `[:counters_harvested]`, or legacy `degraded: true` without reasons meta)"
   when:
     - CoverageTriangulation.envelope_findings/3 is called
   then:
-    - "the returned list is exactly one `detector_unavailable` finding with reason `async_contaminated`"
+    - "the returned list is exactly one `detector_unavailable` finding with reason `async_contaminated`, its message naming the actual cause"
+    - "an unhooked-only envelope (`degraded_reasons == [:unhooked]`) instead runs the detectors over its hooked payload"
   covers:
     - specled.triangulation.envelope_async_contaminated
 - id: specled.triangulation.scenario.aggregate_reach_covered_uncovered_split
@@ -294,6 +316,18 @@ decisions:
     - "`line_coverage_pct` reflects the envelope `:files` entries for modules reached by a covered closure MFA"
   covers:
     - specled.triangulation.aggregate_requirement_reach_mfa_intersection
+- id: specled.triangulation.scenario.per_test_reach_line_intersection
+  given:
+    - "hand-built per-test records with lines_hit and a stub MfaLines line index"
+    - "a closure map whose requirements declare closure_mfas for those modules"
+  when:
+    - CoverageTriangulation.per_test_requirement_reach/3 is called (via CoverageClosure.build_v2/2 :per_test)
+  then:
+    - "an MFA is covered only when a test's lines_hit intersects that MFA's line set (not merely any hit in the source file)"
+    - "reaching_tests and executed-strength tagged tests derive from the same intersection"
+    - "modules marked :no_debug_info surface in no_debug_info_mfas, not covered or uncovered"
+  covers:
+    - specled.triangulation.per_test_requirement_reach
 ```
 
 ## Verification
@@ -331,4 +365,5 @@ decisions:
     - specled.triangulation.envelope_aggregate_underspecified_realization
     - specled.triangulation.envelope_async_contaminated
     - specled.triangulation.aggregate_requirement_reach_mfa_intersection
+    - specled.triangulation.per_test_requirement_reach
 ```

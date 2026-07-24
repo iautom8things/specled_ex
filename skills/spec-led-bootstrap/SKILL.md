@@ -147,6 +147,9 @@ grep -rE '@(tag|moduletag)\s+spec:' test/ 2>/dev/null | head -5
 ls .spec/_coverage/per_test.coverdata 2>/dev/null
 grep -rE 'mix spec\.cover\.(test|ingest)' .github/ 2>/dev/null
 
+# phase 4b — per-test boundary hook wired in case templates?
+grep -rE 'per_test_boundary|SpecLedEx\.Case' test/support test/ --include='*.ex' --include='*.exs'
+
 # CI integration?
 grep -rE 'mix spec\.(check|cover\.test)' .github/ 2>/dev/null
 ```
@@ -156,7 +159,10 @@ detection signal — since epic `specled_-155`, wiring the formatter there is
 the anti-pattern this package's own docs used to (wrongly) instruct, and a
 bare wiring is inert by design (one stderr notice, no artifact) rather than
 a sign of adoption. Detect phase4 from the artifact's existence and CI
-actually running the capture step instead.
+actually running the capture step instead. Detect **phase 4b** (per-test
+wiring) only via the pinned `per_test_boundary|SpecLedEx.Case` grep above —
+it is orthogonal to the aggregate phase4 ladder step and does not raise
+`current_phase` past 4 on its own.
 
 Each line answered "yes" raises the inferred current phase by one. Compute
 the **current_phase** as the highest phase whose preconditions all hold,
@@ -166,7 +172,8 @@ floor at 0:
 - **phase1** — at least one non-draft subject with `surface:`
 - **phase2** — at least one subject with `realized_by.api_boundary:`
 - **phase3** — `test_tags.enabled: true` AND at least one `@tag spec:`
-- **phase4** — `.spec/_coverage/per_test.coverdata` produced at least once AND CI runs `mix spec.cover.test` (or `spec.cover.ingest`)
+- **phase4** — `.spec/_coverage/per_test.coverdata` produced at least once AND CI runs `mix spec.cover.test` (or `spec.cover.ingest`) (aggregate / 4a)
+- **phase4b** — (orthogonal signal, not a ladder step) boundary hook present: non-empty `grep -rE 'per_test_boundary|SpecLedEx\.Case' test/support test/ --include='*.ex' --include='*.exs'`
 - **phase5** — at least one subject with `realized_by.implementation:`
 - **phase6** — `test_tags.enforcement: error` AND `branch_guard.severities.*: error` raised on the high-trust codes
 
@@ -236,7 +243,7 @@ version:
 | phase1  | Carve N subjects with `surface:`, `status: draft`.         | 1–2 PRs        |
 | phase2  | `realized_by.api_boundary:` on every subject; status active; CI gate (`spec.check --base` + `spec.review` artifact). | 1 PR per subject cluster |
 | phase3  | Test-tag scanner enabled (warning); start tagging tests.   | Ongoing        |
-| phase4  | Coverage formatter wired; full triangle online.            | 1 PR + CI wire |
+| phase4  | Aggregate coverage capture + CI step; triangle diagnostics online (4a; zero wiring). Optional 4b: boundary hook per case template for exclusive per-test attribution. | 1 PR + CI wire (+ optional wiring PR) |
 | phase5  | `realized_by.implementation:` for refactor-heavy subjects. | Optional       |
 | phase6  | Severities graduated to error; lock down.                  | 1 PR after green |
 
@@ -253,7 +260,12 @@ Also surface the **configurable levers** so the user can opt out of tiers
 they will never use (see [references/configurable-levers.md](references/configurable-levers.md)):
 
 - Skip `implementation` tier indefinitely if churn is mostly new features.
-- Skip coverage triangulation indefinitely if the test suite is already slow.
+- Skip coverage triangulation indefinitely if the test suite is already slow
+  — that opts out of **both** lanes: aggregate (4a / `mix spec.cover.test`)
+  and per-test (4b / `--per-test` + boundary wiring). When coverage stays
+  **on** and the user also wants `realized_by`, the skill pushes for the
+  optional phase-4b wiring ticket (exclusive per-test attribution); otherwise
+  4a alone is enough.
 - Umbrella project? The `realized_by` tiers degrade to
   `detector_unavailable :umbrella_unsupported`; tagged-tests and ADR
   governance still work — bootstrap should target phase3, not phase4.
@@ -378,7 +390,7 @@ Each phase becomes one ticket, **created as a child of `$EPIC`**, with
 dependencies wired so `orchestrate-epic`'s DAG drives them in order:
 
 ```
-phase0  →  phase1  →  phase2  →  phase3  →  phase4  →  phase5  →  phase6
+phase0  →  phase1  →  phase2  →  phase3  →  phase4  →  [phase-4b?]  →  phase5  →  phase6
 ```
 
 Stop at `target_phase` — do not create tickets past it.
@@ -394,12 +406,33 @@ Each carries `Advances: <subject.id>` for its cluster only. This lets
 `/orchestrate-epic` parallelize across subjects while the phase1 parent
 gates phase2.
 
+**phase-4b wiring ticket (conditional).** When emitting phase4 (aggregate /
+4a) **and** the user wants coverage **and** `realized_by`, also emit the
+optional phase-4b wiring ticket from
+[references/task-templates.md](references/task-templates.md) and wire
+`phase4 → phase-4b → next`. The skill **pushes** for 4b in that case
+(exclusive per-test attribution is the payoff of having both coverage and
+bindings). Omit phase-4b when:
+
+- coverage triangulation is skipped entirely (both 4a and 4b), or
+- the user wants aggregate-only coverage without per-test attribution, or
+- detection already shows the 4b signal (hook present — no re-wire ticket).
+
+Detect 4b wiring with the pinned grep (see detection matrix):
+
+```bash
+grep -rE 'per_test_boundary|SpecLedEx\.Case' test/support test/ --include='*.ex' --include='*.exs'
+```
+
 ### 4.3 Dependency wiring
 
 ```bash
 bw dep add <phase0-id> blocks <phase1-id>
 bw dep add <phase1-id> blocks <phase2-id>
 # ... up to target
+# when phase-4b is emitted:
+# bw dep add <phase4-id> blocks <phase-4b-id>
+# bw dep add <phase-4b-id> blocks <next-phase-id>
 ```
 
 Within phase1's fan-out, all sub-tickets block the phase1 parent's close
@@ -409,20 +442,26 @@ parent and depend phase2 on the fan-out).
 ### 4.4 Per-tier opt-out handling
 
 - `implementation` skipped → omit the phase5 ticket entirely.
-- `coverage triangulation` skipped → omit phase4 ticket. There is no
-  `.spec/config.yml` opt-out to write for `branch_guard_untested_realization`,
-  `branch_guard_untethered_test`, or `branch_guard_underspecified_realization`
-  — they are `mix spec.triangle`/`mix spec.review`-only diagnostics with
-  fixed severities, never part of the `mix spec.check` gate, so
+- `coverage triangulation` skipped → omit phase4 **and** phase-4b tickets.
+  There is no `.spec/config.yml` opt-out to write for
+  `branch_guard_untested_realization`, `branch_guard_untethered_test`, or
+  `branch_guard_underspecified_realization` — they are
+  `mix spec.triangle`/`mix spec.review`-only diagnostics with fixed
+  severities, never part of the `mix spec.check` gate, so
   `branch_guard.severities` has no effect on them. Skipping the phase means
-  simply never running `mix spec.cover.test` / `mix spec.triangle`; note
-  this in the phase3 ticket instead of a config edit.
+  simply never running `mix spec.cover.test` / `mix spec.triangle` (both the
+  aggregate 4a lane and the per-test 4b lane); note this in the phase3
+  ticket instead of a config edit.
+- coverage on, aggregate-only → emit phase4; omit phase-4b.
+- coverage on **and** `realized_by` wanted → emit phase4 and **push** the
+  optional phase-4b wiring ticket (unless the 4b detection signal is already
+  present).
 - Umbrella → phase2 ticket includes the note that `realized_by` tiers will
-  emit `detector_unavailable :umbrella_unsupported`; omit the phase4/5
-  tickets when the capability probe confirms the degrade (run
-  `mix spec.check` once and look for `detector_unavailable` findings with
-  reason `umbrella_unsupported` — probe the installed dep's behavior, not
-  its version string).
+  emit `detector_unavailable :umbrella_unsupported`; omit the phase4 /
+  phase-4b / phase5 tickets when the capability probe confirms the degrade
+  (run `mix spec.check` once and look for `detector_unavailable` findings
+  with reason `umbrella_unsupported` — probe the installed dep's behavior,
+  not its version string).
 - Pre-ledger workspace (detection 1.2) → insert the migration ticket from
   [references/task-templates.md](references/task-templates.md) after
   phase0 and wire it to block phase1+.

@@ -84,7 +84,8 @@ defmodule SpecLedEx.Coverage.Store do
   #       files: [term()],
   #       mfas: [term()],
   #       payload: term(),
-  #       degraded: boolean()
+  #       degraded: boolean(),
+  #       meta: map()   # additive; older artifacts default to %{}
   #     }
   #
   # This module owns the envelope container, validation, and read/write
@@ -120,7 +121,8 @@ defmodule SpecLedEx.Coverage.Store do
           files: [term()],
           mfas: [term()],
           payload: term(),
-          degraded: boolean()
+          degraded: boolean(),
+          meta: map()
         }
 
   @doc """
@@ -128,7 +130,8 @@ defmodule SpecLedEx.Coverage.Store do
 
   `:mode`, `:source`, `:files`, `:mfas`, and `:payload` are required.
   `:generated_at` defaults to `DateTime.utc_now/0`; `:degraded` defaults to
-  `false`. `:version` is always #{@v2_version} and cannot be overridden.
+  `false`; `:meta` defaults to `%{}`. `:version` is always #{@v2_version}
+  and cannot be overridden.
   """
   @spec build_envelope(map()) :: envelope()
   def build_envelope(fields) when is_map(fields) do
@@ -140,9 +143,45 @@ defmodule SpecLedEx.Coverage.Store do
       files: fetch!(fields, :files),
       mfas: fetch!(fields, :mfas),
       payload: fetch!(fields, :payload),
-      degraded: Map.get(fields, :degraded, false)
+      degraded: Map.get(fields, :degraded, false),
+      meta: Map.get(fields, :meta, %{})
     }
   end
+
+  @doc """
+  The recorded provenance of a degraded v2 envelope.
+
+  Returns the `meta.degraded_reasons` list (`:async` |
+  `:counters_harvested` | `:unhooked`) the formatter wrote. `:async` and
+  `:counters_harvested` invalidate the hooked windows themselves;
+  `:unhooked` only omits the unhooked tests' coverage from the payload.
+
+  Legacy artifacts written before `meta.degraded_reasons` existed fall back
+  to the old single-consumer inference: unhooked-modules meta present means
+  unhooked-only, otherwise assume the async guard fired. Returns `[]` for a
+  non-degraded envelope.
+  """
+  @spec degraded_reasons(envelope() | map()) :: [atom()]
+  def degraded_reasons(%{degraded: true} = envelope) do
+    meta = if is_map(Map.get(envelope, :meta)), do: envelope.meta, else: %{}
+
+    case Map.get(meta, :degraded_reasons) || Map.get(meta, "degraded_reasons") do
+      reasons when is_list(reasons) and reasons != [] ->
+        Enum.map(reasons, &normalize_reason/1)
+
+      _ ->
+        unhooked = Map.get(meta, :unhooked_modules) || Map.get(meta, "unhooked_modules")
+        if is_list(unhooked) and unhooked != [], do: [:unhooked], else: [:async]
+    end
+  end
+
+  def degraded_reasons(_envelope), do: []
+
+  defp normalize_reason(reason) when is_atom(reason), do: reason
+  defp normalize_reason("async"), do: :async
+  defp normalize_reason("counters_harvested"), do: :counters_harvested
+  defp normalize_reason("unhooked"), do: :unhooked
+  defp normalize_reason(other), do: other
 
   @doc """
   Writes a v2 envelope to `path` as ETF.
@@ -289,7 +328,9 @@ defmodule SpecLedEx.Coverage.Store do
 
   defp classify_v2(%{version: @v2_version} = envelope) do
     if Enum.all?(@v2_required_fields, &Map.has_key?(envelope, &1)) do
-      {:ok, envelope}
+      # `:meta` is additive — older artifacts written before Stage 1 default
+      # to an empty map rather than failing the read.
+      {:ok, Map.put_new(envelope, :meta, %{})}
     else
       {:error, :invalid_artifact}
     end

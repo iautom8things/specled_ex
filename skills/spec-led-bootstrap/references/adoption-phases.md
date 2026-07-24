@@ -11,7 +11,8 @@ escape hatches look like, and what "done" means for a stage ticket.
 | 1     | Subjects with `surface:` enable file-touch guard | Yes         | "I want some visibility"        |
 | 2     | `api_boundary` hashes detect surface drift       | Yes         | Common stopping point           |
 | 3     | Test tags enforce intent linkage                 | Yes         | After phase2 stabilizes         |
-| 4     | Coverage triangulation closes the third side (diagnostic-only — `mix spec.triangle`/`mix spec.review`, not a `spec.check` gate) | Yes | Full-triangle targets |
+| 4a    | Aggregate coverage triangulation (diagnostic-only — `mix spec.triangle`/`mix spec.review`, not a `spec.check` gate; zero wiring) | Yes | Full-triangle targets |
+| 4b    | Per-test attribution (opt-in boundary hook in every case template) | Yes | When coverage AND `realized_by` both wanted |
 | 5     | `implementation` tier catches body drift         | Yes         | Refactor-heavy codebases only   |
 | 6     | Severities → error; CI hard-fails on drift       | Hard to undo | Mature adoption                 |
 
@@ -151,15 +152,15 @@ scanner can be disabled with `test_tags.enabled: false`.
 - `mix spec.check` runs the tag scanner without parse errors
 - No backlog mandate — tagging is opportunistic from here
 
-## Phase 4 — Coverage triangulation
+## Phase 4a — Aggregate coverage (diagnostic-only, zero wiring)
 
 **Adds:** `mix spec.cover.test` run regularly (locally and/or in CI); the
 third side of the triangle. No `test/test_helper.exs` wiring — never add
 `SpecLedEx.Coverage.Formatter` there, it is inert unless `mix
 spec.cover.test` itself arms it (one stderr notice, no artifact, if you
 wire it anyway). Default mode is aggregate (no serialized run, no
-async-config changes); `--per-test` is an additional opt-in for
-observed/approximate per-test attribution. See
+async-config changes). See
+[`docs/adoption.md`](../../../docs/adoption.md) Phase 4a and
 [`docs/coverage.md`](../../../docs/coverage.md) in the specled_ex repo for
 the full contract.
 
@@ -189,6 +190,48 @@ the cost, simply never run `mix spec.cover.test` / `mix spec.triangle` and
 skip this ticket entirely — there is no config opt-out to author, because
 `.spec/config.yml` has no effect on whether these diagnostics print. The
 bootstrap epic accommodates this by omitting the ticket.
+
+## Phase 4b — Per-test attribution (opt-in, wiring cost named)
+
+Phase 4a is enough for file-level and subject-level triangulation. Opt into
+Phase 4b only when the user wants coverage **and** `realized_by` — exclusive
+per-test attribution (`branch_guard_untethered_test`, per-test "Reached by"
+rows). Authoritative prose:
+[`docs/adoption.md`](../../../docs/adoption.md) Phase 4b.
+
+**Cost:** one setup line per case template (2–4 places in a typical app):
+
+```elixir
+setup {SpecLedEx.Coverage, :per_test_boundary}
+```
+
+For bare `ExUnit.Case` modules, prefer `use SpecLedEx.Case`. Capture with:
+
+```bash
+mix spec.cover.test --per-test
+```
+
+**Gate behavior:** none — still diagnostic-only. Unhooked modules degrade
+honestly (envelope `degraded: true`, per-module stderr notice naming the
+setup line) and never fail the run.
+
+**Escape hatch:** the hook is a no-op when unarmed (plain `mix test` / default
+aggregate capture), so leaving the setup lines is safe; removing them is
+also safe and falls back to Phase 4a aggregate semantics. Manually wiring
+`SpecLedEx.Coverage.Formatter` into `test_helper.exs` remains the inert
+anti-pattern — do not do it.
+
+**Stage-ticket done criteria:**
+- Boundary hook present in every case template
+  (`setup {SpecLedEx.Coverage, :per_test_boundary}` or `use SpecLedEx.Case`)
+- One green local run of `mix spec.cover.test --per-test` produces a
+  non-degraded envelope (`degraded: false`; no unhooked-module notices)
+- Notices clean (stderr has no unhooked-module remediation lines)
+
+**Emission:** optional ticket — emit when the user wants coverage AND
+`realized_by` (the skill pushes for 4b in that case). Detect wiring via the
+pinned 4b signal in [detection-matrix.md](detection-matrix.md). Template:
+[task-templates.md](task-templates.md) phase-4b.
 
 ## Phase 5 — `implementation` tier
 

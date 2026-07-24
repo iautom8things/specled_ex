@@ -18,6 +18,7 @@ defmodule SpecLedEx.Review.CoverageClosureTest do
   # covers: specled.triangulation.envelope_per_test_only_detectors_unavailable
   # covers: specled.triangulation.envelope_aggregate_underspecified_realization
   # covers: specled.triangulation.aggregate_requirement_reach_mfa_intersection
+  # covers: specled.triangulation.per_test_requirement_reach
   # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
   use ExUnit.Case, async: true
 
@@ -27,6 +28,7 @@ defmodule SpecLedEx.Review.CoverageClosureTest do
                "specled.triangulation.envelope_per_test_only_detectors_unavailable",
                "specled.triangulation.envelope_aggregate_underspecified_realization",
                "specled.triangulation.aggregate_requirement_reach_mfa_intersection",
+               "specled.triangulation.per_test_requirement_reach",
                "specled.spec_review.coverage_tab_v2_envelope_data_layer"
              ]
 
@@ -237,14 +239,22 @@ defmodule SpecLedEx.Review.CoverageClosureTest do
       refute req.self_verified?
     end
 
-    test "per_test mode: a tagged test reaches \"executed\" when its own coverage record reaches the closure, and self_verified? composes closure coverage > 0 with an executed tagged test" do
+    test "per_test mode: a tagged test reaches \"executed\" when its own coverage record intersects the MFA line set, and self_verified? composes closure coverage > 0 with an executed tagged test" do
       source = FixtureA.module_info(:compile)[:source] |> List.to_string()
+      # Would fail if CoverageClosure still used the file-level proxy (any
+      # lines_hit on the MFA's source file): hitting a non-MFA line must not
+      # mark FixtureA.run/1 covered. Real line→MFA intersection requires the
+      # hit to fall inside the MFA's line set from the stub index.
+      line_index = %{
+        FixtureA => %{{:run, 1} => MapSet.new([10, 11, 12])},
+        FixtureB => %{{:run, 1} => MapSet.new([20])}
+      }
 
       records = [
         %{
           test_id: "T.t1",
           file: source,
-          lines_hit: [1],
+          lines_hit: [11],
           tags: %{file: "test/a_test.exs", test: "t1"},
           test_pid: self()
         }
@@ -258,15 +268,52 @@ defmodule SpecLedEx.Review.CoverageClosureTest do
       reach =
         CoverageClosure.build_v2(fixture_index(),
           tracer_edges: @edges,
-          envelope: %{mode: :per_test, payload: records},
-          tag_index: tag_index
+          envelope: %{mode: :per_test, payload: records, degraded: false, meta: %{}},
+          tag_index: tag_index,
+          line_index: line_index
         )
 
       req = reach["subject_a"].by_requirement["subject_a.req1"]
 
+      assert reach["subject_a"].status == :ok_per_test
+      assert reach["subject_a"].attribution == :exact
       assert [%{strength: "executed"}] = req.tagged_tests
       assert req.closure_coverage_pct == 100.0
+      assert req.covered_mfas == [@fixture_a_mfa]
       assert req.self_verified?
+    end
+
+    test "per_test mode: a hit on the MFA's source file outside the MFA line set does not cover the MFA (would fail if file-level proxy returned)" do
+      source = FixtureA.module_info(:compile)[:source] |> List.to_string()
+
+      line_index = %{
+        FixtureA => %{{:run, 1} => MapSet.new([10, 11, 12])},
+        FixtureB => %{{:run, 1} => MapSet.new([20])}
+      }
+
+      records = [
+        %{
+          test_id: "T.t1",
+          file: source,
+          # Line 99 is in FixtureA's source file but not in run/1's line set.
+          lines_hit: [99],
+          tags: %{file: "test/a_test.exs", test: "t1"},
+          test_pid: self()
+        }
+      ]
+
+      reach =
+        CoverageClosure.build_v2(fixture_index(),
+          tracer_edges: @edges,
+          envelope: %{mode: :per_test, payload: records, degraded: false, meta: %{}},
+          line_index: line_index
+        )
+
+      req = reach["subject_a"].by_requirement["subject_a.req1"]
+
+      assert req.covered_mfas == []
+      assert req.uncovered_mfas == [@fixture_a_mfa]
+      assert req.closure_coverage_pct == 0.0
     end
 
     test "per_test mode: a tagged test with no reaching coverage record is \"linked\", not \"executed\"" do
@@ -278,14 +325,125 @@ defmodule SpecLedEx.Review.CoverageClosureTest do
       reach =
         CoverageClosure.build_v2(fixture_index(),
           tracer_edges: @edges,
-          envelope: %{mode: :per_test, payload: []},
-          tag_index: tag_index
+          envelope: %{mode: :per_test, payload: [], degraded: false, meta: %{}},
+          tag_index: tag_index,
+          line_index: %{
+            FixtureA => %{{:run, 1} => MapSet.new([10])},
+            FixtureB => %{{:run, 1} => MapSet.new([20])}
+          }
         )
 
       req = reach["subject_a"].by_requirement["subject_a.req1"]
 
       assert [%{strength: "linked"}] = req.tagged_tests
       refute req.self_verified?
+    end
+
+    test "per_test mode: :no_debug_info modules surface as no_debug_info_mfas, not covered or uncovered" do
+      line_index = %{
+        FixtureA => :no_debug_info,
+        FixtureB => %{{:run, 1} => MapSet.new([20])}
+      }
+
+      reach =
+        CoverageClosure.build_v2(fixture_index(),
+          tracer_edges: @edges,
+          envelope: %{mode: :per_test, payload: [], degraded: false, meta: %{}},
+          line_index: line_index
+        )
+
+      req = reach["subject_a"].by_requirement["subject_a.req1"]
+
+      assert req.no_debug_info_mfas == [@fixture_a_mfa]
+      assert req.covered_mfas == []
+      assert req.uncovered_mfas == []
+      # closure_mfa_count still counts the MFA; executed is 0 because nothing
+      # was provably covered — pct is a real 0.0, not the zero-closure sentinel.
+      assert req.closure_mfa_count == 1
+      assert req.closure_coverage_pct == 0.0
+    end
+
+    test "per_test mode: unhooked-degraded envelope stays :ok_per_test with attribution :degraded_unhooked (not :async_contaminated)" do
+      reach =
+        CoverageClosure.build_v2(fixture_index(),
+          tracer_edges: @edges,
+          envelope: %{
+            mode: :per_test,
+            payload: [],
+            degraded: true,
+            meta: %{unhooked_modules: [UnhookedTestModule]}
+          },
+          line_index: %{
+            FixtureA => %{{:run, 1} => MapSet.new([10])},
+            FixtureB => %{{:run, 1} => MapSet.new([20])}
+          }
+        )
+
+      assert reach["subject_a"].status == :ok_per_test
+      assert reach["subject_a"].attribution == :degraded_unhooked
+      assert reach["subject_a"].unhooked_modules == [UnhookedTestModule]
+      refute reach["subject_a"].status == :async_contaminated
+    end
+
+    @tag spec: "specled.spec_review.coverage_async_dominates_unhooked"
+    test "per_test mode: async dominates unhooked — an overlap degrade reports :async_contaminated, never :ok_per_test" do
+      reach =
+        CoverageClosure.build_v2(fixture_index(),
+          tracer_edges: @edges,
+          envelope: %{
+            mode: :per_test,
+            payload: [],
+            degraded: true,
+            meta: %{
+              unhooked_modules: [UnhookedTestModule],
+              degraded_reasons: [:async, :unhooked]
+            }
+          }
+        )
+
+      # Pre-degraded_reasons, non-empty unhooked meta masked the async
+      # contamination and re-published corrupted windows as trustworthy.
+      assert reach["subject_a"] == %{status: :async_contaminated, by_requirement: %{}}
+    end
+
+    @tag spec: "specled.spec_review.coverage_async_dominates_unhooked"
+    test "per_test mode: harvest-only degrade (degraded_reasons [:counters_harvested]) also refuses :ok_per_test" do
+      reach =
+        CoverageClosure.build_v2(fixture_index(),
+          tracer_edges: @edges,
+          envelope: %{
+            mode: :per_test,
+            payload: [],
+            degraded: true,
+            meta: %{degraded_reasons: [:counters_harvested]}
+          }
+        )
+
+      assert reach["subject_a"] == %{status: :async_contaminated, by_requirement: %{}}
+    end
+
+    @tag spec: "specled.spec_review.coverage_async_dominates_unhooked"
+    test "per_test mode: explicit unhooked-only degraded_reasons stays :ok_per_test with attribution :degraded_unhooked" do
+      reach =
+        CoverageClosure.build_v2(fixture_index(),
+          tracer_edges: @edges,
+          envelope: %{
+            mode: :per_test,
+            payload: [],
+            degraded: true,
+            meta: %{
+              unhooked_modules: [UnhookedTestModule],
+              degraded_reasons: [:unhooked]
+            }
+          },
+          line_index: %{
+            FixtureA => %{{:run, 1} => MapSet.new([10])},
+            FixtureB => %{{:run, 1} => MapSet.new([20])}
+          }
+        )
+
+      assert reach["subject_a"].status == :ok_per_test
+      assert reach["subject_a"].attribution == :degraded_unhooked
     end
   end
 

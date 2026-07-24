@@ -188,9 +188,14 @@ defmodule Mix.Tasks.Spec.Cover.Test do
     Application.ensure_all_started(:ex_unit)
     ExUnit.configure(async: false)
 
-    # Arms SpecLedEx.Coverage.Formatter -- see its moduledoc. Without this,
-    # installing it below is inert.
-    Application.put_env(:specled_ex, :spec_cover_run, true)
+    # Arms SpecLedEx.Coverage.Formatter and the per-test boundary hook via
+    # the keyword form of the arming seam (merged over production defaults
+    # — see Formatter moduledoc). Without this, installing the formatter
+    # below is inert and setup {SpecLedEx.Coverage, :per_test_boundary}
+    # no-ops. The public anonymous ETS table carries hooked tests' exclusive
+    # [head, tail] window rows for Formatter.flush/1 to prefer.
+    boundary_table = :ets.new(:anon, [:public, :set])
+    Application.put_env(:specled_ex, :spec_cover_run, boundary_table: boundary_table)
 
     # Ensure the formatter module is resident before ExUnit boots its
     # formatter GenServers; in a child BEAM (fixture run) the parent app's
@@ -199,6 +204,8 @@ defmodule Mix.Tasks.Spec.Cover.Test do
     {:module, _} = Code.ensure_loaded(SpecLedEx.Coverage.Store)
     {:module, _} = Code.ensure_loaded(SpecLedEx.Coverage.Snapshot)
     {:module, _} = Code.ensure_loaded(SpecLedEx.Coverage)
+    {:module, _} = Code.ensure_loaded(SpecLedEx.Coverage.Boundary)
+    {:module, _} = Code.ensure_loaded(SpecLedEx.Case)
 
     install_formatter()
 

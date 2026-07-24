@@ -112,6 +112,10 @@
       "hash": "5aa09417ee10b1d22f9d0284babdf2d209c06db59f02d903f5c747d5f02e1244",
       "hasher_version": 1
     },
+    "SpecLedEx.Case": {
+      "hash": "b6f29877fd434fa85570fdcc5c51477f8ccc4dfde030870f8ed5553eb3663b19",
+      "hasher_version": 1
+    },
     "SpecLedEx.ChangeAnalysis.analyze/3": {
       "hash": "82a11f36dbf7d15fe5b3b42cb805a1e1dae45e6d9f0b8be7a5e944db25707d8e",
       "hasher_version": 1
@@ -193,11 +197,19 @@
       "hasher_version": 1
     },
     "SpecLedEx.Coverage": {
-      "hash": "a3e32221f2cb6a98beee662944453d492eb80984fc2587f716f66fddc72b2cf5",
+      "hash": "4f09db5862b2632247879ef76e2430ccc2a6928f8573232385b1cb9e0c6a38a0",
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.Aggregate.ingest/2": {
       "hash": "193f4e4b6a5e308e5fc832e940be940ed30f033bfe7aa614f87631b4212adf07",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.Boundary.head/1": {
+      "hash": "4f48980ece314fa72c7970c84295376ad95ad2374d84727aeac6dce74df38eb5",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.Boundary.tail/3": {
+      "hash": "d79cc805bf8d39037566b61af73b617287bb946da89c84ff4e581771a6b547d6",
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.Formatter": {
@@ -214,6 +226,10 @@
     },
     "SpecLedEx.Coverage.MfaKey.parse/1": {
       "hash": "91c2678b0d75ad03bed24765f408db8c92bee6c242d3a7a103f7e9fa408f8225",
+      "hasher_version": 1
+    },
+    "SpecLedEx.Coverage.MfaLines.index/1": {
+      "hash": "1cc3de28fe53b2f8b095767c95e1fe837230b816f6119c4c6e46514e3bfec99c",
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.Snapshot.classic_snapshot/1": {
@@ -296,6 +312,10 @@
       "hash": "9ca6bcbf10b5f30b94efee7f2f33a986928d56cc7b9dada303972017a2cba1fd",
       "hasher_version": 1
     },
+    "SpecLedEx.Coverage.per_test_boundary/1": {
+      "hash": "8014b7d9058ec51a0c409259a531dff00b6911a693e35fd8e5e9d44e8a31bc62",
+      "hasher_version": 1
+    },
     "SpecLedEx.Coverage.subject_file_map/2": {
       "hash": "7ec955535b921da5e209e7f5a5cc3b0213350331eaa36f885164aae7ce558188",
       "hasher_version": 1
@@ -309,7 +329,7 @@
       "hasher_version": 1
     },
     "SpecLedEx.CoverageTriangulation.envelope_findings/3": {
-      "hash": "e7822913d39d2b9b93c23f9044fb30497f89f9585123737854955fa1f1498e3d",
+      "hash": "a2e0b8413312cd8d72d9c2fee2046d6d104ceeacbcdffbfd7170648f33546147",
       "hasher_version": 1
     },
     "SpecLedEx.CoverageTriangulation.execution_reach_map/2": {
@@ -318,6 +338,10 @@
     },
     "SpecLedEx.CoverageTriangulation.findings/3": {
       "hash": "c6f188765774c6065db4ba3ef72be0fb807f4d43166ab0fbd4eae8dff5e5b0e8",
+      "hasher_version": 1
+    },
+    "SpecLedEx.CoverageTriangulation.per_test_requirement_reach/3": {
+      "hash": "7293df6bcd43ad866424a1147d1eccf9742e9c0e90a39ed3fa06bff1453dcf4e",
       "hasher_version": 1
     },
     "SpecLedEx.DecisionParser.CrossField.validate/3": {

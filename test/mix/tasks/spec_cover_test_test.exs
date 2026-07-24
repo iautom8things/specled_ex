@@ -13,7 +13,14 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
                "specled.coverage_capture.per_test_async_contamination",
                "specled.coverage_capture.per_test_allow_async_degrade",
                "specled.coverage_capture.per_test_v2_envelope",
-               "specled.coverage_capture.cumulative_parity"
+               "specled.coverage_capture.cumulative_parity",
+               "specled.coverage_capture.per_test_exclusive_attribution",
+               "specled.coverage_capture.boundary_row_exclusive",
+               "specled.coverage_capture.boundary_hook_sync",
+               "specled.coverage_capture.case_template",
+               "specled.coverage_capture.formatter_auditor",
+               "specled.coverage_capture.unhooked_degrade",
+               "specled.coverage_capture.unhooked_remediation_notice"
              ]
 
   alias SpecLedEx.Coverage.Store
@@ -101,7 +108,11 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
   describe "--per-test mode (opt-in serialized capture)" do
     @tag :integration
     test "runs serialized, arms the formatter, writes per_test.coverdata" do
-      root = scaffold_fixture(async_true?: false)
+      # Fully-hooked fixture: without SpecLedEx.Case wiring the auditor folds
+      # all coverage to the remainder and degrades. The exclusive fixture is
+      # fully hooked; here we use that shape so a clean --per-test run still
+      # produces a non-degraded envelope with per-test records.
+      root = scaffold_exclusive_fixture()
       on_exit(fn -> File.rm_rf!(root) end)
 
       {output, status} = run_fixture_mix_test(root, ["spec.cover.test", "--per-test"])
@@ -170,6 +181,118 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
       assert envelope.degraded,
              "would fail if the formatter didn't flag the async-contaminated test's records, " <>
                "leaving the v2 envelope indistinguishable from a clean --per-test run"
+    end
+  end
+
+  describe "partial-hook unhooked degrade (auditor)" do
+    @tag :integration
+    @tag spec: [
+           "specled.coverage_capture.unhooked_degrade",
+           "specled.coverage_capture.unhooked_remediation_notice",
+           "specled.coverage_capture.formatter_auditor"
+         ]
+    test "unhooked module degrades the run and the notice names the setup line" do
+      # One hooked module (SpecLedEx.Case) + one unhooked bare ExUnit.Case.
+      # Would fail if the auditor still used lazy per-test snapshots for
+      # unhooked tests, or if unhooked modules failed the run instead of
+      # degrading with a remediation notice.
+      root = scaffold_partial_hook_fixture()
+      on_exit(fn -> File.rm_rf!(root) end)
+
+      {output, status} = run_fixture_mix_test(root, ["spec.cover.test", "--per-test"])
+
+      assert status == 0,
+             "expected partial-hook --per-test to exit 0 (degrade, never fail). Output:\n#{output}"
+
+      assert output =~ "UnhookedTest",
+             "expected stderr notice to name the unhooked module. Output:\n#{output}"
+
+      assert output =~ "setup {SpecLedEx.Coverage, :per_test_boundary}",
+             "expected notice to name the exact setup line. Output:\n#{output}"
+
+      artifact = Path.join(root, ".spec/_coverage/per_test.coverdata")
+      assert File.exists?(artifact), "expected degraded artifact. Output:\n#{output}"
+
+      assert {:ok, envelope} = Store.read_v2(artifact)
+      assert envelope.mode == :per_test
+      assert envelope.degraded
+
+      assert envelope.meta[:unhooked_modules] == [UnhookedTest] or
+               envelope.meta["unhooked_modules"] == [UnhookedTest]
+
+      hooked = find_record(envelope.payload, "path_a")
+      assert hooked, "missing hooked path_a record: #{inspect(envelope.payload)}"
+      assert is_list(hooked.lines_hit) and hooked.lines_hit != []
+    end
+  end
+
+  describe "seeded exclusive attribution (boundary hook)" do
+    @tag :integration
+    @tag spec: [
+           "specled.coverage_capture.per_test_exclusive_attribution",
+           "specled.coverage_capture.boundary_row_exclusive",
+           "specled.coverage_capture.boundary_hook_sync",
+           "specled.coverage_capture.case_template"
+         ]
+    test "hooked tests get disjoint, self-confined records across three explicit seeds" do
+      # Deterministic exclusivity: two tests (hooked via SpecLedEx.Case) call
+      # disjoint fixture functions. Tail snapshots run inside exec_on_exit
+      # before the next test starts, so no seed can bleed coverage between
+      # hooked windows. Would fail if Formatter.flush/1 ignored boundary rows
+      # or if run_per_test/2 failed to arm the boundary table.
+      seeds = [1, 42, 99]
+
+      Enum.each(seeds, fn seed ->
+        root = scaffold_exclusive_fixture()
+        on_exit(fn -> File.rm_rf!(root) end)
+
+        {path_a_lines, path_b_lines} = exclusive_function_lines(root)
+
+        {output, status} =
+          run_fixture_mix_test(root, [
+            "spec.cover.test",
+            "--per-test",
+            "--seed",
+            Integer.to_string(seed)
+          ])
+
+        assert status == 0,
+               "expected exclusive fixture to pass under seed #{seed}, got #{status}.\nOutput:\n#{output}"
+
+        artifact = Path.join(root, ".spec/_coverage/per_test.coverdata")
+        assert File.exists?(artifact), "expected artifact under seed #{seed}. Output:\n#{output}"
+
+        assert {:ok, envelope} = Store.read_v2(artifact)
+        assert envelope.mode == :per_test
+        assert envelope.meta[:boundary] == true or envelope.meta["boundary"] == true
+
+        records = envelope.payload
+        assert is_list(records) and records != []
+
+        rec_a = find_record(records, "path_a")
+        rec_b = find_record(records, "path_b")
+
+        assert rec_a, "missing path_a record under seed #{seed}: #{inspect(records)}"
+        assert rec_b, "missing path_b record under seed #{seed}: #{inspect(records)}"
+
+        lines_a = MapSet.new(rec_a.lines_hit)
+        lines_b = MapSet.new(rec_b.lines_hit)
+
+        assert MapSet.size(lines_a) > 0, "path_a had no hits under seed #{seed}"
+        assert MapSet.size(lines_b) > 0, "path_b had no hits under seed #{seed}"
+
+        assert MapSet.disjoint?(lines_a, lines_b),
+               "would fail if hooked tests' windows bled under seed #{seed}: " <>
+                 "a=#{inspect(MapSet.to_list(lines_a))} b=#{inspect(MapSet.to_list(lines_b))}"
+
+        assert MapSet.subset?(lines_a, path_a_lines),
+               "path_a hits escaped own function lines under seed #{seed}: " <>
+                 "#{inspect(MapSet.to_list(lines_a))} not subset of #{inspect(MapSet.to_list(path_a_lines))}"
+
+        assert MapSet.subset?(lines_b, path_b_lines),
+               "path_b hits escaped own function lines under seed #{seed}: " <>
+                 "#{inspect(MapSet.to_list(lines_b))} not subset of #{inspect(MapSet.to_list(path_b_lines))}"
+      end)
     end
   end
 
@@ -300,6 +423,151 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
     end
 
     base
+  end
+
+  # One hooked (SpecLedEx.Case) + one unhooked bare ExUnit.Case module.
+  defp scaffold_partial_hook_fixture do
+    base =
+      System.tmp_dir!()
+      |> Path.join("specled_cover_partial_#{System.unique_integer([:positive])}")
+
+    File.mkdir_p!(Path.join(base, "lib"))
+    File.mkdir_p!(Path.join(base, "test"))
+
+    File.write!(Path.join(base, "mix.exs"), mix_exs())
+    File.write!(Path.join([base, "lib", "covered.ex"]), exclusive_lib_module())
+    File.write!(Path.join([base, "test", "test_helper.exs"]), "ExUnit.start()\n")
+
+    File.write!(
+      Path.join([base, "test", "hooked_test.exs"]),
+      """
+      defmodule HookedTest do
+        use SpecLedEx.Case, async: false
+
+        test "path_a" do
+          assert Covered.path_a() == 3
+        end
+      end
+      """
+    )
+
+    File.write!(
+      Path.join([base, "test", "unhooked_test.exs"]),
+      """
+      defmodule UnhookedTest do
+        use ExUnit.Case, async: false
+
+        test "path_b" do
+          assert Covered.path_b() == 30
+        end
+      end
+      """
+    )
+
+    base
+  end
+
+  # Two-test fixture hooked via SpecLedEx.Case; tests call disjoint functions.
+  defp scaffold_exclusive_fixture do
+    base =
+      System.tmp_dir!()
+      |> Path.join("specled_cover_exclusive_#{System.unique_integer([:positive])}")
+
+    File.mkdir_p!(Path.join(base, "lib"))
+    File.mkdir_p!(Path.join(base, "test"))
+
+    File.write!(Path.join(base, "mix.exs"), mix_exs())
+    File.write!(Path.join([base, "lib", "covered.ex"]), exclusive_lib_module())
+    File.write!(Path.join([base, "test", "test_helper.exs"]), "ExUnit.start()\n")
+
+    File.write!(
+      Path.join([base, "test", "exclusive_test.exs"]),
+      exclusive_test_module()
+    )
+
+    base
+  end
+
+  defp exclusive_lib_module do
+    """
+    defmodule Covered do
+      def path_a do
+        x = 1
+        y = 2
+        x + y
+      end
+
+      def path_b do
+        a = 10
+        b = 20
+        a + b
+      end
+    end
+    """
+  end
+
+  defp exclusive_test_module do
+    """
+    defmodule ExclusiveTest do
+      use SpecLedEx.Case, async: false
+
+      test "path_a" do
+        assert Covered.path_a() == 3
+      end
+
+      test "path_b" do
+        assert Covered.path_b() == 30
+      end
+    end
+    """
+  end
+
+  defp exclusive_function_lines(root) do
+    source = File.read!(Path.join([root, "lib", "covered.ex"]))
+    lines = String.split(source, "\n")
+
+    path_a = function_body_lines(lines, "path_a")
+    path_b = function_body_lines(lines, "path_b")
+    {path_a, path_b}
+  end
+
+  defp function_body_lines(lines, fun_name) do
+    start =
+      Enum.find_index(lines, &String.contains?(&1, "def #{fun_name}")) ||
+        raise "function #{fun_name} not found"
+
+    # Inclusive range from the def line through the matching end (1-indexed for cover).
+    rest = Enum.drop(lines, start)
+    depth = 0
+
+    end_offset =
+      Enum.find_index(rest, fn line ->
+        cond do
+          String.match?(line, ~r/\bdef\b/) ->
+            # keep going; depth tracking via end only for this simple shape
+            false
+
+          String.trim(line) == "end" and depth == 0 ->
+            true
+
+          true ->
+            false
+        end
+      end)
+
+    # Simple shape: def ... end at column 2. Count lines from def through end.
+    end_offset =
+      end_offset ||
+        Enum.find_index(rest, &(String.trim(&1) == "end"))
+
+    Range.new(start + 1, start + end_offset + 1)
+    |> MapSet.new()
+  end
+
+  defp find_record(records, fragment) do
+    Enum.find(records, fn rec ->
+      is_binary(rec.test_id) and String.contains?(rec.test_id, fragment)
+    end)
   end
 
   defp scaffold_async_true_fixture do

@@ -55,8 +55,8 @@ Full contract, refusal-reason catalogue, and honest-attribution rules in
 [`docs/coverage.md`](docs/coverage.md).
 
 - `mix spec.cover.test`
-  - one command, no `test_helper.exs` wiring — default mode runs plain `mix test --cover --export-coverage` and ingests it into `.spec/_coverage/per_test.coverdata`
-  - `--per-test` opts into a serialized, race-bounded per-test attribution lane (`--allow-async` degrades instead of failing on `async: true` contamination)
+  - one command, no `test_helper.exs` wiring for the default aggregate mode — runs plain `mix test --cover --export-coverage` and ingests it into `.spec/_coverage/per_test.coverdata` (`--per-test` needs one `setup {SpecLedEx.Coverage, :per_test_boundary}` line per case template, or `use SpecLedEx.Case`; see [`docs/coverage.md`](docs/coverage.md))
+  - `--per-test` opts into a serialized per-test attribution lane that is exact up to escaped processes when the boundary hook is wired (`--allow-async` degrades instead of failing on `async: true` contamination)
   - read by `mix spec.triangle` and `mix spec.review`'s Coverage tab only — `mix spec.check` never runs triangulation
 - `mix spec.cover.ingest <path.coverdata>`
   - CI/coveralls escape hatch: ingests a `.coverdata` already exported by another run (e.g. your existing coveralls step) instead of running the suite a second time
