@@ -11,9 +11,15 @@
   "id": "specled_-q6l.3",
   "labels": [],
   "parent": "specled_-q6l",
+  "comments": [
+    {
+      "text": "CONTRACT (orchestrator-synthesized)\n\nContext: specled_-q6l.1 has merged into the epic branch — Store.load/1 now owns envelope loading and coverage_closure.ex already routes through it. Your base includes that change.\n\nAllowed touches:\n- lib/specled_ex/review/coverage_closure.ex (delete dead v1 build/2 and its private helpers that become uncalled; fix the stale 'build_v2 not wired yet — T7's job' comment and the docstring claiming v1 is 'used today')\n- test/specled_ex/review/coverage_closure_test.exs (only if deletions orphan references; ticket states v1 has zero tests)\n- .spec/decisions/** (ONLY if you choose ADR-note-why-it-stays instead of deletion)\n- .spec/specs/** ONLY if the spec gate demands subject co-change for touched files\n- .spec/state.json, .spec/realization_hashes.json (tool-managed baselines; regenerate via documented command only)\n\nOut of Scope (files): all other lib/**, mix.exs, .github/**.\n\nOut of Scope (intent): no behavior change to the live build_v2 path; do NOT touch binary_to_term safety (that is specled_-q6l.4, blocked on this ticket); do not refactor beyond the deletion; no new deps. Preference is DELETION — only keep v1 with an ADR note if you find a real reason it must stay (then say so in the completion record).\n\nVerification:\n1. Before deleting, record proof v1 build/2 has zero callers (grep) in the completion record.\n2. mix compile --warnings-as-errors clean after deletion (orphaned private helpers also removed).\n3. Targeted: mix test test/specled_ex/review/coverage_closure_test.exs green.\n4. mix format --check-formatted; mix spec.check --no-run-commands green.",
+      "timestamp": "2026-07-24T12:42:03Z"
+    }
+  ],
   "priority": 3,
   "status": "open",
   "title": "Remove dead v1 CoverageClosure.build/2 and stale wiring comments",
   "type": "task",
-  "updated_at": "2026-07-24T12:12:54Z"
+  "updated_at": "2026-07-24T12:42:03Z"
 }
