@@ -46,11 +46,15 @@
     {
       "text": "Squash-merged to main (ce39e0f). Watching post-merge specs.yml run.",
       "timestamp": "2026-07-24T18:30:47Z"
+    },
+    {
+      "text": "Post-merge Specs run green on main (ce39e0f). Remote+local branch deleted, worktree cleaned. hyt ship arc complete — 0.6.2 released.",
+      "timestamp": "2026-07-24T18:33:45Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "Attribution sidecar temp-file naming: VM-local unique_integer (same collision class as specled_-vnw)",
   "type": "task",
-  "updated_at": "2026-07-24T18:30:47Z"
+  "updated_at": "2026-07-24T18:33:45Z"
 }
