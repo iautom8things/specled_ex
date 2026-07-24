@@ -37,11 +37,15 @@
     {
       "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/20 (release 0.7.0). Rebased onto 0.6.3; critical-review Tier-1 fixes (degraded_reasons provenance, never-ran inventory filter) landed as 731b686. Babysitting CI.",
       "timestamp": "2026-07-24T19:11:03Z"
+    },
+    {
+      "text": "CI green on first run (Check Specs 2m1s, OTP-28 leg 1m43s, OTP-26 leg 1m37s), zero fix commits. Ready for merge.",
+      "timestamp": "2026-07-24T19:13:29Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Per-test exact attribution via synchronous boundary hook",
   "type": "epic",
-  "updated_at": "2026-07-24T19:11:03Z"
+  "updated_at": "2026-07-24T19:13:29Z"
 }
