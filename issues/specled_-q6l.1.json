@@ -9,9 +9,15 @@
   "id": "specled_-q6l.1",
   "labels": [],
   "parent": "specled_-q6l",
+  "comments": [
+    {
+      "text": "CONTRACT (orchestrator-synthesized)\n\nAllowed touches:\n- lib/specled_ex/coverage/store.ex (add public Store.load/1)\n- lib/specled_ex/review/coverage_closure.ex (collapse private load_envelope/1 call site)\n- lib/specled_ex/review.ex (collapse the variant at ~792)\n- lib/mix/tasks/spec.triangle.ex (collapse private load_envelope/1 call site)\n- test/specled_ex/coverage/store_test.exs and other targeted test files for the three consumers\n- .spec/specs/** ONLY if the spec gate demands subject co-change for touched files\n- .spec/state.json, .spec/realization_hashes.json (tool-managed baselines; regenerate only)\n\nOut of Scope (files): everything else in lib/**; .github/**; mix.exs.\n\nOut of Scope (intent): no change to envelope classification semantics — Store.load/1 owns the existing vocabulary {:ok, env} | {:degraded, :no_coverage_artifact | :legacy_artifact | :invalid_artifact}, callers keep their current observable behavior; do NOT delete v1 CoverageClosure.build/2 (that is specled_-q6l.3); do NOT touch binary_to_term safety (that is specled_-q6l.4); no new deps.\n\nVerification:\n1. Unit tests on Store.load/1 covering the full return vocabulary (ok, missing file, legacy, invalid).\n2. After collapse: no private load_envelope/1 duplicates remain (grep) and all three consumers route through Store.load/1.\n3. Targeted tests for the three consumers green (change-scoped tier; no full suite).\n4. mix compile --warnings-as-errors; mix spec.check --no-run-commands green.",
+      "timestamp": "2026-07-24T12:15:25Z"
+    }
+  ],
   "priority": 2,
   "status": "open",
   "title": "Consolidate envelope load-and-classify into Store.load/1",
   "type": "task",
-  "updated_at": "2026-07-24T12:12:54Z"
+  "updated_at": "2026-07-24T12:15:25Z"
 }
