@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-24T12:26:23Z",
+  "description": "Advances: specled.coverage_capture\n\nRoot cause found during specled_-epl ship preflight, diagnosed via the new seed-echo feature (failing merged run echoed seed 354632; standalone repro: mix test test/specled_ex/coverage/store_test.exs --seed 354632).\n\nSpecLedEx.Coverage.Store.status_path/1 (lib/specled_ex/coverage/store.ex:265) resolves the last_run.status sidecar to dirname(artifact_path). The v2 describe-block setup (test/specled_ex/coverage/store_test.exs:124-133) builds tmp_path directly in System.tmp_dir!(), so the sidecar is $TMPDIR/last_run.status — a machine-global file shared by every concurrently running BEAM and left behind by killed runs. Symptoms: 'returns {:refused, :not_found} when no sidecar has ever been written' (line 266) reads another run's leftover status; the refused-write test can read a concurrent run's status. Observed: failed in a merged tagged_tests run while two full spec.checks ran concurrently; failed once standalone from leftover pollution (its own on_exit then cleaned the file, so re-runs passed).\n\nProduction is unaffected (artifact lives in repo-local .spec/_coverage/). Fix: give the setup a unique per-test subdirectory so the sidecar is test-private. Likely also the real identity of some past 'flaky one-off failures in full-suite runs' (specled_-f98 lineage); unrelated to the tracer property flake (specled_-epl) and to the tempfile race (specled_-vnw).",
+  "id": "specled_-ind",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "[BUG] store_test v2 setup shares $TMPDIR/last_run.status across BEAMs — flaky read_status tests",
+  "type": "task",
+  "updated_at": "2026-07-24T12:26:23Z"
+}
