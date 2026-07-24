@@ -25,11 +25,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: c1eaf748-3b25-4d2f-8556-663e80be3a37\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/c1eaf748-3b25-4d2f-8556-663e80be3a37.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. No auditor was spawned per policy.",
       "timestamp": "2026-07-24T10:58:32Z"
+    },
+    {
+      "text": "APPROVED. No stage merge-back — standalone ticket branched from main; commit 95f3e78 sits on specled_-vnw/fix-tempscript-race in worktree /Users/mz/src/specled_ex-fix-tempscript-race, ready for a PR to main. Closing per auditor sign-off.",
+      "timestamp": "2026-07-24T10:58:53Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Verifier run_command temp-script race: false verification_command_failed on untouched subjects",
   "type": "bug",
-  "updated_at": "2026-07-24T10:58:32Z"
+  "updated_at": "2026-07-24T10:58:53Z"
 }
