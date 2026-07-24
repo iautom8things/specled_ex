@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-q6l.3"
   ],
@@ -16,8 +16,8 @@
     }
   ],
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "title": "Use binary_to_term [:safe] for coverage/manifest artifact decodes",
   "type": "task",
-  "updated_at": "2026-07-24T13:07:53Z"
+  "updated_at": "2026-07-24T13:09:33Z"
 }
