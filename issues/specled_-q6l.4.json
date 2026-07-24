@@ -7,9 +7,9 @@
   "id": "specled_-q6l.4",
   "labels": [],
   "parent": "specled_-q6l",
-  "priority": 2,
+  "priority": 3,
   "status": "open",
   "title": "Use binary_to_term [:safe] for coverage/manifest artifact decodes",
   "type": "task",
-  "updated_at": "2026-07-23T22:50:31Z"
+  "updated_at": "2026-07-24T09:57:50Z"
 }
