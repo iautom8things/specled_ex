@@ -1165,6 +1165,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       )
     end
 
+    # covers: specled.spec_review.coverage_closure_line_format
     test "aggregate mode renders \"Closure: N MFAs — K executed (X.X%). Self-verified: yes/no. Tagged tests: …\"" do
       reach = %{
         status: :ok_aggregate,
@@ -1197,6 +1198,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       refute html =~ "file-level proxy"
     end
 
+    # covers: specled.spec_review.coverage_closure_line_format
     test "self-verified renders yes when self_verified? is true, with an executed tagged test" do
       reach = %{
         status: :ok_per_test,
@@ -1225,6 +1227,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       assert html =~ "test/a_test.exs :: t1</code> (executed)"
     end
 
+    # covers: specled.spec_review.coverage_reached_by_tests_per_test_only
     test "\"Reached by tests\" row renders only in per_test mode, naming executed tagged tests" do
       reach = %{
         status: :ok_per_test,
@@ -1261,6 +1264,41 @@ defmodule SpecLedEx.Review.HtmlTest do
                "Reached by tests:</span> <code class=\"cov-closure-test\">test/a_test.exs :: t1</code>, <code class=\"cov-closure-test\">test/b_test.exs :: t2</code>."
     end
 
+    # covers: specled.spec_review.coverage_observed_approximate_qualifier
+    test "qualifies the closure line and the \"Reached by tests\" row as observed, not exact" do
+      reach = %{
+        status: :ok_per_test,
+        by_requirement: %{
+          "subj.a.req1" =>
+            req_reach(
+              self_verified?: true,
+              tagged_tests: [%{file: "test/a_test.exs", test_name: "t1", strength: "executed"}]
+            )
+        }
+      }
+
+      html =
+        IO.iodata_to_binary(
+          Html.render_coverage_tab(
+            coverage_subject(
+              closure_reach: reach,
+              requirements: [
+                %{"id" => "subj.a.req1", "statement" => "S", "priority" => "must"}
+              ]
+            )
+          )
+        )
+
+      # The "Reached by tests" row names its per-test-race caveat so the
+      # executed-strength attribution is never read as exact isolation.
+      assert html =~ "treat as observed, not exact"
+
+      # The closure line's percentage carries its own approximate caveat
+      # (currently surfaced via the file-level-proxy note's tooltip).
+      assert html =~ "treat the percentage as approximate"
+    end
+
+    # covers: specled.spec_review.coverage_file_level_proxy_qualifier
     test "per_test mode carries a file-level-proxy qualifier on the closure line" do
       reach = %{
         status: :ok_per_test,
@@ -1312,6 +1350,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       assert html =~ "Closure:</span> 0 MFAs."
     end
 
+    # covers: specled.spec_review.coverage_degraded_banners_distinct
     test "renders the \"coverage artifact unavailable\" banner when status is :no_coverage_artifact" do
       reach = %{status: :no_coverage_artifact, by_requirement: %{}}
 
@@ -1324,6 +1363,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       refute html =~ ~s|class="cov-closure"|
     end
 
+    # covers: specled.spec_review.coverage_no_tracer_manifest_banner
     test "renders the \"binding closure unavailable\" banner when status is :no_tracer_manifest" do
       reach = %{status: :no_tracer_manifest, by_requirement: %{}}
 
@@ -1334,6 +1374,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       refute html =~ ~s|class="cov-closure"|
     end
 
+    # covers: specled.spec_review.coverage_degraded_banners_distinct
     test "renders a distinct banner naming mix spec.cover.test when status is :legacy_artifact" do
       reach = %{status: :legacy_artifact, by_requirement: %{}}
 
@@ -1345,6 +1386,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       refute html =~ ~s|class="cov-closure"|
     end
 
+    # covers: specled.spec_review.coverage_degraded_banners_distinct
     test "renders a distinct banner when status is :invalid_artifact" do
       reach = %{status: :invalid_artifact, by_requirement: %{}}
 
@@ -1356,6 +1398,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       refute html =~ ~s|class="cov-closure"|
     end
 
+    # covers: specled.spec_review.coverage_degraded_banners_distinct
     test "renders a distinct degraded banner when status is :async_contaminated (flag 1)" do
       reach = %{status: :async_contaminated, by_requirement: %{}}
 
@@ -1367,6 +1410,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       refute html =~ ~s|class="cov-closure"|
     end
 
+    # covers: specled.spec_review.coverage_generated_at_staleness
     test "renders the coverage artifact's generated_at with an elapsed-time note" do
       generated_at = DateTime.add(DateTime.utc_now(), -300, :second)
 
@@ -1380,6 +1424,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       refute html =~ "possibly stale"
     end
 
+    # covers: specled.spec_review.coverage_generated_at_staleness
     test "flags the generated_at note as possibly stale past the age threshold" do
       generated_at = DateTime.add(DateTime.utc_now(), -2 * 24 * 60 * 60, :second)
 
@@ -1418,6 +1463,7 @@ defmodule SpecLedEx.Review.HtmlTest do
   end
 
   # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
+  # covers: specled.spec_review.coverage_rollup_badge
   describe "render_subject_coverage_badge — subject-card rollup badge" do
     test "renders a self-verified/total count and mode label when coverage data loaded" do
       reach = %{

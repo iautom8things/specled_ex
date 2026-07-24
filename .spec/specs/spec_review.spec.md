@@ -291,6 +291,82 @@ decisions:
     empty closure rows that would be misread as the absence of test coverage.
   priority: must
   stability: evolving
+- id: specled.spec_review.coverage_closure_line_format
+  statement: >-
+    Each subject's Coverage pivot shall render, per requirement, a one-line
+    bind-closure summary sourced from
+    `SpecLedEx.Review.CoverageClosure.build_v2/2`'s v2-envelope reach data,
+    of the form "Closure: N MFAs — K executed (X.X%). Self-verified:
+    yes/no. Tagged tests: T1 (executed), T2 (linked)." — where N is
+    `closure_mfa_count`, K is the count of `covered_mfas`, X.X% is
+    `closure_coverage_pct`, "Self-verified" reflects `self_verified?`, and
+    the tagged tests list every `tagged_tests` entry with its evidence
+    `:strength` ("claimed" / "linked" / "executed").
+  priority: must
+  stability: evolving
+- id: specled.spec_review.coverage_reached_by_tests_per_test_only
+  statement: >-
+    A "Reached by tests" row naming every `"executed"`-strength tagged
+    test shall render exclusively when the subject's coverage mode is
+    `:per_test` (`:ok_per_test`) — aggregate coverage has no per-test
+    attribution to name, so the row stays absent there.
+  priority: must
+  stability: evolving
+- id: specled.spec_review.coverage_observed_approximate_qualifier
+  statement: >-
+    `"executed"` strength and the per_test `closure_coverage_pct` both
+    reflect the `--per-test` engine's observed attribution, which is
+    race-bounded (an ExUnit `test_finished` cast-timing race can bleed
+    coverage between adjacent tests regardless of the `degraded` flag; see
+    `specled_-cpw` and `specled.decision.aggregate_first_spec_coverage`)
+    rather than exact — the closure line and the "Reached by tests" row
+    shall each be discoverably qualified as observed/approximate, never
+    asserted as exact per-test isolation.
+  priority: must
+  stability: evolving
+- id: specled.spec_review.coverage_file_level_proxy_qualifier
+  statement: >-
+    Because `:ok_per_test`'s per-requirement MFA coverage is still
+    computed via a file-level proxy rather than the per-test engine's real
+    MFA-level data, the per_test closure line shall additionally carry a
+    qualifier noting the coverage percentage is approximate.
+  priority: must
+  stability: evolving
+- id: specled.spec_review.coverage_rollup_badge
+  statement: >-
+    Each subject card shall additionally carry a rollup badge summarizing
+    the subject's coverage status (a self-verified/total count and mode
+    when coverage data loaded, or a muted "coverage unavailable" chip when
+    degraded).
+  priority: must
+  stability: evolving
+- id: specled.spec_review.coverage_generated_at_staleness
+  statement: >-
+    The v2 envelope's own `generated_at` timestamp shall render in the
+    Coverage tab with an elapsed-time note, flagged as possibly stale past
+    a fixed age threshold.
+  priority: must
+  stability: evolving
+- id: specled.spec_review.coverage_degraded_banners_distinct
+  statement: >-
+    `:no_coverage_artifact`, `:legacy_artifact` (naming `mix
+    spec.cover.test` as the re-run command), `:invalid_artifact`, and
+    `:async_contaminated` (a degraded `:per_test` envelope) shall each
+    render their own distinct honest banner in place of the per-row
+    summaries — never collapsing into one another, into a fake 0%, or
+    into an empty-but-ok result. All degraded states piggyback the
+    page-level `:degraded` leg state machinery rather than rendering empty
+    closure rows that would be misread as the absence of test coverage.
+  priority: must
+  stability: evolving
+- id: specled.spec_review.coverage_no_tracer_manifest_banner
+  statement: >-
+    A missing compiler tracer manifest (`:no_tracer_manifest`) shall
+    render a single "Binding closure unavailable" banner in place of
+    per-row closure summaries, piggybacking the page-level `:degraded` leg
+    state machinery like the other degraded statuses.
+  priority: must
+  stability: evolving
 - id: specled.spec_review.coverage_tab_v2_envelope_data_layer
   statement: >-
     `SpecLedEx.Review.CoverageClosure.build_v2/2` shall provide the v2
@@ -586,6 +662,86 @@ decisions:
     - the modal contains a link to the subject's full unit section
   covers:
     - specled.spec_review.shared_file_spec_modal
+- id: specled.spec_review.coverage_closure_line_format_renders
+  given:
+    - a requirement whose v2 reach data reports 4 closure MFAs, 3 covered, self_verified? false, and two tagged tests of differing strength
+  when:
+    - the reviewer opens the subject's Coverage pivot
+  then:
+    - "the requirement's closure line reads \"Closure: 4 MFAs — 3 executed (75.0%).\""
+    - "the line states \"Self-verified: no.\" and lists each tagged test with its evidence strength"
+  covers:
+    - specled.spec_review.coverage_closure_line_format
+- id: specled.spec_review.coverage_reached_by_tests_gated_to_per_test
+  given:
+    - a requirement in :ok_per_test mode with one executed-strength and one linked-strength tagged test
+  when:
+    - the reviewer opens the subject's Coverage pivot
+  then:
+    - a "Reached by tests" row renders naming only the executed-strength test
+    - the same requirement rendered under aggregate mode renders no "Reached by tests" row
+  covers:
+    - specled.spec_review.coverage_reached_by_tests_per_test_only
+- id: specled.spec_review.coverage_qualifies_observed_not_exact
+  given:
+    - a requirement in :ok_per_test mode with an executed-strength tagged test
+  when:
+    - the reviewer opens the subject's Coverage pivot
+  then:
+    - the "Reached by tests" row carries a discoverable qualifier naming the result observed, not exact, and citing the per-test capture race
+    - the closure line's coverage percentage carries a discoverable qualifier that it is approximate
+  covers:
+    - specled.spec_review.coverage_observed_approximate_qualifier
+- id: specled.spec_review.coverage_file_level_proxy_noted
+  given:
+    - a requirement whose subject coverage mode is :ok_per_test
+  when:
+    - the reviewer opens the subject's Coverage pivot
+  then:
+    - the closure line carries a "(file-level proxy)" qualifier
+    - the equivalent requirement rendered under aggregate mode carries no such qualifier
+  covers:
+    - specled.spec_review.coverage_file_level_proxy_qualifier
+- id: specled.spec_review.coverage_card_rollup_badge_renders
+  given:
+    - a subject with 2 requirements, one self-verified and one not, coverage data loaded in per-test mode
+  when:
+    - mix spec.review renders the subject's card
+  then:
+    - the card carries a rollup badge reading "1/2 self-verified (per-test)"
+    - a subject whose coverage status is degraded instead renders a muted "coverage unavailable" chip
+  covers:
+    - specled.spec_review.coverage_rollup_badge
+- id: specled.spec_review.coverage_generated_at_flags_staleness
+  given:
+    - a coverage artifact captured 5 minutes ago, and a second one captured 2 days ago
+  when:
+    - the reviewer opens the Coverage tab for each
+  then:
+    - the 5-minute-old capture renders an elapsed-time note with no staleness flag
+    - the 2-day-old capture renders the same note flagged as possibly stale
+  covers:
+    - specled.spec_review.coverage_generated_at_staleness
+- id: specled.spec_review.coverage_degraded_statuses_render_distinct_banners
+  given:
+    - a Coverage tab rendered in turn with status :no_coverage_artifact, :legacy_artifact, :invalid_artifact, and :async_contaminated
+  when:
+    - mix spec.review renders the Coverage tab for each status
+  then:
+    - each status renders its own distinctly worded banner naming the specific problem
+    - no two statuses render the same banner text and none renders a bare 0% or empty-but-ok result
+  covers:
+    - specled.spec_review.coverage_degraded_banners_distinct
+- id: specled.spec_review.coverage_no_tracer_manifest_single_banner
+  given:
+    - a Coverage tab whose coverage mode status is :no_tracer_manifest
+  when:
+    - mix spec.review renders the Coverage tab
+  then:
+    - a single "Binding closure unavailable" banner renders naming the missing tracer manifest
+    - no per-row closure summaries render
+  covers:
+    - specled.spec_review.coverage_no_tracer_manifest_banner
 ```
 
 ## Verification
@@ -612,6 +768,14 @@ decisions:
     - specled.spec_review.degraded_leg_state
     - specled.spec_review.decisions_governance_inline
     - specled.spec_review.coverage_tab_bind_closure
+    - specled.spec_review.coverage_closure_line_format
+    - specled.spec_review.coverage_reached_by_tests_per_test_only
+    - specled.spec_review.coverage_observed_approximate_qualifier
+    - specled.spec_review.coverage_file_level_proxy_qualifier
+    - specled.spec_review.coverage_rollup_badge
+    - specled.spec_review.coverage_generated_at_staleness
+    - specled.spec_review.coverage_degraded_banners_distinct
+    - specled.spec_review.coverage_no_tracer_manifest_banner
 - kind: command
   target: mix test test/specled_ex/review/html_layout_test.exs
   execute: true
