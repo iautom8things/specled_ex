@@ -40,6 +40,7 @@ decisions:
   - specled.decision.tagged_tests_file_selectors
   - specled.decision.verification_runtime_config
   - specled.decision.evidence_based_attribution
+  - specled.decision.cross_vm_temp_names
 ```
 
 ## Requirements
@@ -265,6 +266,16 @@ decisions:
     line itself. When no seed line is present, findings shall be unchanged.
   priority: must
   stability: evolving
+- id: specled.tagged_tests.attribution_artifact_name_cross_vm_unique
+  statement: >-
+    The streaming attribution artifact shall be named with a suffix that is
+    collision-proof across concurrently running BEAM VMs (OS pid plus random
+    entropy, via SpecLedEx.TempName.cross_vm_suffix/0). A VM-local counter
+    would let a nested or parallel specled run sharing tmp_dir delete or
+    truncate this run's in-flight artifact, silently degrading a completed
+    merged run to shared fate with mass `cover_not_executed` warnings.
+  priority: must
+  stability: stable
 ```
 
 ## Scenarios
@@ -473,6 +484,16 @@ decisions:
     - every `verification_command_failed` and `verification_command_timeout` finding echoes seed 424242 with a `--seed 424242` reproduction hint
   covers:
     - specled.tagged_tests.findings_echo_exunit_seed
+- id: specled.tagged_tests.scenario.attribution_artifact_name_cross_vm_safe
+  given:
+    - a merged tagged_tests run whose command records the `SPECLED_ATTRIBUTION_PATH` it received
+  when:
+    - verification runs with run_commands true
+  then:
+    - the artifact name embeds the OS pid and random entropy
+    - a concurrent specled run in another VM cannot generate the same artifact name
+  covers:
+    - specled.tagged_tests.attribution_artifact_name_cross_vm_unique
 ```
 
 ## Verification
@@ -504,4 +525,5 @@ decisions:
     - specled.tagged_tests.resume_pass_over_remainder
     - specled.tagged_tests.resume_double_timeout_signal
     - specled.tagged_tests.findings_echo_exunit_seed
+    - specled.tagged_tests.attribution_artifact_name_cross_vm_unique
 ```

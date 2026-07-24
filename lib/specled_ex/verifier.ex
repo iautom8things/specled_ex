@@ -2142,8 +2142,11 @@ defmodule SpecLedEx.Verifier do
   # keeps every downstream branch on today's shared-fate path (degradation
   # contract — see specled.decision.evidence_based_attribution).
   defp run_merged_command(cmd, root, timeout_ms, cover_ids, tag_map) do
+    # Cross-VM-unique name (see SpecLedEx.TempName): a VM-local counter here
+    # lets a nested specled run's cleanup delete/truncate this run's artifact
+    # mid-stream — a completed run then mass-reports cover_not_executed.
     artifact_path =
-      Path.join(System.tmp_dir!(), "specled_attr_#{System.unique_integer([:positive])}.jsonl")
+      Path.join(System.tmp_dir!(), "specled_attr_#{SpecLedEx.TempName.cross_vm_suffix()}.jsonl")
 
     try do
       base =
@@ -2266,13 +2269,10 @@ defmodule SpecLedEx.Verifier do
   end
 
   defp run_command(target, root, timeout_ms, opts \\ []) do
-    # System.unique_integer/1 is unique only within one BEAM VM. Nested or
-    # parallel specled runs share tmp_dir, so a cross-VM name collision lets
+    # Cross-VM-unique name (see SpecLedEx.TempName): a VM-local counter lets
     # one run's cleanup delete another's in-flight script (exit 127 blamed on
-    # an innocent subject). The OS pid separates concurrently live VMs; the
-    # random suffix covers pid reuse against stale same-name leftovers.
-    suffix = "#{System.pid()}_#{Base.encode16(:crypto.strong_rand_bytes(6), case: :lower)}"
-    tmp_out = Path.join(System.tmp_dir!(), "specled_cmd_#{suffix}")
+    # an innocent subject).
+    tmp_out = Path.join(System.tmp_dir!(), "specled_cmd_#{SpecLedEx.TempName.cross_vm_suffix()}")
 
     # Write a wrapper script to avoid shell escaping issues with nested quotes.
     # The script captures stdout/stderr to a temp file and exits with the command status.
@@ -2372,8 +2372,7 @@ defmodule SpecLedEx.Verifier do
       # Same cross-VM-unique scheme as run_command's temp names: concurrent
       # specled runs may share a capture dir, and a per-VM-only unique name
       # could overwrite another run's forensic log.
-      suffix = "#{System.pid()}_#{Base.encode16(:crypto.strong_rand_bytes(6), case: :lower)}"
-      path = Path.join(dir, "specled_cmd_#{suffix}.log")
+      path = Path.join(dir, "specled_cmd_#{SpecLedEx.TempName.cross_vm_suffix()}.log")
 
       File.write!(path, """
       command: #{target}

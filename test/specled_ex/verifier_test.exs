@@ -1410,6 +1410,27 @@ defmodule SpecLedEx.VerifierTest do
     refute Enum.any?(findings(report, "tagged_tests_cover_not_executed"))
   end
 
+  # A VM-local counter (System.unique_integer) in the artifact name collides
+  # across concurrent BEAMs sharing tmp_dir — a nested specled run's cleanup
+  # then deletes/truncates this run's in-flight artifact, and a completed
+  # merged run silently degrades to mass cover_not_executed.
+  @tag spec: "specled.tagged_tests.attribution_artifact_name_cross_vm_unique"
+  test "attribution artifact names embed the OS pid and random entropy", %{root: root} do
+    shim = ~S"""
+    echo "$SPECLED_ATTRIBUTION_PATH" > attr_path.txt
+    exit 0
+    """
+
+    report = run_two_subject_merged(root, shim, run_commands: true)
+
+    assert report["status"] == "pass"
+
+    artifact_name =
+      root |> Path.join("attr_path.txt") |> File.read!() |> String.trim() |> Path.basename()
+
+    assert artifact_name =~ ~r/^specled_attr_#{System.pid()}_[0-9a-f]{12}\.jsonl$/
+  end
+
   @tag spec: "specled.tagged_tests.cover_not_executed_finding"
   test "a completed run with a silent cover warns and stays linked, not executed", %{root: root} do
     shim = ~S"""
