@@ -7,6 +7,12 @@
   "id": "specled_-26g",
   "labels": [],
   "parent": "specled_-xkn",
+  "comments": [
+    {
+      "text": "Review F14 (2026-07-24) found the same pattern in the NEW Store.load/1 test setup added by specled_-q6l.1 (writes/deletes the global last_run.status sidecar under async:true) — include that describe block when unique-diring.",
+      "timestamp": "2026-07-24T14:22:05Z"
+    }
+  ],
   "priority": 3,
   "status": "open",
   "title": "Unique-dir the Store.read_status sidecar tests (shared $TMPDIR/last_run.status pollution)",
