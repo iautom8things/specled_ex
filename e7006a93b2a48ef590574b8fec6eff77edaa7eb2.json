@@ -36,8 +36,8 @@
       "message": "Changed file lib/specled_ex/review/coverage_closure.ex impacts subject specs that were not updated: specled.spec_review"
     }
   ],
-  "run_at": "2026-07-24T12:49:37.955364Z",
-  "run_id": "248e55875635372247e3607ffc61bae0",
+  "run_at": "2026-07-24T12:52:07.459242Z",
+  "run_id": "03335a3b7de7f55f8b6898255cea8858",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "e7006a93b2a48ef590574b8fec6eff77edaa7eb2",
