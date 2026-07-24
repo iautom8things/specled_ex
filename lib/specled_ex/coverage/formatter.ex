@@ -197,6 +197,16 @@ defmodule SpecLedEx.Coverage.Formatter do
   @impl GenServer
   def handle_cast(_event, state), do: {:noreply, state}
 
+  # ExUnit emits `test_finished` for tests it never ran (excluded, skipped,
+  # invalid setup_all). Those tests never reach `setup`, so a boundary row
+  # cannot exist for them — inventorying them would mark correctly-wired
+  # modules unhooked. `{:failed, _}` tests DID run (their on_exit executes)
+  # and keep their real window, so they stay inventoried.
+  defp record_inventory(%ExUnit.Test{state: {reason, _}}, state)
+       when reason in [:excluded, :skipped, :invalid] do
+    state
+  end
+
   # Inventory only — no per-test snapshot. A `test_finished` arriving with no
   # prior `suite_started` resolves module scope lazily rather than crashing.
   defp record_inventory(%ExUnit.Test{} = test, %{modules: nil} = state) do
@@ -307,8 +317,21 @@ defmodule SpecLedEx.Coverage.Formatter do
       IO.puts(:stderr, unhooked_notice(mod, count))
     end)
 
-    degraded? =
-      state.degraded_async? or total_diagnostics > 0 or unhooked_modules != []
+    # Every cause that fired, in one place — consumers must never reconstruct
+    # the cause by asking which meta key happens to be present. `:async` and
+    # `:counters_harvested` invalidate the hooked windows; `:unhooked` merely
+    # omits the unhooked tests' coverage from the payload.
+    degraded_reasons =
+      Enum.reject(
+        [
+          if(state.degraded_async?, do: :async),
+          if(total_diagnostics > 0, do: :counters_harvested),
+          if(unhooked_modules != [], do: :unhooked)
+        ],
+        &is_nil/1
+      )
+
+    degraded? = degraded_reasons != []
 
     payload_files = records |> Enum.map(& &1.file) |> Enum.uniq()
     remainder_file_paths = Enum.map(unattributed_files, fn {file, _lines} -> file end)
@@ -323,6 +346,7 @@ defmodule SpecLedEx.Coverage.Formatter do
       |> maybe_put(:boundary, used_boundary?, true)
       |> maybe_put(:unhooked_modules, unhooked_modules != [], unhooked_modules)
       |> maybe_put(:unattributed, unattributed_files != [], unattributed_files)
+      |> maybe_put(:degraded_reasons, degraded?, degraded_reasons)
 
     envelope =
       Store.build_envelope(%{

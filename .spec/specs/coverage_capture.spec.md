@@ -511,12 +511,27 @@ decisions:
     `meta.unattributed` as `[{file, sorted_lines}]`.
   priority: must
   stability: evolving
+- id: specled.coverage_capture.degraded_reasons
+  statement: >-
+    Whenever the written envelope is `degraded: true`, it shall carry
+    `meta.degraded_reasons` — a non-empty list drawn from
+    `[:async, :counters_harvested, :unhooked]` recording every cause that
+    fired — so consumers never reconstruct the cause from which other meta
+    keys happen to be present. `:async` and `:counters_harvested`
+    invalidate the hooked windows themselves; `:unhooked` merely omits the
+    unhooked tests' coverage. Readers (`Store.degraded_reasons/1`) shall
+    treat a degraded envelope without the key as legacy, inferring
+    `[:unhooked]` when `meta.unhooked_modules` is present and `[:async]`
+    otherwise, and shall return `[]` for a non-degraded envelope.
+  priority: must
+  stability: evolving
 - id: specled.coverage_capture.formatter_auditor
   statement: >-
     Under `mix spec.cover.test --per-test`, `SpecLedEx.Coverage.Formatter`
     shall take no per-test snapshots: `test_finished` records inventory
     only (`test_id`, `test_key`, `module`, `tags`, `test_pid`) and the
-    existing `degraded_async?` fold. On `suite_finished` it shall take one
+    existing `degraded_async?` fold, and only for tests that ran
+    (see `never_ran_not_inventoried`). On `suite_finished` it shall take one
     final whole-scope snapshot, compute run-total hits via
     `Snapshot.diff(baseline, final)`, attribute the union of boundary rows
     to per-test payload records, and fold the unattributed remainder
@@ -527,13 +542,25 @@ decisions:
   stability: evolving
 - id: specled.coverage_capture.unhooked_degrade
   statement: >-
-    When any inventoried test lacks a boundary row for its `{module, name}`
+    When any test that ran lacks a boundary row for its `{module, name}`
     key, `Formatter.flush/1` shall never fail the run for that reason: the
     unhooked test contributes no per-test payload record; its coverage
     (if any) remains in the unattributed remainder; `meta.unhooked_modules`
-    lists each unhooked module; and the envelope is `degraded: true`. A
-    zero-hooked run with a non-empty remainder still writes the degraded
-    envelope.
+    lists each unhooked module; and the envelope is `degraded: true` with
+    `:unhooked` among `meta.degraded_reasons`. A zero-hooked run
+    with a non-empty remainder still writes the degraded envelope.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.never_ran_not_inventoried
+  statement: >-
+    A `test_finished` whose `test.state` is `{:excluded, _}`,
+    `{:skipped, _}`, or `{:invalid, _}` never reached `setup`, so a
+    boundary row cannot exist for it: the formatter shall not inventory it,
+    it shall not mark its module unhooked, and it shall not feed the
+    `degraded_async?` fold. A fully hooked suite run under
+    `--only`/`--exclude` or carrying `@tag :skip` tests stays undegraded,
+    with no remediation notices. `{:failed, _}` tests ran (their `on_exit`
+    executes and their window is real) and stay inventoried.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.unhooked_remediation_notice
@@ -813,6 +840,26 @@ decisions:
     - "when flush consumes a boundary row, the written envelope carries `meta.boundary: true`"
   covers:
     - specled.coverage_capture.envelope_meta
+- id: specled.coverage_capture.scenario.degraded_reasons_overlap
+  given:
+    - "an armed formatter whose run is degraded by BOTH an async-tagged test and an unhooked test"
+  when:
+    - "suite_finished flushes the envelope"
+  then:
+    - "meta.degraded_reasons contains both :async and :unhooked — the overlap is recorded, never collapsed to whichever meta key a consumer checks first"
+    - "single-cause degrades record exactly their one cause; a legacy degraded envelope without the key reads back as [:unhooked] when unhooked-modules meta is present, [:async] otherwise"
+  covers:
+    - specled.coverage_capture.degraded_reasons
+- id: specled.coverage_capture.scenario.never_ran_not_inventoried
+  given:
+    - "a fully hooked run whose test_finished stream includes an excluded, a skipped, and an invalid test alongside hooked tests that ran"
+  when:
+    - "suite_finished flushes the envelope"
+  then:
+    - "the never-ran tests are not inventoried: the envelope is not degraded, carries no meta.unhooked_modules, and prints no remediation notice"
+    - "a {:failed, _} test ran and stays inventoried"
+  covers:
+    - specled.coverage_capture.never_ran_not_inventoried
 - id: specled.coverage_capture.scenario.formatter_auditor_inventory_only
   given:
     - "an armed formatter with a stub snapshot_fn and no boundary rows"
@@ -904,4 +951,9 @@ decisions:
     - specled.coverage_capture.formatter_auditor
     - specled.coverage_capture.unhooked_degrade
     - specled.coverage_capture.unhooked_remediation_notice
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.coverage_capture.degraded_reasons
+    - specled.coverage_capture.never_ran_not_inventoried
 ```

@@ -285,8 +285,9 @@ decisions:
     envelope's own `generated_at` timestamp shall render in the Coverage tab with an
     elapsed-time note, flagged as possibly stale past a fixed age threshold.
     `:no_coverage_artifact`, `:legacy_artifact` (naming `mix spec.cover.test` as the
-    re-run command), `:invalid_artifact`, and `:async_contaminated` (a degraded
-    `:per_test` envelope without unhooked-modules meta) shall each render their own
+    re-run command), `:invalid_artifact`, and `:async_contaminated` (a `:per_test`
+    envelope degraded by a window-invalidating `meta.degraded_reasons` entry —
+    `:async` or `:counters_harvested`) shall each render their own
     distinct honest banner in place of the per-row summaries — never collapsing into
     one another, into a fake 0%, or into an empty-but-ok result; a missing compiler
     tracer manifest (`:no_tracer_manifest`) shall render a single "Binding closure
@@ -393,12 +394,15 @@ decisions:
     (`CoverageTriangulation.per_test_requirement_reach/3` +
     `SpecLedEx.Coverage.MfaLines.index/1`), never a file-level proxy.
     Subject-level status distinguishes `:ok_aggregate` from `:ok_per_test`
-    coverage; unhooked-degraded envelopes (`meta.unhooked_modules`
-    non-empty) stay on `:ok_per_test` with `:attribution =>
-    :degraded_unhooked`. `:no_coverage_artifact` / `:legacy_artifact` /
-    `:invalid_artifact` / `:no_tracer_manifest` / `:async_contaminated` (a
-    `:per_test` envelope with `degraded: true` and no unhooked-modules meta
-    — the flag-1 special case that keeps a corrupted per-test capture from
+    coverage; unhooked-only degraded envelopes
+    (`Store.degraded_reasons/1 == [:unhooked]`) stay on `:ok_per_test`
+    with `:attribution => :degraded_unhooked`. `:no_coverage_artifact` /
+    `:legacy_artifact` / `:invalid_artifact` / `:no_tracer_manifest` /
+    `:async_contaminated` (a `:per_test` envelope whose
+    `Store.degraded_reasons/1` include a window-invalidating cause —
+    `:async` or `:counters_harvested`, with `:async` dominating
+    `:unhooked` because it corrupts the hooked windows themselves; the
+    flag-1 guard that keeps a corrupted per-test capture from
     misreporting as trustworthy `:ok_per_test`) degrade distinctly rather
     than collapsing into one empty-but-ok result. `Review.build_view/3`
     calls `build_v2/2` and the Coverage pivot renders its v2 shape, per
@@ -756,6 +760,17 @@ decisions:
     - no two statuses render the same banner text and none renders a bare 0% or empty-but-ok result
   covers:
     - specled.spec_review.coverage_degraded_banners_distinct
+- id: specled.spec_review.coverage_async_dominates_unhooked
+  given:
+    - "a :per_test envelope degraded with meta.degraded_reasons [:async, :unhooked] (an --allow-async run over a partially hooked suite)"
+  when:
+    - CoverageClosure.build_v2/2 resolves the envelope
+  then:
+    - "every subject reports :async_contaminated with an empty by_requirement map — never :ok_per_test claiming exactness over corrupted windows"
+    - "a harvest-only envelope (degraded_reasons [:counters_harvested]) also refuses :ok_per_test"
+    - "an unhooked-only envelope (degraded_reasons [:unhooked]) stays :ok_per_test with attribution :degraded_unhooked"
+  covers:
+    - specled.spec_review.coverage_tab_v2_envelope_data_layer
 - id: specled.spec_review.coverage_no_tracer_manifest_single_banner
   given:
     - a Coverage tab whose coverage mode status is :no_tracer_manifest

@@ -2821,10 +2821,11 @@ defmodule SpecLedEx.Review.Html do
     ~S"""
     <p class="cov-closure-unavailable" role="status">
       <strong>Per-test coverage is degraded.</strong>
-      The last <code>--per-test</code> capture reported async contamination,
-      so per-test attribution may be unreliable. Re-run
-      <code>mix spec.cover.test --per-test</code> without
-      <code>--allow-async</code> before trusting this data.
+      The last <code>--per-test</code> capture reported async contamination
+      or externally-harvested counters, so its per-test windows may be
+      corrupted. Re-run <code>mix spec.cover.test --per-test</code> without
+      <code>--allow-async</code> and without concurrent coverage consumers
+      before trusting this data.
     </p>
     """
   end

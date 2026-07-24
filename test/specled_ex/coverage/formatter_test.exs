@@ -385,6 +385,7 @@ defmodule SpecLedEx.Coverage.FormatterTest do
 
       assert line_other in rem_lines
       refute envelope.degraded
+      refute Map.has_key?(envelope.meta, :degraded_reasons)
     end
 
     @tag spec: [
@@ -448,7 +449,145 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       assert envelope.degraded
       assert envelope.payload == []
       assert envelope.meta[:unhooked_modules] == [ATest]
+      # Single-cause degrade records exactly its one cause.
+      assert envelope.meta[:degraded_reasons] == [:unhooked]
       assert File.exists?(path)
+    end
+
+    @tag spec: [
+           "specled.coverage_capture.degraded_reasons",
+           "specled.coverage_capture.scenario.degraded_reasons_overlap"
+         ]
+    test "async + unhooked overlap records both causes in meta.degraded_reasons" do
+      line = __ENV__.line
+
+      snapshots = [
+        %{Fixture => [{line, 0}]},
+        %{Fixture => [{line, 1}]}
+      ]
+
+      # async-tagged AND unhooked (no boundary row) in the same run — the
+      # overlap the consumer previously reconstructed wrongly by elimination.
+      test = %ExUnit.Test{
+        module: OverlapTest,
+        name: :"test x",
+        tags: %{async: true, test_pid: self()}
+      }
+
+      {_output, path} = flush_suite(snapshots: snapshots, tests: [test])
+
+      assert {:ok, envelope} = SpecLedEx.Coverage.Store.read_v2(path)
+      assert envelope.degraded
+      assert :async in envelope.meta[:degraded_reasons]
+      assert :unhooked in envelope.meta[:degraded_reasons]
+    end
+
+    @tag spec: [
+           "specled.coverage_capture.degraded_reasons",
+           "specled.coverage_capture.scenario.degraded_reasons_overlap"
+         ]
+    test "harvest-only degrade records [:counters_harvested]" do
+      line = __ENV__.line
+      boundary_tid = new_boundary_table()
+
+      true =
+        :ets.insert(
+          boundary_tid,
+          {{HarvestTest, :"test x"}, %{hits: %{Fixture => [line]}, diagnostics: 1, tags: %{}}}
+        )
+
+      snapshots = [
+        %{Fixture => [{line, 0}]},
+        %{Fixture => [{line, 1}]}
+      ]
+
+      test = %ExUnit.Test{module: HarvestTest, name: :"test x", tags: %{test_pid: self()}}
+
+      {output, path} =
+        flush_suite(snapshots: snapshots, tests: [test], boundary_table: boundary_tid)
+
+      assert output =~ "counters-externally-harvested"
+      assert {:ok, envelope} = SpecLedEx.Coverage.Store.read_v2(path)
+      assert envelope.degraded
+      assert envelope.meta[:degraded_reasons] == [:counters_harvested]
+    end
+
+    @tag spec: [
+           "specled.coverage_capture.never_ran_not_inventoried",
+           "specled.coverage_capture.scenario.never_ran_not_inventoried"
+         ]
+    test "excluded/skipped/invalid tests are never inventoried and cannot degrade a fully hooked run" do
+      line = __ENV__.line
+      boundary_tid = new_boundary_table()
+
+      true =
+        :ets.insert(
+          boundary_tid,
+          {{RanTest, :"test ran"}, %{hits: %{Fixture => [line]}, diagnostics: 0, tags: %{}}}
+        )
+
+      snapshots = [
+        %{Fixture => [{line, 0}]},
+        %{Fixture => [{line, 1}]}
+      ]
+
+      ran = %ExUnit.Test{module: RanTest, name: :"test ran", tags: %{test_pid: self()}}
+
+      # `async: true` on the never-ran tests also proves the degraded_async?
+      # fold skips them — ExUnit merges module tags into tests it never runs.
+      never_ran =
+        for {name, state} <- [
+              {:"test excluded", {:excluded, "due to --only"}},
+              {:"test skipped", {:skipped, "@tag :skip"}},
+              {:"test invalid", {:invalid, RanTest}}
+            ] do
+          %ExUnit.Test{
+            module: RanTest,
+            name: name,
+            state: state,
+            tags: %{async: true, test_pid: self()}
+          }
+        end
+
+      {output, path} =
+        flush_suite(
+          snapshots: snapshots,
+          tests: [ran | never_ran],
+          boundary_table: boundary_tid
+        )
+
+      refute output =~ "ran without the per-test boundary hook"
+      assert {:ok, envelope} = SpecLedEx.Coverage.Store.read_v2(path)
+      refute envelope.degraded
+      refute Map.has_key?(envelope.meta, :unhooked_modules)
+      refute Map.has_key?(envelope.meta, :degraded_reasons)
+    end
+
+    @tag spec: [
+           "specled.coverage_capture.never_ran_not_inventoried",
+           "specled.coverage_capture.scenario.never_ran_not_inventoried"
+         ]
+    test "a failed test ran — it stays inventoried and still degrades when unhooked" do
+      line = __ENV__.line
+
+      snapshots = [
+        %{Fixture => [{line, 0}]},
+        %{Fixture => [{line, 1}]}
+      ]
+
+      failed = %ExUnit.Test{
+        module: FailedTest,
+        name: :"test boom",
+        state: {:failed, []},
+        tags: %{test_pid: self()}
+      }
+
+      {output, path} = flush_suite(snapshots: snapshots, tests: [failed])
+
+      assert output =~ "FailedTest"
+      assert {:ok, envelope} = SpecLedEx.Coverage.Store.read_v2(path)
+      assert envelope.degraded
+      assert envelope.meta[:unhooked_modules] == [FailedTest]
     end
 
     @tag spec: "specled.coverage_capture.formatter_auditor"

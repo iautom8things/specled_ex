@@ -295,13 +295,15 @@ defmodule SpecLedEx.Review.CoverageClosure do
           Map.new(subjects, fn s -> {s.id, %{status: status, by_requirement: %{}}} end)
 
         # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
-        # Flag 1 (specled_-155.7 orchestrator addendum): async contamination
-        # (degraded: true without unhooked_modules meta) still collapses to
-        # :async_contaminated with empty by_requirement. Unhooked-only
-        # degradation (Stage 2 meta.unhooked_modules) stays on the
-        # :ok_per_test path so hooked-window MFA reach remains visible.
+        # Flag 1 (specled_-155.7 orchestrator addendum): window-invalidating
+        # degradation (`:async` contamination or `:counters_harvested` in
+        # `meta.degraded_reasons`) collapses to :async_contaminated with an
+        # empty by_requirement — async dominates :unhooked, because it
+        # corrupts the hooked windows themselves. Unhooked-only degradation
+        # stays on the :ok_per_test path so hooked-window MFA reach remains
+        # visible.
         {:ok, %{mode: :per_test, degraded: true} = envelope} ->
-          if unhooked_modules(envelope) == [] do
+          if windows_invalidated?(envelope) do
             Map.new(subjects, fn s ->
               {s.id, %{status: :async_contaminated, by_requirement: %{}}}
             end)
@@ -387,11 +389,20 @@ defmodule SpecLedEx.Review.CoverageClosure do
   defp maybe_put_attribution(reach, _status, _attribution, _unhooked), do: reach
 
   defp per_test_attribution(%{mode: :per_test, degraded: true} = envelope) do
-    if unhooked_modules(envelope) != [], do: :degraded_unhooked, else: :exact
+    if :unhooked in degraded_reasons(envelope), do: :degraded_unhooked, else: :exact
   end
 
   defp per_test_attribution(%{mode: :per_test}), do: :exact
   defp per_test_attribution(_), do: :exact
+
+  # `:async` and `:counters_harvested` corrupt the hooked windows themselves,
+  # so no per-test claim survives them; `:unhooked` only omits coverage.
+  defp windows_invalidated?(envelope) do
+    reasons = degraded_reasons(envelope)
+    :async in reasons or :counters_harvested in reasons
+  end
+
+  defp degraded_reasons(envelope), do: Store.degraded_reasons(envelope)
 
   defp unhooked_modules(%{meta: meta}) when is_map(meta) do
     case Map.get(meta, :unhooked_modules) || Map.get(meta, "unhooked_modules") do

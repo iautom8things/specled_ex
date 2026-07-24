@@ -807,14 +807,38 @@ defmodule SpecLedEx.CoverageTriangulation do
     ]
   end
 
-  def envelope_findings(%{mode: :per_test, degraded: true}, _closure_map, _tag_index) do
-    [
-      envelope_unavailable(
-        :async_contaminated,
-        "Per-test coverage lane reported async contamination; re-run without --allow-async " <>
-          "(or re-run `mix spec.cover.test`) before trusting per-test attribution."
-      )
-    ]
+  # Window-invalidating degradation (`:async` / `:counters_harvested` in
+  # `meta.degraded_reasons`) refuses per-test findings — the hooked windows
+  # themselves may be corrupted. Unhooked-only degradation keeps the hooked
+  # windows trustworthy, so the detectors still run over the hooked payload.
+  def envelope_findings(%{mode: :per_test, degraded: true} = envelope, closure_map, tag_index)
+      when is_map(closure_map) and is_map(tag_index) do
+    reasons = SpecLedEx.Coverage.Store.degraded_reasons(envelope)
+
+    cond do
+      :async in reasons ->
+        [
+          envelope_unavailable(
+            :async_contaminated,
+            "Per-test coverage lane reported async contamination; re-run without --allow-async " <>
+              "(or re-run `mix spec.cover.test`) before trusting per-test attribution."
+          )
+        ]
+
+      :counters_harvested in reasons ->
+        [
+          envelope_unavailable(
+            :async_contaminated,
+            "Per-test coverage lane recorded externally-harvested counters (another process " <>
+              "read-and-reset coverage counters mid-run); re-run `mix spec.cover.test` " <>
+              "without concurrent coverage consumers before trusting per-test attribution."
+          )
+        ]
+
+      true ->
+        records = Map.get(envelope, :payload)
+        findings(if(is_list(records), do: records, else: []), closure_map, tag_index)
+    end
   end
 
   def envelope_findings(%{mode: :per_test, payload: records}, closure_map, tag_index)

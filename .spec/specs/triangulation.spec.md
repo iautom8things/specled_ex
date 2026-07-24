@@ -178,10 +178,15 @@ decisions:
   stability: evolving
 - id: specled.triangulation.envelope_async_contaminated
   statement: >-
-    Given a `:per_test` v2 envelope with `degraded: true` (the `--per-test`
-    lane's async-contamination guard), `envelope_findings/3` shall emit a
-    single `detector_unavailable` finding with reason `async_contaminated`
-    instead of computing per-test findings over data that may be corrupted.
+    Given a `:per_test` v2 envelope degraded by a window-invalidating
+    reason (`:async` or `:counters_harvested` in
+    `Store.degraded_reasons/1`, including the legacy no-reasons fallback),
+    `envelope_findings/3` shall emit a single `detector_unavailable`
+    finding with reason `async_contaminated` — with cause-accurate message
+    text per reason — instead of computing per-test findings over data
+    that may be corrupted. An unhooked-only degrade
+    (`degraded_reasons == [:unhooked]`) keeps its hooked windows
+    trustworthy: the detectors shall still run over the hooked payload.
     A non-degraded `:per_test` envelope shall delegate its `:payload` to
     `findings/3` unchanged.
   priority: must
@@ -293,11 +298,12 @@ decisions:
     - specled.triangulation.envelope_aggregate_underspecified_realization
 - id: specled.triangulation.scenario.envelope_per_test_async_contaminated
   given:
-    - "a `:per_test` envelope with `degraded: true`"
+    - "a `:per_test` envelope degraded by a window-invalidating reason (`[:async]`, `[:counters_harvested]`, or legacy `degraded: true` without reasons meta)"
   when:
     - CoverageTriangulation.envelope_findings/3 is called
   then:
-    - "the returned list is exactly one `detector_unavailable` finding with reason `async_contaminated`"
+    - "the returned list is exactly one `detector_unavailable` finding with reason `async_contaminated`, its message naming the actual cause"
+    - "an unhooked-only envelope (`degraded_reasons == [:unhooked]`) instead runs the detectors over its hooked payload"
   covers:
     - specled.triangulation.envelope_async_contaminated
 - id: specled.triangulation.scenario.aggregate_reach_covered_uncovered_split

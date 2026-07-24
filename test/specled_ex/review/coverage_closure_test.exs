@@ -384,6 +384,67 @@ defmodule SpecLedEx.Review.CoverageClosureTest do
       assert reach["subject_a"].unhooked_modules == [UnhookedTestModule]
       refute reach["subject_a"].status == :async_contaminated
     end
+
+    @tag spec: "specled.spec_review.coverage_async_dominates_unhooked"
+    test "per_test mode: async dominates unhooked — an overlap degrade reports :async_contaminated, never :ok_per_test" do
+      reach =
+        CoverageClosure.build_v2(fixture_index(),
+          tracer_edges: @edges,
+          envelope: %{
+            mode: :per_test,
+            payload: [],
+            degraded: true,
+            meta: %{
+              unhooked_modules: [UnhookedTestModule],
+              degraded_reasons: [:async, :unhooked]
+            }
+          }
+        )
+
+      # Pre-degraded_reasons, non-empty unhooked meta masked the async
+      # contamination and re-published corrupted windows as trustworthy.
+      assert reach["subject_a"] == %{status: :async_contaminated, by_requirement: %{}}
+    end
+
+    @tag spec: "specled.spec_review.coverage_async_dominates_unhooked"
+    test "per_test mode: harvest-only degrade (degraded_reasons [:counters_harvested]) also refuses :ok_per_test" do
+      reach =
+        CoverageClosure.build_v2(fixture_index(),
+          tracer_edges: @edges,
+          envelope: %{
+            mode: :per_test,
+            payload: [],
+            degraded: true,
+            meta: %{degraded_reasons: [:counters_harvested]}
+          }
+        )
+
+      assert reach["subject_a"] == %{status: :async_contaminated, by_requirement: %{}}
+    end
+
+    @tag spec: "specled.spec_review.coverage_async_dominates_unhooked"
+    test "per_test mode: explicit unhooked-only degraded_reasons stays :ok_per_test with attribution :degraded_unhooked" do
+      reach =
+        CoverageClosure.build_v2(fixture_index(),
+          tracer_edges: @edges,
+          envelope: %{
+            mode: :per_test,
+            payload: [],
+            degraded: true,
+            meta: %{
+              unhooked_modules: [UnhookedTestModule],
+              degraded_reasons: [:unhooked]
+            }
+          },
+          line_index: %{
+            FixtureA => %{{:run, 1} => MapSet.new([10])},
+            FixtureB => %{{:run, 1} => MapSet.new([20])}
+          }
+        )
+
+      assert reach["subject_a"].status == :ok_per_test
+      assert reach["subject_a"].attribution == :degraded_unhooked
+    end
   end
 
   # ---------------------------------------------------------------------------

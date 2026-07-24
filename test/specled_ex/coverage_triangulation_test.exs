@@ -498,6 +498,76 @@ defmodule SpecLedEx.CoverageTriangulationTest do
       assert finding["code"] == "detector_unavailable"
       assert finding["reason"] == "async_contaminated"
     end
+
+    test "an unhooked-only degrade (degraded_reasons [:unhooked]) still runs the detectors over the hooked payload" do
+      records = [
+        coverage_record(test_id: "B.t1", file: "lib/b.ex", lines_hit: [1])
+      ]
+
+      envelope = %{
+        mode: :per_test,
+        degraded: true,
+        payload: records,
+        meta: %{unhooked_modules: [UnhookedFixture], degraded_reasons: [:unhooked]}
+      }
+
+      via_envelope =
+        CoverageTriangulation.envelope_findings(
+          envelope,
+          fixture_closure_map(),
+          fixture_tag_index()
+        )
+
+      via_records =
+        CoverageTriangulation.findings(records, fixture_closure_map(), fixture_tag_index())
+
+      # Hooked windows stay trustworthy — same findings as a clean run over
+      # the same payload, never a blanket detector_unavailable.
+      assert via_envelope == via_records
+      refute Enum.any?(via_envelope, &(&1["reason"] == "async_contaminated"))
+    end
+
+    test "async dominates unhooked: an overlap degrade refuses per-test findings" do
+      envelope = %{
+        mode: :per_test,
+        degraded: true,
+        payload: [],
+        meta: %{unhooked_modules: [UnhookedFixture], degraded_reasons: [:async, :unhooked]}
+      }
+
+      assert [finding] =
+               CoverageTriangulation.envelope_findings(
+                 envelope,
+                 fixture_closure_map(),
+                 fixture_tag_index()
+               )
+
+      assert finding["code"] == "detector_unavailable"
+      assert finding["reason"] == "async_contaminated"
+      assert finding["message"] =~ "--allow-async"
+    end
+
+    test "harvest-only degrade refuses per-test findings with a cause-accurate message" do
+      envelope = %{
+        mode: :per_test,
+        degraded: true,
+        payload: [],
+        meta: %{degraded_reasons: [:counters_harvested]}
+      }
+
+      assert [finding] =
+               CoverageTriangulation.envelope_findings(
+                 envelope,
+                 fixture_closure_map(),
+                 fixture_tag_index()
+               )
+
+      assert finding["code"] == "detector_unavailable"
+      assert finding["reason"] == "async_contaminated"
+      # Never the mis-targeted --allow-async advice for a harvest cause.
+      assert finding["message"] =~ "harvested"
+      refute finding["message"] =~ "--allow-async"
+    end
   end
 
   describe "envelope_findings/3 — :aggregate envelope" do
