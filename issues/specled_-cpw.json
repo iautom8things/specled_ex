@@ -12,11 +12,15 @@
     {
       "text": "Fix scheduled: epic specled_-pzd (per-test exact attribution via synchronous boundary hook). S1 (specled_-pzd.1) lands the sync boundary engine; S2 (specled_-pzd.2) demotes the formatter to auditor and flips the claim surfaces via superseding ADR. Close this ticket when S2 merges.",
       "timestamp": "2026-07-24T12:22:15Z"
+    },
+    {
+      "text": "Resolved in code by epic specled_-pzd (S2 formatter demotion + synchronous boundary hook); all epic children closed and merged to the epic branch. Close when the epic's release PR lands on main.",
+      "timestamp": "2026-07-24T15:40:29Z"
     }
   ],
   "priority": 2,
   "status": "open",
   "title": "Per-test coverage: cross-test attribution race via async ExUnit formatter casts",
   "type": "bug",
-  "updated_at": "2026-07-24T12:22:16Z"
+  "updated_at": "2026-07-24T15:40:29Z"
 }
