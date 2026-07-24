@@ -57,11 +57,15 @@
     {
       "text": "specled_-q6l: 5/6 closed, 1 in flight (q6l.4 verifying), next: specled_-q6l.4",
       "timestamp": "2026-07-24T13:23:17Z"
+    },
+    {
+      "text": "MERGE GATE after specled_-q6l.2 close: GREEN. format OK, deps.unlock OK, compile+full-suite green via smoke (1162/0) @ f44a81b, mix spec.check (bare) --base 2e6f3d4 exit 0, 0 [ERROR] findings.",
+      "timestamp": "2026-07-24T13:25:29Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fast-follow: Aggregate-first spec coverage — specled_-47j remediation",
   "type": "epic",
-  "updated_at": "2026-07-24T13:23:17Z"
+  "updated_at": "2026-07-24T13:25:29Z"
 }
