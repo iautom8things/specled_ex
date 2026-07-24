@@ -33,11 +33,15 @@
     {
       "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/15 (release 0.5.2). CI running: Check Specs + Test matrix (1.18.4/OTP26, 1.19.5/OTP28).",
       "timestamp": "2026-07-24T11:27:25Z"
+    },
+    {
+      "text": "Squash-merged to main: 699a503 (PR #15, release 0.5.2). Post-merge Specs run green (30092343326). Remote + local branches deleted, worktree cleaned.",
+      "timestamp": "2026-07-24T12:16:59Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "Verifier run_command temp-script race: false verification_command_failed on untouched subjects",
   "type": "bug",
-  "updated_at": "2026-07-24T11:27:25Z"
+  "updated_at": "2026-07-24T12:16:59Z"
 }
