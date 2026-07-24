@@ -42,11 +42,15 @@
     {
       "text": "CI green on first run (all 3 checks, 0 fix commits). Proceeding to squash-merge.",
       "timestamp": "2026-07-24T18:28:32Z"
+    },
+    {
+      "text": "Squash-merged to main (ce39e0f). Watching post-merge specs.yml run.",
+      "timestamp": "2026-07-24T18:30:47Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "Attribution sidecar temp-file naming: VM-local unique_integer (same collision class as specled_-vnw)",
   "type": "task",
-  "updated_at": "2026-07-24T18:30:46Z"
+  "updated_at": "2026-07-24T18:30:47Z"
 }
