@@ -19,11 +19,15 @@
     {
       "text": "IMPLEMENTED\nSession: 45487a8d-2b6e-4948-8a5e-8ce33f9f30f1\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/45487a8d-2b6e-4948-8a5e-8ce33f9f30f1.jsonl\n\nCommit: 2dbe269\nFiles touched: .spec/specs/spec_review.spec.md, test/specled_ex/review/html_test.exs\nTests added: SpecLedEx.Review.HtmlTest \"render_coverage_tab — v2 envelope bind-closure view\" \u003e \"qualifies the closure line and the \\\"Reached by tests\\\" row as observed, not exact\" (new); plus per-clause `# covers:` comments added to 11 existing tests/describe blocks in the same file (closure-line format x2, per-test-only row, file-level-proxy, rollup badge describe block, generated_at staleness x2, degraded banners x4, no_tracer_manifest)\nVerification stubs flipped: none newly stubbed — added 8 new requirement ids directly into the already execute:true `mix test test/specled_ex/review/html_test.exs` verification entry's covers list (specled.spec_review.coverage_closure_line_format, coverage_reached_by_tests_per_test_only, coverage_observed_approximate_qualifier, coverage_file_level_proxy_qualifier, coverage_rollup_badge, coverage_generated_at_staleness, coverage_degraded_banners_distinct, coverage_no_tracer_manifest_banner)\nVerification tier: change-scoped — test/specled_ex/review/html_test.exs (90 tests, 0 failures), mix compile --warnings-as-errors (clean), mix format --check-formatted (clean), mix spec.check --no-run-commands --base 2e6f3d4103a75149b45b72bb5c9557fd4fe240f3 (status=pass errors=0 warnings=0, branch findings=0); full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 2 (first run's spec.check hit a YAML colon-in-plain-scalar parse error in one new scenario's `then:` lines; quoted the two offending strings and re-ran green)\nDeferred must requirements: specled_-gai — retire/shrink the duplicated coverage_tab_bind_closure parent statement once lib/** edits are back in scope (its id/statement were kept unchanged rather than removed, since 3 source_file verifications in lib/** carry `# covers:` comments against it that must keep resolving, and lib/** was out of scope for this ticket)\n\nSummary: Split specled.spec_review.coverage_tab_bind_closure's 8 fused clauses into 8 standalone requirement ids, each with its own spec-scenario and a named covering test, so a regression in any one clause (e.g. the per-test-only \"Reached by tests\" gating, or the file-level-proxy qualifier) now fails at its own requirement rather than only at the compound one. The compound id/statement was kept in place (not deleted) to avoid touching out-of-scope lib/** covers comments; a follow-up tracks its eventual retirement. No production code changed.",
       "timestamp": "2026-07-24T12:37:03Z"
+    },
+    {
+      "text": "-F",
+      "timestamp": "2026-07-24T12:41:50Z"
     }
   ],
   "priority": 3,
   "status": "in_progress",
   "title": "Split over-compound spec_review.coverage_tab_bind_closure requirement",
   "type": "task",
-  "updated_at": "2026-07-24T12:37:42Z"
+  "updated_at": "2026-07-24T12:41:50Z"
 }
