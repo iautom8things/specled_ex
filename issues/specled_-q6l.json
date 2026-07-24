@@ -65,11 +65,15 @@
     {
       "text": "MINI-RETRO\nbounces: 0 (none — every child auto-approved via Selective Audit Gate except 6v6, whose full audit also approved on first pass)\nfull_suite_runs: 6 (one epic-worktree smoke per close; each also served as the gate's compile+test leg)\nfinals_gt1: 3 (q6l.5: YAML quoting fix; 6v6: re-proof after spec co-updates; q6l.4: 2 clean)\nflake_accepts: 1 (verify-6v6: pre-existing shared-$TMPDIR last_run.status pollution in store_test — root-caused as diff-independent, upheld by full audit, filed as specled_-26g)\nescalations: 0\nlessons_kept/retired: 0/0 (no verification failures or audit bounces occurred; no lessons distilled)",
       "timestamp": "2026-07-24T13:36:04Z"
+    },
+    {
+      "text": "ORCHESTRATED\nChildren closed: 6\nBOUNCEs encountered: 0\nUser escalations: 0",
+      "timestamp": "2026-07-24T13:36:52Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fast-follow: Aggregate-first spec coverage — specled_-47j remediation",
   "type": "epic",
-  "updated_at": "2026-07-24T13:36:04Z"
+  "updated_at": "2026-07-24T13:36:52Z"
 }
