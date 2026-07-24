@@ -22,11 +22,15 @@
     {
       "text": "Heads-up: .claude/scripts/worktree-cleanup.sh was removed in 256f8ba — the repo adopted the synced worktree workflow (host-elixir@0.22.0 from agentic-dotfiles); cleanup is now make worktree-cleanup via make/worktree.mk, which uses a WORKTREE_CLEANUP_BASE rev comparison. Re-test the squash-merged scenario against the new target; this ticket may be obsolete or need re-scoping.",
       "timestamp": "2026-07-24T10:05:22Z"
+    },
+    {
+      "text": "Confirmed from the synced workflow docs: make worktree-cleanup accepts FORCE=1 to bypass the dirty+unmerged refusal gates, and WORKTREE_CLEANUP_BASE=main is the documented post-squash-merge cleanup path. The 'no force path' gap this ticket describes is addressed by the new target; remaining work is just verifying the squash-merged scenario once.",
+      "timestamp": "2026-07-24T10:05:35Z"
     }
   ],
   "priority": 2,
   "status": "open",
   "title": "worktree-cleanup.sh cannot clean squash-merged worktrees (no force path)",
   "type": "task",
-  "updated_at": "2026-07-24T10:05:22Z"
+  "updated_at": "2026-07-24T10:05:35Z"
 }
