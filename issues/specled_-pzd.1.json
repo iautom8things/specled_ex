@@ -51,11 +51,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: 5c8acfce-20cb-419d-884e-ebc8687b4943\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/5c8acfce-20cb-419d-884e-ebc8687b4943.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. No auditor was spawned per policy.",
       "timestamp": "2026-07-24T14:00:07Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-pzd/per-test-sync-boundary. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-24T14:02:05Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "S1: Boundary engine, SpecLedEx.Case, deterministic exclusivity",
   "type": "task",
-  "updated_at": "2026-07-24T14:00:07Z"
+  "updated_at": "2026-07-24T14:02:05Z"
 }
