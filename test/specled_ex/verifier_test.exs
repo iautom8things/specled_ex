@@ -1666,6 +1666,142 @@ defmodule SpecLedEx.VerifierTest do
            end)
   end
 
+  @tag spec: "specled.tagged_tests.findings_echo_exunit_seed"
+  @tag spec: "specled.verify.command_output_capture_dir"
+  test "a shared-fate timeout finding echoes the ExUnit seed and its capture records timed_out",
+       %{root: root} do
+    capture_dir = Path.join(root, "capture")
+    System.put_env("SPECLED_COMMAND_OUTPUT_DIR", capture_dir)
+
+    # The shim never touches SPECLED_ATTRIBUTION_PATH, so the timeout
+    # distributes shared-fate (command_timeout_details/1, not the attributed
+    # path). Budget generous enough that the shim reliably echoes the seed
+    # line before the process-group kill; matches the 2000ms sibling tests.
+    shim = ~S"""
+    echo "Running ExUnit with seed: 424242, max_cases: 8"
+    sleep 5
+    """
+
+    try do
+      report = run_two_subject_merged(root, shim, run_commands: true, command_timeout_ms: 2000)
+
+      timeouts = findings(report, "verification_command_timeout")
+      assert length(timeouts) == 2
+
+      assert Enum.all?(timeouts, fn timeout ->
+               timeout["message"] =~ "append --seed 424242 to the command to reproduce"
+             end)
+
+      assert [capture_path] = Path.wildcard(Path.join(capture_dir, "specled_cmd_*.log"))
+      captured = File.read!(capture_path)
+      assert captured =~ "timed_out: true"
+    after
+      System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
+    end
+  end
+
+  @tag spec: "specled.tagged_tests.findings_echo_exunit_seed"
+  test "a failure without a seed line appends no seed note", %{root: root} do
+    shim = ~S"""
+    echo boom
+    exit 1
+    """
+
+    report = run_two_subject_merged(root, shim, run_commands: true)
+
+    failures = findings(report, "verification_command_failed")
+    assert length(failures) == 2
+
+    refute Enum.any?(failures, fn failure ->
+             failure["message"] =~ "exunit seed:" or failure["message"] =~ "--seed"
+           end)
+  end
+
+  @tag spec: "specled.tagged_tests.findings_echo_exunit_seed"
+  test "a double timeout pairs each seed with its run: first-run seed primary, resume seed in the suffix",
+       %{root: root} do
+    # Branch on the remainder-only resume command (see the primary resume
+    # test) so each invocation writes its artifact first. First run: seed
+    # 111111, req.alpha passes, req.beta never starts, hang. Resume (beta
+    # only): seed 222222, req.beta's test starts, hang again — a double
+    # timeout whose finding must keep 111111 as the primary echo and pair
+    # 222222 with the resume run's suspect.
+    shim = ~S"""
+    case "$*" in
+    *alpha_test.exs*)
+    echo "Running ExUnit with seed: 111111, max_cases: 8"
+    cat >> "$SPECLED_ATTRIBUTION_PATH" <<'JSONL'
+    {"event":"test_finished","id":"AlphaTest.t","file":"test/alpha_test.exs","line":5,"spec":["req.alpha"],"state":"pass"}
+    JSONL
+    sleep 5
+    ;;
+    *)
+    echo "Running ExUnit with seed: 222222, max_cases: 8"
+    cat >> "$SPECLED_ATTRIBUTION_PATH" <<'JSONL'
+    {"event":"test_started","id":"BetaTest.hang","file":"test/beta_test.exs","line":6,"spec":["req.beta"]}
+    JSONL
+    sleep 5
+    ;;
+    esac
+    """
+
+    # Both runs must write before their kills; keep the budget generous.
+    report = run_two_subject_merged(root, shim, run_commands: true, command_timeout_ms: 2000)
+
+    timeouts = findings(report, "verification_command_timeout")
+    beta = Enum.find(timeouts, &(&1["subject_id"] == "beta"))
+    assert beta
+
+    assert beta["message"] =~ "exunit seed: 111111 — append --seed 111111"
+
+    assert beta["message"] =~
+             "resume pass seed: 222222 — append --seed 222222 to the resume remainder command"
+
+    refute beta["message"] =~ "exunit seed: 222222"
+  end
+
+  @tag spec: "specled.verify.command_findings_echo_exunit_seed"
+  test "a generic command failure echoes the seed and a seedless failure appends no note",
+       %{root: root} do
+    report =
+      verify_subject(
+        root,
+        %{
+          "requirements" => [
+            %{"id" => "req.seeded", "statement" => "Seeded"},
+            %{"id" => "req.seedless", "statement" => "Seedless"}
+          ],
+          "verification" => [
+            %{
+              "kind" => "command",
+              "target" => "echo \"Running ExUnit with seed: 424242, max_cases: 8\"; exit 1",
+              "covers" => ["req.seeded"],
+              "execute" => true
+            },
+            %{
+              "kind" => "command",
+              "target" => "echo boom; exit 1",
+              "covers" => ["req.seedless"],
+              "execute" => true
+            }
+          ]
+        },
+        run_commands: true
+      )
+
+    failures = findings(report, "verification_command_failed")
+    assert length(failures) == 2
+
+    seeded = Enum.find(failures, &(&1["message"] =~ "Running ExUnit with seed"))
+    seedless = Enum.find(failures, &(&1["message"] =~ "boom"))
+
+    assert seeded["message"] =~
+             "exunit seed: 424242 — append --seed 424242 to the command to reproduce"
+
+    refute seedless["message"] =~ "exunit seed:"
+    refute seedless["message"] =~ "--seed"
+  end
+
   defp run_two_subject_merged(root, shim_body, verify_opts) do
     shim_dir = Path.join(root, "bin")
     File.mkdir_p!(shim_dir)
@@ -1797,31 +1933,36 @@ defmodule SpecLedEx.VerifierTest do
       assert Path.wildcard(Path.join(capture_dir, "*")) == []
 
       # Point the capture dir under a regular file so mkdir_p fails: capture is
-      # best-effort, so the failure finding must still be produced unchanged.
+      # best-effort, so the failure finding must still be produced unchanged —
+      # but the capture failure itself must warn on stderr, not vanish.
       blocker = Path.join(root, "blocker")
       File.write!(blocker, "")
       System.put_env("SPECLED_COMMAND_OUTPUT_DIR", Path.join(blocker, "nested"))
 
-      failing =
-        verify_subject(
-          root,
-          %{
-            "requirements" => [%{"id" => "req.cap", "statement" => "Captured"}],
-            "verification" => [
-              %{
-                "kind" => "command",
-                "target" => "exit 3",
-                "covers" => ["req.cap"],
-                "execute" => true
-              }
-            ]
-          },
-          run_commands: true
-        )
+      {failing, stderr} =
+        ExUnit.CaptureIO.with_io(:stderr, fn ->
+          verify_subject(
+            root,
+            %{
+              "requirements" => [%{"id" => "req.cap", "statement" => "Captured"}],
+              "verification" => [
+                %{
+                  "kind" => "command",
+                  "target" => "exit 3",
+                  "covers" => ["req.cap"],
+                  "execute" => true
+                }
+              ]
+            },
+            run_commands: true
+          )
+        end)
 
       assert failing["status"] == "fail"
       assert [failure] = findings(failing, "verification_command_failed")
       assert failure["message"] =~ "exit_code=3"
+      assert stderr =~ "specled: forensic output capture failed"
+      assert stderr =~ "verification result unaffected"
     after
       System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
     end

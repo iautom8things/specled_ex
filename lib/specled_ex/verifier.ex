@@ -510,15 +510,32 @@ defmodule SpecLedEx.Verifier do
   # own in-flight tests when it recorded any.
   defp resume_timeout_suffix(command_result) do
     if Map.get(command_result, :resume_timed_out, false) do
-      case Map.get(command_result, :resume_in_flight, []) do
-        [] ->
-          "\nthe resume pass re-ran the timeout remainder alone with a fresh full budget and still timed out — the remaining tests, not the budget, are the likely problem"
+      base =
+        case Map.get(command_result, :resume_in_flight, []) do
+          [] ->
+            "\nthe resume pass re-ran the timeout remainder alone with a fresh full budget and still timed out — the remaining tests, not the budget, are the likely problem"
 
-        suspects ->
-          "\nthe resume pass re-ran the timeout remainder alone with a fresh full budget and still timed out on #{Enum.join(suspects, ", ")} — this test, not the budget, is the likely problem"
-      end
+          suspects ->
+            "\nthe resume pass re-ran the timeout remainder alone with a fresh full budget and still timed out on #{Enum.join(suspects, ", ")} — this test, not the budget, is the likely problem"
+        end
+
+      base <> resume_seed_note(command_result)
     else
       ""
+    end
+  end
+
+  # The finding's primary seed echo belongs to the first run (its output is
+  # what the result retains); the resume run drew its own seed, so a hang
+  # suspect named by the resume pass reproduces under this seed, not the
+  # primary one.
+  defp resume_seed_note(command_result) do
+    case Map.get(command_result, :resume_seed) do
+      nil ->
+        ""
+
+      seed ->
+        "\nresume pass seed: #{seed} — append --seed #{seed} to the resume remainder command to reproduce its run order"
     end
   end
 
@@ -647,14 +664,23 @@ defmodule SpecLedEx.Verifier do
   # ExUnit randomizes test order per seed, so an order-dependent flake in the
   # merged tagged_tests run is unreproducible without the seed. Findings
   # truncate long output (and timeout details drop it entirely), so the seed
-  # line is re-parsed here and echoed explicitly with a repro hint.
+  # line is re-parsed here and echoed explicitly with a repro hint. Applies
+  # to generic `command` verifications as well — any command that runs ExUnit
+  # benefits (specled.verify.command_findings_echo_exunit_seed).
   defp exunit_seed_note(output) do
-    case Regex.run(~r/Running ExUnit with seed: (\d+)/, output || "") do
-      [_, seed] ->
-        "\nexunit seed: #{seed} — append --seed #{seed} to the command to reproduce this run order"
-
-      _ ->
+    case exunit_seed(output) do
+      nil ->
         ""
+
+      seed ->
+        "\nexunit seed: #{seed} — append --seed #{seed} to the command to reproduce this run order"
+    end
+  end
+
+  defp exunit_seed(output) do
+    case Regex.run(~r/Running ExUnit with seed: (\d+)/, output || "") do
+      [_, seed] -> seed
+      _ -> nil
     end
   end
 
@@ -2211,7 +2237,10 @@ defmodule SpecLedEx.Verifier do
   # still counts as timed out when the resume pass itself timed out or when the
   # merged attribution still holds in-flight hang suspects (a first-run hanger we
   # chose not to re-run). `resume_in_flight` records the resume pass's own hang
-  # suspects so a double timeout can name them as the likely problem.
+  # suspects so a double timeout can name them as the likely problem. The
+  # retained `output` (and thus the primary seed echo) stays the FIRST run's;
+  # `resume_seed` carries the resume run's own seed so the resume-timeout
+  # suffix can pair each seed with the run it reproduces.
   defp resumed_result(first_result, resume_result, resume_attribution, merged) do
     first_result
     |> Map.put(
@@ -2220,6 +2249,7 @@ defmodule SpecLedEx.Verifier do
     )
     |> Map.put(:resume_timed_out, command_timed_out?(resume_result))
     |> Map.put(:resume_in_flight, attributed_hang_suspects(resume_attribution || %{}))
+    |> Map.put(:resume_seed, exunit_seed(Map.get(resume_result, :output)))
   end
 
   # Maps each cover id to the `{absolute_file, test_line}` locations the tag
@@ -2386,7 +2416,17 @@ defmodule SpecLedEx.Verifier do
 
     :ok
   rescue
-    _ -> :ok
+    # Narrow by design: only filesystem failures (unwritable dir, disk full)
+    # are the tolerated best-effort case, and even those must not fail
+    # silently — the capture exists to diagnose exactly the loaded runners
+    # where it is most likely to fail.
+    e in File.Error ->
+      IO.puts(
+        :stderr,
+        "specled: forensic output capture failed (#{Exception.message(e)}); verification result unaffected"
+      )
+
+      :ok
   end
 
   # SIGKILLs the target's process group recorded by the job-control wrapper.

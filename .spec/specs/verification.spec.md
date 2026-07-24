@@ -141,9 +141,24 @@ decisions:
     timeout state to a uniquely named file in that directory (creating the
     directory if needed) before temp-file cleanup, so CI can upload the
     capture as an artifact. Passing commands shall write nothing. Capture
-    shall be best-effort: a capture failure (for example an unwritable
-    directory) shall not alter the verification result. When the variable
-    is unset or blank, no capture occurs.
+    shall be best-effort: a filesystem capture failure (for example an
+    unwritable directory) shall not alter the verification result, but
+    shall emit a one-line stderr warning naming the failure rather than
+    failing silently. When the variable is unset or blank, no capture
+    occurs.
+  priority: must
+  stability: evolving
+- id: specled.verify.command_findings_echo_exunit_seed
+  statement: >
+    When a command verification's captured output contains ExUnit's
+    `Running ExUnit with seed: N` line, the resulting
+    `verification_command_failed` or `verification_command_timeout`
+    finding shall echo the seed with a `--seed N` reproduction hint,
+    regardless of verification kind (generic `command` runs as well as
+    merged `tagged_tests` runs, whose distribution and multi-run pairing
+    behavior is pinned by specled.tagged_tests.findings_echo_exunit_seed).
+    When the output contains no seed line, the finding shall be unchanged
+    — no seed note is appended.
   priority: must
   stability: evolving
 - id: specled.verify.requirement_without_test_tag
@@ -291,15 +306,27 @@ decisions:
 - id: specled.verify.scenario.command_output_capture_dir
   given:
     - SPECLED_COMMAND_OUTPUT_DIR names a writable directory
-    - a failing, a passing, and (with the variable re-pointed at an unwritable path) another failing command verification
+    - a failing, a passing, a timed-out, and (with the variable re-pointed at an unwritable path) another failing command verification
   when:
     - verification runs with run_commands true
   then:
     - the failing command's capture file records the command target, exit code, timeout state, and full output
+    - "the timed-out command's capture file records `timed_out: true`"
     - the passing command writes no capture file
-    - the unwritable capture directory leaves the verification result unchanged
+    - the unwritable capture directory leaves the verification result unchanged and emits a one-line stderr warning naming the capture failure
   covers:
     - specled.verify.command_output_capture_dir
+- id: specled.verify.scenario.command_finding_echoes_seed
+  given:
+    - "a generic command verification whose output contains `Running ExUnit with seed: 424242` and exits non-zero"
+    - another generic command verification that fails without any seed line in its output
+  when:
+    - verification runs with run_commands true
+  then:
+    - the seeded command's failure finding echoes seed 424242 with a `--seed 424242` reproduction hint
+    - the seedless command's failure finding contains no seed note
+  covers:
+    - specled.verify.command_findings_echo_exunit_seed
 - id: specled.verify.scenario.requirement_without_tag_emits_finding
   given:
     - an index with a `must` requirement `billing.invoice`
@@ -383,6 +410,7 @@ decisions:
     - specled.verify.command_timeout_cli_precedence
     - specled.verify.command_exit_code_recorded
     - specled.verify.command_output_capture_dir
+    - specled.verify.command_findings_echo_exunit_seed
 - kind: tagged_tests
   execute: true
   covers:
