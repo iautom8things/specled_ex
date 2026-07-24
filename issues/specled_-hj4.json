@@ -5,7 +5,9 @@
   "created": "2026-07-24T18:55:30Z",
   "description": "Distilled from mini-plan (think-l8c). Spec dir: .spec/\nWorktree: /Users/mz/src/specled_ex-spec-check-verdict-contract",
   "id": "specled_-hj4",
-  "labels": [],
+  "labels": [
+    "slug:spec-check-verdict-contract"
+  ],
   "priority": 2,
   "status": "open",
   "title": "spec.check verdict contract + teaching sweep",
