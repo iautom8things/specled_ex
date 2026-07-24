@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-24T19:18:42Z",
+  "description": "Quadratic append at suite end (70x at 200k records, measured 2133ms vs 30ms). Simplicity sketch also deletes fallback_test_key/1, inventory_module_from_key/1 and two dead || fallbacks. Report F6/CF4.",
+  "id": "specled_-dn4.2",
+  "labels": [],
+  "parent": "specled_-dn4",
+  "priority": 2,
+  "status": "open",
+  "title": "flush/1: replace 4-tuple reduce + quadratic acc ++ recs with split_with/flat_map/frequencies_by (F6)",
+  "type": "task",
+  "updated_at": "2026-07-24T19:18:42Z"
+}
