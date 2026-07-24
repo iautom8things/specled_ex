@@ -5,7 +5,9 @@
   "created": "2026-07-24T09:57:00Z",
   "description": "No spec subject yet (likely advances specled.verification when fixed).\n\nExtracted from specled_-epl comments during 2026-07-24 board triage — the tempfile_command_execution race matched no open ticket and is distinct from the tracer_test.exs:241 flake epl tracks.\n\nObserved 3x during epic specled_-155 (2026-07-23), all on otherwise-green runs:\n1. Merge gate 1 mix test: stray \"specled_cmd_*.sh: No such file or directory\"\n2. T3 verify mix test --stale: same signature\n3. T7 verify spec.check run 1: exit 127 \"exs: command not found\" on UNTOUCHED evidence_store target.sh — passed manually and on runs 2-3\n\nHypothesis: cross-VM temp-script name collision in verifier.ex run_command — when a host project test suite spawns nested specled runs (or parallel verifications share a temp dir), two BEAMs can generate the same specled_cmd_* name; one deletes the script while the other is executing it, producing exit 127 / missing-file failures attributed to innocent subjects.\n\nImpact: false verification_command_failed findings from mix spec.check — the core promise failing — in any host project whose tests spawn nested specled runs.\n\nFix direction: make the temp-script name collision-proof (OS pid + random bytes) in verifier.ex run_command, plus a regression test. Optionally surface the merged-run ExUnit seed line into spec.check CI output for diagnosability (also referenced by specled_-epl / specled_-qvg protocol).",
   "id": "specled_-vnw",
-  "labels": [],
+  "labels": [
+    "phase:implementing"
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Verifier run_command temp-script race: false verification_command_failed on untouched subjects",
