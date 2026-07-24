@@ -16,9 +16,9 @@
       "timestamp": "2026-07-23T22:49:25Z"
     }
   ],
-  "priority": 3,
+  "priority": 2,
   "status": "open",
   "title": "worktree-cleanup.sh cannot clean squash-merged worktrees (no force path)",
   "type": "task",
-  "updated_at": "2026-07-23T22:49:25Z"
+  "updated_at": "2026-07-24T09:57:41Z"
 }
