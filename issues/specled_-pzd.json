@@ -41,6 +41,10 @@
     {
       "text": "CI green on first run (Check Specs 2m1s, OTP-28 leg 1m43s, OTP-26 leg 1m37s), zero fix commits. Ready for merge.",
       "timestamp": "2026-07-24T19:13:29Z"
+    },
+    {
+      "text": "Squash-merged to main (14f6e72, release 0.7.0). Remote branch deleted. Watching post-merge Specs run.",
+      "timestamp": "2026-07-24T19:14:18Z"
     }
   ],
   "priority": 1,
