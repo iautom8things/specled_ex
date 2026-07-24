@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-24T19:18:42Z",
+  "description": "boundary_tags/1 denylist-copies the whole ExUnit context into every boundary row in a suite-lifetime :public ETS table; nothing in lib/ reads it. Suite-lifetime retention of O(tests × context), extra deep-copy on the per-test hot path, denylist must track ExUnit keys forever. Drop :tags from the row, collapse tail/3→tail/2, update boundary_test.exs:76 assertion + coverage_capture.spec.md api surface. If a consumer appears later, use an allowlist (Map.take/2). Report F4/CF3.",
+  "id": "specled_-dn4.1",
+  "labels": [],
+  "parent": "specled_-dn4",
+  "priority": 2,
+  "status": "open",
+  "title": "Drop write-only boundary_row.tags; collapse to Boundary.tail/2 (F4, 5-reviewer consensus)",
+  "type": "task",
+  "updated_at": "2026-07-24T19:18:42Z"
+}
