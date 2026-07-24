@@ -9,9 +9,15 @@
   "id": "specled_-q6l.2",
   "labels": [],
   "parent": "specled_-q6l",
+  "comments": [
+    {
+      "text": "CONTRACT (orchestrator-synthesized)\n\nContext: specled_-q6l.5 has merged — .spec/specs/spec_review.spec.md now has 8 per-contract requirement ids split from coverage_tab_bind_closure, including specled.spec_review.coverage_observed_approximate_qualifier and coverage_rollup_badge, each with covering tests in test/specled_ex/review/html_test.exs. Your base includes that change. specled_-cpw (the real synchronous-on_exit fix) has NOT landed; this ticket is the cheap rendering qualifier.\n\nAllowed touches:\n- lib/specled_ex/review/html.ex (rollup badge ~line 2012 + per-requirement row: observed/approx qualifier + title-attribute caveat, under :ok_per_test mode ONLY)\n- lib/specled_ex/review/coverage_closure.ex (only if threading data to the renderer is genuinely required; prefer render-side)\n- test/specled_ex/review/html_test.exs (update the qualifier/badge covering tests to the new rendering)\n- .spec/specs/spec_review.spec.md (co-change AUTHORIZED: update the affected split requirement texts/scenarios — coverage_observed_approximate_qualifier, coverage_rollup_badge — to the qualified rendering; contract-preserving otherwise)\n- .spec/state.json, .spec/realization_hashes.json (tool-managed; regenerate only)\n\nOut of Scope (files): mix.exs, .github/**, all other lib/**.\n\nOut of Scope (intent): aggregate mode rendering unchanged (its 'linked' ceiling is already honest — qualify :ok_per_test mode only); do NOT attempt the synchronous on_exit fix (that is specled_-cpw); no new deps; ADR disclaimer language should follow the existing 'race-bounded, not exact' phrasing.\n\nVerification:\n1. Targeted: mix test test/specled_ex/review/html_test.exs green, including updated tests proving the badge and per-requirement row carry the observed/approximate qualifier + title caveat under :ok_per_test, and refuting it under aggregate mode.\n2. mix compile --warnings-as-errors; mix format --check-formatted.\n3. mix spec.check --no-run-commands --base b91211522ff6a2d2c6e23d4e9933e06746fa8e7d (your ticket base — do NOT use default origin/main base, it shows unrelated pre-existing drift).",
+      "timestamp": "2026-07-24T12:59:21Z"
+    }
+  ],
   "priority": 2,
   "status": "open",
   "title": "Qualify self_verified? rendering under :ok_per_test as observed/approximate",
   "type": "task",
-  "updated_at": "2026-07-24T12:12:54Z"
+  "updated_at": "2026-07-24T12:59:21Z"
 }
