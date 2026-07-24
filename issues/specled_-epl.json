@@ -45,11 +45,15 @@
     {
       "text": "APPROVED. Standalone ticket — no epic worktree, stage merge-back n/a; branch specled_-epl/flake-capture (commit e28ee6d, worktree specled_ex-flake-capture) is ready for a PR to main. Closing per auto-audit sign-off.",
       "timestamp": "2026-07-24T11:25:57Z"
+    },
+    {
+      "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/16 (release 0.6.0, branch feat/specled_-epl-flake-seed-echo-capture, also carries specled_-ind). Babysitting CI.",
+      "timestamp": "2026-07-24T12:47:32Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "Investigate flaky specled.compiler_tracer verification_command_failed (tracer_test.exs:241) under multi-file tagged_tests run",
   "type": "task",
-  "updated_at": "2026-07-24T11:25:57Z"
+  "updated_at": "2026-07-24T12:47:32Z"
 }
