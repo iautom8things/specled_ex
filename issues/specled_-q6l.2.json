@@ -31,11 +31,15 @@
     {
       "text": "Merge queued behind specled_-6v6 (currently rebasing onto epic HEAD); will rebase onto the post-6v6 epic HEAD to avoid a moving target.",
       "timestamp": "2026-07-24T13:13:47Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-q6l/fast-follow-aggregate-first. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-24T13:23:04Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Qualify self_verified? rendering under :ok_per_test as observed/approximate",
   "type": "task",
-  "updated_at": "2026-07-24T13:13:47Z"
+  "updated_at": "2026-07-24T13:23:04Z"
 }
