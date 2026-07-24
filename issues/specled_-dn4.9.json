@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-24T19:18:44Z",
+  "description": "Batch of Low-severity cleanups from the consolidated report's Tier 3: one module→source resolver; fold group_records_with_lines/1; one attribution_copy/1 in Review.Html; delete dead diagnostic_count/baseline||%{}/disarmed_notice; collapse collect_lines/2 ladder; MapSet.disjoint?/2; ets.info(tid,:size); read/write_concurrency; persistent_term modules cache; rescue-based boundary insert + head/1 tolerance; boundary_key/1 setup_all fallback; document declare-the-hook-FIRST; publish one measured per-test overhead figure; meta shape validation at classify_v2; non-loading source resolution; fixture mkdir hardening. See report Tier 3 for the full list.",
+  "id": "specled_-dn4.9",
+  "labels": [],
+  "parent": "specled_-dn4",
+  "priority": 2,
+  "status": "open",
+  "title": "Tier-3 seam cleanups, cheap perf, robustness batch (F9/F13/F16/F17/F19/F20/F46, F25, F21/F22/F24, F44/F15, F10/F42/F43)",
+  "type": "task",
+  "updated_at": "2026-07-24T19:18:44Z"
+}
