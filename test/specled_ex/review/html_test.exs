@@ -1158,6 +1158,7 @@ defmodule SpecLedEx.Review.HtmlTest do
           closure_coverage_pct: 75.0,
           covered_mfas: ["Mod.a/1", "Mod.b/1", "Mod.c/1"],
           uncovered_mfas: ["Mod.d/1"],
+          no_debug_info_mfas: [],
           tagged_tests: [],
           self_verified?: false
         },
@@ -1193,8 +1194,8 @@ defmodule SpecLedEx.Review.HtmlTest do
       # Aggregate mode has no per-test attribution, so evidence never
       # reaches "executed" and the mode-gated row does not render.
       refute html =~ "Reached by tests"
-      # Aggregate mode's covered_mfas come straight from the envelope, not a
-      # file-level proxy, so the qualifier does not render.
+      # Aggregate mode has no per-test attribution qualifier.
+      refute html =~ "exact up to escaped processes"
       refute html =~ "file-level proxy"
     end
 
@@ -1265,9 +1266,11 @@ defmodule SpecLedEx.Review.HtmlTest do
     end
 
     # covers: specled.spec_review.coverage_observed_approximate_qualifier
-    test "qualifies the closure line and the \"Reached by tests\" row as observed, not exact" do
+    test "per-test closure line renders the exact-up-to-escaped-processes qualifier" do
       reach = %{
         status: :ok_per_test,
+        attribution: :exact,
+        unhooked_modules: [],
         by_requirement: %{
           "subj.a.req1" =>
             req_reach(
@@ -1289,26 +1292,54 @@ defmodule SpecLedEx.Review.HtmlTest do
           )
         )
 
-      # The "Reached by tests" row names its per-test-race caveat so the
-      # executed-strength attribution is never read as exact isolation.
-      assert html =~ "treat as observed, not exact"
+      # Discoverability: the closure line carries the exact-up-to-escaped-
+      # processes qualifier (file-level proxy note is retired).
+      assert html =~ "exact up to escaped processes"
+      refute html =~ "file-level proxy"
+      refute html =~ "treat as observed, not exact"
 
-      # The closure line's percentage carries its own approximate caveat
-      # (currently surfaced via the file-level-proxy note's tooltip).
-      assert html =~ "treat the percentage as approximate"
+      # Reached-by and self-verified share the same claim language.
+      assert html =~ "escaped processes"
 
-      # "Self-verified: yes." composes the same "executed" attribution, so
-      # it carries its own discoverable (observed) qualifier under
-      # :ok_per_test — the ADR's race-bounded disclaimer, not the
-      # file-level-proxy one.
       assert html =~
-               ~s|Self-verified: yes. <span class="cov-closure-self-verified-note" title="Per-test attribution can be affected|
+               ~s|Self-verified: yes. <span class="cov-closure-self-verified-note"|
 
-      assert html =~ "treat as observed, not exact — see specled_-cpw.\">(observed)</span>"
+      assert html =~ "(exact up to escaped processes)</span>"
+    end
+
+    # covers: specled.spec_review.coverage_file_level_proxy_qualifier
+    test "degraded unhooked per-test run names unhooked modules on the closure line and banner" do
+      reach = %{
+        status: :ok_per_test,
+        attribution: :degraded_unhooked,
+        unhooked_modules: [UnhookedCase, OtherUnhooked],
+        by_requirement: %{
+          "subj.a.req1" => req_reach(tagged_tests: [])
+        }
+      }
+
+      html =
+        IO.iodata_to_binary(
+          Html.render_coverage_tab(
+            coverage_subject(
+              closure_reach: reach,
+              requirements: [
+                %{"id" => "subj.a.req1", "statement" => "S", "priority" => "must"}
+              ]
+            )
+          )
+        )
+
+      assert html =~ "degraded: unhooked"
+      assert html =~ "UnhookedCase"
+      assert html =~ "OtherUnhooked"
+      assert html =~ "Per-test coverage is degraded (unhooked modules)"
+      assert html =~ "setup {SpecLedEx.Coverage, :per_test_boundary}"
+      refute html =~ "file-level proxy"
     end
 
     # covers: specled.spec_review.coverage_observed_approximate_qualifier
-    test "aggregate mode's \"Self-verified: no.\" row carries no (observed) qualifier" do
+    test "aggregate mode's \"Self-verified: no.\" row carries no exact/degraded qualifier" do
       reach = %{
         status: :ok_aggregate,
         by_requirement: %{
@@ -1330,14 +1361,21 @@ defmodule SpecLedEx.Review.HtmlTest do
 
       assert html =~ "Self-verified: no."
       refute html =~ "cov-closure-self-verified-note"
+      refute html =~ "exact up to escaped processes"
       refute html =~ "(observed)"
     end
 
-    # covers: specled.spec_review.coverage_file_level_proxy_qualifier
-    test "per_test mode carries a file-level-proxy qualifier on the closure line" do
+    test "renders a no-debug-info note when requirement reach lists no_debug_info_mfas" do
       reach = %{
         status: :ok_per_test,
-        by_requirement: %{"subj.a.req1" => req_reach(tagged_tests: [])}
+        attribution: :exact,
+        by_requirement: %{
+          "subj.a.req1" =>
+            req_reach(
+              covered_mfas: [],
+              no_debug_info_mfas: ["Ghost.Mod.fun/1"]
+            )
+        }
       }
 
       html =
@@ -1352,7 +1390,9 @@ defmodule SpecLedEx.Review.HtmlTest do
           )
         )
 
-      assert html =~ "file-level proxy"
+      assert html =~ "No debug info"
+      assert html =~ "Ghost.Mod.fun/1"
+      assert html =~ "not counted as covered or uncovered"
     end
 
     test "renders the empty-closure form when the requirement has no closure MFAs" do
@@ -1516,9 +1556,10 @@ defmodule SpecLedEx.Review.HtmlTest do
     end
 
     # covers: specled.spec_review.coverage_observed_approximate_qualifier
-    test "per-test mode's rollup badge carries a discoverable (observed) qualifier" do
+    test "per-test mode's rollup badge carries a discoverable exact-up-to-escaped-processes qualifier" do
       reach = %{
         status: :ok_per_test,
+        attribution: :exact,
         by_requirement: %{
           "a" => %{self_verified?: true},
           "b" => %{self_verified?: false}
@@ -1527,12 +1568,13 @@ defmodule SpecLedEx.Review.HtmlTest do
 
       html = IO.iodata_to_binary(Html.render_subject_coverage_badge(reach))
 
-      assert html =~ "1/2 self-verified (per-test) (observed)"
-      assert html =~ "treat as observed, not exact — see specled_-cpw"
+      assert html =~ "1/2 self-verified (per-test) (exact up to escaped processes)"
+      assert html =~ "exact up to escaped processes"
+      refute html =~ "(observed)"
     end
 
     # covers: specled.spec_review.coverage_observed_approximate_qualifier
-    test "aggregate mode's rollup badge carries no (observed) qualifier" do
+    test "aggregate mode's rollup badge carries no exact/degraded qualifier" do
       reach = %{
         status: :ok_aggregate,
         by_requirement: %{
@@ -1545,7 +1587,7 @@ defmodule SpecLedEx.Review.HtmlTest do
 
       assert html =~ "0/2 self-verified (aggregate)"
       refute html =~ "(observed)"
-      refute html =~ "treat as observed, not exact"
+      refute html =~ "exact up to escaped processes"
     end
 
     test "renders a muted coverage-unavailable chip for each degraded status" do

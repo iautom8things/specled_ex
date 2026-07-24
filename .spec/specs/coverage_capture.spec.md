@@ -87,6 +87,7 @@ surface:
   - lib/specled_ex/coverage/store.ex
   - lib/specled_ex/coverage/aggregate.ex
   - lib/specled_ex/coverage/mfa_key.ex
+  - lib/specled_ex/coverage/mfa_lines.ex
   - lib/mix/tasks/spec.cover.test.ex
   - lib/mix/tasks/spec.cover.ingest.ex
   - test/specled_ex/coverage/formatter_test.exs
@@ -96,6 +97,7 @@ surface:
   - test/specled_ex/coverage/store_test.exs
   - test/specled_ex/coverage/aggregate_test.exs
   - test/specled_ex/coverage/mfa_key_test.exs
+  - test/specled_ex/coverage/mfa_lines_test.exs
   - test/mix/tasks/spec_cover_test_test.exs
   - test_support/specled_ex_integration_case.ex
 realized_by:
@@ -125,6 +127,7 @@ realized_by:
     - "SpecLedEx.Coverage.Aggregate.ingest/2"
     - "SpecLedEx.Coverage.MfaKey.format/1"
     - "SpecLedEx.Coverage.MfaKey.parse/1"
+    - "SpecLedEx.Coverage.MfaLines.index/1"
   implementation:
     - "SpecLedEx.Coverage.Formatter.init/1"
     - "SpecLedEx.Coverage.Store.build_records/1"
@@ -428,6 +431,18 @@ decisions:
     {:ok, mfa}`. This is the string format `SpecLedEx.Coverage.Aggregate`
     writes into envelope `:mfas` entries and the one downstream consumers
     (coverage triangulation) parse back.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.mfa_lines_index
+  statement: >-
+    `SpecLedEx.Coverage.MfaLines.index/1` shall return
+    `%{module => fun_index | :no_debug_info}` where `fun_index` is
+    `%{{fun, arity} => MapSet.t(line)}` derived from
+    `:beam_lib.chunks(beam, [:abstract_code])` function-form clause
+    annos. Modules without abstract code shall yield `:no_debug_info`
+    (surfaced, never silently an empty map). Production caller:
+    `SpecLedEx.Review.CoverageClosure.build_v2/2` via
+    `CoverageTriangulation.per_test_requirement_reach/3`.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.boundary_hook_sync
@@ -871,6 +886,7 @@ decisions:
     - specled.coverage_capture.aggregate_empty_coverage
     - specled.coverage_capture.aggregate_unmapped_degraded
     - specled.coverage_capture.mfa_key_round_trip
+    - specled.coverage_capture.mfa_lines_index
 - kind: tagged_tests
   execute: true
   covers:

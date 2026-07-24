@@ -265,30 +265,34 @@ decisions:
     "linked" / "executed"). A "Reached by tests" row naming every `"executed"`-
     strength tagged test shall render exclusively when the subject's coverage mode
     is `:per_test` (`:ok_per_test`) — aggregate coverage has no per-test attribution
-    to name, so the row stays absent there. `"executed"` strength and the per_test
-    `closure_coverage_pct` both reflect the `--per-test` engine's observed
-    attribution, which is race-bounded (an ExUnit `test_finished` cast-timing race
-    can bleed coverage between adjacent tests regardless of the `degraded` flag;
-    see `specled_-cpw` and `specled.decision.aggregate_first_spec_coverage`) rather
-    than exact — the closure line and the "Reached by tests" row shall each be
-    discoverably qualified as observed/approximate, never asserted as exact
-    per-test isolation. Because `:ok_per_test`'s per-requirement MFA coverage is
-    still computed via a file-level proxy rather than the per-test engine's real
-    MFA-level data, the per_test closure line shall additionally carry a qualifier
-    noting the coverage percentage is approximate. Each subject card shall
-    additionally carry a rollup badge summarizing the subject's coverage status (a
-    self-verified/total count and mode when coverage data loaded, or a muted
-    "coverage unavailable" chip when degraded). The v2 envelope's own `generated_at`
-    timestamp shall render in the Coverage tab with an elapsed-time note, flagged as
-    possibly stale past a fixed age threshold. `:no_coverage_artifact`,
-    `:legacy_artifact` (naming `mix spec.cover.test` as the re-run command),
-    `:invalid_artifact`, and `:async_contaminated` (a degraded `:per_test` envelope)
-    shall each render their own distinct honest banner in place of the per-row
-    summaries — never collapsing into one another, into a fake 0%, or into an
-    empty-but-ok result; a missing compiler tracer manifest (`:no_tracer_manifest`)
-    shall render a single "Binding closure unavailable" banner. All degraded states
-    piggyback the page-level `:degraded` leg state machinery rather than rendering
-    empty closure rows that would be misread as the absence of test coverage.
+    to name, so the row stays absent there. Under `:ok_per_test`, per-requirement MFA
+    coverage is real line→MFA intersection via
+    `CoverageTriangulation.per_test_requirement_reach/3` and
+    `SpecLedEx.Coverage.MfaLines` (not a file-level proxy). `"executed"` strength and
+    the per_test `closure_coverage_pct` for non-degraded / fully-hooked runs are
+    **exact up to escaped processes** (a process a test spawns that outlives its tail
+    snapshot can still increment counters after the window closes; see
+    `specled.decision.per_test_sync_boundary`) — the closure line, "Reached by tests"
+    row, Self-verified row, and subject-card rollup badge shall each be discoverably
+    qualified with that claim. When the envelope is unhooked-degraded
+    (`meta.unhooked_modules` non-empty), the same surfaces shall instead carry an
+    honest degraded qualifier naming those modules; hooked windows remain exact up
+    to escaped processes. MFAs whose modules lack abstract code
+    (`:no_debug_info`) shall render as a distinct note, not as covered or uncovered.
+    Each subject card shall additionally carry a rollup badge summarizing the
+    subject's coverage status (a self-verified/total count and mode when coverage
+    data loaded, or a muted "coverage unavailable" chip when degraded). The v2
+    envelope's own `generated_at` timestamp shall render in the Coverage tab with an
+    elapsed-time note, flagged as possibly stale past a fixed age threshold.
+    `:no_coverage_artifact`, `:legacy_artifact` (naming `mix spec.cover.test` as the
+    re-run command), `:invalid_artifact`, and `:async_contaminated` (a degraded
+    `:per_test` envelope without unhooked-modules meta) shall each render their own
+    distinct honest banner in place of the per-row summaries — never collapsing into
+    one another, into a fake 0%, or into an empty-but-ok result; a missing compiler
+    tracer manifest (`:no_tracer_manifest`) shall render a single "Binding closure
+    unavailable" banner. All degraded states piggyback the page-level `:degraded`
+    leg state machinery rather than rendering empty closure rows that would be
+    misread as the absence of test coverage.
   priority: must
   stability: evolving
 - id: specled.spec_review.coverage_closure_line_format
@@ -314,27 +318,26 @@ decisions:
   stability: evolving
 - id: specled.spec_review.coverage_observed_approximate_qualifier
   statement: >-
-    `"executed"` strength and the per_test `closure_coverage_pct` both
-    reflect the `--per-test` engine's observed attribution, which is
-    race-bounded (an ExUnit `test_finished` cast-timing race can bleed
-    coverage between adjacent tests regardless of the `degraded` flag; see
-    `specled_-cpw` and `specled.decision.aggregate_first_spec_coverage`)
-    rather than exact — the closure line and the "Reached by tests" row
-    shall each be discoverably qualified as observed/approximate, never
-    asserted as exact per-test isolation. `self_verified?` is derived from
-    that same `"executed"` attribution, so under `:ok_per_test` mode the
-    per-requirement "Self-verified" row and the subject-card rollup badge
-    (`specled.spec_review.coverage_rollup_badge`) shall each carry the same
-    discoverable qualifier — aggregate mode's `self_verified?` is always
-    false and stays unqualified.
+    `"executed"` strength and the per_test `closure_coverage_pct` for
+    non-degraded / fully-hooked runs both reflect real per-test line→MFA
+    intersection and are **exact up to escaped processes** (see
+    `specled.decision.per_test_sync_boundary`) — the closure line, the
+    "Reached by tests" row, the per-requirement "Self-verified" row, and
+    the subject-card rollup badge (`specled.spec_review.coverage_rollup_badge`)
+    shall each be discoverably qualified with that claim. Aggregate mode's
+    `self_verified?` is always false and stays unqualified. (Supersedes the
+    prior race-bounded "observed/approximate" wording for hooked windows.)
   priority: must
   stability: evolving
 - id: specled.spec_review.coverage_file_level_proxy_qualifier
   statement: >-
-    Because `:ok_per_test`'s per-requirement MFA coverage is still
-    computed via a file-level proxy rather than the per-test engine's real
-    MFA-level data, the per_test closure line shall additionally carry a
-    qualifier noting the coverage percentage is approximate.
+    Under `:ok_per_test`, per-requirement MFA coverage shall be real
+    line→MFA intersection (via `per_test_requirement_reach/3` and
+    `MfaLines`), and the per_test closure line shall carry the
+    exact-up-to-escaped-processes qualifier for non-degraded hooked runs, or
+    an honest degraded qualifier naming `meta.unhooked_modules` when the
+    envelope is unhooked-degraded — replacing the prior file-level-proxy
+    approximate label. Aggregate mode shall render neither qualifier.
   priority: must
   stability: evolving
 - id: specled.spec_review.coverage_rollup_badge
@@ -344,9 +347,9 @@ decisions:
     when coverage data loaded, or a muted "coverage unavailable" chip when
     degraded). Under `:ok_per_test` mode the badge shall additionally carry
     the `specled.spec_review.coverage_observed_approximate_qualifier`
-    disclaimer (a discoverable "(observed)" qualifier), since the count
-    composes the same race-bounded `"executed"` attribution; aggregate
-    mode's badge is already honest and stays unqualified.
+    disclaimer (exact-up-to-escaped-processes, or unhooked-degraded via
+    `coverage_file_level_proxy_qualifier`); aggregate mode's badge is already
+    honest and stays unqualified.
   priority: must
   stability: evolving
 - id: specled.spec_review.coverage_generated_at_staleness
@@ -382,18 +385,26 @@ decisions:
     data layer for the Coverage tab — reading
     `SpecLedEx.Coverage.Store.read_v2/1`, and returning, per requirement,
     `closure_coverage_pct`, `covered_mfas` / `uncovered_mfas` (via
-    `SpecLedEx.Coverage.MfaKey`), and `tagged_tests` with an evidence
-    `:strength` (`"claimed"` / `"linked"` / `"executed"`). Subject-level
-    status distinguishes `:ok_aggregate` from `:ok_per_test` coverage, and
-    `:no_coverage_artifact` / `:legacy_artifact` / `:invalid_artifact` /
-    `:no_tracer_manifest` / `:async_contaminated` (a `:per_test` envelope
-    with `degraded: true` — the flag-1 special case that keeps a corrupted
-    per-test capture from misreporting as trustworthy `:ok_per_test`)
-    degrade distinctly rather than collapsing into one empty-but-ok
-    result. `Review.build_view/3` calls `build_v2/2` and the Coverage
-    pivot renders its v2 shape, per `coverage_tab_bind_closure`. The prior
-    v1 record-list path (`build/2`) had zero callers and zero tests once
-    `build_view/3` switched over, and was deleted rather than kept dead.
+    `SpecLedEx.Coverage.MfaKey`), `no_debug_info_mfas` for modules without
+    abstract code, and `tagged_tests` with an evidence `:strength`
+    (`"claimed"` / `"linked"` / `"executed"`). Under `:ok_per_test`,
+    covered/uncovered partitions and `"executed"` strength shall come from
+    real line→MFA intersection
+    (`CoverageTriangulation.per_test_requirement_reach/3` +
+    `SpecLedEx.Coverage.MfaLines.index/1`), never a file-level proxy.
+    Subject-level status distinguishes `:ok_aggregate` from `:ok_per_test`
+    coverage; unhooked-degraded envelopes (`meta.unhooked_modules`
+    non-empty) stay on `:ok_per_test` with `:attribution =>
+    :degraded_unhooked`. `:no_coverage_artifact` / `:legacy_artifact` /
+    `:invalid_artifact` / `:no_tracer_manifest` / `:async_contaminated` (a
+    `:per_test` envelope with `degraded: true` and no unhooked-modules meta
+    — the flag-1 special case that keeps a corrupted per-test capture from
+    misreporting as trustworthy `:ok_per_test`) degrade distinctly rather
+    than collapsing into one empty-but-ok result. `Review.build_view/3`
+    calls `build_v2/2` and the Coverage pivot renders its v2 shape, per
+    `coverage_tab_bind_closure`. The prior v1 record-list path (`build/2`)
+    had zero callers and zero tests once `build_view/3` switched over, and
+    was deleted rather than kept dead.
   priority: must
   stability: evolving
 - id: specled.spec_review.no_realized_by_degrades_spec_to_code
@@ -691,26 +702,27 @@ decisions:
     - the same requirement rendered under aggregate mode renders no "Reached by tests" row
   covers:
     - specled.spec_review.coverage_reached_by_tests_per_test_only
-- id: specled.spec_review.coverage_qualifies_observed_not_exact
+- id: specled.spec_review.coverage_qualifies_exact_up_to_escaped
   given:
-    - a requirement in :ok_per_test mode with an executed-strength tagged test, self_verified? true
+    - a requirement in :ok_per_test mode with attribution :exact, an executed-strength tagged test, self_verified? true
   when:
     - the reviewer opens the subject's Coverage pivot
   then:
-    - the "Reached by tests" row carries a discoverable qualifier naming the result observed, not exact, and citing the per-test capture race
-    - the closure line's coverage percentage carries a discoverable qualifier that it is approximate
-    - "the \"Self-verified: yes.\" row carries its own discoverable \"(observed)\" qualifier citing the same per-test capture race"
+    - the closure line carries a discoverable "(exact up to escaped processes)" qualifier
+    - the "Reached by tests" row carries the same exact-up-to-escaped-processes caveat
+    - "the \"Self-verified: yes.\" row carries its own discoverable \"(exact up to escaped processes)\" qualifier"
     - "the equivalent requirement rendered under aggregate mode renders \"Self-verified: no.\" with no such qualifier"
   covers:
     - specled.spec_review.coverage_observed_approximate_qualifier
-- id: specled.spec_review.coverage_file_level_proxy_noted
+- id: specled.spec_review.coverage_qualifies_degraded_unhooked
   given:
-    - a requirement whose subject coverage mode is :ok_per_test
+    - a requirement whose subject coverage mode is :ok_per_test with attribution :degraded_unhooked and unhooked_modules set
   when:
     - the reviewer opens the subject's Coverage pivot
   then:
-    - the closure line carries a "(file-level proxy)" qualifier
-    - the equivalent requirement rendered under aggregate mode carries no such qualifier
+    - the closure line carries a degraded qualifier naming the unhooked modules
+    - a tab-level banner names the unhooked modules and the boundary-hook setup line
+    - the retired "(file-level proxy)" string does not render
   covers:
     - specled.spec_review.coverage_file_level_proxy_qualifier
 - id: specled.spec_review.coverage_card_rollup_badge_renders
@@ -719,7 +731,7 @@ decisions:
   when:
     - mix spec.review renders the subject's card
   then:
-    - the card carries a rollup badge reading "1/2 self-verified (per-test)" with a discoverable "(observed)" qualifier and title caveat citing the per-test capture race
+    - the card carries a rollup badge reading "1/2 self-verified (per-test)" with a discoverable "(exact up to escaped processes)" qualifier and title caveat citing escaped processes
     - the equivalent badge rendered in aggregate mode carries no such qualifier
     - a subject whose coverage status is degraded instead renders a muted "coverage unavailable" chip
   covers:

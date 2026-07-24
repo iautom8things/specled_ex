@@ -43,10 +43,12 @@ realized_by:
     - "SpecLedEx.CoverageTriangulation.findings/3"
     - "SpecLedEx.CoverageTriangulation.envelope_findings/3"
     - "SpecLedEx.CoverageTriangulation.aggregate_requirement_reach/2"
+    - "SpecLedEx.CoverageTriangulation.per_test_requirement_reach/3"
     - "SpecLedEx.Review.CoverageClosure.build_v2/2"
     - "SpecLedEx.CoverageTriangulation.execution_reach_map/2"
 decisions:
   - specled.decision.aggregate_first_spec_coverage
+  - specled.decision.per_test_sync_boundary
 ```
 
 ## Requirements
@@ -195,6 +197,20 @@ decisions:
     module is reached by an intersecting covered MFA.
   priority: must
   stability: evolving
+- id: specled.triangulation.per_test_requirement_reach
+  statement: >-
+    `per_test_requirement_reach/3` shall return, per `{subject_id,
+    requirement_id}`, MFA-level reach over per-test coverage records and a
+    `SpecLedEx.Coverage.MfaLines` line index: an MFA is covered by test T
+    iff T's record for the MFA's source file intersects the MFA's line set;
+    `covered_mfas` / `uncovered_mfas` / `executed_mfa_count` /
+    `reaching_tests` all derive from that same intersection. MFAs whose
+    module is `:no_debug_info` (or whose `{fun, arity}` is absent from the
+    index) land in `no_debug_info_mfas`, never silently as uncovered via a
+    file-level proxy. The v1 file-level `per_requirement_reach/2` remains
+    for the v1 path and is not replaced by this function.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -294,6 +310,18 @@ decisions:
     - "`line_coverage_pct` reflects the envelope `:files` entries for modules reached by a covered closure MFA"
   covers:
     - specled.triangulation.aggregate_requirement_reach_mfa_intersection
+- id: specled.triangulation.scenario.per_test_reach_line_intersection
+  given:
+    - "hand-built per-test records with lines_hit and a stub MfaLines line index"
+    - "a closure map whose requirements declare closure_mfas for those modules"
+  when:
+    - CoverageTriangulation.per_test_requirement_reach/3 is called (via CoverageClosure.build_v2/2 :per_test)
+  then:
+    - "an MFA is covered only when a test's lines_hit intersects that MFA's line set (not merely any hit in the source file)"
+    - "reaching_tests and executed-strength tagged tests derive from the same intersection"
+    - "modules marked :no_debug_info surface in no_debug_info_mfas, not covered or uncovered"
+  covers:
+    - specled.triangulation.per_test_requirement_reach
 ```
 
 ## Verification
@@ -331,4 +359,5 @@ decisions:
     - specled.triangulation.envelope_aggregate_underspecified_realization
     - specled.triangulation.envelope_async_contaminated
     - specled.triangulation.aggregate_requirement_reach_mfa_intersection
+    - specled.triangulation.per_test_requirement_reach
 ```

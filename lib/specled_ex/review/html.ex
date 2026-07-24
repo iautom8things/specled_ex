@@ -2011,9 +2011,9 @@ defmodule SpecLedEx.Review.Html do
 
         title =
           "#{self_verified} of #{total} requirements self-verified under #{mode_label} coverage" <>
-            rollup_qualifier_title_suffix(status)
+            rollup_qualifier_title_suffix(closure_reach)
 
-        ~s|<span class="badge badge-coverage-rollup badge-coverage-#{tone}" title="#{h(title)}">#{self_verified}/#{total} self-verified (#{mode_label})#{rollup_qualifier_suffix(status)}</span>|
+        ~s|<span class="badge badge-coverage-rollup badge-coverage-#{tone}" title="#{h(title)}">#{self_verified}/#{total} self-verified (#{mode_label})#{rollup_qualifier_suffix(closure_reach)}</span>|
     end
   end
 
@@ -2026,16 +2026,45 @@ defmodule SpecLedEx.Review.Html do
   # The rollup badge's self-verified count is only ever nonzero under
   # :ok_per_test (aggregate's "linked" evidence ceiling can never satisfy
   # self_verified?'s "executed" half — see CoverageClosure.build_v2/2's
-  # doc), and that "executed" attribution is the same test_finished
-  # event-timing race the "Reached by tests" row discloses below. So the
-  # badge names itself observed, not exact, under :ok_per_test only —
-  # aggregate mode's badge is already honest and stays unqualified.
-  defp rollup_qualifier_suffix(:ok_per_test), do: " (observed)"
+  # doc). Hooked per-test attribution is exact up to escaped processes
+  # (specled.decision.per_test_sync_boundary); unhooked-degraded runs name
+  # that honestly via subject `:attribution`. Aggregate stays unqualified.
+  defp rollup_qualifier_suffix(reach) when is_map(reach) do
+    case Map.get(reach, :status) do
+      :ok_per_test ->
+        case Map.get(reach, :attribution, :exact) do
+          :degraded_unhooked -> " (degraded)"
+          _ -> " (exact up to escaped processes)"
+        end
+
+      _ ->
+        ""
+    end
+  end
+
   defp rollup_qualifier_suffix(_), do: ""
 
-  defp rollup_qualifier_title_suffix(:ok_per_test),
-    do:
-      "; per-test attribution is race-bounded (ExUnit test_finished event-timing race across formatter casts), treat as observed, not exact — see specled_-cpw"
+  defp rollup_qualifier_title_suffix(reach) when is_map(reach) do
+    case Map.get(reach, :status) do
+      :ok_per_test ->
+        case Map.get(reach, :attribution, :exact) do
+          :degraded_unhooked ->
+            mods = format_unhooked_modules(Map.get(reach, :unhooked_modules, []))
+
+            "; per-test run is degraded — unhooked modules (#{mods}) fold into " <>
+              "the aggregate remainder; hooked windows remain exact up to escaped processes"
+
+          _ ->
+            "; per-test attribution is exact up to escaped processes " <>
+              "(a process a test spawns that outlives its tail snapshot can still " <>
+              "increment counters after the window closes) — see " <>
+              "specled.decision.per_test_sync_boundary"
+        end
+
+      _ ->
+        ""
+    end
+  end
 
   defp rollup_qualifier_title_suffix(_), do: ""
 
@@ -2681,9 +2710,41 @@ defmodule SpecLedEx.Review.Html do
       render_coverage_help_link(),
       render_coverage_generated_at(Map.get(s, :coverage_generated_at)),
       render_closure_reach_status(closure_reach),
+      render_unhooked_degraded_banner(closure_reach),
       render_requirements_coverage(s.requirements, s.claims_by_req, closure_reach, req_status),
       render_bindings_section(s.bindings)
     ]
+  end
+
+  # covers: specled.spec_review.coverage_observed_approximate_qualifier
+  # Unhooked-only degradation stays on :ok_per_test (reach still computed for
+  # hooked windows) but names the unhooked modules from envelope meta so the
+  # tab is honest that the run is not fully exact.
+  defp render_unhooked_degraded_banner(%{
+         status: :ok_per_test,
+         attribution: :degraded_unhooked,
+         unhooked_modules: mods
+       })
+       when is_list(mods) and mods != [] do
+    names = format_unhooked_modules(mods)
+
+    ~s"""
+    <p class="cov-closure-unavailable" role="status">
+      <strong>Per-test coverage is degraded (unhooked modules).</strong>
+      Modules without the boundary hook (#{h(names)}) fold into the aggregate
+      remainder; hooked windows remain exact up to escaped processes. Add
+      <code>setup {SpecLedEx.Coverage, :per_test_boundary}</code> (or
+      <code>use SpecLedEx.Case</code>) in each unhooked case template.
+    </p>
+    """
+  end
+
+  defp render_unhooked_degraded_banner(_), do: ""
+
+  defp format_unhooked_modules(mods) when is_list(mods) do
+    mods
+    |> Enum.map(&inspect/1)
+    |> Enum.join(", ")
   end
 
   # Touched set for the Coverage pivot: requirement ids added or modified by
@@ -2843,7 +2904,6 @@ defmodule SpecLedEx.Review.Html do
   defp render_requirements_coverage(requirements, claims_by_req, closure_reach, req_status) do
     by_req = Map.get(closure_reach || %{}, :by_requirement, %{})
     status = Map.get(closure_reach || %{}, :status, :ok_aggregate)
-    mode = closure_status_mode(status)
 
     render_one = fn req ->
       id = field(req, :id) || ""
@@ -2864,7 +2924,7 @@ defmodule SpecLedEx.Review.Html do
           #{render_strength_badge(best_strength, claims, meets_minimum?)}
         </div>
         <p class="cov-req-statement" title="#{h(statement)}">#{h(statement)}</p>
-        #{render_closure_reach(reach, status, mode)}
+        #{render_closure_reach(reach, status, closure_reach)}
         #{render_covering_claims(claims)}
       </li>
       """
@@ -2936,10 +2996,10 @@ defmodule SpecLedEx.Review.Html do
   # verified: yes/no. Tagged tests: T1 (executed), T2 (linked)." plus a
   # mode-gated "Reached by tests" row (per_test only — aggregate coverage has
   # no per-test attribution to name). When the artifact is missing/legacy/
-  # invalid/degraded the renderer falls through to
+  # invalid/async-contaminated the renderer falls through to
   # render_closure_reach_status/1 at the tab level and this helper renders
   # nothing per-row to avoid duplicate noise.
-  defp render_closure_reach(_reach, status, _mode)
+  defp render_closure_reach(_reach, status, _subject_reach)
        when status in [
               :no_coverage_artifact,
               :no_tracer_manifest,
@@ -2949,13 +3009,15 @@ defmodule SpecLedEx.Review.Html do
             ],
        do: ""
 
-  defp render_closure_reach(nil, _status, _mode), do: ""
+  defp render_closure_reach(nil, _status, _subject_reach), do: ""
 
-  defp render_closure_reach(%{closure_mfa_count: 0}, _status, _mode) do
+  defp render_closure_reach(%{closure_mfa_count: 0}, _status, _subject_reach) do
     ~S|<p class="cov-closure" data-empty="true"><span class="cov-closure-label">Closure:</span> 0 MFAs.</p>|
   end
 
-  defp render_closure_reach(reach, _status, mode) do
+  defp render_closure_reach(reach, status, subject_reach) do
+    mode = closure_status_mode(status)
+
     %{
       closure_mfa_count: mfa_count,
       closure_coverage_pct: pct,
@@ -2966,6 +3028,7 @@ defmodule SpecLedEx.Review.Html do
 
     executed_count = length(covered)
     self_str = if self_verified?, do: "yes", else: "no"
+    no_debug = Map.get(reach, :no_debug_info_mfas, [])
 
     tagged_str =
       case tagged_tests do
@@ -2976,12 +3039,13 @@ defmodule SpecLedEx.Review.Html do
     [
       ~s"""
       <p class="cov-closure">
-        <span class="cov-closure-label">Closure:</span> #{mfa_count} MFA#{plural(mfa_count)} — #{executed_count} executed (#{format_closure_pct(pct)}).#{render_proxy_note(mode)}
-        <span class="cov-closure-self-verified">Self-verified: #{self_str}.#{render_self_verified_note(mode)}</span>
+        <span class="cov-closure-label">Closure:</span> #{mfa_count} MFA#{plural(mfa_count)} — #{executed_count} executed (#{format_closure_pct(pct)}).#{render_attribution_qualifier(mode, subject_reach)}
+        <span class="cov-closure-self-verified">Self-verified: #{self_str}.#{render_self_verified_note(mode, subject_reach)}</span>
         <span class="cov-closure-tests">Tagged tests: #{tagged_str}.</span>
       </p>
       """,
-      render_reached_by_tests_row(tagged_tests, mode)
+      render_no_debug_info_note(no_debug),
+      render_reached_by_tests_row(tagged_tests, mode, subject_reach)
     ]
   end
 
@@ -2990,19 +3054,35 @@ defmodule SpecLedEx.Review.Html do
 
   defp format_closure_pct(_), do: "0.0%"
 
-  # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
-  # Flag 2 (specled_-155.7 orchestrator addendum): per_test-mode MFA coverage
-  # is computed via a file-level proxy — CoverageClosure's
-  # v2_by_requirement/5 (:per_test clause) has not yet been wired to the
-  # real per-test snapshot-diff engine specled_-155.5 shipped (tracked
-  # follow-up: specled_-jjq). Naming that here keeps the UI honest about the
-  # percentage's provenance rather than presenting it as exact MFA
-  # attribution.
-  defp render_proxy_note(:per_test) do
-    ~S| <span class="cov-closure-proxy-note" title="Per-test MFA coverage is currently a file-level proxy, not real per-test MFA data (specled_-jjq); treat the percentage as approximate.">(file-level proxy)</span>|
+  # covers: specled.spec_review.coverage_observed_approximate_qualifier
+  # covers: specled.spec_review.coverage_file_level_proxy_qualifier
+  # Real per-test MFA reach (specled_-jjq / Stage 3): non-degraded hooked
+  # runs claim "exact up to escaped processes"; unhooked-degraded runs name
+  # meta.unhooked_modules. The retired file-level-proxy note is gone.
+  defp render_attribution_qualifier(:per_test, subject_reach) do
+    case Map.get(subject_reach || %{}, :attribution, :exact) do
+      :degraded_unhooked ->
+        mods =
+          subject_reach
+          |> Map.get(:unhooked_modules, [])
+          |> format_unhooked_modules()
+
+        ~s| <span class="cov-closure-attribution-note" title="#{h("Per-test run degraded: unhooked modules (#{mods}) fold into the aggregate remainder; hooked windows remain exact up to escaped processes.")}">(degraded: unhooked #{h(mods)})</span>|
+
+      _ ->
+        ~S| <span class="cov-closure-attribution-note" title="Per-test MFA coverage is exact up to escaped processes: a process a test spawns that outlives its tail snapshot can still increment counters after the window closes — see specled.decision.per_test_sync_boundary.">(exact up to escaped processes)</span>|
+    end
   end
 
-  defp render_proxy_note(_), do: ""
+  defp render_attribution_qualifier(_, _), do: ""
+
+  defp render_no_debug_info_note([]), do: ""
+
+  defp render_no_debug_info_note(mfas) when is_list(mfas) do
+    names = mfas |> Enum.map(&h/1) |> Enum.join(", ")
+
+    ~s|<p class="cov-closure-no-debug" role="status"><span class="cov-closure-no-debug-label">No debug info:</span> #{names} — MFA line sets unavailable (module abstract code missing); not counted as covered or uncovered.</p>|
+  end
 
   defp render_tagged_test(%{file: file, test_name: name, strength: strength}) do
     ~s|<code class="cov-closure-test">#{h("#{file} :: #{name}")}</code> (#{h(strength)})|
@@ -3010,30 +3090,21 @@ defmodule SpecLedEx.Review.Html do
 
   # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
   # "Reached by tests" names the tagged tests whose own coverage record
-  # reached the requirement's closure — observed, race-bounded per-test
-  # attribution that only exists under :ok_per_test (aggregate coverage's
-  # evidence strength tops out at "linked", never "executed"). It is not
-  # exact: the underlying formatter takes each test's snapshot lazily inside
-  # an async `test_finished` GenServer.cast that ExUnit.Runner does not wait
-  # on, so a test's in-flight coverage can bleed into its neighbor's
-  # snapshot regardless of the envelope's `degraded` flag — measured at
-  # roughly 1-in-3 exclusive-attribution failures on a trivial fixture (see
-  # specled_-cpw and specled.decision.aggregate_first_spec_coverage). The
-  # label's title attribute below discloses this so "executed" reads as
-  # observed, not proven exact. Rendered only in per_test mode, per the
-  # ticket's mode-gate requirement — not merely omitted when the "executed"
-  # list happens to be empty.
-  defp render_reached_by_tests_row(_tagged_tests, :aggregate), do: ""
+  # reached the requirement's closure via real line→MFA intersection under
+  # :ok_per_test (aggregate coverage's evidence strength tops out at
+  # "linked", never "executed"). Hooked attribution is exact up to escaped
+  # processes (specled.decision.per_test_sync_boundary). Rendered only in
+  # per_test mode — not merely omitted when the "executed" list is empty.
+  defp render_reached_by_tests_row(_tagged_tests, :aggregate, _subject_reach), do: ""
 
-  @reached_by_tests_title "Per-test attribution can be affected by an ExUnit " <>
-                            "test_finished event-timing race across formatter " <>
-                            "casts (roughly 1-in-3 measured on a trivial fixture); " <>
-                            "treat as observed, not exact — see specled_-cpw."
+  @exact_up_to_escaped_title "Per-test attribution is exact up to escaped processes: a process a test spawns that outlives its tail snapshot can still increment counters after the window closes — see specled.decision.per_test_sync_boundary."
 
-  defp render_reached_by_tests_row(tagged_tests, :per_test) do
+  defp render_reached_by_tests_row(tagged_tests, :per_test, subject_reach) do
+    title = reached_by_tests_title(subject_reach)
+
     case Enum.filter(tagged_tests, &(&1.strength == "executed")) do
       [] ->
-        ~s|<p class="cov-reached-by-tests" data-empty="true"><span class="cov-reached-by-tests-label" title="#{h(@reached_by_tests_title)}">Reached by tests:</span> none.</p>|
+        ~s|<p class="cov-reached-by-tests" data-empty="true"><span class="cov-reached-by-tests-label" title="#{h(title)}">Reached by tests:</span> none.</p>|
 
       executed ->
         names =
@@ -3043,21 +3114,45 @@ defmodule SpecLedEx.Review.Html do
           end)
           |> Enum.join(", ")
 
-        ~s|<p class="cov-reached-by-tests"><span class="cov-reached-by-tests-label" title="#{h(@reached_by_tests_title)}">Reached by tests:</span> #{names}.</p>|
+        ~s|<p class="cov-reached-by-tests"><span class="cov-reached-by-tests-label" title="#{h(title)}">Reached by tests:</span> #{names}.</p>|
+    end
+  end
+
+  defp reached_by_tests_title(subject_reach) do
+    case Map.get(subject_reach || %{}, :attribution, :exact) do
+      :degraded_unhooked ->
+        mods =
+          subject_reach
+          |> Map.get(:unhooked_modules, [])
+          |> format_unhooked_modules()
+
+        "Per-test run is degraded — unhooked modules (#{mods}) fold into the aggregate remainder; hooked windows remain exact up to escaped processes."
+
+      _ ->
+        @exact_up_to_escaped_title
     end
   end
 
   # covers: specled.spec_review.coverage_observed_approximate_qualifier
   # self_verified? composes closure_coverage_pct with an "executed"-strength
-  # tagged test, and that "executed" determination is exactly what
-  # @reached_by_tests_title's race affects — so the same caveat applies here.
+  # tagged test under the same exact-up-to-escaped-processes claim.
   # Rendered only in per_test mode: aggregate coverage's "linked" ceiling
   # means self_verified? is always false there, so the note would be inert.
-  defp render_self_verified_note(:per_test) do
-    ~s| <span class="cov-closure-self-verified-note" title="#{h(@reached_by_tests_title)}">(observed)</span>|
+  defp render_self_verified_note(:per_test, subject_reach) do
+    title = reached_by_tests_title(subject_reach)
+    label = self_verified_qualifier_label(subject_reach)
+
+    ~s| <span class="cov-closure-self-verified-note" title="#{h(title)}">(#{h(label)})</span>|
   end
 
-  defp render_self_verified_note(_), do: ""
+  defp render_self_verified_note(_, _), do: ""
+
+  defp self_verified_qualifier_label(subject_reach) do
+    case Map.get(subject_reach || %{}, :attribution, :exact) do
+      :degraded_unhooked -> "degraded"
+      _ -> "exact up to escaped processes"
+    end
+  end
 
   defp plural(1), do: ""
   defp plural(_), do: "s"
@@ -5575,16 +5670,24 @@ defmodule SpecLedEx.Review.Html do
     }
 
     /* Coverage tab — v2 envelope additions: self-verified/tagged-tests line,
-       mode-gated "Reached by tests" row, file-level proxy qualifier, and the
-       coverage-artifact generated-at staleness note. */
+       mode-gated "Reached by tests" row, exact-up-to-escaped-processes
+       attribution qualifier, and the coverage-artifact generated-at
+       staleness note. */
     .cov-closure-self-verified { margin-left: 8px; }
     .cov-closure-tests { margin-left: 8px; }
-    .cov-closure-proxy-note {
+    .cov-closure-attribution-note {
       margin-left: 4px;
       font-style: italic;
       color: var(--fg-faint);
       cursor: help;
     }
+    .cov-closure-no-debug {
+      margin: 0 0 8px 0;
+      font-size: 12px;
+      color: var(--fg-muted);
+      line-height: 1.55;
+    }
+    .cov-closure-no-debug-label { font-weight: 600; color: var(--fg); }
     .cov-reached-by-tests {
       margin: 0 0 8px 0;
       font-size: 12px;

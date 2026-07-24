@@ -228,6 +228,10 @@
       "hash": "91c2678b0d75ad03bed24765f408db8c92bee6c242d3a7a103f7e9fa408f8225",
       "hasher_version": 1
     },
+    "SpecLedEx.Coverage.MfaLines.index/1": {
+      "hash": "1cc3de28fe53b2f8b095767c95e1fe837230b816f6119c4c6e46514e3bfec99c",
+      "hasher_version": 1
+    },
     "SpecLedEx.Coverage.Snapshot.classic_snapshot/1": {
       "hash": "7c9cb9429e35caa3bba34332a472f0fde1bfb61da9cc13874dc4e2ead8837088",
       "hasher_version": 1
@@ -334,6 +338,10 @@
     },
     "SpecLedEx.CoverageTriangulation.findings/3": {
       "hash": "c6f188765774c6065db4ba3ef72be0fb807f4d43166ab0fbd4eae8dff5e5b0e8",
+      "hasher_version": 1
+    },
+    "SpecLedEx.CoverageTriangulation.per_test_requirement_reach/3": {
+      "hash": "7293df6bcd43ad866424a1147d1eccf9742e9c0e90a39ed3fa06bff1453dcf4e",
       "hasher_version": 1
     },
     "SpecLedEx.DecisionParser.CrossField.validate/3": {

@@ -245,6 +245,181 @@ defmodule SpecLedEx.CoverageTriangulation do
     end)
   end
 
+  # covers: specled.triangulation.per_test_requirement_reach
+  @doc """
+  Per-test MFA-level counterpart to `per_requirement_reach/2`.
+
+  An MFA is covered by test T when T's per-file `lines_hit` intersects the
+  MFA's line set from `line_index` (produced by
+  `SpecLedEx.Coverage.MfaLines.index/1`) for the MFA's source file. Covered /
+  uncovered partitions, `reaching_tests`, and the `"executed"` evidence path
+  all derive from that same intersection — never from a file-level "any line
+  in the MFA's source file" proxy.
+
+  `line_index` is `%{module => fun_index | :no_debug_info}` where `fun_index`
+  is `%{{fun, arity} => MapSet.t(line)}`. MFAs whose module is
+  `:no_debug_info` (or whose `{fun, arity}` is absent from the fun index)
+  land in `no_debug_info_mfas` rather than covered/uncovered — callers must
+  surface them, never silently proxy.
+
+  Pure: no filesystem access. Production caller is
+  `SpecLedEx.Review.CoverageClosure.build_v2/2`'s `:per_test` clause.
+  """
+  @spec per_test_requirement_reach([coverage_record()], closure_map(), map()) :: %{
+          optional({subject_id(), requirement_id()}) => %{
+            closure_mfa_count: non_neg_integer(),
+            executed_mfa_count: non_neg_integer(),
+            covered_mfas: [mfa_string()],
+            uncovered_mfas: [mfa_string()],
+            no_debug_info_mfas: [mfa_string()],
+            reaching_tests: [String.t()]
+          }
+        }
+  def per_test_requirement_reach(records, closure_map, line_index)
+      when is_list(records) and is_map(closure_map) and is_map(line_index) do
+    subjects = Map.get(closure_map, :subjects, %{})
+    per_test = group_records_with_lines(records)
+    source_by_module = module_source_index(line_index)
+
+    Enum.reduce(subjects, %{}, fn {subject_id, info}, acc ->
+      info
+      |> Map.get(:requirements, [])
+      |> Enum.reduce(acc, fn req, inner ->
+        Map.put(
+          inner,
+          {subject_id, req.id},
+          requirement_per_test_reach(req, per_test, line_index, source_by_module)
+        )
+      end)
+    end)
+  end
+
+  defp requirement_per_test_reach(req, per_test, line_index, source_by_module) do
+    closure_mfas = req |> Map.get(:closure_mfas, []) |> Enum.uniq()
+
+    {covered, uncovered, no_debug, reaching} =
+      Enum.reduce(closure_mfas, {[], [], [], MapSet.new()}, fn mfa_str,
+                                                               {cov, unc, ndi, reach_acc} ->
+        case SpecLedEx.Coverage.MfaKey.parse(mfa_str) do
+          {:ok, {mod, fun, arity}} ->
+            case Map.get(line_index, mod, :no_debug_info) do
+              :no_debug_info ->
+                {cov, unc, [mfa_str | ndi], reach_acc}
+
+              fun_index when is_map(fun_index) ->
+                case Map.fetch(fun_index, {fun, arity}) do
+                  :error ->
+                    {cov, unc, [mfa_str | ndi], reach_acc}
+
+                  {:ok, mfa_lines} ->
+                    source = Map.get(source_by_module, mod)
+                    hit_tests = tests_hitting_mfa(per_test, source, mfa_lines)
+
+                    if hit_tests == [] do
+                      {cov, [mfa_str | unc], ndi, reach_acc}
+                    else
+                      {
+                        [mfa_str | cov],
+                        unc,
+                        ndi,
+                        Enum.reduce(hit_tests, reach_acc, &MapSet.put(&2, &1))
+                      }
+                    end
+                end
+            end
+
+          _ ->
+            {cov, [mfa_str | unc], ndi, reach_acc}
+        end
+      end)
+
+    covered_sorted = Enum.sort(covered)
+    uncovered_sorted = Enum.sort(uncovered)
+
+    %{
+      closure_mfa_count: length(closure_mfas),
+      executed_mfa_count: length(covered_sorted),
+      covered_mfas: covered_sorted,
+      uncovered_mfas: uncovered_sorted,
+      no_debug_info_mfas: Enum.sort(no_debug),
+      reaching_tests: reaching |> MapSet.to_list() |> Enum.sort()
+    }
+  end
+
+  defp tests_hitting_mfa(_per_test, nil, _mfa_lines), do: []
+
+  defp tests_hitting_mfa(per_test, source, mfa_lines) do
+    source_norm = normalize_path(source)
+
+    Enum.reduce(per_test, [], fn t, acc ->
+      hit_lines = Map.get(t.lines_by_file, source_norm, MapSet.new())
+
+      if MapSet.size(MapSet.intersection(hit_lines, mfa_lines)) > 0 do
+        [format_test_display(t) | acc]
+      else
+        acc
+      end
+    end)
+  end
+
+  # Like group_records_by_test/1 but keeps per-file line sets so MFA
+  # intersection can run. Empty lines_hit records are ignored (same as v1).
+  defp group_records_with_lines(records) do
+    records
+    |> Enum.group_by(& &1.test_id)
+    |> Enum.map(fn {test_id, recs} ->
+      lines_by_file =
+        recs
+        |> Enum.filter(fn r -> r.lines_hit != [] end)
+        |> Enum.reduce(%{}, fn r, acc ->
+          file = normalize_path(r.file)
+          lines = MapSet.new(r.lines_hit)
+          Map.update(acc, file, lines, &MapSet.union(&1, lines))
+        end)
+
+      first = hd(recs)
+      tags = Map.get(first, :tags, %{}) || %{}
+
+      %{
+        test_id: test_id,
+        test_file: normalize_path(test_file_from_tags(tags)),
+        test_name: Map.get(tags, :test) || Map.get(tags, "test") || "",
+        lines_by_file: lines_by_file
+      }
+    end)
+    |> Enum.sort_by(& &1.test_id)
+  end
+
+  # Resolve each indexed module to its compile-time source path so record
+  # `:file` values (also source paths) can be matched. Modules without a
+  # loadable source contribute nothing — their MFAs never intersect.
+  defp module_source_index(line_index) do
+    line_index
+    |> Map.keys()
+    |> Enum.reduce(%{}, fn mod, acc ->
+      case module_source_file(mod) do
+        nil -> acc
+        path -> Map.put(acc, mod, path)
+      end
+    end)
+  end
+
+  defp module_source_file(mod) when is_atom(mod) do
+    case Code.ensure_loaded(mod) do
+      {:module, ^mod} ->
+        case mod.module_info(:compile)[:source] do
+          path when is_list(path) -> List.to_string(path)
+          path when is_binary(path) -> path
+          _ -> nil
+        end
+
+      _ ->
+        nil
+    end
+  rescue
+    _ -> nil
+  end
+
   defp format_test_display(%{test_file: file, test_name: name}) do
     file = if file in [nil, ""], do: "(unknown)", else: file
     name = if name in [nil, ""], do: "(anonymous)", else: name
