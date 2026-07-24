@@ -7,9 +7,9 @@
   "id": "specled_-q6l.3",
   "labels": [],
   "parent": "specled_-q6l",
-  "priority": 2,
+  "priority": 3,
   "status": "open",
   "title": "Remove dead v1 CoverageClosure.build/2 and stale wiring comments",
   "type": "task",
-  "updated_at": "2026-07-23T22:50:30Z"
+  "updated_at": "2026-07-24T09:57:50Z"
 }
