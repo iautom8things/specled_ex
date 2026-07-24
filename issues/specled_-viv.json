@@ -6,7 +6,8 @@
   "description": "Advances: specled.tagged_tests, specled.verification\n\nFollow-up from specled_-epl cold review (verifier Notes 1/2 + elixir-test-critic ADVISORY-1; all advisory, no blocking findings — implementation is complete, this is test-coverage hardening only).\n\nTwo uncovered cells in the specled_-epl diff (commit e28ee6d):\n\n1. specled.tagged_tests.findings_echo_exunit_seed enumerates failed/timeout x attributed/shared-fate; tests cover 3 of 4 cells. The shared-fate TIMEOUT path (command_timeout_details/1, lib/specled_ex/verifier.ex ~634-638 — timeout with NO attribution artifact) has no direct seed-echo assertion. Fix: in test/specled_ex/verifier_test.exs, add a test mirroring 'a timeout finding echoes the ExUnit seed' (~:1589) whose shim echoes 'Running ExUnit with seed: 424242, max_cases: 8' then sleeps past the 2000ms budget WITHOUT writing $SPECLED_ATTRIBUTION_PATH; assert both verification_command_timeout findings contain '--seed 424242'.\n\n2. specled.verify.command_output_capture_dir guard is 'result.timed_out or result.exit_code != 0'; only the exit-code branch is asserted (capture test asserts timed_out: false). Fix: assert a timed-out command's capture file records 'timed_out: true' (can ride the same new test by also setting SPECLED_COMMAND_OUTPUT_DIR, or use a generic command-kind slow target with a short --command-timeout-ms).\n\nOptional (critic ADVISORY-2/3): split the bundled pass/unwritable capture test into two; align the three seed tests on minimal contract tokens (seed number + '--seed 424242') instead of connective prose.\n\nBoth paths route through the same helpers as tested cells (exunit_seed_note/1, preserve_failed_output/2), so risk is low — do not treat as a bug.",
   "id": "specled_-viv",
   "labels": [
-    "phase:implementing"
+    "phase:implementing",
+    "slug:test-coverage-shared-fate"
   ],
   "comments": [
     {
