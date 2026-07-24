@@ -12,7 +12,7 @@
       "timestamp": "2026-07-24T18:17:47Z"
     }
   ],
-  "priority": 3,
+  "priority": 2,
   "status": "open",
   "title": "hash_store.ex fixed-name .tmp write-rename sibling vs cross_vm_temp_names ADR",
   "type": "task",
