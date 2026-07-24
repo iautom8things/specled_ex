@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-24T19:18:44Z",
+  "description": "F36: no_debug_info rendering obligation has no scenario and the covering test lost its # covers: linkage. F37: scenario boundary_row_preferred_on_flush's given requires the lazy-capture row Stage 2 deleted — contradicts a must requirement in the same file. F39: coverage_observed_approximate_qualifier / coverage_file_level_proxy_qualifier ids now assert the opposite of their names. F40: mix_tasks.spec.md gained prose under gate pressure but no ticket Advances: it. F41: package.adoption_guide verified by kind: source_file (file existence only). Report F36/F37/F39-F41.",
+  "id": "specled_-dn4.8",
+  "labels": [],
+  "parent": "specled_-dn4",
+  "priority": 2,
+  "status": "open",
+  "title": "Spec-evidence repairs + spec hygiene (F36, F37, F39, F40, F41)",
+  "type": "task",
+  "updated_at": "2026-07-24T19:18:44Z"
+}
