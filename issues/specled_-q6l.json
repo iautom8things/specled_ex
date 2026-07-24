@@ -69,6 +69,10 @@
     {
       "text": "ORCHESTRATED\nChildren closed: 6\nBOUNCEs encountered: 0\nUser escalations: 0",
       "timestamp": "2026-07-24T13:36:52Z"
+    },
+    {
+      "text": "Epic branch specled_-q6l/fast-follow-aggregate-first @ a80c942 is READY FOR ITS PR (human checkpoint — not pushed, PR not opened). PRE-PR REQUIRED: rebase onto main (now 9ce640e; fork base 2e6f3d4) — spec.check vs origin/main currently shows base-mismatch findings (e.g. requirement_deleted for specled.verify.command_temp_names_cross_vm_unique added by v0.5.2) that will read as regressions in PR CI until rebased. All 6 post-close merge gates were green against the fork base. Standalone follow-ups filed during the run: specled_-gai (retire duplicated coverage_tab_bind_closure parent statement), specled_-26g (unique-dir Store.read_status sidecar tests).",
+      "timestamp": "2026-07-24T13:36:52Z"
     }
   ],
   "priority": 2,
