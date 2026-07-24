@@ -4,7 +4,7 @@ status: accepted
 date: 2026-07-23
 affects:
   - specled.package
-change_type: clarifies
+change_type: adds-exception
 ---
 
 # The Doc-Identifier Lint Spans `.spec/**`; Unemitted Codes Need an Explicit Allow-Marker
