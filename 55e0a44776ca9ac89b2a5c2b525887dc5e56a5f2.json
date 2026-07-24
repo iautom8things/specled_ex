@@ -13,8 +13,8 @@
       "message": "Changed file lib/specled_ex/coverage.ex impacts subject specled.status; spec.md not co-changed, but realization attested binding(s) SpecLedEx.Coverage.category_summary/3, SpecLedEx.Coverage.covered_files/2, SpecLedEx.Coverage.subject_file_map/2, SpecLedEx.Coverage.subject_id/1 as clean — informational only."
     }
   ],
-  "run_at": "2026-07-24T14:52:32.102144Z",
-  "run_id": "02478c82dd5a2ec2d4728397c87963ba",
+  "run_at": "2026-07-24T14:52:47.514570Z",
+  "run_id": "8a33de997c4346c113d865f7466c33e8",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "55e0a44776ca9ac89b2a5c2b525887dc5e56a5f2",
