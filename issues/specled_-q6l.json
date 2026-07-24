@@ -81,6 +81,10 @@
     {
       "text": "CI green on first run (0 fix commits — pre-flight held). All 3 checks pass incl. armed --cover gate on both OTP legs. Proceeding to squash-merge per /ship-it.",
       "timestamp": "2026-07-24T14:17:48Z"
+    },
+    {
+      "text": "Squash-merged to main (4a374be). Post-merge Specs CI running.",
+      "timestamp": "2026-07-24T14:19:15Z"
     }
   ],
   "priority": 2,
