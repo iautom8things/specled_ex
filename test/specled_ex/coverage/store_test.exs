@@ -122,13 +122,15 @@ defmodule SpecLedEx.Coverage.StoreTest do
                  ]
 
     setup do
-      tmp_path =
-        Path.join(System.tmp_dir!(), "store_v2_#{System.unique_integer([:positive])}.coverdata")
+      # The last_run.status sidecar lands in dirname(path), so the artifact
+      # must live in a test-private directory — parking it directly in
+      # System.tmp_dir!() makes the sidecar a machine-global file shared with
+      # every concurrent BEAM and leftover from killed runs (specled_-ind).
+      tmp_dir = Path.join(System.tmp_dir!(), "store_v2_#{System.unique_integer([:positive])}")
+      File.mkdir_p!(tmp_dir)
+      tmp_path = Path.join(tmp_dir, "per_test.coverdata")
 
-      on_exit(fn ->
-        File.rm_rf!(tmp_path)
-        File.rm_rf!(Path.join(Path.dirname(tmp_path), "last_run.status"))
-      end)
+      on_exit(fn -> File.rm_rf!(tmp_dir) end)
 
       {:ok, path: tmp_path}
     end
