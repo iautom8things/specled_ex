@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-24T19:18:43Z",
+  "description": "Shipped public SpecLedEx.Case is silently shadowed in the host test VM by test_support/specled_ex_case.ex (Code.require_file under ignore_module_conflict) — specled cannot dogfood its own headline ergonomic; case_test.exs verifies the template by grepping its own source. Rename the fixture module (~52 use sites, mechanical), convert case_template_injects_setup to a behavioural scenario, confirm the SpecLedEx.Case realization binding resolves to lib/specled_ex/case.ex via mix spec.next. Report F7/CF5.",
+  "id": "specled_-dn4.3",
+  "labels": [],
+  "parent": "specled_-dn4",
+  "priority": 2,
+  "status": "open",
+  "title": "Rename test_support SpecLedEx.Case → SpecLedEx.FixtureCase; behavioral case_template scenario (F7)",
+  "type": "task",
+  "updated_at": "2026-07-24T19:18:43Z"
+}
