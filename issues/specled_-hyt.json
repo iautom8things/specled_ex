@@ -33,11 +33,15 @@
     {
       "text": "APPROVED. Standalone worktree branch specled_-hyt/attr-sidecar-pid-entropy at d68b523 (rebased onto origin/main 4a374be); no epic branch, work ready for PR/landing. Closing per auditor sign-off.",
       "timestamp": "2026-07-24T14:35:39Z"
+    },
+    {
+      "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/18 (release 0.6.2). Babysitting CI.",
+      "timestamp": "2026-07-24T18:26:09Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "Attribution sidecar temp-file naming: VM-local unique_integer (same collision class as specled_-vnw)",
   "type": "task",
-  "updated_at": "2026-07-24T14:35:40Z"
+  "updated_at": "2026-07-24T18:26:09Z"
 }
