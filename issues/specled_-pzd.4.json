@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-pzd.2"
   ],
@@ -12,8 +12,8 @@
   "labels": [],
   "parent": "specled_-pzd",
   "priority": 1,
-  "status": "open",
+  "status": "in_progress",
   "title": "S4: Adoption docs Phase 4a/4b split, README qualifier",
   "type": "task",
-  "updated_at": "2026-07-24T14:45:51Z"
+  "updated_at": "2026-07-24T14:52:09Z"
 }
