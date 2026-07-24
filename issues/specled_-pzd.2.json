@@ -15,9 +15,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-pzd",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: impl-a1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-pzd.2/grok-impl-a1/log\n\nCommit: 6830d5ce2896beb6d65fb5a347ca50754ae71bd0 (impl 8d6d69d + merge origin/main)\nFiles touched (S2 impl): lib/specled_ex/coverage/formatter.ex, test/specled_ex/coverage/formatter_test.exs, test/mix/tasks/spec_cover_test_test.exs, .spec/specs/coverage_capture.spec.md, .spec/specs/package.spec.md (attestation-only), .spec/decisions/specled.decision.per_test_sync_boundary.md (new), .spec/decisions/specled.decision.aggregate_first_spec_coverage.md (append-only amendment), docs/coverage.md, CHANGELOG.md, VERSION\nAlso via merge origin/main (required for append-only green vs base): .spec/specs/spec_review.spec.md, store/review/html/triangle/snapshot/store_test paths from 0.6.1 q6l, realization_hashes, mix.exs, workflows — no intentional claim edits beyond merge resolution of CHANGELOG/VERSION\nTests added: SpecLedEx.Coverage.FormatterTest inventory-only test_finished; suite_finished auditor flush prefers boundary; unhooked module degrades + notice names setup line; zero-hooked remainder still writes; partial-hook remainder math; snapshot_fn only at suite_started+suite_finished; Mix.Tasks.Spec.Cover.TestTest \"unhooked module degrades the run and the notice names the setup line\" (partial-hook integration). Existing seeded exclusivity retained.\nVerification stubs flipped: specled.coverage_capture.formatter_auditor, unhooked_degrade, unhooked_remediation_notice (new execute:true tagged_tests block)\nVerification tier: full merge gate\nFinal-tier runs: 1\nspec.check branch findings evidence:\n  authored_dir=.spec/specs subjects=34 requirements=410\n  status=pass errors=0 warnings=0\n  branch base=origin/main changed_files=20 findings=2\n  [INFO] branch_guard_missing_subject_update lib/specled_ex/coverage.ex (attested-clean; informational only) x2 for branch_guard + status\n  exit status: 0\n  (Epic lessons checked: did not treat status=pass alone as pass; confirmed zero ERROR branch findings; gate-demanded package.spec attestation applied; merged origin/main so append_only requirement_deleted for main-only 0.6.1 requirements cleared.)\nDeferred must requirements: none\n\nSummary: Demoted SpecLedEx.Coverage.Formatter from per-test snapshotter to suite-lifecycle auditor: test_finished is inventory-only; suite_finished diffs baseline→final, attributes boundary rows to payload, folds unattributed remainder into meta.unattributed/files, degrades unhooked modules with one per-module remediation notice naming the exact setup line, and still writes when zero-hooked but remainder non-empty. Superseding ADR per_test_sync_boundary + append-only amendment on aggregate_first upgrades the claim to exact-up-to-escaped-processes; docs/coverage.md and coverage_capture.spec.md updated accordingly.",
+      "timestamp": "2026-07-24T14:28:17Z"
+    }
+  ],
   "priority": 1,
   "status": "in_progress",
   "title": "S2: Formatter demoted to auditor; unhooked degrade; claim upgrade + superseding ADR",
   "type": "task",
-  "updated_at": "2026-07-24T14:11:30Z"
+  "updated_at": "2026-07-24T14:28:17Z"
 }
