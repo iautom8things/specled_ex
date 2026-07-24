@@ -147,9 +147,26 @@ preconditions hold. Compute floor-zero.
 | 1     | at least one non-draft subject with non-empty `surface:`                  | parse `.spec/specs/*.spec.md`; count subjects with `status != draft` and `surface: [...]`        |
 | 2     | at least one subject has `realized_by.api_boundary:` with ≥1 MFA          | parse `.spec/specs/*.spec.md`; count subjects with `realized_by.api_boundary` populated         |
 | 3     | `test_tags.enabled: true` AND ≥1 `@tag spec:` in test files               | parse `.spec/config.yml`; grep `test/`                                                          |
-| 4     | coverage artifact exists AND CI runs the capture step                     | check `.spec/_coverage/per_test.coverdata` exists; grep `.github/` for `mix spec\.cover\.(test|ingest)` |
+| 4     | coverage artifact exists AND CI runs the capture step (aggregate / 4a)   | check `.spec/_coverage/per_test.coverdata` exists; grep `.github/` for `mix spec\.cover\.(test|ingest)` |
+| 4b    | boundary hook wired in case templates (per-test / 4b)                     | pinned grep below (non-empty match = wired)                                                     |
 | 5     | at least one subject has `realized_by.implementation:` with ≥1 MFA        | parse `.spec/specs/*.spec.md`                                                                   |
 | 6     | `test_tags.enforcement: error` AND `branch_guard_realization_drift: error` | parse `.spec/config.yml`                                                                        |
+
+**Phase 4b signal** (per-test boundary wiring — pinned; copy verbatim):
+
+```bash
+grep -rE 'per_test_boundary|SpecLedEx\.Case' test/support test/ --include='*.ex' --include='*.exs'
+```
+
+Phase 4 is the aggregate ladder step (artifact + CI capture). Phase **4b** is
+orthogonal: the per-test boundary hook (`setup {SpecLedEx.Coverage,
+:per_test_boundary}` or `use SpecLedEx.Case`) in test support / case-template
+files. A non-empty match from the pinned grep means the wiring is present.
+4b does **not** raise `current_phase` past 4 on its own — it is a separate
+signal that gates the optional phase-4b wiring ticket (see
+[task-templates.md](task-templates.md) and
+[adoption-phases.md](adoption-phases.md)). Cross-reference:
+[`docs/adoption.md`](../../../docs/adoption.md) Phase 4a / Phase 4b.
 
 Do not grep `test/test_helper.exs` for `SpecLedEx.Coverage.Formatter` as the
 phase4 signal. Since epic `specled_-155`, the default `mix spec.cover.test`
