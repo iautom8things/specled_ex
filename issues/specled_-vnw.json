@@ -9,9 +9,15 @@
     "phase:implementing",
     "slug:verifier-run-command-temp"
   ],
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: c1eaf748-3b25-4d2f-8556-663e80be3a37\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/c1eaf748-3b25-4d2f-8556-663e80be3a37.jsonl\n\nCommit: 95f3e78\nFiles touched: lib/specled_ex/verifier.ex, test/specled_ex/verifier_test.exs, .spec/specs/verification.spec.md\nTests added: SpecLedEx.VerifierTest \"command temp script names embed the OS pid and random entropy\" (@tag spec: specled.verify.command_temp_names_cross_vm_unique)\nVerification stubs flipped: none — new requirement added to the existing execute:true tagged_tests stub on specled.verification\nVerification tier: change-scoped — mix test test/specled_ex/verifier_test.exs (42 tests), mix test --stale (1154 tests, full compile-graph fanout), mix spec.check --no-run-commands --base origin/main; full-system proof deferred to PR CI\nFinal-tier runs: 1\n\nSummary: run_command named temp scripts with System.unique_integer/1, unique only within one BEAM — concurrent specled runs sharing tmp_dir could collide and one run's after-block cleanup deleted the other's in-flight script (false verification_command_failed, exit 127, on untouched subjects). Names now embed the OS pid plus 6 random hex-encoded bytes. New must requirement specled.verify.command_temp_names_cross_vm_unique + scenario in verification.spec.md; regression test observes the generated script path via $0 and asserts the pid+entropy shape. Optional ExUnit-seed-surfacing diagnosability item was not done here; it is already tracked by specled_-epl/specled_-qvg.",
+      "timestamp": "2026-07-24T10:54:27Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Verifier run_command temp-script race: false verification_command_failed on untouched subjects",
   "type": "bug",
-  "updated_at": "2026-07-24T10:46:05Z"
+  "updated_at": "2026-07-24T10:54:27Z"
 }
