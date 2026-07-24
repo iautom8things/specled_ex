@@ -49,11 +49,15 @@
     {
       "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/16 (release 0.6.0, branch feat/specled_-epl-flake-seed-echo-capture, also carries specled_-ind). Babysitting CI.",
       "timestamp": "2026-07-24T12:47:32Z"
+    },
+    {
+      "text": "Squash-merged to main (9ce640e, release 0.6.0, PR #16). Remote branch deleted; primary main fast-forwarded. Watching post-merge Specs run.",
+      "timestamp": "2026-07-24T12:50:57Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "Investigate flaky specled.compiler_tracer verification_command_failed (tracer_test.exs:241) under multi-file tagged_tests run",
   "type": "task",
-  "updated_at": "2026-07-24T12:47:32Z"
+  "updated_at": "2026-07-24T12:50:57Z"
 }
