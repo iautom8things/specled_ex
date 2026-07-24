@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [
     "specled_-pzd.2"
@@ -10,8 +10,8 @@
   "labels": [],
   "parent": "specled_-pzd",
   "priority": 1,
-  "status": "open",
+  "status": "in_progress",
   "title": "S1: Boundary engine, SpecLedEx.Case, deterministic exclusivity",
   "type": "task",
-  "updated_at": "2026-07-24T12:40:32Z"
+  "updated_at": "2026-07-24T12:41:30Z"
 }
