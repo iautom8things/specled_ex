@@ -45,11 +45,15 @@
     {
       "text": "Squash-merged to main (14f6e72, release 0.7.0). Remote branch deleted. Watching post-merge Specs run.",
       "timestamp": "2026-07-24T19:14:18Z"
+    },
+    {
+      "text": "Closed. Shipped as PR #20 → main 14f6e72, release 0.7.0. Post-merge Specs run green; both CI matrix legs 1208 tests/0 failures. Critical review: 0C/3H post-calibration, all 3 Tier-1 findings fixed pre-merge (731b686). Closes specled_-cpw + specled_-jjq. Fast-follow epic specled_-dn4 carries the review Tier-2/3 remediation (9 tickets).",
+      "timestamp": "2026-07-24T19:19:01Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Per-test exact attribution via synchronous boundary hook",
   "type": "epic",
-  "updated_at": "2026-07-24T19:14:18Z"
+  "updated_at": "2026-07-24T19:19:01Z"
 }
