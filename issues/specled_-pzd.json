@@ -33,6 +33,10 @@
     {
       "text": "ORCHESTRATED\nChildren closed: 5\nBOUNCEs encountered: 2\nUser escalations: 0",
       "timestamp": "2026-07-24T15:40:40Z"
+    },
+    {
+      "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/20 (release 0.7.0). Rebased onto 0.6.3; critical-review Tier-1 fixes (degraded_reasons provenance, never-ran inventory filter) landed as 731b686. Babysitting CI.",
+      "timestamp": "2026-07-24T19:11:03Z"
     }
   ],
   "priority": 1,
