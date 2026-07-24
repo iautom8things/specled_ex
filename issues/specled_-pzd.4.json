@@ -25,11 +25,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: 5c8acfce-20cb-419d-884e-ebc8687b4943\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/5c8acfce-20cb-419d-884e-ebc8687b4943.jsonl\n\nReasoning: VERIFY reported PASS with zero scope violations, corpus-scoped claim\nvalidation (14 claims, ~8 by execution, byte-for-byte notice/setup-line match),\ngreen gate state, and no seams (docs-only stage). No auditor was spawned per policy.",
       "timestamp": "2026-07-24T15:04:30Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-pzd/per-test-sync-boundary. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-24T15:06:38Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "S4: Adoption docs Phase 4a/4b split, README qualifier",
   "type": "task",
-  "updated_at": "2026-07-24T15:04:31Z"
+  "updated_at": "2026-07-24T15:06:38Z"
 }
