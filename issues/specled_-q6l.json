@@ -77,11 +77,15 @@
     {
       "text": "PR opened: (see gh pr view) release 0.6.1. Babysitting CI.",
       "timestamp": "2026-07-24T14:15:27Z"
+    },
+    {
+      "text": "CI green on first run (0 fix commits — pre-flight held). All 3 checks pass incl. armed --cover gate on both OTP legs. Proceeding to squash-merge per /ship-it.",
+      "timestamp": "2026-07-24T14:17:48Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fast-follow: Aggregate-first spec coverage — specled_-47j remediation",
   "type": "epic",
-  "updated_at": "2026-07-24T14:15:27Z"
+  "updated_at": "2026-07-24T14:17:48Z"
 }
