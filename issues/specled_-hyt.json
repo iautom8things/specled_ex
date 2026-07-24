@@ -5,7 +5,9 @@
   "created": "2026-07-24T12:17:54Z",
   "description": "Surfaced by the specled_-vnw cold verifier (2026-07-24): lib/specled_ex/verifier.ex:2131 still names the streaming-attribution sidecar (specled_attr_*.jsonl / specled_pgkill_* etc.) with System.unique_integer([:positive]) — the same VM-local scheme specled_-vnw fixed for command temp scripts (shipped 0.5.2, PR #15, 699a503). Cross-VM collision here would corrupt/steal attribution events between concurrent specled runs sharing tmp_dir rather than exit-127 a command, so impact is subtler (misattributed per-test coverage) but the fix is identical: OS pid + random entropy. Audit all remaining System.unique_integer-based temp paths in lib/ while at it (test-only usages are fine). Likely advances specled.verification.",
   "id": "specled_-hyt",
-  "labels": [],
+  "labels": [
+    "slug:attribution-sidecar-temp-file"
+  ],
   "comments": [
     {
       "text": "In-the-wild datum (2026-07-24, specled_-epl ship preflight): a full spec.check produced a 266-finding anomaly — merged run exit 2 with EMPTY captured output plus mass tagged_tests_cover_not_executed warnings across many subjects; a serial re-run was clean. The empty output half is the (now-fixed) specled_-vnw class, but the cover_not_executed storm is consistent with THIS ticket's mechanism: run_merged_command names the attribution artifact specled_attr_\u003cunique_integer\u003e.jsonl in shared tmp; inner verifier_test tests running INSIDE the merged run create and File.rm their own specled_attr_* files with the same VM-local counter scheme, so a name collision deletes/truncates the outer run's attribution artifact mid-stream — exactly what mass cover_not_executed on a completed run looks like. This upgrades the ticket from 'theoretical collision' to 'plausibly observed'; the fix (pid+entropy, mirroring vnw and the 0.6.0 capture-log naming at verifier.ex preserve_failed_output) is mechanical. Raising P3→P2.",
@@ -16,5 +18,5 @@
   "status": "open",
   "title": "Attribution sidecar temp-file naming: VM-local unique_integer (same collision class as specled_-vnw)",
   "type": "task",
-  "updated_at": "2026-07-24T13:46:22Z"
+  "updated_at": "2026-07-24T14:14:11Z"
 }
