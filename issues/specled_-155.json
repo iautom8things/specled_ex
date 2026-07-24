@@ -91,11 +91,15 @@
     {
       "text": "Closed. Shipped as v0.5.0 (PR #13, squash c90b32aa, post-merge Specs green on both OTP legs). Fast-follow epic specled_-q6l carries: specled_-q6l.1..5 (calibrated review Tier-2/3 items) + specled_-6v6 (arm --cover). Root cause specled_-47j resolved by this epic.",
       "timestamp": "2026-07-23T22:50:40Z"
+    },
+    {
+      "text": "LESSON correction (2026-07-24): the earlier LESSON \"append new code below existing bound functions — line shifts above them trigger spurious branch_guard_realization_drift via specled_-wp7\" is OBSOLETE. wp7 was a stale-base duplicate of specled_-o40 (8e91b13, 0.3.4), which fixed strip_meta form-position recursion BEFORE this epic merged; the epic worktree was cut pre-o40 so workers kept hitting the already-fixed bug. On \u003e=0.3.4 line shifts above bound functions do NOT drift api_boundary hashes — do not contort diffs to append-below. Meta-lesson: when an epic worker files a bug against tooling outside its Allowed touches, check main history for an existing fix before treating it as live (stale-base duplicate).",
+      "timestamp": "2026-07-24T09:37:07Z"
     }
   ],
   "priority": 1,
   "status": "closed",
   "title": "Aggregate-first spec coverage — specled_-47j remediation",
   "type": "epic",
-  "updated_at": "2026-07-23T22:50:40Z"
+  "updated_at": "2026-07-24T09:37:07Z"
 }
