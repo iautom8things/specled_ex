@@ -9,9 +9,15 @@
   "id": "specled_-q6l.4",
   "labels": [],
   "parent": "specled_-q6l",
+  "comments": [
+    {
+      "text": "CONTRACT (orchestrator-synthesized)\n\nContext: your base is epic HEAD b5ea42b5ed168e23852ebe43d207a6f81bc54234, which includes specled_-q6l.1 (envelope loading consolidated into Store.load/1 — the decode sites may have moved relative to the ticket's original line numbers) and specled_-q6l.3 (v1 CoverageClosure.build/2 deleted). Re-locate the decode sites in the current tree before editing.\n\nAllowed touches:\n- lib/specled_ex/coverage/store.ex (safe_decode/read paths)\n- lib/mix/tasks/spec.triangle.ex (tracer-manifest read, originally ~:132-140)\n- lib/specled_ex/review/coverage_closure.ex (only if a binary_to_term site still lives there after the .1 consolidation)\n- test/** (targeted tests proving hostile-artifact rejection where cheap to add)\n- .spec/specs/** ONLY if the spec gate demands subject co-change\n- .spec/state.json, .spec/realization_hashes.json (tool-managed; regenerate only)\n\nOut of Scope (files): mix.exs, .github/**, all other lib/**.\n\nOut of Scope (intent): per the epic triage this is NOT a one-word fix — the tracer manifest and store hold atoms not guaranteed interned, so a blind [:safe] everywhere can break legitimate decodes. Do a per-site analysis: add [:safe] where the decoded term's atoms are guaranteed already-interned; where decoding must resurrect module atoms, keep non-safe and document why in a comment at the site (MfaKey atoms come via String.to_atom separately — see the review's idioms M3 note re the to_existing_atom variant, but do NOT change MfaKey semantics in this ticket). No behavior change for well-formed artifacts. No new deps.\n\nVerification:\n1. Per-site decision table in the completion record: every :erlang.binary_to_term call site in the touched files, with safe/non-safe decision + one-line rationale each.\n2. Targeted tests green for every touched module (store_test, spec_triangle_test, coverage_closure_test as applicable); add at least one test proving an artifact with a never-interned atom is rejected (or classified :invalid_artifact) at a site you made safe.\n3. mix compile --warnings-as-errors; mix format --check-formatted.\n4. mix spec.check --no-run-commands --base b5ea42b5ed168e23852ebe43d207a6f81bc54234 (base-pinned; ignore default origin/main drift).",
+      "timestamp": "2026-07-24T13:07:53Z"
+    }
+  ],
   "priority": 3,
   "status": "open",
   "title": "Use binary_to_term [:safe] for coverage/manifest artifact decodes",
   "type": "task",
-  "updated_at": "2026-07-24T12:12:54Z"
+  "updated_at": "2026-07-24T13:07:53Z"
 }
