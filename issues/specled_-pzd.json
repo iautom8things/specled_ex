@@ -17,11 +17,15 @@
     {
       "text": "LESSONS\n- ~~[other] Do not co-update spec prose outside Allowed touches; Coverage realization drift is fully absorbed by .spec/realization_hashes.json (an Allowed touch) — verify with a revert + spec.check before touching extra .spec/specs files (from specled_-pzd.1)~~ (RETIRED — the empirical claim was irreproducible; the revert turns the gate red)\n- [stale-spec] branch_guard_missing_subject_update (base=origin/main) demands subject spec co-update when surface files change (CHANGELOG.md, docs/coverage.md → specled.package; lib/mix/tasks/*.ex → specled.mix_tasks); .spec/realization_hashes.json absorbs realization drift but does NOT satisfy this finding. Gate-demanded subject co-updates are in scope per the implement template (\"a green gate outranks Out of Scope\") (from specled_-pzd.1)\n- [other] mix spec.check prints \"status=pass errors=0 warnings=0\" for the structural tier even when branch-guard findings fail the run — read the full output through \"branch findings\" and the exit status, never just the status line (from specled_-pzd.1)",
       "timestamp": "2026-07-24T13:36:51Z"
+    },
+    {
+      "text": "GATE FLAKE ACCEPTED (1/2 for this signature)\nSignature: scenario_refactor_stable_test.exs:150 \"cosmetic refactor inside closure produces no drift finding\" — branch_guard_realization_drift implementation-tier hash instability\nGate run: post-specled_-pzd.3-close, seed 156172, 1193 tests / 1 failure\nTargeted re-run: same file, same seed — 1 test, 0 failures (does not reproduce)\nIntersection with touched files: none (S3 touched coverage/review/spec files; failing scenario is self-contained synthetic-repo harness)\nKnown-issue linkage: matches open ticket specled_-l05 (implementation-tier drift: cross-compile determinism + hash-input audit)\nPolicy: second acceptance of this signature is the last; a third occurrence creates an investigation ticket and leaves the gate red.",
+      "timestamp": "2026-07-24T15:35:29Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Per-test exact attribution via synchronous boundary hook",
   "type": "epic",
-  "updated_at": "2026-07-24T13:36:51Z"
+  "updated_at": "2026-07-24T15:35:29Z"
 }
