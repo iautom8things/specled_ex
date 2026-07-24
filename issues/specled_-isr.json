@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-24T12:22:16Z",
+  "description": "During make worktree-new bootstrap smoke for specled_-pzd (2026-07-24), test/specled_ex/coverage/store_test.exs:267 failed once with an envelope asserting file_count: 1, mfa_count: 0 (full suite, mix test --max-failures 1, unknown seed from bootstrap run). Passes in isolation and on immediate full-suite re-run (seed 813421, 1154 tests green). Likely seed/order-dependent. Investigate for cross-test contamination in store fixtures. Not part of epic specled_-pzd scope; noted for hygiene.",
+  "id": "specled_-isr",
+  "labels": [],
+  "priority": 3,
+  "status": "open",
+  "title": "Flaky store_test.exs:267 under bootstrap seed: envelope meta mfa_count 0 vs expected",
+  "type": "task",
+  "updated_at": "2026-07-24T12:22:16Z"
+}
