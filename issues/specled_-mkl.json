@@ -18,11 +18,15 @@
     {
       "text": "Triage 2026-07-24: raised P3-\u003eP2. Repo squash-merges 100% of PRs, so cleanup fails on EVERY post-merge teardown; the manual fallback (worktree remove --force + branch -D) bypasses the dirty-tree safety check and normalizes agents force-deleting unsupervised. Verified at HEAD: no --force path in worktree-cleanup.sh (args :18-38, unconditional exit :74-78, --all silent skip :79); Makefile:156 never passes FORCE. Fix must also switch line 134 branch -d to -D. Prefer squash-merge auto-detect (empty git diff main...branch on tree content, or gh PR mergedAt) over blind --force for unattended /ship-it runs.",
       "timestamp": "2026-07-24T09:57:41Z"
+    },
+    {
+      "text": "Heads-up: .claude/scripts/worktree-cleanup.sh was removed in 256f8ba — the repo adopted the synced worktree workflow (host-elixir@0.22.0 from agentic-dotfiles); cleanup is now make worktree-cleanup via make/worktree.mk, which uses a WORKTREE_CLEANUP_BASE rev comparison. Re-test the squash-merged scenario against the new target; this ticket may be obsolete or need re-scoping.",
+      "timestamp": "2026-07-24T10:05:22Z"
     }
   ],
   "priority": 2,
   "status": "open",
   "title": "worktree-cleanup.sh cannot clean squash-merged worktrees (no force path)",
   "type": "task",
-  "updated_at": "2026-07-24T09:57:41Z"
+  "updated_at": "2026-07-24T10:05:22Z"
 }
