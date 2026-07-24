@@ -916,6 +916,39 @@ defmodule SpecLedEx.VerifierTest do
     assert passed_check
   end
 
+  # `$0` inside the target script is the script's own path, so the command can
+  # report which temp file the verifier generated for it. A VM-local counter
+  # (System.unique_integer) here would collide across concurrent BEAMs sharing
+  # tmp_dir — one run's cleanup then deletes the other's in-flight script and
+  # an untouched subject fails with exit 127.
+  @tag spec: "specled.verify.command_temp_names_cross_vm_unique"
+  test "command temp script names embed the OS pid and random entropy", %{root: root} do
+    proof = Path.join(root, "script_path.txt")
+
+    report =
+      verify_subject(
+        root,
+        %{
+          "requirements" => [%{"id" => "req.name", "statement" => "Collision-proof temp names"}],
+          "verification" => [
+            %{
+              "kind" => "command",
+              "target" => "echo \"$0\" >> \"#{proof}\"",
+              "covers" => ["req.name"],
+              "execute" => true
+            }
+          ]
+        },
+        run_commands: true
+      )
+
+    assert report["status"] == "pass"
+
+    script_name = proof |> File.read!() |> String.trim() |> Path.basename()
+
+    assert script_name =~ ~r/^specled_cmd_#{System.pid()}_[0-9a-f]{12}\.target\.sh$/
+  end
+
   test "command verification captures non-zero exit codes", %{root: root} do
     report =
       verify_subject(

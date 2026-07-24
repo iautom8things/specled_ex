@@ -2251,7 +2251,13 @@ defmodule SpecLedEx.Verifier do
   end
 
   defp run_command(target, root, timeout_ms, opts \\ []) do
-    tmp_out = Path.join(System.tmp_dir!(), "specled_cmd_#{System.unique_integer([:positive])}")
+    # System.unique_integer/1 is unique only within one BEAM VM. Nested or
+    # parallel specled runs share tmp_dir, so a cross-VM name collision lets
+    # one run's cleanup delete another's in-flight script (exit 127 blamed on
+    # an innocent subject). The OS pid separates concurrently live VMs; the
+    # random suffix covers pid reuse against stale same-name leftovers.
+    suffix = "#{System.pid()}_#{Base.encode16(:crypto.strong_rand_bytes(6), case: :lower)}"
+    tmp_out = Path.join(System.tmp_dir!(), "specled_cmd_#{suffix}")
 
     # Write a wrapper script to avoid shell escaping issues with nested quotes.
     # The script captures stdout/stderr to a temp file and exits with the command status.
