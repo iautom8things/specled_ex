@@ -9,9 +9,15 @@
   "id": "specled_-q6l.5",
   "labels": [],
   "parent": "specled_-q6l",
+  "comments": [
+    {
+      "text": "CONTRACT (orchestrator-synthesized)\n\nSpec co-change is AUTHORIZED and is the point of this ticket: you are editing .spec/specs/spec_review.spec.md to split requirement specled.spec_review.coverage_tab_bind_closure into per-contract requirement ids. This is not a scope violation.\n\nAllowed touches:\n- .spec/specs/spec_review.spec.md (the split)\n- test/** (per-contract covering tests / tag adjustments so each new requirement id has its own scenario + test)\n- .spec/decisions/** (optional short ADR only if the split changes architecture-level meaning)\n- .spec/state.json, .spec/realization_hashes.json (tool-managed baselines; regenerate via documented command only)\n\nOut of Scope (files): lib/** (no production code change), mix.exs, .github/**.\n\nOut of Scope (intent): the union of the split requirements must be contract-preserving — cover everything the compound requirement asserted (closure-line format, per-test-only 'Reached by tests' row, observed/approximate qualifier, file-level-proxy note, rollup badge, generated_at staleness, five degraded banners, no_tracer_manifest banner). Do NOT weaken or drop any clause. Do NOT pre-implement the qualifier rendering change (that is specled_-q6l.2, blocked on this ticket).\n\nVerification:\n1. mix spec.check --no-run-commands green (structural validate + test-tag consistency).\n2. Each split requirement id has its own scenario and a named covering test; flip verification stubs to execute: true where tests exist and run the flipped stubs.\n3. Targeted test files green (change-scoped tier; no full suite).",
+      "timestamp": "2026-07-24T12:15:31Z"
+    }
+  ],
   "priority": 3,
   "status": "open",
   "title": "Split over-compound spec_review.coverage_tab_bind_closure requirement",
   "type": "task",
-  "updated_at": "2026-07-24T12:12:54Z"
+  "updated_at": "2026-07-24T12:15:31Z"
 }
