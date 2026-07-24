@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
   "created": "2026-07-24T12:26:23Z",
@@ -7,8 +7,8 @@
   "id": "specled_-ind",
   "labels": [],
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "[BUG] store_test v2 setup shares $TMPDIR/last_run.status across BEAMs — flaky read_status tests",
   "type": "task",
-  "updated_at": "2026-07-24T12:26:23Z"
+  "updated_at": "2026-07-24T12:26:33Z"
 }
