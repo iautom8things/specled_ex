@@ -12,11 +12,15 @@
     {
       "text": "Fix scheduled: epic specled_-pzd stage S3 (specled_-pzd.3) wires CoverageClosure :per_test to real MFA/line data and retires render_proxy_note/1. Close this ticket when S3 merges.",
       "timestamp": "2026-07-24T12:22:16Z"
+    },
+    {
+      "text": "Resolved in code by epic specled_-pzd (S3 real per-test MFA closure via MfaLines; file-level proxy retired). Close when the epic's release PR lands on main.",
+      "timestamp": "2026-07-24T15:40:30Z"
     }
   ],
   "priority": 2,
   "status": "open",
   "title": "Wire per_test review closure to real per-test MFA coverage (retire file-level proxy)",
   "type": "bug",
-  "updated_at": "2026-07-24T12:22:16Z"
+  "updated_at": "2026-07-24T15:40:30Z"
 }
