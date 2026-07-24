@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.5.1 — 2026-07-23
+
+- The doc-identifier lint now covers the repo-resident spec workspace
+  (`.spec/**/*.md`), not just `skills/`, `docs/` and `README.md`, so a fabricated
+  finding code in a subject spec or decision record is caught the same way one in
+  a guide is. Because decision records must sometimes name a budgeted or rejected
+  code that no detector emits, such a reference may carry an explicit per-token
+  marker — `<!-- spec-lint:allow-code=<token> reason -->` — which exempts only the
+  exact token it names, on that line, and **only inside `.spec/decisions/`**;
+  guidance docs, skill files and subject specs get no escape hatch, so a lint
+  failure there must be corrected rather than marked. Reconciles the fabricated
+  codes the widened corpus surfaced (a `triangulation` scenario `then:` clause now
+  names the codes its covering integration test actually asserts; two budgeted or
+  rejected codes in decision records carry markers), adds a path-boundary guard so
+  a code-shaped path segment is not mistaken for a code, and records the policy in
+  `specled.decision.doc_identifier_lint_spec_corpus`. (specled_-6fn)
+
 ## 0.5.0 — 2026-07-23
 
 **Breaking behavior changes — read before upgrading:**
