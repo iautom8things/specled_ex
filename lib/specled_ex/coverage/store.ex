@@ -84,7 +84,8 @@ defmodule SpecLedEx.Coverage.Store do
   #       files: [term()],
   #       mfas: [term()],
   #       payload: term(),
-  #       degraded: boolean()
+  #       degraded: boolean(),
+  #       meta: map()   # additive; older artifacts default to %{}
   #     }
   #
   # This module owns the envelope container, validation, and read/write
@@ -120,7 +121,8 @@ defmodule SpecLedEx.Coverage.Store do
           files: [term()],
           mfas: [term()],
           payload: term(),
-          degraded: boolean()
+          degraded: boolean(),
+          meta: map()
         }
 
   @doc """
@@ -128,7 +130,8 @@ defmodule SpecLedEx.Coverage.Store do
 
   `:mode`, `:source`, `:files`, `:mfas`, and `:payload` are required.
   `:generated_at` defaults to `DateTime.utc_now/0`; `:degraded` defaults to
-  `false`. `:version` is always #{@v2_version} and cannot be overridden.
+  `false`; `:meta` defaults to `%{}`. `:version` is always #{@v2_version}
+  and cannot be overridden.
   """
   @spec build_envelope(map()) :: envelope()
   def build_envelope(fields) when is_map(fields) do
@@ -140,7 +143,8 @@ defmodule SpecLedEx.Coverage.Store do
       files: fetch!(fields, :files),
       mfas: fetch!(fields, :mfas),
       payload: fetch!(fields, :payload),
-      degraded: Map.get(fields, :degraded, false)
+      degraded: Map.get(fields, :degraded, false),
+      meta: Map.get(fields, :meta, %{})
     }
   end
 
@@ -289,7 +293,9 @@ defmodule SpecLedEx.Coverage.Store do
 
   defp classify_v2(%{version: @v2_version} = envelope) do
     if Enum.all?(@v2_required_fields, &Map.has_key?(envelope, &1)) do
-      {:ok, envelope}
+      # `:meta` is additive — older artifacts written before Stage 1 default
+      # to an empty map rather than failing the read.
+      {:ok, Map.put_new(envelope, :meta, %{})}
     else
       {:error, :invalid_artifact}
     end

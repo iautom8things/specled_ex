@@ -174,6 +174,41 @@ per test — proportional to test count, unlike the aggregate default.
 dependency-injection seams; these are for test authoring inside this
 package, not adopter-facing configuration.
 
+## Wiring the per-test boundary hook
+
+For exclusive per-test windows under `--per-test`, wire a synchronous
+boundary hook once per case template. The hook takes a head coverage
+snapshot at setup and a tail snapshot in `on_exit` (awaited by
+`ExUnit.Runner` before the next test starts), so a hooked test's record
+cannot contain a neighbor's progress.
+
+In a Phoenix-style app case template:
+
+```elixir
+setup {SpecLedEx.Coverage, :per_test_boundary}
+```
+
+For bare `ExUnit.Case` modules:
+
+```elixir
+defmodule MyApp.SomeTest do
+  use SpecLedEx.Case, async: false
+
+  test "example" do
+    assert true
+  end
+end
+```
+
+The hook no-ops unless `mix spec.cover.test --per-test` has armed the
+`:specled_ex, :spec_cover_run` seam with a `:boundary_table`, so it is
+safe to leave wired under plain `mix test` (zero cost, zero output).
+
+Attribution for hooked tests under this wiring is still described as
+observed/approximate in this document until Stage 2 upgrades the claim
+surface; the deterministic exclusivity property for hooked windows is
+covered by the seeded exclusivity integration test.
+
 ## OTP posture
 
 `SpecLedEx.Coverage.Snapshot.runtime_mode/0` dispatches on

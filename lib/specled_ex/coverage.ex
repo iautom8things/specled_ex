@@ -1,5 +1,21 @@
 defmodule SpecLedEx.Coverage do
-  @moduledoc false
+  @moduledoc """
+  Coverage capture utilities and the public per-test boundary hook.
+
+  ## Wiring the per-test boundary hook
+
+  Adopters that want exclusive per-test attribution under
+  `mix spec.cover.test --per-test` wire the hook once per case template:
+
+      setup {SpecLedEx.Coverage, :per_test_boundary}
+
+  Or, for bare `ExUnit.Case` modules, `use SpecLedEx.Case` (which injects
+  that setup line). The hook no-ops unless the task has armed the
+  `:specled_ex, :spec_cover_run` seam with a `:boundary_table`, so the
+  wiring is safe under plain `mix test`. See `docs/coverage.md`.
+  """
+
+  alias SpecLedEx.Coverage.Boundary
 
   @file_kinds ~w(file source_file test_file guide_file readme_file workflow_file test doc workflow contract)
   @command_prefixes ~w(.spec/ lib/ test/ guides/ docs/ priv/ config/ .github/)
@@ -21,6 +37,57 @@ defmodule SpecLedEx.Coverage do
   """
   @spec default_artifact_path() :: Path.t()
   def default_artifact_path, do: @default_artifact_path
+
+  @doc """
+  Public ExUnit setup callback for the per-test coverage boundary hook.
+
+  Wire with `setup {SpecLedEx.Coverage, :per_test_boundary}` (or
+  `use SpecLedEx.Case`). When the `:specled_ex, :spec_cover_run` seam is
+  unarmed or lacks a `:boundary_table`, this is a pure no-op. When armed,
+  it takes a head snapshot and registers an `on_exit` that takes the tail
+  snapshot, diffs the window, and inserts the row into the boundary ETS
+  table for the formatter to consume on flush.
+  """
+  @spec per_test_boundary(map()) :: :ok
+  def per_test_boundary(context) when is_map(context) do
+    case Boundary.head(context) do
+      :unarmed ->
+        :ok
+
+      head_snapshot ->
+        key = boundary_key(context)
+        tags = boundary_tags(context)
+
+        ExUnit.Callbacks.on_exit(fn ->
+          Boundary.tail(key, head_snapshot, tags)
+        end)
+
+        :ok
+    end
+  end
+
+  defp boundary_key(%{module: mod, test: name}) when is_atom(mod) and is_atom(name) do
+    {mod, name}
+  end
+
+  defp boundary_tags(context) when is_map(context) do
+    Map.drop(context, [
+      :case,
+      :describe,
+      :describe_line,
+      :file,
+      :line,
+      :module,
+      :registered,
+      :test,
+      :test_pid,
+      :test_type,
+      :async,
+      :seed,
+      :report,
+      :type
+    ])
+  end
 
   @doc """
   Resolves formatter options into a config map. Pure: no ETS, no `:cover`

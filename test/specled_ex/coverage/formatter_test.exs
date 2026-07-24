@@ -380,5 +380,81 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       assert [record] = envelope.payload
       assert record.lines_hit == [line + 1]
     end
+
+    @tag spec: [
+           "specled.coverage_capture.boundary_row_exclusive",
+           "specled.coverage_capture.envelope_meta"
+         ]
+    test "flush prefers a boundary row when present; envelope meta.boundary is true" do
+      line_lazy = __ENV__.line
+      line_boundary = line_lazy + 1
+
+      tmp_path =
+        Path.join(System.tmp_dir!(), "fmt_bound_#{System.unique_integer([:positive])}.coverdata")
+
+      on_exit(fn -> File.rm_rf!(tmp_path) end)
+
+      boundary_tid = :ets.new(:anon, [:public, :set])
+      on_exit(fn -> if :ets.info(boundary_tid) != :undefined, do: :ets.delete(boundary_tid) end)
+
+      # Boundary claims only line_boundary was hit in the window.
+      true =
+        :ets.insert(
+          boundary_tid,
+          {{AbcTest, :"test x"},
+           %{hits: %{Fixture => [line_boundary]}, diagnostics: 0, tags: %{}}}
+        )
+
+      snapshots = [
+        %{Fixture => [{line_lazy, 0}, {line_boundary, 0}]},
+        # Lazy formatter path would attribute line_lazy — boundary must win.
+        %{Fixture => [{line_lazy, 1}, {line_boundary, 0}]}
+      ]
+
+      {:ok, agent} = Agent.start_link(fn -> snapshots end)
+      on_exit(fn -> if Process.alive?(agent), do: Agent.stop(agent) end)
+
+      snapshot_fn = fn _modules ->
+        Agent.get_and_update(agent, fn [head | tail] -> {head, tail} end)
+      end
+
+      arm(
+        snapshot_fn: snapshot_fn,
+        modules_fn: fn -> [Fixture] end,
+        artifact_path: tmp_path,
+        boundary_table: boundary_tid
+      )
+
+      {:ok, state} = Formatter.init([])
+      state = suite_started(state)
+
+      tags = %{file: "test/abc_test.exs", test_pid: self()}
+      event = {:test_finished, %ExUnit.Test{module: AbcTest, name: :"test x", tags: tags}}
+      {:noreply, state} = Formatter.handle_cast(event, state)
+
+      capture_io(:stderr, fn ->
+        {:noreply, ^state} = Formatter.handle_cast({:suite_finished, %{}}, state)
+      end)
+
+      :ets.delete(state.table)
+
+      assert {:ok, envelope} = SpecLedEx.Coverage.Store.read_v2(tmp_path)
+      assert envelope.meta == %{boundary: true}
+      assert [record] = envelope.payload
+      # Would fail if flush ignored the boundary row and used the lazy line_lazy hit.
+      assert record.lines_hit == [line_boundary]
+      refute line_lazy in record.lines_hit
+    end
+
+    test "flush without boundary rows leaves meta empty and keeps lazy rows" do
+      line = __ENV__.line
+      {output, path} = flush_with([%{Fixture => [{line, 0}]}, %{Fixture => [{line, 1}]}])
+
+      assert output == ""
+      assert {:ok, envelope} = SpecLedEx.Coverage.Store.read_v2(path)
+      assert envelope.meta == %{}
+      assert [record] = envelope.payload
+      assert record.lines_hit == [line]
+    end
   end
 end

@@ -109,7 +109,7 @@ defmodule SpecLedEx.Coverage.StoreTest do
   describe "build_envelope/1" do
     @describetag spec: ["specled.coverage_capture.store_v2_envelope"]
 
-    test "defaults :version, :generated_at, and :degraded" do
+    test "defaults :version, :generated_at, :degraded, and :meta" do
       envelope =
         Store.build_envelope(%{
           mode: :aggregate,
@@ -121,7 +121,23 @@ defmodule SpecLedEx.Coverage.StoreTest do
 
       assert envelope.version == 2
       assert envelope.degraded == false
+      assert envelope.meta == %{}
       assert %DateTime{} = envelope.generated_at
+    end
+
+    @tag spec: "specled.coverage_capture.envelope_meta"
+    test "honors an explicit :meta map" do
+      envelope =
+        Store.build_envelope(%{
+          mode: :per_test,
+          source: "mix spec.cover.test --per-test",
+          files: [%{file: "lib/a.ex", lines_hit: [1]}],
+          mfas: [],
+          payload: [],
+          meta: %{boundary: true}
+        })
+
+      assert envelope.meta == %{boundary: true}
     end
 
     test "raises KeyError when a required field is missing" do
@@ -227,6 +243,27 @@ defmodule SpecLedEx.Coverage.StoreTest do
 
     test "read_v2 on a missing file returns :invalid_artifact", %{path: path} do
       assert {:error, :invalid_artifact} = Store.read_v2(path)
+    end
+
+    @tag spec: "specled.coverage_capture.envelope_meta"
+    test "read_v2 tolerates older envelopes without :meta (defaults to %{})", %{path: path} do
+      # Simulate a pre-meta v2 artifact: all required fields, no :meta key.
+      legacy_shape = %{
+        version: 2,
+        mode: :aggregate,
+        generated_at: DateTime.utc_now(),
+        source: "mix spec.cover.test",
+        files: [%{file: "lib/a.ex", lines_hit: [1]}],
+        mfas: [],
+        payload: nil,
+        degraded: false
+      }
+
+      File.mkdir_p!(Path.dirname(path))
+      File.write!(path, :erlang.term_to_binary(legacy_shape))
+
+      assert {:ok, envelope} = Store.read_v2(path)
+      assert envelope.meta == %{}
     end
   end
 

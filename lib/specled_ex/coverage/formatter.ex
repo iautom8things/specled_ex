@@ -224,6 +224,9 @@ defmodule SpecLedEx.Coverage.Formatter do
 
     row = %{
       test_id: test_id(test),
+      # Stable match key for boundary-table preference on flush (independent of
+      # whether the ETS row itself is keyed by test_pid or {module, name}).
+      test_key: {test.module, test.name},
       tags: test.tags,
       test_pid: on_disk_pid(test.tags),
       files: files
@@ -285,16 +288,24 @@ defmodule SpecLedEx.Coverage.Formatter do
   end
 
   defp flush(%{table: table, artifact_path: path} = state) do
-    records =
+    boundary_index = load_boundary_index()
+
+    {records, boundary_diagnostics, used_boundary?} =
       table
       |> :ets.tab2list()
-      |> Enum.flat_map(&records_for_row/1)
+      |> Enum.reduce({[], 0, false}, fn entry, {acc, diag_acc, used?} ->
+        {recs, diag, from_boundary?} = records_for_entry(entry, boundary_index, state.file_map)
+        {acc ++ recs, diag_acc + diag, used? or from_boundary?}
+      end)
 
-    if state.diagnostic_count > 0 do
-      IO.puts(:stderr, diagnostic_notice(state.diagnostic_count))
+    total_diagnostics = state.diagnostic_count + boundary_diagnostics
+
+    if total_diagnostics > 0 do
+      IO.puts(:stderr, diagnostic_notice(total_diagnostics))
     end
 
-    degraded? = state.degraded_async? or state.diagnostic_count > 0
+    degraded? = state.degraded_async? or total_diagnostics > 0
+    meta = if used_boundary?, do: %{boundary: true}, else: %{}
 
     envelope =
       Store.build_envelope(%{
@@ -303,7 +314,8 @@ defmodule SpecLedEx.Coverage.Formatter do
         files: records |> Enum.map(& &1.file) |> Enum.uniq() |> Enum.sort(),
         mfas: [],
         payload: records,
-        degraded: degraded?
+        degraded: degraded?,
+        meta: meta
       })
 
     case Store.write_v2(envelope, path) do
@@ -312,6 +324,34 @@ defmodule SpecLedEx.Coverage.Formatter do
 
       {:error, :empty_files} ->
         IO.puts(:stderr, empty_run_notice())
+    end
+  end
+
+  # Prefer a boundary-table row when present for a test's `{module, name}` key
+  # (Stage 1 transitional: hooked tests derive exclusively from their
+  # [head, tail] window; unhooked tests keep today's lazy-snapshot rows).
+  defp records_for_entry({key, row}, boundary_index, file_map) do
+    test_key = Map.get(row, :test_key) || fallback_test_key(key)
+
+    case test_key && Map.get(boundary_index, test_key) do
+      nil ->
+        {records_for_row({key, row}), 0, false}
+
+      boundary_row ->
+        files = compact_hits_to_files(boundary_row.hits, file_map)
+
+        recs =
+          Enum.map(files, fn {file, lines} ->
+            %{
+              test_id: row.test_id,
+              file: file,
+              lines_hit: lines,
+              tags: row.tags,
+              test_pid: row.test_pid
+            }
+          end)
+
+        {recs, boundary_row.diagnostics, true}
     end
   end
 
@@ -325,6 +365,39 @@ defmodule SpecLedEx.Coverage.Formatter do
         test_pid: row.test_pid
       }
     end)
+  end
+
+  defp fallback_test_key({mod, name}) when is_atom(mod) and is_atom(name), do: {mod, name}
+  defp fallback_test_key(_), do: nil
+
+  defp load_boundary_index do
+    case Application.get_env(@arming_app, @arming_key) do
+      opts when is_list(opts) ->
+        case Keyword.get(opts, :boundary_table) do
+          tid when is_reference(tid) or is_atom(tid) ->
+            case :ets.info(tid) do
+              :undefined ->
+                %{}
+
+              _ ->
+                modules_key = SpecLedEx.Coverage.Boundary.modules_cache_key()
+
+                tid
+                |> :ets.tab2list()
+                |> Enum.reduce(%{}, fn
+                  {^modules_key, _}, acc -> acc
+                  {key, row}, acc when is_tuple(key) and is_map(row) -> Map.put(acc, key, row)
+                  _, acc -> acc
+                end)
+            end
+
+          _ ->
+            %{}
+        end
+
+      _ ->
+        %{}
+    end
   end
 
   defp diagnostic_notice(count) do

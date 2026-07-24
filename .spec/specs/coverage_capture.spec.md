@@ -77,6 +77,8 @@ status: active
 summary: `mix spec.cover.test` task + ExUnit formatter that captures per-test line coverage serialized; Store reads/writes `.spec/_coverage/per_test.coverdata`.
 surface:
   - lib/specled_ex/coverage.ex
+  - lib/specled_ex/coverage/boundary.ex
+  - lib/specled_ex/case.ex
   - lib/specled_ex/coverage/formatter.ex
   - lib/specled_ex/coverage/snapshot.ex
   - lib/specled_ex/coverage/store.ex
@@ -85,6 +87,8 @@ surface:
   - lib/mix/tasks/spec.cover.test.ex
   - lib/mix/tasks/spec.cover.ingest.ex
   - test/specled_ex/coverage/formatter_test.exs
+  - test/specled_ex/coverage/boundary_test.exs
+  - test/specled_ex/case_test.exs
   - test/specled_ex/coverage/snapshot_test.exs
   - test/specled_ex/coverage/store_test.exs
   - test/specled_ex/coverage/aggregate_test.exs
@@ -96,6 +100,10 @@ realized_by:
     - "SpecLedEx.Coverage.init/2"
     - "SpecLedEx.Coverage.install/1"
     - "SpecLedEx.Coverage.default_artifact_path/0"
+    - "SpecLedEx.Coverage.per_test_boundary/1"
+    - "SpecLedEx.Coverage.Boundary.head/1"
+    - "SpecLedEx.Coverage.Boundary.tail/3"
+    - "SpecLedEx.Case"
     - "SpecLedEx.Coverage.Formatter"
     - "SpecLedEx.Coverage.Snapshot.runtime_mode/0"
     - "SpecLedEx.Coverage.Snapshot.scope_modules/0"
@@ -413,6 +421,67 @@ decisions:
     (coverage triangulation) parse back.
   priority: must
   stability: evolving
+- id: specled.coverage_capture.boundary_hook_sync
+  statement: >-
+    `SpecLedEx.Coverage.Boundary` shall take a head snapshot at test setup
+    (`Boundary.head/1`) and a tail snapshot in the test's `on_exit` callback
+    (`Boundary.tail/3`), which `ExUnit.Runner` awaits via `exec_on_exit/3`
+    before spawning the next test. The public adopter API is
+    `setup {SpecLedEx.Coverage, :per_test_boundary}` (or `use SpecLedEx.Case`).
+    The hot path is two snapshot reads + one `Snapshot.diff/2` + one ETS
+    insert; no `module_info/1` calls; the head snapshot lives only in the
+    `on_exit` closure.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.boundary_noop_unarmed
+  statement: >-
+    `SpecLedEx.Coverage.per_test_boundary/1` and `Boundary.head/1` shall be
+    pure no-ops (return `:ok` / `:unarmed`, zero ETS writes, zero snapshot
+    calls) when `Application.get_env(:specled_ex, :spec_cover_run)` is unset,
+    `false`, or a keyword list lacking `:boundary_table`. The wiring is
+    therefore safe under plain `mix test`.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.case_template
+  statement: >-
+    `SpecLedEx.Case` shall be an `ExUnit.CaseTemplate` that forwards opts to
+    `use ExUnit.Case` and injects `setup {SpecLedEx.Coverage,
+    :per_test_boundary}`. Intended for bare `ExUnit.Case` modules;
+    Phoenix-style apps compose the setup line into their own case templates
+    instead.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.boundary_row_exclusive
+  statement: >-
+    When `mix spec.cover.test --per-test` has armed a `:boundary_table` and a
+    hooked test produced a boundary row for its `{module, name}` key,
+    `SpecLedEx.Coverage.Formatter.flush/1` shall derive that test's flushed
+    record exclusively from the boundary window (compacted via the
+    formatter's file map), never from the lazy `test_finished` snapshot row.
+    Unhooked tests (no boundary row) keep today's lazy-snapshot rows.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.per_test_exclusive_attribution
+  statement: >-
+    Under `mix spec.cover.test --per-test`, hooked tests' `[head, tail]`
+    windows shall be disjoint: each hooked test's `lines_hit` shall contain
+    only lines executed inside its own window, and two hooked tests that
+    exercise disjoint functions of a fixture module shall produce disjoint
+    `lines_hit` sets. Exclusivity is deterministic (Runner-awaited tail),
+    qualified only by processes a test spawns that outlive its tail
+    snapshot. Proven by a seeded exclusivity integration test over three
+    distinct explicit seeds — never a statistical assertion.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.envelope_meta
+  statement: >-
+    `SpecLedEx.Coverage.Store.build_envelope/1` shall accept an optional
+    `:meta` map (default `%{}`). `read_v2/1` shall tolerate envelopes written
+    without `:meta` (older artifacts default `meta: %{}`). When
+    `Formatter.flush/1` consumes any boundary row, the written envelope shall
+    carry `meta: %{boundary: true}`.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -621,6 +690,64 @@ decisions:
     - "the parsed result is `{:ok, {Module, :fun, 2}}`"
   covers:
     - specled.coverage_capture.mfa_key_round_trip
+- id: specled.coverage_capture.scenario.boundary_hook_window
+  given:
+    - "the arming seam carries `boundary_table: tid` and a stub `snapshot_fn`"
+    - "a test registers `setup {SpecLedEx.Coverage, :per_test_boundary}`"
+  when:
+    - "the test runs (head at setup, tail at on_exit)"
+  then:
+    - "the boundary table holds a row keyed by `{module, name}` whose hits are the strict positive diff of the [head, tail] window"
+  covers:
+    - specled.coverage_capture.boundary_hook_sync
+- id: specled.coverage_capture.scenario.boundary_noop_under_plain_mix_test
+  given:
+    - "`Application.get_env(:specled_ex, :spec_cover_run)` is unset"
+    - "a module uses `SpecLedEx.Case` (or the setup line directly)"
+  when:
+    - "plain `mix test` runs the module"
+  then:
+    - "the setup is a pure no-op (no snapshot, no ETS write, no error)"
+  covers:
+    - specled.coverage_capture.boundary_noop_unarmed
+- id: specled.coverage_capture.scenario.case_template_injects_setup
+  given:
+    - "the production `lib/specled_ex/case.ex` source"
+  when:
+    - "an adopter writes `use SpecLedEx.Case`"
+  then:
+    - "the module is an ExUnit.CaseTemplate that injects `setup {SpecLedEx.Coverage, :per_test_boundary}`"
+  covers:
+    - specled.coverage_capture.case_template
+- id: specled.coverage_capture.scenario.boundary_row_preferred_on_flush
+  given:
+    - "a formatter flush where both a lazy `test_finished` row and a boundary row exist for the same test key, with different hit lines"
+  when:
+    - "`Formatter.flush/1` runs on `suite_finished`"
+  then:
+    - "the flushed record's `lines_hit` match the boundary window only"
+    - "the envelope carries `meta: %{boundary: true}`"
+  covers:
+    - specled.coverage_capture.boundary_row_exclusive
+- id: specled.coverage_capture.scenario.seeded_exclusive_attribution
+  given:
+    - "a child-BEAM fixture whose two tests (hooked via `SpecLedEx.Case`) call disjoint functions of a fixture module"
+  when:
+    - "`mix spec.cover.test --per-test --seed S` runs for each of three distinct explicit seeds"
+  then:
+    - "each run's records are non-empty, pairwise disjoint, and confined to each test's own function lines"
+  covers:
+    - specled.coverage_capture.per_test_exclusive_attribution
+- id: specled.coverage_capture.scenario.envelope_meta_tolerant_read
+  given:
+    - "a v2 envelope written without a `:meta` key (pre-Stage-1 shape)"
+  when:
+    - "`Store.read_v2/1` reads that path"
+  then:
+    - "the decoded envelope has `meta: %{}`"
+    - "when flush consumes a boundary row, the written envelope carries `meta: %{boundary: true}`"
+  covers:
+    - specled.coverage_capture.envelope_meta
 ```
 
 ## Verification
@@ -659,6 +786,10 @@ decisions:
     - specled.coverage_capture.default_aggregate_empty_refusal
     - specled.coverage_capture.per_test_v2_envelope
     - specled.coverage_capture.cumulative_parity
+    - specled.coverage_capture.per_test_exclusive_attribution
+    - specled.coverage_capture.boundary_row_exclusive
+    - specled.coverage_capture.boundary_hook_sync
+    - specled.coverage_capture.case_template
 - kind: tagged_tests
   execute: true
   covers:
@@ -672,4 +803,9 @@ decisions:
     - specled.coverage_capture.snapshot_runtime_mode
     - specled.coverage_capture.snapshot_diff_strictly_increased
     - specled.coverage_capture.snapshot_negative_delta_diagnostic
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.coverage_capture.boundary_noop_unarmed
+    - specled.coverage_capture.envelope_meta
 ```
