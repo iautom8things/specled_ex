@@ -17,6 +17,10 @@
     {
       "text": "Triage 2026-07-24: children .3/.4/.5 lowered P2-\u003eP3 (real but bounded; .4 exploitability near-nil since both artifacts are gitignored, and is NOT a one-word fix — tracer manifest + store hold atoms not guaranteed interned, needs per-site [:safe] analysis). Sequencing verified against code: land .5 before .2 (same requirement text); bundle .1+.3+.4 in one worktree (same-file conflicts in coverage_closure.ex/store.ex); .2 becomes moot if specled_-cpw lands first. 6v6 needs the raise-coverage-vs-lower-threshold call up front, then the whole epic is orchestrate-epic delegable.",
       "timestamp": "2026-07-24T09:57:51Z"
+    },
+    {
+      "text": "Orchestration 2026-07-24: materialized triage sequencing as deps (.5 blocks .2; .1 blocks .3 blocks .4 — serialized instead of bundled to keep one-ticket-one-worktree; same-file conflicts avoided by ordering). 6v6 decision (user): ARM AT THRESHOLD 83 — lower mix.exs threshold 90-\u003e83, fix fixture cover leak, wire --cover; ratchet-to-90 is a follow-up, not this epic. Laborer: Claude (codex token expired). Epic worktree: /Users/mz/src/specled_ex-fast-follow-aggregate-first @ 2e6f3d4.",
+      "timestamp": "2026-07-24T12:14:19Z"
     }
   ],
   "priority": 2,
