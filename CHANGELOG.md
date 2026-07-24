@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.6.3 — 2026-07-24
+
+- Seed-echo contract hardened across both command kinds and pinned end to
+  end. Coverage closes the two remaining cells from the 0.6.0 flake
+  diagnostics: the shared-fate timeout path now has a direct seed-echo
+  assertion, and a timed-out command's forensic capture is asserted to
+  record `timed_out: true`. The contract itself was tightened once and the
+  tests follow: a new `specled.verify.command_findings_echo_exunit_seed`
+  requirement covers generic `command` verifications (the code always did
+  this; the spec now says so), and the merged-run requirement pins the
+  multi-run case — a double-timeout finding keeps the FIRST run's seed as
+  the primary echo and names the resume pass's own seed next to the resume
+  run's hang suspects, so each seed reproduces the run it came from
+  (`resumed_result/4` now carries `:resume_seed`). Forensic capture's bare
+  `rescue` is narrowed to `File.Error` and emits a one-line stderr warning
+  instead of failing silently, and the "no seed line ⇒ findings unchanged"
+  negative half is asserted directly. (specled_-viv)
+
 ## 0.6.2 — 2026-07-24
 
 - The streaming attribution sidecar (`specled_attr_*.jsonl`) and every other
