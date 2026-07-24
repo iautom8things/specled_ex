@@ -9,9 +9,15 @@
     "phase:implementing",
     "slug:per-test-sync-boundary"
   ],
+  "comments": [
+    {
+      "text": "LESSONS\n- [other] Do not co-update spec prose outside Allowed touches; Coverage realization drift is fully absorbed by .spec/realization_hashes.json (an Allowed touch) — verify with a revert + spec.check before touching extra .spec/specs files (from specled_-pzd.1)",
+      "timestamp": "2026-07-24T13:16:33Z"
+    }
+  ],
   "priority": 1,
   "status": "in_progress",
   "title": "Per-test exact attribution via synchronous boundary hook",
   "type": "epic",
-  "updated_at": "2026-07-24T12:39:35Z"
+  "updated_at": "2026-07-24T13:16:33Z"
 }
