@@ -13,9 +13,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-pzd",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: impl-a1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-pzd.3/grok-impl-a1/log\n\nCommit: 759656469ed827f6a401ebae3133acb12b2391c6\nFiles touched: lib/specled_ex/coverage/mfa_lines.ex (new), lib/specled_ex/coverage_triangulation.ex, lib/specled_ex/review/coverage_closure.ex, lib/specled_ex/review/html.ex, test/specled_ex/coverage/mfa_lines_test.exs (new), test/specled_ex/review/coverage_closure_test.exs, test/specled_ex/review/html_test.exs, .spec/specs/spec_review.spec.md, .spec/specs/triangulation.spec.md, .spec/specs/coverage_capture.spec.md, .spec/realization_hashes.json, CHANGELOG.md\nTests added: SpecLedEx.Coverage.MfaLinesTest (index/1 line sets, :no_debug_info, multi-module isolation); CoverageClosureTest per-test line-intersection executed strength, non-intersecting file hit, :no_debug_info_mfas, unhooked-degraded attribution; HtmlTest \"per-test closure line renders the exact-up-to-escaped-processes qualifier\", degraded unhooked banner/qualifier, no-debug-info note, rollup exact qualifier\nVerification stubs flipped: triangulation.per_test_requirement_reach (execute:true via tagged_tests covers); coverage_capture.mfa_lines_index (execute:true); spec_review coverage_observed_approximate_qualifier + coverage_file_level_proxy_qualifier + coverage_tab_bind_closure + coverage_tab_v2_envelope_data_layer statements rewritten / scenarios updated (stubs already execute:true)\nVerification tier: full merge gate\nFinal-tier runs: 2 (first failed on append_only requirement deletion / MUST NOT modal; second green after in-place requirement rewrites)\nspec.check branch findings evidence:\n  authored_dir=.spec/specs subjects=34 requirements=412\n  status=pass errors=0 warnings=0\n  branch base=origin/main changed_files=29 findings=2\n  branch change_type=cross_cutting\n  branch impacted_subjects=specled.branch_guard, specled.coverage_capture, specled.mix_tasks, specled.package, specled.spec_review, specled.status, specled.triangulation\n  branch uncovered_policy_files=\n  branch next=mix spec.next --base origin/main\n  exit status: 0\n  (no [ERROR] lines in branch findings; findings=2 are non-error branch metadata)\nEpic lessons self-check: [stale-spec] subject co-updates present for advanced subjects; [other] full branch findings + exit 0 inspected (not status=pass alone).\n\nSummary: Real per-test MFA closure lands via MfaLines abstract_code line index and per_test_requirement_reach/3 line→MFA intersection; CoverageClosure :per_test retires the file-level proxy and surfaces no_debug_info_mfas plus unhooked-degraded attribution from envelope meta. Review HTML replaces (file-level proxy) with exact-up-to-escaped-processes (or degraded unhooked) qualifiers; specs and 0.6.2 CHANGELOG updated. Full merge gate green.",
+      "timestamp": "2026-07-24T15:15:18Z"
+    }
+  ],
   "priority": 1,
   "status": "in_progress",
   "title": "S3: Real per-test MFA closure; retire file-level proxy (specled_-jjq)",
   "type": "task",
-  "updated_at": "2026-07-24T14:52:07Z"
+  "updated_at": "2026-07-24T15:15:18Z"
 }
