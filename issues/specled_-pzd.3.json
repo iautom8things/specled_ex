@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-pzd.2"
   ],
@@ -12,8 +12,8 @@
   "labels": [],
   "parent": "specled_-pzd",
   "priority": 1,
-  "status": "open",
+  "status": "in_progress",
   "title": "S3: Real per-test MFA closure; retire file-level proxy (specled_-jjq)",
   "type": "task",
-  "updated_at": "2026-07-24T14:45:50Z"
+  "updated_at": "2026-07-24T14:52:07Z"
 }
