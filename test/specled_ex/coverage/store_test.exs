@@ -218,16 +218,17 @@ defmodule SpecLedEx.Coverage.StoreTest do
     @describetag spec: ["specled.coverage_capture.store_v2_envelope"]
 
     setup do
-      tmp_path =
-        Path.join(
-          System.tmp_dir!(),
-          "store_status_#{System.unique_integer([:positive])}.coverdata"
-        )
+      # Same isolation as the write_v2 setup above: the last_run.status
+      # sidecar lands in dirname(path), so the artifact needs a test-private
+      # directory or the sidecar becomes machine-global shared state
+      # (specled_-ind).
+      tmp_dir =
+        Path.join(System.tmp_dir!(), "store_status_#{System.unique_integer([:positive])}")
 
-      on_exit(fn ->
-        File.rm_rf!(tmp_path)
-        File.rm_rf!(Path.join(Path.dirname(tmp_path), "last_run.status"))
-      end)
+      File.mkdir_p!(tmp_dir)
+      tmp_path = Path.join(tmp_dir, "per_test.coverdata")
+
+      on_exit(fn -> File.rm_rf!(tmp_dir) end)
 
       {:ok, path: tmp_path}
     end
