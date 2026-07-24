@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.2 — 2026-07-24
+
+- Command verification temp scripts are now named with the OS pid plus random
+  entropy instead of a BEAM-local counter (`System.unique_integer/1`). Two
+  concurrent specled runs sharing the system temp dir — e.g. a host project's
+  test suite spawning nested specled runs — could collide on the same
+  `specled_cmd_*` name, and one run's cleanup deleted the other's in-flight
+  script, surfacing as false `verification_command_failed` findings
+  (exit 127 / missing file) attributed to untouched subjects. Collision-proof
+  naming closes that race; the new
+  `specled.verify.command_temp_names_cross_vm_unique` must requirement and a
+  regression test pin the name shape. (specled_-vnw)
+
 ## 0.5.1 — 2026-07-23
 
 - The doc-identifier lint now covers the repo-resident spec workspace
