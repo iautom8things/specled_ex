@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-pzd",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: impl-a1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-pzd.5/grok-impl-a1/log\n\nCommit: 478cc4f862f8f54e871c79bdd6de485627855df5\nFiles touched: skills/spec-led-bootstrap/SKILL.md, skills/spec-led-bootstrap/references/detection-matrix.md, skills/spec-led-bootstrap/references/adoption-phases.md, skills/spec-led-bootstrap/references/task-templates.md\nTests added: none — skill-markdown stage (gate-verified)\nVerification stubs flipped: none\nVerification tier: full merge gate\nFinal-tier runs: 1 (full compile+test+format+deps+spec.check green); plus verbose re-check for branch findings\nspec.check branch findings evidence:\n  authored_dir=.spec/specs subjects=34 requirements=410\n  status=pass errors=0 warnings=0\n  branch base=origin/main changed_files=26 findings=2\n  [INFO] branch_guard_missing_subject_update lib/specled_ex/coverage.ex :: impacts subject specled.branch_guard; realization attested clean — informational only.\n  [INFO] branch_guard_missing_subject_update lib/specled_ex/coverage.ex :: impacts subject specled.status; realization attested clean — informational only.\n  branch change_type=cross_cutting\n  branch impacted_subjects=specled.branch_guard, specled.coverage_capture, specled.mix_tasks, specled.package, specled.status\n  branch uncovered_policy_files=\n  exit status: 0\n  zero ERROR lines in branch findings (INFO-only, pre-existing epic base for coverage.ex; no package.spec.md attestation demanded for skills/** surface on this branch).\nEpic lessons checked: [stale-spec] no ERROR branch_guard_missing_subject_update for skills/** — package surface already covered; [other] read full branch findings via --verbose, not just status=pass line.\nCHANGELOG.md/VERSION: not edited (owned by sibling specled_-pzd.3 this round).\nDeferred must requirements: none\n\nSummary: Bootstrap skill now detects and optionally tickets Phase 4b boundary-hook wiring. detection-matrix splits 4a (artifact+CI, unchanged) from a pinned 4b grep signal; adoption-phases and task-templates document 4b cost/done-criteria and an optional wiring ticket emitted when coverage AND realized_by are wanted; SKILL.md emission/opt-out names both aggregate and per-test lanes without weakening the Formatter-in-test_helper anti-pattern.",
+      "timestamp": "2026-07-24T15:23:21Z"
+    }
+  ],
   "priority": 1,
   "status": "in_progress",
   "title": "S5: Bootstrap skill 4b detection + optional wiring ticket",
   "type": "task",
-  "updated_at": "2026-07-24T15:13:34Z"
+  "updated_at": "2026-07-24T15:23:21Z"
 }
