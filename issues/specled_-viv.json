@@ -25,11 +25,15 @@
     {
       "text": "TEST_CRITIC: PASS\nSession: f7f79dec-3ff7-432c-aea4-8edd60ebf85a\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/f7f79dec-3ff7-432c-aea4-8edd60ebf85a.jsonl\nCritic session: elixir-test-critic agent \"critic-viv\" (spawned from this session)\nBlocking findings: 0 (resolved: 0, waived: 0)\nFiles reviewed: test/specled_ex/verifier_test.exs\n\nVerdict PASS — critic confirmed every new/changed scenario then-clause is genuinely asserted (all four seed-echo combos, seedless negative, double-timeout pairing, timed_out capture, stderr warning), all collection predicates guarded against vacuous truth, cleanup exception-safe, timing budgets match sibling patterns, the narrowed File.Error rescue actually catches the test's mkdir_p! failure, and the dual @tag spec on the shared-fate test is credited to both subjects by the AST TagScanner. 3 advisories, none blocking: (1) new generic-command test dereferences Enum.find results without an intermediate assert nil-guard (robustness of the failure message only — length==2 is asserted first); (2) the \"next to the hang suspect\" adjacency of the resume seed note holds by construction and via the sibling resume_double_timeout_signal test rather than a direct adjacency assertion; (3) seed tests pin exact diagnostic copy — inherent to the requirement pinning the --seed hint, same as siblings.",
       "timestamp": "2026-07-24T14:53:20Z"
+    },
+    {
+      "text": "AUDIT: APPROVE (auto — selective audit)\nSession: f7f79dec-3ff7-432c-aea4-8edd60ebf85a\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/f7f79dec-3ff7-432c-aea4-8edd60ebf85a.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. No auditor was spawned per policy.\nTEST_CRITIC passed with 3 non-blocking advisories, all recorded on the ticket.",
+      "timestamp": "2026-07-24T14:53:42Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Test coverage: shared-fate timeout seed echo + timed_out capture assertion",
   "type": "task",
-  "updated_at": "2026-07-24T14:53:20Z"
+  "updated_at": "2026-07-24T14:53:42Z"
 }
