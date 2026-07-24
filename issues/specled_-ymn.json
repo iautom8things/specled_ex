@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-24T14:35:02Z",
+  "description": "Advances: specled.verification\n\nSurfaced by the specled_-hyt cold verifier (2026-07-24): lib/specled_ex/hash_store.ex:212 builds a FIXED-name write-rename sibling (.spec/realization_hashes.json.tmp) with no cross-VM uniqueness, while specled.decision.cross_vm_temp_names' decision clause lists 'write-rename siblings' among the locations that shall use SpecLedEx.TempName.cross_vm_suffix/0. Not a live collision hazard today (repo-local path, no System.unique_integer, no cross-run File.rm cleanup — the same safety reasoning as the ADR's tracer exception), but the ADR is currently contradicted by an unconverted, unexcepted site. Either convert the site to cross_vm_suffix() or record it as a second explicit exception in the ADR. Also worth a quick sweep for other fixed-name write-rename siblings in lib/ while there.",
+  "id": "specled_-ymn",
+  "labels": [],
+  "priority": 3,
+  "status": "open",
+  "title": "hash_store.ex fixed-name .tmp write-rename sibling vs cross_vm_temp_names ADR",
+  "type": "task",
+  "updated_at": "2026-07-24T14:35:02Z"
+}
