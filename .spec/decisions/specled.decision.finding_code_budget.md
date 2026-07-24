@@ -44,7 +44,7 @@ infrastructure but are newly specified in this slice:
 - `detector_unavailable`
 
 **S1 prose/guard codes (new with this slice):**
-- `branch_guard_test_only_change` (info severity)
+- `branch_guard_test_only_change` (info severity) <!-- spec-lint:allow-code=branch_guard_test_only_change budgeted in S1 planning; never emitted — the test-only-change flow is expressed by the absence of realization findings, not a dedicated code -->
 - `spec_requirement_too_short` (info severity)
 
 Any finding code added during implementation must justify against this list

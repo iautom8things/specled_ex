@@ -2,19 +2,35 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
   use ExUnit.Case, async: true
 
   @moduledoc """
-  Corpus-scoped lint over the agent-facing docs and skills. Guards two defect
-  classes that a reviewer would otherwise have to catch by hand:
+  Corpus-scoped lint over the agent-facing docs, skills, and repo-resident
+  spec workspace. Guards two defect classes that a reviewer would otherwise
+  have to catch by hand:
 
     1. Fabricated finding codes — a `append_only/*`, `overlap/*`, or
-       `branch_guard_*` token in the prose that no detector actually emits.
+       `branch_guard_*` token that no detector actually emits. Checked across
+       the guidance docs/skills AND the `.spec/**` workspace (subject specs and
+       decision records), because a fabricated code that survives in a spec
+       scenario or an ADR is just as misleading as one in a skill.
     2. Inert config severities — the `:atom` value form inside a YAML block,
        which `SpecLedEx.Config` silently drops (a bare `off`/`info`/`warning`/
-       `error` token is required).
+       `error` token is required). Scoped to the user-facing guidance corpus
+       (skills/docs/README): `.spec/**` scenarios legitimately quote atom-form
+       config as the *input under test*, so they are out of this check's scope.
 
   The known-code allowlist below mirrors the implementation. It is a vetted,
   hand-maintained set rather than reflection because its job is to fail loudly:
   a genuinely new code lands here in the same change that starts documenting it,
   and a typo'd or removed code trips the test until the docs are corrected.
+
+  Decision records must sometimes name a code that is *not* emitted — a
+  budgeted-but-unimplemented code, or a rejected design alternative. Rather than
+  exempt `.spec/` wholesale (which would defeat the check), such a reference must
+  carry an explicit, per-token allow-marker on the same line:
+
+      <!-- spec-lint:allow-code=<token> reason -->
+
+  The marker exempts only the exact token it names, on that one line, so genuine
+  typos and removed codes still trip the lint everywhere else.
   """
 
   # append_only/* → SpecLedEx.AppendOnly (mirrored in branch_check.ex @per_code_defaults)
@@ -53,41 +69,88 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
 
   @known_codes MapSet.new(@append_only_codes ++ @overlap_codes ++ @branch_guard_codes)
 
+  # The leading `(?<![\w/])` negative lookbehind keeps the token from matching
+  # inside a file path or a longer identifier — e.g. the `branch_guard_test`
+  # substring of a `.../config/branch_guard_test.exs` closure-file reference in a
+  # spec is a path segment, not a finding code.
   @token_patterns [
-    ~r{append_only/[a-z_]+},
-    ~r{overlap/[a-z_]+},
-    ~r{branch_guard_[a-z_]+}
+    ~r{(?<![\w/])append_only/[a-z_]+},
+    ~r{(?<![\w/])overlap/[a-z_]+},
+    ~r{(?<![\w/])branch_guard_[a-z_]+}
   ]
+
+  # Per-token allow-marker: `<!-- spec-lint:allow-code=<token> reason -->`.
+  # Exempts only the exact token it names, on the line it appears on. One flat
+  # character class: the downstream `MapSet.member?/2` already gates on token
+  # shape, so a second approximate copy of the token grammar here could only
+  # drift from the real one.
+  @allow_marker_pattern ~r{spec-lint:allow-code=([a-z_/]+)}
+
+  # ...and the marker is honoured ONLY in decision records. Guidance docs, skill
+  # files, README, and subject specs get no escape hatch: those surfaces had none
+  # before this check existed, and granting one there would let "make the lint
+  # green" mean "mark the code" instead of "correct it". This mirrors the `must`
+  # and `specled.decision.doc_identifier_lint_spec_corpus`, which both scope the
+  # marker to decision records.
+  @marker_scope ".spec/decisions/"
 
   # Elixir-atom severity value inside a YAML mapping, e.g. `code: :off`.
   @atom_severity_pattern ~r/:\s+:(off|info|warning|error)\b/
 
-  defp corpus_files do
-    (Path.wildcard("skills/**/*.md") ++ Path.wildcard("docs/*.md") ++ ["README.md"])
+  # Finding-code integrity is checked across guidance docs/skills AND the
+  # repo-resident spec workspace.
+  defp finding_code_corpus do
+    normalize(guidance_files() ++ Path.wildcard(".spec/**/*.md"))
+  end
+
+  # The atom-severity check stays on the user-facing guidance corpus; `.spec/**`
+  # scenarios legitimately quote atom-form config as the input under test.
+  defp severity_corpus, do: normalize(guidance_files())
+
+  defp guidance_files do
+    Path.wildcard("skills/**/*.md") ++ Path.wildcard("docs/**/*.md") ++ ["README.md"]
+  end
+
+  defp normalize(files) do
+    files
     |> Enum.uniq()
     |> Enum.filter(&File.regular?/1)
     |> Enum.sort()
   end
 
   @tag spec: "specled.package.doc_identifier_integrity"
-  test "every finding-code-shaped token in docs references a real implementation code" do
+  test "every finding-code-shaped token in docs and specs references a real implementation code" do
+    files = finding_code_corpus()
+
+    # `unknown == []` reads identically whether hundreds of tokens were inspected
+    # or the glob returned nothing, so pin the corpus size too: a `.spec/` reorg
+    # or a cwd change would otherwise turn this whole lint into a silent no-op.
+    assert length(files) > 50,
+           "finding-code corpus collapsed to #{length(files)} files — the lint is a no-op"
+
     unknown =
-      for file <- corpus_files(),
+      for file <- files,
           {line, lineno} <- Enum.with_index(File.stream!(file), 1),
-          pattern <- @token_patterns,
-          token <- @known_codes |> unknown_tokens(pattern, line) do
+          token <- unknown_tokens(line, file) do
         "#{file}:#{lineno}: unknown finding code #{inspect(token)}"
       end
 
     assert unknown == [],
-           "Docs reference finding codes with no implementation counterpart:\n" <>
+           "Docs/specs reference finding codes with no implementation counterpart\n" <>
+             "(if a decision record legitimately names an unimplemented code, tag the line\n" <>
+             " with `<!-- spec-lint:allow-code=<token> reason -->`):\n" <>
              Enum.join(unknown, "\n")
   end
 
   @tag spec: "specled.package.doc_identifier_integrity"
   test "YAML blocks in docs use bare severity tokens, not the inert :atom form" do
+    files = severity_corpus()
+
+    assert length(files) > 8,
+           "severity corpus collapsed to #{length(files)} files — this check is a no-op"
+
     offenders =
-      for file <- corpus_files(),
+      for file <- files,
           {lineno, line} <- yaml_block_lines(File.read!(file)),
           Regex.match?(@atom_severity_pattern, line) do
         "#{file}:#{lineno}: atom-form severity #{inspect(String.trim(line))}" <>
@@ -99,12 +162,97 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
              Enum.join(offenders, "\n")
   end
 
-  defp unknown_tokens(known, pattern, line) do
-    pattern
+  # The corpus scans above only prove the corpus is clean TODAY — they never feed
+  # the rejection path a controlled input, so they cannot defend the allow-marker's
+  # contract. These do. Each states the regression it catches.
+
+  @decision_file ".spec/decisions/specled.decision.example.md"
+  @guidance_file "docs/concepts.md"
+
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "a real implementation code is never flagged" do
+    # Baseline: a known code passes. (This cannot by itself prove the check is
+    # non-vacuous — an `== []` assertion holds for a function that always returns
+    # []. The next test is the actual non-vacuousness proof.)
+    assert unknown_tokens("see `branch_guard_realization_drift` for details", @decision_file) ==
+             []
+  end
+
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "a fabricated, unmarked finding code IS flagged" do
+    # Catches: the lint silently stops rejecting unknown codes at all.
+    assert unknown_tokens("see `branch_guard_totally_made_up` for details", @decision_file) ==
+             ["branch_guard_totally_made_up"]
+  end
+
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "an allow-marker exempts the exact token it names, in a decision record" do
+    # Catches: the marker stops working, so legitimately-budgeted codes in
+    # decision records start failing the suite.
+    line =
+      "a `branch_guard_totally_made_up` code " <>
+        "<!-- spec-lint:allow-code=branch_guard_totally_made_up budgeted, never emitted -->"
+
+    assert unknown_tokens(line, @decision_file) == []
+  end
+
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "an allow-marker does NOT exempt outside decision records" do
+    # The marker is an escape hatch for ADRs that must name budgeted/rejected
+    # codes — NOT for guidance docs, skills, README, or subject specs, none of
+    # which had any escape hatch before this lint existed. Catches: honouring the
+    # marker corpus-wide, which would let a doc_identifier_integrity failure be
+    # taken green by MARKING a fabricated code instead of correcting it.
+    line =
+      "a `branch_guard_totally_made_up` code " <>
+        "<!-- spec-lint:allow-code=branch_guard_totally_made_up not honoured here -->"
+
+    assert unknown_tokens(line, @guidance_file) == ["branch_guard_totally_made_up"]
+
+    assert unknown_tokens(line, ".spec/specs/package.spec.md") ==
+             ["branch_guard_totally_made_up"]
+  end
+
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "an allow-marker does NOT rescue a different unmarked code on the same line" do
+    # THE safety property: per-token, not per-line. Catches a refactor of
+    # allowed_codes/1 or unknown_tokens/1 that exempts the whole line whenever any
+    # marker is present — which would let a genuine typo hide behind an unrelated
+    # marker. Without this test that regression is invisible: the live corpus has
+    # no line carrying a marker for one code and an unmarked fabricated other.
+    # The marked side uses a slash-shaped token so the marker grammar's `/` branch
+    # is exercised too (all live markers happen to be `branch_guard_*`).
+    line =
+      "`overlap/marked_one` and `branch_guard_unmarked_two` " <>
+        "<!-- spec-lint:allow-code=overlap/marked_one budgeted -->"
+
+    assert unknown_tokens(line, @decision_file) == ["branch_guard_unmarked_two"]
+  end
+
+  # Finding-code-shaped tokens on `line` that neither the implementation emits
+  # (@known_codes) nor an on-line allow-marker exempts.
+  defp unknown_tokens(line, file) do
+    allowed =
+      if marker_scoped?(file) do
+        MapSet.union(@known_codes, allowed_codes(line))
+      else
+        @known_codes
+      end
+
+    for pattern <- @token_patterns,
+        token <- pattern |> Regex.scan(line) |> List.flatten() |> Enum.uniq(),
+        not MapSet.member?(allowed, token) do
+      token
+    end
+  end
+
+  defp marker_scoped?(file), do: String.starts_with?(file, @marker_scope)
+
+  defp allowed_codes(line) do
+    @allow_marker_pattern
     |> Regex.scan(line)
-    |> List.flatten()
-    |> Enum.uniq()
-    |> Enum.reject(&MapSet.member?(known, &1))
+    |> Enum.map(fn [_full, code] -> code end)
+    |> MapSet.new()
   end
 
   # Returns {lineno, line} tuples for every source line that sits inside a

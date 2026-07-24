@@ -105,7 +105,7 @@ as today. Adoption is the opt-in signal; no new feature flag is introduced.
 - **New `cosmetic` / `comment_only` git trailer.** Rejected: bypasses
   realization entirely; the author asserts intent rather than the tooling
   earning the relaxation. Doesn't make `realized_by` adoption pay off.
-- **New finding code (`branch_guard_missing_subject_update_attested`).**
+- **New finding code (`branch_guard_missing_subject_update_attested`).** <!-- spec-lint:allow-code=branch_guard_missing_subject_update_attested rejected design alternative; never emitted by the implementation -->
   Rejected: bloats the finding-code budget (cf.
   [[specled.decision.append_only_finding_budget]]). Downgrading the existing
   code with a distinctive message conveys the same information without a new
