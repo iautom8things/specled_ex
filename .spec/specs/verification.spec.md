@@ -78,6 +78,14 @@ decisions:
     rather than a second sidecar file written after command completion.
   priority: must
   stability: stable
+- id: specled.verify.command_temp_names_cross_vm_unique
+  statement: >
+    Command verification temp file names shall be collision-proof across
+    concurrently running BEAM VMs (OS pid plus random entropy), so one
+    specled run's cleanup can never delete another run's in-flight temp
+    scripts and misattribute the resulting failure to an innocent subject.
+  priority: must
+  stability: stable
 - id: specled.verify.command_output_via_tempfile
   statement: >
     Command verifications shall capture stdout+stderr via a temp file and
@@ -220,6 +228,16 @@ decisions:
     - the spawned child process is no longer running after verification returns
   covers:
     - specled.verify.command_execution_resilience
+- id: specled.verify.scenario.command_temp_names_cross_vm_safe
+  given:
+    - a spec with a command verification that records its own script path via `$0`
+  when:
+    - verification runs with run_commands true
+  then:
+    - the temp script name embeds the OS pid and random entropy
+    - a concurrent specled run in another VM cannot generate the same temp name
+  covers:
+    - specled.verify.command_temp_names_cross_vm_unique
 - id: specled.verify.scenario.command_timeout_distinct_finding
   given:
     - a spec with a command verification targeting a slow command
@@ -329,6 +347,7 @@ decisions:
     - specled.verify.decision_governance
     - specled.verify.strength_semantics
     - specled.verify.command_execution_resilience
+    - specled.verify.command_temp_names_cross_vm_unique
     - specled.verify.command_output_via_tempfile
     - specled.verify.command_timeout_enforced
     - specled.verify.command_timeout_distinct_finding
