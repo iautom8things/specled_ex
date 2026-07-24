@@ -16,11 +16,15 @@
     {
       "text": "Resolved in code by epic specled_-pzd (S2 formatter demotion + synchronous boundary hook); all epic children closed and merged to the epic branch. Close when the epic's release PR lands on main.",
       "timestamp": "2026-07-24T15:40:29Z"
+    },
+    {
+      "text": "Fixed and shipped: specled_-pzd S1/S2 landed the synchronous per-test boundary hook (SpecLedEx.Case / setup {SpecLedEx.Coverage, :per_test_boundary}) — windows snapshot at the Runner-awaited setup/on_exit boundary, so attribution is deterministic and exclusive; the formatter is an auditor, no longer a racy measurement engine. Merged to main in PR #20 (14f6e72, release 0.7.0); seeded exclusivity integration test over three explicit seeds pins it.",
+      "timestamp": "2026-07-24T19:18:59Z"
     }
   ],
   "priority": 2,
   "status": "open",
   "title": "Per-test coverage: cross-test attribution race via async ExUnit formatter casts",
   "type": "bug",
-  "updated_at": "2026-07-24T15:40:29Z"
+  "updated_at": "2026-07-24T19:18:59Z"
 }
