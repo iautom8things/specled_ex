@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-24T19:18:43Z",
+  "description": "Three implicit identities under the 'exact' claim: capture↔review source-path string equality (F8 — nil source and path mismatch both collapse to uncovered), no_debug_info_mfas conflating three states while sitting in the closure pct denominator (F11), and two independently derived module-scope caches where a file_map miss silently deletes lines from payload AND remainder (F23). Also F18: missing :attribution renders as :exact — unknown provenance must render unqualified. Specify path identity (repo-root-relative, normalized both sides), classify unresolvable sources as their own partition, single-source the module scope + surface misses as meta.unmapped_modules. Report Theme 4.",
+  "id": "specled_-dn4.5",
+  "labels": [],
+  "parent": "specled_-dn4",
+  "priority": 2,
+  "status": "open",
+  "title": "Specify the capture↔review identity joins; stop failing silently toward stronger claims (F8, F11, F23, F18)",
+  "type": "task",
+  "updated_at": "2026-07-24T19:18:43Z"
+}
