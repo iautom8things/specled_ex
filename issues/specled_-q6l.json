@@ -21,11 +21,15 @@
     {
       "text": "Orchestration 2026-07-24: materialized triage sequencing as deps (.5 blocks .2; .1 blocks .3 blocks .4 — serialized instead of bundled to keep one-ticket-one-worktree; same-file conflicts avoided by ordering). 6v6 decision (user): ARM AT THRESHOLD 83 — lower mix.exs threshold 90-\u003e83, fix fixture cover leak, wire --cover; ratchet-to-90 is a follow-up, not this epic. Laborer: Claude (codex token expired). Epic worktree: /Users/mz/src/specled_ex-fast-follow-aggregate-first @ 2e6f3d4.",
       "timestamp": "2026-07-24T12:14:19Z"
+    },
+    {
+      "text": "specled_-q6l: 1/6 closed, 2 in flight, next: specled_-q6l.3",
+      "timestamp": "2026-07-24T12:42:04Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fast-follow: Aggregate-first spec coverage — specled_-47j remediation",
   "type": "epic",
-  "updated_at": "2026-07-24T12:14:19Z"
+  "updated_at": "2026-07-24T12:42:04Z"
 }
