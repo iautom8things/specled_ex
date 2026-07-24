@@ -263,7 +263,17 @@ decisions:
     attributed and shared-fate paths — shall echo the seed together with a
     `--seed N` reproduction hint, so an order-dependent flake stays
     reproducible even when output truncation or log loss discards the seed
-    line itself. When no seed line is present, findings shall be unchanged.
+    line itself. When a resume pass ran, the finding's primary seed echo
+    shall be the FIRST run's seed (the retained output belongs to the first
+    run); when the resume pass itself timed out and its own output contains
+    a seed line, the resume-timeout suffix shall additionally name that
+    resume seed next to the resume run's hang suspects, so each seed is
+    paired with the run it reproduces. When no seed line is present in the
+    retained output, findings shall be unchanged — no seed note is
+    appended. The seed-echo mechanism itself is shared with generic
+    `command` verifications (see
+    specled.verify.command_findings_echo_exunit_seed); this requirement
+    pins the merged-run distribution and multi-run pairing behavior.
   priority: must
   stability: evolving
 - id: specled.tagged_tests.attribution_artifact_name_cross_vm_unique
@@ -477,11 +487,15 @@ decisions:
 - id: specled.tagged_tests.scenario.findings_echo_seed
   given:
     - "merged runs whose output contains `Running ExUnit with seed: 424242`"
-    - one run records a failing spec-tagged test and exits non-zero, another times out past the configured budget
+    - one run records a failing spec-tagged test and exits non-zero, another times out past the configured budget, and a third times out without writing any attribution artifact (shared fate)
+    - a seedless merged run that fails without any seed line in its output
+    - "a double-timeout pair: a first run drawing seed 111111 that passes one cover, leaves a never-started remainder, and times out; and a resume pass drawing seed 222222 that starts the remainder's test and also times out"
   when:
     - verification distributes each run result back to its entries
   then:
-    - every `verification_command_failed` and `verification_command_timeout` finding echoes seed 424242 with a `--seed 424242` reproduction hint
+    - every seeded run's `verification_command_failed` and `verification_command_timeout` finding — attributed and shared-fate alike — echoes seed 424242 with a `--seed 424242` reproduction hint
+    - the seedless run's findings contain no seed note and no `--seed` hint
+    - the double-timeout finding keeps 111111 as the primary seed echo and names resume pass seed 222222 next to the resume run's hang suspect, never presenting 222222 as the primary seed
   covers:
     - specled.tagged_tests.findings_echo_exunit_seed
 - id: specled.tagged_tests.scenario.attribution_artifact_name_cross_vm_safe
