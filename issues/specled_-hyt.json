@@ -6,7 +6,6 @@
   "description": "Surfaced by the specled_-vnw cold verifier (2026-07-24): lib/specled_ex/verifier.ex:2131 still names the streaming-attribution sidecar (specled_attr_*.jsonl / specled_pgkill_* etc.) with System.unique_integer([:positive]) — the same VM-local scheme specled_-vnw fixed for command temp scripts (shipped 0.5.2, PR #15, 699a503). Cross-VM collision here would corrupt/steal attribution events between concurrent specled runs sharing tmp_dir rather than exit-127 a command, so impact is subtler (misattributed per-test coverage) but the fix is identical: OS pid + random entropy. Audit all remaining System.unique_integer-based temp paths in lib/ while at it (test-only usages are fine). Likely advances specled.verification.",
   "id": "specled_-hyt",
   "labels": [
-    "phase:implementing",
     "slug:attribution-sidecar-temp-file"
   ],
   "comments": [
@@ -39,5 +38,5 @@
   "status": "in_progress",
   "title": "Attribution sidecar temp-file naming: VM-local unique_integer (same collision class as specled_-vnw)",
   "type": "task",
-  "updated_at": "2026-07-24T14:35:39Z"
+  "updated_at": "2026-07-24T14:35:40Z"
 }
