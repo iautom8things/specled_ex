@@ -26,11 +26,15 @@
     {
       "text": "Confirmed from the synced workflow docs: make worktree-cleanup accepts FORCE=1 to bypass the dirty+unmerged refusal gates, and WORKTREE_CLEANUP_BASE=main is the documented post-squash-merge cleanup path. The 'no force path' gap this ticket describes is addressed by the new target; remaining work is just verifying the squash-merged scenario once.",
       "timestamp": "2026-07-24T10:05:35Z"
+    },
+    {
+      "text": "Fixed by adopting the synced worktree workflow rather than patching the old script. Commit 2dfc439f (chore: adopt synced worktree workflow host-elixir@0.22.0) deletes .claude/scripts/worktree-cleanup.sh entirely and replaces the Makefile targets with generated make/worktree.mk, where FORCE=1 is a real pass-through: it bypasses both the dirty gate and the unmerged gate, deletes the branch with -D (covering the squash-merge case), and worktree-cleanup-all forwards FORCE too. Follow-up commit 1ad60d3b syncs the matching worktree-cleanup rules/docs. All three scoped gaps (design fork, branch -d site, --all mode) are covered by the new module.",
+      "timestamp": "2026-07-24T10:25:29Z"
     }
   ],
   "priority": 2,
   "status": "open",
   "title": "worktree-cleanup.sh cannot clean squash-merged worktrees (no force path)",
   "type": "task",
-  "updated_at": "2026-07-24T10:05:35Z"
+  "updated_at": "2026-07-24T10:25:29Z"
 }
