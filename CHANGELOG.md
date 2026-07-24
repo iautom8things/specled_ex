@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.6.0 — 2026-07-24
+
+- Findings for merged `tagged_tests` run failures and timeouts now echo the
+  ExUnit seed parsed from the run output (`exunit seed: N — append --seed N
+  ...`), in both the attributed and shared-fate paths. Previously the seed was
+  lost to head/tail truncation on failures and dropped entirely on timeouts,
+  leaving order-dependent flakes unreproducible — the third occurrence of the
+  tracer property flake lost its seed and counterexample permanently. A new
+  `specled.tagged_tests.findings_echo_exunit_seed` must requirement pins the
+  behavior. (specled_-epl)
+- New `SPECLED_COMMAND_OUTPUT_DIR` environment variable: when set, failing or
+  timed-out verification commands persist their full output, command target,
+  exit code, and timeout state to cross-VM-uniquely named files in that
+  directory (best-effort — capture failure never alters the verification
+  result). The Specs CI workflow sets it and uploads the directory as a
+  `specled-command-output` artifact on failure, so the next flake occurrence
+  arrives with its counterexample attached. Pinned by the new
+  `specled.verify.command_output_capture_dir` must requirement. (specled_-epl)
+- Fixed a test-isolation flake in the coverage store suite: both v2 describe
+  blocks parked artifacts directly in `System.tmp_dir!()`, which made the
+  `last_run.status` sidecar (written to `dirname(artifact)`) a machine-global
+  file shared across concurrent BEAMs and leftover from killed runs — the
+  `read_status/1` tests then flaked under merged/parallel runs. Artifacts now
+  live in per-test directories; diagnosed via the new seed echo, which
+  reproduced the failure standalone on its first outing. (specled_-ind)
+
 ## 0.5.2 — 2026-07-24
 
 - Command verification temp scripts are now named with the OS pid plus random

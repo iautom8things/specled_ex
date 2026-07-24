@@ -431,7 +431,7 @@ defmodule SpecLedEx.Verifier do
           finding(
             "error",
             "verification_command_failed",
-            "Verification command failed: tagged_tests: #{label}\nexit_code=#{inspect(Map.get(command_result, :exit_code))}\nfailing tests: #{Enum.join(tests, ", ")}",
+            "Verification command failed: tagged_tests: #{label}\nexit_code=#{inspect(Map.get(command_result, :exit_code))}\nfailing tests: #{Enum.join(tests, ", ")}#{exunit_seed_note(Map.get(command_result, :output))}",
             subject_id,
             file
           )
@@ -501,7 +501,7 @@ defmodule SpecLedEx.Verifier do
           "no test was observed still running at timeout#{remainder_suffix(remainder)}"
       end
 
-    "#{command_timeout_core(command_result)}\n#{evidence}#{resume_timeout_suffix(command_result)}"
+    "#{command_timeout_core(command_result)}\n#{evidence}#{resume_timeout_suffix(command_result)}#{exunit_seed_note(Map.get(command_result, :output))}"
   end
 
   # When a resume pass re-ran the never-started remainder alone with a fresh full
@@ -627,12 +627,13 @@ defmodule SpecLedEx.Verifier do
           "#{header}\n#{head}\n...[output truncated]...\n#{tail}"
       end
 
-    append_shared_tagged_tests_context(details, command_result)
+    (details <> exunit_seed_note(output))
+    |> append_shared_tagged_tests_context(command_result)
   end
 
   defp command_timeout_details(command_result) do
-    command_result
-    |> command_timeout_core()
+    (command_timeout_core(command_result) <>
+       exunit_seed_note(Map.get(command_result, :output)))
     |> append_shared_tagged_tests_context(command_result)
   end
 
@@ -641,6 +642,20 @@ defmodule SpecLedEx.Verifier do
     doubled_timeout_ms = timeout_ms * 2
 
     "command exceeded #{timeout_ms}ms (verification.command_timeout_ms in .spec/config.yml, default #{@default_command_timeout_ms}); tests were not observed to fail. Re-run with --command-timeout-ms #{doubled_timeout_ms} to confirm this is a budget problem."
+  end
+
+  # ExUnit randomizes test order per seed, so an order-dependent flake in the
+  # merged tagged_tests run is unreproducible without the seed. Findings
+  # truncate long output (and timeout details drop it entirely), so the seed
+  # line is re-parsed here and echoed explicitly with a repro hint.
+  defp exunit_seed_note(output) do
+    case Regex.run(~r/Running ExUnit with seed: (\d+)/, output || "") do
+      [_, seed] ->
+        "\nexunit seed: #{seed} — append --seed #{seed} to the command to reproduce this run order"
+
+      _ ->
+        ""
+    end
   end
 
   defp append_shared_tagged_tests_context(message, command_result) do
@@ -2324,13 +2339,55 @@ defmodule SpecLedEx.Verifier do
       timed_out? = exit_status == :timeout
       exit_code = if(timed_out?, do: nil, else: exit_status)
 
-      %{output: output, exit_code: exit_code, timed_out: timed_out?, timeout_ms: timeout_ms}
+      result = %{
+        output: output,
+        exit_code: exit_code,
+        timed_out: timed_out?,
+        timeout_ms: timeout_ms
+      }
+
+      preserve_failed_output(result, target)
+      result
     after
       File.rm(tmp_out)
       File.rm(tmp_script)
       File.rm(tmp_target)
       File.rm(tmp_pgid)
     end
+  end
+
+  # Forensic capture for flaky-run diagnosis: when SPECLED_COMMAND_OUTPUT_DIR
+  # names a directory, failing or timed-out commands persist their full output
+  # there before the temp files are removed, so CI can upload the directory as
+  # an artifact. Findings truncate long output and drop it entirely on timeout;
+  # without this, the seed and counterexample of a non-reproducing merged-run
+  # failure are unrecoverable once the runner is gone. Best-effort by contract:
+  # a capture failure must never alter the verification result.
+  defp preserve_failed_output(result, target) do
+    dir = System.get_env("SPECLED_COMMAND_OUTPUT_DIR")
+
+    if is_binary(dir) and dir != "" and (result.timed_out or result.exit_code != 0) do
+      File.mkdir_p!(dir)
+
+      # Same cross-VM-unique scheme as run_command's temp names: concurrent
+      # specled runs may share a capture dir, and a per-VM-only unique name
+      # could overwrite another run's forensic log.
+      suffix = "#{System.pid()}_#{Base.encode16(:crypto.strong_rand_bytes(6), case: :lower)}"
+      path = Path.join(dir, "specled_cmd_#{suffix}.log")
+
+      File.write!(path, """
+      command: #{target}
+      exit_code: #{inspect(result.exit_code)}
+      timed_out: #{result.timed_out}
+      timeout_ms: #{result.timeout_ms}
+      --- output ---
+      #{result.output}
+      """)
+    end
+
+    :ok
+  rescue
+    _ -> :ok
   end
 
   # SIGKILLs the target's process group recorded by the job-control wrapper.
