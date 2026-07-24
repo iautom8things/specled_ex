@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
   "created": "2026-07-24T09:57:00Z",
@@ -7,8 +7,8 @@
   "id": "specled_-vnw",
   "labels": [],
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "Verifier run_command temp-script race: false verification_command_failed on untouched subjects",
   "type": "bug",
-  "updated_at": "2026-07-24T09:57:00Z"
+  "updated_at": "2026-07-24T10:44:21Z"
 }
