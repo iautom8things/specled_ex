@@ -321,7 +321,12 @@ decisions:
     `specled_-cpw` and `specled.decision.aggregate_first_spec_coverage`)
     rather than exact — the closure line and the "Reached by tests" row
     shall each be discoverably qualified as observed/approximate, never
-    asserted as exact per-test isolation.
+    asserted as exact per-test isolation. `self_verified?` is derived from
+    that same `"executed"` attribution, so under `:ok_per_test` mode the
+    per-requirement "Self-verified" row and the subject-card rollup badge
+    (`specled.spec_review.coverage_rollup_badge`) shall each carry the same
+    discoverable qualifier — aggregate mode's `self_verified?` is always
+    false and stays unqualified.
   priority: must
   stability: evolving
 - id: specled.spec_review.coverage_file_level_proxy_qualifier
@@ -337,7 +342,11 @@ decisions:
     Each subject card shall additionally carry a rollup badge summarizing
     the subject's coverage status (a self-verified/total count and mode
     when coverage data loaded, or a muted "coverage unavailable" chip when
-    degraded).
+    degraded). Under `:ok_per_test` mode the badge shall additionally carry
+    the `specled.spec_review.coverage_observed_approximate_qualifier`
+    disclaimer (a discoverable "(observed)" qualifier), since the count
+    composes the same race-bounded `"executed"` attribution; aggregate
+    mode's badge is already honest and stays unqualified.
   priority: must
   stability: evolving
 - id: specled.spec_review.coverage_generated_at_staleness
@@ -684,12 +693,14 @@ decisions:
     - specled.spec_review.coverage_reached_by_tests_per_test_only
 - id: specled.spec_review.coverage_qualifies_observed_not_exact
   given:
-    - a requirement in :ok_per_test mode with an executed-strength tagged test
+    - a requirement in :ok_per_test mode with an executed-strength tagged test, self_verified? true
   when:
     - the reviewer opens the subject's Coverage pivot
   then:
     - the "Reached by tests" row carries a discoverable qualifier naming the result observed, not exact, and citing the per-test capture race
     - the closure line's coverage percentage carries a discoverable qualifier that it is approximate
+    - "the \"Self-verified: yes.\" row carries its own discoverable \"(observed)\" qualifier citing the same per-test capture race"
+    - "the equivalent requirement rendered under aggregate mode renders \"Self-verified: no.\" with no such qualifier"
   covers:
     - specled.spec_review.coverage_observed_approximate_qualifier
 - id: specled.spec_review.coverage_file_level_proxy_noted
@@ -708,7 +719,8 @@ decisions:
   when:
     - mix spec.review renders the subject's card
   then:
-    - the card carries a rollup badge reading "1/2 self-verified (per-test)"
+    - the card carries a rollup badge reading "1/2 self-verified (per-test)" with a discoverable "(observed)" qualifier and title caveat citing the per-test capture race
+    - the equivalent badge rendered in aggregate mode carries no such qualifier
     - a subject whose coverage status is degraded instead renders a muted "coverage unavailable" chip
   covers:
     - specled.spec_review.coverage_rollup_badge

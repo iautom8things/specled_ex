@@ -1296,6 +1296,41 @@ defmodule SpecLedEx.Review.HtmlTest do
       # The closure line's percentage carries its own approximate caveat
       # (currently surfaced via the file-level-proxy note's tooltip).
       assert html =~ "treat the percentage as approximate"
+
+      # "Self-verified: yes." composes the same "executed" attribution, so
+      # it carries its own discoverable (observed) qualifier under
+      # :ok_per_test — the ADR's race-bounded disclaimer, not the
+      # file-level-proxy one.
+      assert html =~
+               ~s|Self-verified: yes. <span class="cov-closure-self-verified-note" title="Per-test attribution can be affected|
+
+      assert html =~ "treat as observed, not exact — see specled_-cpw.\">(observed)</span>"
+    end
+
+    # covers: specled.spec_review.coverage_observed_approximate_qualifier
+    test "aggregate mode's \"Self-verified: no.\" row carries no (observed) qualifier" do
+      reach = %{
+        status: :ok_aggregate,
+        by_requirement: %{
+          "subj.a.req1" => req_reach(self_verified?: false)
+        }
+      }
+
+      html =
+        IO.iodata_to_binary(
+          Html.render_coverage_tab(
+            coverage_subject(
+              closure_reach: reach,
+              requirements: [
+                %{"id" => "subj.a.req1", "statement" => "S", "priority" => "must"}
+              ]
+            )
+          )
+        )
+
+      assert html =~ "Self-verified: no."
+      refute html =~ "cov-closure-self-verified-note"
+      refute html =~ "(observed)"
     end
 
     # covers: specled.spec_review.coverage_file_level_proxy_qualifier
@@ -1478,6 +1513,39 @@ defmodule SpecLedEx.Review.HtmlTest do
 
       assert html =~ "badge-coverage-rollup"
       assert html =~ "1/2 self-verified (per-test)"
+    end
+
+    # covers: specled.spec_review.coverage_observed_approximate_qualifier
+    test "per-test mode's rollup badge carries a discoverable (observed) qualifier" do
+      reach = %{
+        status: :ok_per_test,
+        by_requirement: %{
+          "a" => %{self_verified?: true},
+          "b" => %{self_verified?: false}
+        }
+      }
+
+      html = IO.iodata_to_binary(Html.render_subject_coverage_badge(reach))
+
+      assert html =~ "1/2 self-verified (per-test) (observed)"
+      assert html =~ "treat as observed, not exact — see specled_-cpw"
+    end
+
+    # covers: specled.spec_review.coverage_observed_approximate_qualifier
+    test "aggregate mode's rollup badge carries no (observed) qualifier" do
+      reach = %{
+        status: :ok_aggregate,
+        by_requirement: %{
+          "a" => %{self_verified?: false},
+          "b" => %{self_verified?: false}
+        }
+      }
+
+      html = IO.iodata_to_binary(Html.render_subject_coverage_badge(reach))
+
+      assert html =~ "0/2 self-verified (aggregate)"
+      refute html =~ "(observed)"
+      refute html =~ "treat as observed, not exact"
     end
 
     test "renders a muted coverage-unavailable chip for each degraded status" do
