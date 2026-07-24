@@ -369,22 +369,22 @@ decisions:
   stability: evolving
 - id: specled.spec_review.coverage_tab_v2_envelope_data_layer
   statement: >-
-    `SpecLedEx.Review.CoverageClosure.build_v2/2` shall provide the v2
-    envelope-based counterpart to `build/2` — reading
-    `SpecLedEx.Coverage.Store.read_v2/1` instead of the v1 record list, and
-    returning, per requirement, `closure_coverage_pct`, `covered_mfas` /
-    `uncovered_mfas` (via `SpecLedEx.Coverage.MfaKey`), and `tagged_tests`
-    with an evidence `:strength` (`"claimed"` / `"linked"` / `"executed"`).
-    Subject-level status distinguishes `:ok_aggregate` from `:ok_per_test`
-    coverage, and `:no_coverage_artifact` / `:legacy_artifact` /
-    `:invalid_artifact` / `:no_tracer_manifest` / `:async_contaminated`
-    (a `:per_test` envelope with `degraded: true` — the flag-1 special case
-    that keeps a corrupted per-test capture from misreporting as trustworthy
-    `:ok_per_test`) degrade distinctly rather than collapsing into one
-    empty-but-ok result. `build/2` remains unchanged and still available for
-    any caller that needs the v1 shape; `Review.build_view/3` now calls
-    `build_v2/2` and the Coverage pivot renders its v2 shape, per
-    `coverage_tab_bind_closure`.
+    `SpecLedEx.Review.CoverageClosure.build_v2/2` shall provide the sole
+    data layer for the Coverage tab — reading
+    `SpecLedEx.Coverage.Store.read_v2/1`, and returning, per requirement,
+    `closure_coverage_pct`, `covered_mfas` / `uncovered_mfas` (via
+    `SpecLedEx.Coverage.MfaKey`), and `tagged_tests` with an evidence
+    `:strength` (`"claimed"` / `"linked"` / `"executed"`). Subject-level
+    status distinguishes `:ok_aggregate` from `:ok_per_test` coverage, and
+    `:no_coverage_artifact` / `:legacy_artifact` / `:invalid_artifact` /
+    `:no_tracer_manifest` / `:async_contaminated` (a `:per_test` envelope
+    with `degraded: true` — the flag-1 special case that keeps a corrupted
+    per-test capture from misreporting as trustworthy `:ok_per_test`)
+    degrade distinctly rather than collapsing into one empty-but-ok
+    result. `Review.build_view/3` calls `build_v2/2` and the Coverage
+    pivot renders its v2 shape, per `coverage_tab_bind_closure`. The prior
+    v1 record-list path (`build/2`) had zero callers and zero tests once
+    `build_view/3` switched over, and was deleted rather than kept dead.
   priority: must
   stability: evolving
 - id: specled.spec_review.no_realized_by_degrades_spec_to_code

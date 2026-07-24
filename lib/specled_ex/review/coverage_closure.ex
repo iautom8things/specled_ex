@@ -2,7 +2,8 @@ defmodule SpecLedEx.Review.CoverageClosure do
   # covers: specled.spec_review.coverage_tab_bind_closure
   @moduledoc """
   Computes per-requirement bind-closure reach data for the spec.review HTML
-  Coverage tab.
+  Coverage tab, via `build_v2/2` (see its `@doc` for the envelope-based
+  pipeline).
 
   The pipeline mirrors `mix spec.triangle`:
 
@@ -20,120 +21,15 @@ defmodule SpecLedEx.Review.CoverageClosure do
        which returns the per-requirement reach summary the renderer turns
        into "Closure: N MFAs. Reached: M (by tests T1, T2). Unreached: K."
 
-  The function is read-only: missing artifacts produce a status atom rather
-  than raising, so spec.review keeps rendering even when triangulation
-  inputs are absent (the same posture used by spec.triangle).
+  Read-only: missing artifacts produce a status atom rather than raising, so
+  spec.review keeps rendering even when triangulation inputs are absent (the
+  same posture used by spec.triangle).
   """
 
   alias SpecLedEx.Compiler.Tracer
   alias SpecLedEx.Coverage.{MfaKey, Store}
   alias SpecLedEx.CoverageTriangulation
   alias SpecLedEx.Realization.Closure
-
-  @type reach_status :: :ok | :no_coverage_artifact | :no_tracer_manifest
-
-  @type subject_reach :: %{
-          status: reach_status(),
-          by_requirement: %{optional(String.t()) => map()}
-        }
-
-  @doc """
-  Returns `%{subject_id => subject_reach}` for every subject in `index`.
-
-  Each `subject_reach` carries:
-
-    * `:status` — `:ok` when both the tracer manifest and coverage
-      artifact were loaded, `:no_tracer_manifest` when the tracer manifest
-      is missing (closure walk skipped), `:no_coverage_artifact` when the
-      manifest loaded but `.spec/_coverage/per_test.coverdata` is missing.
-    * `:by_requirement` — `%{requirement_id => reach_map}` from
-      `CoverageTriangulation.per_requirement_reach/2`. Empty when status
-      is degraded.
-
-  `opts` (all optional, primarily for tests):
-
-    * `:tracer_edges` — pre-loaded tracer-edge map (skips disk read).
-    * `:coverage_records` — pre-loaded coverage records OR
-      `:no_coverage_artifact` (skips disk read).
-    * `:artifact_path` — override `.spec/_coverage/per_test.coverdata`.
-  """
-  @spec build(map(), keyword()) :: %{optional(String.t()) => subject_reach()}
-  def build(index, opts \\ []) when is_map(index) do
-    tracer_edges =
-      case Keyword.fetch(opts, :tracer_edges) do
-        {:ok, edges} -> edges
-        :error -> load_tracer_edges()
-      end
-
-    coverage_records =
-      case Keyword.fetch(opts, :coverage_records) do
-        {:ok, records} ->
-          records
-
-        :error ->
-          path = Keyword.get(opts, :artifact_path) || Store.default_path()
-          load_coverage(path)
-      end
-
-    subjects = normalized_subjects(index)
-
-    cond do
-      tracer_edges == %{} ->
-        Map.new(subjects, fn s ->
-          {s.id, %{status: :no_tracer_manifest, by_requirement: %{}}}
-        end)
-
-      coverage_records == :no_coverage_artifact ->
-        Map.new(subjects, fn s ->
-          {s.id, %{status: :no_coverage_artifact, by_requirement: %{}}}
-        end)
-
-      true ->
-        world = %{subjects: subjects, tracer_edges: tracer_edges}
-
-        Map.new(subjects, fn subject ->
-          closure = Closure.compute(subject, world)
-
-          requirements =
-            requirements_for(index, subject.id)
-            |> Enum.map(fn req -> requirement_view(req, closure) end)
-
-          closure_map = %{
-            subjects: %{
-              subject.id => %{
-                owned_files: subject.surface,
-                requirements: requirements
-              }
-            }
-          }
-
-          per_req = CoverageTriangulation.per_requirement_reach(coverage_records, closure_map)
-
-          by_req =
-            case per_req do
-              :no_coverage_artifact ->
-                %{}
-
-              map when is_map(map) ->
-                Map.new(requirements, fn req ->
-                  {req.id, Map.get(map, {subject.id, req.id}, empty_reach(req))}
-                end)
-            end
-
-          {subject.id, %{status: :ok, by_requirement: by_req}}
-        end)
-    end
-  end
-
-  defp empty_reach(req) do
-    %{
-      closure_mfa_count: length(Map.get(req, :closure_mfas, [])),
-      closure_file_count: req |> Map.get(:closure_files, []) |> Enum.uniq() |> length(),
-      reached_files: [],
-      unreached_files: req |> Map.get(:closure_files, []) |> Enum.uniq() |> Enum.sort(),
-      reaching_tests: []
-    }
-  end
 
   # ---------------------------------------------------------------------------
   # Closure plumbing — mirrors mix spec.triangle so behavior stays consistent.
@@ -151,14 +47,6 @@ defmodule SpecLedEx.Review.CoverageClosure do
     end
   rescue
     _ -> %{}
-  end
-
-  defp load_coverage(path) do
-    if File.regular?(path) do
-      Store.read(path)
-    else
-      :no_coverage_artifact
-    end
   end
 
   defp normalized_subjects(index) do
@@ -268,15 +156,11 @@ defmodule SpecLedEx.Review.CoverageClosure do
   # ---------------------------------------------------------------------------
   # v2 envelope path (epic specled_-155, T6)
   #
-  # `build/2` above is the v1 path used today by `SpecLedEx.Review.build_view/3`
-  # — untouched, so review.ex/html.ex (T7's rendering migration, out of scope
-  # here) keep working exactly as before.
-  #
-  # `build_v2/2` below is the additive v2 counterpart: it reads
-  # `SpecLedEx.Coverage.Store.read_v2/1` instead of `Store.read/1` and adds
-  # per-requirement MFA-level closure coverage plus tagged-test evidence
-  # strength. It is not wired into `Review.build_view/3` yet — that wiring is
-  # T7's job.
+  # `build_v2/2` below reads the v2 coverage envelope
+  # (`SpecLedEx.Coverage.Store.read_v2/1`) and adds per-requirement MFA-level
+  # closure coverage plus tagged-test evidence strength. It is the sole path
+  # wired into `SpecLedEx.Review.build_view/3` — the v1 record-list path this
+  # comment used to describe was deleted once build_view switched over.
   # ---------------------------------------------------------------------------
 
   @type v2_status ::
@@ -305,11 +189,8 @@ defmodule SpecLedEx.Review.CoverageClosure do
         }
 
   @doc """
-  Envelope-based counterpart to `build/2`.
-
   Returns `%{subject_id => v2_subject_reach()}` for every subject in `index`,
-  reading the v2 coverage envelope (`SpecLedEx.Coverage.Store.read_v2/1`)
-  instead of the v1 record list.
+  reading the v2 coverage envelope (`SpecLedEx.Coverage.Store.read_v2/1`).
 
   Each subject's `:status` is one of:
 
@@ -325,8 +206,8 @@ defmodule SpecLedEx.Review.CoverageClosure do
       Distinct from `:no_coverage_artifact` and `:legacy_artifact` — none of
       the three collapse into a silent empty-but-ok result.
     * `:no_tracer_manifest` — the compiler tracer manifest is missing, so the
-      closure walk itself could not run (checked first, same precedence as
-      `build/2`).
+      closure walk itself could not run (checked first, ahead of any
+      envelope-loading status).
     * `:async_contaminated` — the envelope loaded as `:per_test` but carries
       `degraded: true` (the `--per-test` lane's async-contamination guard,
       the same condition `CoverageTriangulation.envelope_findings/3` reports
