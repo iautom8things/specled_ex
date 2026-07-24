@@ -14,11 +14,15 @@
     {
       "text": "4th observation (2026-07-23, epic specled_-155 merge gate 9, epic @ af16144): 1/1136 failure in full-suite run, did not reproduce on immediate full re-run (0 failures), --failed manifest empty, docs-only delta since prior green gate. Flake-accepted once at the gate per protocol. Exact test identity lost to output piping — orchestrator process fixed to capture full gate output going forward.",
       "timestamp": "2026-07-23T19:58:07Z"
+    },
+    {
+      "text": "Board triage 2026-07-24 (verified against HEAD a509836): (1) The tempfile_command_execution race noted in comments here is now its own bug: specled_-vnw — it is unrelated to the tracer property flake. (2) specled_-qvg merged into this ticket and closed: its analysis found merge_edges/3 pure (tracer.ex:294-311), all four property invariants hold by construction, no derivable counterexample; leading hypothesis is a suite-capacity timeout artifact, not a real bug. (3) Occurrence 3 datum is permanently lost — CI run 29944042016 has 0 artifacts and no ExUnit seed/counterexample in logs. Remaining actionable work: adopt qvg capture-on-recurrence protocol (on next flake: record failure mode — timeout vs counterexample — plus seed, one-command repro), and add a seed-echo/capture step to specs.yml so the next occurrence is diagnosable. NOTE: flake is at accept-cap per specled_-csg policy — next occurrence hard-blocks a merge gate.",
+      "timestamp": "2026-07-24T09:57:09Z"
     }
   ],
   "priority": 2,
   "status": "open",
   "title": "Investigate flaky specled.compiler_tracer verification_command_failed (tracer_test.exs:241) under multi-file tagged_tests run",
   "type": "task",
-  "updated_at": "2026-07-23T19:58:07Z"
+  "updated_at": "2026-07-24T09:57:09Z"
 }
