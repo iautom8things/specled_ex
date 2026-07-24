@@ -42,8 +42,8 @@
       "message": "Changed file test/specled_ex/coverage/store_test.exs impacts subject specs that were not updated: specled.coverage_capture"
     }
   ],
-  "run_at": "2026-07-24T13:19:43.943988Z",
-  "run_id": "7186b58e39faaf34cf208973296f9b3a",
+  "run_at": "2026-07-24T13:25:43.859286Z",
+  "run_id": "d64aa3b6268b0e6a77d5a91e08bd14fe",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "5117f0e2994344a0fb5db669aa6488528fc73a8f",
