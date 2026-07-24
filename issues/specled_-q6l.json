@@ -85,11 +85,15 @@
     {
       "text": "Squash-merged to main (4a374be). Post-merge Specs CI running.",
       "timestamp": "2026-07-24T14:19:15Z"
+    },
+    {
+      "text": "Closed. Fast-follow epic specled_-xkn carries: review mediums F3/CF1 (safe_decode default), F15/CF2 (per-leg coverage provenance); plus re-homed specled_-gai, specled_-26g.",
+      "timestamp": "2026-07-24T14:22:05Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fast-follow: Aggregate-first spec coverage — specled_-47j remediation",
   "type": "epic",
-  "updated_at": "2026-07-24T14:19:15Z"
+  "updated_at": "2026-07-24T14:22:05Z"
 }
