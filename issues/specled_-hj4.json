@@ -57,6 +57,10 @@
     {
       "text": "MINI-RETRO (final, incl. S3 review remediation)\nbounces: 3 (untested-clause x2 -\u003e implementer, seam-substitution x1 -\u003e verifier)\nfull_suite_runs: 9\nfinals_gt1: 2\nflake_accepts: 3 (all specled_-l05 scenario_refactor_stable drift; 3rd escalated with evidence, not silently accepted)\nescalations: 0\nlessons_kept/retired: 7/0\npre-ship critical review: 5 personas, 33 raw -\u003e 28 unique -\u003e 0 Critical / 0 High after skeptic calibration; 10 downgraded, 3 claims disproven by execution. Both Tier-1 items fixed pre-merge (f338abb changelog accuracy, specled_-hj4.3 protocol truth). Tier-2/3 -\u003e fast-follow epic specled_-0x4.",
       "timestamp": "2026-07-25T17:41:42Z"
+    },
+    {
+      "text": "Branch pushed to origin as specled_-hj4/spec-check-verdict-contract (HEAD af5e005). PR creation BLOCKED: the gh wrapper routes writes through `op plugin run -- gh`, which timed out awaiting 1Password approval. Not bypassed deliberately — needs a human to run gh pr create. All gates green locally including CI's exact invocations.",
+      "timestamp": "2026-07-25T17:41:42Z"
     }
   ],
   "priority": 2,
