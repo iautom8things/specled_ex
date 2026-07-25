@@ -17,11 +17,15 @@
     {
       "text": "ORCHESTRATOR DIRECTIVE #2 (from the dn4.6 audit, 2026-07-25T16:19:49Z) — add one test-hardening item to your batch. You already own test/specled_ex/review/html_test.exs and you merge LAST, which makes you the right closer for this.\n\ndn4.6 left three corrected renderer strings rendered correctly but pinned by no test — each is individually revertible to the retired \"exact up to escaped processes\" claim with html_test.exs green:\n  - html.ex:3075 — render_attribution_qualifier/2's degraded title\n  - html.ex:3135 — reached_by_tests_title/1's degraded branch\n  - html.ex:3078 — render_attribution_qualifier/2's non-degraded title/label\nCause: the existing assertions use text that is byte-identical at base (an unchanged prefix) or a bare substring three sites emit, so neither can fail on a single-site revert.\n\nFIRST verify the three sites still emit the chained-window wording (they may have passed through dn4.5's rebase): grep -c \"hooked tests remain exact only within disclosed chained windows\" lib/specled_ex/review/html.ex must be 3 and \"exact up to escaped processes\" must be 0 in that file. If not, STOP and report — do not pin a reverted string.\n\nTHEN close it, test-file only (html.ex stays frozen for this item): widen the two prefix assertions in the degraded test into WHOLE-TITLE assertions carrying the corrected clause, e.g. \"Per-test run degraded: unhooked modules (UnhookedCase, OtherUnhooked) fold into the aggregate remainder; hooked tests remain exact only within disclosed chained windows.\" and the \"Per-test run is degraded — …\" variant; and add one whole-string assertion for the non-degraded title. Both prefix assertions pass today, so the existing fixture already renders both sites — no new fixture needed.\n\nACCEPTANCE: reverting each of the three strings individually to its ca7ef09 text must fail at least one named test. Report the per-string mutation result. (A prior iteration reported a mutation table it had not actually run — run these.)",
       "timestamp": "2026-07-25T16:20:31Z"
+    },
+    {
+      "text": "ORCHESTRATOR NOTE #3 (from dn4.7's verification, 2026-07-25T18:47:29Z — informational, not a directive): two defensive branches in lib/specled_ex/coverage/formatter.ex remain untested and dn4.7 could not reach them because it was test-only. They are source_file/1's unrecognized-:source-shape clause (~:264) and its rescue (~:270-271). Both require a module whose module_info(:compile)[:source] has a non-list, non-binary shape, which cannot be constructed without touching lib/**. You DO have formatter.ex in your Allowed touches. If one of your cleanups makes them reachable or removable, handle it; if not, leave them and say so — do not contort the code to make them testable. The third branch originally listed with them (the non-loadable clause) IS covered, via UnloadableCoverageModule in formatter_test.exs:400.",
+      "timestamp": "2026-07-25T18:47:56Z"
     }
   ],
   "priority": 1,
   "status": "open",
   "title": "Tier-3 seam cleanups, cheap perf, robustness batch (F9/F13/F16/F17/F19/F20/F46, F25, F21/F22/F24, F44/F15, F10/F42/F43)",
   "type": "task",
-  "updated_at": "2026-07-25T16:20:31Z"
+  "updated_at": "2026-07-25T18:47:56Z"
 }
