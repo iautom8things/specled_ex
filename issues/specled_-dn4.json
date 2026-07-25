@@ -33,11 +33,15 @@
     {
       "text": "FLAKE LEDGER (update)\n- signature: test/integration/scenario_refactor_stable_test.exs:150 branch_guard_realization_drift — count 1, pre-existing, ticket specled_-ya8.\n- signature: test/specled_ex/compiler/tracer_test.exs:255 StreamData.TooManyDuplicatesError (seed 407930) — count 1 (dn4.3 merge gate). NOT flake-accepted under the strict no-reproduce rule (seed-deterministic generators always reproduce under the printed seed); instead attributed by base-reproduction: identical failure at base 14f6e72 same seed, file untouched by the epic. Pre-existing defect; standalone ticket created. Gate re-run under fresh seed.",
       "timestamp": "2026-07-25T12:51:24Z"
+    },
+    {
+      "text": "FLAKE LEDGER: scenario_refactor_stable_test.exs:150 (specled_-ya8) struck again during dn4.8 worktree bootstrap smoke — count now 2. Immediate clean re-run green (1208/0). Signature is at its 2-accept cap: a third occurrence leaves the gate red per protocol; specled_-ya8 should be prioritized.",
+      "timestamp": "2026-07-25T12:59:38Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-25T12:51:24Z"
+  "updated_at": "2026-07-25T12:59:38Z"
 }
