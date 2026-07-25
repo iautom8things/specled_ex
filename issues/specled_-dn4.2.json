@@ -25,11 +25,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: eb717ea1-b20d-491a-a5f9-322b223bfe82\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/eb717ea1-b20d-491a-a5f9-322b223bfe82.jsonl\n\nReasoning: VERIFY reported PASS with zero scope deviations (single Allowed file),\nbyte-identical A/B differential proof of behavior preservation (md5-identical\nenvelope+stderr across four adversarial scenarios, old vs new code), verified\ndead-helper deletion, green stubs via bare spec.check, and complete seam\ndisclosure (the arming seam is established production wiring). No auditor was\nspawned per policy. Posted by the orchestrator applying the canonical Selective\nAudit Gate.\n\nCarried note for dn4.5: the comment above records_for_inventory/3 is stale\n(describes logic that moved into flush/1's split_with) — dn4.5 rewrites that\nregion and should fold the comment fix in.",
       "timestamp": "2026-07-25T15:00:53Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-dn4/fast-follow-per-test. Closing per orchestrator sign-off. (Gate green first run: 1211/0, spec.check pass.)",
+      "timestamp": "2026-07-25T15:06:27Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "flush/1: replace 4-tuple reduce + quadratic acc ++ recs with split_with/flat_map/frequencies_by (F6)",
   "type": "task",
-  "updated_at": "2026-07-25T15:00:53Z"
+  "updated_at": "2026-07-25T15:06:27Z"
 }
