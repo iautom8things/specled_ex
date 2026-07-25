@@ -29,6 +29,7 @@ decisions:
   - specled.decision.configurable_test_tag_enforcement
   - specled.decision.change_type_enum_v1
   - specled.decision.adr_append_only
+  - specled.decision.deprecates_affect_reference_carveout
 ```
 
 ## Requirements
@@ -39,7 +40,11 @@ decisions:
   priority: must
   stability: stable
 - id: specled.decisions.reference_validation
-  statement: The verifier shall reject ADR affects or supersession links that do not resolve and shall warn when a subject references an unknown ADR id.
+  statement: >-
+    The verifier shall reject ADR affects or supersession links that do not
+    resolve, except that `change_type: deprecates` ADRs may list affects ids
+    absent from the current index because the target is being retired, and
+    shall warn when a subject references an unknown ADR id.
   priority: must
   stability: evolving
 - id: specled.decisions.change_type_enum
