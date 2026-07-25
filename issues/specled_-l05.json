@@ -12,9 +12,9 @@
       "timestamp": "2026-07-23T18:23:47Z"
     }
   ],
-  "priority": 2,
+  "priority": 1,
   "status": "open",
   "title": "implementation-tier drift: attribution study + cross-compile determinism test + hash-input audit",
   "type": "task",
-  "updated_at": "2026-07-24T09:57:28Z"
+  "updated_at": "2026-07-25T10:58:01Z"
 }
