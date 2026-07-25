@@ -61,6 +61,7 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
       assert is_function(config.modules_fn, 0)
       assert config.artifact_path == ".spec/_coverage/per_test.coverdata"
       assert Arming.resolve(:boundary) == :disarmed
+      refute function_exported?(Boundary, :modules_cache_key, 0)
     end
   end
 
@@ -106,7 +107,10 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
 
       arm(
         boundary_table: tid,
-        snapshot_fn: fn _ -> %{} end,
+        snapshot_fn: fn modules ->
+          send(parent, {:snapshot_modules, modules})
+          %{}
+        end,
         modules_fn: fn ->
           send(parent, :modules_called)
           [ModA, ModB]
@@ -117,9 +121,10 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
       _ = Boundary.head(%{})
       assert_received :modules_called
       refute_received :modules_called
+      assert_received {:snapshot_modules, [ModA, ModB]}
 
-      assert :ets.info(tid, :size) == 1
-      refute function_exported?(Boundary, :modules_cache_key, 0)
+      assert [{key, [ModA, ModB]}] = :ets.tab2list(tid)
+      assert is_atom(key)
     end
 
     test "passes diagnostics count through on negative deltas" do
