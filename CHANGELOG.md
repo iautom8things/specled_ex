@@ -2,14 +2,32 @@
 
 ## 0.8.0 — 2026-07-25
 
-- Documented the `mix spec.check` verdict-read protocol across the adopter
-  guides, agent guidance, bootstrap skill, and rule text: the verdict line is
-  `spec.check result=pass` or `spec.check result=fail tier=<tier>
-  error_findings=<N>`, while the validation summary remains
-  `validate status=<status> errors=<N> warnings=<N>` and the branch breakdown
-  remains `branch base=<base> changed_files=<N> findings=<N> (error=<E>
-  warning=<W> info=<I>, info hidden; --verbose to show)`.
-  The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict.
+- `mix spec.check` and `mix spec.validate` now end every run they report on
+  with a machine-readable verdict line — `spec.check result=pass` or
+  `spec.check result=fail tier=<validate|branch> error_findings=<N>`, and the
+  `spec.validate` equivalent. It is printed before the task raises, so a
+  failing run states its own outcome instead of leaving the reader to infer it
+  from the summary lines above. Exit-code semantics are unchanged.
+- Branch findings now break down by severity and disclose suppression:
+  `branch base=<base> changed_files=<N> findings=<N> (error=<E> warning=<W>
+  info=<I>, info hidden; --verbose to show)`, with `info shown` when
+  `--verbose` or `SPECLED_SHOW_INFO=1` is active. Errors now display after
+  warnings and info in both the branch and validation reports; ordering is
+  display-only and does not affect the report map or recorded evidence.
+- `mix spec.check --base <ref>` now validates the ref up front and prints a
+  fail verdict before raising, instead of failing later with a bare
+  `ArgumentError` after the validation summary had already printed.
+- **Changed stdout formats.** Three lines changed shape this release; anything
+  parsing them needs updating:
+  - `status=<status> errors=<N> warnings=<N>` → `validate status=<status>
+    errors=<N> warnings=<N>` (renamed in place, in both tasks).
+  - `branch base=… findings=<N>` gained the parenthesised severity breakdown
+    described above.
+  - `spec.validate --output` announced itself as `spec.validate wrote <path>`
+    → `state wrote <path>`, so the task name now prefixes only the verdict.
+- Documented the verdict-read protocol across the adopter guides, agent
+  guidance, bootstrap skill, and rule text, and added it to `mix spec.prime`
+  and `mix spec.next` output wherever they suggest running `spec.check`.
 
 ## 0.7.0 — 2026-07-24
 
