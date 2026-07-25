@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
   "created": "2026-07-25T12:40:35Z",
@@ -14,8 +14,8 @@
     }
   ],
   "priority": 1,
-  "status": "open",
+  "status": "in_progress",
   "title": "Flaky scenario_refactor_stable_test.exs: async:true mutates global code server (branch_guard_realization_drift, seed 194143)",
   "type": "task",
-  "updated_at": "2026-07-25T13:58:42Z"
+  "updated_at": "2026-07-25T14:03:31Z"
 }
