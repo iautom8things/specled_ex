@@ -79,7 +79,7 @@ defmodule Mix.Tasks.Spec.Validate do
 
     if output = opts[:output] do
       path = SpecLedEx.write_state(index, report, root, output)
-      Mix.shell().info("spec.validate wrote #{path}")
+      Mix.shell().info("state wrote #{path}")
     end
 
     summary = report["summary"]
@@ -127,6 +127,7 @@ defmodule Mix.Tasks.Spec.Validate do
     invalid_flags = Enum.map(invalid, fn {flag, _value} -> flag end)
     extra_args = Enum.map(rest, &inspect/1)
     details = Enum.join(invalid_flags ++ extra_args, ", ")
+    print_verdict("fail", error_findings: 0)
     Mix.raise("Invalid arguments for spec.validate: #{details}")
   end
 
@@ -165,6 +166,7 @@ defmodule Mix.Tasks.Spec.Validate do
         normalized
 
       {:error, message} ->
+        print_verdict("fail", error_findings: 0)
         Mix.raise("Invalid value for --min-strength: #{message}")
     end
   end

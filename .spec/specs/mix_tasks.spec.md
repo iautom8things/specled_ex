@@ -296,7 +296,7 @@ decisions:
   covers:
     - specled.tasks.verdict_line
   given:
-    - A spec.check or spec.validate invocation completes successfully, fails validation, or fails branch enforcement.
+    - A spec.check or spec.validate invocation completes successfully, fails validation, fails branch enforcement, or is rejected during CLI argument or min-strength validation.
   when:
     - The task prints its human stdout, including output printed immediately before raising.
   then:

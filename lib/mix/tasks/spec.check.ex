@@ -67,6 +67,10 @@ defmodule Mix.Tasks.Spec.Check do
         aliases: [r: :root, o: :output, d: :debug]
       )
 
+    if rest != [] or invalid != [] do
+      print_verdict("fail", tier: "validate", error_findings: 0)
+    end
+
     SpecLedEx.TaskArgs.validate!("spec.check", rest, invalid)
 
     min_strength = validate_min_strength!(opts[:min_strength])
@@ -287,6 +291,7 @@ defmodule Mix.Tasks.Spec.Check do
         normalized
 
       {:error, message} ->
+        print_verdict("fail", tier: "validate", error_findings: 0)
         Mix.raise("Invalid value for --min-strength: #{message}")
     end
   end
