@@ -37,11 +37,15 @@
     {
       "text": "FLAKE LEDGER: scenario_refactor_stable_test.exs:150 (specled_-ya8) struck again during dn4.8 worktree bootstrap smoke — count now 2. Immediate clean re-run green (1208/0). Signature is at its 2-accept cap: a third occurrence leaves the gate red per protocol; specled_-ya8 should be prioritized.",
       "timestamp": "2026-07-25T12:59:38Z"
+    },
+    {
+      "text": "Scope expanded: specled_-dn4.10 carved for specled_-dn4.8 (reference_validation carve-out in decision_governance.spec.md; both graders named it). Consumes no bounce. Must land before the epic PR.",
+      "timestamp": "2026-07-25T13:43:39Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-25T12:59:38Z"
+  "updated_at": "2026-07-25T13:43:39Z"
 }
