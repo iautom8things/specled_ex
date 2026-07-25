@@ -25,11 +25,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: eb717ea1-b20d-491a-a5f9-322b223bfe82\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/eb717ea1-b20d-491a-a5f9-322b223bfe82.jsonl\n\nReasoning: VERIFY reported PASS with zero Gaps and zero scope deviations (test-only,\nzero lib/** changes). The verifier derived the remaining async code-server mutator\ncount itself (zero) rather than accepting the implementer's, confirmed the F38\ncitation holds on all three legs at this base, checked every F31 removal and coverage\nclaim independently, and found the F30 test falsifiable on three independent axes\ncovering all six claimed partitions plus a seventh. Gates green at two seeds, at\n--max-cases 64, and across the full 1227-test suite. No seams (test-only diff). No\nauditor was spawned per policy. Posted by the orchestrator applying the canonical\nSelective Audit Gate.",
       "timestamp": "2026-07-25T18:47:55Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-dn4/fast-follow-per-test. Closing per orchestrator sign-off. (Gate green first run: 1227/0, spec.check pass.)",
+      "timestamp": "2026-07-25T18:51:32Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Coverage test isolation + missing evidence (F27, F28, F30, F38, F31)",
   "type": "task",
-  "updated_at": "2026-07-25T18:47:55Z"
+  "updated_at": "2026-07-25T18:51:32Z"
 }
