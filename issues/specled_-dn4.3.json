@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [
     "specled_-dn4.4",
@@ -11,8 +11,8 @@
   "labels": [],
   "parent": "specled_-dn4",
   "priority": 1,
-  "status": "open",
+  "status": "in_progress",
   "title": "Rename test_support SpecLedEx.Case → SpecLedEx.FixtureCase; behavioral case_template scenario (F7)",
   "type": "task",
-  "updated_at": "2026-07-25T11:30:12Z"
+  "updated_at": "2026-07-25T11:34:30Z"
 }
