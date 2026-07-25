@@ -7,9 +7,9 @@
   "id": "specled_-dn4.2",
   "labels": [],
   "parent": "specled_-dn4",
-  "priority": 2,
+  "priority": 1,
   "status": "open",
   "title": "flush/1: replace 4-tuple reduce + quadratic acc ++ recs with split_with/flat_map/frequencies_by (F6)",
   "type": "task",
-  "updated_at": "2026-07-24T19:18:42Z"
+  "updated_at": "2026-07-25T10:57:59Z"
 }
