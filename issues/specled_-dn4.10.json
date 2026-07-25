@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-dn4",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: eb717ea1-b20d-491a-a5f9-322b223bfe82\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/eb717ea1-b20d-491a-a5f9-322b223bfe82.jsonl\n\nCommit: 932efedc94e9a0a6df80584a723122cf03fb8314\nFiles touched: .spec/specs/decision_governance.spec.md; .spec/decisions/specled.decision.deprecates_affect_reference_carveout.md\nTests added: none\nVerification stubs flipped: none\nVerification tier: change-scoped — ran mix spec.validate; mix spec.check --no-run-commands; bare mix spec.check; mix test test/specled_ex/verifier_test.exs test/specled_ex/decision_parser/cross_field_test.exs; mix format --check-formatted; full-system proof deferred to the merge gate\nFinal-tier runs: 1\nGate-forced co-changes outside Allowed touches: none\nDeferred must requirements: none\n\nSummary: Updated specled.decisions.reference_validation to include the deprecates-only unresolved-affects carve-out already enforced by CrossField and Verifier. Added ADR specled.decision.deprecates_affect_reference_carveout documenting the append-only narrowing ceremony and the decision not to widen the verifier exemption to weakens/narrows-scope/adds-exception because those labels still modify live targets.",
+      "timestamp": "2026-07-25T14:07:56Z"
+    }
+  ],
   "priority": 1,
   "status": "in_progress",
   "title": "Advance specled.decisions: add change_type:deprecates carve-out to reference_validation; align verifier exemption breadth",
   "type": "task",
-  "updated_at": "2026-07-25T14:03:32Z"
+  "updated_at": "2026-07-25T14:07:56Z"
 }
