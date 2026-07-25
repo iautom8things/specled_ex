@@ -7,9 +7,9 @@
   "id": "specled_-dn4.5",
   "labels": [],
   "parent": "specled_-dn4",
-  "priority": 2,
+  "priority": 1,
   "status": "open",
   "title": "Specify the capture↔review identity joins; stop failing silently toward stronger claims (F8, F11, F23, F18)",
   "type": "task",
-  "updated_at": "2026-07-24T19:18:43Z"
+  "updated_at": "2026-07-25T10:57:59Z"
 }
