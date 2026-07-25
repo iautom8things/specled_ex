@@ -1,6 +1,7 @@
 defmodule SpecLedEx.Integration.ScenarioRefactorStableTest do
   # covers: specled.implementation_tier.scenario.refactor_does_not_drift
-  use ExUnit.Case, async: true
+  # Mutates the global code server with same-name fixture modules; must not race.
+  use ExUnit.Case, async: false
 
   @moduletag spec: ["specled.implementation_tier.scenario_refactor_stable"]
 
