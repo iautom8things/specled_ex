@@ -1,7 +1,7 @@
 defmodule Mix.Tasks.SpecTriangleTest do
   # covers: specled.triangulation.spec_triangle_task
   # Tracer.manifest_path/0 points at a shared _build manifest file.
-  use SpecLedEx.Case, async: false
+  use SpecLedEx.FixtureCase, async: false
 
   @moduletag spec: ["specled.triangulation.spec_triangle_task"]
 

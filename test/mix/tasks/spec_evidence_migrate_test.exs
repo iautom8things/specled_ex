@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Spec.Evidence.MigrateTest do
-  use SpecLedEx.Case, async: false
+  use SpecLedEx.FixtureCase, async: false
 
   @moduletag spec: [
                "specled.evidence_store.migration_one_shot",

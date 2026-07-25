@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.SpecReviewTaskTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   alias SpecLedEx.Evidence.{Entry, Store}
 

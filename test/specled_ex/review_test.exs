@@ -1,5 +1,5 @@
 defmodule SpecLedEx.ReviewTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   alias SpecLedEx.Review
 

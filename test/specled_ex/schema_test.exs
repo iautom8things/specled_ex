@@ -1,5 +1,5 @@
 defmodule SpecLedEx.SchemaTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.schema.block_structs",

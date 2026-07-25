@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.SpecPruneTaskTest do
-  use SpecLedEx.Case, async: false
+  use SpecLedEx.FixtureCase, async: false
 
   import SpecLedEx.EvidenceHelpers
 

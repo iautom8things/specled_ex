@@ -1,5 +1,5 @@
 defmodule SpecLedEx.Evidence.GitTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   alias SpecLedEx.Evidence.Git
 

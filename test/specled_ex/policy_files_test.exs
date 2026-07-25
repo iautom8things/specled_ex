@@ -1,5 +1,5 @@
 defmodule SpecLedEx.PolicyFilesTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.policy_files.change_analysis_delegates",

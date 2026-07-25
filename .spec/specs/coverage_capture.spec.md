@@ -804,11 +804,11 @@ decisions:
     - specled.coverage_capture.boundary_noop_unarmed
 - id: specled.coverage_capture.scenario.case_template_injects_setup
   given:
-    - "the production `lib/specled_ex/case.ex` source"
+    - "the production `SpecLedEx.Case` template is loaded"
   when:
     - "an adopter writes `use SpecLedEx.Case`"
   then:
-    - "the module is an ExUnit.CaseTemplate that injects `setup {SpecLedEx.Coverage, :per_test_boundary}`"
+    - "the adopter module is an `ExUnit.Case` that receives forwarded options and runs the injected boundary setup before the test body"
   covers:
     - specled.coverage_capture.case_template
 - id: specled.coverage_capture.scenario.boundary_row_preferred_on_flush

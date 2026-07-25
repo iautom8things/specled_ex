@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Spec.Evidence.InstallHookTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.evidence_store.hook_static_never_blocks",

@@ -1,5 +1,5 @@
 defmodule SpecLedEx.Config.RealizationTest do
-  use SpecLedEx.Case, async: true
+  use SpecLedEx.FixtureCase, async: true
 
   @moduletag spec: "specled.config.realization_enabled_tiers"
 

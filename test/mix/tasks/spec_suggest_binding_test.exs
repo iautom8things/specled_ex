@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Spec.SuggestBindingTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
   @moduletag spec: ["specled.api_boundary.suggest_binding_proposal_only"]
 
   describe "mix spec.suggest_binding" do

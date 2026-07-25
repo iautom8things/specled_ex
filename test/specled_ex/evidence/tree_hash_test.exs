@@ -1,5 +1,5 @@
 defmodule SpecLedEx.Evidence.TreeHashTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   import SpecLedEx.EvidenceHelpers
 

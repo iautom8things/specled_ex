@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Spec.Validate.RealizedByDedupTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.realized_by.redundant_dup_warning",
@@ -157,7 +157,7 @@ defmodule Mix.Tasks.Spec.Validate.RealizedByDedupTest do
 end
 
 defmodule Mix.Tasks.Spec.ValidateCommandTimeoutTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag :capture_log
 

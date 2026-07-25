@@ -1,6 +1,6 @@
 defmodule Mix.Tasks.Spec.CheckTest do
   # SPECLED_SHOW_INFO env mutation is VM-global.
-  use SpecLedEx.Case, async: false
+  use SpecLedEx.FixtureCase, async: false
 
   @moduletag spec: ["specled.tasks.check_verbose_flag"]
 
@@ -230,7 +230,7 @@ defmodule Mix.Tasks.Spec.CheckTest do
 end
 
 defmodule Mix.Tasks.Spec.CheckCommandTimeoutTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag :capture_log
 
@@ -315,7 +315,7 @@ defmodule Mix.Tasks.Spec.CheckCommandTimeoutTest do
 end
 
 defmodule Mix.Tasks.Spec.CheckEvidenceTest do
-  use SpecLedEx.Case, async: false
+  use SpecLedEx.FixtureCase, async: false
 
   @moduletag :capture_log
   @moduletag spec: [

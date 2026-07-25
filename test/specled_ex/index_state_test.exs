@@ -1,5 +1,5 @@
 defmodule SpecLedEx.IndexStateTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.index.canonical_state_output",

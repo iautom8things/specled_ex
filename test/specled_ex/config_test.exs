@@ -1,5 +1,5 @@
 defmodule SpecLedEx.ConfigTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.config.defaults_when_missing",

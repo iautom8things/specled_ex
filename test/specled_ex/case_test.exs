@@ -13,18 +13,66 @@ defmodule SpecLedEx.CaseTest do
   end
 
   describe "SpecLedEx.Case (production template in lib/specled_ex/case.ex)" do
-    test "production source is an ExUnit.CaseTemplate injecting per_test_boundary" do
-      # Host-suite tests redefine SpecLedEx.Case via test_support/specled_ex_case.ex
-      # (workspace fixture helper). The shippable template lives at
-      # lib/specled_ex/case.ex and is what child-BEAM fixtures load from the
-      # parent ebin — assert its shape from source so the host redefine cannot
-      # shadow the contract.
-      source = File.read!("lib/specled_ex/case.ex")
+    @tag spec: "specled.coverage_capture.case_template"
+    test "use SpecLedEx.Case forwards ExUnit opts and runs injected boundary setup" do
+      parent_lib = Path.expand("_build/#{Mix.env()}/lib")
 
-      assert source =~ "defmodule SpecLedEx.Case do"
-      assert source =~ "use ExUnit.CaseTemplate"
-      assert source =~ "setup {SpecLedEx.Coverage, :per_test_boundary}"
-      assert function_exported?(SpecLedEx.Coverage, :per_test_boundary, 1)
+      script = """
+      ExUnit.start()
+
+      defmodule CaseTemplateProbeTest do
+        use SpecLedEx.Case, async: false
+
+        setup_all do
+          tid = :ets.new(:case_template_boundary, [:public, :set])
+
+          snapshots = [
+            %{CaseTemplateProbe => [{10, 0}]},
+            %{CaseTemplateProbe => [{10, 1}]}
+          ]
+
+          {:ok, agent} = Agent.start(fn -> snapshots end)
+
+          snapshot_fn = fn _modules ->
+            Agent.get_and_update(agent, fn
+              [snapshot | rest] -> {snapshot, rest}
+              [] -> {%{}, []}
+            end)
+          end
+
+          Application.put_env(:specled_ex, :spec_cover_run,
+            boundary_table: tid,
+            snapshot_fn: snapshot_fn,
+            modules_fn: fn -> [CaseTemplateProbe] end
+          )
+
+          on_exit(fn ->
+            Application.delete_env(:specled_ex, :spec_cover_run)
+
+            if Process.alive?(agent) do
+              Agent.stop(agent)
+            end
+          end)
+
+          {:ok, snapshot_agent: agent}
+        end
+
+        test "adopter receives opts and boundary setup", context do
+          assert context.async == false
+          assert function_exported?(__MODULE__, :__ex_unit__, 0)
+          assert Agent.get(context.snapshot_agent, &length/1) == 1
+        end
+      end
+      """
+
+      {output, status} =
+        System.cmd("elixir", ["-e", script],
+          env: [{"ERL_LIBS", parent_lib}],
+          stderr_to_stdout: true
+        )
+
+      assert status == 0,
+             "expected child-BEAM SpecLedEx.Case adopter to pass, got #{status}.\nOutput:\n#{output}"
     end
 
     @tag spec: "specled.coverage_capture.boundary_noop_unarmed"

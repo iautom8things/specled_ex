@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Spec.ConfigDiagnosticsTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: ["specled.tasks.config_diagnostics_surfaced"]
 

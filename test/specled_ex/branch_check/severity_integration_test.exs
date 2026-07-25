@@ -1,5 +1,5 @@
 defmodule SpecLedEx.BranchCheck.SeverityIntegrationTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   alias SpecLedEx.BranchCheck
   alias SpecLedEx.Index

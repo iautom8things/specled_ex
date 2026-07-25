@@ -1,5 +1,5 @@
 defmodule SpecLedEx.TagScannerTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.tag_scanning.deduplicated_matches",

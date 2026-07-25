@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.SpecTasksTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.branch_guard.cross_cutting_decision",

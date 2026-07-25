@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.SpecPrimeTaskTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.prime.command_execution_default",

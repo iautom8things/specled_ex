@@ -1,5 +1,5 @@
 defmodule SpecLedEx.Config.BranchGuardTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   alias SpecLedEx.Config
   alias SpecLedEx.Config.BranchGuard

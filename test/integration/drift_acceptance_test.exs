@@ -1,6 +1,6 @@
 defmodule SpecLedEx.Integration.DriftAcceptanceTest do
   # covers: specled.realized_by.drift_acceptance
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   alias SpecLedEx.BranchCheck
   alias SpecLedEx.Index

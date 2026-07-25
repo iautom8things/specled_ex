@@ -44,7 +44,7 @@ surface:
   - priv/spec_init/specs/spec_system.spec.md.eex
   - priv/spec_init/specs/package.spec.md.eex
   - skills/write-spec-led-specs/references/authoring-reference.md
-  - test_support/specled_ex_case.ex
+  - test_support/specled_ex_fixture_case.ex
   - test/mix/tasks/spec_cover_ingest_test.exs
 realized_by:
   implementation:

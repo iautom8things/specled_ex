@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.SpecStatusTaskTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.status.coverage_summary",

@@ -1,5 +1,5 @@
 defmodule SpecLedEx.BranchCheck.TrailerTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.spec_drift_trailer.parse_unknown_token_warns",

@@ -1,5 +1,5 @@
 defmodule SpecLedEx.IndexStateTagTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.index.tag_data_absent_when_disabled",

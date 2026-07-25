@@ -1,5 +1,5 @@
 defmodule SpecLedEx.Evidence.StoreTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   import SpecLedEx.EvidenceHelpers
 

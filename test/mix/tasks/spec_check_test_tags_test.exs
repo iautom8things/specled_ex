@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Spec.CheckTestTagsTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
   @moduletag spec: ["specled.tasks.test_tags_flag", "specled.tasks.test_tags_precedence"]
 
   @moduletag :capture_log

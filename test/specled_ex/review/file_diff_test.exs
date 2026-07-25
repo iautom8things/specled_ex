@@ -7,7 +7,7 @@ defmodule SpecLedEx.Review.FileDiffTest do
   # change_analysis picked it up via `ls-files --others --exclude-standard`,
   # and untracked_as_addition inlined its raw bytes into the diff lines —
   # UnicodeConversionError at HTML render time.
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   alias SpecLedEx.Review
   alias SpecLedEx.Review.FileDiff
