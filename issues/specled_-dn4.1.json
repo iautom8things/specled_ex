@@ -7,9 +7,9 @@
   "id": "specled_-dn4.1",
   "labels": [],
   "parent": "specled_-dn4",
-  "priority": 2,
+  "priority": 1,
   "status": "open",
   "title": "Drop write-only boundary_row.tags; collapse to Boundary.tail/2 (F4, 5-reviewer consensus)",
   "type": "task",
-  "updated_at": "2026-07-24T19:18:42Z"
+  "updated_at": "2026-07-25T10:57:58Z"
 }
