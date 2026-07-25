@@ -18,11 +18,15 @@
     {
       "text": "Go-live triage 2026-07-25: F37 + F39 stay HERE (dn4 epic is the P1 launch gate). The two vk0-sourced live inaccuracies were carved into sibling gate ticket specled_-cz0 — coordinate if both touch triangulation.spec.md, do not double-fix.",
       "timestamp": "2026-07-25T10:58:23Z"
+    },
+    {
+      "text": "IMPLEMENTED\nSession: eb717ea1-b20d-491a-a5f9-322b223bfe82\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/eb717ea1-b20d-491a-a5f9-322b223bfe82.jsonl\n\nCommit: 91987f7b19bdddd505e34bee573aee7d224f8529\nFiles touched: .spec/decisions/specled.decision.coverage_qualifier_requirement_ids.md, .spec/specs/coverage_capture.spec.md, .spec/specs/mix_tasks.spec.md, .spec/specs/package.spec.md, .spec/specs/spec_review.spec.md, lib/specled_ex/review/html.ex, lib/specled_ex/verifier.ex, test/specled_ex/review/html_test.exs, test/specled_ex/verifier_test.exs\nTests added: SpecLedEx.VerifierTest — deprecating decisions may affect ids absent from the current index\nVerification stubs flipped: specled.package.adoption_guide — source_file existence check replaced by an execute: true command asserting greenfield, brownfield, severity graduation, Phase 4a, Phase 4b, and boundary wiring content\nVerification tier: change-scoped — mix spec.validate; mix spec.check --no-run-commands; mix spec.check; mix test test/specled_ex/review/html_test.exs test/docs_identifier_lint_test.exs test/specled_ex/verifier_test.exs; mix format --check-formatted; full-system proof deferred to the merge gate\nFinal-tier runs: 3\nGate-forced co-changes outside Allowed touches: lib/specled_ex/verifier.ex and test/specled_ex/verifier_test.exs — initial mix spec.check --no-run-commands failed with decision_unknown_affect for both retired ids even though specled.decisions.cross_field_affects_resolve and CrossField already exempt change_type: deprecates targets absent from head; aligned the aggregate verifier and added regression proof\nDeferred must requirements: none\n\nSummary: Repaired F36/F37/F39-F41 with a no-debug scenario/link, an honest boundary-only scenario, qualifier-id renames plus the required deprecation ADR, coverage-capture prose ownership, and executable adoption-guide content proof. The expected same_pr_self_authorization finding remained warning-level and final-tier run 3 passed; run 2 encountered the tracked order-sensitive scenario_refactor_stable flake, which passed immediately in isolation with its failing seed. The optional case-template wording advisory was skipped to avoid expanding beyond the required repairs.",
+      "timestamp": "2026-07-25T13:17:04Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Spec-evidence repairs + spec hygiene (F36, F37, F39, F40, F41)",
   "type": "task",
-  "updated_at": "2026-07-25T12:59:39Z"
+  "updated_at": "2026-07-25T13:17:04Z"
 }
