@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-25T13:25:39Z",
+  "description": "Advances: specled.mix_tasks\nFrom specled_-hj4.1 round-3 verification note (2026-07-25). Mix.Tasks.Spec.Check validate_base!/2 (spec.check.ex:300-316, added in hj4.1 to print a fail verdict before raising) is a logic-for-logic copy of BranchCheck private validate_base!/2 (branch_check.ex:635-651), differing only in raise type and message tail. The two will silently diverge if the C13 commit-only ref rule changes. Expose one public validator both call. Related advisory: next.ex:313 suggested_commands_with_protocol/1 appends the read-protocol sentence to any non-empty commands list and renders it as a bullet inside commands: — revisit only if that list is ever machine-consumed.",
+  "id": "specled_-wli",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Dedup --base validator: expose one public validator for spec.check and BranchCheck",
+  "type": "task",
+  "updated_at": "2026-07-25T13:25:39Z"
+}
