@@ -13,11 +13,15 @@
     {
       "text": "Escalated into epic specled_-dn4 as gate-health work (orchestrator, 2026-07-25): the signature has struck 4× today including once at the dn4.8 merge gate (flake-accept 1/2 consumed). With ~7 merges remaining, the gate cannot absorb another accept. Fix per triage: flip the three code-server-mutating integration test files to async: false (or serialize them behind a shared lock). Files disjoint from all in-flight dn4 stage work.",
       "timestamp": "2026-07-25T13:51:21Z"
+    },
+    {
+      "text": "IMPLEMENTED\nSession: eb717ea1-b20d-491a-a5f9-322b223bfe82\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/eb717ea1-b20d-491a-a5f9-322b223bfe82.jsonl\n\nCommit: c478563\nFiles touched: test/integration/scenario_refactor_stable_test.exs, test/integration/scenario_tier_dispatch_test.exs, test/specled_ex/realization/api_boundary_test.exs\nTests added: none\nVerification stubs flipped: none\nVerification tier: change-scoped — mix compile --warnings-as-errors; targeted flipped-file test at seed 194143; mix test test/integration/ test/specled_ex/realization/ at seeds 111111 and 222222; six flipped-file stress runs; mix spec.check --no-run-commands; mix format --check-formatted; full-system proof deferred to the merge gate\nFinal-tier runs: 10 (2 broad scoped test runs, 6 flipped-file stress runs, spec.check --no-run-commands, format check)\nGate-forced co-changes outside Allowed touches: none\nDeferred must requirements: none\n\nSummary: Serialized the three in-scope code-server-mutating test modules by switching their async declarations to async: false. Added a one-line rationale comment in each file and left out-of-scope coverage/mfa_lines_test.exs untouched.",
+      "timestamp": "2026-07-25T14:06:02Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Flaky scenario_refactor_stable_test.exs: async:true mutates global code server (branch_guard_realization_drift, seed 194143)",
   "type": "task",
-  "updated_at": "2026-07-25T14:03:31Z"
+  "updated_at": "2026-07-25T14:06:02Z"
 }
