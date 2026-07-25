@@ -21,7 +21,7 @@ defmodule SpecLedEx.CaseTest do
       ExUnit.start()
 
       defmodule CaseTemplateProbeTest do
-        use SpecLedEx.Case, async: false
+        use SpecLedEx.Case, async: true
 
         setup_all do
           tid = :ets.new(:case_template_boundary, [:public, :set])
@@ -58,7 +58,7 @@ defmodule SpecLedEx.CaseTest do
         end
 
         test "adopter receives opts and boundary setup", context do
-          assert context.async == false
+          assert context.async == true
           assert function_exported?(__MODULE__, :__ex_unit__, 0)
           assert Agent.get(context.snapshot_agent, &length/1) == 1
         end

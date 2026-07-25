@@ -808,7 +808,7 @@ decisions:
   when:
     - "an adopter writes `use SpecLedEx.Case`"
   then:
-    - "the adopter module is an `ExUnit.Case` that receives forwarded options and runs the injected boundary setup before the test body"
+    - "the adopter module is an `ExUnit.Case` that receives forwarded options (`async: true`) and runs the injected `setup {SpecLedEx.Coverage, :per_test_boundary}` before the test body"
   covers:
     - specled.coverage_capture.case_template
 - id: specled.coverage_capture.scenario.boundary_row_preferred_on_flush
