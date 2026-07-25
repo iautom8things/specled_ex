@@ -14,9 +14,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-dn4",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: eb717ea1-b20d-491a-a5f9-322b223bfe82\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/eb717ea1-b20d-491a-a5f9-322b223bfe82.jsonl\n\nCommit: d60ffa6\nFiles touched: .spec/decisions/specled.decision.per_test_sync_boundary.md, .spec/realization_hashes.json, .spec/specs/coverage_capture.spec.md, .spec/specs/spec_review.spec.md, docs/coverage.md, lib/mix/tasks/spec.cover.test.ex, lib/specled_ex/coverage.ex, lib/specled_ex/coverage/boundary.ex, lib/specled_ex/review/coverage_closure.ex, test/mix/tasks/spec_cover_test_test.exs, test/specled_ex/case_test.exs, test/specled_ex/coverage/boundary_test.exs, test/specled_ex/review/coverage_closure_test.exs\nTests added: Boundary chains each tail into the next head with one snapshot per test after the initial read; stale successful artifact cannot make a formatter run with no fresh write exit 0; red per-test suite preserves its failing exit without inventing a stale-artifact failure; per_test reach is computed once with the full multi-subject closure map\nVerification stubs flipped: none\nVerification tier: change-scoped — compile with warnings-as-errors; boundary, case, coverage closure, and spec.cover.test task tests; structural spec gate; formatting; full-system proof deferred to the merge gate\nFinal-tier runs: 2\nGate-forced co-changes outside Allowed touches: none\nDeferred must requirements: none\n\nSummary: Chained boundary windows now retain snapshots in ETS so on_exit captures only the test key, with the true O(modules × lines) cost and widened between-test/unhooked interval documented in the spec, ADR, and guide. Coverage review computes per-test reach once for the full multi-subject closure map, and the per-test task rejects missing/refused/stale artifacts while preserving a red suite's original failure when its artifact is fresh.",
+      "timestamp": "2026-07-25T14:55:46Z"
+    }
+  ],
   "priority": 1,
   "status": "in_progress",
   "title": "Correct the per-test cost model + artifact freshness guard (F14, F12, F26)",
   "type": "task",
-  "updated_at": "2026-07-25T14:41:22Z"
+  "updated_at": "2026-07-25T14:55:46Z"
 }
