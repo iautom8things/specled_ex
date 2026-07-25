@@ -6,22 +6,16 @@
       "message": "ADR `specled.decision.coverage_qualifier_requirement_ids` is new in this diff and its `affects:` list ([\"specled.spec_review.coverage_observed_approximate_qualifier\", \"specled.spec_review.coverage_file_level_proxy_qualifier\"]) exactly matches the set of requirement ids removed in this same diff — the ADR is self-authorizing its own deletion. Visible but not blocked; review decides.\n\n```\nfix: land the removal in a separate PR from the authorizing ADR, or confirm in review that the self-authorization is intentional.\n```"
     },
     {
-      "code": "branch_guard_realization_drift",
-      "entity_id": "specled.branch_guard",
+      "code": "branch_guard_missing_subject_update",
+      "file": "lib/specled_ex/coverage.ex",
       "level": "info",
-      "message": "api_boundary hash for SpecLedEx.Coverage differs from committed value (subject=specled.branch_guard)"
+      "message": "Changed file lib/specled_ex/coverage.ex impacts subject specled.branch_guard; spec.md not co-changed, but realization attested binding(s) SpecLedEx.Coverage as clean — informational only."
     },
     {
       "code": "branch_guard_missing_subject_update",
       "file": "lib/specled_ex/coverage.ex",
       "level": "info",
       "message": "Changed file lib/specled_ex/coverage.ex impacts subject specled.status; spec.md not co-changed, but realization attested binding(s) SpecLedEx.Coverage.category_summary/3, SpecLedEx.Coverage.covered_files/2, SpecLedEx.Coverage.subject_file_map/2, SpecLedEx.Coverage.subject_id/1 as clean — informational only."
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "lib/specled_ex/coverage.ex",
-      "level": "info",
-      "message": "Changed file lib/specled_ex/coverage.ex impacts subject specs that were not updated: specled.branch_guard"
     },
     {
       "code": "branch_guard_missing_subject_update",
@@ -294,8 +288,8 @@
       "message": "Changed file test/specled_ex/verifier_test.exs impacts subject specs that were not updated: specled.decisions, specled.tagged_tests, specled.verification"
     }
   ],
-  "run_at": "2026-07-25T14:05:14.957528Z",
-  "run_id": "630d90c30244c8388062d1609964d14a",
+  "run_at": "2026-07-25T14:05:20.588334Z",
+  "run_id": "eafb44d157ad451135abfef3198cef10",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "fe90b4e10ac90b31f39241855274a3df6e303e83",
