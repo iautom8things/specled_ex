@@ -19,6 +19,10 @@
     {
       "text": "ORCHESTRATOR RECORD REPAIR (not a pipeline marker). The preceding IMPLEMENTED comment posted with an unexpanded $(agent-session lines) substitution, so it carries no Session:/Log: attribution — the worker used a quoted heredoc, which suppresses command substitution. bw has no comment edit, so the attribution is recorded here instead:\nWorker: codex, ticket specled_-dn4.11, session tag impl1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-dn4.11/codex-impl1/log\nCommit: 39e3575\nTreat the IMPLEMENTED comment above as attributed to that transcript. The verifier and auditor for this ticket must still post their own attribution normally.",
       "timestamp": "2026-07-25T16:03:14Z"
+    },
+    {
+      "text": "ORCHESTRATOR CORRECTION: this ticket is NOT fully independent after all. Its package.spec.md:29 fix asserts what docs/coverage.md contains, and that file only carries the chained-window wording on specled_-dn4.6's branch. Dependency wired (dn4.6 blocks dn4.11) to enforce merge order dn4.6 → dn4.11; otherwise the epic branch would transiently contain a subject summary asserting something false about a file that had not been updated yet. Parallel IMPLEMENTATION was still correct and cost nothing.",
+      "timestamp": "2026-07-25T16:03:33Z"
     }
   ],
   "priority": 2,
