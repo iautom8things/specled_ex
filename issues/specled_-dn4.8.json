@@ -7,9 +7,15 @@
   "id": "specled_-dn4.8",
   "labels": [],
   "parent": "specled_-dn4",
+  "comments": [
+    {
+      "text": "Go-live triage 2026-07-25: F37 + F39 stay HERE (dn4 epic is the P1 launch gate). The two vk0-sourced live inaccuracies were carved into sibling gate ticket specled_-cz0 — coordinate if both touch triangulation.spec.md, do not double-fix.",
+      "timestamp": "2026-07-25T10:58:23Z"
+    }
+  ],
   "priority": 1,
   "status": "open",
   "title": "Spec-evidence repairs + spec hygiene (F36, F37, F39, F40, F41)",
   "type": "task",
-  "updated_at": "2026-07-25T10:58:00Z"
+  "updated_at": "2026-07-25T10:58:23Z"
 }
