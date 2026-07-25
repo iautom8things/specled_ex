@@ -47,11 +47,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: eb717ea1-b20d-491a-a5f9-322b223bfe82\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/eb717ea1-b20d-491a-a5f9-322b223bfe82.jsonl\n\nReasoning: VERIFY reported PASS with zero Gaps. The audit's bounce is discharged on\nits own terms: all five F18 sites fail INDIVIDUALLY under their own mutation, verified\none at a time with the worktree confirmed byte-clean between each and the rendered\nstring inspected at each surface rather than trusting a suite-green signal. All four\nsurfaces enumerated by coverage_missing_attribution_unqualified are realized; gate\nchecks a-d pass, so dn4.6's unpinned residual survived this rebase intact; the\niteration-2 delta is test-file-only with production code byte-frozen; the honesty\ninvariant holds with explicit spec and ADR justification; full suite and both spec.check\ntiers green. No auditor was spawned per policy. Posted by the orchestrator applying the\ncanonical Selective Audit Gate.",
       "timestamp": "2026-07-25T18:25:21Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-dn4/fast-follow-per-test. Closing per orchestrator sign-off. (Gate green first run: 1226/0, spec.check pass. Post-rebase integrity re-confirmed: 0 retired-claim occurrences, exactly 3 corrected — dn4.6's unpinned residual survived this rebase intact.)",
+      "timestamp": "2026-07-25T18:31:20Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Specify the capture↔review identity joins; stop failing silently toward stronger claims (F8, F11, F23, F18)",
   "type": "task",
-  "updated_at": "2026-07-25T18:25:22Z"
+  "updated_at": "2026-07-25T18:31:20Z"
 }
