@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-25T13:25:36Z",
+  "description": "Advances: specled.package\nFrom specled_-hj4.2 verification notes N12-N14 (2026-07-25). N12 configurable-levers.md: :96-101 calls dropped-atom-severity diagnostics silent but both consumers print [CONFIG] on stderr (spec.check.ex:188-192, reproduced); :25-26 attributes per-code defaults to SpecLedEx.Config (they live in BranchCheck); :123 wrong module for trailer mapping (branch_check/trailer.ex:46-48); :58,:60 wrong defaults for branch_guard_dangling_binding and branch_guard_unmapped_change (both :error). N13 adoption-phases.md: :109-110 claims phase2 CI is warning-level/no hard fail — dangling_binding and unmapped_change are :error by default; :39-40 names a \u003cPROJECT_VERIFICATION_COMMAND\u003e placeholder absent from priv/spec_init/AGENTS.md.eex; :45-47 claims scaffolded AGENTS.md mentions mix spec.sync (it does not); :112-114 calls spec_review.yml.eex scaffolded though spec.init never copies it. N14 SKILL.md internal counts: :17 six vs seven phases (:4,:396); :584 five sections then lists six; adoption-phases.md:296-310 \"those four hold\" after five items; SKILL.md:4 declares an unconsumed --target argument.",
+  "id": "specled_-j3k",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Bootstrap skill accuracy: configurable-levers, adoption-phases, SKILL.md internal consistency",
+  "type": "task",
+  "updated_at": "2026-07-25T13:25:36Z"
+}
