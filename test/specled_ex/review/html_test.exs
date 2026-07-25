@@ -1300,6 +1300,8 @@ defmodule SpecLedEx.Review.HtmlTest do
 
       # Reached-by and self-verified share the same claim language.
       assert html =~ "escaped processes"
+      assert html =~ "Per-test attribution is exact within disclosed chained windows"
+      assert html =~ "inherit runner/setup_all and intervening unhooked-test activity"
 
       assert html =~
                ~s|Self-verified: yes. <span class="cov-closure-self-verified-note"|
@@ -1335,6 +1337,20 @@ defmodule SpecLedEx.Review.HtmlTest do
       assert html =~ "OtherUnhooked"
       assert html =~ "Per-test coverage is degraded (unhooked modules)"
       assert html =~ "setup {SpecLedEx.Coverage, :per_test_boundary}"
+
+      assert html =~
+               "unhooked modules (UnhookedCase, OtherUnhooked) fold into the aggregate remainder"
+
+      assert html =~
+               "Per-test run degraded: unhooked modules (UnhookedCase, OtherUnhooked) fold into the aggregate remainder"
+
+      assert html =~
+               "Per-test run is degraded — unhooked modules (UnhookedCase, OtherUnhooked) fold into the aggregate remainder"
+
+      assert html =~
+               "remainder; hooked tests remain exact only within disclosed chained windows. Add"
+
+      assert html =~ "hooked tests remain exact only within disclosed chained windows"
       refute html =~ "file-level proxy"
     end
 
@@ -1571,7 +1587,30 @@ defmodule SpecLedEx.Review.HtmlTest do
 
       assert html =~ "1/2 self-verified (per-test) (exact within chained windows)"
       assert html =~ "exact within chained windows"
+      assert html =~ "inherit runner/setup_all and intervening unhooked-test activity"
       refute html =~ "(observed)"
+    end
+
+    # covers: specled.spec_review.coverage_line_mfa_intersection_qualifier
+    test "degraded per-test rollup badge names the unhooked-module qualifier" do
+      reach = %{
+        status: :ok_per_test,
+        attribution: :degraded_unhooked,
+        unhooked_modules: [UnhookedCase],
+        by_requirement: %{
+          "a" => %{self_verified?: true},
+          "b" => %{self_verified?: false}
+        }
+      }
+
+      html = IO.iodata_to_binary(Html.render_subject_coverage_badge(reach))
+
+      assert html =~ "1/2 self-verified (per-test) (degraded)"
+
+      assert html =~
+               "unhooked modules (UnhookedCase) fold into the aggregate remainder"
+
+      assert html =~ "hooked tests remain exact only within disclosed chained windows"
     end
 
     # covers: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier

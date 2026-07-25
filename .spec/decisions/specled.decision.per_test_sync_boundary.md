@@ -136,6 +136,16 @@ seam, anonymous ETS, and `snapshot_fn`/`modules_fn` DI seams remain.
 - **Negative:** between-test runner / `setup_all` activity, and any unhooked
   tests scheduled between hooked tests, are attributed to the following
   hooked test's chained window.
+- **Negative:** `Boundary.tail/2` writes the boundary row and the next chained
+  head in a single `:ets.insert/2` (`boundary.ex:75-79`), so any exception
+  raised above that insert — in module resolution, the tail snapshot, or the
+  diff — advances nothing: the raising test gets no row and its coverage joins
+  the following hooked test's window. In practice the snapshot and
+  module-resolution paths rescue their own failures, and the raise surfaces as
+  a test failure whose module is then reported in `meta.unhooked_modules`, so
+  the condition is loud rather than silent. It is named here because it is a
+  third way the chained head can fail to advance, distinct from between-test
+  activity and escaped processes.
 - **Negative:** escaped-process leakage is a disclosed bound, not a detected
   runtime condition.
 - **Negative:** the final hooked test's tail snapshot remains in the boundary
