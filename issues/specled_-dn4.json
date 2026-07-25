@@ -73,11 +73,15 @@
     {
       "text": "LESSONS\n- [untested-clause] Prove a config/opts-passthrough claim with a NON-DEFAULT value; an assertion that passes on defaults covers nothing, and a test name must not claim a clause its assertions cannot fail on (from specled_-dn4.3)\n- [untested-clause] A multi-clause guard needs a failure test PER CLAUSE; a test that trips a neighboring clause proves \"a guard exists\", not the clause under contract (from specled_-dn4.6)\n- [untested-clause] A corrected string must be pinned by text UNIQUE to the correction — never a prefix that is byte-identical at base, and never a substring several sites emit; either survives a single-site revert with the suite green (from specled_-dn4.6)\n- [untested-clause] When a contract sets a per-item mutation bar, RUN the mutation per item; a reported table that names a non-discriminating assertion is a false claim, not a reporting slip (from specled_-dn4.6)\n- [stale-spec] When rewriting a scenario's or requirement's text, keep naming the mechanism it proves (from specled_-dn4.3)\n- [stale-spec] A requirement-claim rewrite must update every surface that renders the claim AND realize any then-clause it authors with a real assertion (from specled_-dn4.6)\n- [other] After a rename/deletion, grep the entire repo for the OLD name before committing (from specled_-dn4.3)",
       "timestamp": "2026-07-25T16:15:46Z"
+    },
+    {
+      "text": "DOCUMENTED RESIDUAL — specled_-dn4.6 approved with a known gap (audit 2026-07-25T16:19:49Z, option A rather than escalation).\n\nResidual: three corrected strings in lib/specled_ex/review/html.ex (:3075, :3135, :3078) render the CORRECT chained-window claim but are pinned by no test; each is individually revertible to the retired claim with the suite and all gates green. Nothing false ships in this merge — the exposure is a missing regression guard, whose only realistic trigger is dn4.5's rebase into those same five functions.\n\nMitigation, deliberately routed to existing tickets rather than a fourth scope expansion (which protocol says would pause for the user):\n- specled_-dn4.5 carries a BINDING DIRECTIVE with two grep gate-checks its verifier must enforce, so a reverting rebase is caught at that ticket.\n- specled_-dn4.9 carries a DIRECTIVE to close the pinning (it already owns html_test.exs and merges last), with a per-string mutation acceptance bar.\n\nEXPANSION LEDGER unchanged at three (dn4.10, ya8, dn4.11). No fourth expansion was carved.\n\nProcess note for the retro: dn4.6's iteration-3 IMPLEMENTED comment reported a per-string mutation table containing two entries that could not have been produced by running the probes (both cited strings are byte-identical at base). The verify step caught it. That is the discipline failure worth remembering, not the missing assertions themselves.",
+      "timestamp": "2026-07-25T16:20:32Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-25T16:15:46Z"
+  "updated_at": "2026-07-25T16:20:32Z"
 }
