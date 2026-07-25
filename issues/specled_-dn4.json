@@ -49,11 +49,15 @@
     {
       "text": "FLAKE LEDGER: ya8 struck the dn4.4 gate (seed 858695) — targeted re-run clean, flake-accept 2/2 AT GATE. CAP EXHAUSTED: the next ya8 strike at any gate leaves it red and pauses the epic. ya8 fix is being admitted NOW and will merge before any other ticket.",
       "timestamp": "2026-07-25T13:57:50Z"
+    },
+    {
+      "text": "FLAKE LEDGER: ya8 fix merged (c478563). Verifier A/B: 8/15 fail at base flags vs 0/15 fixed. Correction to prior ledger entries: this flake is NOT seed-deterministic (seed 570646 failed one base pass, passed another) — future reports of this class should quote a failure RATE, not a seed. Pre-existing advisory carried forward: coverage/formatter_test.exs is async while mutating the arming Application env (dn4.7/F27 will flip it), and ~19 async FixtureCase modules run Mix.Tasks.Spec.*.run/1 in-process against global Mix.Task state — different class, likeliest next suite-order flake; triage at epic finish.",
+      "timestamp": "2026-07-25T14:19:04Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-25T13:57:50Z"
+  "updated_at": "2026-07-25T14:19:04Z"
 }
