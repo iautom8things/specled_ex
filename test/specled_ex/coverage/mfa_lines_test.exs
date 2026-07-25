@@ -1,6 +1,7 @@
 defmodule SpecLedEx.Coverage.MfaLinesTest do
   # covers: specled.coverage_capture.mfa_lines_index
-  use ExUnit.Case, async: true
+  # Flips the VM-global :debug_info compiler option — must not race.
+  use ExUnit.Case, async: false
 
   @moduletag spec: ["specled.coverage_capture.mfa_lines_index"]
 

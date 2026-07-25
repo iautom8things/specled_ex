@@ -1,5 +1,6 @@
 defmodule SpecLedEx.Coverage.FormatterTest do
-  use ExUnit.Case, async: true
+  # Shares Application env arming seam with other coverage tests — must not race.
+  use ExUnit.Case, async: false
 
   import ExUnit.CaptureIO
 
