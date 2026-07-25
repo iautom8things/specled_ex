@@ -9,9 +9,15 @@
     "phase:implementing",
     "slug:spec-check-verdict-contract"
   ],
+  "comments": [
+    {
+      "text": "LESSONS\n- [untested-clause] Prove every clause of a newly authored output contract by execution on all emission paths (auxiliary prints like --output notices, argument-validation raises, validation-tier findings), not only the primary pass/fail path (from specled_-hj4.1)",
+      "timestamp": "2026-07-25T11:23:14Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "spec.check verdict contract + teaching sweep",
   "type": "epic",
-  "updated_at": "2026-07-25T10:48:40Z"
+  "updated_at": "2026-07-25T11:23:14Z"
 }
