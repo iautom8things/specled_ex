@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-hj4",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: impl-b1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-hj4.2/codex-impl-b1/log\n\nCommit: 1077675edb7b3f109c651945f12ca21d71ab0235\nFiles touched: .claude/rules/specled.md, .spec/AGENTS.md, .spec/specs/package.spec.md, CHANGELOG.md, VERSION, docs/adoption.md, docs/concepts.md, docs/coverage.md, skills/spec-led-bootstrap/SKILL.md, skills/spec-led-bootstrap/references/adoption-phases.md, skills/spec-led-bootstrap/references/configurable-levers.md, skills/spec-led-bootstrap/references/detection-matrix.md\nTests added: none — docs-only sweep\nVerification stubs flipped: none\nVerification tier: full final merge gate (mix compile --warnings-as-errors \u0026\u0026 mix test \u0026\u0026 mix format --check-formatted \u0026\u0026 mix deps.unlock --check-unused \u0026\u0026 mix spec.check)\nFinal-tier runs: 1\nOut-of-repo handoffs: vault-side agent-rules sync source for .claude/rules/specled.md needs the same protocol sentence; requested transcript path was sandbox-unwritable from this worker\nDeferred must requirements: none\n\nSummary: The protocol sentence landed on .spec/AGENTS.md, .claude/rules/specled.md, docs/adoption.md, docs/coverage.md, docs/concepts.md, the bootstrap skill and its listed references, plus CHANGELOG/VERSION. VERSION moved from 0.7.0 to 0.8.0 because the base already carried S1's 0.7.0 release heading, so this user-facing docs contract is the next minor. Quoted output strings were extracted byte-for-byte from the shipped implementation/tests, and all four epic lesson self-check lines were checked against the final diff.",
+      "timestamp": "2026-07-25T12:56:52Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "S2: Teaching sweep — docs, AGENTS, rules, bootstrap skill, CHANGELOG/VERSION",
   "type": "task",
-  "updated_at": "2026-07-25T12:41:08Z"
+  "updated_at": "2026-07-25T12:56:52Z"
 }
