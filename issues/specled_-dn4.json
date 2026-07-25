@@ -89,11 +89,15 @@
     {
       "text": "FLAKE LEDGER: a THIRD class identified by dn4.5's verifier — load-fragile tagged_tests leg (verifier_test.exs:1452/:1681, review_test.exs:135), ticketed as the new P2. Unlike zr6 (seed) this one is LOAD sensitive, so it strikes during parallel orchestration precisely when a red gate costs most. Not escalated into the epic: no gate has gone red on it yet. Ledger of gate-path flakes: ya8 (fixed, merged), zr6 (open, 2 strikes, never at a gate), and this new one (0 gate strikes).",
       "timestamp": "2026-07-25T18:25:22Z"
+    },
+    {
+      "text": "SCOPE DISPOSITION — dn4.9's two skipped sub-items, reparented OUT of the epic (loudly, not silently)\n\nspecled_-dn4.9 filed two follow-ups for sub-items it did not complete, and bw created them as epic children, which would have made \"all children closed\" unreachable. Both are now standalone tickets. Rationale per item:\n\n- specled_-dn4.13 (sub-item 9, persistent_term modules cache): this skip was PRE-AUTHORIZED by the orchestrator before dn4.9 started. dn4.4 had already closed the modules_cache_key leak by keeping ETS with the key private to its arming resolver, and the standing ruling was \"apply persistent_term ONLY if it demonstrably improves on that landed design without reintroducing a key leak; otherwise skip and say so.\" dn4.9 found no such improvement and said so. Nothing is outstanding that the epic promised.\n\n- specled_-dn4.12 (sub-item 1, one module→source resolver): technically blocked, not declined. dn4.9 attempted the shared Coverage helper and it caused an API-boundary attestation failure, so it kept the two private non-loading copies. This leaves the divergence risk dn4.5's verifier flagged (repo_relative_path/1 in formatter.ex vs repo_relative_source_path/1 in coverage_triangulation.ex — identical logic, nothing enforcing they stay in sync). Real residual, worth doing, but it needs a realization-tier design decision rather than a cleanup pass.\n\nNeither is required for this epic's deliverable (the Tier-2/3 review remediation), and 14 of dn4.9's 16 sub-items landed. Recording here so the PR reviewer sees the scope decision rather than discovering two orphaned follow-ups.\n\nEXPANSION LEDGER stays at three (dn4.10, ya8, dn4.11). No fourth expansion was carved; these two are contractions documented as standalone work.",
+      "timestamp": "2026-07-25T19:09:56Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-25T18:25:22Z"
+  "updated_at": "2026-07-25T19:09:56Z"
 }
