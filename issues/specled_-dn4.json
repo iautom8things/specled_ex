@@ -69,11 +69,15 @@
     {
       "text": "FLAKE LEDGER: zr6 struck a second time (seed 437710, during dn4.11 implementation — not at a gate). Two different seeds now, so zr6 is NOT seed-deterministic; its ticket title and description are corrected. It remains OUT of the epic (pre-existing on main, no gate blocked yet). If it strikes a merge gate twice, it gets escalated in like ya8 was.",
       "timestamp": "2026-07-25T16:03:17Z"
+    },
+    {
+      "text": "LESSONS\n- [untested-clause] Prove a config/opts-passthrough claim with a NON-DEFAULT value; an assertion that passes on defaults covers nothing, and a test name must not claim a clause its assertions cannot fail on (from specled_-dn4.3)\n- [untested-clause] A multi-clause guard needs a failure test PER CLAUSE; a test that trips a neighboring clause proves \"a guard exists\", not the clause under contract (from specled_-dn4.6)\n- [untested-clause] A corrected string must be pinned by text UNIQUE to the correction — never a prefix that is byte-identical at base, and never a substring several sites emit; either survives a single-site revert with the suite green (from specled_-dn4.6)\n- [untested-clause] When a contract sets a per-item mutation bar, RUN the mutation per item; a reported table that names a non-discriminating assertion is a false claim, not a reporting slip (from specled_-dn4.6)\n- [stale-spec] When rewriting a scenario's or requirement's text, keep naming the mechanism it proves (from specled_-dn4.3)\n- [stale-spec] A requirement-claim rewrite must update every surface that renders the claim AND realize any then-clause it authors with a real assertion (from specled_-dn4.6)\n- [other] After a rename/deletion, grep the entire repo for the OLD name before committing (from specled_-dn4.3)",
+      "timestamp": "2026-07-25T16:15:46Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-25T16:03:17Z"
+  "updated_at": "2026-07-25T16:15:46Z"
 }
