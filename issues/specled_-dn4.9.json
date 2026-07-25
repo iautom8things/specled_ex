@@ -9,9 +9,15 @@
   "id": "specled_-dn4.9",
   "labels": [],
   "parent": "specled_-dn4",
+  "comments": [
+    {
+      "text": "ORCHESTRATOR DIRECTIVE (added 2026-07-25, from the specled_-dn4.6 audit): add one item to your batch — lib/specled_ex/coverage/formatter.ex:12's moduledoc still states the RETIRED per-test attribution claim 'exact up to escaped processes'. dn4.6 widened the real bound to 'exact within disclosed chained windows'; reuse the exact wording landed in .spec/decisions/specled.decision.per_test_sync_boundary.md and docs/coverage.md. You own formatter.ex and merge last, so this site is yours; the other four retired-claim sites (README.md:59, docs/adoption.md:26/:387, .spec/specs/package.spec.md:29) belong to sibling ticket specled_-dn4.11 — do not touch them.",
+      "timestamp": "2026-07-25T15:49:19Z"
+    }
+  ],
   "priority": 1,
   "status": "open",
   "title": "Tier-3 seam cleanups, cheap perf, robustness batch (F9/F13/F16/F17/F19/F20/F46, F25, F21/F22/F24, F44/F15, F10/F42/F43)",
   "type": "task",
-  "updated_at": "2026-07-25T11:30:21Z"
+  "updated_at": "2026-07-25T15:49:19Z"
 }
