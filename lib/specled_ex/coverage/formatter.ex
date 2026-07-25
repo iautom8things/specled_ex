@@ -278,13 +278,28 @@ defmodule SpecLedEx.Coverage.Formatter do
     boundary_index = load_boundary_index()
     inventory = :ets.tab2list(table)
 
-    {records, boundary_diagnostics, used_boundary?, unhooked_by_module} =
-      Enum.reduce(inventory, {[], 0, false, %{}}, fn entry, {acc, diag_acc, used?, unhooked} ->
-        {recs, diag, from_boundary?, unhooked} =
-          records_for_inventory(entry, boundary_index, state.file_map, unhooked)
-
-        {acc ++ recs, diag_acc + diag, used? or from_boundary?, unhooked}
+    {boundary_inventory, unhooked_inventory} =
+      Enum.split_with(inventory, fn {_key, row} ->
+        Map.get(boundary_index, row.test_key) != nil
       end)
+
+    boundary_rows =
+      Enum.map(boundary_inventory, fn {_key, row} ->
+        {row, Map.fetch!(boundary_index, row.test_key)}
+      end)
+
+    records =
+      Enum.flat_map(boundary_rows, fn {row, boundary_row} ->
+        records_for_inventory(row, boundary_row, state.file_map)
+      end)
+
+    boundary_diagnostics =
+      Enum.sum(Enum.map(boundary_rows, fn {_row, boundary_row} -> boundary_row.diagnostics end))
+
+    used_boundary? = boundary_rows != []
+
+    unhooked_by_module =
+      Enum.frequencies_by(unhooked_inventory, fn {_key, row} -> row.module end)
 
     attributed_hits = union_boundary_hits(boundary_index)
     unattributed_hits = subtract_hits(run_total_hits, attributed_hits)
@@ -360,44 +375,19 @@ defmodule SpecLedEx.Coverage.Formatter do
   # Prefer a boundary-table row when present for a test's `{module, name}`
   # key. Unhooked inventory entries produce no payload records — their
   # coverage folds into the suite remainder via set subtraction.
-  defp records_for_inventory({key, row}, boundary_index, file_map, unhooked) do
-    test_key = Map.get(row, :test_key) || fallback_test_key(key)
-    module = Map.get(row, :module) || inventory_module_from_key(test_key)
-
-    case test_key && Map.get(boundary_index, test_key) do
-      nil ->
-        unhooked =
-          if is_atom(module) do
-            Map.update(unhooked, module, 1, &(&1 + 1))
-          else
-            unhooked
-          end
-
-        {[], 0, false, unhooked}
-
-      boundary_row ->
-        files = compact_hits_to_files(boundary_row.hits, file_map)
-
-        recs =
-          Enum.map(files, fn {file, lines} ->
-            %{
-              test_id: row.test_id,
-              file: file,
-              lines_hit: lines,
-              tags: row.tags,
-              test_pid: row.test_pid
-            }
-          end)
-
-        {recs, boundary_row.diagnostics, true, unhooked}
-    end
+  defp records_for_inventory(row, boundary_row, file_map) do
+    boundary_row.hits
+    |> compact_hits_to_files(file_map)
+    |> Enum.map(fn {file, lines} ->
+      %{
+        test_id: row.test_id,
+        file: file,
+        lines_hit: lines,
+        tags: row.tags,
+        test_pid: row.test_pid
+      }
+    end)
   end
-
-  defp inventory_module_from_key({mod, _name}) when is_atom(mod), do: mod
-  defp inventory_module_from_key(_), do: nil
-
-  defp fallback_test_key({mod, name}) when is_atom(mod) and is_atom(name), do: {mod, name}
-  defp fallback_test_key(_), do: nil
 
   defp load_boundary_index do
     case Arming.resolve(:boundary) do
