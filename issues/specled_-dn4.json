@@ -13,11 +13,15 @@
     {
       "text": "Split from specled_-pzd at delivery; original shipped as PR #20 / release 0.7.0 (14f6e72).",
       "timestamp": "2026-07-24T19:19:01Z"
+    },
+    {
+      "text": "ORCHESTRATION PLAN (/orchestrate-epic, 2026-07-25)\n\nEpic worktree: /Users/mz/src/specled_ex-fast-follow-per-test (branch specled_-dn4/fast-follow-per-test, base 14f6e72 = origin/main). Smoke green at start: 1208 tests, 0 failures.\n\nLaborer: Codex via cx-implementer --profile team (headroom confirmed; unattended run, choice logged). Verify/audit/rebase: Claude agents. Comment mode per MARKERS.md.\n\nAll 9 children scoped from a verified code analysis (sections appended to each ticket description). Wave order wired as bw deps to minimize rebase conflicts:\n  W1 dn4.3 (mass rename, lands first)\n  W2 dn4.4 + dn4.8 (parallel, disjoint)\n  W3 dn4.1\n  W4 dn4.2 + dn4.6 (parallel; meet only in regenerable realization_hashes.json)\n  W5 dn4.5\n  W6 dn4.7\n  W7 dn4.9 (merges last; overlaps everything, behavior-preserving)\n\nPlan-shaping findings from scoping:\n- dn4.7/F38 already satisfied by 731b686 (formatter_test.exs:485-513) — implementer verifies + cites rather than writing a new test.\n- dn4.8/F39 rename is a requirement deletion under append_only/requirement_deleted:error — needs a head-side ADR.\n- dn4.6 window chaining is a semantic change to the exclusivity bound — must restate the bound in the per_test_sync_boundary decision or prove the inter-test interval empty.\n- dn4.9 items 9/13 renegotiated (rulings on ticket): dn4.4 owns the modules_cache_key leak closure; item 13 builds on dn4.6's landed cost model.\n- .spec/state.json is gitignored (never in allowed touches). Generated-state for rebases: .spec/realization_hashes.json, regen via mix spec.check.\n\n⚠️ Cross-epic coordination: sibling gate ticket specled_-cz0 collides with dn4.8 on package.spec.md (different hunks) and owns triangulation.spec.md, where cz0 item 2 + dn4.5 + dn4.7/F30 converge on scenario per_test_reach_line_intersection. Do not start cz0 in parallel with dn4.5/dn4.7/dn4.8 without coordinating.",
+      "timestamp": "2026-07-25T11:30:37Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-25T11:05:51Z"
+  "updated_at": "2026-07-25T11:30:37Z"
 }
