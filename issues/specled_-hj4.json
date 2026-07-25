@@ -53,11 +53,15 @@
     {
       "text": "FLAKE_ACCEPT record (3rd occurrence — at cap, escalating evidence rather than silently accepting):\nSignature: scenario_refactor_stable_test.exs:150 branch_guard_realization_drift on cosmetic refactor (subject \"A\" temp fixture). Owner: specled_-l05 (open).\nOccurrence 3 at the hj4.3 merge gate, seed 714928. Non-reproduction evidence: targeted re-run with the exact printed seed (0 failures), the same file with --include integration (0 failures), and the whole test/integration/ directory (23 tests, 0 failures). Gate re-run green end-to-end: spec.check result=pass.\nNon-intersection evidence: the failing file is not in this branch diff; the fixture uses its own subject \"A\", not any repo subject. The verifier independently confirmed .spec/realization_hashes.json is unchanged and SpecLedEx.Next.run/3's implementation-tier binding survived its 6-\u003e10 line shift, so the next.ex edit cannot be the cause.\nDisposition: NOT attributed to this branch. Evidence appended to specled_-l05. CI may hit the same signature on the PR run; that is a babysit-pr retry, not a product failure.",
       "timestamp": "2026-07-25T17:30:09Z"
+    },
+    {
+      "text": "MINI-RETRO (final, incl. S3 review remediation)\nbounces: 3 (untested-clause x2 -\u003e implementer, seam-substitution x1 -\u003e verifier)\nfull_suite_runs: 9\nfinals_gt1: 2\nflake_accepts: 3 (all specled_-l05 scenario_refactor_stable drift; 3rd escalated with evidence, not silently accepted)\nescalations: 0\nlessons_kept/retired: 7/0\npre-ship critical review: 5 personas, 33 raw -\u003e 28 unique -\u003e 0 Critical / 0 High after skeptic calibration; 10 downgraded, 3 claims disproven by execution. Both Tier-1 items fixed pre-merge (f338abb changelog accuracy, specled_-hj4.3 protocol truth). Tier-2/3 -\u003e fast-follow epic specled_-0x4.",
+      "timestamp": "2026-07-25T17:41:42Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "spec.check verdict contract + teaching sweep",
   "type": "epic",
-  "updated_at": "2026-07-25T17:30:09Z"
+  "updated_at": "2026-07-25T17:41:42Z"
 }
