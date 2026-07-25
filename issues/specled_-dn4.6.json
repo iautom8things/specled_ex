@@ -7,9 +7,9 @@
   "id": "specled_-dn4.6",
   "labels": [],
   "parent": "specled_-dn4",
-  "priority": 2,
+  "priority": 1,
   "status": "open",
   "title": "Correct the per-test cost model + artifact freshness guard (F14, F12, F26)",
   "type": "task",
-  "updated_at": "2026-07-24T19:18:43Z"
+  "updated_at": "2026-07-25T10:58:00Z"
 }
