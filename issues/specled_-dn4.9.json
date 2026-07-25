@@ -7,9 +7,9 @@
   "id": "specled_-dn4.9",
   "labels": [],
   "parent": "specled_-dn4",
-  "priority": 2,
+  "priority": 1,
   "status": "open",
   "title": "Tier-3 seam cleanups, cheap perf, robustness batch (F9/F13/F16/F17/F19/F20/F46, F25, F21/F22/F24, F44/F15, F10/F42/F43)",
   "type": "task",
-  "updated_at": "2026-07-24T19:18:44Z"
+  "updated_at": "2026-07-25T10:58:00Z"
 }
