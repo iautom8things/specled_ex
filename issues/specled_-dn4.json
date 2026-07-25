@@ -85,11 +85,15 @@
     {
       "text": "LESSONS\n- [untested-clause] Prove a claim with a NON-DEFAULT value; a test name must not claim a clause its assertions cannot fail on (from specled_-dn4.3)\n- [untested-clause] A multi-clause guard needs a failure test PER CLAUSE (from specled_-dn4.6)\n- [untested-clause] A corrected string must be pinned by text UNIQUE to the correction — never a base-identical prefix, never a substring several sites emit (from specled_-dn4.6)\n- [untested-clause] When you report a mutation result, RUN the mutation; a table naming a non-discriminating assertion is a false claim (from specled_-dn4.6)\n- [untested-clause] A REFUTE must be checked against the string the code actually emits today — \"exact within chained windows\" does not match \"exact within DISCLOSED chained windows\", so the refute passes vacuously and guards nothing. Second occurrence in this epic (from specled_-dn4.5)\n- [untested-clause] A value rendered into an ATTRIBUTE (title=) is invisible to class-based refutes because the element renders unconditionally — attribute-borne claims need their own text assertion (from specled_-dn4.5)\n- [stale-spec] A requirement-claim rewrite must update every surface that renders the claim AND realize any then-clause it authors with a real assertion; enumerate the surfaces and check them off one by one (from specled_-dn4.6, recurring in specled_-dn4.5)\n- [other] After a rename/deletion, grep the entire repo for the OLD name before committing (from specled_-dn4.3)",
       "timestamp": "2026-07-25T17:34:42Z"
+    },
+    {
+      "text": "FLAKE LEDGER: a THIRD class identified by dn4.5's verifier — load-fragile tagged_tests leg (verifier_test.exs:1452/:1681, review_test.exs:135), ticketed as the new P2. Unlike zr6 (seed) this one is LOAD sensitive, so it strikes during parallel orchestration precisely when a red gate costs most. Not escalated into the epic: no gate has gone red on it yet. Ledger of gate-path flakes: ya8 (fixed, merged), zr6 (open, 2 strikes, never at a gate), and this new one (0 gate strikes).",
+      "timestamp": "2026-07-25T18:25:22Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-25T17:34:42Z"
+  "updated_at": "2026-07-25T18:25:22Z"
 }
