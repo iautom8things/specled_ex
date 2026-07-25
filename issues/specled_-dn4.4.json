@@ -14,9 +14,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-dn4",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: eb717ea1-b20d-491a-a5f9-322b223bfe82\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/eb717ea1-b20d-491a-a5f9-322b223bfe82.jsonl\n\nCommit: 462d6c4\nFiles touched: .spec/realization_hashes.json, .spec/specs/coverage_capture.spec.md, lib/mix/tasks/spec.cover.test.ex, lib/specled_ex/coverage/arming.ex, lib/specled_ex/coverage/boundary.ex, lib/specled_ex/coverage/formatter.ex, test/specled_ex/coverage/boundary_test.exs\nTests added: SpecLedEx.Coverage.BoundaryTest — shared resolver requires a live ETS table for boundary arming; SpecLedEx.Coverage.BoundaryTest — shared resolver keeps true armed for formatter and disarmed for boundary\nVerification stubs flipped: none — already execute: true\nVerification tier: change-scoped — mix compile --warnings-as-errors; mix test test/specled_ex/coverage/boundary_test.exs test/specled_ex/coverage/formatter_test.exs test/specled_ex/case_test.exs test/mix/tasks/spec_cover_test_test.exs (47 tests); mix spec.check --no-run-commands; mix format --check-formatted; full-system proof deferred to the merge gate\nFinal-tier runs: 2\nGate-forced co-changes outside Allowed touches: none\nDeferred must requirements: none\n\nSummary: Added SpecLedEx.Coverage.Arming as the sole seam decoder, using live ETS status as the shared table-validity predicate while preserving formatter true/default arming and boundary true/unarmed behavior. Centralized production defaults and ETS module caching behind the resolver, removed Boundary.modules_cache_key/0, and preloaded the resolver for child-BEAM production runs.",
+      "timestamp": "2026-07-25T13:06:04Z"
+    }
+  ],
   "priority": 1,
   "status": "in_progress",
   "title": "Unify the arming-seam decoders behind one resolver (F5)",
   "type": "task",
-  "updated_at": "2026-07-25T12:59:39Z"
+  "updated_at": "2026-07-25T13:06:04Z"
 }
