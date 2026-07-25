@@ -25,11 +25,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: eb717ea1-b20d-491a-a5f9-322b223bfe82\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/eb717ea1-b20d-491a-a5f9-322b223bfe82.jsonl\n\nReasoning: VERIFY reported PASS with zero scope violations, no seams (test-only\nasync flips), and a causal A/B effectiveness proof (8/15 failures at base flags\nvs 0/15 at HEAD across 15 seeds; 7/7 green on all three recorded strike seeds).\nNo spec subject advanced (disclosed; test-infrastructure hygiene). No auditor\nwas spawned per policy. Posted by the orchestrator applying the canonical\nSelective Audit Gate.",
       "timestamp": "2026-07-25T14:18:42Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-dn4/fast-follow-per-test. Closing per orchestrator sign-off. (Gate green first run: 1211/0, spec.check pass — first gate since dn4.3 to pass without a flake adjudication.)",
+      "timestamp": "2026-07-25T14:22:38Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Flaky scenario_refactor_stable_test.exs: async:true mutates global code server (branch_guard_realization_drift, seed 194143)",
   "type": "task",
-  "updated_at": "2026-07-25T14:18:42Z"
+  "updated_at": "2026-07-25T14:22:38Z"
 }
