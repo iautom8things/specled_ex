@@ -6,7 +6,7 @@
   "description": "Distilled from mini-plan (think-l8c). Spec dir: .spec/\nWorktree: /Users/mz/src/specled_ex-spec-check-verdict-contract\nBranch: specled_-hj4/spec-check-verdict-contract\nRefined plan: /Users/mz/vaults/rmbrs-vault/plans/src-specled_ex/2026-07-24-spec-check-verdict-contract/runs/20260724-142413-claude-mini/05-refined-plan.md\n\nVerdict contract for mix spec.check/spec.validate stdout (trailing result line, tier-labeled structural line, severity-broken-down branch counts, ERROR-last ordering) + read protocol on every teaching surface. Motivated by the specled_-pzd.1 double bounce (three agents misread status=pass as the verdict).\n\nPRECONDITION (hard, from refined plan): do not start stage work until the specled_-pzd release PR has merged to main; fast-forward/rebase this epic branch onto post-pzd main first. S2's teaching surfaces overlap pzd's diff. NOTE 2026-07-24: main has since landed 0.6.2/0.6.3 (hyt, viv), so pzd itself re-versions at rebase; S2's version bump is minor (0.7.0) on top of whatever pzd lands as.",
   "id": "specled_-hj4",
   "labels": [
-    "phase:implementing",
+    "phase:in-ci",
     "slug:spec-check-verdict-contract"
   ],
   "comments": [
@@ -67,5 +67,5 @@
   "status": "in_progress",
   "title": "spec.check verdict contract + teaching sweep",
   "type": "epic",
-  "updated_at": "2026-07-25T17:41:42Z"
+  "updated_at": "2026-07-25T17:59:26Z"
 }
