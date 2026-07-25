@@ -10,8 +10,6 @@ The `spec.init` scaffold's local skill and README, and the `spec.prime` loop, de
 
 The `spec.prime` and `spec.next` human guidance share the same verdict read-protocol text so task output and assertions do not drift by invisible Unicode punctuation.
 
-`mix spec.cover.test --per-test`'s child-BEAM preload list (see `specled.tasks.dep_runtime_bootstrap` below) also resident-loads `SpecLedEx.Coverage.Snapshot` — the native/classic per-test engine module owned by `specled.coverage_capture` — for the same reason it already preloads `Formatter`, `Store`, `Coverage`, `Boundary`, and `SpecLedEx.Case`: a fixture's own `app.config` rewrite would otherwise evict the parent's lazily-loaded ebin before the formatter's `suite_started` handler or a hooked test's boundary setup could reach it. The task also creates a public anonymous ETS `:boundary_table` and arms it via the keyword form of the `:specled_ex, :spec_cover_run` seam (owned behavior documented under `specled.coverage_capture`).
-
 ```yaml spec-meta
 id: specled.mix_tasks
 kind: workflow

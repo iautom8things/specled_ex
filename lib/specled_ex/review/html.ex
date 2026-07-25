@@ -2022,7 +2022,7 @@ defmodule SpecLedEx.Review.Html do
   defp coverage_rollup_tone(0, _total), do: "dangling"
   defp coverage_rollup_tone(_self_verified, _total), do: "partial"
 
-  # covers: specled.spec_review.coverage_observed_approximate_qualifier
+  # covers: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
   # The rollup badge's self-verified count is only ever nonzero under
   # :ok_per_test (aggregate's "linked" evidence ceiling can never satisfy
   # self_verified?'s "executed" half — see CoverageClosure.build_v2/2's
@@ -2716,7 +2716,7 @@ defmodule SpecLedEx.Review.Html do
     ]
   end
 
-  # covers: specled.spec_review.coverage_observed_approximate_qualifier
+  # covers: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
   # Unhooked-only degradation stays on :ok_per_test (reach still computed for
   # hooked windows) but names the unhooked modules from envelope meta so the
   # tab is honest that the run is not fully exact.
@@ -3055,8 +3055,8 @@ defmodule SpecLedEx.Review.Html do
 
   defp format_closure_pct(_), do: "0.0%"
 
-  # covers: specled.spec_review.coverage_observed_approximate_qualifier
-  # covers: specled.spec_review.coverage_file_level_proxy_qualifier
+  # covers: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
+  # covers: specled.spec_review.coverage_line_mfa_intersection_qualifier
   # Real per-test MFA reach (specled_-jjq / Stage 3): non-degraded hooked
   # runs claim "exact up to escaped processes"; unhooked-degraded runs name
   # meta.unhooked_modules. The retired file-level-proxy note is gone.
@@ -3134,7 +3134,7 @@ defmodule SpecLedEx.Review.Html do
     end
   end
 
-  # covers: specled.spec_review.coverage_observed_approximate_qualifier
+  # covers: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
   # self_verified? composes closure_coverage_pct with an "executed"-strength
   # tagged test under the same exact-up-to-escaped-processes claim.
   # Rendered only in per_test mode: aggregate coverage's "linked" ceiling

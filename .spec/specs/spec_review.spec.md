@@ -34,6 +34,7 @@ decisions:
   - specled.decision.spec_review_change_scoped_master_detail
   - specled.decision.evidence_orphan_branch_split
   - specled.decision.aggregate_first_spec_coverage
+  - specled.decision.coverage_qualifier_requirement_ids
 ```
 
 ## Requirements
@@ -317,7 +318,7 @@ decisions:
     attribution to name, so the row stays absent there.
   priority: must
   stability: evolving
-- id: specled.spec_review.coverage_observed_approximate_qualifier
+- id: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
   statement: >-
     `"executed"` strength and the per_test `closure_coverage_pct` for
     non-degraded / fully-hooked runs both reflect real per-test line→MFA
@@ -330,7 +331,7 @@ decisions:
     prior race-bounded "observed/approximate" wording for hooked windows.)
   priority: must
   stability: evolving
-- id: specled.spec_review.coverage_file_level_proxy_qualifier
+- id: specled.spec_review.coverage_line_mfa_intersection_qualifier
   statement: >-
     Under `:ok_per_test`, per-requirement MFA coverage shall be real
     line→MFA intersection (via `per_test_requirement_reach/3` and
@@ -347,9 +348,9 @@ decisions:
     the subject's coverage status (a self-verified/total count and mode
     when coverage data loaded, or a muted "coverage unavailable" chip when
     degraded). Under `:ok_per_test` mode the badge shall additionally carry
-    the `specled.spec_review.coverage_observed_approximate_qualifier`
+    the `specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier`
     disclaimer (exact-up-to-escaped-processes, or unhooked-degraded via
-    `coverage_file_level_proxy_qualifier`); aggregate mode's badge is already
+    `coverage_line_mfa_intersection_qualifier`); aggregate mode's badge is already
     honest and stays unqualified.
   priority: must
   stability: evolving
@@ -717,7 +718,7 @@ decisions:
     - "the \"Self-verified: yes.\" row carries its own discoverable \"(exact up to escaped processes)\" qualifier"
     - "the equivalent requirement rendered under aggregate mode renders \"Self-verified: no.\" with no such qualifier"
   covers:
-    - specled.spec_review.coverage_observed_approximate_qualifier
+    - specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
 - id: specled.spec_review.coverage_qualifies_degraded_unhooked
   given:
     - a requirement whose subject coverage mode is :ok_per_test with attribution :degraded_unhooked and unhooked_modules set
@@ -728,7 +729,17 @@ decisions:
     - a tab-level banner names the unhooked modules and the boundary-hook setup line
     - the retired "(file-level proxy)" string does not render
   covers:
-    - specled.spec_review.coverage_file_level_proxy_qualifier
+    - specled.spec_review.coverage_line_mfa_intersection_qualifier
+- id: specled.spec_review.coverage_no_debug_info_renders_distinct_note
+  given:
+    - a requirement whose v2 reach data reports an MFA under no_debug_info_mfas
+  when:
+    - the reviewer opens the subject's Coverage pivot
+  then:
+    - the MFA renders in a distinct no-debug-info note
+    - the MFA is not counted or rendered as covered or uncovered
+  covers:
+    - specled.spec_review.coverage_tab_bind_closure
 - id: specled.spec_review.coverage_card_rollup_badge_renders
   given:
     - a subject with 2 requirements, one self-verified and one not, coverage data loaded in per-test mode
@@ -809,8 +820,8 @@ decisions:
     - specled.spec_review.coverage_tab_bind_closure
     - specled.spec_review.coverage_closure_line_format
     - specled.spec_review.coverage_reached_by_tests_per_test_only
-    - specled.spec_review.coverage_observed_approximate_qualifier
-    - specled.spec_review.coverage_file_level_proxy_qualifier
+    - specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
+    - specled.spec_review.coverage_line_mfa_intersection_qualifier
     - specled.spec_review.coverage_rollup_badge
     - specled.spec_review.coverage_generated_at_staleness
     - specled.spec_review.coverage_degraded_banners_distinct

@@ -1265,7 +1265,7 @@ defmodule SpecLedEx.Review.HtmlTest do
                "Reached by tests:</span> <code class=\"cov-closure-test\">test/a_test.exs :: t1</code>, <code class=\"cov-closure-test\">test/b_test.exs :: t2</code>."
     end
 
-    # covers: specled.spec_review.coverage_observed_approximate_qualifier
+    # covers: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
     test "per-test closure line renders the exact-up-to-escaped-processes qualifier" do
       reach = %{
         status: :ok_per_test,
@@ -1307,7 +1307,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       assert html =~ "(exact up to escaped processes)</span>"
     end
 
-    # covers: specled.spec_review.coverage_file_level_proxy_qualifier
+    # covers: specled.spec_review.coverage_line_mfa_intersection_qualifier
     test "degraded unhooked per-test run names unhooked modules on the closure line and banner" do
       reach = %{
         status: :ok_per_test,
@@ -1338,7 +1338,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       refute html =~ "file-level proxy"
     end
 
-    # covers: specled.spec_review.coverage_observed_approximate_qualifier
+    # covers: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
     test "aggregate mode's \"Self-verified: no.\" row carries no exact/degraded qualifier" do
       reach = %{
         status: :ok_aggregate,
@@ -1365,6 +1365,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       refute html =~ "(observed)"
     end
 
+    # covers: specled.spec_review.coverage_tab_bind_closure specled.spec_review.coverage_tab_v2_envelope_data_layer
     test "renders a no-debug-info note when requirement reach lists no_debug_info_mfas" do
       reach = %{
         status: :ok_per_test,
@@ -1555,7 +1556,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       assert html =~ "1/2 self-verified (per-test)"
     end
 
-    # covers: specled.spec_review.coverage_observed_approximate_qualifier
+    # covers: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
     test "per-test mode's rollup badge carries a discoverable exact-up-to-escaped-processes qualifier" do
       reach = %{
         status: :ok_per_test,
@@ -1573,7 +1574,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       refute html =~ "(observed)"
     end
 
-    # covers: specled.spec_review.coverage_observed_approximate_qualifier
+    # covers: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
     test "aggregate mode's rollup badge carries no exact/degraded qualifier" do
       reach = %{
         status: :ok_aggregate,

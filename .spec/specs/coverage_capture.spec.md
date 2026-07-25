@@ -46,6 +46,14 @@ produces the per-test artifact at `.spec/_coverage/per_test.coverdata`
 `specled.decision.per_test_sync_boundary` (supersedes the race-bound claim
 in `specled.decision.aggregate_first_spec_coverage`).
 
+`mix spec.cover.test --per-test` resident-loads
+`SpecLedEx.Coverage.Snapshot` alongside `Formatter`, `Store`, `Coverage`,
+`Boundary`, and `SpecLedEx.Case` in its child BEAM because a fixture's own
+`app.config` rewrite would otherwise evict the parent's lazily-loaded ebin
+before `suite_started` or a hooked test's boundary setup could reach it. The
+task also creates a public anonymous ETS `:boundary_table` and arms it via the
+keyword form of the `:specled_ex, :spec_cover_run` seam.
+
 The formatter is inert unless armed: registering it in `:formatters` is not
 by itself enough to run it (ExUnit forwards its entire `:ex_unit` application
 environment to every formatter it starts, so trusting a formatter's own init
@@ -813,11 +821,13 @@ decisions:
     - specled.coverage_capture.case_template
 - id: specled.coverage_capture.scenario.boundary_row_preferred_on_flush
   given:
-    - "a formatter flush where both a lazy `test_finished` row and a boundary row exist for the same test key, with different hit lines"
+    - "an inventoried test key with a boundary row containing the test's hit lines"
+    - "a second inventoried test key with no boundary row"
   when:
     - "`Formatter.flush/1` runs on `suite_finished`"
   then:
-    - "the flushed record's `lines_hit` match the boundary window only"
+    - "the hooked test's flushed record is derived exclusively from its boundary window"
+    - "the unhooked test produces no per-test payload record; no lazy-capture fallback is fabricated"
     - "the envelope carries `meta: %{boundary: true}`"
   covers:
     - specled.coverage_capture.boundary_row_exclusive

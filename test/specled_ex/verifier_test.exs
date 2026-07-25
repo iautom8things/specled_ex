@@ -400,6 +400,40 @@ defmodule SpecLedEx.VerifierTest do
     assert Enum.any?(report["checks"], &(&1["code"] == "decision_affect_invalid"))
   end
 
+  test "deprecating decisions may affect ids absent from the current index", %{root: root} do
+    report =
+      Verifier.verify(
+        %{
+          "subjects" => [base_subject(%{})],
+          "decisions" => [
+            %{
+              "file" => ".spec/decisions/deprecates.md",
+              "meta" => %{
+                "id" => "repo.governance.deprecates",
+                "status" => "accepted",
+                "date" => "2026-07-25",
+                "affects" => ["removed.requirement"],
+                "change_type" => "deprecates",
+                "reverses_what" => "The removed requirement."
+              },
+              "sections" => ["Context", "Decision", "Consequences"],
+              "parse_errors" => []
+            }
+          ]
+        },
+        root,
+        debug: true
+      )
+
+    refute "decision_unknown_affect" in finding_codes(report)
+
+    assert Enum.any?(
+             report["checks"],
+             &(&1["code"] == "decision_affect_valid" and
+                 &1["message"] == "Decision affect valid: removed.requirement")
+           )
+  end
+
   test "verify only fails warnings in strict mode", %{root: root} do
     index = %{
       "subjects" => [

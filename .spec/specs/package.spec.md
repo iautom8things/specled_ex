@@ -122,8 +122,18 @@ decisions:
   execute: true
   covers:
     - specled.package.mix_tasks
-- kind: source_file
-  target: docs/adoption.md
+- kind: command
+  target: >-
+    sh -c 'grep -Fq "## Greenfield" docs/adoption.md &&
+    grep -Fq "## Brownfield" docs/adoption.md &&
+    grep -Fq "Same as greenfield step 6: graduate" docs/adoption.md &&
+    grep -Fq "enforcement: error" docs/adoption.md &&
+    grep -Fq "guardrails:" docs/adoption.md &&
+    grep -Fq "branch_guard:" docs/adoption.md &&
+    grep -Fq "### Phase 4a — Aggregate coverage (zero wiring)" docs/adoption.md &&
+    grep -Fq "### Phase 4b — Per-test attribution (opt-in)" docs/adoption.md &&
+    grep -Fq "setup {SpecLedEx.Coverage, :per_test_boundary}" docs/adoption.md'
+  execute: true
   covers:
     - specled.package.adoption_guide
 - kind: source_file
