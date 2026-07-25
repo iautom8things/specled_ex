@@ -33,11 +33,15 @@
     {
       "text": "MINI-RETRO\nbounces: 2 (untested-clause, other — both AUDIT: BOUNCE → implementer on hj4.1)\nfull_suite_runs: 6\nfinals_gt1: 1\nflake_accepts: 2\nescalations: 0\nlessons_kept/retired: 4/0",
       "timestamp": "2026-07-25T13:25:48Z"
+    },
+    {
+      "text": "ORCHESTRATED\nChildren closed: 2\nBOUNCEs encountered: 2\nUser escalations: 0",
+      "timestamp": "2026-07-25T13:32:48Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "spec.check verdict contract + teaching sweep",
   "type": "epic",
-  "updated_at": "2026-07-25T13:25:48Z"
+  "updated_at": "2026-07-25T13:32:48Z"
 }
