@@ -1,7 +1,8 @@
 {
   "assignee": "",
   "blocked_by": [
-    "specled_-dn4.4"
+    "specled_-dn4.4",
+    "specled_-dn4.8"
   ],
   "blocks": [],
   "created": "2026-07-24T19:18:42Z",
@@ -13,5 +14,5 @@
   "status": "open",
   "title": "Drop write-only boundary_row.tags; collapse to Boundary.tail/2 (F4, 5-reviewer consensus)",
   "type": "task",
-  "updated_at": "2026-07-25T11:30:12Z"
+  "updated_at": "2026-07-25T11:30:13Z"
 }
