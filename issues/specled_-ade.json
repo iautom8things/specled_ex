@@ -6,9 +6,15 @@
   "description": "No spec subject\nFrom specled_-hj4.2 verification note N3 (2026-07-25). .claude/rules/specled.md:74-80 (\"state.json is generated — never hand-merge\") is false on three counts, verified by execution: (a) mix spec.check never writes .spec/state.json; mix spec.validate writes it only with --output (spec.validate.ex:81); (b) it cannot conflict on rebase — untracked and .gitignore:28 ignores it; (c) \"regenerate with mix spec.check and commit\" is impossible. Contradicts the correct .spec/AGENTS.md:33-36. Same false section exists in project CLAUDE.md. Agent-facing rule text — fix both, and mirror to the vault-side agent-rules sync source (same handoff as the hj4.2 protocol-sentence edit).",
   "id": "specled_-ade",
   "labels": [],
+  "comments": [
+    {
+      "text": "Fixed centrally in agentic-dotfiles (rules source llms/workflows/agent-rules/rules/specled.md), commits 4491d767 (hj4.2 verdict-sentence handoff, was sitting uncommitted) + 32d3b6f0 (state.json section fix, agent-rules 0.13.1 -\u003e 0.13.2). Resynced into specled_ex via sync-agent-rules: commit 6fe5b77 on main. Note: the ticket claim \"same false section exists in project CLAUDE.md\" is stale — grep finds no state.json mention in specled_ex CLAUDE.md; only .claude/rules/specled.md (and the central source) carried it. Other adopter repos (builder, engage, spire-client, atlas, exoterm-cli) pick up 0.13.2 on their next resync.",
+      "timestamp": "2026-07-25T15:12:19Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Rules: fix false state.json is generated section in .claude/rules/specled.md + CLAUDE.md",
   "type": "task",
-  "updated_at": "2026-07-25T15:11:24Z"
+  "updated_at": "2026-07-25T15:12:19Z"
 }
