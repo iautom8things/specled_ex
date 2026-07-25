@@ -1,9 +1,21 @@
 {
   "findings": [
     {
-      "code": "append_only/same_pr_self_authorization",
-      "level": "warning",
-      "message": "ADR `specled.decision.coverage_qualifier_requirement_ids` is new in this diff and its `affects:` list ([\"specled.spec_review.coverage_observed_approximate_qualifier\", \"specled.spec_review.coverage_file_level_proxy_qualifier\"]) exactly matches the set of requirement ids removed in this same diff — the ADR is self-authorizing its own deletion. Visible but not blocked; review decides.\n\n```\nfix: land the removal in a separate PR from the authorizing ADR, or confirm in review that the self-authorization is intentional.\n```"
+      "code": "branch_guard_missing_decision_update",
+      "level": "info",
+      "message": "Cross-cutting change spans multiple subjects but no decision file changed. Durable cross-cutting policy (it constrains future changes, spans subjects beyond this branch, or records a rejected alternative) needs an ADR; a change that is not durable policy does not.\n\n```\nfix: if this branch changes durable cross-cutting policy, add or revise an ADR (`mix spec.decision.new <id> --title \"...\"`); if it does not, record `Spec-Drift: branch_guard_missing_decision_update=info` as a git trailer on a commit in this range, with a one-line reason in the commit body.\n```"
+    },
+    {
+      "code": "branch_guard_missing_subject_update",
+      "file": "docs/coverage.md",
+      "level": "info",
+      "message": "Changed file docs/coverage.md impacts subject specs that were not updated: specled.package"
+    },
+    {
+      "code": "branch_guard_missing_subject_update",
+      "file": "lib/mix/tasks/spec.cover.test.ex",
+      "level": "info",
+      "message": "Changed file lib/mix/tasks/spec.cover.test.ex impacts subject specs that were not updated: specled.mix_tasks"
     },
     {
       "code": "branch_guard_missing_subject_update",
@@ -19,265 +31,31 @@
     },
     {
       "code": "branch_guard_missing_subject_update",
-      "file": "lib/specled_ex/verifier.ex",
+      "file": "lib/specled_ex/coverage_triangulation.ex",
       "level": "info",
-      "message": "Changed file lib/specled_ex/verifier.ex impacts subject specled.verification; spec.md not co-changed, but realization attested binding(s) SpecLedEx.Verifier.verify/3 as clean — informational only."
+      "message": "Changed file lib/specled_ex/coverage_triangulation.ex impacts subject specled.triangulation; spec.md not co-changed, but realization attested binding(s) SpecLedEx.CoverageTriangulation.aggregate_requirement_reach/2, SpecLedEx.CoverageTriangulation.envelope_findings/3, SpecLedEx.CoverageTriangulation.execution_reach_map/2, SpecLedEx.CoverageTriangulation.findings/3, SpecLedEx.CoverageTriangulation.per_test_requirement_reach/3 as clean — informational only."
     },
     {
       "code": "branch_guard_missing_subject_update",
-      "file": "lib/specled_ex/verifier.ex",
+      "file": "lib/specled_ex/coverage_triangulation.ex",
       "level": "info",
-      "message": "Changed file lib/specled_ex/verifier.ex impacts subject specs that were not updated: specled.prose_guard"
+      "message": "Changed file lib/specled_ex/coverage_triangulation.ex impacts subject specs that were not updated: specled.spec_review"
     },
     {
       "code": "branch_guard_missing_subject_update",
-      "file": "test/integration/drift_acceptance_test.exs",
+      "file": "lib/specled_ex/review/html.ex",
       "level": "info",
-      "message": "Changed file test/integration/drift_acceptance_test.exs impacts subject specs that were not updated: specled.realized_by"
+      "message": "Changed file lib/specled_ex/review/html.ex impacts subject specs that were not updated: specled.spec_review"
     },
     {
       "code": "branch_guard_missing_subject_update",
-      "file": "test/integration/scenario_refactor_stable_test.exs",
+      "file": "test/specled_ex/review/html_test.exs",
       "level": "info",
-      "message": "Changed file test/integration/scenario_refactor_stable_test.exs impacts subject specs that were not updated: specled.implementation_tier"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/integration/scenario_tier_dispatch_test.exs",
-      "level": "info",
-      "message": "Changed file test/integration/scenario_tier_dispatch_test.exs impacts subject specs that were not updated: specled.branch_guard"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/mix/tasks/spec_check_test.exs",
-      "level": "info",
-      "message": "Changed file test/mix/tasks/spec_check_test.exs impacts subject specs that were not updated: specled.evidence_store, specled.verification"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/mix/tasks/spec_evidence_install_hook_test.exs",
-      "level": "info",
-      "message": "Changed file test/mix/tasks/spec_evidence_install_hook_test.exs impacts subject specs that were not updated: specled.evidence_store"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/mix/tasks/spec_evidence_migrate_test.exs",
-      "level": "info",
-      "message": "Changed file test/mix/tasks/spec_evidence_migrate_test.exs impacts subject specs that were not updated: specled.evidence_store"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/mix/tasks/spec_next_task_test.exs",
-      "level": "info",
-      "message": "Changed file test/mix/tasks/spec_next_task_test.exs impacts subject specs that were not updated: specled.next"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/mix/tasks/spec_prime_task_test.exs",
-      "level": "info",
-      "message": "Changed file test/mix/tasks/spec_prime_task_test.exs impacts subject specs that were not updated: specled.prime"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/mix/tasks/spec_prune_task_test.exs",
-      "level": "info",
-      "message": "Changed file test/mix/tasks/spec_prune_task_test.exs impacts subject specs that were not updated: specled.evidence_store"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/mix/tasks/spec_status_task_test.exs",
-      "level": "info",
-      "message": "Changed file test/mix/tasks/spec_status_task_test.exs impacts subject specs that were not updated: specled.status"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/mix/tasks/spec_suggest_binding_test.exs",
-      "level": "info",
-      "message": "Changed file test/mix/tasks/spec_suggest_binding_test.exs impacts subject specs that were not updated: specled.api_boundary"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/mix/tasks/spec_sync_task_test.exs",
-      "level": "info",
-      "message": "Changed file test/mix/tasks/spec_sync_task_test.exs impacts subject specs that were not updated: specled.evidence_store"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/mix/tasks/spec_tasks_test.exs",
-      "level": "info",
-      "message": "Changed file test/mix/tasks/spec_tasks_test.exs impacts subject specs that were not updated: specled.branch_guard, specled.status, specled.verification"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/base_view_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/base_view_test.exs impacts subject specs that were not updated: specled.append_only, specled.branch_guard, specled.index_state"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/branch_check/realization_config_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/branch_check/realization_config_test.exs impacts subject specs that were not updated: specled.branch_guard, specled.implementation_tier"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/branch_check/severity_integration_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/branch_check/severity_integration_test.exs impacts subject specs that were not updated: specled.config, specled.severity"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/branch_check/severity_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/branch_check/severity_test.exs impacts subject specs that were not updated: specled.severity"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/branch_check/trailer_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/branch_check/trailer_test.exs impacts subject specs that were not updated: specled.spec_drift_trailer"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/branch_check_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/branch_check_test.exs impacts subject specs that were not updated: specled.append_only, specled.branch_guard, specled.severity"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/config/branch_guard_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/config/branch_guard_test.exs impacts subject specs that were not updated: specled.branch_guard, specled.severity"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/config/prose_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/config/prose_test.exs impacts subject specs that were not updated: specled.prose_guard"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/config/realization_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/config/realization_test.exs impacts subject specs that were not updated: specled.config"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/config_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/config_test.exs impacts subject specs that were not updated: specled.config"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/evidence/entry_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/evidence/entry_test.exs impacts subject specs that were not updated: specled.evidence_store"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/evidence/git_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/evidence/git_test.exs impacts subject specs that were not updated: specled.evidence_store"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/evidence/store_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/evidence/store_test.exs impacts subject specs that were not updated: specled.evidence_store"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/evidence/sync_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/evidence/sync_test.exs impacts subject specs that were not updated: specled.evidence_store"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/evidence/tree_hash_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/evidence/tree_hash_test.exs impacts subject specs that were not updated: specled.evidence_store"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/index_state_tag_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/index_state_tag_test.exs impacts subject specs that were not updated: specled.index_state"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/index_state_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/index_state_test.exs impacts subject specs that were not updated: specled.index_state, specled.status"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/json_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/json_test.exs impacts subject specs that were not updated: specled.index_state"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/mix/tasks/spec_validate_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/mix/tasks/spec_validate_test.exs impacts subject specs that were not updated: specled.realized_by, specled.verification"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/modal_class_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/modal_class_test.exs impacts subject specs that were not updated: specled.modal_class"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/parser_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/parser_test.exs impacts subject specs that were not updated: specled.block_schema, specled.parser, specled.realized_by"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/policy_files_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/policy_files_test.exs impacts subject specs that were not updated: specled.policy_files"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/realization/api_boundary_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/realization/api_boundary_test.exs impacts subject specs that were not updated: specled.api_boundary, specled.realized_by"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/schema_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/schema_test.exs impacts subject specs that were not updated: specled.block_schema"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/tag_findings_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/tag_findings_test.exs impacts subject specs that were not updated: specled.verification"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/tag_scanner_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/tag_scanner_test.exs impacts subject specs that were not updated: specled.tag_scanning"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/tagged_tests_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/tagged_tests_test.exs impacts subject specs that were not updated: specled.tagged_tests"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "test/specled_ex/verifier_test.exs",
-      "level": "info",
-      "message": "Changed file test/specled_ex/verifier_test.exs impacts subject specs that were not updated: specled.tagged_tests, specled.verification"
+      "message": "Changed file test/specled_ex/review/html_test.exs impacts subject specs that were not updated: specled.spec_review"
     }
   ],
-  "run_at": "2026-07-25T19:15:24.197333Z",
-  "run_id": "0821c12cc849717f5da85b8ad49ab8ed",
+  "run_at": "2026-07-25T19:15:26.035070Z",
+  "run_id": "38416218ff837dcea1440739562c5247",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "94f860b97aeb66b61ccd44cb640e713792769c23",
