@@ -273,6 +273,8 @@ defmodule SpecLedEx.Review.CoverageClosure do
     * `:line_index` — pre-built `MfaLines.index/1` result (skips indexing;
       tests use this to inject a stub without relying on fixture BEAM
       layout).
+    * `:per_test_reach_fn` — test-only three-argument replacement for
+      `CoverageTriangulation.per_test_requirement_reach/3`.
   """
   @spec build_v2(map(), keyword()) :: %{optional(String.t()) => v2_subject_reach()}
   def build_v2(index, opts \\ []) when is_map(index) do
@@ -355,21 +357,41 @@ defmodule SpecLedEx.Review.CoverageClosure do
           end
       end
 
-    Map.new(subject_reqs, fn {subject_id, {subject, requirements}} ->
-      closure_map = %{
-        subjects: %{
-          subject_id => %{owned_files: subject.surface, requirements: requirements}
-        }
-      }
+    closure_map = %{
+      subjects:
+        Map.new(subject_reqs, fn {subject_id, {subject, requirements}} ->
+          {subject_id, %{owned_files: subject.surface, requirements: requirements}}
+        end)
+    }
 
+    requirement_reach =
+      case envelope.mode do
+        :aggregate ->
+          CoverageTriangulation.aggregate_requirement_reach(envelope, closure_map)
+
+        :per_test ->
+          per_test_reach_fn =
+            Keyword.get(
+              opts,
+              :per_test_reach_fn,
+              &CoverageTriangulation.per_test_requirement_reach/3
+            )
+
+          per_test_reach_fn.(
+            envelope.payload,
+            closure_map,
+            line_index
+          )
+      end
+
+    Map.new(subject_reqs, fn {subject_id, {_subject, requirements}} ->
       by_req =
         v2_by_requirement(
           envelope,
-          closure_map,
+          requirement_reach,
           subject_id,
           requirements,
-          tag_index,
-          line_index
+          tag_index
         )
 
       reach =
@@ -461,19 +483,17 @@ defmodule SpecLedEx.Review.CoverageClosure do
   end
 
   defp v2_by_requirement(
-         %{mode: :aggregate} = envelope,
-         closure_map,
+         %{mode: :aggregate},
+         requirement_reach,
          subject_id,
          requirements,
-         tag_index,
-         _line_index
+         tag_index
        ) do
-    reach = CoverageTriangulation.aggregate_requirement_reach(envelope, closure_map)
     spec_tags = Map.get(tag_index, :spec, %{})
 
     Map.new(requirements, fn req ->
       r =
-        Map.get(reach, {subject_id, req.id}, %{
+        Map.get(requirement_reach, {subject_id, req.id}, %{
           closure_mfa_count: 0,
           executed_mfa_count: 0,
           covered_mfas: [],
@@ -498,27 +518,17 @@ defmodule SpecLedEx.Review.CoverageClosure do
   end
 
   defp v2_by_requirement(
-         %{mode: :per_test} = envelope,
-         closure_map,
+         %{mode: :per_test},
+         requirement_reach,
          subject_id,
          requirements,
-         tag_index,
-         line_index
+         tag_index
        ) do
-    # Real per-test MFA reach: line→MFA intersection via MfaLines, not the
-    # retired file-level "any hit in the MFA's source file" proxy.
-    per_req =
-      CoverageTriangulation.per_test_requirement_reach(
-        envelope.payload,
-        closure_map,
-        line_index
-      )
-
     spec_tags = Map.get(tag_index, :spec, %{})
 
     Map.new(requirements, fn req ->
       r =
-        Map.get(per_req, {subject_id, req.id}, %{
+        Map.get(requirement_reach, {subject_id, req.id}, %{
           closure_mfa_count: 0,
           executed_mfa_count: 0,
           covered_mfas: [],

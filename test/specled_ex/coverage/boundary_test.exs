@@ -74,8 +74,7 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
         %{Mod => [{10, 2}, {20, 0}]}
       ]
 
-      {:ok, agent} = Agent.start_link(fn -> snapshots end)
-      on_exit(fn -> if Process.alive?(agent), do: Agent.stop(agent) end)
+      agent = start_supervised!({Agent, fn -> snapshots end})
 
       snapshot_fn = fn _modules ->
         Agent.get_and_update(agent, fn [head | tail] -> {head, tail} end)
@@ -88,9 +87,9 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
       )
 
       head = Boundary.head(%{module: SampleTest, test: :"test path_a"})
-      assert head == %{Mod => [{10, 0}, {20, 0}]}
+      assert head == :armed
 
-      assert :ok = Boundary.tail({SampleTest, :"test path_a"}, head)
+      assert :ok = Boundary.tail(SampleTest, :"test path_a")
 
       assert [{_key, row}] =
                :ets.lookup(tid, {SampleTest, :"test path_a"})
@@ -121,9 +120,12 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
       assert_received :modules_called
       refute_received :modules_called
       assert_received {:snapshot_modules, [ModA, ModB]}
+      refute_received {:snapshot_modules, [ModA, ModB]}
 
-      assert [{key, [ModA, ModB]}] = :ets.tab2list(tid)
-      assert is_atom(key)
+      assert Enum.any?(:ets.tab2list(tid), fn
+               {key, [ModA, ModB]} when is_atom(key) -> true
+               _ -> false
+             end)
     end
 
     test "passes diagnostics count through on negative deltas" do
@@ -140,18 +142,51 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
 
       arm(boundary_table: tid, snapshot_fn: snapshot_fn, modules_fn: fn -> [Mod] end)
 
-      head = Boundary.head(%{})
-      assert :ok = Boundary.tail({T, :t}, head)
+      assert :armed = Boundary.head(%{})
+      assert :ok = Boundary.tail(T, :t)
 
       assert [{_, row}] = :ets.lookup(tid, {T, :t})
       assert row.hits == %{}
       assert row.diagnostics == 1
     end
+
+    test "chains each tail into the next head with one snapshot per test after the initial read" do
+      tid = new_table()
+
+      snapshots = [
+        %{Mod => [{10, 0}, {20, 0}]},
+        %{Mod => [{10, 1}, {20, 0}]},
+        %{Mod => [{10, 1}, {20, 1}]}
+      ]
+
+      {:ok, agent} = Agent.start_link(fn -> snapshots end)
+      on_exit(fn -> if Process.alive?(agent), do: Agent.stop(agent) end)
+
+      snapshot_fn = fn _ ->
+        Agent.get_and_update(agent, fn [snapshot | rest] -> {snapshot, rest} end)
+      end
+
+      arm(boundary_table: tid, snapshot_fn: snapshot_fn, modules_fn: fn -> [Mod] end)
+
+      assert :armed = Boundary.head(%{module: T, test: :first})
+      assert :ok = Boundary.tail(T, :first)
+
+      # The second head reuses the first tail. A fourth snapshot would be
+      # required here if the chained tail were not retained in ETS.
+      assert :armed = Boundary.head(%{module: T, test: :second})
+      assert :ok = Boundary.tail(T, :second)
+      assert Agent.get(agent, & &1) == []
+
+      assert [{_, first}] = :ets.lookup(tid, {T, :first})
+      assert [{_, second}] = :ets.lookup(tid, {T, :second})
+      assert first.hits == %{Mod => [10]}
+      assert second.hits == %{Mod => [20]}
+    end
   end
 
   describe "tail/2 - unarmed no-op" do
     test "returns :ok without writing when unarmed" do
-      assert :ok = Boundary.tail({M, :t}, %{})
+      assert :ok = Boundary.tail(M, :t)
     end
   end
 end

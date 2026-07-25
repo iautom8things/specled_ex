@@ -271,14 +271,15 @@ decisions:
     `CoverageTriangulation.per_test_requirement_reach/3` and
     `SpecLedEx.Coverage.MfaLines` (not a file-level proxy). `"executed"` strength and
     the per_test `closure_coverage_pct` for non-degraded / fully-hooked runs are
-    **exact up to escaped processes** (a process a test spawns that outlives its tail
-    snapshot can still increment counters after the window closes; see
+    exact within the chained window: later tests also inherit serialized runner /
+    `setup_all` activity since the prior tail, and a process a test spawns that
+    outlives its tail snapshot can increment counters after the window closes (see
     `specled.decision.per_test_sync_boundary`) — the closure line, "Reached by tests"
     row, Self-verified row, and subject-card rollup badge shall each be discoverably
     qualified with that claim. When the envelope is unhooked-degraded
     (`meta.unhooked_modules` non-empty), the same surfaces shall instead carry an
-    honest degraded qualifier naming those modules; hooked windows remain exact up
-    to escaped processes. MFAs whose modules lack abstract code
+    honest degraded qualifier naming those modules; hooked windows remain exact
+    within the same disclosed chained-window bounds. MFAs whose modules lack abstract code
     (`:no_debug_info`) shall render as a distinct note, not as covered or uncovered.
     Each subject card shall additionally carry a rollup badge summarizing the
     subject's coverage status (a self-verified/total count and mode when coverage
@@ -322,7 +323,9 @@ decisions:
   statement: >-
     `"executed"` strength and the per_test `closure_coverage_pct` for
     non-degraded / fully-hooked runs both reflect real per-test line→MFA
-    intersection and are **exact up to escaped processes** (see
+    intersection and are exact within the disclosed chained window (later
+    windows include the serialized interval since the prior tail, in
+    addition to escaped-process leakage; see
     `specled.decision.per_test_sync_boundary`) — the closure line, the
     "Reached by tests" row, the per-requirement "Self-verified" row, and
     the subject-card rollup badge (`specled.spec_review.coverage_rollup_badge`)
@@ -394,6 +397,10 @@ decisions:
     real line→MFA intersection
     (`CoverageTriangulation.per_test_requirement_reach/3` +
     `SpecLedEx.Coverage.MfaLines.index/1`), never a file-level proxy.
+    `build_v2/2` shall call `per_test_requirement_reach/3` exactly once per
+    review with the full multi-subject closure map and index the resulting
+    `{subject_id, requirement_id}` entries while building subject views,
+    rather than regrouping and re-walking the full payload once per subject.
     Subject-level status distinguishes `:ok_aggregate` from `:ok_per_test`
     coverage; unhooked-only degraded envelopes
     (`Store.degraded_reasons/1 == [:unhooked]`) stay on `:ok_per_test`

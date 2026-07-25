@@ -209,6 +209,7 @@ defmodule Mix.Tasks.Spec.Cover.Test do
     {:module, _} = Code.ensure_loaded(SpecLedEx.Case)
 
     install_formatter()
+    suite_started_at = DateTime.utc_now()
 
     try do
       Mix.Task.run("test", ["--cover" | argv])
@@ -216,6 +217,24 @@ defmodule Mix.Tasks.Spec.Cover.Test do
       if async_files != [] do
         warn_about_async_true(async_files)
       end
+
+      assert_fresh_per_test_artifact!(Store.default_path(), suite_started_at)
+    end
+  end
+
+  defp assert_fresh_per_test_artifact!(path, suite_started_at) do
+    status = Store.read_status(path)
+
+    with {:ok, _stats} <- status,
+         {:ok, %{generated_at: %DateTime{} = generated_at}} <- Store.read_v2(path),
+         :gt <- DateTime.compare(generated_at, suite_started_at) do
+      :ok
+    else
+      _ ->
+        Mix.raise(
+          "mix spec.cover.test --per-test: coverage artifact is stale; " <>
+            "the suite did not write a fresh #{path} (status: #{inspect(status)})"
+        )
     end
   end
 

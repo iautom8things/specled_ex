@@ -9,7 +9,7 @@ replaces:
   - specled.decision.aggregate_first_spec_coverage
 ---
 
-# Per-Test Attribution Via Synchronous Boundary Hook: Exact Up To Escaped Processes
+# Per-Test Attribution Via Chained Synchronous Boundary Windows
 
 ## Context
 
@@ -32,6 +32,12 @@ demotes to auditor, unhooked modules degrade honestly, and every claim
 surface upgrades from "observed/approximate, never exact" to **"exact up
 to escaped processes"** for hooked windows.
 
+The first implementation retained a whole-scope head snapshot inside every
+test's `on_exit` closure. ExUnit's on-exit handler copies that environment,
+making the retention cost scale with the entire module/line snapshot. Chaining
+removes that copy, but it also changes the measured interval and therefore
+requires a narrower attribution claim.
+
 ## Decision
 
 ### Boundary hook is the measurement engine
@@ -39,10 +45,12 @@ to escaped processes"** for hooked windows.
 Exclusive per-test attribution is produced only by the synchronous
 boundary hook:
 
-- Head snapshot at test setup (`Boundary.head/1`).
-- Tail snapshot in the test's `on_exit` callback (`Boundary.tail/2`), which
-  `ExUnit.Runner` awaits via `exec_on_exit/3` before spawning the next
-  test.
+- One initial head snapshot (`Boundary.head/1`).
+- Tail snapshot in each test's `on_exit` callback (`Boundary.tail/2`), which
+  `ExUnit.Runner` awaits via `exec_on_exit/3` before advancing.
+- Each tail is retained in the boundary ETS table as the next test's head:
+  `tail(N) == head(N+1)`. The on-exit closure therefore retains only the
+  `{module, name}` test key, never a whole-scope snapshot.
 - Diff via `Snapshot.diff/2` over the `[head, tail]` window; row inserted
   into a public anonymous ETS table armed by
   `mix spec.cover.test --per-test` through the existing
@@ -74,14 +82,22 @@ lazy-capture fallback is deleted. On `suite_finished`:
 A zero-hooked run with a non-empty remainder still writes the degraded
 envelope; only a genuinely empty run refuses.
 
-### Claim: exact up to escaped processes
+### Claim: exact within a disclosed chained window
 
-For hooked tests under `--per-test`, per-test `lines_hit` are **exact up
-to escaped processes**: a process a test spawns that outlives its tail
-snapshot can still increment shared `:cover`/native counters after the
-window closes, landing in a later window or the unattributed remainder.
-No runtime detection of escaped processes is promised. Unhooked modules
-are never claimed exact — they degrade as above.
+For hooked tests under `--per-test`, per-test `lines_hit` are exact within
+the chained `[head, tail]` measurement window. For the first hooked test,
+the head is taken in its setup. For every later hooked test, the head is the
+prior hooked test's tail, so the window also contains everything before the
+current test's setup: serialized `ExUnit.Runner` / `setup_all` activity and
+any intervening unhooked tests. The implementation does not prove that
+interval empty and therefore does not claim test-body-only attribution for
+it.
+
+A process a test spawns that outlives its tail snapshot remains the second
+bound: it can increment shared `:cover`/native counters after the window
+closes, landing in a later window or the unattributed remainder. No runtime
+detection of either between-test activity or escaped processes is promised.
+Unhooked modules are never claimed exact — they degrade as above.
 
 This supersedes the "race-bounded, never exact" section of
 `specled.decision.aggregate_first_spec_coverage` for the `--per-test`
@@ -99,19 +115,25 @@ seam, anonymous ETS, and `snapshot_fn`/`modules_fn` DI seams remain.
 
 ## Consequences
 
-- **Positive:** hooked tests get deterministic exclusive attribution
+- **Positive:** hooked tests get deterministic, disjoint chained windows
   (seeded exclusivity integration test; not statistical). The
   ExUnit cast-timing race (`specled_-cpw`) is closed for hooked windows.
+- **Positive:** the boundary costs one initial whole-scope snapshot plus one
+  whole-scope tail snapshot per hooked test, and the on-exit closure retains
+  only the test key.
 - **Positive:** unhooked modules never fail a run — degrade + notice
   teaches the wiring, so adopters can adopt the hook incrementally.
-- **Positive:** claim surfaces can honestly say "exact up to escaped
-  processes" instead of over-disclosing a race that no longer applies to
-  hooked windows.
+- **Positive:** claim surfaces can honestly say "exact within the disclosed
+  chained window" instead of over-disclosing a formatter race or hiding the
+  between-test interval.
 - **Negative:** exclusive per-test attribution now costs one setup line
   per case template (or `use SpecLedEx.Case`). Zero-wiring remains true
   only for the default aggregate lane.
-- **Negative:** escaped-process leakage is a disclosed bound, not a
-  detected runtime condition.
+- **Negative:** between-test runner / `setup_all` activity, and any unhooked
+  tests scheduled between hooked tests, are attributed to the following
+  hooked test's chained window.
+- **Negative:** escaped-process leakage is a disclosed bound, not a detected
+  runtime condition.
 - **Negative (deferred):** review/triangulation labels and adoption docs
   Phase 4a/4b still need their own stages to consume `meta` and teach
   the wiring cost (`specled_-pzd.3`, `specled_-pzd.4`).

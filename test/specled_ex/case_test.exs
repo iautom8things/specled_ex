@@ -118,6 +118,7 @@ defmodule SpecLedEx.CaseTest do
 
       # Would fail if the public setup callback crashed when armed.
       assert :ok = SpecLedEx.Coverage.per_test_boundary(context)
+      assert Agent.get(agent, &length/1) == 1
     end
   end
 end

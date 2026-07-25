@@ -24,12 +24,15 @@ a suite-lifecycle auditor (inventory + flush; no per-test snapshots —
 `specled.coverage_capture.formatter_auditor`). Exclusive per-test
 attribution comes from the synchronous boundary hook
 (`setup {SpecLedEx.Coverage, :per_test_boundary}` or `use SpecLedEx.Case`):
-head snapshot at setup, tail snapshot in `on_exit`, which `ExUnit.Runner`
-awaits before spawning the next test. Hooked tests' `[head, tail]` windows
-are therefore disjoint — **exact up to escaped processes** (a process a
-test spawns that outlives its tail snapshot can still increment shared
-counters after the window closes). Unhooked tests never fail the run:
-their coverage folds into the run's aggregate remainder, the envelope is
+one initial head snapshot, then a tail snapshot in each `on_exit`, which
+`ExUnit.Runner` awaits before spawning the next test. Each tail is reused as
+the next test's head. Hooked tests' `[head, tail]` windows are therefore
+disjoint, but after the first hooked test they include everything since the
+prior hooked tail: serialized runner / `setup_all` work and any intervening
+unhooked tests. Attribution is exact within that chained window up to escaped
+processes. Unhooked tests never fail the run:
+they produce no row of their own; coverage not absorbed by a later chained
+hooked window remains in the run's aggregate remainder. The envelope is
 `degraded: true`, and one per-module stderr notice names the setup line to
 add (`specled.coverage_capture.unhooked_degrade`,
 `specled.coverage_capture.unhooked_remediation_notice`). Inventory is
@@ -319,6 +322,19 @@ decisions:
     notice in that case.
   priority: must
   stability: evolving
+- id: specled.coverage_capture.per_test_artifact_freshness
+  statement: >-
+    After the wrapped suite returns or raises, `mix spec.cover.test
+    --per-test` shall require `Store.read_status/1` to report success and
+    `Store.read_v2/1` to return an envelope whose `generated_at` is later
+    than a timestamp captured immediately before the suite started. A
+    missing, refused, invalid, or older artifact shall raise a clear stale
+    artifact error, so a formatter failure can never silently reuse the
+    previous run's file. A red suite that wrote a fresh artifact shall
+    retain its original failing exit rather than gaining a stale-artifact
+    failure merely because its tests failed.
+  priority: must
+  stability: evolving
 - id: specled.coverage_capture.cumulative_parity
   statement: >-
     Arming the `--per-test` formatter (either snapshot engine) shall never
@@ -339,10 +355,11 @@ decisions:
     (non-`async: true`) execution, so interleaved `test_finished` events
     for different tests cannot collide on the same inventory row. Boundary
     rows are always keyed by `{module, name}` and matched on flush via
-    that stable test key. Exclusive per-test attribution for hooked tests
-    is exact up to escaped processes (see
-    `specled.decision.per_test_sync_boundary`); the inventory key choice
-    does not itself perform measurement.
+    that stable test key. Per-test attribution for hooked tests is exact
+    within the chained window disclosed by
+    `specled.decision.per_test_sync_boundary` (including the serialized
+    interval preceding later tests and escaped-process leakage); the
+    inventory key choice does not itself perform measurement.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.anonymous_ets
@@ -465,14 +482,16 @@ decisions:
   stability: evolving
 - id: specled.coverage_capture.boundary_hook_sync
   statement: >-
-    `SpecLedEx.Coverage.Boundary` shall take a head snapshot at test setup
-    (`Boundary.head/1`) and a tail snapshot in the test's `on_exit` callback
-    (`Boundary.tail/2`), which `ExUnit.Runner` awaits via `exec_on_exit/3`
-    before spawning the next test. The public adopter API is
+    `SpecLedEx.Coverage.Boundary` shall take one initial whole-scope head
+    snapshot (`Boundary.head/1`) and a tail snapshot in each test's
+    `on_exit` callback (`Boundary.tail/2`), which `ExUnit.Runner` awaits via
+    `exec_on_exit/3` before spawning the next test. Each tail shall be
+    retained in the boundary ETS table as the next test's head, so the
+    `on_exit` closure captures only the test key. The public adopter API is
     `setup {SpecLedEx.Coverage, :per_test_boundary}` (or `use SpecLedEx.Case`).
-    The hot path is two snapshot reads + one `Snapshot.diff/2` + one ETS
-    insert; no `module_info/1` calls; the head snapshot lives only in the
-    `on_exit` closure.
+    The cost is one O(modules × lines) initial snapshot plus one O(modules ×
+    lines) snapshot, one `Snapshot.diff/2`, and ETS operations per hooked
+    test; no `module_info/1` calls occur on the boundary hot path.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.boundary_noop_unarmed
@@ -501,21 +520,28 @@ decisions:
     `SpecLedEx.Coverage.Formatter.flush/1` shall derive that test's flushed
     record exclusively from the boundary window (compacted via the
     formatter's file map). Unhooked tests (no boundary row) produce no
-    per-test payload record — their coverage folds into the unattributed
-    remainder (`formatter_auditor` / `unhooked_degrade`); there is no
+    per-test payload record. Their coverage remains in the unattributed
+    remainder unless a later hooked test's chained window starts at an
+    earlier hooked tail and therefore absorbs the intervening unhooked
+    execution (`formatter_auditor` / `unhooked_degrade`). There is no
     lazy-capture fallback.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.per_test_exclusive_attribution
   statement: >-
     Under `mix spec.cover.test --per-test`, hooked tests' `[head, tail]`
-    windows shall be disjoint: each hooked test's `lines_hit` shall contain
-    only lines executed inside its own window, and two hooked tests that
-    exercise disjoint functions of a fixture module shall produce disjoint
-    `lines_hit` sets. Exclusivity is deterministic (Runner-awaited tail),
-    qualified only by processes a test spawns that outlive its tail
-    snapshot. Proven by a seeded exclusivity integration test over three
-    distinct explicit seeds — never a statistical assertion.
+    windows shall be chained and disjoint: `tail(N) == head(N+1)`. The first
+    window starts at its setup; each later window also includes activity in
+    the serialized runner / `setup_all` interval after the prior tail and
+    before the current setup; if unhooked tests ran since the prior hooked
+    tail, their execution is part of that interval too. Two hooked tests that
+    exercise disjoint functions of a fixture module shall still produce
+    disjoint `lines_hit` sets when that between-test interval does not
+    execute those functions.
+    Attribution is exact within each chained window, qualified by both that
+    disclosed between-test interval and processes a test spawns that outlive
+    its tail snapshot. Proven by a seeded exclusivity integration test over
+    three distinct explicit seeds — never a statistical assertion.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.envelope_meta
@@ -555,17 +581,21 @@ decisions:
     `Snapshot.diff(baseline, final)`, attribute the union of boundary rows
     to per-test payload records, and fold the unattributed remainder
     (line-level set subtraction of attributed from run-total) into
-    `meta.unattributed` and `envelope.files`. There is no lazy-capture
-    fallback for unhooked tests.
+    `meta.unattributed` and `envelope.files`. Because chained heads come
+    from the prior hooked tail, intervening unhooked execution may already
+    be present in a later boundary row and thus absent from that remainder.
+    There is no lazy-capture fallback for unhooked tests.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.unhooked_degrade
   statement: >-
     When any test that ran lacks a boundary row for its `{module, name}`
     key, `Formatter.flush/1` shall never fail the run for that reason: the
-    unhooked test contributes no per-test payload record; its coverage
-    (if any) remains in the unattributed remainder; `meta.unhooked_modules`
-    lists each unhooked module; and the envelope is `degraded: true` with
+    unhooked test contributes no per-test payload record of its own; its
+    coverage remains in the unattributed remainder unless it falls between
+    two hooked tails and is absorbed by the later chained window;
+    `meta.unhooked_modules` lists each unhooked module; and the envelope is
+    `degraded: true` with
     `:unhooked` among `meta.degraded_reasons`. A zero-hooked run
     with a non-empty remainder still writes the degraded envelope.
   priority: must
@@ -710,6 +740,17 @@ decisions:
   covers:
     - specled.coverage_capture.serialized_run
     - specled.coverage_capture.integration_case
+- id: specled.coverage_capture.scenario.spec_cover_test_per_test_freshness
+  given:
+    - "a successful status sidecar and v2 artifact left by an earlier run"
+    - "a new `--per-test` suite whose formatter does not write an artifact"
+  when:
+    - "`mix spec.cover.test --per-test` finishes the suite"
+  then:
+    - "the task exits non-zero naming the stale artifact instead of accepting the previous run's file"
+    - "a red suite that does write an envelope newer than the pre-suite timestamp keeps its ordinary red-suite failure with no stale-artifact error"
+  covers:
+    - specled.coverage_capture.per_test_artifact_freshness
 - id: specled.coverage_capture.scenario.spec_cover_test_per_test_async_contamination
   given:
     - "a child-BEAM fixture with one `async: true` test module"
@@ -806,9 +847,10 @@ decisions:
     - "the arming seam carries `boundary_table: tid` and a stub `snapshot_fn`"
     - "a test registers `setup {SpecLedEx.Coverage, :per_test_boundary}`"
   when:
-    - "the test runs (head at setup, tail at on_exit)"
+    - "two tests run (one initial head, each tail at on_exit, with the first tail reused as the second head)"
   then:
-    - "the boundary table holds a row keyed by `{module, name}` whose hits are the strict positive diff of the [head, tail] window"
+    - "the boundary table holds rows keyed by `{module, name}` whose hits are the strict positive diffs of their chained windows"
+    - "three whole-scope snapshot reads occur for two tests, and each on_exit closure needs only its test key"
   covers:
     - specled.coverage_capture.boundary_hook_sync
 - id: specled.coverage_capture.scenario.boundary_noop_under_plain_mix_test
@@ -900,7 +942,7 @@ decisions:
   then:
     - "exit code is 0"
     - "envelope is degraded: true with meta.unhooked_modules naming the unhooked module"
-    - "hooked test's payload row is present and exact"
+    - "the hooked test's payload row is present and exact within its disclosed chained window"
     - "stderr notice names the unhooked module and contains `setup {SpecLedEx.Coverage, :per_test_boundary}`"
   covers:
     - specled.coverage_capture.unhooked_degrade
@@ -942,6 +984,7 @@ decisions:
     - specled.coverage_capture.default_aggregate_red_suite_passthrough
     - specled.coverage_capture.default_aggregate_empty_refusal
     - specled.coverage_capture.per_test_v2_envelope
+    - specled.coverage_capture.per_test_artifact_freshness
     - specled.coverage_capture.cumulative_parity
     - specled.coverage_capture.per_test_exclusive_attribution
     - specled.coverage_capture.boundary_row_exclusive

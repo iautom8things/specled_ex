@@ -97,7 +97,7 @@ interchangeable:
   requirement" figure — `self_verified?` is a yes/no composite, not a
   percentage.
 
-## `--per-test`: opt-in, exact up to escaped processes
+## `--per-test`: opt-in, exact within disclosed chained windows
 
 ```bash
 mix spec.cover.test --per-test
@@ -150,19 +150,21 @@ is marked `degraded: true`:
   - test/async_true_test.exs
 ```
 
-**Hooked tests: exact up to escaped processes.** A hooked test's
-`[head, tail]` window is taken inside the test process and awaited by
-`ExUnit.Runner` before the next test starts, so two hooked tests that
-exercise disjoint code produce disjoint `lines_hit` sets. The only
-disclosed bound is **escaped processes**: a process a test spawns that
-outlives its tail snapshot can still increment shared `:cover`/native
-counters after the window closes, landing in a later window or the
-unattributed remainder. No runtime detection of escaped processes is
-promised. See `specled.decision.per_test_sync_boundary`.
+**Hooked tests: exact within chained windows.** The first hooked test takes
+an initial head snapshot; every `on_exit` takes a tail snapshot that
+`ExUnit.Runner` awaits before advancing and that tail becomes the next
+test's head. The windows are disjoint, but after the first hooked test a
+window also contains everything since the prior hooked tail: serialized
+runner / `setup_all` work and any intervening unhooked tests. A process a
+test spawns that outlives its tail can
+likewise increment shared `:cover`/native counters in a later window or the
+unattributed remainder. Neither source of leakage is detected at runtime.
+See `specled.decision.per_test_sync_boundary`.
 
 **Unhooked modules degrade, never fail.** Tests that do not run the
-boundary hook contribute no per-test payload row. Their coverage folds
-into the run's aggregate remainder (`meta.unattributed`); the envelope is
+boundary hook contribute no per-test payload row of their own. Their coverage
+folds into the run's aggregate remainder (`meta.unattributed`) unless a later
+hooked chained window absorbs the intervening execution; the envelope is
 `degraded: true` with `meta.unhooked_modules` listing the modules; and
 stderr prints one per-module remediation notice naming the setup line.
 A fully unhooked run still writes the degraded envelope when the remainder
@@ -172,9 +174,12 @@ is non-empty — it does not refuse as "empty payload."
 `mix test --cover` itself exports (a tripwire test diffs decoded
 `.coverdata` content with and without it armed and requires them equal).
 The cost is the forced serialized run itself, plus two suite-level
-snapshots from the formatter and two snapshots per hooked test from the
-boundary hook — proportional to hooked test count for the exclusive path,
-unlike the aggregate default.
+O(modules × lines) snapshots from the formatter. The boundary hook adds one
+initial O(modules × lines) snapshot, then one O(modules × lines) tail
+snapshot, one diff, and ETS operations per hooked test; each tail is reused
+as the next head so `on_exit` retains only the small test key. The exclusive
+path is therefore proportional to hooked test count, unlike the aggregate
+default.
 
 **Scoping knobs.** `SpecLedEx.Coverage.Formatter` accepts `snapshot_fn`
 (default dispatches to `SpecLedEx.Coverage.Snapshot.take/2`) and
@@ -184,11 +189,13 @@ package, not adopter-facing configuration.
 
 ## Wiring the per-test boundary hook
 
-For exclusive per-test windows under `--per-test`, wire a synchronous
-boundary hook once per case template. The hook takes a head coverage
-snapshot at setup and a tail snapshot in `on_exit` (awaited by
-`ExUnit.Runner` before the next test starts), so a hooked test's record
-cannot contain a neighbor's progress.
+For chained per-test windows under `--per-test`, wire a synchronous boundary
+hook once per case template. The hook takes one initial head coverage
+snapshot and a tail snapshot in every `on_exit` (awaited by `ExUnit.Runner`
+before the next test starts); each tail is the next test's head. A record
+cannot contain a neighboring hooked test body's progress, but it can contain
+serialized runner / `setup_all` work or unhooked tests run since the previous
+hooked tail, as disclosed above.
 
 In a Phoenix-style app case template:
 

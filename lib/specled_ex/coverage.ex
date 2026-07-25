@@ -4,7 +4,7 @@ defmodule SpecLedEx.Coverage do
 
   ## Wiring the per-test boundary hook
 
-  Adopters that want exclusive per-test attribution under
+  Adopters that want chained per-test attribution under
   `mix spec.cover.test --per-test` wire the hook once per case template:
 
       setup {SpecLedEx.Coverage, :per_test_boundary}
@@ -44,9 +44,9 @@ defmodule SpecLedEx.Coverage do
   Wire with `setup {SpecLedEx.Coverage, :per_test_boundary}` (or
   `use SpecLedEx.Case`). When the `:specled_ex, :spec_cover_run` seam is
   unarmed or lacks a `:boundary_table`, this is a pure no-op. When armed,
-  it takes a head snapshot and registers an `on_exit` that takes the tail
-  snapshot, diffs the window, and inserts the row into the boundary ETS
-  table for the formatter to consume on flush.
+  it ensures the chained head snapshot exists and registers an `on_exit`
+  that takes the tail snapshot, diffs the window, and inserts the row into
+  the boundary ETS table for the formatter to consume on flush.
   """
   @spec per_test_boundary(map()) :: :ok
   def per_test_boundary(context) when is_map(context) do
@@ -54,11 +54,12 @@ defmodule SpecLedEx.Coverage do
       :unarmed ->
         :ok
 
-      head_snapshot ->
+      :armed ->
         key = boundary_key(context)
 
         ExUnit.Callbacks.on_exit(fn ->
-          Boundary.tail(key, head_snapshot)
+          {module, name} = key
+          Boundary.tail(module, name)
         end)
 
         :ok

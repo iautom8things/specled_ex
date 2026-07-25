@@ -188,6 +188,64 @@ defmodule SpecLedEx.Review.CoverageClosureTest do
   end
 
   describe "build_v2/2 — tagged_tests evidence strength" do
+    test "per_test reach is computed once with the full multi-subject closure map" do
+      source = FixtureA.module_info(:compile)[:source] |> List.to_string()
+
+      line_index = %{
+        FixtureA => %{{:run, 1} => MapSet.new([10])},
+        FixtureB => %{{:run, 1} => MapSet.new([20])}
+      }
+
+      records = [
+        %{
+          test_id: "T.a",
+          file: source,
+          lines_hit: [10],
+          tags: %{file: "test/a_test.exs", test: "a"},
+          test_pid: self()
+        },
+        %{
+          test_id: "T.b",
+          file: source,
+          lines_hit: [20],
+          tags: %{file: "test/b_test.exs", test: "b"},
+          test_pid: self()
+        }
+      ]
+
+      parent = self()
+
+      per_test_reach_fn = fn payload, closure_map, index ->
+        send(parent, {:per_test_reach, payload, closure_map, index})
+
+        SpecLedEx.CoverageTriangulation.per_test_requirement_reach(
+          payload,
+          closure_map,
+          index
+        )
+      end
+
+      reach =
+        CoverageClosure.build_v2(fixture_index(),
+          tracer_edges: @edges,
+          envelope: %{mode: :per_test, payload: records, degraded: false, meta: %{}},
+          line_index: line_index,
+          per_test_reach_fn: per_test_reach_fn
+        )
+
+      assert_receive {:per_test_reach, ^records, closure_map, ^line_index}
+      assert closure_map.subjects |> Map.keys() |> Enum.sort() == ["subject_a", "subject_b"]
+      refute_receive {:per_test_reach, _records, _closure_map, _line_index}
+
+      assert reach["subject_a"].by_requirement["subject_a.req1"].covered_mfas == [
+               @fixture_a_mfa
+             ]
+
+      assert reach["subject_b"].by_requirement["subject_b.req1"].covered_mfas == [
+               @fixture_b_mfa
+             ]
+    end
+
     test "aggregate mode: a tagged test is \"linked\" when the closure has any execution, \"claimed\" when it has none" do
       linked_envelope = aggregate_envelope(mfas: [%{mfa: @fixture_a_mfa, covered: true}])
       claimed_envelope = aggregate_envelope(mfas: [%{mfa: @fixture_a_mfa, covered: false}])
