@@ -206,8 +206,8 @@ defmodule SpecLedEx.Review.CoverageClosure do
 
     * `:ok_aggregate` / `:ok_per_test` — envelope loaded; mode-tagged so
       renderers can distinguish real per-test MFA attribution
-      (`:ok_per_test`, exact up to escaped processes when the envelope is
-      non-degraded / fully hooked) from cumulative MFA-level coverage
+      (`:ok_per_test`, exact within disclosed chained windows when the
+      envelope is non-degraded / fully hooked) from cumulative MFA-level coverage
       (`:ok_aggregate`). Under `:ok_per_test`, subject maps may also carry
       `:attribution` (`:exact` | `:degraded_unhooked`) and
       `:unhooked_modules` read from envelope `meta` (Stage 2).

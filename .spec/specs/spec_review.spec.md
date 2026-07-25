@@ -339,10 +339,11 @@ decisions:
     Under `:ok_per_test`, per-requirement MFA coverage shall be real
     line→MFA intersection (via `per_test_requirement_reach/3` and
     `MfaLines`), and the per_test closure line shall carry the
-    exact-up-to-escaped-processes qualifier for non-degraded hooked runs, or
-    an honest degraded qualifier naming `meta.unhooked_modules` when the
-    envelope is unhooked-degraded — replacing the prior file-level-proxy
-    approximate label. Aggregate mode shall render neither qualifier.
+    exact-within-chained-windows qualifier for non-degraded hooked runs, or
+    an honest degraded qualifier naming `meta.unhooked_modules` and the
+    aggregate remainder when the envelope is unhooked-degraded — replacing
+    the prior file-level-proxy approximate label. Aggregate mode shall render
+    neither qualifier.
   priority: must
   stability: evolving
 - id: specled.spec_review.coverage_rollup_badge
@@ -352,9 +353,9 @@ decisions:
     when coverage data loaded, or a muted "coverage unavailable" chip when
     degraded). Under `:ok_per_test` mode the badge shall additionally carry
     the `specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier`
-    disclaimer (exact-up-to-escaped-processes, or unhooked-degraded via
-    `coverage_line_mfa_intersection_qualifier`); aggregate mode's badge is already
-    honest and stays unqualified.
+    disclaimer (exact within disclosed chained windows, or
+    unhooked-degraded via `coverage_line_mfa_intersection_qualifier`);
+    aggregate mode's badge is already honest and stays unqualified.
   priority: must
   stability: evolving
 - id: specled.spec_review.coverage_generated_at_staleness
@@ -720,9 +721,9 @@ decisions:
   when:
     - the reviewer opens the subject's Coverage pivot
   then:
-    - the closure line carries a discoverable "(exact up to escaped processes)" qualifier
-    - the "Reached by tests" row carries the same exact-up-to-escaped-processes caveat
-    - "the \"Self-verified: yes.\" row carries its own discoverable \"(exact up to escaped processes)\" qualifier"
+    - the closure line carries a discoverable "(exact within chained windows)" qualifier
+    - the "Reached by tests" row carries the same chained-window caveat, naming inherited between-hook activity and escaped processes
+    - "the \"Self-verified: yes.\" row carries its own discoverable \"(exact within chained windows)\" qualifier"
     - "the equivalent requirement rendered under aggregate mode renders \"Self-verified: no.\" with no such qualifier"
   covers:
     - specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
@@ -753,7 +754,7 @@ decisions:
   when:
     - mix spec.review renders the subject's card
   then:
-    - the card carries a rollup badge reading "1/2 self-verified (per-test)" with a discoverable "(exact up to escaped processes)" qualifier and title caveat citing escaped processes
+    - the card carries a rollup badge reading "1/2 self-verified (per-test)" with a discoverable "(exact within chained windows)" qualifier and title caveat citing inherited between-hook activity and escaped processes
     - the equivalent badge rendered in aggregate mode carries no such qualifier
     - a subject whose coverage status is degraded instead renders a muted "coverage unavailable" chip
   covers:

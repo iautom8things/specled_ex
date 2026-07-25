@@ -225,16 +225,25 @@ defmodule Mix.Tasks.Spec.Cover.Test do
   defp assert_fresh_per_test_artifact!(path, suite_started_at) do
     status = Store.read_status(path)
 
-    with {:ok, _stats} <- status,
-         {:ok, %{generated_at: %DateTime{} = generated_at}} <- Store.read_v2(path),
-         :gt <- DateTime.compare(generated_at, suite_started_at) do
+    if per_test_artifact_fresh?(path, suite_started_at) do
       :ok
     else
-      _ ->
-        Mix.raise(
-          "mix spec.cover.test --per-test: coverage artifact is stale; " <>
-            "the suite did not write a fresh #{path} (status: #{inspect(status)})"
-        )
+      Mix.raise(
+        "mix spec.cover.test --per-test: coverage artifact is stale; " <>
+          "the suite did not write a fresh #{path} (status: #{inspect(status)})"
+      )
+    end
+  end
+
+  @doc false
+  def per_test_artifact_fresh?(path, suite_started_at)
+      when is_binary(path) and is_struct(suite_started_at, DateTime) do
+    with {:ok, _stats} <- Store.read_status(path),
+         {:ok, %{generated_at: %DateTime{} = generated_at}} <- Store.read_v2(path),
+         :gt <- DateTime.compare(generated_at, suite_started_at) do
+      true
+    else
+      _ -> false
     end
   end
 

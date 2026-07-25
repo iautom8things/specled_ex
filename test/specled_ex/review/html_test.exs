@@ -1195,7 +1195,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       # reaches "executed" and the mode-gated row does not render.
       refute html =~ "Reached by tests"
       # Aggregate mode has no per-test attribution qualifier.
-      refute html =~ "exact up to escaped processes"
+      refute html =~ "exact within chained windows"
       refute html =~ "file-level proxy"
     end
 
@@ -1266,7 +1266,7 @@ defmodule SpecLedEx.Review.HtmlTest do
     end
 
     # covers: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
-    test "per-test closure line renders the exact-up-to-escaped-processes qualifier" do
+    test "per-test closure line renders the exact-within-chained-windows qualifier" do
       reach = %{
         status: :ok_per_test,
         attribution: :exact,
@@ -1292,9 +1292,9 @@ defmodule SpecLedEx.Review.HtmlTest do
           )
         )
 
-      # Discoverability: the closure line carries the exact-up-to-escaped-
-      # processes qualifier (file-level proxy note is retired).
-      assert html =~ "exact up to escaped processes"
+      # Discoverability: the closure line carries the exact-within-
+      # chained-windows qualifier (file-level proxy note is retired).
+      assert html =~ "exact within chained windows"
       refute html =~ "file-level proxy"
       refute html =~ "treat as observed, not exact"
 
@@ -1304,7 +1304,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       assert html =~
                ~s|Self-verified: yes. <span class="cov-closure-self-verified-note"|
 
-      assert html =~ "(exact up to escaped processes)</span>"
+      assert html =~ "(exact within chained windows)</span>"
     end
 
     # covers: specled.spec_review.coverage_line_mfa_intersection_qualifier
@@ -1361,7 +1361,7 @@ defmodule SpecLedEx.Review.HtmlTest do
 
       assert html =~ "Self-verified: no."
       refute html =~ "cov-closure-self-verified-note"
-      refute html =~ "exact up to escaped processes"
+      refute html =~ "exact within chained windows"
       refute html =~ "(observed)"
     end
 
@@ -1557,7 +1557,7 @@ defmodule SpecLedEx.Review.HtmlTest do
     end
 
     # covers: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
-    test "per-test mode's rollup badge carries a discoverable exact-up-to-escaped-processes qualifier" do
+    test "per-test mode's rollup badge carries a discoverable exact-within-chained-windows qualifier" do
       reach = %{
         status: :ok_per_test,
         attribution: :exact,
@@ -1569,8 +1569,8 @@ defmodule SpecLedEx.Review.HtmlTest do
 
       html = IO.iodata_to_binary(Html.render_subject_coverage_badge(reach))
 
-      assert html =~ "1/2 self-verified (per-test) (exact up to escaped processes)"
-      assert html =~ "exact up to escaped processes"
+      assert html =~ "1/2 self-verified (per-test) (exact within chained windows)"
+      assert html =~ "exact within chained windows"
       refute html =~ "(observed)"
     end
 
@@ -1588,7 +1588,7 @@ defmodule SpecLedEx.Review.HtmlTest do
 
       assert html =~ "0/2 self-verified (aggregate)"
       refute html =~ "(observed)"
-      refute html =~ "exact up to escaped processes"
+      refute html =~ "exact within chained windows"
     end
 
     test "renders a muted coverage-unavailable chip for each degraded status" do

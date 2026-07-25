@@ -26,6 +26,64 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
 
   alias SpecLedEx.Coverage.Store
 
+  describe "per-test artifact freshness predicate" do
+    @tag spec: "specled.coverage_capture.per_test_artifact_freshness"
+    test "classifies missing, refused, stale successful, and fresh successful artifacts" do
+      root =
+        System.tmp_dir!()
+        |> Path.join("specled_cover_freshness_#{System.unique_integer([:positive])}")
+
+      on_exit(fn -> File.rm_rf!(root) end)
+
+      artifact = Path.join(root, ".spec/_coverage/per_test.coverdata")
+      suite_started_at = ~U[2026-01-01 00:00:00Z]
+
+      refute Mix.Tasks.Spec.Cover.Test.per_test_artifact_fresh?(artifact, suite_started_at)
+
+      refused =
+        Store.build_envelope(%{
+          mode: :per_test,
+          generated_at: ~U[2026-01-01 00:00:01Z],
+          source: "refused",
+          files: [],
+          mfas: [],
+          payload: [],
+          degraded: false
+        })
+
+      assert {:error, :empty_files} = Store.write_v2(refused, artifact)
+      refute Mix.Tasks.Spec.Cover.Test.per_test_artifact_fresh?(artifact, suite_started_at)
+
+      stale =
+        Store.build_envelope(%{
+          mode: :per_test,
+          generated_at: ~U[2020-01-01 00:00:00Z],
+          source: "stale",
+          files: ["lib/stale.ex"],
+          mfas: [],
+          payload: [],
+          degraded: false
+        })
+
+      :ok = Store.write_v2(stale, artifact)
+      refute Mix.Tasks.Spec.Cover.Test.per_test_artifact_fresh?(artifact, suite_started_at)
+
+      fresh =
+        Store.build_envelope(%{
+          mode: :per_test,
+          generated_at: ~U[2026-01-01 00:00:01Z],
+          source: "fresh",
+          files: ["lib/fresh.ex"],
+          mfas: [],
+          payload: [],
+          degraded: false
+        })
+
+      :ok = Store.write_v2(fresh, artifact)
+      assert Mix.Tasks.Spec.Cover.Test.per_test_artifact_fresh?(artifact, suite_started_at)
+    end
+  end
+
   describe "default mode (aggregate ingest)" do
     @tag :integration
     test "mix help spec.cover.test exits 0 and keeps the task name" do

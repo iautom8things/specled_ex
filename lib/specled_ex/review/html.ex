@@ -2026,15 +2026,16 @@ defmodule SpecLedEx.Review.Html do
   # The rollup badge's self-verified count is only ever nonzero under
   # :ok_per_test (aggregate's "linked" evidence ceiling can never satisfy
   # self_verified?'s "executed" half — see CoverageClosure.build_v2/2's
-  # doc). Hooked per-test attribution is exact up to escaped processes
-  # (specled.decision.per_test_sync_boundary); unhooked-degraded runs name
-  # that honestly via subject `:attribution`. Aggregate stays unqualified.
+  # doc). Hooked per-test attribution is exact within disclosed chained
+  # windows (specled.decision.per_test_sync_boundary); unhooked-degraded
+  # runs name that honestly via subject `:attribution`. Aggregate stays
+  # unqualified.
   defp rollup_qualifier_suffix(reach) when is_map(reach) do
     case Map.get(reach, :status) do
       :ok_per_test ->
         case Map.get(reach, :attribution, :exact) do
           :degraded_unhooked -> " (degraded)"
-          _ -> " (exact up to escaped processes)"
+          _ -> " (exact within chained windows)"
         end
 
       _ ->
@@ -2052,12 +2053,14 @@ defmodule SpecLedEx.Review.Html do
             mods = format_unhooked_modules(Map.get(reach, :unhooked_modules, []))
 
             "; per-test run is degraded — unhooked modules (#{mods}) fold into " <>
-              "the aggregate remainder; hooked windows remain exact up to escaped processes"
+              "the aggregate remainder; hooked tests remain exact only within " <>
+              "disclosed chained windows"
 
           _ ->
-            "; per-test attribution is exact up to escaped processes " <>
-              "(a process a test spawns that outlives its tail snapshot can still " <>
-              "increment counters after the window closes) — see " <>
+            "; per-test attribution is exact within disclosed chained windows " <>
+              "(later hooked tests inherit runner/setup_all and intervening " <>
+              "unhooked-test activity since the previous hooked tail; escaped " <>
+              "processes can still increment counters after their tail snapshot closes) — see " <>
               "specled.decision.per_test_sync_boundary"
         end
 
@@ -2732,7 +2735,7 @@ defmodule SpecLedEx.Review.Html do
     <p class="cov-closure-unavailable" role="status">
       <strong>Per-test coverage is degraded (unhooked modules).</strong>
       Modules without the boundary hook (#{h(names)}) fold into the aggregate
-      remainder; hooked windows remain exact up to escaped processes. Add
+      remainder; hooked tests remain exact only within disclosed chained windows. Add
       <code>setup {SpecLedEx.Coverage, :per_test_boundary}</code> (or
       <code>use SpecLedEx.Case</code>) in each unhooked case template.
     </p>
@@ -3058,8 +3061,9 @@ defmodule SpecLedEx.Review.Html do
   # covers: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
   # covers: specled.spec_review.coverage_line_mfa_intersection_qualifier
   # Real per-test MFA reach (specled_-jjq / Stage 3): non-degraded hooked
-  # runs claim "exact up to escaped processes"; unhooked-degraded runs name
-  # meta.unhooked_modules. The retired file-level-proxy note is gone.
+  # runs claim exactness within disclosed chained windows;
+  # unhooked-degraded runs name meta.unhooked_modules. The retired
+  # file-level-proxy note is gone.
   defp render_attribution_qualifier(:per_test, subject_reach) do
     case Map.get(subject_reach || %{}, :attribution, :exact) do
       :degraded_unhooked ->
@@ -3068,10 +3072,10 @@ defmodule SpecLedEx.Review.Html do
           |> Map.get(:unhooked_modules, [])
           |> format_unhooked_modules()
 
-        ~s| <span class="cov-closure-attribution-note" title="#{h("Per-test run degraded: unhooked modules (#{mods}) fold into the aggregate remainder; hooked windows remain exact up to escaped processes.")}">(degraded: unhooked #{h(mods)})</span>|
+        ~s| <span class="cov-closure-attribution-note" title="#{h("Per-test run degraded: unhooked modules (#{mods}) fold into the aggregate remainder; hooked tests remain exact only within disclosed chained windows.")}">(degraded: unhooked #{h(mods)})</span>|
 
       _ ->
-        ~S| <span class="cov-closure-attribution-note" title="Per-test MFA coverage is exact up to escaped processes: a process a test spawns that outlives its tail snapshot can still increment counters after the window closes — see specled.decision.per_test_sync_boundary.">(exact up to escaped processes)</span>|
+        ~S| <span class="cov-closure-attribution-note" title="Per-test MFA coverage is exact within disclosed chained windows: later hooked tests inherit runner/setup_all and intervening unhooked-test activity since the previous hooked tail; escaped processes can still increment counters after their tail snapshot closes — see specled.decision.per_test_sync_boundary.">(exact within chained windows)</span>|
     end
   end
 
@@ -3093,12 +3097,13 @@ defmodule SpecLedEx.Review.Html do
   # "Reached by tests" names the tagged tests whose own coverage record
   # reached the requirement's closure via real line→MFA intersection under
   # :ok_per_test (aggregate coverage's evidence strength tops out at
-  # "linked", never "executed"). Hooked attribution is exact up to escaped
-  # processes (specled.decision.per_test_sync_boundary). Rendered only in
-  # per_test mode — not merely omitted when the "executed" list is empty.
+  # "linked", never "executed"). Hooked attribution is exact within
+  # disclosed chained windows (specled.decision.per_test_sync_boundary).
+  # Rendered only in per_test mode — not merely omitted when the "executed"
+  # list is empty.
   defp render_reached_by_tests_row(_tagged_tests, :aggregate, _subject_reach), do: ""
 
-  @exact_up_to_escaped_title "Per-test attribution is exact up to escaped processes: a process a test spawns that outlives its tail snapshot can still increment counters after the window closes — see specled.decision.per_test_sync_boundary."
+  @exact_up_to_escaped_title "Per-test attribution is exact within disclosed chained windows: later hooked tests inherit runner/setup_all and intervening unhooked-test activity since the previous hooked tail; escaped processes can still increment counters after their tail snapshot closes — see specled.decision.per_test_sync_boundary."
 
   defp render_reached_by_tests_row(tagged_tests, :per_test, subject_reach) do
     title = reached_by_tests_title(subject_reach)
@@ -3127,7 +3132,7 @@ defmodule SpecLedEx.Review.Html do
           |> Map.get(:unhooked_modules, [])
           |> format_unhooked_modules()
 
-        "Per-test run is degraded — unhooked modules (#{mods}) fold into the aggregate remainder; hooked windows remain exact up to escaped processes."
+        "Per-test run is degraded — unhooked modules (#{mods}) fold into the aggregate remainder; hooked tests remain exact only within disclosed chained windows."
 
       _ ->
         @exact_up_to_escaped_title
@@ -3136,7 +3141,7 @@ defmodule SpecLedEx.Review.Html do
 
   # covers: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
   # self_verified? composes closure_coverage_pct with an "executed"-strength
-  # tagged test under the same exact-up-to-escaped-processes claim.
+  # tagged test under the same exact-within-chained-windows claim.
   # Rendered only in per_test mode: aggregate coverage's "linked" ceiling
   # means self_verified? is always false there, so the note would be inert.
   defp render_self_verified_note(:per_test, subject_reach) do
@@ -3151,7 +3156,7 @@ defmodule SpecLedEx.Review.Html do
   defp self_verified_qualifier_label(subject_reach) do
     case Map.get(subject_reach || %{}, :attribution, :exact) do
       :degraded_unhooked -> "degraded"
-      _ -> "exact up to escaped processes"
+      _ -> "exact within chained windows"
     end
   end
 

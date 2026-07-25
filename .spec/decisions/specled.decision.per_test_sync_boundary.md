@@ -35,8 +35,11 @@ to escaped processes"** for hooked windows.
 The first implementation retained a whole-scope head snapshot inside every
 test's `on_exit` closure. ExUnit's on-exit handler copies that environment,
 making the retention cost scale with the entire module/line snapshot. Chaining
-removes that copy, but it also changes the measured interval and therefore
-requires a narrower attribution claim.
+removes that closure copy, but it adds an ETS write copy of each whole tail
+snapshot and an ETS read copy of the whole snapshot per hooked test when the
+next tail diffs against it; the final tail also remains retained in the table
+for the rest of the run. Chaining also changes the measured interval and
+therefore requires a narrower attribution claim.
 
 ## Decision
 
@@ -119,8 +122,9 @@ seam, anonymous ETS, and `snapshot_fn`/`modules_fn` DI seams remain.
   (seeded exclusivity integration test; not statistical). The
   ExUnit cast-timing race (`specled_-cpw`) is closed for hooked windows.
 - **Positive:** the boundary costs one initial whole-scope snapshot plus one
-  whole-scope tail snapshot per hooked test, and the on-exit closure retains
-  only the test key.
+  whole-scope tail snapshot per hooked test, plus the ETS write/read copies
+  named in Context; the on-exit closure retains only the test key instead of
+  a whole snapshot.
 - **Positive:** unhooked modules never fail a run — degrade + notice
   teaches the wiring, so adopters can adopt the hook incrementally.
 - **Positive:** claim surfaces can honestly say "exact within the disclosed
@@ -134,6 +138,9 @@ seam, anonymous ETS, and `snapshot_fn`/`modules_fn` DI seams remain.
   hooked test's chained window.
 - **Negative:** escaped-process leakage is a disclosed bound, not a detected
   runtime condition.
+- **Negative:** the final hooked test's tail snapshot remains in the boundary
+  ETS table until suite end; any process that raises coverage after that tail
+  lands in the unattributed remainder, not in a later per-test window.
 - **Negative (deferred):** review/triangulation labels and adoption docs
   Phase 4a/4b still need their own stages to consume `meta` and teach
   the wiring cost (`specled_-pzd.3`, `specled_-pzd.4`).

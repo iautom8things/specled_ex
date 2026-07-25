@@ -742,12 +742,13 @@ decisions:
     - specled.coverage_capture.integration_case
 - id: specled.coverage_capture.scenario.spec_cover_test_per_test_freshness
   given:
-    - "a successful status sidecar and v2 artifact left by an earlier run"
-    - "a new `--per-test` suite whose formatter does not write an artifact"
+    - "a per-test artifact path whose status/envelope state is exercised as missing, refused, stale-successful, and fresh-successful"
+    - "the stale-successful case has both a successful sidecar and a decoded v2 envelope whose generated_at is older than the suite-start timestamp"
   when:
-    - "`mix spec.cover.test --per-test` finishes the suite"
+    - "`mix spec.cover.test --per-test` performs its post-suite freshness guard"
   then:
-    - "the task exits non-zero naming the stale artifact instead of accepting the previous run's file"
+    - "only the fresh-successful artifact is accepted"
+    - "the stale-successful artifact is rejected by the generated_at comparison rather than by the missing/refused/read-failure clauses"
     - "a red suite that does write an envelope newer than the pre-suite timestamp keeps its ordinary red-suite failure with no stale-artifact error"
   covers:
     - specled.coverage_capture.per_test_artifact_freshness

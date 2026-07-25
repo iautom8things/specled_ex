@@ -31,14 +31,18 @@
 
 ## 0.7.0 — 2026-07-24
 
-- Per-test coverage attribution is now exact. `mix spec.cover.test
+- Per-test coverage attribution is now exact within disclosed chained windows.
+  `mix spec.cover.test
   --per-test` gains a synchronous boundary hook: `SpecLedEx.Case` (a
   shippable `ExUnit.CaseTemplate`) or a one-line
   `setup {SpecLedEx.Coverage, :per_test_boundary}` in an existing case
   template snapshots each hooked test's coverage window at the
   Runner-awaited `setup`/`on_exit` boundary, so per-test line hits are
-  deterministic and exclusive (qualified only by processes a test spawns
-  that outlive its tail snapshot). The coverage formatter is demoted from
+  deterministic within the chained [head, tail] window: later hooked tests
+  inherit serialized runner/setup_all and any intervening unhooked-test
+  activity since the prior hooked tail, and processes that outlive their tail
+  snapshot can still leak into a later window or the aggregate remainder. The
+  coverage formatter is demoted from
   measurement engine to auditor — it takes one baseline and one final
   snapshot, attributes hooked windows from the boundary table, folds the
   unattributed remainder into the envelope, and degrades honestly when
@@ -49,7 +53,7 @@
   from line→MFA intersection (`CoverageTriangulation.per_test_requirement_reach/3`
   + `SpecLedEx.Coverage.MfaLines.index/1`), retiring the file-level proxy
   (specled_-jjq). Per-subject cards carry an attribution qualifier
-  ("exact up to escaped processes" / "degraded: unhooked"). (specled_-pzd)
+  ("exact within chained windows" / "degraded: unhooked"). (specled_-pzd)
 - Degradation provenance is recorded, not inferred: a degraded per-test
   envelope carries `meta.degraded_reasons` (`:async` |
   `:counters_harvested` | `:unhooked`), `Store.degraded_reasons/1` is the
