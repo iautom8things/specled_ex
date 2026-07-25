@@ -29,11 +29,15 @@
     {
       "text": "FLAKE LEDGER\n- signature: test/integration/scenario_refactor_stable_test.exs:150 branch_guard_realization_drift (async:true mutating global code server; seed 194143) — count 1, PRE-EXISTING (reproduced at base 14f6e72 by dn4.3 verifier, 1/12 stress at base, 0/12 at stage HEAD). Not gating. Standalone investigation ticket to follow.",
       "timestamp": "2026-07-25T12:40:35Z"
+    },
+    {
+      "text": "FLAKE LEDGER (update)\n- signature: test/integration/scenario_refactor_stable_test.exs:150 branch_guard_realization_drift — count 1, pre-existing, ticket specled_-ya8.\n- signature: test/specled_ex/compiler/tracer_test.exs:255 StreamData.TooManyDuplicatesError (seed 407930) — count 1 (dn4.3 merge gate). NOT flake-accepted under the strict no-reproduce rule (seed-deterministic generators always reproduce under the printed seed); instead attributed by base-reproduction: identical failure at base 14f6e72 same seed, file untouched by the epic. Pre-existing defect; standalone ticket created. Gate re-run under fresh seed.",
+      "timestamp": "2026-07-25T12:51:24Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-25T12:40:35Z"
+  "updated_at": "2026-07-25T12:51:24Z"
 }
