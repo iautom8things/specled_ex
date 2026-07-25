@@ -29,11 +29,15 @@
     {
       "text": "FLAKE_ACCEPT record: signature=scenario_refactor_stable_test.exs:150 branch_guard_realization_drift on cosmetic refactor (pre-declared diff-independent, owned by specled_-l05). Occurrences at hj4.1 merge gate: 2 (smoke runs 1-2, seeds incl. 31466); targeted re-run with printed seed does not reproduce (0 failures); file not in ticket diff. Accepted at cap — a third occurrence leaves the gate red per policy (investigation ticket specled_-l05 already open).",
       "timestamp": "2026-07-25T12:31:45Z"
+    },
+    {
+      "text": "MINI-RETRO\nbounces: 2 (untested-clause, other — both AUDIT: BOUNCE → implementer on hj4.1)\nfull_suite_runs: 6\nfinals_gt1: 1\nflake_accepts: 2\nescalations: 0\nlessons_kept/retired: 4/0",
+      "timestamp": "2026-07-25T13:25:48Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "spec.check verdict contract + teaching sweep",
   "type": "epic",
-  "updated_at": "2026-07-25T12:31:45Z"
+  "updated_at": "2026-07-25T13:25:48Z"
 }
