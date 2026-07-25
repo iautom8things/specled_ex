@@ -21,11 +21,15 @@
     {
       "text": "LESSONS\n- [untested-clause] Prove a config/opts-passthrough claim with a NON-DEFAULT value; an assertion that passes on defaults (e.g. async: false) covers nothing, and a test name must not claim a clause its assertions cannot fail on (from specled_-dn4.3)",
       "timestamp": "2026-07-25T11:53:48Z"
+    },
+    {
+      "text": "LESSONS\n- [untested-clause] Prove a config/opts-passthrough claim with a NON-DEFAULT value; an assertion that passes on defaults (e.g. async: false) covers nothing, and a test name must not claim a clause its assertions cannot fail on (from specled_-dn4.3)\n- [stale-spec] When rewriting a scenario's then-text, keep naming the mechanism it proves (module/MFA); the append-only guard only compares scenario COUNTS and cannot catch prose weakening (from specled_-dn4.3)\n- [other] After a mechanical rename, grep the entire repo (*.ex *.exs *.md *.json *.yml, excluding _build/deps) for the OLD name before committing; prefix-based or non-filesystem code can keep stale references green (from specled_-dn4.3)",
+      "timestamp": "2026-07-25T11:59:54Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-25T11:53:48Z"
+  "updated_at": "2026-07-25T11:59:54Z"
 }
