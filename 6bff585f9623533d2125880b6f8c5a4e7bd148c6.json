@@ -294,8 +294,8 @@
       "message": "Changed file test/test_helper.exs impacts subject specs that were not updated: specled.package"
     }
   ],
-  "run_at": "2026-07-25T13:05:11.985591Z",
-  "run_id": "9c3fb4eb73852baedb74d6e59f92bf34",
+  "run_at": "2026-07-25T13:10:45.791676Z",
+  "run_id": "f2b457be065460a5d3a96448ed591ef6",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "6bff585f9623533d2125880b6f8c5a4e7bd148c6",
