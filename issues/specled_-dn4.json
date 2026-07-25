@@ -65,11 +65,15 @@
     {
       "text": "Scope expanded: specled_-dn4.11 carved for specled_-dn4.6 (retired-claim propagation to README/adoption guide/package summary). Consumes no bounce.\n\nEXPANSION LEDGER — this is the THIRD growth of this epic run: (1) specled_-dn4.10 from dn4.8, (2) specled_-ya8 escalated in as gate-health, (3) specled_-dn4.11 from dn4.6. Protocol says pause before a FOURTH; any further expansion goes to the user first.\n\ndn4.11 is dependency-free and file-disjoint from the entire remaining chain (dn4.6/dn4.5/dn4.7/dn4.9), so it runs in parallel and does not extend the critical path.",
       "timestamp": "2026-07-25T15:49:19Z"
+    },
+    {
+      "text": "FLAKE LEDGER: zr6 struck a second time (seed 437710, during dn4.11 implementation — not at a gate). Two different seeds now, so zr6 is NOT seed-deterministic; its ticket title and description are corrected. It remains OUT of the epic (pre-existing on main, no gate blocked yet). If it strikes a merge gate twice, it gets escalated in like ya8 was.",
+      "timestamp": "2026-07-25T16:03:17Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-25T15:49:19Z"
+  "updated_at": "2026-07-25T16:03:17Z"
 }
