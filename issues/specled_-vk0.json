@@ -10,11 +10,15 @@
     {
       "text": "Additional findings from the specled_-6fn ship-it critical review (2026-07-23), same hardening theme: (1) COVERAGE GAP — the lint guards 3 of at least 5 emitted code namespaces; evidence/*, detector_unavailable and spec_requirement_too_short are unguarded (the corpus happens to be clean today). Either widen @token_patterns to cover them or narrow the must to claim only what is guarded. (2) STALE-MARKER CHECK — nothing detects an allow-marker whose token has since become a real emitted code, or whose token no longer appears on its line; such a marker silently rots into a permanent unearned exemption. (3) MIRROR IS FAIL-LOUD ONLY ONE WAY — @known_codes catches a code ADDED to lib/ but not one DELETED from it: docs naming a now-dead code keep passing. (4) PRE-EXISTING SPEC INACCURACY (not introduced by 6fn, deliberately left rather than silently widened) — .spec/specs/triangulation.spec.md scenario given:/when: claim a mix spec.check branch run with mix spec.cover.test fixture coverage that the covering test (test/integration/scenario_test_only_change_test.exs) never performs; it calls CoverageTriangulation.findings/3 on hand-built maps. 6fn reconciled only the then: clause, which was the fabricated-code defect in scope. Note append_only detect_scenario_regression/3 compares scenario COUNTS, so it cannot see then-clause content — a clean spec.check is weak evidence for scenario-text accuracy.",
       "timestamp": "2026-07-24T00:19:50Z"
+    },
+    {
+      "text": "Go-live triage 2026-07-25: the two LIVE spec inaccuracies (package.spec.md overclaiming must; triangulation.spec.md fabricated scenario) split out to P1 gate ticket specled_-cz0. This ticket now holds only the deferred hardening items (A3 lookbehind bounds, A4 severity-corpus asymmetry, A5 digit codes, stale-marker sweep, two-way mirror) — stays P2, post-launch.",
+      "timestamp": "2026-07-25T10:58:23Z"
     }
   ],
   "priority": 2,
   "status": "open",
   "title": "Harden doc-identifier lint: lookbehind bounds, severity-corpus asymmetry, digit-bearing codes",
   "type": "task",
-  "updated_at": "2026-07-24T00:19:50Z"
+  "updated_at": "2026-07-25T10:58:23Z"
 }
