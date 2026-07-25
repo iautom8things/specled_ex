@@ -42,11 +42,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: eb717ea1-b20d-491a-a5f9-322b223bfe82\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/eb717ea1-b20d-491a-a5f9-322b223bfe82.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. No auditor was spawned per policy.\nIteration-2 note: the G1 fix was mutation-proven (5 lib mutations each killed\nexactly one intended assertion); the conditional spec.cover.test.ex edit was\nadjudicated authorized by this ticket's iteration-1 auditor (2026-07-25T13:30:08Z).\nPosted by the orchestrator applying the canonical Selective Audit Gate.",
       "timestamp": "2026-07-25T13:45:43Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-dn4/fast-follow-per-test. Closing per orchestrator sign-off. (Gate: suite green 1211/0; one ya8 flake-accept, targeted re-run clean, spec.check green on re-run.)",
+      "timestamp": "2026-07-25T13:57:50Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Unify the arming-seam decoders behind one resolver (F5)",
   "type": "task",
-  "updated_at": "2026-07-25T13:45:44Z"
+  "updated_at": "2026-07-25T13:57:50Z"
 }
