@@ -91,7 +91,7 @@ branch_guard:
 - `:info` — runs and stores in local evidence but hidden from default output.
   Show with `--verbose` or `SPECLED_SHOW_INFO=1`.
 - `:warning` — visible by default; does not fail the gate.
-- `:error` — fails `mix spec.check` (non-zero exit). The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict.
+- `:error` — fails `mix spec.check` (non-zero exit).
 
 > **Warning — YAML value form.** In `config.yml`, severity values are written
 > as **bare tokens** (`off`, `info`, `warning`, `error`), not Elixir atoms. The
@@ -146,7 +146,7 @@ mix spec.check --verbose             # surface :info findings
 SPECLED_SHOW_INFO=1 mix spec.check   # same, env var form
 ```
 
-The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict.
+The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears.
 
 Bootstrap should note in `.spec/AGENTS.md`:
 

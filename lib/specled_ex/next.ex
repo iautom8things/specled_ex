@@ -3,6 +3,10 @@ defmodule SpecLedEx.Next do
 
   alias SpecLedEx.ChangeAnalysis
 
+  @verdict_read_protocol "The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears."
+
+  def verdict_read_protocol, do: @verdict_read_protocol
+
   def run(index, root, opts \\ []) do
     analysis = ChangeAnalysis.analyze(index, root, opts)
     focused_subject_ids = focused_subject_ids(analysis)
@@ -313,10 +317,7 @@ defmodule SpecLedEx.Next do
   defp suggested_commands_with_protocol([]), do: []
 
   defp suggested_commands_with_protocol(commands) do
-    commands ++
-      [
-        "The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict."
-      ]
+    commands ++ [verdict_read_protocol()]
   end
 
   defp format_optional_items(false, _label, _items), do: []

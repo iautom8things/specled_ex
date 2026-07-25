@@ -79,7 +79,7 @@ defmodule SpecLedEx.Prime do
 
   # covers: specled.prime.verdict_read_protocol
   defp verdict_protocol do
-    "The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict."
+    Next.verdict_read_protocol()
   end
 
   defp purpose_label("session_start_context"), do: "session-start context"

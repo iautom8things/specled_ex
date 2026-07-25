@@ -59,8 +59,7 @@ decisions:
   statement: >-
     The mix spec.prime default loop, in both its normal and --bugfix variants,
     shall append this read protocol sentence wherever it suggests running
-    spec.check: "The last line is the verdict — `spec.check result=…`;
-    nothing above it, including `validate status=…`, is the verdict."
+    spec.check: "The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears."
   priority: must
   stability: evolving
 ```

@@ -20,7 +20,7 @@ defmodule Mix.Tasks.SpecPrimeTaskTest do
                "specled.prime.verdict_read_protocol"
              ]
 
-  @verdict_protocol "The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict."
+  @verdict_protocol SpecLedEx.Next.verdict_read_protocol()
 
   test "spec.prime stays read-only and skips command execution by default", %{root: root} do
     write_subject_spec(

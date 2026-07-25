@@ -124,7 +124,7 @@ mix spec.validate
 mix spec.check --base HEAD~1
 ```
 
-The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict.
+The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears.
 
 Classify findings into:
 
@@ -279,7 +279,7 @@ usually `mix spec.check --no-run-commands`) and `<container_verify_cmd>`
 (runtime verification in the container, e.g. `docker compose exec app mix
 test`). These substitute into every stage-ticket template and into the
 split daily loop the phase0 ticket writes into `.spec/AGENTS.md`.
-The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict.
+The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears.
 
 Any phase0–phase6 is a valid `--depth`; the argument-hint lists only the
 common stops. phase3 and phase5 are omitted there deliberately — phase3 is
@@ -464,7 +464,7 @@ parent and depend phase2 on the fan-out).
   phase-4b / phase5 tickets when the capability probe confirms the degrade
   (run `mix spec.check` once and look for `detector_unavailable` findings
   with reason `umbrella_unsupported` — probe the installed dep's behavior,
-  not its version string). The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict.
+  not its version string). The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears.
 - Pre-ledger workspace (detection 1.2) → insert the migration ticket from
   [references/task-templates.md](references/task-templates.md) after
   phase0 and wire it to block phase1+.

@@ -22,6 +22,10 @@ deps, and Mix task wiring). An edit to an unrelated top-level key — e.g.
 exception — legitimately touches this subject's tracked surface without
 reflecting any change to what this subject verifies.
 
+The package docs and bootstrap skill teach the same `mix spec.check` verdict
+read protocol as the live `spec.prime` and `spec.next` guidance, while avoiding
+placing that protocol on commands that do not emit a `spec.check result=` line.
+
 ```yaml spec-meta
 id: specled.package
 kind: package

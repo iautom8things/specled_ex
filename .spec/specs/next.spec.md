@@ -67,9 +67,9 @@ decisions:
 - id: specled.next.verdict_read_protocol
   statement: >-
     The mix spec.next human command suggestions shall include this read
-    protocol sentence after suggested spec.check commands: "The last line is
-    the verdict — `spec.check result=…`; nothing above it, including `validate
-    status=…`, is the verdict."
+    protocol sentence after suggested spec.check commands: "The verdict is the
+    last stdout line starting with `spec.check result=` — not `validate
+    status=…`. A non-zero exit means failure even if no verdict line appears."
   priority: must
   stability: evolving
 ```

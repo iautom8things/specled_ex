@@ -21,7 +21,7 @@ defmodule Mix.Tasks.SpecNextTaskTest do
                "specled.next.verdict_read_protocol"
              ]
 
-  @verdict_protocol "The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict."
+  @verdict_protocol SpecLedEx.Next.verdict_read_protocol()
 
   test "spec.next guides a covered local change", %{root: root} do
     init_git_repo(root)
