@@ -13,9 +13,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-dn4",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: eb717ea1-b20d-491a-a5f9-322b223bfe82\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/eb717ea1-b20d-491a-a5f9-322b223bfe82.jsonl\n\nCommit: 016bf12\nFiles touched: lib/specled_ex/coverage/formatter.ex\nTests added: none (existing formatter and Mix-task scenarios cover the preserved payload, meta, diagnostics, ordering, and notice behavior)\nVerification stubs flipped: none\nVerification tier: change-scoped — mix compile --warnings-as-errors; mix test test/specled_ex/coverage/formatter_test.exs; mix test test/specled_ex/coverage/formatter_test.exs test/mix/tasks/spec_cover_test_test.exs; mix spec.check --no-run-commands; mix format --check-formatted\nFinal-tier runs: 1\nGate-forced co-changes outside Allowed touches: none\nDeferred must requirements: none\n\nSummary: Replaced Formatter.flush/1's quadratic four-tuple reduce with stable split_with, flat_map, frequencies_by, and linear diagnostics construction while preserving payload order and envelope behavior. Removed the proven-dead test-key/module fallbacks and their helpers; targeted tests, structural spec checks, compilation, and formatting are green.",
+      "timestamp": "2026-07-25T14:45:03Z"
+    }
+  ],
   "priority": 1,
   "status": "in_progress",
   "title": "flush/1: replace 4-tuple reduce + quadratic acc ++ recs with split_with/flat_map/frequencies_by (F6)",
   "type": "task",
-  "updated_at": "2026-07-25T14:41:22Z"
+  "updated_at": "2026-07-25T14:45:03Z"
 }
