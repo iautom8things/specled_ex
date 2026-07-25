@@ -7,9 +7,9 @@
   "id": "specled_-dn4.4",
   "labels": [],
   "parent": "specled_-dn4",
-  "priority": 2,
+  "priority": 1,
   "status": "open",
   "title": "Unify the arming-seam decoders behind one resolver (F5)",
   "type": "task",
-  "updated_at": "2026-07-24T19:18:43Z"
+  "updated_at": "2026-07-25T10:57:59Z"
 }
