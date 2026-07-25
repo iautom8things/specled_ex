@@ -49,6 +49,7 @@ realized_by:
 decisions:
   - specled.decision.aggregate_first_spec_coverage
   - specled.decision.per_test_sync_boundary
+  - specled.decision.coverage_identity_joins
 ```
 
 ## Requirements
@@ -210,10 +211,34 @@ decisions:
     iff T's record for the MFA's source file intersects the MFA's line set;
     `covered_mfas` / `uncovered_mfas` / `executed_mfa_count` /
     `reaching_tests` all derive from that same intersection. MFAs whose
-    module is `:no_debug_info` (or whose `{fun, arity}` is absent from the
-    index) land in `no_debug_info_mfas`, never silently as uncovered via a
-    file-level proxy. The v1 file-level `per_requirement_reach/2` remains
-    for the v1 path and is not replaced by this function.
+    module is explicitly `:no_debug_info` land in `no_debug_info_mfas`.
+    Modules absent from the line index, missing `{fun, arity}` entries,
+    unresolved compile sources, and malformed MFA identities land in
+    `unresolvable_source_mfas`; neither partition shall silently become
+    uncovered via a file-level proxy. The v1 file-level
+    `per_requirement_reach/2` remains for the v1 path and is not replaced by
+    this function.
+  priority: must
+  stability: evolving
+- id: specled.triangulation.per_test_path_identity
+  statement: >-
+    The per-test line→MFA join shall normalize both coverage-record `:file`
+    values and module compile sources to the same repository-root-relative
+    identity before intersection. An absolute compile source and its
+    repository-relative record path shall join; a source outside the
+    repository or otherwise unresolvable shall never collapse to an uncovered
+    verdict.
+  priority: must
+  stability: evolving
+- id: specled.triangulation.per_test_unresolvable_source_partition
+  statement: >-
+    `per_test_requirement_reach/3` shall return
+    `unresolvable_source_mfas` separately from `no_debug_info_mfas`,
+    `covered_mfas`, and `uncovered_mfas`. The partition shall include closure
+    modules absent from the line index, absent MFA line entries, unresolved
+    compile-source identities, and malformed MFA strings. Its MFAs remain in
+    `closure_mfa_count` and contribute zero to `executed_mfa_count`; they
+    shall not be removed from the coverage-percentage denominator.
   priority: must
   stability: evolving
 ```
@@ -328,6 +353,19 @@ decisions:
     - "modules marked :no_debug_info surface in no_debug_info_mfas, not covered or uncovered"
   covers:
     - specled.triangulation.per_test_requirement_reach
+- id: specled.triangulation.scenario.per_test_path_and_unresolvable_partition
+  given:
+    - "a repository-relative coverage record for a module whose compile source is absolute"
+    - "closure MFAs separately exercising an absent module index, absent function entry, unresolved source, and malformed identity"
+  when:
+    - "CoverageTriangulation.per_test_requirement_reach/3 runs"
+  then:
+    - "the relative record joins the absolute compile source and covers only its intersecting MFA"
+    - "each resolution failure lands in unresolvable_source_mfas, never no_debug_info_mfas or uncovered_mfas"
+    - "the failed identities remain in closure_mfa_count with zero executed contribution"
+  covers:
+    - specled.triangulation.per_test_path_identity
+    - specled.triangulation.per_test_unresolvable_source_partition
 ```
 
 ## Verification
@@ -366,4 +404,6 @@ decisions:
     - specled.triangulation.envelope_async_contaminated
     - specled.triangulation.aggregate_requirement_reach_mfa_intersection
     - specled.triangulation.per_test_requirement_reach
+    - specled.triangulation.per_test_path_identity
+    - specled.triangulation.per_test_unresolvable_source_partition
 ```

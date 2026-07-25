@@ -413,12 +413,114 @@ defmodule SpecLedEx.Review.CoverageClosureTest do
       req = reach["subject_a"].by_requirement["subject_a.req1"]
 
       assert req.no_debug_info_mfas == [@fixture_a_mfa]
+      assert req.unresolvable_source_mfas == []
       assert req.covered_mfas == []
       assert req.uncovered_mfas == []
       # closure_mfa_count still counts the MFA; executed is 0 because nothing
       # was provably covered — pct is a real 0.0, not the zero-closure sentinel.
       assert req.closure_mfa_count == 1
       assert req.closure_coverage_pct == 0.0
+    end
+
+    @tag spec: [
+           "specled.triangulation.per_test_unresolvable_source_partition",
+           "specled.spec_review.coverage_tab_v2_envelope_data_layer"
+         ]
+    test "per_test mode: CoverageClosure preserves unresolvable MFAs in the percentage denominator" do
+      reach =
+        CoverageClosure.build_v2(fixture_index(),
+          tracer_edges: @edges,
+          envelope: %{mode: :per_test, payload: [], degraded: false, meta: %{}},
+          line_index: %{FixtureB => %{{:run, 1} => MapSet.new([20])}}
+        )
+
+      req = reach["subject_a"].by_requirement["subject_a.req1"]
+
+      assert req.unresolvable_source_mfas == [@fixture_a_mfa]
+      assert req.no_debug_info_mfas == []
+      assert req.covered_mfas == []
+      assert req.uncovered_mfas == []
+      assert req.closure_mfa_count == 1
+      assert req.closure_coverage_pct == 0.0
+    end
+
+    @tag spec: "specled.triangulation.per_test_path_identity"
+    test "per_test mode: repo-relative record paths join an absolute compile source path" do
+      source =
+        FixtureA.module_info(:compile)[:source]
+        |> List.to_string()
+        |> Path.relative_to_cwd()
+
+      records = [
+        %{
+          test_id: "T.relative",
+          file: source,
+          lines_hit: [17],
+          tags: %{file: "test/relative_test.exs", test: "relative"}
+        }
+      ]
+
+      req =
+        single_requirement_reach(
+          @fixture_a_mfa,
+          records,
+          %{FixtureA => %{{:run, 1} => MapSet.new([17])}}
+        )
+
+      assert req.covered_mfas == [@fixture_a_mfa]
+      assert req.reaching_tests == ["test/relative_test.exs :: relative"]
+      assert req.unresolvable_source_mfas == []
+    end
+
+    @tag spec: "specled.triangulation.per_test_unresolvable_source_partition"
+    test "per_test mode: a closure module absent from the line index is unresolvable, not no-debug or uncovered" do
+      req = single_requirement_reach(@fixture_a_mfa, [], %{})
+
+      assert req.unresolvable_source_mfas == [@fixture_a_mfa]
+      assert req.no_debug_info_mfas == []
+      assert req.uncovered_mfas == []
+      assert req.closure_mfa_count == 1
+      assert req.executed_mfa_count == 0
+    end
+
+    @tag spec: "specled.triangulation.per_test_unresolvable_source_partition"
+    test "per_test mode: an MFA absent from an otherwise present function index is unresolvable" do
+      req =
+        single_requirement_reach(
+          @fixture_a_mfa,
+          [],
+          %{FixtureA => %{{:other, 0} => MapSet.new([1])}}
+        )
+
+      assert req.unresolvable_source_mfas == [@fixture_a_mfa]
+      assert req.no_debug_info_mfas == []
+      assert req.uncovered_mfas == []
+    end
+
+    @tag spec: "specled.triangulation.per_test_unresolvable_source_partition"
+    test "per_test mode: a module whose compile source cannot resolve is unresolvable" do
+      module = UnloadableIdentityModule
+      mfa = MfaKey.format({module, :run, 1})
+
+      req =
+        single_requirement_reach(
+          mfa,
+          [],
+          %{module => %{{:run, 1} => MapSet.new([1])}}
+        )
+
+      assert req.unresolvable_source_mfas == [mfa]
+      assert req.no_debug_info_mfas == []
+      assert req.uncovered_mfas == []
+    end
+
+    @tag spec: "specled.triangulation.per_test_unresolvable_source_partition"
+    test "per_test mode: an unparseable closure MFA is unresolvable rather than uncovered" do
+      req = single_requirement_reach("not-an-mfa", [], %{})
+
+      assert req.unresolvable_source_mfas == ["not-an-mfa"]
+      assert req.no_debug_info_mfas == []
+      assert req.uncovered_mfas == []
     end
 
     test "per_test mode: unhooked-degraded envelope stays :ok_per_test with attribution :degraded_unhooked (not :async_contaminated)" do
@@ -508,6 +610,20 @@ defmodule SpecLedEx.Review.CoverageClosureTest do
   # ---------------------------------------------------------------------------
   # Fixtures
   # ---------------------------------------------------------------------------
+
+  defp single_requirement_reach(mfa, records, line_index) do
+    closure_map = %{
+      subjects: %{
+        "subject" => %{
+          requirements: [%{id: "subject.requirement", closure_mfas: [mfa]}]
+        }
+      }
+    }
+
+    records
+    |> SpecLedEx.CoverageTriangulation.per_test_requirement_reach(closure_map, line_index)
+    |> Map.fetch!({"subject", "subject.requirement"})
+  end
 
   defp aggregate_envelope(mfas: mfas) do
     %{

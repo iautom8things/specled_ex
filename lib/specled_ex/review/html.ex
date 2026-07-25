@@ -2031,9 +2031,9 @@ defmodule SpecLedEx.Review.Html do
   # runs name that honestly via subject `:attribution`. Aggregate stays
   # unqualified.
   defp rollup_qualifier_suffix(reach) when is_map(reach) do
-    case Map.get(reach, :status) do
-      :ok_per_test ->
-        case Map.get(reach, :attribution, :exact) do
+    case {Map.get(reach, :status), Map.get(reach, :attribution)} do
+      {:ok_per_test, attribution} when attribution in [:exact, :degraded_unhooked] ->
+        case Map.get(reach, :attribution) do
           :degraded_unhooked -> " (degraded)"
           _ -> " (exact within chained windows)"
         end
@@ -2046,9 +2046,9 @@ defmodule SpecLedEx.Review.Html do
   defp rollup_qualifier_suffix(_), do: ""
 
   defp rollup_qualifier_title_suffix(reach) when is_map(reach) do
-    case Map.get(reach, :status) do
-      :ok_per_test ->
-        case Map.get(reach, :attribution, :exact) do
+    case {Map.get(reach, :status), Map.get(reach, :attribution)} do
+      {:ok_per_test, attribution} when attribution in [:exact, :degraded_unhooked] ->
+        case Map.get(reach, :attribution) do
           :degraded_unhooked ->
             mods = format_unhooked_modules(Map.get(reach, :unhooked_modules, []))
 
@@ -3033,6 +3033,7 @@ defmodule SpecLedEx.Review.Html do
     executed_count = length(covered)
     self_str = if self_verified?, do: "yes", else: "no"
     no_debug = Map.get(reach, :no_debug_info_mfas, [])
+    unresolvable = Map.get(reach, :unresolvable_source_mfas, [])
 
     tagged_str =
       case tagged_tests do
@@ -3049,6 +3050,7 @@ defmodule SpecLedEx.Review.Html do
       </p>
       """,
       render_no_debug_info_note(no_debug),
+      render_unresolvable_source_note(unresolvable),
       render_reached_by_tests_row(tagged_tests, mode, subject_reach)
     ]
   end
@@ -3064,8 +3066,9 @@ defmodule SpecLedEx.Review.Html do
   # runs claim exactness within disclosed chained windows;
   # unhooked-degraded runs name meta.unhooked_modules. The retired
   # file-level-proxy note is gone.
-  defp render_attribution_qualifier(:per_test, subject_reach) do
-    case Map.get(subject_reach || %{}, :attribution, :exact) do
+  defp render_attribution_qualifier(:per_test, %{attribution: attribution} = subject_reach)
+       when attribution in [:exact, :degraded_unhooked] do
+    case Map.get(subject_reach || %{}, :attribution) do
       :degraded_unhooked ->
         mods =
           subject_reach
@@ -3079,6 +3082,7 @@ defmodule SpecLedEx.Review.Html do
     end
   end
 
+  defp render_attribution_qualifier(:per_test, _), do: ""
   defp render_attribution_qualifier(_, _), do: ""
 
   defp render_no_debug_info_note([]), do: ""
@@ -3087,6 +3091,14 @@ defmodule SpecLedEx.Review.Html do
     names = mfas |> Enum.map(&h/1) |> Enum.join(", ")
 
     ~s|<p class="cov-closure-no-debug" role="status"><span class="cov-closure-no-debug-label">No debug info:</span> #{names} — MFA line sets unavailable (module abstract code missing); not counted as covered or uncovered.</p>|
+  end
+
+  defp render_unresolvable_source_note([]), do: ""
+
+  defp render_unresolvable_source_note(mfas) when is_list(mfas) do
+    names = mfas |> Enum.map(&h/1) |> Enum.join(", ")
+
+    ~s|<p class="cov-closure-unresolvable-source" role="status"><span class="cov-closure-unresolvable-source-label">Source identity unavailable:</span> #{names} — MFA source or line identity could not be resolved; retained in the closure denominator and not reported as covered or uncovered.</p>|
   end
 
   defp render_tagged_test(%{file: file, test_name: name, strength: strength}) do
@@ -3124,8 +3136,9 @@ defmodule SpecLedEx.Review.Html do
     end
   end
 
-  defp reached_by_tests_title(subject_reach) do
-    case Map.get(subject_reach || %{}, :attribution, :exact) do
+  defp reached_by_tests_title(%{attribution: attribution} = subject_reach)
+       when attribution in [:exact, :degraded_unhooked] do
+    case Map.get(subject_reach || %{}, :attribution) do
       :degraded_unhooked ->
         mods =
           subject_reach
@@ -3139,6 +3152,8 @@ defmodule SpecLedEx.Review.Html do
     end
   end
 
+  defp reached_by_tests_title(_), do: ""
+
   # covers: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
   # self_verified? composes closure_coverage_pct with an "executed"-strength
   # tagged test under the same exact-within-chained-windows claim.
@@ -3148,17 +3163,24 @@ defmodule SpecLedEx.Review.Html do
     title = reached_by_tests_title(subject_reach)
     label = self_verified_qualifier_label(subject_reach)
 
-    ~s| <span class="cov-closure-self-verified-note" title="#{h(title)}">(#{h(label)})</span>|
+    if label do
+      ~s| <span class="cov-closure-self-verified-note" title="#{h(title)}">(#{h(label)})</span>|
+    else
+      ""
+    end
   end
 
   defp render_self_verified_note(_, _), do: ""
 
-  defp self_verified_qualifier_label(subject_reach) do
-    case Map.get(subject_reach || %{}, :attribution, :exact) do
+  defp self_verified_qualifier_label(%{attribution: attribution} = subject_reach)
+       when attribution in [:exact, :degraded_unhooked] do
+    case Map.get(subject_reach || %{}, :attribution) do
       :degraded_unhooked -> "degraded"
       _ -> "exact within chained windows"
     end
   end
+
+  defp self_verified_qualifier_label(_), do: nil
 
   defp plural(1), do: ""
   defp plural(_), do: "s"

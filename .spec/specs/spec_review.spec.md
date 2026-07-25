@@ -35,6 +35,7 @@ decisions:
   - specled.decision.evidence_orphan_branch_split
   - specled.decision.aggregate_first_spec_coverage
   - specled.decision.coverage_qualifier_requirement_ids
+  - specled.decision.coverage_identity_joins
 ```
 
 ## Requirements
@@ -330,8 +331,11 @@ decisions:
     "Reached by tests" row, the per-requirement "Self-verified" row, and
     the subject-card rollup badge (`specled.spec_review.coverage_rollup_badge`)
     shall each be discoverably qualified with that claim. Aggregate mode's
-    `self_verified?` is always false and stays unqualified. (Supersedes the
-    prior race-bounded "observed/approximate" wording for hooked windows.)
+    `self_verified?` is always false and stays unqualified. A per-test reach
+    map missing `:attribution` also stays unqualified across all four
+    surfaces; absence of provenance shall never default to `:exact`.
+    (Supersedes the prior race-bounded "observed/approximate" wording for
+    hooked windows.)
   priority: must
   stability: evolving
 - id: specled.spec_review.coverage_line_mfa_intersection_qualifier
@@ -392,7 +396,8 @@ decisions:
     `SpecLedEx.Coverage.Store.read_v2/1`, and returning, per requirement,
     `closure_coverage_pct`, `covered_mfas` / `uncovered_mfas` (via
     `SpecLedEx.Coverage.MfaKey`), `no_debug_info_mfas` for modules without
-    abstract code, and `tagged_tests` with an evidence `:strength`
+    abstract code, `unresolvable_source_mfas` for source/line identities that
+    could not be joined, and `tagged_tests` with an evidence `:strength`
     (`"claimed"` / `"linked"` / `"executed"`). Under `:ok_per_test`,
     covered/uncovered partitions and `"executed"` strength shall come from
     real line→MFA intersection
@@ -418,6 +423,23 @@ decisions:
     `coverage_tab_bind_closure`. The prior v1 record-list path (`build/2`)
     had zero callers and zero tests once `build_view/3` switched over, and
     was deleted rather than kept dead.
+  priority: must
+  stability: evolving
+- id: specled.spec_review.coverage_unresolvable_source_renders_distinct_note
+  statement: >-
+    Each per-requirement Coverage view shall render
+    `unresolvable_source_mfas` in a distinct "Source identity unavailable"
+    note stating that those MFAs remain in the closure denominator and are
+    not reported as covered or uncovered. They shall never be presented under
+    the no-debug-info label or silently omitted from the review surface.
+  priority: must
+  stability: evolving
+- id: specled.spec_review.coverage_missing_attribution_unqualified
+  statement: >-
+    An `:ok_per_test` subject reach map that omits `:attribution` shall render
+    no exact or degraded qualifier on the subject rollup, closure line,
+    "Reached by tests" title, or Self-verified row. Only an explicit `:exact`
+    or `:degraded_unhooked` value may publish the matching qualifier.
   priority: must
   stability: evolving
 - id: specled.spec_review.no_realized_by_degrades_spec_to_code
@@ -748,6 +770,17 @@ decisions:
     - the MFA is not counted or rendered as covered or uncovered
   covers:
     - specled.spec_review.coverage_tab_bind_closure
+- id: specled.spec_review.coverage_unresolvable_source_and_missing_attribution
+  given:
+    - "an :ok_per_test requirement with unresolvable_source_mfas and a subject reach map with no :attribution key"
+  when:
+    - "the reviewer opens the Coverage pivot and inspects the subject rollup"
+  then:
+    - "the unresolved MFA renders under Source identity unavailable with its denominator effect disclosed"
+    - "the rollup, closure, Reached by tests, and Self-verified surfaces carry no exact or degraded qualifier"
+  covers:
+    - specled.spec_review.coverage_unresolvable_source_renders_distinct_note
+    - specled.spec_review.coverage_missing_attribution_unqualified
 - id: specled.spec_review.coverage_card_rollup_badge_renders
   given:
     - a subject with 2 requirements, one self-verified and one not, coverage data loaded in per-test mode
@@ -834,6 +867,8 @@ decisions:
     - specled.spec_review.coverage_generated_at_staleness
     - specled.spec_review.coverage_degraded_banners_distinct
     - specled.spec_review.coverage_no_tracer_manifest_banner
+    - specled.spec_review.coverage_unresolvable_source_renders_distinct_note
+    - specled.spec_review.coverage_missing_attribution_unqualified
 - kind: command
   target: mix test test/specled_ex/review/html_layout_test.exs
   execute: true

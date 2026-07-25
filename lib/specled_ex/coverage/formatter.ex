@@ -232,8 +232,9 @@ defmodule SpecLedEx.Coverage.Formatter do
   end
 
   # Compacts `%{module => [line]}` hits into `[{file, sorted_lines}]`,
-  # merging lines from different modules that map to the same file and
-  # dropping modules this run couldn't attribute to a source file.
+  # merging lines from different modules that map to the same file. Modules
+  # this run couldn't attribute are surfaced separately in
+  # `meta.unmapped_modules`.
   defp compact_hits_to_files(hits_by_module, file_map) do
     hits_by_module
     |> Enum.reduce(%{}, fn {mod, lines}, acc ->
@@ -258,8 +259,8 @@ defmodule SpecLedEx.Coverage.Formatter do
     case Code.ensure_loaded(module) do
       {:module, ^module} ->
         case module.module_info(:compile)[:source] do
-          source when is_list(source) -> List.to_string(source)
-          source when is_binary(source) -> source
+          source when is_list(source) -> repo_relative_path(List.to_string(source))
+          source when is_binary(source) -> repo_relative_path(source)
           _ -> nil
         end
 
@@ -268,6 +269,15 @@ defmodule SpecLedEx.Coverage.Formatter do
     end
   rescue
     _ -> nil
+  end
+
+  defp repo_relative_path(path) do
+    root = File.cwd!() |> Path.expand()
+    absolute = Path.expand(path, root)
+
+    if String.starts_with?(absolute, root <> "/") do
+      Path.relative_to(absolute, root)
+    end
   end
 
   defp flush(%{table: table, artifact_path: path} = state) do
@@ -304,6 +314,15 @@ defmodule SpecLedEx.Coverage.Formatter do
     attributed_hits = union_boundary_hits(boundary_index)
     unattributed_hits = subtract_hits(run_total_hits, attributed_hits)
     unattributed_files = compact_hits_to_files(unattributed_hits, state.file_map)
+
+    unmapped_modules =
+      [attributed_hits, unattributed_hits]
+      |> Enum.flat_map(fn hits ->
+        for {mod, lines} <- hits, lines != [], do: mod
+      end)
+      |> Enum.uniq()
+      |> Enum.filter(&(Map.get(state.file_map, &1) == nil))
+      |> Enum.sort_by(&to_string/1)
 
     total_diagnostics = state.diagnostic_count + boundary_diagnostics + length(suite_diagnostics)
 
@@ -350,6 +369,7 @@ defmodule SpecLedEx.Coverage.Formatter do
       |> maybe_put(:boundary, used_boundary?, true)
       |> maybe_put(:unhooked_modules, unhooked_modules != [], unhooked_modules)
       |> maybe_put(:unattributed, unattributed_files != [], unattributed_files)
+      |> maybe_put(:unmapped_modules, unmapped_modules != [], unmapped_modules)
       |> maybe_put(:degraded_reasons, degraded?, degraded_reasons)
 
     envelope =
@@ -372,9 +392,9 @@ defmodule SpecLedEx.Coverage.Formatter do
     end
   end
 
-  # Prefer a boundary-table row when present for a test's `{module, name}`
-  # key. Unhooked inventory entries produce no payload records — their
-  # coverage folds into the suite remainder via set subtraction.
+  # Turn one already-selected boundary row into payload records using the
+  # suite's single module-to-source map. The boundary-vs-unhooked choice is
+  # made once in `flush/1` before this function is called.
   defp records_for_inventory(row, boundary_row, file_map) do
     boundary_row.hits
     |> compact_hits_to_files(file_map)

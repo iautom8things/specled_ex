@@ -149,6 +149,7 @@ decisions:
   - specled.decision.serialized_per_test_coverage
   - specled.decision.aggregate_first_spec_coverage
   - specled.decision.per_test_sync_boundary
+  - specled.decision.coverage_identity_joins
 ```
 
 ## Requirements
@@ -553,7 +554,10 @@ decisions:
     carry `meta.boundary: true`. When any inventoried test is unhooked, the
     envelope shall carry `meta.unhooked_modules` (sorted module list). When
     the unattributed remainder is non-empty, the envelope shall carry
-    `meta.unattributed` as `[{file, sorted_lines}]`.
+    `meta.unattributed` as `[{file, sorted_lines}]`. When any boundary or
+    run-total hit belongs to a module the suite-start file map cannot resolve,
+    the envelope shall carry `meta.unmapped_modules` as a sorted unique module
+    list.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.degraded_reasons
@@ -584,7 +588,10 @@ decisions:
     `meta.unattributed` and `envelope.files`. Because chained heads come
     from the prior hooked tail, intervening unhooked execution may already
     be present in a later boundary row and thus absent from that remainder.
-    There is no lazy-capture fallback for unhooked tests.
+    Boundary payload and remainder compaction shall reuse the same suite-start
+    module-to-source map; hit modules missing from that map shall surface in
+    `meta.unmapped_modules`. There is no lazy-capture fallback for unhooked
+    tests.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.unhooked_degrade
@@ -619,6 +626,26 @@ decisions:
     per test), naming the module, the unhooked test count, and the literal
     setup line `setup {SpecLedEx.Coverage, :per_test_boundary}` plus the
     `use SpecLedEx.Case` alternative for bare `ExUnit.Case` modules.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.path_identity
+  statement: >-
+    Formatter source identities shall be normalized to repository-root-relative
+    paths before entering payload records, `meta.unattributed`, or
+    `envelope.files`; absolute compile-time source paths shall never be
+    persisted. The module-to-source map shall be derived once from the
+    suite-start module scope and reused for both boundary payload and aggregate
+    remainder compaction.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.unmapped_modules_meta
+  statement: >-
+    When a module contributes a boundary hit or unattributed run-total hit but
+    the suite's module-to-source map cannot resolve that module to a
+    repository-root-relative source path, `Formatter.flush/1` shall retain the
+    omission explicitly as `meta.unmapped_modules`, a sorted unique module
+    list. The module's lines shall not be fabricated under another file or
+    silently folded into a reported file's percentage.
   priority: must
   stability: evolving
 ```
@@ -897,11 +924,13 @@ decisions:
 - id: specled.coverage_capture.scenario.envelope_meta_tolerant_read
   given:
     - "a v2 envelope written without a `:meta` key (pre-Stage-1 shape)"
+    - "a formatter flush with a hit module absent from the suite-start file map"
   when:
     - "`Store.read_v2/1` reads that path"
   then:
     - "the decoded envelope has `meta: %{}`"
     - "when flush consumes a boundary row, the written envelope carries `meta.boundary: true`"
+    - "the unmapped hit module is retained in `meta.unmapped_modules`"
   covers:
     - specled.coverage_capture.envelope_meta
 - id: specled.coverage_capture.scenario.degraded_reasons_overlap
@@ -948,6 +977,18 @@ decisions:
   covers:
     - specled.coverage_capture.unhooked_degrade
     - specled.coverage_capture.unhooked_remediation_notice
+- id: specled.coverage_capture.scenario.path_identity_and_unmapped_modules
+  given:
+    - "a formatter scope with one loadable module and one module whose source cannot resolve"
+    - "boundary and run-total hits for both modules"
+  when:
+    - "`Formatter.flush/1` compacts the boundary payload and aggregate remainder through its suite-start file map"
+  then:
+    - "the loadable module's payload file is repository-root-relative"
+    - "the unresolved module is named once in `meta.unmapped_modules` and its lines are not fabricated under the mapped file"
+  covers:
+    - specled.coverage_capture.path_identity
+    - specled.coverage_capture.unmapped_modules_meta
 ```
 
 ## Verification
@@ -1021,4 +1062,9 @@ decisions:
   covers:
     - specled.coverage_capture.degraded_reasons
     - specled.coverage_capture.never_ran_not_inventoried
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.coverage_capture.path_identity
+    - specled.coverage_capture.unmapped_modules_meta
 ```

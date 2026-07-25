@@ -1415,6 +1415,80 @@ defmodule SpecLedEx.Review.HtmlTest do
       assert html =~ "not counted as covered or uncovered"
     end
 
+    @tag spec: "specled.spec_review.coverage_unresolvable_source_renders_distinct_note"
+    test "renders an unresolvable-source note without laundering the MFA into covered or uncovered" do
+      reach = %{
+        status: :ok_per_test,
+        attribution: :exact,
+        by_requirement: %{
+          "subj.a.req1" =>
+            req_reach(
+              covered_mfas: [],
+              uncovered_mfas: [],
+              unresolvable_source_mfas: ["Ghost.Mod.fun/1"]
+            )
+        }
+      }
+
+      html =
+        IO.iodata_to_binary(
+          Html.render_coverage_tab(
+            coverage_subject(
+              closure_reach: reach,
+              requirements: [
+                %{"id" => "subj.a.req1", "statement" => "S", "priority" => "must"}
+              ]
+            )
+          )
+        )
+
+      assert html =~ "Source identity unavailable"
+      assert html =~ "Ghost.Mod.fun/1"
+      assert html =~ "retained in the closure denominator"
+      assert html =~ "not reported as covered or uncovered"
+    end
+
+    @tag spec: "specled.spec_review.coverage_missing_attribution_unqualified"
+    test "keyless per-test reach stays unqualified across closure, reached-by, self-verified, and rollup surfaces" do
+      reach = %{
+        status: :ok_per_test,
+        by_requirement: %{
+          "subj.a.req1" =>
+            req_reach(
+              self_verified?: true,
+              tagged_tests: [
+                %{file: "test/a_test.exs", test_name: "t1", strength: "executed"}
+              ]
+            )
+        }
+      }
+
+      tab_html =
+        IO.iodata_to_binary(
+          Html.render_coverage_tab(
+            coverage_subject(
+              closure_reach: reach,
+              requirements: [
+                %{"id" => "subj.a.req1", "statement" => "S", "priority" => "must"}
+              ]
+            )
+          )
+        )
+
+      badge_html = IO.iodata_to_binary(Html.render_subject_coverage_badge(reach))
+
+      assert tab_html =~ "Reached by tests:"
+      assert tab_html =~ "Self-verified: yes."
+      refute tab_html =~ "cov-closure-attribution-note"
+      refute tab_html =~ "cov-closure-self-verified-note"
+      refute tab_html =~ "exact within chained windows"
+      refute tab_html =~ "degraded: unhooked"
+
+      assert badge_html =~ "1/1 self-verified (per-test)"
+      refute badge_html =~ "exact within chained windows"
+      refute badge_html =~ "(degraded)"
+    end
+
     test "renders the empty-closure form when the requirement has no closure MFAs" do
       reach = %{
         status: :ok_aggregate,

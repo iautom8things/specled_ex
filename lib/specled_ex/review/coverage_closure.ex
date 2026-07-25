@@ -185,6 +185,7 @@ defmodule SpecLedEx.Review.CoverageClosure do
           covered_mfas: [String.t()],
           uncovered_mfas: [String.t()],
           no_debug_info_mfas: [String.t()],
+          unresolvable_source_mfas: [String.t()],
           tagged_tests: [v2_tagged_test()],
           self_verified?: boolean()
         }
@@ -241,6 +242,10 @@ defmodule SpecLedEx.Review.CoverageClosure do
       `SpecLedEx.Coverage.MfaLines` — not a file-level proxy.
     * `:no_debug_info_mfas` — closure MFAs whose module has no abstract
       code; neither covered nor uncovered, surfaced as a distinct note.
+    * `:unresolvable_source_mfas` — closure MFAs whose module index, MFA line
+      entry, compile source, or MFA identity could not be resolved. They stay
+      in the denominator and are surfaced separately from no-debug and
+      ordinary uncovered MFAs.
     * `:closure_coverage_pct` — `covered / total * 100`, or the atom
       `:no_closure_mfas` when the closure has zero MFAs. This is a
       deliberately distinct value from `0.0`: a requirement with no closure
@@ -534,6 +539,7 @@ defmodule SpecLedEx.Review.CoverageClosure do
           covered_mfas: [],
           uncovered_mfas: [],
           no_debug_info_mfas: [],
+          unresolvable_source_mfas: [],
           reaching_tests: []
         })
 
@@ -575,6 +581,7 @@ defmodule SpecLedEx.Review.CoverageClosure do
       covered_mfas: r.covered_mfas,
       uncovered_mfas: r.uncovered_mfas,
       no_debug_info_mfas: Map.get(r, :no_debug_info_mfas, []),
+      unresolvable_source_mfas: Map.get(r, :unresolvable_source_mfas, []),
       tagged_tests: tagged_tests,
       self_verified?: self_verified?
     }
