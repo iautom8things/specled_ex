@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
   "created": "2026-07-25T13:25:27Z",
@@ -7,8 +7,8 @@
   "id": "specled_-ade",
   "labels": [],
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "Rules: fix false state.json is generated section in .claude/rules/specled.md + CLAUDE.md",
   "type": "task",
-  "updated_at": "2026-07-25T13:25:27Z"
+  "updated_at": "2026-07-25T15:11:24Z"
 }
