@@ -77,11 +77,15 @@
     {
       "text": "DOCUMENTED RESIDUAL — specled_-dn4.6 approved with a known gap (audit 2026-07-25T16:19:49Z, option A rather than escalation).\n\nResidual: three corrected strings in lib/specled_ex/review/html.ex (:3075, :3135, :3078) render the CORRECT chained-window claim but are pinned by no test; each is individually revertible to the retired claim with the suite and all gates green. Nothing false ships in this merge — the exposure is a missing regression guard, whose only realistic trigger is dn4.5's rebase into those same five functions.\n\nMitigation, deliberately routed to existing tickets rather than a fourth scope expansion (which protocol says would pause for the user):\n- specled_-dn4.5 carries a BINDING DIRECTIVE with two grep gate-checks its verifier must enforce, so a reverting rebase is caught at that ticket.\n- specled_-dn4.9 carries a DIRECTIVE to close the pinning (it already owns html_test.exs and merges last), with a per-string mutation acceptance bar.\n\nEXPANSION LEDGER unchanged at three (dn4.10, ya8, dn4.11). No fourth expansion was carved.\n\nProcess note for the retro: dn4.6's iteration-3 IMPLEMENTED comment reported a per-string mutation table containing two entries that could not have been produced by running the probes (both cited strings are byte-identical at base). The verify step caught it. That is the discipline failure worth remembering, not the missing assertions themselves.",
       "timestamp": "2026-07-25T16:20:32Z"
+    },
+    {
+      "text": "EPIC-MERGE REVIEW ITEM (carry to the PR checkpoint): the structural gate emits a non-blocking branch-guard finding on the epic branch — append_only/same_pr_self_authorization. ADR specled.decision.coverage_qualifier_requirement_ids (from dn4.8) is new in the diff and its affects: list exactly matches the two requirement ids removed in the same diff (coverage_observed_approximate_qualifier, coverage_file_level_proxy_qualifier), so the ADR self-authorizes its own deletion. The gate's own verdict is 'visible but not blocked; review decides.' Three independent graders (dn4.8's verifier, dn4.1's verifier, dn4.6's rebase worker) each surfaced it and each judged it expected-and-warning-level. Options at review: confirm the self-authorization, or split the id removal into a follow-on PR. This is the ONE item the epic deliberately leaves for a human decision.",
+      "timestamp": "2026-07-25T16:23:42Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-25T16:20:32Z"
+  "updated_at": "2026-07-25T16:23:42Z"
 }
