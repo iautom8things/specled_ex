@@ -7,6 +7,12 @@
   "id": "specled_-ya8",
   "labels": [],
   "parent": "specled_-dn4",
+  "comments": [
+    {
+      "text": "Escalated into epic specled_-dn4 as gate-health work (orchestrator, 2026-07-25): the signature has struck 4× today including once at the dn4.8 merge gate (flake-accept 1/2 consumed). With ~7 merges remaining, the gate cannot absorb another accept. Fix per triage: flip the three code-server-mutating integration test files to async: false (or serialize them behind a shared lock). Files disjoint from all in-flight dn4 stage work.",
+      "timestamp": "2026-07-25T13:51:21Z"
+    }
+  ],
   "priority": 1,
   "status": "open",
   "title": "Flaky scenario_refactor_stable_test.exs: async:true mutates global code server (branch_guard_realization_drift, seed 194143)",
