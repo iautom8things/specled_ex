@@ -17,11 +17,15 @@
     {
       "text": "LESSONS\n- [untested-clause] Prove every clause of a newly authored output contract by execution on all emission paths (auxiliary prints like --output notices, argument-validation raises, validation-tier findings), not only the primary pass/fail path (from specled_-hj4.1)\n- [other] Enumerate gate-forced spec attestation co-updates in Allowed touches at ticket authoring; touching a tagged test file forces attestation co-updates across every subject it impacts (from specled_-hj4.1)",
       "timestamp": "2026-07-25T11:28:58Z"
+    },
+    {
+      "text": "LESSONS\n- [untested-clause] Prove every clause of a newly authored output contract by execution on all emission paths (auxiliary prints like --output notices, argument-validation raises, validation-tier findings), not only the primary pass/fail path (from specled_-hj4.1)\n- [other] Enumerate gate-forced spec attestation co-updates in Allowed touches at ticket authoring; touching a tagged test file forces attestation co-updates across every subject it impacts (from specled_-hj4.1)\n- [untested-clause] An \"only line matching X\" output claim must be scoped to lines the task itself emits: verbatim-echoed subprocess/command output can occupy column 0 and forge the anchor, and plain-exception raise paths (bad --base ref, missing .spec dir, unwritable --output) bypass verdict printing entirely (from specled_-hj4.1)",
+      "timestamp": "2026-07-25T11:59:38Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "spec.check verdict contract + teaching sweep",
   "type": "epic",
-  "updated_at": "2026-07-25T11:28:58Z"
+  "updated_at": "2026-07-25T11:59:38Z"
 }
