@@ -23,7 +23,7 @@ things attach to that claim:
    for the default aggregate lane. By default it ingests an aggregate run
    (which MFAs were executed by *any* test, written to
    `.spec/_coverage/per_test.coverdata`); an opt-in `--per-test` flag adds
-   exclusive per-test attribution on top (exact up to escaped processes
+   exclusive per-test attribution on top (exact within disclosed chained windows
    when the boundary hook is wired — Phase 4b). See
    [`docs/coverage.md`](coverage.md) for the full contract.
 
@@ -384,10 +384,15 @@ it is safe to leave wired under plain `mix test`. Full contract:
 ["Wiring the per-test boundary hook"](coverage.md#wiring-the-per-test-boundary-hook)
 in [`docs/coverage.md`](coverage.md).
 
-**Claim.** Hooked tests are **exact up to escaped processes** — two hooked
-tests that exercise disjoint code produce disjoint `lines_hit` sets. The
-only disclosed bound is a process a test spawns that outlives its tail
-snapshot; no runtime detection of escaped processes is promised.
+**Claim.** Hooked tests are **exact within chained windows**. The first hooked
+test takes an initial head snapshot; every `on_exit` takes a tail snapshot that
+`ExUnit.Runner` awaits before advancing and that tail becomes the next test's
+head. The windows are disjoint, but after the first hooked test a window also
+contains everything since the prior hooked tail: serialized runner /
+`setup_all` work and any intervening unhooked tests. A process a test spawns
+that outlives its tail can likewise increment shared `:cover`/native counters
+in a later window or the unattributed remainder. Neither source of leakage is
+detected at runtime.
 
 **Unhooked modules degrade, never fail.** Run `--per-test` without wiring
 and every unhooked module still contributes coverage to the aggregate

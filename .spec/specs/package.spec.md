@@ -30,7 +30,7 @@ placing that protocol on commands that do not emit a `spec.check result=` line.
 id: specled.package
 kind: package
 status: active
-summary: Elixir package for Spec Led Development. Provides Mix tasks to scaffold, orient, index, guide, validate, summarize, and strictly check authored specs. Docs include coverage capture (docs/coverage.md), including the per-test boundary-hook wiring subsection and Stage-2 auditor/unhooked-degrade claim (exact up to escaped processes).
+summary: Elixir package for Spec Led Development. Provides Mix tasks to scaffold, orient, index, guide, validate, summarize, and strictly check authored specs. Docs include coverage capture (docs/coverage.md), including the per-test boundary-hook wiring subsection and Stage-2 auditor/unhooked-degrade claim (exact within disclosed chained windows).
 surface:
   - README.md
   - CHANGELOG.md
