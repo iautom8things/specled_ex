@@ -23,11 +23,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: eb717ea1-b20d-491a-a5f9-322b223bfe82\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/eb717ea1-b20d-491a-a5f9-322b223bfe82.jsonl\n\nReasoning: VERIFY reported PASS with zero scope violations (exactly the two\nAllowed spec files), the carve-out proven at exactly the live guard's breadth\n(deprecates-only, affects-only, supersession links strict), a well-formed\nnarrows-scope ADR registered and resolvable without the exemption it documents,\nand green targeted verification including the dn4.8 regression tests. No\nauditor was spawned per policy. Posted by the orchestrator applying the\ncanonical Selective Audit Gate.\n\nMerge sequencing: queued behind specled_-dn4.1 (already approved) which is\nqueued behind the ya8 gate now running.",
       "timestamp": "2026-07-25T14:21:50Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-dn4/fast-follow-per-test. Closing per orchestrator sign-off. (Gate green first run: 1211/0, spec.check pass.)",
+      "timestamp": "2026-07-25T14:37:46Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Advance specled.decisions: add change_type:deprecates carve-out to reference_validation; align verifier exemption breadth",
   "type": "task",
-  "updated_at": "2026-07-25T14:21:50Z"
+  "updated_at": "2026-07-25T14:37:46Z"
 }
