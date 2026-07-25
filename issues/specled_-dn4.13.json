@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-25T19:05:21Z",
+  "description": "specled_-dn4.9 re-derived item 9 after dn4.4: the landed SpecLedEx.Coverage.Arming resolver keeps the ETS modules cache private and closes the previous modules_cache_key/0 leak. No persistent_term change was made because it would need a demonstrated improvement over that design without reintroducing a cross-module key leak. Reassess only with measurement and an encapsulated key strategy.",
+  "id": "specled_-dn4.13",
+  "labels": [],
+  "parent": "specled_-dn4",
+  "priority": 2,
+  "status": "open",
+  "title": "Follow up: reassess persistent_term cache for coverage boundary modules",
+  "type": "task",
+  "updated_at": "2026-07-25T19:05:21Z"
+}
