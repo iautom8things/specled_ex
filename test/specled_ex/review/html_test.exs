@@ -1306,6 +1306,9 @@ defmodule SpecLedEx.Review.HtmlTest do
       assert html =~
                ~s|Self-verified: yes. <span class="cov-closure-self-verified-note"|
 
+      assert html =~
+               ~s|specled.decision.per_test_sync_boundary.">(exact within chained windows)</span></span>|
+
       assert html =~ "(exact within chained windows)</span>"
     end
 
