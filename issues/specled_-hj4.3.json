@@ -9,9 +9,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-hj4",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: impl-c1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-hj4.3/codex-impl-c1/log\n\nCommit: af5e00502f18936c7513401195897f18734873c2\nFiles touched: .claude/rules/specled.md; .spec/AGENTS.md; .spec/specs/mix_tasks.spec.md; .spec/specs/next.spec.md; .spec/specs/package.spec.md; .spec/specs/prime.spec.md; docs/adoption.md; docs/concepts.md; docs/coverage.md; lib/specled_ex/next.ex; lib/specled_ex/prime.ex; skills/spec-led-bootstrap/SKILL.md; skills/spec-led-bootstrap/references/adoption-phases.md; skills/spec-led-bootstrap/references/configurable-levers.md; skills/spec-led-bootstrap/references/detection-matrix.md; test/mix/tasks/spec_next_task_test.exs; test/mix/tasks/spec_prime_task_test.exs\nTests added: none — wording change with existing assertions updated\nVerification stubs flipped: none\nVerification tier: final full gate (`mix compile --warnings-as-errors \u0026\u0026 mix test \u0026\u0026 mix format --check-formatted \u0026\u0026 mix deps.unlock --check-unused \u0026\u0026 mix spec.check`)\nFinal-tier runs: 1\nFinal wording: The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears.\nOccurrence count: 25 old sites handled; 16 live new-wording occurrences remain after replacing runtime/test copies with the shared constant and dropping 2 misplaced doc occurrences; zero stale copies of the old sentence remain.\nExecution proof: failing path:\nspec.check result=fail tier=validate error_findings=0\n** (Mix) --base \"definitely-not-a-real-ref\" does not resolve to a commit\npassing path:\nbranch uncovered_policy_files=\nbranch next=mix spec.next --base origin/main\nspec.check result=pass\nOut-of-repo handoffs: vault-side agent-rules source ~/dev/mz/agentic-dotfiles/llms/workflows/agent-rules/rules/specled.md needs the identical reword\nDeferred must requirements: none\n\nSummary: Landed the proposed wording unchanged because it anchors on the `spec.check result=` stdout prefix, separates it from `validate status=…`, and makes non-zero exit the failure signal when no verdict line appears. The shared literal lives at `SpecLedEx.Next.verdict_read_protocol/0`, with `prime.ex`, `next.ex`, and both task test files referencing it. The stale `docs/coverage.md` `spec.cover.test` placement and the mid-list configurable-levers severity placement were dropped rather than reattached to commands that do not emit a `spec.check result=` verdict.",
+      "timestamp": "2026-07-25T16:05:51Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "S3: Verdict read-protocol text must be true under merged streams",
   "type": "task",
-  "updated_at": "2026-07-25T15:55:16Z"
+  "updated_at": "2026-07-25T16:05:51Z"
 }
