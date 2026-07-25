@@ -12,9 +12,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-dn4",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: eb717ea1-b20d-491a-a5f9-322b223bfe82\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/eb717ea1-b20d-491a-a5f9-322b223bfe82.jsonl\n\nCommit: 0e07235ccf00e329237ad239dfbe4d35a238c497\nFiles touched: 56 files: test_support/specled_ex_case.ex renamed to test_support/specled_ex_fixture_case.ex, 52 test files updated for SpecLedEx.FixtureCase or the behavioral SpecLedEx.Case proof, test/test_helper.exs require path updated, coverage_capture.spec.md scenario updated, mix_tasks.spec.md surface path updated\nTests added: SpecLedEx.CaseTest \"use SpecLedEx.Case forwards ExUnit opts and runs injected boundary setup\"; child-BEAM CaseTemplateProbeTest \"adopter receives opts and boundary setup\"\nVerification stubs flipped: none — already execute: true\nVerification tier: full suite — mix test + mix spec.next + mix spec.check --no-run-commands\nFinal-tier runs: 1\nDeferred must requirements: none\n\nSummary: Renamed the host-only fixture case template to SpecLedEx.FixtureCase and updated the host test suite to use it, leaving the child-BEAM fixture heredocs on the shipped SpecLedEx.Case API. Replaced the source-grep case-template check with a child-BEAM behavioral adopter test that proves use SpecLedEx.Case forwards ExUnit opts and runs the injected boundary setup; direct resolver verification confirmed SpecLedEx.Case resolves to lib/specled_ex/case.ex.",
+      "timestamp": "2026-07-25T11:41:44Z"
+    }
+  ],
   "priority": 1,
   "status": "in_progress",
   "title": "Rename test_support SpecLedEx.Case → SpecLedEx.FixtureCase; behavioral case_template scenario (F7)",
   "type": "task",
-  "updated_at": "2026-07-25T11:34:31Z"
+  "updated_at": "2026-07-25T11:41:44Z"
 }
