@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
   "created": "2026-07-25T15:49:10Z",
@@ -8,8 +8,8 @@
   "labels": [],
   "parent": "specled_-dn4",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "Propagate the chained-window attribution claim to the last retired-claim sites (README, adoption guide, package subject summary)",
   "type": "task",
-  "updated_at": "2026-07-25T15:49:10Z"
+  "updated_at": "2026-07-25T15:52:26Z"
 }
