@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-25T17:17:11Z",
+  "description": "Advances: specled.mix_tasks\n\nFrom the pre-ship critical review, consensus finding CF2 (security + spec reviewers), calibrated Medium. Cheapest to fix NOW, before anything parses the new field.\n\nThree pre-flight rejection sites in lib/mix/tasks/spec.check.ex (~:71, :121, :295, :312) hardcode tier: \"validate\", error_findings: 0 for failures that occur BEFORE validation is attempted. Verified by execution: mix spec.check --base \u003cbad-ref\u003e emits `spec.check result=fail tier=validate error_findings=0` and NO `validate status=` line at all — the verdict asserts a validation-tier failure on a run where validation never started.\n\nFourth collision from the other direction: spec.check always validates with strict: true, so a run failing purely on warnings also reports error_findings=0. The suite pins the identical string for a substantive failure (spec_tasks_test.exs:606) and a pure usage error (:931).\n\nThis is a spec defect before a code defect: the grammar `tier=\u003cvalidate|branch\u003e` has no honest token for \"the task never started.\"\n\nFix: add a third tier token (tier=invocation or tier=usage) to the verdict_line requirement grammar and emit it from the pre-flight sites; either add warning_findings=\u003cN\u003e or state explicitly in the requirement what error_findings=0 means on a fail verdict.",
+  "id": "specled_-0x4.2",
+  "labels": [],
+  "parent": "specled_-0x4",
+  "priority": 2,
+  "status": "open",
+  "title": "Verdict grammar: pre-flight rejections report tier=validate with error_findings=0",
+  "type": "task",
+  "updated_at": "2026-07-25T17:17:11Z"
+}
