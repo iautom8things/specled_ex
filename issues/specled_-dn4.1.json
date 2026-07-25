@@ -15,9 +15,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-dn4",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: eb717ea1-b20d-491a-a5f9-322b223bfe82\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/eb717ea1-b20d-491a-a5f9-322b223bfe82.jsonl\n\nCommit: de0af4a0e125c248d47fec2090fd12f0f400c537\nFiles touched: lib/specled_ex/coverage/boundary.ex; lib/specled_ex/coverage.ex; test/specled_ex/coverage/boundary_test.exs; test/specled_ex/coverage/formatter_test.exs; test/specled_ex/case_test.exs; .spec/specs/coverage_capture.spec.md; .spec/decisions/specled.decision.per_test_sync_boundary.md; .spec/realization_hashes.json\nTests added: none (updated existing boundary/formatter/case tests)\nVerification stubs flipped: none\nVerification tier: change-scoped — mix compile --warnings-as-errors; mix test test/specled_ex/coverage/boundary_test.exs test/specled_ex/coverage/formatter_test.exs test/specled_ex/case_test.exs; mix spec.check --no-run-commands; mix format --check-formatted; stale-name grep for tail/3/boundary_tags; full-system proof deferred to the merge gate\nFinal-tier runs: 2 (first exposed intentional realization drift; second green after --accept-drift and stale tail/3 baseline removal via HashStore)\nGate-forced co-changes outside Allowed touches: none\nDeferred must requirements: none\n\nSummary: Dropped write-only boundary row tags and collapsed SpecLedEx.Coverage.Boundary.tail/3 to tail/2, including the per_test_boundary call path. Updated scoped tests, coverage_capture current truth, the per-test boundary ADR, and the realization baseline so the API boundary now tracks tail/2.",
+      "timestamp": "2026-07-25T14:06:35Z"
+    }
+  ],
   "priority": 1,
   "status": "in_progress",
   "title": "Drop write-only boundary_row.tags; collapse to Boundary.tail/2 (F4, 5-reviewer consensus)",
   "type": "task",
-  "updated_at": "2026-07-25T14:03:32Z"
+  "updated_at": "2026-07-25T14:06:35Z"
 }
