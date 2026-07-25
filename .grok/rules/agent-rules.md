@@ -1,4 +1,4 @@
-<!-- agent-rules: generated v0.13.1 -->
+<!-- agent-rules: generated v0.13.2 -->
 # Agent Rules
 
 This repo uses the portable agent-rules package.

@@ -1,4 +1,4 @@
-<!-- agent-rules: generated v0.13.1 -->
+<!-- agent-rules: generated v0.13.2 -->
 ---
 description: Hard gate — raw `git worktree remove` / `git worktree prune` are blocked; use `make worktree-cleanup` / `make worktree-prune`.
 # deny: always — the make targets are the only sanctioned teardown path; the

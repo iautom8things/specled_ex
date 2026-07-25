@@ -1,4 +1,4 @@
-<!-- agent-rules: generated v0.13.1 -->
+<!-- agent-rules: generated v0.13.2 -->
 ---
 description: Work tracking with bw (beadwork). Persists plans, progress, and decisions to git across sessions.
 ---

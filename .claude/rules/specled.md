@@ -1,4 +1,4 @@
-<!-- agent-rules: generated v0.13.1 -->
+<!-- agent-rules: generated v0.13.2 -->
 ---
 description: Specled — repo-resident behavioral specs and the verification loop. Specs are the source of truth for "what must be true."
 # Deliberately NOT write_only: specs-as-source-of-truth must be in context when
@@ -29,7 +29,8 @@ Three rungs, lightest to heaviest. Do not overpay:
   to "check like CI."
 - `mix spec.check` (bare) — heaviest. All of the above **plus** executes every
   `execute: true` verification command (runs the tagged tests). Reserve for
-  pre-PR preflight only.
+  pre-PR preflight only. The last line is the verdict — `spec.check
+  result=…`; nothing above it, including `validate status=…`, is the verdict.
 
 Container-based repos may expose these as make targets (e.g. `make spec-check`
 = `--no-run-commands`, `make spec-check-full` = bare) — the semantics are the
@@ -71,10 +72,18 @@ If a requirement is wrong (impossible, contradictory, or misunderstood):
 
 **Do NOT weaken specs to make failing code pass.**
 
-## `state.json` is generated — never hand-merge
+## Generated vs committed state
 
-`.spec/state.json` is produced by `mix spec.check` / `mix spec.validate` and will conflict on rebase or merge whenever two branches both touched specs.
-
-- Treat conflicts in it as noise, not signal. Do not hand-resolve.
-- During a rebase or merge, take either side (e.g. `git checkout --theirs .spec/state.json && git add .spec/state.json`), finish the merge, then regenerate with `mix spec.check` and commit the result.
-- For diff and review purposes, ignore the file — the source of truth is `.spec/specs/*.spec.md`, the code, and the tests.
+- `.spec/state.json` is derived local state, written only on request
+  (`mix spec.index --output .spec/state.json` or
+  `mix spec.validate --output .spec/state.json`) — `mix spec.check` never
+  writes it. It is untracked and gitignored, so it cannot conflict on rebase
+  or merge; never commit it or treat it as shared source of truth.
+- `.spec/realization_hashes.json` is the committed realization-hash baseline
+  that drift detection compares against. Do NOT resolve conflicts in it by
+  regenerating — that recomputes hashes from the merged tree and silently
+  absorbs realization drift between branches. On conflict, prefer the side
+  whose branch legitimately changed the named bindings, or keep both entries
+  when different bindings moved on each branch.
+- For diff and review purposes the source of truth is `.spec/specs/*.spec.md`,
+  the code, and the tests.
