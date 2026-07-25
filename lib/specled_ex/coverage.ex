@@ -56,10 +56,9 @@ defmodule SpecLedEx.Coverage do
 
       head_snapshot ->
         key = boundary_key(context)
-        tags = boundary_tags(context)
 
         ExUnit.Callbacks.on_exit(fn ->
-          Boundary.tail(key, head_snapshot, tags)
+          Boundary.tail(key, head_snapshot)
         end)
 
         :ok
@@ -68,25 +67,6 @@ defmodule SpecLedEx.Coverage do
 
   defp boundary_key(%{module: mod, test: name}) when is_atom(mod) and is_atom(name) do
     {mod, name}
-  end
-
-  defp boundary_tags(context) when is_map(context) do
-    Map.drop(context, [
-      :case,
-      :describe,
-      :describe_line,
-      :file,
-      :line,
-      :module,
-      :registered,
-      :test,
-      :test_pid,
-      :test_type,
-      :async,
-      :seed,
-      :report,
-      :type
-    ])
   end
 
   @doc """

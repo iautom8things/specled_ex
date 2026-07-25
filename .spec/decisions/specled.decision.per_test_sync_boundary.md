@@ -40,7 +40,7 @@ Exclusive per-test attribution is produced only by the synchronous
 boundary hook:
 
 - Head snapshot at test setup (`Boundary.head/1`).
-- Tail snapshot in the test's `on_exit` callback (`Boundary.tail/3`), which
+- Tail snapshot in the test's `on_exit` callback (`Boundary.tail/2`), which
   `ExUnit.Runner` awaits via `exec_on_exit/3` before spawning the next
   test.
 - Diff via `Snapshot.diff/2` over the `[head, tail]` window; row inserted

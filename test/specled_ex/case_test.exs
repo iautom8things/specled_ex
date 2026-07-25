@@ -90,7 +90,7 @@ defmodule SpecLedEx.CaseTest do
 
     test "per_test_boundary returns :ok when armed with a boundary_table" do
       # ETS table is owned by this test process and auto-drops when it exits
-      # (after on_exit callbacks complete). Boundary.tail/3 tolerates a gone
+      # (after on_exit callbacks complete). Boundary.tail/2 tolerates a gone
       # table so the registered on_exit does not raise in the host suite.
       tid = :ets.new(:anon, [:public, :set])
 

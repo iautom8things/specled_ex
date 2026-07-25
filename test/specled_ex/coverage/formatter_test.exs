@@ -347,8 +347,7 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       true =
         :ets.insert(
           boundary_tid,
-          {{AbcTest, :"test x"},
-           %{hits: %{Fixture => [line_boundary]}, diagnostics: 0, tags: %{}}}
+          {{AbcTest, :"test x"}, %{hits: %{Fixture => [line_boundary]}, diagnostics: 0}}
         )
 
       # Baseline → final increases both lines; only boundary line is attributed.
@@ -493,7 +492,7 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       true =
         :ets.insert(
           boundary_tid,
-          {{HarvestTest, :"test x"}, %{hits: %{Fixture => [line]}, diagnostics: 1, tags: %{}}}
+          {{HarvestTest, :"test x"}, %{hits: %{Fixture => [line]}, diagnostics: 1}}
         )
 
       snapshots = [
@@ -523,7 +522,7 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       true =
         :ets.insert(
           boundary_tid,
-          {{RanTest, :"test ran"}, %{hits: %{Fixture => [line]}, diagnostics: 0, tags: %{}}}
+          {{RanTest, :"test ran"}, %{hits: %{Fixture => [line]}, diagnostics: 0}}
         )
 
       snapshots = [
@@ -640,8 +639,7 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       true =
         :ets.insert(
           boundary_tid,
-          {{HookedTest, :"test hooked"},
-           %{hits: %{Fixture => [line_hooked]}, diagnostics: 0, tags: %{}}}
+          {{HookedTest, :"test hooked"}, %{hits: %{Fixture => [line_hooked]}, diagnostics: 0}}
         )
 
       snapshots = [

@@ -65,7 +65,7 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
     end
   end
 
-  describe "head/1 + tail/3 — window diff semantics" do
+  describe "head/1 + tail/2 - window diff semantics" do
     test "inserts hits for lines that strictly increased in the window" do
       tid = new_table()
 
@@ -90,15 +90,14 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
       head = Boundary.head(%{module: SampleTest, test: :"test path_a"})
       assert head == %{Mod => [{10, 0}, {20, 0}]}
 
-      assert :ok =
-               Boundary.tail({SampleTest, :"test path_a"}, head, %{file: "test/sample_test.exs"})
+      assert :ok = Boundary.tail({SampleTest, :"test path_a"}, head)
 
       assert [{_key, row}] =
                :ets.lookup(tid, {SampleTest, :"test path_a"})
 
       assert row.hits == %{Mod => [10]}
       assert row.diagnostics == 0
-      assert row.tags.file == "test/sample_test.exs"
+      refute Map.has_key?(row, :tags)
     end
 
     test "caches modules_fn result once under the reserved key" do
@@ -142,7 +141,7 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
       arm(boundary_table: tid, snapshot_fn: snapshot_fn, modules_fn: fn -> [Mod] end)
 
       head = Boundary.head(%{})
-      assert :ok = Boundary.tail({T, :t}, head, %{})
+      assert :ok = Boundary.tail({T, :t}, head)
 
       assert [{_, row}] = :ets.lookup(tid, {T, :t})
       assert row.hits == %{}
@@ -150,9 +149,9 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
     end
   end
 
-  describe "tail/3 — unarmed no-op" do
+  describe "tail/2 - unarmed no-op" do
     test "returns :ok without writing when unarmed" do
-      assert :ok = Boundary.tail({M, :t}, %{}, %{})
+      assert :ok = Boundary.tail({M, :t}, %{})
     end
   end
 end

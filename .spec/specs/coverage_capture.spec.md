@@ -116,7 +116,7 @@ realized_by:
     - "SpecLedEx.Coverage.default_artifact_path/0"
     - "SpecLedEx.Coverage.per_test_boundary/1"
     - "SpecLedEx.Coverage.Boundary.head/1"
-    - "SpecLedEx.Coverage.Boundary.tail/3"
+    - "SpecLedEx.Coverage.Boundary.tail/2"
     - "SpecLedEx.Case"
     - "SpecLedEx.Coverage.Formatter"
     - "SpecLedEx.Coverage.Snapshot.runtime_mode/0"
@@ -467,7 +467,7 @@ decisions:
   statement: >-
     `SpecLedEx.Coverage.Boundary` shall take a head snapshot at test setup
     (`Boundary.head/1`) and a tail snapshot in the test's `on_exit` callback
-    (`Boundary.tail/3`), which `ExUnit.Runner` awaits via `exec_on_exit/3`
+    (`Boundary.tail/2`), which `ExUnit.Runner` awaits via `exec_on_exit/3`
     before spawning the next test. The public adopter API is
     `setup {SpecLedEx.Coverage, :per_test_boundary}` (or `use SpecLedEx.Case`).
     The hot path is two snapshot reads + one `Snapshot.diff/2` + one ETS

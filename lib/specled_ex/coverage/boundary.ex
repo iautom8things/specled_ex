@@ -18,8 +18,7 @@ defmodule SpecLedEx.Coverage.Boundary do
   @type head_result :: Snapshot.module_snapshot() | :unarmed
   @type boundary_row :: %{
           hits: %{module() => [pos_integer()]},
-          diagnostics: non_neg_integer(),
-          tags: map()
+          diagnostics: non_neg_integer()
         }
 
   @doc """
@@ -43,11 +42,8 @@ defmodule SpecLedEx.Coverage.Boundary do
   Tail boundary: take the tail snapshot, diff against `head_snapshot`, insert
   `{test_key, row}` into the boundary table. No-ops when unarmed.
   """
-  @spec tail(test_key(), Snapshot.module_snapshot(), map()) :: :ok
-  def tail(test_key, head_snapshot, tags \\ %{})
-
-  def tail(test_key, head_snapshot, tags)
-      when is_tuple(test_key) and is_map(head_snapshot) and is_map(tags) do
+  @spec tail(test_key(), Snapshot.module_snapshot()) :: :ok
+  def tail(test_key, head_snapshot) when is_tuple(test_key) and is_map(head_snapshot) do
     case Arming.resolve(:boundary) do
       :disarmed ->
         :ok
@@ -59,8 +55,7 @@ defmodule SpecLedEx.Coverage.Boundary do
 
         row = %{
           hits: hits_by_module,
-          diagnostics: length(diagnostics),
-          tags: tags
+          diagnostics: length(diagnostics)
         }
 
         true = :ets.insert(config.boundary_table, {test_key, row})
