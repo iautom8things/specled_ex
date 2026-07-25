@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-25T13:25:27Z",
+  "description": "No spec subject\nFrom specled_-hj4.2 verification note N3 (2026-07-25). .claude/rules/specled.md:74-80 (\"state.json is generated — never hand-merge\") is false on three counts, verified by execution: (a) mix spec.check never writes .spec/state.json; mix spec.validate writes it only with --output (spec.validate.ex:81); (b) it cannot conflict on rebase — untracked and .gitignore:28 ignores it; (c) \"regenerate with mix spec.check and commit\" is impossible. Contradicts the correct .spec/AGENTS.md:33-36. Same false section exists in project CLAUDE.md. Agent-facing rule text — fix both, and mirror to the vault-side agent-rules sync source (same handoff as the hj4.2 protocol-sentence edit).",
+  "id": "specled_-ade",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Rules: fix false state.json is generated section in .claude/rules/specled.md + CLAUDE.md",
+  "type": "task",
+  "updated_at": "2026-07-25T13:25:27Z"
+}
