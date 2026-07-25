@@ -81,11 +81,15 @@
     {
       "text": "EPIC-MERGE REVIEW ITEM (carry to the PR checkpoint): the structural gate emits a non-blocking branch-guard finding on the epic branch — append_only/same_pr_self_authorization. ADR specled.decision.coverage_qualifier_requirement_ids (from dn4.8) is new in the diff and its affects: list exactly matches the two requirement ids removed in the same diff (coverage_observed_approximate_qualifier, coverage_file_level_proxy_qualifier), so the ADR self-authorizes its own deletion. The gate's own verdict is 'visible but not blocked; review decides.' Three independent graders (dn4.8's verifier, dn4.1's verifier, dn4.6's rebase worker) each surfaced it and each judged it expected-and-warning-level. Options at review: confirm the self-authorization, or split the id removal into a follow-on PR. This is the ONE item the epic deliberately leaves for a human decision.",
       "timestamp": "2026-07-25T16:23:42Z"
+    },
+    {
+      "text": "LESSONS\n- [untested-clause] Prove a claim with a NON-DEFAULT value; a test name must not claim a clause its assertions cannot fail on (from specled_-dn4.3)\n- [untested-clause] A multi-clause guard needs a failure test PER CLAUSE (from specled_-dn4.6)\n- [untested-clause] A corrected string must be pinned by text UNIQUE to the correction — never a base-identical prefix, never a substring several sites emit (from specled_-dn4.6)\n- [untested-clause] When you report a mutation result, RUN the mutation; a table naming a non-discriminating assertion is a false claim (from specled_-dn4.6)\n- [untested-clause] A REFUTE must be checked against the string the code actually emits today — \"exact within chained windows\" does not match \"exact within DISCLOSED chained windows\", so the refute passes vacuously and guards nothing. Second occurrence in this epic (from specled_-dn4.5)\n- [untested-clause] A value rendered into an ATTRIBUTE (title=) is invisible to class-based refutes because the element renders unconditionally — attribute-borne claims need their own text assertion (from specled_-dn4.5)\n- [stale-spec] A requirement-claim rewrite must update every surface that renders the claim AND realize any then-clause it authors with a real assertion; enumerate the surfaces and check them off one by one (from specled_-dn4.6, recurring in specled_-dn4.5)\n- [other] After a rename/deletion, grep the entire repo for the OLD name before committing (from specled_-dn4.3)",
+      "timestamp": "2026-07-25T17:34:42Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-25T16:23:42Z"
+  "updated_at": "2026-07-25T17:34:42Z"
 }
