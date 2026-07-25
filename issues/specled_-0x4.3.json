@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-25T17:17:20Z",
+  "description": "Advances: specled.mix_tasks, specled.prime, specled.next\n\nFrom the pre-ship critical review, Tier-2 items U2/U7/U8/U13/U15/U16, all calibrated Medium or Low.\n\nU2 — specled.tasks.verdict_line scope clause is circular as written (\"for every pass and fail path WHERE THE TASK ITSELF REPORTS A VERDICT\"). The covering scenario already enumerates six real paths and IS falsifiable; hoist that enumeration into the requirement statement and name the excluded pre-report raise paths explicitly.\n\nU7 — verdict_line is UNDER-credited: the tier=branch form that motivated the whole epic has no test tagged to it. spec_check_test.exs:70 is tagged check_verbose_flag + branch_findings_breakdown; its verdict assertion is at :92. Add specled.tasks.verdict_line to the @tag spec: lists on the tier=branch, pass, spec.validate pass, argument-rejection and min-strength tests.\n\nU8 — prime/next verdict_read_protocol are OVER-credited: tagged at @moduletag scope (spec_prime_task_test.exs:4-21), so every test in the module vouches for them and the two assertions that actually prove them could be deleted with the gate still green. Move the ids onto the specific tests.\n\nU13 — drain_shell_messages/1 (test_support/specled_ex_case.ex:122-124) matches {:mix_shell, _level, payload}, discarding the level, so \"last stdout line\" assertions actually prove \"last shell message\". Add a level-preserving drain_shell_events/0 and assert {:info, verdict} on one pass-path and one fail-path test; existing call sites keep working.\n\nU15/U16 — no fixture pairs an info finding with an error, so the middle sort rank is unpinned (spec_check_test.exs:82 asserts info=0). Add an info-severity finding to the mixed fixture so all three ranks are ordered in one run, and replace the paired find_index comparisons with a severity-sequence partition assertion that stays correct as the fixture grows.",
+  "id": "specled_-0x4.3",
+  "labels": [],
+  "parent": "specled_-0x4",
+  "priority": 2,
+  "status": "open",
+  "title": "Spec/test attribution and test-craft gaps in the verdict contract",
+  "type": "task",
+  "updated_at": "2026-07-25T17:17:20Z"
+}
