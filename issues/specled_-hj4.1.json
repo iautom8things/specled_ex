@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-hj4",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: impl-a1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-hj4.1/codex-impl-a1/log\n\nCommit: ba430e7\nFiles touched: .spec/specs/branch_guard.spec.md, .spec/specs/evidence_store.spec.md, .spec/specs/mix_tasks.spec.md, .spec/specs/next.spec.md, .spec/specs/prime.spec.md, .spec/specs/status.spec.md, .spec/specs/verification.spec.md, lib/mix/tasks/spec.check.ex, lib/mix/tasks/spec.validate.ex, lib/specled_ex/next.ex, lib/specled_ex/prime.ex, test/mix/tasks/spec_check_test.exs, test/mix/tasks/spec_next_task_test.exs, test/mix/tasks/spec_prime_task_test.exs, test/mix/tasks/spec_tasks_test.exs\nTests added: Mix.Tasks.Spec.CheckTest \"branch findings print non-error severities before errors\"; strengthened Mix.Tasks.SpecTasksTest spec.check/spec.validate pass and fail output assertions; strengthened Mix.Tasks.SpecPrimeTaskTest protocol output assertions; strengthened Mix.Tasks.SpecNextTaskTest protocol output assertions\nVerification stubs flipped: added executable tagged_tests coverage for specled.tasks.verdict_line, specled.tasks.branch_findings_breakdown, specled.prime.verdict_read_protocol, specled.next.verdict_read_protocol\nVerification tier: full merge-gate list: mix compile --warnings-as-errors \u0026\u0026 mix test \u0026\u0026 mix format --check-formatted \u0026\u0026 mix deps.unlock --check-unused \u0026\u0026 mix spec.check\nFinal-tier runs: 1\nAudit-expanded scope: none\nDeferred must requirements: none\n\nSummary: Implemented trailing pass/fail verdict lines for spec.check and spec.validate, renamed the validation summary line to validate status=..., and added branch severity breakdown plus error-last display ordering without changing report/evidence data. Added the required spec.check verdict read-protocol sentence to prime and next human guidance and updated subject specs/tests to cover the new contracts.",
+      "timestamp": "2026-07-25T11:07:27Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "S1: Verdict contract in spec.check/spec.validate + prime/next read-protocol text",
   "type": "task",
-  "updated_at": "2026-07-25T10:55:16Z"
+  "updated_at": "2026-07-25T11:07:27Z"
 }
