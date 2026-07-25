@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-25T10:58:16Z",
+  "description": "Advances: specled.package, specled.triangulation\n\nGo-live gate ticket (2026-07-25): the shipped .spec/ corpus is the adoption-facing proof of the spec-code-test integrity pitch and must contain no provably false statements at launch. Split out of specled_-vk0, which keeps only the deferred hardening work (lookbehind bounds, severity-corpus asymmetry, digit codes, stale-marker sweep, two-way mirror).\n\nTwo live inaccuracies, both verified against code during the 2026-07-24 triage (see specled_-vk0 description + last comment for full evidence):\n\n1. package.spec.md doc_identifier_integrity must OVERCLAIMS: the lint guards 3 of at least 5 emitted finding-code namespaces — evidence/* (emitted at lib/specled_ex/evidence/store.ex:46, evidence/sync.ex:266,431,455, mix/tasks/spec.prune.ex:47-60, spec.sync.ex:41), detector_unavailable (lib/specled_ex/review.ex:537), and spec_requirement_too_short are unguarded; the corpus merely happens to be clean today. Fix: widen @token_patterns to cover the unguarded namespaces OR narrow the must to claim only what is guarded. Maintainer call on widen-vs-narrow, then mechanical.\n\n2. triangulation.spec.md scenario asserts a given/when the implementation and tests do not perform (fabricated scenario text found in the specled_-6fn ship-it critical review, restated in the specled_-vk0 comment). Fix: rewrite the scenario to describe actual behavior, through append-only ceremony.\n\nNOT in scope here (already covered by specled_-dn4.8, which is being finished as part of the P1 dn4 epic): F37 boundary_row_preferred_on_flush contradicting a must in the same file, and F39 coverage qualifier ids asserting the opposite of their names. Do not double-fix.\n\nVerification: mix spec.check green + the corpus-scoped doc-identifier lint; per-claim code citations above make each fix mechanically checkable.",
+  "id": "specled_-cz0",
+  "labels": [],
+  "priority": 1,
+  "status": "open",
+  "title": "Spec-honesty slice: fix the two provably false statements in the shipped .spec/ corpus",
+  "type": "task",
+  "updated_at": "2026-07-25T10:58:16Z"
+}
