@@ -53,11 +53,15 @@
     {
       "text": "FLAKE LEDGER: ya8 fix merged (c478563). Verifier A/B: 8/15 fail at base flags vs 0/15 fixed. Correction to prior ledger entries: this flake is NOT seed-deterministic (seed 570646 failed one base pass, passed another) — future reports of this class should quote a failure RATE, not a seed. Pre-existing advisory carried forward: coverage/formatter_test.exs is async while mutating the arming Application env (dn4.7/F27 will flip it), and ~19 async FixtureCase modules run Mix.Tasks.Spec.*.run/1 in-process against global Mix.Task state — different class, likeliest next suite-order flake; triage at epic finish.",
       "timestamp": "2026-07-25T14:19:04Z"
+    },
+    {
+      "text": "LESSONS\n- [untested-clause] Prove a config/opts-passthrough claim with a NON-DEFAULT value; an assertion that passes on defaults covers nothing, and a test name must not claim a clause its assertions cannot fail on (from specled_-dn4.3)\n- [untested-clause] A multi-clause guard (with/cond chains) needs a failure test PER CLAUSE; a test that trips a neighboring clause proves \"a guard exists\", not the clause under contract — mutation-check the specific clause (from specled_-dn4.6)\n- [stale-spec] When rewriting a scenario's or requirement's text, keep naming the mechanism it proves; the append-only guard only compares scenario COUNTS and cannot catch prose weakening (from specled_-dn4.3)\n- [stale-spec] A requirement-claim rewrite must in the SAME change update its covering scenarios and every surface that renders the claim (or record an explicit deferred obligation); spec.check cannot catch prose-level contradictions between a requirement, its scenarios, and the renderer (from specled_-dn4.6)\n- [other] After a rename/deletion, grep the entire repo for the OLD name before committing (from specled_-dn4.3)",
+      "timestamp": "2026-07-25T15:15:29Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-25T14:19:04Z"
+  "updated_at": "2026-07-25T15:15:29Z"
 }
