@@ -45,11 +45,15 @@
     {
       "text": "FLAKE LEDGER: ya8 signature struck the dn4.8 MERGE GATE (spec.check tagged_tests, seed 570646). Targeted re-run with printed seed: 0 failures → flake-accept 1/2 AT GATE per protocol (file untouched by epic). One gate-accept remains before the gate must stay red. Escalating ya8 into the epic as gate-health work.",
       "timestamp": "2026-07-25T13:48:43Z"
+    },
+    {
+      "text": "FLAKE LEDGER: ya8 struck the dn4.4 gate (seed 858695) — targeted re-run clean, flake-accept 2/2 AT GATE. CAP EXHAUSTED: the next ya8 strike at any gate leaves it red and pauses the epic. ya8 fix is being admitted NOW and will merge before any other ticket.",
+      "timestamp": "2026-07-25T13:57:50Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-25T13:48:43Z"
+  "updated_at": "2026-07-25T13:57:50Z"
 }
