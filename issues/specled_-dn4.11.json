@@ -31,11 +31,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: eb717ea1-b20d-491a-a5f9-322b223bfe82\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/eb717ea1-b20d-491a-a5f9-322b223bfe82.jsonl\n\nReasoning: VERIFY reported PASS with zero Gaps, zero scope deviations, both musts\n(package.adoption_guide, package.doc_identifier_integrity) covered with executed\nevidence and mutation-proven Would-fail-if lines, no seams (documentation diff),\ngreen stubs under bare spec.check, and the CHANGELOG co-change shown byte-identical\nto dn4.6's rather than independent release-note authoring. No auditor was spawned\nper policy. Posted by the orchestrator applying the canonical Selective Audit Gate.\n\nMERGE HOLD: dependency specled_-dn4.6 must merge first. Verifier note 2 is\nload-bearing — this stage branch in isolation carries a subject summary asserting\ncontent docs/coverage.md does not yet have, and no gate detects it.",
       "timestamp": "2026-07-25T16:12:12Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-dn4/fast-follow-per-test. Closing per orchestrator sign-off. (Gate green first run: 1217/0, spec.check pass. Merge-order dependency on dn4.6 honored — package.spec.md:29's summary was verified accurate against docs/coverage.md:100 post-rebase, which was the whole point of the ordering.)",
+      "timestamp": "2026-07-25T16:38:21Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Propagate the chained-window attribution claim to the last retired-claim sites (README, adoption guide, package subject summary)",
   "type": "task",
-  "updated_at": "2026-07-25T16:12:12Z"
+  "updated_at": "2026-07-25T16:38:21Z"
 }
