@@ -1478,13 +1478,17 @@ defmodule SpecLedEx.Review.HtmlTest do
       badge_html = IO.iodata_to_binary(Html.render_subject_coverage_badge(reach))
 
       assert tab_html =~ "Reached by tests:"
+      assert tab_html =~ ~s|<span class="cov-reached-by-tests-label" title="">|
       assert tab_html =~ "Self-verified: yes."
       refute tab_html =~ "cov-closure-attribution-note"
       refute tab_html =~ "cov-closure-self-verified-note"
+      refute tab_html =~ "exact within disclosed chained windows"
       refute tab_html =~ "exact within chained windows"
       refute tab_html =~ "degraded: unhooked"
 
       assert badge_html =~ "1/1 self-verified (per-test)"
+      assert badge_html =~ ~s|title="1 of 1 requirements self-verified under per-test coverage"|
+      refute badge_html =~ "exact within disclosed chained windows"
       refute badge_html =~ "exact within chained windows"
       refute badge_html =~ "(degraded)"
     end
@@ -1704,6 +1708,7 @@ defmodule SpecLedEx.Review.HtmlTest do
 
       assert html =~ "0/2 self-verified (aggregate)"
       refute html =~ "(observed)"
+      refute html =~ "disclosed chained windows"
       refute html =~ "exact within chained windows"
     end
 
