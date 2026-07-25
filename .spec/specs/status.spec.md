@@ -52,6 +52,11 @@ decisions:
 
 ## Verification
 
+Branch reconciliation note: `test/mix/tasks/spec_tasks_test.exs` is a shared
+task test surface for this subject. This branch touches that file to assert the
+spec.check stdout verdict contract; the status requirements above remain
+unchanged.
+
 ```yaml spec-verification
 - kind: tagged_tests
   execute: true

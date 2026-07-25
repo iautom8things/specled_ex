@@ -53,7 +53,10 @@ defmodule SpecLedEx.Next do
           report["uncovered_policy_files"] || []
         ) ++
         format_items("next_steps", report["next_steps"] || []) ++
-        format_items("commands", report["suggested_commands"] || [])
+        format_items(
+          "commands",
+          suggested_commands_with_protocol(report["suggested_commands"] || [])
+        )
 
     Enum.join(lines, "\n")
   end
@@ -304,6 +307,16 @@ defmodule SpecLedEx.Next do
 
   defp format_items(label, items) do
     ["#{label}:"] ++ Enum.map(items, &"- #{&1}")
+  end
+
+  # covers: specled.next.verdict_read_protocol
+  defp suggested_commands_with_protocol([]), do: []
+
+  defp suggested_commands_with_protocol(commands) do
+    commands ++
+      [
+        "The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict."
+      ]
   end
 
   defp format_optional_items(false, _label, _items), do: []

@@ -17,8 +17,11 @@ defmodule Mix.Tasks.SpecNextTaskTest do
                "specled.tasks.prime_json",
                "specled.tasks.status_summary",
                "specled.tasks.validate_exit_status",
-               "specled.tasks.validate_findings"
+               "specled.tasks.validate_findings",
+               "specled.next.verdict_read_protocol"
              ]
+
+  @verdict_protocol "The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict."
 
   test "spec.next guides a covered local change", %{root: root} do
     init_git_repo(root)
@@ -57,6 +60,7 @@ defmodule Mix.Tasks.SpecNextTaskTest do
            )
 
     assert message_contains?(messages, "mix spec.check --base HEAD")
+    assert message_contains?(messages, @verdict_protocol)
   end
 
   test "spec.next guides a covered cross-cutting change", %{root: root} do

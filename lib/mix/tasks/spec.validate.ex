@@ -85,7 +85,7 @@ defmodule Mix.Tasks.Spec.Validate do
     summary = report["summary"]
 
     Mix.shell().info(
-      "status=#{report["status"]} errors=#{summary["errors"]} warnings=#{summary["warnings"]}"
+      "validate status=#{report["status"]} errors=#{summary["errors"]} warnings=#{summary["warnings"]}"
     )
 
     if debug? do
@@ -103,7 +103,9 @@ defmodule Mix.Tasks.Spec.Validate do
     end
 
     if report["status"] == "fail" do
-      Enum.each(report["findings"] || [], fn finding ->
+      (report["findings"] || [])
+      |> sort_findings_for_display()
+      |> Enum.each(fn finding ->
         severity = String.upcase(finding["severity"] || "warning")
         subject_id = finding["subject_id"] || "global"
         file = finding["file"] || "-"
@@ -112,8 +114,11 @@ defmodule Mix.Tasks.Spec.Validate do
         Mix.shell().info("[#{severity}] #{subject_id} #{code} #{file} :: #{message}")
       end)
 
+      print_verdict("fail", error_findings: summary["errors"])
       Mix.raise("Spec validate failed: #{length(report["findings"] || [])} finding(s)")
     end
+
+    print_verdict("pass")
   end
 
   defp validate_args!([], []), do: :ok
@@ -211,4 +216,38 @@ defmodule Mix.Tasks.Spec.Validate do
       finding["message"] || ""
     }
   end
+
+  # covers: specled.tasks.verdict_line
+  defp print_verdict("pass") do
+    Mix.shell().info("spec.validate result=pass")
+  end
+
+  defp print_verdict("fail", error_findings: error_findings) do
+    Mix.shell().info(
+      "spec.validate result=fail tier=validate error_findings=#{error_findings || 0}"
+    )
+  end
+
+  defp sort_findings_for_display(findings) do
+    Enum.sort_by(findings, fn finding ->
+      {
+        severity_sort_rank(normalized_severity(finding)),
+        finding["file"] || "",
+        finding["subject_id"] || "",
+        finding["code"] || "",
+        finding["message"] || ""
+      }
+    end)
+  end
+
+  defp normalized_severity(finding) do
+    (finding["severity"] || finding[:severity] || "warning")
+    |> to_string()
+    |> String.downcase()
+  end
+
+  defp severity_sort_rank("warning"), do: 0
+  defp severity_sort_rank("info"), do: 1
+  defp severity_sort_rank("error"), do: 2
+  defp severity_sort_rank(_), do: 3
 end

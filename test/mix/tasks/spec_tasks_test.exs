@@ -22,7 +22,9 @@ defmodule Mix.Tasks.SpecTasksTest do
                "specled.tasks.status_summary",
                "specled.tasks.verification_severity_config",
                "specled.tasks.validate_exit_status",
-               "specled.tasks.validate_findings"
+               "specled.tasks.validate_findings",
+               "specled.tasks.verdict_line",
+               "specled.tasks.branch_findings_breakdown"
              ]
 
   test "spec.init scaffolds files, keeps existing content, and overwrites with force", %{
@@ -176,7 +178,8 @@ defmodule Mix.Tasks.SpecTasksTest do
              state["findings"]
 
     assert message_contains?(messages, "spec.validate wrote")
-    assert message_contains?(messages, "status=fail errors=0 warnings=1")
+    assert message_contains?(messages, "validate status=fail errors=0 warnings=1")
+    assert List.last(messages) == "spec.validate result=fail tier=validate error_findings=0"
 
     assert message_contains?(
              messages,
@@ -263,9 +266,10 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     messages = drain_shell_messages()
 
-    assert Enum.any?(messages, &String.contains?(&1, "status=pass errors=0 warnings=0"))
+    assert Enum.any?(messages, &String.contains?(&1, "validate status=pass errors=0 warnings=0"))
     assert Enum.any?(messages, &String.contains?(&1, "debug_checks="))
     assert Enum.any?(messages, &String.contains?(&1, "[PASS] passing.subject"))
+    assert List.last(messages) == "spec.validate result=pass"
   end
 
   test "spec.validate requires explicit --run-commands to execute commands", %{root: root} do
@@ -411,10 +415,18 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     messages = drain_shell_messages()
 
+    assert message_contains?(messages, "validate status=pass errors=0 warnings=0")
+
+    assert message_contains?(
+             messages,
+             "branch base=HEAD changed_files=1 findings=1 (error=1 warning=0 info=0, info hidden; --verbose to show)"
+           )
+
     assert message_contains?(messages, "branch_guard_missing_subject_update")
     assert message_contains?(messages, "branch change_type=single_subject")
     assert message_contains?(messages, "branch impacted_subjects=example.subject")
     assert message_contains?(messages, "branch next=mix spec.next --base HEAD")
+    assert List.last(messages) == "spec.check result=fail tier=branch error_findings=1"
   end
 
   test "spec.check requires a decision update for cross-cutting changes", %{root: root} do
@@ -586,6 +598,7 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     messages = drain_shell_messages()
     assert message_contains?(messages, "requirement_without_verification")
+    assert List.last(messages) == "spec.check result=fail tier=validate error_findings=0"
     refute File.exists?(Path.join(failing_root, ".spec/state.json"))
   end
 
@@ -612,7 +625,8 @@ defmodule Mix.Tasks.SpecTasksTest do
     refute File.exists?(Path.join(root, ".spec/state.json"))
     assert File.read!(Path.join(root, "checked.txt")) == "checked"
     assert message_contains?(messages, "debug_checks=")
-    assert message_contains?(messages, "status=pass errors=0 warnings=0")
+    assert message_contains?(messages, "validate status=pass errors=0 warnings=0")
+    assert List.last(messages) == "spec.check result=pass"
   end
 
   @tag spec: [
@@ -748,7 +762,8 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     messages = drain_shell_messages()
 
-    assert message_contains?(messages, "status=pass errors=0 warnings=0")
+    assert message_contains?(messages, "validate status=pass errors=0 warnings=0")
+    assert List.last(messages) == "spec.check result=pass"
     refute message_contains?(messages, "requirement_without_verification")
     refute File.exists?(Path.join(root, ".spec/state.json"))
   end

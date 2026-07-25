@@ -59,7 +59,7 @@ defmodule SpecLedEx.Prime do
       "Run `mix spec.next --bugfix` after code, docs, or tests change.",
       "If next says `needs subject updates`, update the named subject before you finish.",
       "If next says `needs decision update`, revise ADRs when the rule is durable and cross-cutting; otherwise clear the finding with a `Spec-Drift: branch_guard_missing_decision_update=info` trailer plus a one-line reason.",
-      "When next says `ready for check`, run `#{check_command(base)}`."
+      "When next says `ready for check`, run `#{check_command(base)}`. #{verdict_protocol()}"
     ]
   end
 
@@ -70,12 +70,17 @@ defmodule SpecLedEx.Prime do
       "Run `mix spec.next` after code, docs, or tests change.",
       "If next says `needs subject updates`, update the named subject before you finish.",
       "If next says `needs decision update`, revise ADRs when the rule is durable and cross-cutting; otherwise clear the finding with a `Spec-Drift: branch_guard_missing_decision_update=info` trailer plus a one-line reason.",
-      "When next says `ready for check`, run `#{check_command(base)}`."
+      "When next says `ready for check`, run `#{check_command(base)}`. #{verdict_protocol()}"
     ]
   end
 
   defp check_command(nil), do: "mix spec.check"
   defp check_command(base), do: "mix spec.check --base #{base}"
+
+  # covers: specled.prime.verdict_read_protocol
+  defp verdict_protocol do
+    "The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict."
+  end
 
   defp purpose_label("session_start_context"), do: "session-start context"
   defp purpose_label(nil), do: "session-start context"
