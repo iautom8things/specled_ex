@@ -5,6 +5,7 @@
     "specled_-dn4.4"
   ],
   "blocks": [
+    "specled_-dn4.11",
     "specled_-dn4.5"
   ],
   "created": "2026-07-24T19:18:43Z",
@@ -52,5 +53,5 @@
   "status": "in_progress",
   "title": "Correct the per-test cost model + artifact freshness guard (F14, F12, F26)",
   "type": "task",
-  "updated_at": "2026-07-25T16:03:08Z"
+  "updated_at": "2026-07-25T16:03:33Z"
 }
