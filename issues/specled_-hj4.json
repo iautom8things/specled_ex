@@ -37,11 +37,15 @@
     {
       "text": "ORCHESTRATED\nChildren closed: 2\nBOUNCEs encountered: 2\nUser escalations: 0",
       "timestamp": "2026-07-25T13:32:48Z"
+    },
+    {
+      "text": "Out-of-repo handoff from specled_-hj4.2 resolved: vault-side agent-rules sync source (agentic-dotfiles llms/workflows/agent-rules/rules/specled.md) gained the identical protocol sentence on the bare spec.check rung. Left uncommitted in agentic-dotfiles (working tree has unrelated pending changes).",
+      "timestamp": "2026-07-25T15:03:16Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "spec.check verdict contract + teaching sweep",
   "type": "epic",
-  "updated_at": "2026-07-25T13:32:48Z"
+  "updated_at": "2026-07-25T15:03:16Z"
 }
