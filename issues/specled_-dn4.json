@@ -57,11 +57,15 @@
     {
       "text": "LESSONS\n- [untested-clause] Prove a config/opts-passthrough claim with a NON-DEFAULT value; an assertion that passes on defaults covers nothing, and a test name must not claim a clause its assertions cannot fail on (from specled_-dn4.3)\n- [untested-clause] A multi-clause guard (with/cond chains) needs a failure test PER CLAUSE; a test that trips a neighboring clause proves \"a guard exists\", not the clause under contract — mutation-check the specific clause (from specled_-dn4.6)\n- [stale-spec] When rewriting a scenario's or requirement's text, keep naming the mechanism it proves; the append-only guard only compares scenario COUNTS and cannot catch prose weakening (from specled_-dn4.3)\n- [stale-spec] A requirement-claim rewrite must in the SAME change update its covering scenarios and every surface that renders the claim (or record an explicit deferred obligation); spec.check cannot catch prose-level contradictions between a requirement, its scenarios, and the renderer (from specled_-dn4.6)\n- [other] After a rename/deletion, grep the entire repo for the OLD name before committing (from specled_-dn4.3)",
       "timestamp": "2026-07-25T15:15:29Z"
+    },
+    {
+      "text": "LESSONS\n- [untested-clause] Prove a config/opts-passthrough claim with a NON-DEFAULT value; an assertion that passes on defaults covers nothing, and a test name must not claim a clause its assertions cannot fail on (from specled_-dn4.3)\n- [untested-clause] A multi-clause guard (with/cond chains) needs a failure test PER CLAUSE; a test that trips a neighboring clause proves \"a guard exists\", not the clause under contract — mutation-check the specific clause (from specled_-dn4.6)\n- [untested-clause] A corrected string/claim in a renderer must be pinned by an assertion naming the NEW text; an unpinned correction can be silently reverted by a later rebase with the whole suite still green (from specled_-dn4.6)\n- [stale-spec] When rewriting a scenario's or requirement's text, keep naming the mechanism it proves; the append-only guard only compares scenario COUNTS and cannot catch prose weakening (from specled_-dn4.3)\n- [stale-spec] A requirement-claim rewrite must in the SAME change update its covering scenarios and every surface that renders the claim, AND realize any then-clause it authors with a real assertion (from specled_-dn4.6)\n- [other] After a rename/deletion, grep the entire repo for the OLD name before committing (from specled_-dn4.3)",
+      "timestamp": "2026-07-25T15:43:11Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-25T15:15:29Z"
+  "updated_at": "2026-07-25T15:43:11Z"
 }
