@@ -704,6 +704,38 @@ defmodule Mix.Tasks.SpecTasksTest do
     assert message_contains?(messages, "debug_checks=")
     assert message_contains?(messages, "validate status=pass errors=0 warnings=0")
     assert List.last(messages) == "spec.check result=pass"
+    assert Enum.count(messages, &String.starts_with?(&1, "spec.check result=")) == 1
+  end
+
+  @tag spec: ["specled.tasks.verdict_line"]
+  test "spec.check keeps its verdict last when failed command output echoes task result", %{
+    root: root
+  } do
+    write_subject_spec(
+      root,
+      "echoed_command",
+      meta: %{"id" => "echoed.command", "kind" => "module", "status" => "active"},
+      requirements: [%{"id" => "echoed.command.requirement", "statement" => "Covered"}],
+      verification: [
+        %{
+          "kind" => "command",
+          "target" => "sh -c 'printf \"spec.check result=pass\\n\"; exit 1'",
+          "covers" => ["echoed.command.requirement"],
+          "execute" => true
+        }
+      ]
+    )
+
+    assert_raise Mix.Error, ~r/Spec check failed: 1 validation finding/, fn ->
+      Mix.Tasks.Spec.Check.run(["--root", root])
+    end
+
+    messages = drain_shell_messages()
+    output = Enum.join(messages, "\n")
+
+    assert output =~ "\nspec.check result=pass\n"
+    assert List.last(messages) == "spec.check result=fail tier=validate error_findings=1"
+    assert Enum.count(messages, &String.starts_with?(&1, "spec.check result=")) == 1
   end
 
   @tag spec: [
@@ -916,6 +948,27 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     messages = drain_shell_messages()
 
+    assert List.last(messages) == "spec.check result=fail tier=validate error_findings=0"
+  end
+
+  @tag spec: ["specled.tasks.verdict_line"]
+  test "spec.check rejects invalid base refs with a verdict before raising", %{root: root} do
+    init_git_repo(root)
+
+    assert_raise Mix.Error,
+                 ~r/--base "definitely-not-a-real-ref" does not resolve to a commit/,
+                 fn ->
+                   Mix.Tasks.Spec.Check.run([
+                     "--root",
+                     root,
+                     "--base",
+                     "definitely-not-a-real-ref"
+                   ])
+                 end
+
+    messages = drain_shell_messages()
+
+    refute message_contains?(messages, "validate status=")
     assert List.last(messages) == "spec.check result=fail tier=validate error_findings=0"
   end
 end

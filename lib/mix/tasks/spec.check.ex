@@ -73,8 +73,9 @@ defmodule Mix.Tasks.Spec.Check do
 
     SpecLedEx.TaskArgs.validate!("spec.check", rest, invalid)
 
-    min_strength = validate_min_strength!(opts[:min_strength])
     root = opts[:root] || File.cwd!()
+    min_strength = validate_min_strength!(opts[:min_strength])
+    validate_base!(root, opts[:base])
     spec_dir = opts[:spec_dir] || SpecLedEx.detect_spec_dir(root)
     authored_dir = SpecLedEx.detect_authored_dir(root, spec_dir)
     config = Config.load(root, path: config_path(root, spec_dir))
@@ -294,6 +295,25 @@ defmodule Mix.Tasks.Spec.Check do
         print_verdict("fail", tier: "validate", error_findings: 0)
         Mix.raise("Invalid value for --min-strength: #{message}")
     end
+  end
+
+  defp validate_base!(_root, nil), do: :ok
+  defp validate_base!(_root, "HEAD"), do: :ok
+
+  defp validate_base!(root, base) when is_binary(base) do
+    {_output, exit_code} =
+      System.cmd(
+        "git",
+        ["-C", root, "rev-parse", "--verify", "#{base}^{commit}"],
+        stderr_to_stdout: true
+      )
+
+    if exit_code != 0 do
+      print_verdict("fail", tier: "validate", error_findings: 0)
+      Mix.raise("--base #{inspect(base)} does not resolve to a commit")
+    end
+
+    :ok
   end
 
   # covers: specled.tasks.verdict_line
