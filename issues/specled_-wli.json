@@ -7,9 +7,15 @@
   "id": "specled_-wli",
   "labels": [],
   "parent": "specled_-0x4",
+  "comments": [
+    {
+      "text": "Disposition confirmed: IMPLEMENT AS WRITTEN, do not close as moot (2026-07-25, post-review).\n\nContext: a reviewer initially argued this ticket was moot because a single validation funnel in run/1 would delete validate_base!/2 outright. That argument depended on the verdict contract NOT being total — i.e. on some raise paths leaving `validate status=pass` as the last stdout line. That premise was DISPROVEN by execution (consolidated review Verification Log): record_evidence failure still prints the verdict (forced with chmod, exit 0), pre-report raises emit zero stdout, and the one window that could strand a misleading last line contains no reachable raise. The reviewer withdrew the moot recommendation on that basis.\n\nWith a total contract already in place, extracting one shared validator is the right resolution and this ticket stands as written.\n\nTwo adjacent duplication findings from the same review, same class, fold them in here:\n- CF4: lib/mix/tasks/spec.check.ex:70-72 re-implements TaskArgs.validate!/3 own head match (`rest != [] or invalid != []`) purely to position the verdict print before the raise. They agree today (TaskArgs.validate!/3 has exactly one non-raising clause), but if the callee ever tolerates a leftover arg, spec.check would print result=fail, continue, and print result=pass — two verdict lines, violating the uniqueness clause. Note spec.validate solved the identical problem WITHOUT the duplicated predicate by printing inside the failure clause (spec.validate.ex:126-131); spec.check can simply match its sibling. Cleanest fix: convert TaskArgs.validate!/3 to :ok | {:error, message} so verdict and raise derive from one evaluation.\n- CF6: print_verdict/2 in both task modules matches options positionally (`defp print_verdict(\"fail\", tier: t, error_findings: n)`), so option ORDER is load-bearing and a missing key raises FunctionClauseError inside the one path whose purpose is to guarantee output. The two modules also define same-named/same-arity helpers with INCOMPATIBLE option lists (spec.check requires :tier, spec.validate rejects it), so copying a call site between the mirrored modules fails at runtime, not compile time. All six current call sites verified correct — latent only. Read options via Keyword.get/3.\n\nAlso related (separate finding, spec.validate.ex): sort_findings_for_display/1 re-types the exact four-element tuple of the pre-existing sort_key/1 about twenty lines above it. Compose rather than duplicate.",
+      "timestamp": "2026-07-25T17:47:04Z"
+    }
+  ],
   "priority": 2,
   "status": "open",
   "title": "Dedup --base validator: expose one public validator for spec.check and BranchCheck",
   "type": "task",
-  "updated_at": "2026-07-25T17:16:44Z"
+  "updated_at": "2026-07-25T17:47:04Z"
 }
