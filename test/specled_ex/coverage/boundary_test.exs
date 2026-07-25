@@ -7,7 +7,7 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
                "specled.coverage_capture.boundary_noop_unarmed"
              ]
 
-  alias SpecLedEx.Coverage.Boundary
+  alias SpecLedEx.Coverage.{Arming, Boundary}
 
   setup do
     on_exit(fn -> Application.delete_env(:specled_ex, :spec_cover_run) end)
@@ -37,6 +37,30 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
     test "returns :unarmed when keyword seam lacks :boundary_table" do
       arm(snapshot_fn: fn _ -> %{} end)
       assert Boundary.head(%{module: M, test: :t}) == :unarmed
+    end
+
+    test "shared resolver requires a live ETS table for boundary arming" do
+      snapshot_fn = fn _ -> flunk("snapshot must not run for an invalid table") end
+
+      arm(boundary_table: make_ref(), snapshot_fn: snapshot_fn)
+      assert Arming.resolve(:boundary) == :disarmed
+      assert Boundary.head(%{}) == :unarmed
+
+      tid = new_table()
+      :ets.delete(tid)
+      arm(boundary_table: tid, snapshot_fn: snapshot_fn)
+      assert Arming.resolve(:boundary) == :disarmed
+      assert Boundary.head(%{}) == :unarmed
+    end
+
+    test "shared resolver keeps true armed for formatter and disarmed for boundary" do
+      Application.put_env(:specled_ex, :spec_cover_run, true)
+
+      assert {:armed, config} = Arming.resolve(:formatter)
+      assert is_function(config.snapshot_fn, 1)
+      assert is_function(config.modules_fn, 0)
+      assert config.artifact_path == ".spec/_coverage/per_test.coverdata"
+      assert Arming.resolve(:boundary) == :disarmed
     end
   end
 
@@ -94,7 +118,8 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
       assert_received :modules_called
       refute_received :modules_called
 
-      assert [{_, [ModA, ModB]}] = :ets.lookup(tid, Boundary.modules_cache_key())
+      assert :ets.info(tid, :size) == 1
+      refute function_exported?(Boundary, :modules_cache_key, 0)
     end
 
     test "passes diagnostics count through on negative deltas" do

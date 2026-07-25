@@ -204,6 +204,10 @@
       "hash": "193f4e4b6a5e308e5fc832e940be940ed30f033bfe7aa614f87631b4212adf07",
       "hasher_version": 1
     },
+    "SpecLedEx.Coverage.Arming.resolve/1": {
+      "hash": "9b353bda119316099d5cbcd3277bf0e2b87340fe0f636022820792bab049e333",
+      "hasher_version": 1
+    },
     "SpecLedEx.Coverage.Boundary.head/1": {
       "hash": "4f48980ece314fa72c7970c84295376ad95ad2374d84727aeac6dce74df38eb5",
       "hasher_version": 1

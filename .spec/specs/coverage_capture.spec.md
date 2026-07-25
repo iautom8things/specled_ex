@@ -88,6 +88,7 @@ status: active
 summary: `mix spec.cover.test` task + ExUnit formatter that captures per-test line coverage serialized; Store reads/writes `.spec/_coverage/per_test.coverdata`.
 surface:
   - lib/specled_ex/coverage.ex
+  - lib/specled_ex/coverage/arming.ex
   - lib/specled_ex/coverage/boundary.ex
   - lib/specled_ex/case.ex
   - lib/specled_ex/coverage/formatter.ex
@@ -137,6 +138,7 @@ realized_by:
     - "SpecLedEx.Coverage.MfaKey.parse/1"
     - "SpecLedEx.Coverage.MfaLines.index/1"
   implementation:
+    - "SpecLedEx.Coverage.Arming.resolve/1"
     - "SpecLedEx.Coverage.Formatter.init/1"
     - "SpecLedEx.Coverage.Store.build_records/1"
     - "SpecLedEx.Coverage.cover_modules_safe/0"
@@ -218,6 +220,14 @@ decisions:
   stability: evolving
 - id: specled.coverage_capture.formatter_arming_seam
   statement: >-
+    `SpecLedEx.Coverage.Arming.resolve/1` shall be the sole decoder of the
+    `:specled_ex, :spec_cover_run` seam for both formatter and boundary
+    consumers, returning `{:armed, config}` or `:disarmed`; it shall own the
+    private ETS modules-cache key and the shared production defaults for
+    `snapshot_fn`, `modules_fn`, and `artifact_path`. A boundary table is
+    valid only when it is a live ETS table, defined as
+    `:ets.info(tid) != :undefined` (invalid identifiers and deleted tables
+    are disarmed).
     SpecLedEx.Coverage.Formatter's `init/1` shall be inert by default:
     when `Application.get_env(:specled_ex, :spec_cover_run)` is unset or
     `false`, it prints one stderr notice and returns `{:ok, :disabled}`,
@@ -470,8 +480,9 @@ decisions:
     `SpecLedEx.Coverage.per_test_boundary/1` and `Boundary.head/1` shall be
     pure no-ops (return `:ok` / `:unarmed`, zero ETS writes, zero snapshot
     calls) when `Application.get_env(:specled_ex, :spec_cover_run)` is unset,
-    `false`, or a keyword list lacking `:boundary_table`. The wiring is
-    therefore safe under plain `mix test`.
+    `false`, `true`, or a keyword list lacking a live `:boundary_table`
+    according to the arming resolver's `:ets.info/1` predicate. The wiring
+    is therefore safe under plain `mix test`.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.case_template
@@ -802,7 +813,7 @@ decisions:
     - specled.coverage_capture.boundary_hook_sync
 - id: specled.coverage_capture.scenario.boundary_noop_under_plain_mix_test
   given:
-    - "`Application.get_env(:specled_ex, :spec_cover_run)` is unset"
+    - "`Application.get_env(:specled_ex, :spec_cover_run)` is unset, `true`, or carries an invalid/deleted `:boundary_table`"
     - "a module uses `SpecLedEx.Case` (or the setup line directly)"
   when:
     - "plain `mix test` runs the module"

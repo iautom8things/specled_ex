@@ -200,6 +200,7 @@ defmodule Mix.Tasks.Spec.Cover.Test do
     # Ensure the formatter module is resident before ExUnit boots its
     # formatter GenServers; in a child BEAM (fixture run) the parent app's
     # ebin must already be on the code path for this to succeed.
+    {:module, _} = Code.ensure_loaded(SpecLedEx.Coverage.Arming)
     {:module, _} = Code.ensure_loaded(SpecLedEx.Coverage.Formatter)
     {:module, _} = Code.ensure_loaded(SpecLedEx.Coverage.Store)
     {:module, _} = Code.ensure_loaded(SpecLedEx.Coverage.Snapshot)

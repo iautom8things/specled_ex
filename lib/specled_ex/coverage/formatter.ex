@@ -108,41 +108,30 @@ defmodule SpecLedEx.Coverage.Formatter do
   use GenServer
 
   alias SpecLedEx.Coverage
-  alias SpecLedEx.Coverage.{Snapshot, Store}
-
-  @arming_app :specled_ex
-  @arming_key :spec_cover_run
+  alias SpecLedEx.Coverage.{Arming, Snapshot, Store}
 
   # `opts` here is not a caller's intent — ExUnit forwards its entire
   # application environment to every formatter GenServer it starts (see
   # `moduledoc`). It is ignored; config comes only from the arming seam.
   @impl GenServer
   def init(_opts) do
-    case armed() do
+    case Arming.resolve(:formatter) do
       :disarmed ->
         IO.puts(:stderr, disarmed_notice())
         {:ok, :disabled}
 
-      seam_opts ->
-        config = Coverage.init(Keyword.merge(production_defaults(), seam_opts))
+      {:armed, arming} ->
+        config =
+          Coverage.init(
+            snapshot_fn: arming.snapshot_fn,
+            modules_fn: arming.modules_fn,
+            artifact_path: arming.artifact_path
+          )
+
         state = Coverage.install(config)
         {:ok, run_init(state)}
     end
   end
-
-  defp armed do
-    case Application.get_env(@arming_app, @arming_key) do
-      opts when is_list(opts) -> opts
-      true -> []
-      _disarmed -> :disarmed
-    end
-  end
-
-  defp production_defaults do
-    [snapshot_fn: &default_snapshot_fn/1]
-  end
-
-  defp default_snapshot_fn(modules), do: Snapshot.take(Snapshot.runtime_mode(), modules)
 
   # Per-run bookkeeping layered on top of the static config
   # `Coverage.install/1` resolves. `:modules` and `:file_map` are populated
@@ -411,32 +400,9 @@ defmodule SpecLedEx.Coverage.Formatter do
   defp fallback_test_key(_), do: nil
 
   defp load_boundary_index do
-    case Application.get_env(@arming_app, @arming_key) do
-      opts when is_list(opts) ->
-        case Keyword.get(opts, :boundary_table) do
-          tid when is_reference(tid) or is_atom(tid) ->
-            case :ets.info(tid) do
-              :undefined ->
-                %{}
-
-              _ ->
-                modules_key = SpecLedEx.Coverage.Boundary.modules_cache_key()
-
-                tid
-                |> :ets.tab2list()
-                |> Enum.reduce(%{}, fn
-                  {^modules_key, _}, acc -> acc
-                  {key, row}, acc when is_tuple(key) and is_map(row) -> Map.put(acc, key, row)
-                  _, acc -> acc
-                end)
-            end
-
-          _ ->
-            %{}
-        end
-
-      _ ->
-        %{}
+    case Arming.resolve(:boundary) do
+      {:armed, config} -> Arming.boundary_index(config)
+      :disarmed -> %{}
     end
   end
 
