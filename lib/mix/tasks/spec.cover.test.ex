@@ -194,7 +194,14 @@ defmodule Mix.Tasks.Spec.Cover.Test do
     # below is inert and setup {SpecLedEx.Coverage, :per_test_boundary}
     # no-ops. The public anonymous ETS table carries hooked tests' exclusive
     # [head, tail] window rows for Formatter.flush/1 to prefer.
-    boundary_table = :ets.new(:anon, [:public, :set])
+    boundary_table =
+      :ets.new(:anon, [
+        :public,
+        :set,
+        read_concurrency: true,
+        write_concurrency: true
+      ])
+
     Application.put_env(:specled_ex, :spec_cover_run, boundary_table: boundary_table)
 
     # Ensure the formatter module is resident before ExUnit boots its

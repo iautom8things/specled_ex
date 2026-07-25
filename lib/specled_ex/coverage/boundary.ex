@@ -36,15 +36,19 @@ defmodule SpecLedEx.Coverage.Boundary do
         :unarmed
 
       {:armed, config} ->
-        case :ets.lookup(config.boundary_table, @head_snapshot_key) do
-          [{@head_snapshot_key, _snapshot}] ->
-            :armed
+        try do
+          case :ets.lookup(config.boundary_table, @head_snapshot_key) do
+            [{@head_snapshot_key, _snapshot}] ->
+              :armed
 
-          [] ->
-            modules = Arming.modules(config)
-            snapshot = config.snapshot_fn.(modules)
-            true = :ets.insert(config.boundary_table, {@head_snapshot_key, snapshot})
-            :armed
+            [] ->
+              modules = Arming.modules(config)
+              snapshot = config.snapshot_fn.(modules)
+              true = :ets.insert(config.boundary_table, {@head_snapshot_key, snapshot})
+              :armed
+          end
+        rescue
+          ArgumentError -> :unarmed
         end
     end
   end
@@ -61,25 +65,29 @@ defmodule SpecLedEx.Coverage.Boundary do
         :ok
 
       {:armed, config} ->
-        case :ets.lookup(config.boundary_table, @head_snapshot_key) do
-          [{@head_snapshot_key, head_snapshot}] ->
-            modules = Arming.modules(config)
-            tail_snapshot = config.snapshot_fn.(modules)
-            {hits_by_module, diagnostics} = Snapshot.diff(head_snapshot, tail_snapshot)
+        try do
+          case :ets.lookup(config.boundary_table, @head_snapshot_key) do
+            [{@head_snapshot_key, head_snapshot}] ->
+              modules = Arming.modules(config)
+              tail_snapshot = config.snapshot_fn.(modules)
+              {hits_by_module, diagnostics} = Snapshot.diff(head_snapshot, tail_snapshot)
 
-            row = %{
-              hits: hits_by_module,
-              diagnostics: length(diagnostics)
-            }
+              row = %{
+                hits: hits_by_module,
+                diagnostics: length(diagnostics)
+              }
 
-            true =
-              :ets.insert(config.boundary_table, [
-                {{module, name}, row},
-                {@head_snapshot_key, tail_snapshot}
-              ])
+              true =
+                :ets.insert(config.boundary_table, [
+                  {{module, name}, row},
+                  {@head_snapshot_key, tail_snapshot}
+                ])
 
-          [] ->
-            :ok
+            [] ->
+              :ok
+          end
+        rescue
+          ArgumentError -> :ok
         end
 
         :ok

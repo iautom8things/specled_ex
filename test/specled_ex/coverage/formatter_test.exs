@@ -63,6 +63,8 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       assert is_reference(state.table)
       assert :ets.info(state.table, :named_table) == false
       assert :ets.info(state.table, :type) == :set
+      assert :ets.info(state.table, :read_concurrency) == true
+      assert :ets.info(state.table, :write_concurrency) == true
 
       :ets.delete(state.table)
     end
@@ -123,7 +125,6 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       assert state.artifact_path == ".spec/_coverage/per_test.coverdata"
       assert state.modules == nil
       assert state.baseline == %{}
-      assert state.diagnostic_count == 0
       refute state.degraded_async?
 
       :ets.delete(state.table)

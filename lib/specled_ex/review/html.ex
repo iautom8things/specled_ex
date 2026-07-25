@@ -2031,38 +2031,30 @@ defmodule SpecLedEx.Review.Html do
   # runs name that honestly via subject `:attribution`. Aggregate stays
   # unqualified.
   defp rollup_qualifier_suffix(reach) when is_map(reach) do
-    case {Map.get(reach, :status), Map.get(reach, :attribution)} do
-      {:ok_per_test, attribution} when attribution in [:exact, :degraded_unhooked] ->
-        case Map.get(reach, :attribution) do
-          :degraded_unhooked -> " (degraded)"
-          _ -> " (exact within chained windows)"
-        end
-
-      _ ->
-        ""
+    case {Map.get(reach, :status), attribution_copy(reach)} do
+      {:ok_per_test, :degraded_unhooked} -> " (degraded)"
+      {:ok_per_test, :exact} -> " (exact within chained windows)"
+      _ -> ""
     end
   end
 
   defp rollup_qualifier_suffix(_), do: ""
 
   defp rollup_qualifier_title_suffix(reach) when is_map(reach) do
-    case {Map.get(reach, :status), Map.get(reach, :attribution)} do
-      {:ok_per_test, attribution} when attribution in [:exact, :degraded_unhooked] ->
-        case Map.get(reach, :attribution) do
-          :degraded_unhooked ->
-            mods = format_unhooked_modules(Map.get(reach, :unhooked_modules, []))
+    case {Map.get(reach, :status), attribution_copy(reach)} do
+      {:ok_per_test, :degraded_unhooked} ->
+        mods = format_unhooked_modules(Map.get(reach, :unhooked_modules, []))
 
-            "; per-test run is degraded — unhooked modules (#{mods}) fold into " <>
-              "the aggregate remainder; hooked tests remain exact only within " <>
-              "disclosed chained windows"
+        "; per-test run is degraded — unhooked modules (#{mods}) fold into " <>
+          "the aggregate remainder; hooked tests remain exact only within " <>
+          "disclosed chained windows"
 
-          _ ->
-            "; per-test attribution is exact within disclosed chained windows " <>
-              "(later hooked tests inherit runner/setup_all and intervening " <>
-              "unhooked-test activity since the previous hooked tail; escaped " <>
-              "processes can still increment counters after their tail snapshot closes) — see " <>
-              "specled.decision.per_test_sync_boundary"
-        end
+      {:ok_per_test, :exact} ->
+        "; per-test attribution is exact within disclosed chained windows " <>
+          "(later hooked tests inherit runner/setup_all and intervening " <>
+          "unhooked-test activity since the previous hooked tail; escaped " <>
+          "processes can still increment counters after their tail snapshot closes) — see " <>
+          "specled.decision.per_test_sync_boundary"
 
       _ ->
         ""
@@ -3066,9 +3058,8 @@ defmodule SpecLedEx.Review.Html do
   # runs claim exactness within disclosed chained windows;
   # unhooked-degraded runs name meta.unhooked_modules. The retired
   # file-level-proxy note is gone.
-  defp render_attribution_qualifier(:per_test, %{attribution: attribution} = subject_reach)
-       when attribution in [:exact, :degraded_unhooked] do
-    case Map.get(subject_reach || %{}, :attribution) do
+  defp render_attribution_qualifier(:per_test, subject_reach) do
+    case attribution_copy(subject_reach) do
       :degraded_unhooked ->
         mods =
           subject_reach
@@ -3078,11 +3069,14 @@ defmodule SpecLedEx.Review.Html do
         ~s| <span class="cov-closure-attribution-note" title="#{h("Per-test run degraded: unhooked modules (#{mods}) fold into the aggregate remainder; hooked tests remain exact only within disclosed chained windows.")}">(degraded: unhooked #{h(mods)})</span>|
 
       _ ->
-        ~S| <span class="cov-closure-attribution-note" title="Per-test MFA coverage is exact within disclosed chained windows: later hooked tests inherit runner/setup_all and intervening unhooked-test activity since the previous hooked tail; escaped processes can still increment counters after their tail snapshot closes — see specled.decision.per_test_sync_boundary.">(exact within chained windows)</span>|
+        if attribution_copy(subject_reach) == :exact do
+          ~S| <span class="cov-closure-attribution-note" title="Per-test MFA coverage is exact within disclosed chained windows: later hooked tests inherit runner/setup_all and intervening unhooked-test activity since the previous hooked tail; escaped processes can still increment counters after their tail snapshot closes — see specled.decision.per_test_sync_boundary.">(exact within chained windows)</span>|
+        else
+          ""
+        end
     end
   end
 
-  defp render_attribution_qualifier(:per_test, _), do: ""
   defp render_attribution_qualifier(_, _), do: ""
 
   defp render_no_debug_info_note([]), do: ""
@@ -3136,9 +3130,8 @@ defmodule SpecLedEx.Review.Html do
     end
   end
 
-  defp reached_by_tests_title(%{attribution: attribution} = subject_reach)
-       when attribution in [:exact, :degraded_unhooked] do
-    case Map.get(subject_reach || %{}, :attribution) do
+  defp reached_by_tests_title(subject_reach) do
+    case attribution_copy(subject_reach) do
       :degraded_unhooked ->
         mods =
           subject_reach
@@ -3148,11 +3141,9 @@ defmodule SpecLedEx.Review.Html do
         "Per-test run is degraded — unhooked modules (#{mods}) fold into the aggregate remainder; hooked tests remain exact only within disclosed chained windows."
 
       _ ->
-        @exact_up_to_escaped_title
+        if attribution_copy(subject_reach) == :exact, do: @exact_up_to_escaped_title, else: ""
     end
   end
-
-  defp reached_by_tests_title(_), do: ""
 
   # covers: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
   # self_verified? composes closure_coverage_pct with an "executed"-strength
@@ -3172,15 +3163,19 @@ defmodule SpecLedEx.Review.Html do
 
   defp render_self_verified_note(_, _), do: ""
 
-  defp self_verified_qualifier_label(%{attribution: attribution} = subject_reach)
-       when attribution in [:exact, :degraded_unhooked] do
-    case Map.get(subject_reach || %{}, :attribution) do
+  defp self_verified_qualifier_label(subject_reach) do
+    case attribution_copy(subject_reach) do
       :degraded_unhooked -> "degraded"
-      _ -> "exact within chained windows"
+      :exact -> "exact within chained windows"
+      _ -> nil
     end
   end
 
-  defp self_verified_qualifier_label(_), do: nil
+  defp attribution_copy(%{attribution: attribution})
+       when attribution in [:exact, :degraded_unhooked],
+       do: attribution
+
+  defp attribution_copy(_), do: :unknown
 
   defp plural(1), do: ""
   defp plural(_), do: "s"

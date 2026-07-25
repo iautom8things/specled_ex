@@ -7,6 +7,7 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
                "specled.coverage_capture.boundary_noop_unarmed"
              ]
 
+  alias SpecLedEx.Coverage
   alias SpecLedEx.Coverage.{Arming, Boundary}
 
   setup do
@@ -19,8 +20,15 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
   end
 
   defp new_table do
-    tid = :ets.new(:anon, [:public, :set])
-    on_exit(fn -> if :ets.info(tid) != :undefined, do: :ets.delete(tid) end)
+    tid =
+      :ets.new(:anon, [
+        :public,
+        :set,
+        read_concurrency: true,
+        write_concurrency: true
+      ])
+
+    on_exit(fn -> if :ets.info(tid, :size) != :undefined, do: :ets.delete(tid) end)
     tid
   end
 
@@ -53,6 +61,21 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
       assert Boundary.head(%{}) == :unarmed
     end
 
+    test "returns :unarmed when the boundary table dies after arming resolution" do
+      tid = new_table()
+
+      arm(
+        boundary_table: tid,
+        snapshot_fn: fn _ -> %{} end,
+        modules_fn: fn ->
+          :ets.delete(tid)
+          [Mod]
+        end
+      )
+
+      assert Boundary.head(%{module: M, test: :t}) == :unarmed
+    end
+
     test "shared resolver keeps true armed for formatter and disarmed for boundary" do
       Application.put_env(:specled_ex, :spec_cover_run, true)
 
@@ -66,6 +89,18 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
   end
 
   describe "head/1 + tail/2 - window diff semantics" do
+    test "per_test_boundary accepts setup_all contexts without a :test key" do
+      tid = new_table()
+
+      arm(
+        boundary_table: tid,
+        snapshot_fn: fn _modules -> %{} end,
+        modules_fn: fn -> [Mod] end
+      )
+
+      assert Coverage.per_test_boundary(%{module: SetupAllCase}) == :ok
+    end
+
     test "inserts hits for lines that strictly increased in the window" do
       tid = new_table()
 
@@ -131,10 +166,7 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
     test "passes diagnostics count through on negative deltas" do
       tid = new_table()
 
-      {:ok, agent} =
-        Agent.start_link(fn -> [%{Mod => [{1, 5}]}, %{Mod => [{1, 2}]}] end)
-
-      on_exit(fn -> if Process.alive?(agent), do: Agent.stop(agent) end)
+      agent = start_supervised!({Agent, fn -> [%{Mod => [{1, 5}]}, %{Mod => [{1, 2}]}] end})
 
       snapshot_fn = fn _ ->
         Agent.get_and_update(agent, fn [head | tail] -> {head, tail} end)
@@ -186,6 +218,22 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
 
   describe "tail/2 - unarmed no-op" do
     test "returns :ok without writing when unarmed" do
+      assert :ok = Boundary.tail(M, :t)
+    end
+
+    test "returns :ok when the boundary table dies after arming resolution" do
+      tid = new_table()
+      true = :ets.insert(tid, {:__specled_boundary_head_snapshot__, %{Mod => [{1, 0}]}})
+
+      arm(
+        boundary_table: tid,
+        snapshot_fn: fn _ ->
+          :ets.delete(tid)
+          %{Mod => [{1, 1}]}
+        end,
+        modules_fn: fn -> [Mod] end
+      )
+
       assert :ok = Boundary.tail(M, :t)
     end
   end

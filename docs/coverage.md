@@ -179,7 +179,10 @@ initial O(modules × lines) snapshot, then one O(modules × lines) tail
 snapshot, one diff, and ETS operations per hooked test; each tail is reused
 as the next head so `on_exit` retains only the small test key. The exclusive
 path is therefore proportional to hooked test count, unlike the aggregate
-default.
+default. On a 2026-07-25 local run, 1,000 stubbed boundary tail+next-head
+cycles over an 800-module snapshot averaged 264 µs per hooked test; real
+suite cost is dominated by the selected coverage snapshot engine and module
+line count.
 
 **Scoping knobs.** `SpecLedEx.Coverage.Formatter` accepts `snapshot_fn`
 (default dispatches to `SpecLedEx.Coverage.Snapshot.take/2`) and
@@ -196,6 +199,11 @@ before the next test starts); each tail is the next test's head. A record
 cannot contain a neighboring hooked test body's progress, but it can contain
 serialized runner / `setup_all` work or unhooked tests run since the previous
 hooked tail, as disclosed above.
+
+Declare the boundary setup before any other setup callbacks whose coverage
+should belong to the test body. ExUnit runs `on_exit` callbacks in LIFO order,
+so registering the boundary hook first makes its tail snapshot run last and
+include later setup callbacks in the test's chained window.
 
 In a Phoenix-style app case template:
 

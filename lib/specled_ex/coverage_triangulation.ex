@@ -362,17 +362,22 @@ defmodule SpecLedEx.CoverageTriangulation do
     Enum.reduce(per_test, [], fn t, acc ->
       hit_lines = Map.get(t.lines_by_file, source, MapSet.new())
 
-      if MapSet.size(MapSet.intersection(hit_lines, mfa_lines)) > 0 do
-        [format_test_display(t) | acc]
-      else
+      if MapSet.disjoint?(hit_lines, mfa_lines) do
         acc
+      else
+        [format_test_display(t) | acc]
       end
     end)
   end
 
-  # Like group_records_by_test/1 but keeps per-file line sets so MFA
-  # intersection can run. Empty lines_hit records are ignored (same as v1).
   defp group_records_with_lines(records) do
+    group_records(records, :with_lines)
+  end
+
+  # Empty lines_hit records are ignored in both modes. `:with_lines` keeps
+  # per-file line sets for MFA intersection; `:files_only` exposes the same
+  # file set and tag metadata used by the v1 detectors.
+  defp group_records(records, mode) when mode in [:with_lines, :files_only] do
     records
     |> Enum.group_by(& &1.test_id)
     |> Enum.map(fn {test_id, recs} ->
@@ -396,11 +401,21 @@ defmodule SpecLedEx.CoverageTriangulation do
       %{
         test_id: test_id,
         test_file: normalize_path(test_file_from_tags(tags)),
-        test_name: Map.get(tags, :test) || Map.get(tags, "test") || "",
-        lines_by_file: lines_by_file
+        test_name: Map.get(tags, :test) || Map.get(tags, "test") || ""
       }
+      |> put_group_payload(mode, tags, lines_by_file)
     end)
     |> Enum.sort_by(& &1.test_id)
+  end
+
+  defp put_group_payload(test, :with_lines, _tags, lines_by_file),
+    do: Map.put(test, :lines_by_file, lines_by_file)
+
+  defp put_group_payload(test, :files_only, tags, lines_by_file) do
+    test
+    |> Map.put(:files, Map.keys(lines_by_file) |> Enum.sort())
+    |> Map.put(:spec_ids, extract_tag_list(tags, :spec))
+    |> Map.put(:opt_out?, opt_out_tag?(tags))
   end
 
   # Resolve each indexed module to the same repo-root-relative identity used
@@ -418,20 +433,21 @@ defmodule SpecLedEx.CoverageTriangulation do
   end
 
   defp module_source_file(mod) when is_atom(mod) do
-    case Code.ensure_loaded(mod) do
-      {:module, ^mod} ->
-        case mod.module_info(:compile)[:source] do
-          path when is_list(path) -> repo_relative_source_path(List.to_string(path))
-          path when is_binary(path) -> repo_relative_source_path(path)
-          _ -> nil
-        end
-
-      _ ->
-        nil
+    with {_kind, _loaded_path} <- :code.is_loaded(mod),
+         source when is_list(source) or is_binary(source) <-
+           mod.module_info(:compile)[:source] do
+      source
+      |> source_to_binary()
+      |> repo_relative_source_path()
+    else
+      _ -> nil
     end
   rescue
     _ -> nil
   end
+
+  defp source_to_binary(source) when is_list(source), do: List.to_string(source)
+  defp source_to_binary(source) when is_binary(source), do: source
 
   defp repo_relative_source_path(path) when is_binary(path) do
     root = File.cwd!() |> Path.expand()
@@ -455,28 +471,7 @@ defmodule SpecLedEx.CoverageTriangulation do
   # ---------------------------------------------------------------------------
 
   defp group_records_by_test(records) do
-    records
-    |> Enum.group_by(& &1.test_id)
-    |> Enum.map(fn {test_id, recs} ->
-      files =
-        recs
-        |> Enum.filter(fn r -> r.lines_hit != [] end)
-        |> Enum.map(&normalize_path(&1.file))
-        |> Enum.uniq()
-
-      first = hd(recs)
-      tags = Map.get(first, :tags, %{}) || %{}
-
-      %{
-        test_id: test_id,
-        test_file: normalize_path(test_file_from_tags(tags)),
-        test_name: Map.get(tags, :test) || Map.get(tags, "test") || "",
-        files: files,
-        spec_ids: extract_tag_list(tags, :spec),
-        opt_out?: opt_out_tag?(tags)
-      }
-    end)
-    |> Enum.sort_by(& &1.test_id)
+    group_records(records, :files_only)
   end
 
   defp test_file_from_tags(tags) do

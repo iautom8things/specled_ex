@@ -1304,6 +1304,9 @@ defmodule SpecLedEx.Review.HtmlTest do
       assert html =~ "inherit runner/setup_all and intervening unhooked-test activity"
 
       assert html =~
+               ~s|title="Per-test MFA coverage is exact within disclosed chained windows: later hooked tests inherit runner/setup_all and intervening unhooked-test activity since the previous hooked tail; escaped processes can still increment counters after their tail snapshot closes — see specled.decision.per_test_sync_boundary."|
+
+      assert html =~
                ~s|Self-verified: yes. <span class="cov-closure-self-verified-note"|
 
       assert html =~
@@ -1345,10 +1348,10 @@ defmodule SpecLedEx.Review.HtmlTest do
                "unhooked modules (UnhookedCase, OtherUnhooked) fold into the aggregate remainder"
 
       assert html =~
-               "Per-test run degraded: unhooked modules (UnhookedCase, OtherUnhooked) fold into the aggregate remainder"
+               "Per-test run degraded: unhooked modules (UnhookedCase, OtherUnhooked) fold into the aggregate remainder; hooked tests remain exact only within disclosed chained windows."
 
       assert html =~
-               "Per-test run is degraded — unhooked modules (UnhookedCase, OtherUnhooked) fold into the aggregate remainder"
+               "Per-test run is degraded — unhooked modules (UnhookedCase, OtherUnhooked) fold into the aggregate remainder; hooked tests remain exact only within disclosed chained windows."
 
       assert html =~
                "remainder; hooked tests remain exact only within disclosed chained windows. Add"

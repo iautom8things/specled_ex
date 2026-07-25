@@ -323,14 +323,19 @@ defmodule SpecLedEx.Coverage.Store do
 
     unless is_list(envelope.files), do: raise(ArgumentError, "envelope :files must be a list")
     unless is_list(envelope.mfas), do: raise(ArgumentError, "envelope :mfas must be a list")
+    unless is_map(envelope.meta), do: raise(ArgumentError, "envelope :meta must be a map")
     :ok
   end
 
   defp classify_v2(%{version: @v2_version} = envelope) do
     if Enum.all?(@v2_required_fields, &Map.has_key?(envelope, &1)) do
       # `:meta` is additive — older artifacts written before Stage 1 default
-      # to an empty map rather than failing the read.
-      {:ok, Map.put_new(envelope, :meta, %{})}
+      # to an empty map. Present-but-malformed meta is a malformed artifact,
+      # because downstream readers derive attribution/degraded causes from it.
+      case Map.get(envelope, :meta, %{}) do
+        meta when is_map(meta) -> {:ok, Map.put(envelope, :meta, meta)}
+        _ -> {:error, :invalid_artifact}
+      end
     else
       {:error, :invalid_artifact}
     end

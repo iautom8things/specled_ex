@@ -26,12 +26,20 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
 
   alias SpecLedEx.Coverage.Store
 
+  defp tmp_dir!(prefix) do
+    path = Path.join(System.tmp_dir!(), "#{prefix}_#{random_suffix()}")
+    File.mkdir!(path)
+    path
+  end
+
+  defp random_suffix do
+    8 |> :crypto.strong_rand_bytes() |> Base.url_encode64(padding: false)
+  end
+
   describe "per-test artifact freshness predicate" do
     @tag spec: "specled.coverage_capture.per_test_artifact_freshness"
     test "classifies missing, refused, stale successful, and fresh successful artifacts" do
-      root =
-        System.tmp_dir!()
-        |> Path.join("specled_cover_freshness_#{System.unique_integer([:positive])}")
+      root = tmp_dir!("specled_cover_freshness")
 
       on_exit(fn -> File.rm_rf!(root) end)
 
@@ -504,9 +512,7 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
     failing? = Keyword.get(opts, :failing?, false)
     async_true? = Keyword.get(opts, :async_true?, false)
 
-    base =
-      System.tmp_dir!()
-      |> Path.join("specled_cover_fixture_#{System.unique_integer([:positive])}")
+    base = tmp_dir!("specled_cover_fixture")
 
     File.mkdir_p!(Path.join(base, "lib"))
     File.mkdir_p!(Path.join(base, "test"))
@@ -532,9 +538,7 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
 
   # One hooked (SpecLedEx.Case) + one unhooked bare ExUnit.Case module.
   defp scaffold_partial_hook_fixture do
-    base =
-      System.tmp_dir!()
-      |> Path.join("specled_cover_partial_#{System.unique_integer([:positive])}")
+    base = tmp_dir!("specled_cover_partial")
 
     File.mkdir_p!(Path.join(base, "lib"))
     File.mkdir_p!(Path.join(base, "test"))
@@ -574,9 +578,7 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
 
   # Two-test fixture hooked via SpecLedEx.Case; tests call disjoint functions.
   defp scaffold_exclusive_fixture(opts \\ []) do
-    base =
-      System.tmp_dir!()
-      |> Path.join("specled_cover_exclusive_#{System.unique_integer([:positive])}")
+    base = tmp_dir!("specled_cover_exclusive")
 
     File.mkdir_p!(Path.join(base, "lib"))
     File.mkdir_p!(Path.join(base, "test"))
@@ -689,9 +691,7 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
   end
 
   defp scaffold_empty_fixture do
-    base =
-      System.tmp_dir!()
-      |> Path.join("specled_cover_empty_fixture_#{System.unique_integer([:positive])}")
+    base = tmp_dir!("specled_cover_empty_fixture")
 
     File.mkdir_p!(Path.join(base, "lib"))
     File.mkdir_p!(Path.join(base, "test"))

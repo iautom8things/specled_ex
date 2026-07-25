@@ -8,10 +8,13 @@ defmodule SpecLedEx.Coverage.Formatter do
   the synchronous boundary hook (`SpecLedEx.Coverage.per_test_boundary/1` /
   `use SpecLedEx.Case`) — head snapshot at setup, tail snapshot in `on_exit`,
   which `ExUnit.Runner` awaits via `exec_on_exit/3` before spawning the next
-  test. Hooked tests' `[head, tail]` windows are therefore disjoint
-  (**exact up to escaped processes**: a process a test spawns that outlives
-  its tail snapshot can still increment shared counters after the window
-  closes, landing in a later window or the unattributed remainder).
+  test. The windows are disjoint, but after the first hooked test a window
+  also contains everything since the prior hooked tail: serialized runner /
+  `setup_all` work and any intervening unhooked tests. A process a test
+  spawns that outlives its tail can likewise increment shared
+  `:cover`/native counters in a later window or the unattributed remainder.
+  Neither source of leakage is detected at runtime. See
+  `specled.decision.per_test_sync_boundary`.
 
   ## Suite lifecycle (auditor)
 
@@ -117,7 +120,14 @@ defmodule SpecLedEx.Coverage.Formatter do
   def init(_opts) do
     case Arming.resolve(:formatter) do
       :disarmed ->
-        IO.puts(:stderr, disarmed_notice())
+        IO.puts(
+          :stderr,
+          "[SpecLedEx.Coverage.Formatter] disabled: per-test coverage capture requires " <>
+            "`mix spec.cover.test --per-test` (it arms via " <>
+            "Application.put_env(:specled_ex, :spec_cover_run, true)). Wiring this " <>
+            "formatter directly into ExUnit.start/1 without that task is a no-op."
+        )
+
         {:ok, :disabled}
 
       {:armed, arming} ->
@@ -143,16 +153,8 @@ defmodule SpecLedEx.Coverage.Formatter do
       modules: nil,
       file_map: %{},
       baseline: %{},
-      diagnostic_count: 0,
       degraded_async?: false
     })
-  end
-
-  defp disarmed_notice do
-    "[SpecLedEx.Coverage.Formatter] disabled: per-test coverage capture requires " <>
-      "`mix spec.cover.test --per-test` (it arms via " <>
-      "Application.put_env(:specled_ex, :spec_cover_run, true)). Wiring this " <>
-      "formatter directly into ExUnit.start/1 without that task is a no-op."
   end
 
   @impl GenServer
@@ -256,22 +258,23 @@ defmodule SpecLedEx.Coverage.Formatter do
   defp on_disk_pid(_), do: self()
 
   defp source_file(module) do
-    case Code.ensure_loaded(module) do
-      {:module, ^module} ->
-        case module.module_info(:compile)[:source] do
-          source when is_list(source) -> repo_relative_path(List.to_string(source))
-          source when is_binary(source) -> repo_relative_path(source)
-          _ -> nil
-        end
-
-      _ ->
-        nil
+    with {_kind, _loaded_path} <- :code.is_loaded(module),
+         source when is_list(source) or is_binary(source) <-
+           module.module_info(:compile)[:source] do
+      source
+      |> source_to_binary()
+      |> repo_relative_path()
+    else
+      _ -> nil
     end
   rescue
     _ -> nil
   end
 
-  defp repo_relative_path(path) do
+  defp source_to_binary(source) when is_list(source), do: List.to_string(source)
+  defp source_to_binary(source) when is_binary(source), do: source
+
+  defp repo_relative_path(path) when is_binary(path) do
     root = File.cwd!() |> Path.expand()
     absolute = Path.expand(path, root)
 
@@ -280,10 +283,12 @@ defmodule SpecLedEx.Coverage.Formatter do
     end
   end
 
+  defp repo_relative_path(_), do: nil
+
   defp flush(%{table: table, artifact_path: path} = state) do
-    modules = state.modules || state.modules_fn.()
+    modules = state.modules
     final = state.snapshot_fn.(modules)
-    {run_total_hits, suite_diagnostics} = Snapshot.diff(state.baseline || %{}, final)
+    {run_total_hits, suite_diagnostics} = Snapshot.diff(state.baseline, final)
 
     boundary_index = load_boundary_index()
     inventory = :ets.tab2list(table)
@@ -324,7 +329,7 @@ defmodule SpecLedEx.Coverage.Formatter do
       |> Enum.filter(&(Map.get(state.file_map, &1) == nil))
       |> Enum.sort_by(&to_string/1)
 
-    total_diagnostics = state.diagnostic_count + boundary_diagnostics + length(suite_diagnostics)
+    total_diagnostics = boundary_diagnostics + length(suite_diagnostics)
 
     if total_diagnostics > 0 do
       IO.puts(:stderr, diagnostic_notice(total_diagnostics))

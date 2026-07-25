@@ -366,9 +366,10 @@ decisions:
 - id: specled.coverage_capture.anonymous_ets
   statement: >-
     The formatter shall use an anonymous ETS table
-    (`:ets.new(:anon, [:public, :set])`) for per-test state. No named
-    ETS tables shall be used — parallel formatter instances in unit
-    tests must not collide on a name.
+    (`:ets.new(:anon, [:public, :set, read_concurrency: true,
+    write_concurrency: true])`) for per-test state. No named ETS tables
+    shall be used — parallel formatter instances in unit tests must not
+    collide on a name.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.artifact_path
@@ -502,7 +503,9 @@ decisions:
     calls) when `Application.get_env(:specled_ex, :spec_cover_run)` is unset,
     `false`, `true`, or a keyword list lacking a live `:boundary_table`
     according to the arming resolver's `:ets.info/1` predicate. The wiring
-    is therefore safe under plain `mix test`.
+    is therefore safe under plain `mix test`. `per_test_boundary/1` shall
+    also tolerate ExUnit `setup_all` contexts that carry `:module` without
+    a per-test `:test` key.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.case_template
