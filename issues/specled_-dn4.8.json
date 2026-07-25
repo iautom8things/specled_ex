@@ -5,6 +5,7 @@
   ],
   "blocks": [
     "specled_-dn4.1",
+    "specled_-dn4.10",
     "specled_-dn4.5"
   ],
   "created": "2026-07-24T19:18:44Z",
@@ -36,5 +37,5 @@
   "status": "in_progress",
   "title": "Spec-evidence repairs + spec hygiene (F36, F37, F39, F40, F41)",
   "type": "task",
-  "updated_at": "2026-07-25T13:42:16Z"
+  "updated_at": "2026-07-25T13:43:26Z"
 }
