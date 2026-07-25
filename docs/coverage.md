@@ -44,7 +44,7 @@ Coverage tab are the two consumers (see
 The task's exit code passes through the wrapped `mix test` status: a red
 suite still exits non-zero even though its real, non-placeholder coverage
 is ingested. After a suite that ran to completion, an ingestion refusal
-(see the catalogue below) additionally forces a non-zero exit.
+(see the catalogue below) additionally forces a non-zero exit. The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict.
 
 ## Coexisting with coveralls / existing CI coverage
 

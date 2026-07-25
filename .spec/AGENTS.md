@@ -25,7 +25,7 @@ Use this folder to maintain authored Spec Led Development subjects and generated
 - After code, docs, or tests change, run `mix spec.next`.
 - For bug fixes, prefer `mix spec.next --bugfix`.
 - If next says `needs subject updates`, update the named subject before you finish.
-- If next says `ready for check`, move to `mix spec.check --base ...`.
+- If next says `ready for check`, move to `mix spec.check --base ...`. The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict.
 - Use `mix spec.validate --debug` only when you need low-level verification output.
 - Run `mix spec.status` when you need coverage or weak-spot summaries.
 

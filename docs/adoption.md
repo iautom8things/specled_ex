@@ -179,7 +179,7 @@ mix spec.triangle billing.invoice_numbering
 The `spec-evidence` fetch is read-only setup so the checker can see prior
 attestations when they exist. Evidence is an unauthenticated attestation:
 any repo writer can mint it, so it is forbidden as a merge-gate or pass/fail
-input. A fresh local check result is what gates the build.
+input. A fresh local check result is what gates the build. The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict.
 
 ### 6. Graduate severities
 
@@ -282,7 +282,7 @@ quiet the noise.
 review surface lands with the first bindings, not at lockdown. Severities are
 still warning-level, so the gate reports without hard-failing. Later phases
 (coverage, lockdown) add steps to this same workflow rather than introducing
-it.
+it. The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict.
 
 ### Phase 3 — Tag tests as you touch them
 
@@ -531,7 +531,7 @@ The core loop never grows past four commands (`prime`, `next`,
 triangulation. `spec.triangle` is a separate, always-available diagnostic
 step for when you want to inspect one subject's coverage disagreement in
 isolation — run it whenever you want the signal, not because `spec.check`
-demands it.
+demands it. The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict.
 
 Workflow tooling may call `mix spec.sync` at natural push points, such as a
 pre-push hook or release script, to reconcile local evidence before publishing.

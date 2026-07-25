@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.0 — 2026-07-25
+
+- Documented the `mix spec.check` verdict-read protocol across the adopter
+  guides, agent guidance, bootstrap skill, and rule text: the verdict line is
+  `spec.check result=pass` or `spec.check result=fail tier=<tier>
+  error_findings=<N>`, while the validation summary remains
+  `validate status=<status> errors=<N> warnings=<N>` and the branch breakdown
+  remains `branch base=<base> changed_files=<N> findings=<N> (error=<E>
+  warning=<W> info=<I>, info hidden; --verbose to show)`.
+  The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict.
+
 ## 0.7.0 — 2026-07-24
 
 - Per-test coverage attribution is now exact. `mix spec.cover.test

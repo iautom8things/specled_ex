@@ -194,8 +194,8 @@ Three meta-questions hover over every code in the catalog:
 
   - `mix spec.check` runs the drift, tag-scanning, append-only, and overlap
     detectors and records local evidence for the current tree. It never runs
-    coverage triangulation. `mix spec.sync` reconciles that evidence through
-    the `spec-evidence` ref.
+    coverage triangulation. The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict.
+    `mix spec.sync` reconciles that evidence through the `spec-evidence` ref.
   - `mix spec.next` orders unresolved findings into a single
     recommended next step.
   - `mix spec.validate` surfaces within-spec findings (overlap, prose

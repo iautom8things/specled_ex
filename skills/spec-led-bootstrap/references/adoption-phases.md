@@ -27,7 +27,7 @@ pre-push hook.
 
 **Gate behavior:** `mix spec.check` runs but only the file-touch branch
 guard can fire — and only against template subjects, so it is effectively
-silent.
+silent. The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict.
 
 **Escape hatch:** delete `.spec/` — the dep does not run code at import; it
 is opt-in via the mix tasks.
@@ -67,7 +67,7 @@ mapping survives but does not gate.
   - `.spec/specs/<id>.spec.md` exists and parses (`mix spec.validate`)
   - `spec-meta.id`, `kind`, `status: draft`, `summary`, `surface` all populated
   - At least one `spec-requirements` entry exists (placeholder OK)
-- `mix spec.check` clean
+- `mix spec.check` clean. The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict.
 - Stage commit message names the subjects added
 
 **Fan-out:** if subject count > 3, this ticket is the parent for N child
@@ -107,7 +107,7 @@ not exist (intentional).
 - First clean check committed `.spec/realization_hashes.json` so subsequent
   runs have baseline hashes to compare against
 - CI runs `mix spec.check --base <pr-base>` on pull requests (severities
-  still warning-level, so it reports without hard-failing)
+  still warning-level, so it reports without hard-failing). The last line is the verdict — `spec.check result=…`; nothing above it, including `validate status=…`, is the verdict.
 - CI renders `mix spec.review` and uploads/deploys the HTML artifact —
   start from the scaffolded workflow template
   (`deps/spec_led_ex/priv/spec_init/workflows/spec_review.yml.eex`, copied

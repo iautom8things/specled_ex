@@ -85,11 +85,11 @@ decisions:
   priority: must
   stability: stable
 - id: specled.package.adoption_guide
-  statement: The package shall provide an adoption guide at `docs/adoption.md` that walks both the greenfield path (starting from `mix new`) and the brownfield path (bolting onto an existing tree), that names the severity-graduation step where `branch_guard` and `guardrails` codes move from `:warning` to `:error`, and that splits coverage triangulation into Phase 4a (aggregate, zero wiring) and Phase 4b (per-test attribution, opt-in boundary wiring).
+  statement: The package shall provide an adoption guide at `docs/adoption.md` that walks both the greenfield path (starting from `mix new`) and the brownfield path (bolting onto an existing tree), that names the severity-graduation step where `branch_guard` and `guardrails` codes move from `:warning` to `:error`, that splits coverage triangulation into Phase 4a (aggregate, zero wiring) and Phase 4b (per-test attribution, opt-in boundary wiring), and that teaches the `mix spec.check` verdict read protocol.
   priority: must
   stability: evolving
 - id: specled.package.concepts_guide
-  statement: The package shall provide a concepts document at `docs/concepts.md` that explains the spec triangle (specs ↔ code ↔ tests), the `realized_by` tiers, the graceful-degrade rule that emits `detector_unavailable` instead of failing when a detector's prerequisites are missing, and how to accept intentional realization drift (the durable `mix spec.check --accept-drift` path, the PR-scoped `Spec-Drift:` trailer, and the implementation-tier delete-and-reseed ritual).
+  statement: The package shall provide a concepts document at `docs/concepts.md` that explains the spec triangle (specs ↔ code ↔ tests), the `realized_by` tiers, the graceful-degrade rule that emits `detector_unavailable` instead of failing when a detector's prerequisites are missing, how to accept intentional realization drift (the durable `mix spec.check --accept-drift` path, the PR-scoped `Spec-Drift:` trailer, and the implementation-tier delete-and-reseed ritual), and the `mix spec.check` verdict read protocol.
   priority: must
   stability: evolving
 - id: specled.package.doc_identifier_integrity
