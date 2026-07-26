@@ -9,9 +9,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-0x4",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: cx-202607260710-0x44-impl1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-0x4.4/codex-cx-202607260710-0x44-impl1/log\n\nCommit: 4a931923ddc04102656728704134575b051fd303\nFiles touched: .spec/specs/package.spec.md; skills/spec-led-bootstrap/references/task-templates.md\nTests added: none — docs-only ticket\nVerification stubs flipped: none\nVerification tier: change-scoped — mix spec.check --no-run-commands --base 6f01dfe6dbfb6ed948392490b26f797fd5af630b; grep -r PROJECT_VERIFICATION_COMMAND skills/; rg deliverable checks in skills/spec-led-bootstrap/references/task-templates.md; mix format --check-formatted; full-system\n  proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: Reworded the phase0 bootstrap task template so adopters add the project verification command to scaffolded .spec/AGENTS.md, explicitly noting there is no placeholder to replace. The merge-gate checklist now checks for the command being present, and the same sweep corrected the workflow template wording to describe the shipped split-privilege template accurately. Updated specled.package current truth to reflect the corrected bootstrap guidance.",
+      "timestamp": "2026-07-26T11:14:55Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Bootstrap skill accuracy follow-up: task-templates.md still instructs replacing the nonexistent \u003cPROJECT_VERIFICATION_COMMAND\u003e placeholder",
   "type": "task",
-  "updated_at": "2026-07-26T11:12:50Z"
+  "updated_at": "2026-07-26T11:14:55Z"
 }
