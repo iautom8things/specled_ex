@@ -17,11 +17,15 @@
     {
       "text": "IMPLEMENTED\nSession: 2cbb17f7-cd07-4fcb-b499-81e73c2fd79e\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/2cbb17f7-cd07-4fcb-b499-81e73c2fd79e.jsonl\n\nCommit: 7b9801a (branch specled_-zr6/fix-flaky-merge-edges-property)\nFiles touched: test/specled_ex/compiler/tracer_test.exs\nTests added: none (existing property fixed: \"merge keeps exactly non-session previous entries plus session edges, and is idempotent\")\nVerification stubs flipped: none\nVerification tier: change-scoped — test/specled_ex/compiler/tracer_test.exs full file; property at :241 under striking seeds 407930 and 437710 plus 60 random seeds (0 failures); mix compile --warnings-as-errors; mix format --check-formatted; mix spec.check --no-run-commands --base origin/main (result=pass); full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 2 (first spec.check run flagged branch_guard_missing_subject_update; cleared with the repo's Spec-Drift: test_only commit trailer — test-only change, current truth unchanged)\n\nSummary: Replaced session_modules \u003c- uniq_list_of(member_of(module_pool), max_length: 3) with a plain list_of(member_of(module_pool), max_length: 4). The generated list is immediately converted to a MapSet, so the uniq constraint was semantically redundant while making StreamData abort with TooManyDuplicatesError after 10 consecutive duplicate draws from the 4-atom pool — the flake that struck two different seeds. The property's assertions are unchanged; only the generator changed, and a comment documents why uniq_list_of must not return.",
       "timestamp": "2026-07-26T00:41:41Z"
+    },
+    {
+      "text": "TEST_CRITIC: PASS\nCritic session: 2cbb17f7-cd07-4fcb-b499-81e73c2fd79e (elixir-test-critic subagent; shares the parent session transcript — review turns are inside /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/2cbb17f7-cd07-4fcb-b499-81e73c2fd79e.jsonl. Review ran in worktree specled_-zr6/fix-flaky-merge-edges-property at commit 7b9801a.)\nBlocking findings: 0 (resolved: 0, waived: 0)\nFiles reviewed: test/specled_ex/compiler/tracer_test.exs\n\nEmpirical highlights: 10k-draw sampling shows every merge-scenario axis holds or improves under the new generator (full 4-module session set goes from unreachable to reachable); mutation testing (5 mutants x 2000 cases) confirms the untouched assertions still kill dedup/sort/session-rejection mutants; TooManyDuplicatesError is structurally impossible for list_of (no uniqueness retry loop) — confirmed by reproducing the abort on the OLD generator during sampling.\n\nNon-blocking pre-existing gap (value-provenance assertion missing for non-session callers present in both previous and session_edges) filed as specled_-asb.",
+      "timestamp": "2026-07-26T00:48:38Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Flaky property failure: tracer_test.exs:241 merge_edges uniq_list_of over ~4-atom space (TooManyDuplicatesError; NOT seed-deterministic)",
   "type": "task",
-  "updated_at": "2026-07-26T00:41:41Z"
+  "updated_at": "2026-07-26T00:48:38Z"
 }
