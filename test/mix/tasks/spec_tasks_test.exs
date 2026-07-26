@@ -940,7 +940,7 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     messages = drain_shell_messages()
 
-    assert List.last(messages) == "spec.validate result=fail tier=validate error_findings=0"
+    assert List.last(messages) == "spec.validate result=fail tier=usage error_findings=0"
   end
 
   @tag spec: ["specled.tasks.verdict_line"]

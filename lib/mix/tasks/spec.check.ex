@@ -6,6 +6,7 @@ defmodule Mix.Tasks.Spec.Check do
   alias SpecLedEx.Compiler.Context
   alias SpecLedEx.Config
   alias SpecLedEx.Evidence.{Entry, Store, TreeHash}
+  alias SpecLedEx.{BranchCheck, TaskArgs}
   alias SpecLedEx.VerificationStrength
 
   @shortdoc "Runs the full local Spec Led gate"
@@ -67,15 +68,27 @@ defmodule Mix.Tasks.Spec.Check do
         aliases: [r: :root, o: :output, d: :debug]
       )
 
-    if rest != [] or invalid != [] do
-      print_usage_verdict()
-    end
+    case TaskArgs.validate("spec.check", rest, invalid) do
+      :ok ->
+        :ok
 
-    SpecLedEx.TaskArgs.validate!("spec.check", rest, invalid)
+      {:error, message} ->
+        print_usage_verdict()
+        Mix.raise(message)
+    end
 
     root = opts[:root] || File.cwd!()
     min_strength = validate_min_strength!(opts[:min_strength])
-    validate_base!(root, opts[:base])
+
+    case BranchCheck.validate_base(root, opts[:base]) do
+      :ok ->
+        :ok
+
+      {:error, message} ->
+        print_usage_verdict()
+        Mix.raise(message)
+    end
+
     spec_dir = opts[:spec_dir] || SpecLedEx.detect_spec_dir(root)
     authored_dir = SpecLedEx.detect_authored_dir(root, spec_dir)
     config = Config.load(root, path: config_path(root, spec_dir))
@@ -118,7 +131,7 @@ defmodule Mix.Tasks.Spec.Check do
 
     if report["status"] == "fail" do
       print_validation_findings(report["findings"] || [], verbose?)
-      print_verdict("fail", tier: "validate", error_findings: summary["errors"])
+      print_verdict("fail", error_findings: summary["errors"], tier: "validate")
       Mix.raise("Spec check failed: #{length(report["findings"] || [])} validation finding(s)")
     end
 
@@ -297,25 +310,6 @@ defmodule Mix.Tasks.Spec.Check do
     end
   end
 
-  defp validate_base!(_root, nil), do: :ok
-  defp validate_base!(_root, "HEAD"), do: :ok
-
-  defp validate_base!(root, base) when is_binary(base) do
-    {_output, exit_code} =
-      System.cmd(
-        "git",
-        ["-C", root, "rev-parse", "--verify", "#{base}^{commit}"],
-        stderr_to_stdout: true
-      )
-
-    if exit_code != 0 do
-      print_usage_verdict()
-      Mix.raise("--base #{inspect(base)} does not resolve to a commit")
-    end
-
-    :ok
-  end
-
   # covers: specled.tasks.verdict_line
   # covers: specled.tasks.branch_findings_breakdown
   defp print_verdict("pass") do
@@ -326,7 +320,9 @@ defmodule Mix.Tasks.Spec.Check do
     print_verdict("fail", tier: "usage", error_findings: 0)
   end
 
-  defp print_verdict("fail", tier: tier, error_findings: error_findings) do
+  defp print_verdict("fail", opts) do
+    tier = Keyword.get(opts, :tier, "usage")
+    error_findings = Keyword.get(opts, :error_findings, 0)
     Mix.shell().info("spec.check result=fail tier=#{tier} error_findings=#{error_findings || 0}")
   end
 

@@ -166,7 +166,7 @@ defmodule Mix.Tasks.Spec.Validate do
         normalized
 
       {:error, message} ->
-        print_verdict("fail", error_findings: 0)
+        print_verdict("fail", tier: "usage", error_findings: 0)
         Mix.raise("Invalid value for --min-strength: #{message}")
     end
   end
@@ -224,21 +224,18 @@ defmodule Mix.Tasks.Spec.Validate do
     Mix.shell().info("spec.validate result=pass")
   end
 
-  defp print_verdict("fail", error_findings: error_findings) do
+  defp print_verdict("fail", opts) do
+    tier = Keyword.get(opts, :tier, "validate")
+    error_findings = Keyword.get(opts, :error_findings, 0)
+
     Mix.shell().info(
-      "spec.validate result=fail tier=validate error_findings=#{error_findings || 0}"
+      "spec.validate result=fail tier=#{tier} error_findings=#{error_findings || 0}"
     )
   end
 
   defp sort_findings_for_display(findings) do
     Enum.sort_by(findings, fn finding ->
-      {
-        severity_sort_rank(normalized_severity(finding)),
-        finding["file"] || "",
-        finding["subject_id"] || "",
-        finding["code"] || "",
-        finding["message"] || ""
-      }
+      {severity_sort_rank(normalized_severity(finding)), sort_key(finding)}
     end)
   end
 

@@ -43,6 +43,7 @@ surface:
   - priv/spec_init/specs/package.spec.md.eex
   - skills/write-spec-led-specs/references/authoring-reference.md
   - test_support/specled_ex_fixture_case.ex
+  - test/specled_ex/task_args_test.exs
   - test/mix/tasks/spec_cover_ingest_test.exs
 realized_by:
   implementation:
@@ -308,7 +309,7 @@ decisions:
   then:
     - The final stdout message is the task-specific `result=pass` or `result=fail` verdict.
     - A failing verdict includes the failing tier and error finding count.
-    - A spec.check pre-flight rejection uses `tier=usage` and does not print a `validate status=` line.
+    - A spec.check pre-flight rejection and a spec.validate min-strength pre-flight rejection use `tier=usage`; spec.check does not print a `validate status=` line on that path.
     - "The task itself emits exactly one line matching `^<task> result=`, excluding verbatim-relayed `kind: command` output."
 - id: specled.tasks.branch_findings_breakdown.summary_and_order
   covers:

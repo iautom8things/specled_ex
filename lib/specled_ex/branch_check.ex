@@ -39,7 +39,16 @@ defmodule SpecLedEx.BranchCheck do
   }
 
   def run(index, root, opts \\ []) do
-    validate_base!(root, Keyword.get(opts, :base))
+    case validate_base(root, Keyword.get(opts, :base)) do
+      :ok ->
+        :ok
+
+      {:error, message} ->
+        base = Keyword.fetch!(opts, :base)
+
+        raise ArgumentError,
+              "#{message} (git rev-parse --verify '#{base}^{commit}' failed)"
+    end
 
     config = Config.load(root)
     analysis = ChangeAnalysis.analyze(index, root, opts)
@@ -632,22 +641,24 @@ defmodule SpecLedEx.BranchCheck do
 
   ## ── --base validation (commit-only refs, C13) ──────────────────────
 
-  defp validate_base!(_root, nil), do: :ok
-  defp validate_base!(_root, "HEAD"), do: :ok
+  @doc false
+  @spec validate_base(Path.t(), String.t() | nil) :: :ok | {:error, String.t()}
+  def validate_base(root, base) do
+    if base in [nil, "HEAD"] do
+      :ok
+    else
+      {_output, exit_code} =
+        System.cmd(
+          "git",
+          ["-C", root, "rev-parse", "--verify", "#{base}^{commit}"],
+          stderr_to_stdout: true
+        )
 
-  defp validate_base!(root, base) when is_binary(base) do
-    {_output, exit_code} =
-      System.cmd(
-        "git",
-        ["-C", root, "rev-parse", "--verify", "#{base}^{commit}"],
-        stderr_to_stdout: true
-      )
-
-    if exit_code != 0 do
-      raise ArgumentError,
-            "--base #{inspect(base)} does not resolve to a commit (git rev-parse --verify '#{base}^{commit}' failed)"
+      if exit_code == 0 do
+        :ok
+      else
+        {:error, "--base #{inspect(base)} does not resolve to a commit"}
+      end
     end
-
-    :ok
   end
 end
