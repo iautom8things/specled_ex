@@ -77,11 +77,15 @@
     {
       "text": "Squash-merged to main (402f4a2). Watching post-merge Specs run.",
       "timestamp": "2026-07-26T20:22:22Z"
+    },
+    {
+      "text": "Delivered: PR #28 squash-merged to main as 402f4a2, released 0.9.5, post-merge Specs run green (run 30218821247). All 8 children shipped and closed (zhe+j3k in 0.9.2/PR #25; xde, wli, 0x4.1-4 in 0.9.5/PR #28). Follow-ups live standalone: specled_-z5t, specled_-wby.",
+      "timestamp": "2026-07-26T20:25:39Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fast-follow: spec.check verdict contract + teaching sweep",
   "type": "epic",
-  "updated_at": "2026-07-26T20:22:22Z"
+  "updated_at": "2026-07-26T20:25:39Z"
 }
