@@ -8,9 +8,15 @@
   "labels": [
     "phase:implementing"
   ],
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: a5f50a6d-689f-4616-80ad-806b0595aa28\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/a5f50a6d-689f-4616-80ad-806b0595aa28.jsonl\n\nCommit: 3bbd7e7b (branch specled_-td7/self-identifying-descriptors - landed in one PR with specled_-td7 at the user's request)\nFiles touched: lib/specled_ex/coverage/store.ex, test/specled_ex/coverage/store_test.exs, .spec/specs/coverage_capture.spec.md\nTests added: 1 (store_test.exs \"write_v2 keeps its documented ArgumentError contract for a malformed envelope\")\nVerification stubs flipped: none (new requirement id added to an existing execute:true tagged_tests leg)\nVerification tier: change-scoped, then full - targeted store_test.exs + coverage/ (0 failures), mix test --stale --include integration (1251 tests, 0 failures), mix spec.check BARE (result=pass)\nFinal-tier runs: 1\n\nFix: validate_envelope!/1 reads :meta with Map.get(envelope, :meta, %{}) instead of dot access. Took the ticket's second option, NOT \"add :meta to @v2_required_fields\" - that list also gates classify_v2/1, where requiring :meta would reject every pre-Stage-1 artifact the read path is specified to tolerate (specled.coverage_capture.envelope_meta, and the comment at store.ex classify_v2 says so explicitly). So an absent :meta is now valid on write exactly as on read; only a present-but-non-map value is malformed, and it raises the documented ArgumentError.\n\nWould fail if: validate_envelope!/1 went back to `envelope.meta` - the new test's `Store.write_v2(Map.delete(envelope, :meta), path)` raises KeyError instead of returning :ok, which is the production defect a caller following the docs would hit.\n\nSpec: new requirement specled.coverage_capture.write_v2_argument_error_contract (every malformed-envelope rejection raises the documented ArgumentError, never a substitute type), plus a clause on envelope_meta for the write path's missing-:meta tolerance and non-map rejection. Split into two requirements because one requirement may be covered by only one scenario in a subject (overlap/duplicate_covers).\n\nRESOLVES specled_-npo as a byproduct - disclosed, not absorbed. npo's mandate was \"state the present-but-non-map :meta rejection rule in the requirement so the assertion has an owning clause\"; this change's own test adds another assertion of that rule, so leaving it unstated would have widened npo rather than left it alone. See the comment posted on npo.\n\nDeferred must requirements: none.",
+      "timestamp": "2026-07-26T20:58:34Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Store.write_v2/2 raises KeyError on an envelope lacking :meta, contradicting its documented ArgumentError contract",
   "type": "bug",
-  "updated_at": "2026-07-26T20:50:32Z"
+  "updated_at": "2026-07-26T20:58:34Z"
 }
