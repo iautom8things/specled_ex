@@ -69,11 +69,15 @@
     {
       "text": "CI green on first run (Check Specs + both matrix legs), 0 fix commits during babysit. Proceeding to squash-merge.",
       "timestamp": "2026-07-26T12:21:41Z"
+    },
+    {
+      "text": "Squash-merged to main (782ed9fd, PR #27). Watching post-merge specs run.",
+      "timestamp": "2026-07-26T12:22:47Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "Load-fragile tagged_tests leg: verifier_test.exs:1452/:1681 and review_test.exs:135 intermittently fail under machine load",
   "type": "task",
-  "updated_at": "2026-07-26T12:21:41Z"
+  "updated_at": "2026-07-26T12:22:47Z"
 }
