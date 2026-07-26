@@ -75,11 +75,15 @@
     {
       "text": "CI green on PR #26, first pass — no fix commits needed. Check Specs 1m56s, Test (Elixir 1.18.4/OTP 26.2.5) 1m32s, Test (Elixir 1.19.5/OTP 28.3.1) 1m40s. mergeStateStatus=CLEAN, no review comments. Ready for merge.",
       "timestamp": "2026-07-26T10:16:33Z"
+    },
+    {
+      "text": "Squash-merged to main as c13d1bdd (PR #26, release 0.9.3). Remote branch deleted; primary checkout ff-updated to c13d1bd. No deploy/publish workflow exists in this repo — specs.yml re-runs on push-main and is being watched. Worktree cleanup pending that run.",
+      "timestamp": "2026-07-26T10:22:29Z"
     }
   ],
   "priority": 1,
   "status": "closed",
   "title": "Spec-honesty slice: fix the two provably false statements in the shipped .spec/ corpus",
   "type": "task",
-  "updated_at": "2026-07-26T10:16:33Z"
+  "updated_at": "2026-07-26T10:22:29Z"
 }
