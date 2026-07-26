@@ -24,7 +24,9 @@ reflecting any change to what this subject verifies.
 
 The package docs and bootstrap skill teach the same `mix spec.check` verdict
 read protocol as the live `spec.prime` and `spec.next` guidance, while avoiding
-placing that protocol on commands that do not emit a `spec.check result=` line.
+placing that protocol on commands that do not emit a `spec.check result=` line
+and using `--verbose` when instructing adopters to probe for info-level
+`detector_unavailable` findings on stdout.
 
 The bootstrap skill's reference pages state config-severity defaults as the
 code resolves them (`SpecLedEx.BranchCheck` per-code defaults and its
