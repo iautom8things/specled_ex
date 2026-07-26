@@ -55,11 +55,19 @@ Two facts complicate a blanket extension:
   bare snake_case identifier — `detector_unavailable`,
   `spec_requirement_too_short`, and the several dozen validator and tag-scanner
   codes — and those are deliberately left unguarded rather than approximated by
-  a stem pattern: their stems are also legitimate non-code identifiers in the
-  scanned corpus (`detector_unavailable_by_leg` is a review-output field, and
-  requirement ids embed the same stem), so a `detector_[a-z_]+` pattern would
-  reject correct prose. The `must` names this boundary instead of claiming
-  coverage the lint does not have.
+  a stem pattern. Measured against the corpus, the candidate stems all collide
+  with it: `detector_` matches the review-output field
+  `detector_unavailable_by_leg` and a requirement id that embeds the same stem,
+  and `decision_`, `verification_`, and `requirement_` match eight, four, and
+  six non-code identifiers respectively — requirement ids, config keys, and
+  field names. Each would reject correct prose. The `must` names this boundary
+  instead of claiming coverage the lint does not have.
+
+  Two narrow clusters (`surface_target_*`, `scenario_cover_*`) collide with
+  nothing in the corpus today and could be guarded, at the cost of two more
+  hand-maintained allowlists — the reflection alternative stays rejected. That
+  widening is deferred, not refused; it belongs with the rest of the lint
+  hardening rather than in a spec-honesty fix.
 - File-path segments that happen to match a token pattern (e.g. the trailing
   segment of `.../config/branch_guard_test.exs`) are not finding codes; the
   token patterns carry a `(?<![\w/])` lookbehind so a slash-prefixed path

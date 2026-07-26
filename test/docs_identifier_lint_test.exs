@@ -13,17 +13,25 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
        fabricated code that survives in a spec scenario or an ADR is just as
        misleading as one in a skill.
 
-       Those five families are exactly the emitted codes whose *token shape*
-       marks them as finding codes rather than ordinary prose. Every other
-       emitted code — `detector_unavailable`, `spec_requirement_too_short`,
-       and the several dozen bare validator and tag-scanner codes — is out of
-       reach of this technique, and deliberately so. Their stems are also
-       legitimate non-code identifiers in the very corpus being scanned:
-       `detector_unavailable_by_leg` is a review-output field and
-       `specled.triangulation.detector_unavailable_on_missing_coverage` a
-       requirement id, both of which a `detector_[a-z_]+` pattern would reject
-       as fabricated. `specled.package.doc_identifier_integrity` states that
-       boundary rather than implying every emitted code is guarded.
+       Those five are every emitted family carrying a namespace or a ratified
+       prefix. The rest of the emitted codes — `detector_unavailable`,
+       `spec_requirement_too_short`, and the several dozen bare validator and
+       tag-scanner codes — are plain snake_case, and the stem patterns that
+       would catch them collide with the corpus itself. Measured against the
+       current corpus: `detector_` hits the review-output field
+       `detector_unavailable_by_leg` and the requirement id
+       `specled.triangulation.detector_unavailable_on_missing_coverage`;
+       `decision_` hits eight non-codes including `decision_dir` and
+       `decision_governance`; `verification_` and `requirement_` hit four and
+       six. Each would reject correct prose, so those codes stay
+       author-enforced and the `must` says so.
+
+       Two small clusters (`surface_target_*`, `scenario_cover_*`) happen to
+       collide with nothing today and could be guarded — but only by hand-
+       maintaining their allowlists, since
+       `specled.decision.doc_identifier_lint_spec_corpus` rejects deriving the
+       code set by reflection over lib/. Tracked on specled_-vk0 with the rest
+       of the lint hardening; not claimed here.
     2. Inert config severities — the `:atom` value form inside a YAML block,
        which `SpecLedEx.Config` silently drops (a bare `off`/`info`/`warning`/
        `error` token is required). Scoped to the user-facing guidance corpus
