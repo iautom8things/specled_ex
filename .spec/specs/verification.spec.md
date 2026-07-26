@@ -391,9 +391,9 @@ decisions:
 
 ## Verification
 
-Branch reconciliation note: `test/mix/tasks/spec_check_test.exs` and
-`test/mix/tasks/spec_tasks_test.exs` are shared task test surfaces for this
-subject. This branch touches those files to assert the spec.check stdout verdict
+Branch reconciliation note: `test/mix/tasks/spec_tasks_test.exs` is a shared
+task test surface for this subject. This branch touches that file to assert the
+spec.check stdout verdict
 contract's usage-tier pre-flight rejection token; the verification requirements
 above remain unchanged.
 
