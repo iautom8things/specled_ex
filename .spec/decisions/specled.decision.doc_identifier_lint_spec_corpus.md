@@ -66,6 +66,15 @@ Two facts complicate a blanket extension:
   would reject correct prose. The `must` names this boundary
   instead of claiming coverage the lint does not have.
 
+  The must calls those four "heavily-referenced", on this basis: each occurs
+  24-69 times in the scanned corpus (`detector_` 69, `requirement_` 45,
+  `verification_` 39, `decision_` 24), against zero occurrences for every
+  deferred stem. Corpus occurrences, not emitted-code counts — the two orders
+  differ sharply, and conflating them is what produced an earlier draft calling
+  these the "largest" stems when `detector_` matches exactly one emitted code.
+  Occurrence count is the property the argument actually needs, since a stem
+  that appears often in the corpus is the one likely to collide with it.
+
   That collision argument covers only the four stems named above. They match
   many of the unguarded codes but by no means all — many others are matched by
   none of the four — and at least five narrower stems (`surface_target_`,
