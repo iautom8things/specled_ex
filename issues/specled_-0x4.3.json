@@ -45,11 +45,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: 08c7d7f6-61ab-4208-bd23-ed5eaed321c2\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/08c7d7f6-61ab-4208-bd23-ed5eaed321c2.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations (the one outside-Allowed file is audit-adjudicated per the\n2026-07-26T12:58 and 13:13 AUDIT comments), passing targeted verification at the\ncommitted SHA, complete seam disclosure, and no seam substituting production\nwiring. No further auditor was spawned per policy.",
       "timestamp": "2026-07-26T13:20:41Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-0x4/verdict-teaching-fast-follow. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-26T13:22:09Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Spec/test attribution and test-craft gaps in the verdict contract",
   "type": "task",
-  "updated_at": "2026-07-26T13:20:41Z"
+  "updated_at": "2026-07-26T13:22:09Z"
 }
