@@ -7,8 +7,6 @@ affects:
   - specled.branch_guard
   - specled.compiler_tracer
   - specled.index_state
-  - specled.prose_guard
-  - specled.realized_by
   - specled.spec_review
   - specled.tagged_tests
   - specled.verification
@@ -45,6 +43,9 @@ locations (`System.tmp_dir!()`, `SPECLED_COMMAND_OUTPUT_DIR`, parse temp
 directories, and write-rename siblings) shall derive its uniqueness from
 `SpecLedEx.TempName.cross_vm_suffix/0`.
 
+For any cross-VM-visible path in `lib/`, `System.unique_integer/1` alone is
+not an acceptable uniqueness source. Test-only usages remain fine.
+
 The HashStore write-rename sibling is not an exception. It shall use
 `SpecLedEx.TempName.cross_vm_suffix/0` and therefore leave no fixed
 `.spec/realization_hashes.json.tmp` collision point.
@@ -59,8 +60,8 @@ in-flight file.
 
 ## Consequences
 
-- The decision graph now names every subject whose surface creates or documents
-  cross-VM-visible temp names.
+- The decision graph now names every subject that owns code creating or
+  documenting cross-VM-visible temp names.
 - HashStore's atomic write path removes the last fixed-name write-rename
   sibling in `lib/`.
 - The tracer exception is falsifiable: dropping the pid segment from the tmp
