@@ -2,6 +2,7 @@
   "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-07-26T00:50:16Z",
   "created": "2026-07-25T12:51:24Z",
   "description": "Found by the specled_-dn4 merge gate 2026-07-25. property Tracer.merge_edges/3 (specled.compiler_tracer.merge_on_flush) at test/specled_ex/compiler/tracer_test.exs:241-255 fails deterministically under seed 407930 with StreamData.TooManyDuplicatesError: uniq_list_of draws from a tiny module-atom space (ModA..ModD observed) and 10 consecutive duplicates abort generation. Reproduced identically at main (14f6e72) with the same seed — pre-existing, NOT caused by the dn4 epic; passes under typical seeds (4 independent full-suite green runs same day). Fix: widen the generator space or bound uniqueness (e.g. uniq_list_of(member_of(mods), max_length: length(mods)) or drop uniq constraint). Any seed can strike CI.",
   "id": "specled_-zr6",
@@ -35,7 +36,7 @@
     }
   ],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "Flaky property failure: tracer_test.exs:241 merge_edges uniq_list_of over ~4-atom space (TooManyDuplicatesError; NOT seed-deterministic)",
   "type": "task",
   "updated_at": "2026-07-26T00:50:16Z"
