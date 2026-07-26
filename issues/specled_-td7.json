@@ -10,11 +10,15 @@
     {
       "text": "Scope addition from specled_-odl: test/specled_ex/verifier_test.exs:1452 ('attribution artifact names embed the OS pid and random entropy') remains an open flake site with no credible mechanism — no tight budget, no sleep, serial module. When implementing the forensic capture here, confirm it would preserve enough of the inner run's output to diagnose an assertion-level failure in that test (the report status, the artifact name actually produced, and the shim's stdout).",
       "timestamp": "2026-07-26T11:08:06Z"
+    },
+    {
+      "text": "FINDING: the docs_identifier_lint_test.exs:255 line anomaly is explained — the reporting path is exonerated.\n\nEvidence (git archaeology, 2026-07-26):\n- Test files are .exs: ExUnit compiles them from disk at run time, no beam cache. An artifact event's line therefore always reflects the on-disk file AT RUN START, not any stale compile.\n- The cz0 session's branch (specled_-cz0/spec-honesty, still alive) shows seven micro-commits touching this exact file. Across them, test 'a fabricated, unmarked finding code IS flagged' sat at lines 182, 231, 242, 250, 256, 266, 268 — the file churned +/-6 lines around 255 all session.\n- 4c9aa6864 has that test at 250 and the 'evidence/*' test head at 256/257 with 255 blank — precisely the state the original comment describes inspecting. Adjacent states (833a83fe, 966464d9) have an @tag at 255 and a test decl at 256.\n- Conclusion: the failing run executed an uncommitted working state where a test declaration sat at 255; the 'line 255 is blank' inspection read a different (shifted) state. 'No edits between runs' was wrong at file granularity — the session was editing this exact file between spec.check invocations.\n\nImpact on this ticket's scope: the descriptor-id change is MORE valuable, not less — a test NAME is shift-proof where a line number is not; this failure mode (report generated against tree state A, investigated against tree state B) will recur in any session that edits between gate runs. Two scope additions worth making: (1) preserve the attribution artifact JSONL alongside the SPECLED_COMMAND_OUTPUT_DIR capture on failure (run_merged_command's `after File.rm(artifact_path)` currently destroys it — it is primary evidence); (2) have the forensic capture record run-time provenance (git rev-parse HEAD + dirty-file list) so report-vs-inspection tree skew is detectable next time.\n\nStill genuinely open: WHY a doc-integrity lint test failed once-in-five under load (the assertions near every candidate line are pure-constant), and the verifier_test.exs:1452 site. Both need the armed forensics; neither needs the reporting path investigated further.",
+      "timestamp": "2026-07-26T19:08:20Z"
     }
   ],
   "priority": 3,
   "status": "open",
   "title": "Self-identifying failing-test descriptors + gate forensics for tagged_tests flake reports",
   "type": "task",
-  "updated_at": "2026-07-26T11:08:06Z"
+  "updated_at": "2026-07-26T19:08:20Z"
 }
