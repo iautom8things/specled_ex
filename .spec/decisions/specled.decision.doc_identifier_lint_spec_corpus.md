@@ -66,9 +66,9 @@ Two facts complicate a blanket extension:
   would reject correct prose. The `must` names this boundary
   instead of claiming coverage the lint does not have.
 
-  That collision argument covers the four largest stems only. They match many
-  of the unguarded codes but by no means all — dozens are matched by none of
-  the four — and at least five narrower stems (`surface_target_`,
+  That collision argument covers only the four stems named above. They match
+  many of the unguarded codes but by no means all — many others are matched by
+  none of the four — and at least five narrower stems (`surface_target_`,
   `scenario_cover_`, `meta_field_`, `spec_requirement_`, `invalid_id_`)
   collide with nothing in the corpus today.
 

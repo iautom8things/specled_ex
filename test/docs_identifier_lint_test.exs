@@ -32,9 +32,9 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
        pattern would flag the bare spelling as fabricated, so it counts as a
        false positive.
 
-       That reasoning covers the four largest stems only. They match many of
-       the unguarded codes but by no means all — dozens are matched by none of
-       the four — and at least five narrower stems (`surface_target_`,
+       That reasoning covers only the four stems named above. They match many
+       of the unguarded codes but by no means all — many others are matched by
+       none of the four — and at least five narrower stems (`surface_target_`,
        `scenario_cover_`, `meta_field_`, `spec_requirement_`, `invalid_id_`)
        collide with nothing in the corpus today. (No totals: the emitted-code
        denominator shifts with whether `check/5` outputs and `Mix.raise`
