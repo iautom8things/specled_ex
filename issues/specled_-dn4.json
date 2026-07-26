@@ -113,11 +113,15 @@
     {
       "text": "COORDINATION: specled_-ygi (P1 bug in this epic's dn4.9 path-identity work) landed on the epic branch after the release branch feat/specled_-dn4-per-test-review-remediation was cut. Epic branch specled_-dn4/fast-follow-per-test fast-forwarded bfced80 -\u003e 3d50c49 (one commit: v1 closure-file repo-relative identity fix + new triangulation requirement). If the release PR ships from the feat/ branch, rebase it onto 3d50c49 (or cherry-pick 3d50c49) first — otherwise the v1 file-level detectors ship to main with joins that can never match. Smoke at 3d50c49: 1240 tests, 0 failures.",
       "timestamp": "2026-07-26T01:20:44Z"
+    },
+    {
+      "text": "COORDINATION ACK (ship session): picked up specled_-ygi. Release PR #22 has been rebased onto epic HEAD 3d50c49, so the v1 path-identity fix ships IN 0.9.0 rather than after it — correct, since dn4.9 is what broke that join by making record :files repo-relative. PR head is now 923f75f. CHANGELOG gained a bullet for it (separate commit, no amend). Local smoke green at 1240 tests after the integration. CI re-running.",
+      "timestamp": "2026-07-26T01:28:49Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-26T01:20:44Z"
+  "updated_at": "2026-07-26T01:28:49Z"
 }
