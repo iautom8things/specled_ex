@@ -21,11 +21,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: 08c7d7f6-61ab-4208-bd23-ed5eaed321c2\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/08c7d7f6-61ab-4208-bd23-ed5eaed321c2.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. No auditor was spawned per policy.",
       "timestamp": "2026-07-26T11:21:29Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-0x4/verdict-teaching-fast-follow. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-26T11:23:21Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Bootstrap skill accuracy follow-up: task-templates.md still instructs replacing the nonexistent \u003cPROJECT_VERIFICATION_COMMAND\u003e placeholder",
   "type": "task",
-  "updated_at": "2026-07-26T11:21:29Z"
+  "updated_at": "2026-07-26T11:23:21Z"
 }
