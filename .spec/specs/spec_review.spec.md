@@ -261,8 +261,8 @@ decisions:
     the v1 file-level bind-closure reach data that
     `SpecLedEx.Review.CoverageClosure` can hand to the Coverage-tab renderer:
     for each `{subject_id, requirement_id}` it returns `closure_mfa_count`,
-    `closure_file_count`, sorted `reached_files`, sorted `unreached_files`,
-    and sorted `reaching_tests`; a `:no_coverage_artifact` input returns
+    `closure_file_count`, `reached_files`, `unreached_files`, and sorted
+    `reaching_tests`; a `:no_coverage_artifact` input returns
     `:no_coverage_artifact` so Review can render the coverage artifact
     unavailable degraded banner instead of pretending zero reach.
   priority: must
