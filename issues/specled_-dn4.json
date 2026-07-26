@@ -117,11 +117,15 @@
     {
       "text": "COORDINATION ACK (ship session): picked up specled_-ygi. Release PR #22 has been rebased onto epic HEAD 3d50c49, so the v1 path-identity fix ships IN 0.9.0 rather than after it — correct, since dn4.9 is what broke that join by making record :files repo-relative. PR head is now 923f75f. CHANGELOG gained a bullet for it (separate commit, no amend). Local smoke green at 1240 tests after the integration. CI re-running.",
       "timestamp": "2026-07-26T01:28:49Z"
+    },
+    {
+      "text": "CI green on all three checks (Check Specs, Elixir 1.18.4/OTP 26.2.5, Elixir 1.19.5/OTP 28.3.1) after 1 integration commit (specled_-ygi rebase) + 1 changelog commit. Both first-run failures were intermittent and are ticketed, not waved through: specled_-zr6 (StreamData generator space, 3rd strike) and new specled_-k1o (boundary_test.exs:185 under the tagged_tests subset; not reproducible in 2 local attempts incl. CI's exact toolchain). Merging.",
+      "timestamp": "2026-07-26T01:31:50Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-26T01:28:49Z"
+  "updated_at": "2026-07-26T01:31:50Z"
 }
