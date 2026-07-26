@@ -58,9 +58,12 @@ Two facts complicate a blanket extension:
   a stem pattern. Measured against the corpus, the candidate stems all collide
   with it: `detector_` matches the review-output field
   `detector_unavailable_by_leg` and a requirement id that embeds the same stem,
-  and `decision_`, `verification_`, and `requirement_` match eight, four, and
+  and `decision_`, `verification_`, and `requirement_` match nine, four, and
   six non-code identifiers respectively — requirement ids, config keys, and
-  field names. Each would reject correct prose. The `must` names this boundary
+  field names. (The nine counts bare `decision_deleted`: the emitted code is
+  the namespaced `append_only/decision_deleted`, which the lint already guards,
+  so a `decision_` pattern would flag the bare spelling as fabricated.) Each
+  would reject correct prose. The `must` names this boundary
   instead of claiming coverage the lint does not have.
 
   Two narrow clusters (`surface_target_*`, `scenario_cover_*`) collide with

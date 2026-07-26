@@ -21,10 +21,16 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
        current corpus: `detector_` hits the review-output field
        `detector_unavailable_by_leg` and the requirement id
        `specled.triangulation.detector_unavailable_on_missing_coverage`;
-       `decision_` hits eight non-codes including `decision_dir` and
+       `decision_` hits nine non-codes including `decision_dir` and
        `decision_governance`; `verification_` and `requirement_` hit four and
        six. Each would reject correct prose, so those codes stay
        author-enforced and the `must` says so.
+
+       The nine includes bare `decision_deleted`, which reads like a code but
+       is not one: the emitted code is `append_only/decision_deleted`, and the
+       namespaced form is what the lint already guards. A `decision_[a-z_]+`
+       pattern would flag the bare spelling as fabricated, so it counts as a
+       false positive.
 
        Two small clusters (`surface_target_*`, `scenario_cover_*`) happen to
        collide with nothing today and could be guarded — but only by hand-
