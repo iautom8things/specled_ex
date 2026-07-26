@@ -1,5 +1,11 @@
 defmodule SpecLedEx.ReviewTest do
-  use SpecLedEx.FixtureCase
+  # async: false to keep this module's git subprocesses out of the async
+  # phase's fork burst: every test here shells out to git several times, and
+  # under a loaded machine that concurrency is what pushed spawn latency past
+  # test deadlines in gate runs (specled_-odl, alongside c478563's serialized
+  # fixtures). Nothing here shares state — this is load-shedding, not a
+  # correctness constraint.
+  use SpecLedEx.FixtureCase, async: false
 
   alias SpecLedEx.Review
 

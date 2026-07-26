@@ -10,7 +10,14 @@ System.put_env("GIT_CONFIG_NOSYSTEM", "1")
 
 Mix.shell(Mix.Shell.Process)
 
-ExUnit.start()
+# Per-test timeout raised from the 60s default: under a loaded machine
+# (parallel orchestration running several suites at once) the
+# subprocess-heavy tests — nested verifier runs, git-backed fixtures — slow
+# down far more than CPU-bound ones, and a 60s kill turns machine load into a
+# red `mix spec.check` gate (specled_-odl). The tagged_tests leg's own
+# command budget (verification.command_timeout_ms, 400s) still bounds the
+# whole suite, so a genuine hang is caught regardless.
+ExUnit.start(timeout: 120_000)
 
 # Drift/refactor fixtures intentionally compile two versions of the same
 # module name into temp dirs to exercise hash-stability and drift detection.
