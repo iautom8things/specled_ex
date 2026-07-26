@@ -45,11 +45,15 @@
     {
       "text": "PR #24 CI: Check Specs failed on the cross-cutting branch guard (release commit touches specled.package next to compiler_tracer). Cleared with a Spec-Drift: branch_guard_missing_decision_update=info trailer commit (a026fa7), matching release 0.8.0 precedent. Both test matrix legs were already green. Re-watching CI.",
       "timestamp": "2026-07-26T02:06:31Z"
+    },
+    {
+      "text": "PR #24 CI green after 1 fix commit (branch-guard trailer). Proceeding to squash-merge per user instruction.",
+      "timestamp": "2026-07-26T02:09:27Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "Flaky property failure: tracer_test.exs:241 merge_edges uniq_list_of over ~4-atom space (TooManyDuplicatesError; NOT seed-deterministic)",
   "type": "task",
-  "updated_at": "2026-07-26T02:06:31Z"
+  "updated_at": "2026-07-26T02:09:27Z"
 }
