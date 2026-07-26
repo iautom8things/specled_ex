@@ -9,9 +9,15 @@
     "phase:implementing",
     "slug:v1-file-level-detectors"
   ],
+  "comments": [
+    {
+      "text": "Base decision: the defect only exists on the dn4 epic branch (specled_-dn4/fast-follow-per-test) — main's Formatter.source_file/1 still stores absolute paths, so the v1 join works on main. dn4.9 item 2's repo_relative_path in formatter.ex is what broke the join, and the fix must extend repo_relative_source_path (dn4.5 lane), which doesn't exist on main. Staging from epic HEAD ddda892; fix ships with the epic, never reaching main broken.",
+      "timestamp": "2026-07-26T00:41:39Z"
+    }
+  ],
   "priority": 1,
   "status": "in_progress",
   "title": "v1 file-level detectors can never match: repo-relative :files joined against absolute closure_files",
   "type": "bug",
-  "updated_at": "2026-07-26T00:37:52Z"
+  "updated_at": "2026-07-26T00:41:39Z"
 }
