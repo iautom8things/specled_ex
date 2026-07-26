@@ -1,25 +1,7 @@
 {
-  "findings": [
-    {
-      "code": "branch_guard_missing_decision_update",
-      "level": "info",
-      "message": "Cross-cutting change spans multiple subjects but no decision file changed. Durable cross-cutting policy (it constrains future changes, spans subjects beyond this branch, or records a rejected alternative) needs an ADR; a change that is not durable policy does not.\n\n```\nfix: if this branch changes durable cross-cutting policy, add or revise an ADR (`mix spec.decision.new <id> --title \"...\"`); if it does not, record `Spec-Drift: branch_guard_missing_decision_update=info` as a git trailer on a commit in this range, with a one-line reason in the commit body.\n```"
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "lib/mix/tasks/spec.check.ex",
-      "level": "info",
-      "message": "Changed file lib/mix/tasks/spec.check.ex impacts subject specled.api_boundary; spec.md not co-changed, but realization attested binding(s) Mix.Tasks.Spec.Check as clean — informational only."
-    },
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "lib/mix/tasks/spec.validate.ex",
-      "level": "info",
-      "message": "Changed file lib/mix/tasks/spec.validate.ex impacts subject specled.prose_guard; spec.md not co-changed, but realization attested binding(s) Mix.Tasks.Spec.Validate as clean — informational only."
-    }
-  ],
-  "run_at": "2026-07-26T20:17:34.650357Z",
-  "run_id": "0a74e59f70ae400b72c8a78f23095348",
+  "findings": [],
+  "run_at": "2026-07-26T20:58:42.703815Z",
+  "run_id": "1984c4095d653488617a74f20774d8f9",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "b4dacfc53f1581d69509054f24a2bb689e27dfab",
