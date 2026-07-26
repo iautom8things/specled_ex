@@ -191,8 +191,7 @@ defmodule SpecLedEx.Coverage.BoundaryTest do
         %{Mod => [{10, 1}, {20, 1}]}
       ]
 
-      {:ok, agent} = Agent.start_link(fn -> snapshots end)
-      on_exit(fn -> if Process.alive?(agent), do: Agent.stop(agent) end)
+      agent = start_supervised!({Agent, fn -> snapshots end})
 
       snapshot_fn = fn _ ->
         Agent.get_and_update(agent, fn [snapshot | rest] -> {snapshot, rest} end)
