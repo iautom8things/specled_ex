@@ -37,11 +37,15 @@
     {
       "text": "LESSONS\n- [stale-spec] When a diff rewrites a spec reconciliation note, re-verify every file the note names against the actual diff — never assert a change that did not happen (from specled_-0x4.2)",
       "timestamp": "2026-07-26T11:13:43Z"
+    },
+    {
+      "text": "MERGE-GATE SKIP (unchanged test-relevant tree hash): after closing specled_-0x4.4 at 4a93192, lib/test/config/priv/mix.lock tree hashes are byte-identical to the last green gate at 6f01dfe (diff is .spec/specs/package.spec.md + skills/ only). Smoke ran green post-merge (1242 tests, 0 failures); verifier ran all execute:true package stubs at this exact content.",
+      "timestamp": "2026-07-26T11:24:03Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fast-follow: spec.check verdict contract + teaching sweep",
   "type": "epic",
-  "updated_at": "2026-07-26T11:13:43Z"
+  "updated_at": "2026-07-26T11:24:03Z"
 }
