@@ -2,13 +2,15 @@
   "assignee": "",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-07-26T10:16:22Z",
+  "close_reason": "Already fixed. Re-eval vs HEAD 4f07955: root cause (shared machine-global $TMPDIR/last_run.status sidecar, store.ex:265) was fixed and closed under specled_-ind, which hardened the read_status/1 describe block owning the cited mfa_count assertion. Isolation present at HEAD; store_test.exs:267 is now an unrelated legacy read_v2 test.",
   "created": "2026-07-24T12:22:16Z",
   "description": "During make worktree-new bootstrap smoke for specled_-pzd (2026-07-24), test/specled_ex/coverage/store_test.exs:267 failed once with an envelope asserting file_count: 1, mfa_count: 0 (full suite, mix test --max-failures 1, unknown seed from bootstrap run). Passes in isolation and on immediate full-suite re-run (seed 813421, 1154 tests green). Likely seed/order-dependent. Investigate for cross-test contamination in store fixtures. Not part of epic specled_-pzd scope; noted for hygiene.",
   "id": "specled_-isr",
   "labels": [],
   "priority": 3,
-  "status": "open",
+  "status": "closed",
   "title": "Flaky store_test.exs:267 under bootstrap seed: envelope meta mfa_count 0 vs expected",
   "type": "task",
-  "updated_at": "2026-07-24T12:22:16Z"
+  "updated_at": "2026-07-26T10:16:22Z"
 }
