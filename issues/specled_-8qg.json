@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-26T00:26:18Z",
+  "description": "Found by the specled_-dn4.9 audit (2026-07-26T00:25:30Z, ruling N3 — the one genuinely unchartered behavior change in that ticket, judged advisory because no specled-produced path reaches it).\n\ndn4.9 item 14's mandate was the READ path (Store.classify_v2 rejecting a present non-map :meta), but the check also landed on the WRITE path in validate_envelope!/1, where an envelope missing :meta entirely now raises KeyError from a function documented to raise ArgumentError. Callers catching ArgumentError per the docs will not catch it.\n\nFix: add :meta to @v2_required_fields, or read it with Map.get/3 so the documented ArgumentError path is preserved. Pin with a test asserting the documented exception type.",
+  "id": "specled_-8qg",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Store.write_v2/2 raises KeyError on an envelope lacking :meta, contradicting its documented ArgumentError contract",
+  "type": "bug",
+  "updated_at": "2026-07-26T00:26:18Z"
+}
