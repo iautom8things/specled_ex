@@ -17,11 +17,15 @@
     {
       "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/25 (release 0.9.2, carries specled_-zhe + specled_-j3k). Babysitting CI.",
       "timestamp": "2026-07-26T02:20:53Z"
+    },
+    {
+      "text": "CI green on PR #25 (all 3 checks pass, 0 fix commits needed, no review comments). Proceeding to merge per user instruction.",
+      "timestamp": "2026-07-26T02:23:37Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fast-follow: spec.check verdict contract + teaching sweep",
   "type": "epic",
-  "updated_at": "2026-07-26T02:20:53Z"
+  "updated_at": "2026-07-26T02:23:37Z"
 }
