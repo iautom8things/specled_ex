@@ -6,11 +6,50 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
   spec workspace. Guards two defect classes that a reviewer would otherwise
   have to catch by hand:
 
-    1. Fabricated finding codes — a `append_only/*`, `overlap/*`, or
-       `branch_guard_*` token that no detector actually emits. Checked across
-       the guidance docs/skills AND the `.spec/**` workspace (subject specs and
-       decision records), because a fabricated code that survives in a spec
-       scenario or an ADR is just as misleading as one in a skill.
+    1. Fabricated finding codes — an `append_only/*`, `overlap/*`,
+       `evidence/*`, `cross_field/*`, or `branch_guard_*` token that no
+       detector actually emits. Checked across the guidance docs/skills AND the
+       `.spec/**` workspace (subject specs and decision records), because a
+       fabricated code that survives in a spec scenario or an ADR is just as
+       misleading as one in a skill.
+
+       Those five are every emitted family carrying a namespace or a shared
+       prefix. The rest of the emitted codes — `detector_unavailable`,
+       `spec_requirement_too_short`, and the several dozen bare validator and
+       tag-scanner codes — are plain snake_case, and the stem patterns that
+       would catch them collide with the corpus itself. Measured against the
+       current corpus: `detector_` hits the review-output field
+       `detector_unavailable_by_leg` and the requirement id
+       `specled.triangulation.detector_unavailable_on_missing_coverage`;
+       `decision_` hits nine non-codes including `decision_dir` and
+       `decision_governance`; `verification_` and `requirement_` hit four and
+       six. Each would reject correct prose, so those codes stay
+       author-enforced and the `must` says so.
+
+       The nine includes bare `decision_deleted`, which reads like a code but
+       is not one: the emitted code is `append_only/decision_deleted`, and the
+       namespaced form is what the lint already guards. A `decision_[a-z_]+`
+       pattern would flag the bare spelling as fabricated, so it counts as a
+       false positive.
+
+       That reasoning covers only the four stems named above. They match many
+       of the unguarded codes but by no means all — many others are matched by
+       none of the four — and at least five narrower stems (`surface_target_`,
+       `scenario_cover_`, `meta_field_`, `spec_requirement_`, `invalid_id_`)
+       collide with nothing in the corpus today. (No totals: the emitted-code
+       denominator shifts with whether `check/5` outputs and `Mix.raise`
+       prefixes count, so the comparison is stated and the total is not.) Those are guardable, and unguarded for a different
+       reason: each needs its own hand-maintained allowlist, since
+       `specled.decision.doc_identifier_lint_spec_corpus` rejects deriving the
+       code set by reflection over lib/. Deferred to specled_-vk0, not
+       impossible — the `must` keeps the two reasons apart on purpose.
+
+       Note the trap in conflating them: `spec_requirement_too_short` is one of
+       the exemplars named in the `must`, and NONE of the four large stems
+       matches it (`(?<![\w/])requirement_` cannot match mid-token, since the
+       preceding `_` is a word character). Its own stem `spec_requirement_` has
+       zero corpus collisions. A sentence claiming the four stems explain why
+       every bare code is author-enforced supplies its own counterexample.
     2. Inert config severities — the `:atom` value form inside a YAML block,
        which `SpecLedEx.Config` silently drops (a bare `off`/`info`/`warning`/
        `error` token is required). Scoped to the user-facing guidance corpus
@@ -53,6 +92,36 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     overlap/must_stem_collision
   )
 
+  # evidence/* → the evidence store, its sync/prune reconciliation, and the
+  # `mix spec.sync` / `mix spec.prune` task surface. The first four are warning
+  # findings carried on a `%{code:, message:}` map; the last three are the
+  # `Mix.raise` message prefixes those tasks abort with. Both forms are codes a
+  # doc can legitimately name, and both are equally wrong when misspelled.
+  @evidence_codes ~w(
+    evidence/auto_prune_degraded
+    evidence/entry_quarantined
+    evidence/entry_skipped
+    evidence/local_write_failed
+    evidence/prune_failed
+    evidence/prune_refused
+    evidence/sync_failed
+  )
+
+  # cross_field/* → SpecLedEx.DecisionParser.CrossField. Note that
+  # `cross_field/missing_change_type` and `append_only/missing_change_type` are
+  # distinct codes from distinct detectors; the namespace is what tells them
+  # apart, which is precisely why the lint matches on the full token.
+  @cross_field_codes ~w(
+    cross_field/adr_field_drift
+    cross_field/adr_status_regression
+    cross_field/affects_empty
+    cross_field/affects_unresolved
+    cross_field/missing_change_type
+    cross_field/reverses_what_missing
+    cross_field/supersedes_missing_replaces
+    cross_field/supersedes_unresolved_replaces
+  )
+
   # branch_guard_* → branch_check.ex @per_code_defaults + coverage_triangulation.ex tiers
   @branch_guard_codes ~w(
     branch_guard_unmapped_change
@@ -67,7 +136,11 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     branch_guard_underspecified_realization
   )
 
-  @known_codes MapSet.new(@append_only_codes ++ @overlap_codes ++ @branch_guard_codes)
+  @known_codes MapSet.new(
+                 @append_only_codes ++
+                   @overlap_codes ++
+                   @evidence_codes ++ @cross_field_codes ++ @branch_guard_codes
+               )
 
   # The leading `(?<![\w/])` negative lookbehind keeps the token from matching
   # inside a file path or a longer identifier — e.g. the `branch_guard_test`
@@ -76,6 +149,14 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
   @token_patterns [
     ~r{(?<![\w/])append_only/[a-z_]+},
     ~r{(?<![\w/])overlap/[a-z_]+},
+    # `evidence` is unlike the other four families in that it is also a real
+    # directory name (`lib/specled_ex/evidence/`). Slash-prefixed path mentions
+    # are already skipped by the lookbehind, but a bare relative path written
+    # after a space — "see evidence/sync.ex" — would match and be reported as a
+    # fabricated code. No such reference exists today; tightening the lookbehind
+    # bounds is tracked in specled_-vk0.
+    ~r{(?<![\w/])evidence/[a-z_]+},
+    ~r{(?<![\w/])cross_field/[a-z_]+},
     ~r{(?<![\w/])branch_guard_[a-z_]+}
   ]
 
@@ -166,6 +247,11 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
   # the rejection path a controlled input, so they cannot defend the allow-marker's
   # contract. These do. Each states the regression it catches.
 
+  # Both paths are arguments to `unknown_tokens/2`, which passes them only to
+  # `marker_scoped?/1` and never opens them — they select which side of the
+  # marker-scope boundary a line is judged on, nothing more. @decision_file is
+  # deliberately a name no file carries, so it cannot start meaning something
+  # else if a real ADR is added or renamed.
   @decision_file ".spec/decisions/specled.decision.example.md"
   @guidance_file "docs/concepts.md"
 
@@ -183,6 +269,43 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     # Catches: the lint silently stops rejecting unknown codes at all.
     assert unknown_tokens("see `branch_guard_totally_made_up` for details", @decision_file) ==
              ["branch_guard_totally_made_up"]
+  end
+
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "the guarded-family count is exactly the number the must claims" do
+    # specled.package.doc_identifier_integrity says "the five code families
+    # guarded today" and names them. Adding a sixth pattern here without
+    # updating the must would turn an accurate statement into an undercount,
+    # and no other test in this file would notice — none of them counts
+    # families.
+    #
+    # This is a speed bump, not a guarantee: it pins the lint's count but never
+    # reads package.spec.md, so a coordinated edit that adds a pattern AND
+    # bumps this to 6 while forgetting the must still passes. It forces a
+    # deliberate stop at the right moment, which is the most a test on this
+    # side of the boundary can do.
+    assert length(@token_patterns) == 5
+  end
+
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "the evidence/* and cross_field/* families are guarded in both directions" do
+    # These two families joined the guarded set later than the other three. The
+    # live corpus exercises them unevenly — eight evidence references across
+    # four distinct codes, but only one cross_field reference — and it can only
+    # ever prove the @known_codes half, never the @token_patterns half: a family
+    # missing from @token_patterns is simply never scanned, so the corpus stays
+    # green while nothing is checked. These controlled inputs cover both halves.
+    # A family needs both before it is genuinely guarded.
+    #
+    # Asserted with flat_map rather than a loop so one run reports every broken
+    # family at once; a per-family loop stops at the first failure.
+    reals = ~w(evidence/entry_quarantined cross_field/affects_unresolved)
+    assert Enum.flat_map(reals, &unknown_tokens("`#{&1}` fires here", @decision_file)) == []
+
+    fakes = ~w(evidence/totally_made_up cross_field/totally_made_up)
+
+    assert Enum.flat_map(fakes, &unknown_tokens("see `#{&1}` for details", @decision_file)) ==
+             fakes
   end
 
   @tag spec: "specled.package.doc_identifier_integrity"

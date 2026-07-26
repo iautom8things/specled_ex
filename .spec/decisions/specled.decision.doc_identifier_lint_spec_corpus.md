@@ -12,9 +12,11 @@ change_type: adds-exception
 ## Context
 
 The doc-identifier lint (`test/docs_identifier_lint_test.exs`) asserts that
-every `append_only/*`, `overlap/*`, or `branch_guard_*` token in the corpus
-names a finding code the implementation actually emits. Its corpus was the
-user-facing guidance surface only — `skills/`, `docs/*.md`, `README.md`.
+every `append_only/*`, `overlap/*`, `evidence/*`, `cross_field/*`, or
+`branch_guard_*` token in the corpus names a finding code the implementation
+actually emits. Its corpus
+was the user-facing guidance surface only — `skills/`, `docs/*.md`,
+`README.md`.
 
 Cold verification of specled_-ci0 found that fabricated codes survive in the
 `.spec/**` workspace, which the lint never read: `branch_guard_test_only_change` <!-- spec-lint:allow-code=branch_guard_test_only_change fabricated code this decision names as the motivating example -->
@@ -46,6 +48,61 @@ Two facts complicate a blanket extension:
 
   The marker exempts one token on one line. Typos and removed codes still trip
   the lint everywhere else, so the escape cannot become a silent blanket.
+- The guarded set is every emitted family whose **token shape** identifies it
+  as a finding code: the slash-namespaced `append_only/*`, `overlap/*`,
+  `evidence/*`, and `cross_field/*`, plus the `branch_guard_*` prefix. Every
+  other emitted code is a
+  bare snake_case identifier — `detector_unavailable`,
+  `spec_requirement_too_short`, and the several dozen validator and tag-scanner
+  codes — and those are deliberately left unguarded rather than approximated by
+  a stem pattern. Measured against the corpus, the candidate stems all collide
+  with it: `detector_` matches the review-output field
+  `detector_unavailable_by_leg` and a requirement id that embeds the same stem,
+  and `decision_`, `verification_`, and `requirement_` match nine, four, and
+  six non-code identifiers respectively — requirement ids, config keys, and
+  field names. (The nine counts bare `decision_deleted`: the emitted code is
+  the namespaced `append_only/decision_deleted`, which the lint already guards,
+  so a `decision_` pattern would flag the bare spelling as fabricated.) Each
+  would reject correct prose. The `must` names this boundary
+  instead of claiming coverage the lint does not have.
+
+  The must calls those four "heavily-referenced", on this basis: each occurs
+  24-69 times in the scanned corpus (`detector_` 69, `requirement_` 45,
+  `verification_` 39, `decision_` 24), against zero collisions for every
+  deferred stem — and zero occurrences for `surface_target_`,
+  `scenario_cover_`, and `meta_field_`, while `spec_requirement_` occurs 12
+  times and `invalid_id_` once, every one of those matches being the stem's own
+  real code. Corpus occurrences, not emitted-code counts — the two orders
+  differ sharply, and conflating them is what produced an earlier draft calling
+  these the "largest" stems when `detector_` matches exactly one emitted code.
+  Occurrence count is the property the argument actually needs, since a stem
+  that appears often in the corpus is the one likely to collide with it.
+
+  That collision argument covers only the four stems named above. They match
+  many of the unguarded codes but by no means all — many others are matched by
+  none of the four — and at least five narrower stems (`surface_target_`,
+  `scenario_cover_`, `meta_field_`, `spec_requirement_`, `invalid_id_`)
+  collide with nothing in the corpus today. Those clusters are guardable, at
+  the cost of one more hand-maintained allowlist each — the reflection
+  alternative stays rejected. That widening is deferred, not refused; it
+  belongs with the rest of the lint hardening rather than in a spec-honesty
+  fix.
+
+  Deliberately no totals here. "How many codes does the implementation emit"
+  has no answer until someone fixes whether `check/5` debug outputs count
+  alongside `finding/5` findings, whether the three `Mix.raise` prefixes count,
+  and whether a code reached only through a helper counts. The first of those
+  alone moves the total from 79 to 40; the other two move it by about three
+  each. Two independent reviewers of this text agreed on the comparison and
+  disagreed on the denominator for exactly that reason. A bare total invites
+  that round trip every time the text is read; the comparative claim is the
+  load-bearing one and is stable under every counting rule tried.
+
+  Keeping the two reasons apart is load-bearing, not pedantry. Collapsing them
+  into "bare codes cannot be guarded" is what produced the overclaim this
+  boundary text was written to replace, and the sentence refutes itself the
+  moment anyone checks: `spec_requirement_too_short` is a bare code that none
+  of those four stems matches, and its own stem is collision-free.
 - File-path segments that happen to match a token pattern (e.g. the trailing
   segment of `.../config/branch_guard_test.exs`) are not finding codes; the
   token patterns carry a `(?<![\w/])` lookbehind so a slash-prefixed path
