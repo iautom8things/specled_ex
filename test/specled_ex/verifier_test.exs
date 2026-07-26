@@ -2,6 +2,24 @@ defmodule SpecLedEx.VerifierTest do
   # System.put_env PATH shims are VM-global.
   use SpecLedEx.FixtureCase, async: false
 
+  # specled_-odl: subprocess-heavy module (nested verifier runs spawn shell
+  # shims). Under machine load spawn latency inflates wall time far beyond the
+  # idle baseline, so this module gets deadline headroom over the 60s default.
+  # Scoped here rather than raised globally so the other ~1200 tests keep the
+  # tighter runaway-regression deadline.
+  @moduletag timeout: to_timeout(minute: 2)
+
+  # Shared budget for the timeout-classification tests below whose assertions
+  # depend on the shim making progress (echoing the seed line, writing its
+  # artifact) before the process-group kill. Wall-time cost: each such test
+  # runs for the full budget — doubled where a resume pass also times out
+  # (five of the seven sites) — so this value trades directly against suite
+  # runtime (~48s of sleep at 4000). d300c21 widened it 300 -> 2000 for the
+  # three-level spawn race (Port -> sh -> setsid sh -> shim); a loaded gate
+  # run still lost that race at 2000 (specled_-odl), so it now carries 2x
+  # that margin.
+  @timeout_shim_budget_ms 4000
+
   @moduletag spec: [
                "specled.decisions.change_type_enum",
                "specled.decisions.change_type_optional",
@@ -1489,15 +1507,6 @@ defmodule SpecLedEx.VerifierTest do
 
     refute Enum.any?(findings(report, "verification_command_failed"))
   end
-
-  # Shared budget for every timeout-classification test below whose assertions
-  # depend on the shim making progress (echoing the seed line, writing its
-  # artifact) before the process-group kill. Each such test's wall time equals
-  # this budget, so it is a direct trade against gate runtime: d300c21 widened
-  # it 300 -> 2000 for the three-level spawn race (Port -> sh -> setsid sh ->
-  # shim), and a loaded-machine gate run still lost that race at 2000
-  # (specled_-odl), so it now carries 2x that margin.
-  @timeout_shim_budget_ms 4000
 
   @tag spec: "specled.tagged_tests.timeout_names_hang_suspects"
   test "a timeout names in-flight hang suspects and counts the never-started remainder",

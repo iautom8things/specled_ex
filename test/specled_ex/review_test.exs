@@ -1,11 +1,17 @@
 defmodule SpecLedEx.ReviewTest do
-  # async: false to keep this module's git subprocesses out of the async
-  # phase's fork burst: every test here shells out to git several times, and
-  # under a loaded machine that concurrency is what pushed spawn latency past
-  # test deadlines in gate runs (specled_-odl, alongside c478563's serialized
-  # fixtures). Nothing here shares state — this is load-shedding, not a
-  # correctness constraint.
+  # async: false is load-shedding, not a correctness constraint: nothing here
+  # shares state (every test gets a unique tmp root). The mechanism is
+  # inferred, not reproduced — a loaded-machine gate run red-lighted a test in
+  # this module (specled_-odl) whose idle runtime is ~75ms, every test here
+  # shells out to git several times, and serializing keeps those spawns out
+  # of the async phase's fork burst. If the flake recurs with this in place,
+  # the hypothesis is wrong; specled_-td7 tracks the forensics that would
+  # settle it.
   use SpecLedEx.FixtureCase, async: false
+
+  # specled_-odl: git-subprocess-heavy module; deadline headroom over the 60s
+  # default for loaded-machine gate runs, scoped here rather than globally.
+  @moduletag timeout: to_timeout(minute: 2)
 
   alias SpecLedEx.Review
 
