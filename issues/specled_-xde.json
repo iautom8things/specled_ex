@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
   "created": "2026-07-25T13:25:23Z",
@@ -8,8 +8,8 @@
   "labels": [],
   "parent": "specled_-0x4",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "Docs: relocate verdict protocol in coverage.md; add --verbose to detector_unavailable probes",
   "type": "task",
-  "updated_at": "2026-07-26T10:40:38Z"
+  "updated_at": "2026-07-26T10:44:40Z"
 }
