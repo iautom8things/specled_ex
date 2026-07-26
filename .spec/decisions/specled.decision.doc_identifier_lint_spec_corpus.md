@@ -12,9 +12,11 @@ change_type: adds-exception
 ## Context
 
 The doc-identifier lint (`test/docs_identifier_lint_test.exs`) asserts that
-every `append_only/*`, `overlap/*`, or `branch_guard_*` token in the corpus
-names a finding code the implementation actually emits. Its corpus was the
-user-facing guidance surface only — `skills/`, `docs/*.md`, `README.md`.
+every `append_only/*`, `overlap/*`, `evidence/*`, `cross_field/*`, or
+`branch_guard_*` token in the corpus names a finding code the implementation
+actually emits. Its corpus
+was the user-facing guidance surface only — `skills/`, `docs/*.md`,
+`README.md`.
 
 Cold verification of specled_-ci0 found that fabricated codes survive in the
 `.spec/**` workspace, which the lint never read: `branch_guard_test_only_change` <!-- spec-lint:allow-code=branch_guard_test_only_change fabricated code this decision names as the motivating example -->
@@ -46,6 +48,18 @@ Two facts complicate a blanket extension:
 
   The marker exempts one token on one line. Typos and removed codes still trip
   the lint everywhere else, so the escape cannot become a silent blanket.
+- The guarded set is every emitted family whose **token shape** identifies it
+  as a finding code: the slash-namespaced `append_only/*`, `overlap/*`,
+  `evidence/*`, and `cross_field/*`, plus the `branch_guard_*` prefix. Every
+  other emitted code is a
+  bare snake_case identifier — `detector_unavailable`,
+  `spec_requirement_too_short`, and the several dozen validator and tag-scanner
+  codes — and those are deliberately left unguarded rather than approximated by
+  a stem pattern: their stems are also legitimate non-code identifiers in the
+  scanned corpus (`detector_unavailable_by_leg` is a review-output field, and
+  requirement ids embed the same stem), so a `detector_[a-z_]+` pattern would
+  reject correct prose. The `must` names this boundary instead of claiming
+  coverage the lint does not have.
 - File-path segments that happen to match a token pattern (e.g. the trailing
   segment of `.../config/branch_guard_test.exs`) are not finding codes; the
   token patterns carry a `(?<![\w/])` lookbehind so a slash-prefixed path

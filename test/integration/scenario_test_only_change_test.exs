@@ -103,9 +103,10 @@ defmodule SpecLedEx.Integration.ScenarioTestOnlyChangeTest do
     second = CoverageTriangulation.findings(records, @closure_map, @tag_index)
     assert first == second
 
-    # A genuine `mix spec.check` fixture run against a test-only branch would
-    # observe no new triangulation finding (the closure is still exercised).
-    # Here we just assert the pure function honors that invariant.
+    # A `mix spec.triangle` / `mix spec.review` run against a test-only branch
+    # would observe no new triangulation finding (the closure is still
+    # exercised); `mix spec.check` never runs triangulation at all. Here we
+    # just assert the pure function honors that invariant.
     assert first |> Enum.filter(&(&1["code"] != "detector_unavailable")) |> Enum.map(& &1["code"]) ==
              []
   end

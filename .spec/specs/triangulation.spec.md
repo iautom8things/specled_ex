@@ -292,14 +292,14 @@ decisions:
     - specled.triangulation.detector_unavailable_on_missing_coverage
 - id: specled.triangulation.scenario.test_only_change_scenario_gate
   given:
-    - a spec scenario (spec S2) whose test-only change flow
-    - mix spec.cover.test run captured with fixture coverage data
-    - a branch that edits only the test (no code change)
+    - a subject whose requirement declares a present binding with one closure file and one closure MFA
+    - per-test coverage records captured before the change, showing that closure file exercised
+    - a branch that edits only the covering test file, leaving the closure unchanged
   when:
-    - mix spec.check runs on the branch
+    - "`CoverageTriangulation.findings/3` is called with those captured records, the closure map, and the tag index — `mix spec.check` never runs triangulation and is not a consumer of this detector (Decision 1, `specled.decision.aggregate_first_spec_coverage`)"
   then:
-    - no `branch_guard_untested_realization` fires (the closure is still exercised)
-    - no `branch_guard_realization_drift` fires
+    - no `branch_guard_untested_realization` finding references the subject (the closure is still exercised)
+    - no `branch_guard_realization_drift` finding is emitted at all — drift is an implementation-tier concern that triangulation never reports
   covers:
     - specled.triangulation.pure_function
 - id: specled.triangulation.scenario.envelope_degraded_statuses_distinct

@@ -104,7 +104,7 @@ decisions:
   priority: must
   stability: evolving
 - id: specled.package.doc_identifier_integrity
-  statement: Documentation, skill files, and the repo-resident spec workspace (`.spec/**`) shall reference only finding codes defined by the implementation — a decision record may name an unimplemented (budgeted or rejected) code only when the reference carries an explicit `spec-lint:allow-code=<token>` marker on the same line — and user-facing docs and skill files shall show config severity values in the bare YAML token form.
+  statement: Documentation, skill files, and the repo-resident spec workspace (`.spec/**`) shall reference only finding codes defined by the implementation. This is mechanically enforced for the code families whose token shape distinguishes a finding code from ordinary prose — `append_only/*`, `overlap/*`, `evidence/*`, `cross_field/*`, and `branch_guard_*`; every other emitted code is a bare snake_case identifier (`detector_unavailable`, `spec_requirement_too_short`, and the validator and tag-scanner codes among them) that no pattern can separate from ordinary prose or from the requirement ids and output field names sharing its stem, so those remain author-enforced. A decision record may name an unimplemented (budgeted or rejected) code only when the reference carries an explicit `spec-lint:allow-code=<token>` marker on the same line, and user-facing docs and skill files shall show config severity values in the bare YAML token form.
   priority: must
   stability: stable
 ```
