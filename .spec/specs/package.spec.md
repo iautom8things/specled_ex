@@ -34,6 +34,9 @@ code resolves them (`SpecLedEx.BranchCheck` per-code defaults and its
 stderr diagnostics rather than silent no-ops, and distinguish templates
 `mix spec.init` scaffolds from templates merely shipped under
 `priv/spec_init/` (the spec_review workflow is shipped, not scaffolded).
+The phase0 task template tells adopters to add the project verification
+command to the scaffolded `.spec/AGENTS.md` because the template ships without
+one and has no placeholder to replace.
 
 ```yaml spec-meta
 id: specled.package
