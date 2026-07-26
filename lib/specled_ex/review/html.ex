@@ -2753,7 +2753,7 @@ defmodule SpecLedEx.Review.Html do
     end
   end
 
-  # covers: specled.spec_review.coverage_tab_bind_closure
+  # covers: specled.spec_review.coverage_degraded_banners_distinct specled.spec_review.coverage_no_tracer_manifest_banner
   # When the tracer manifest or per-test coverage artifact is missing the
   # bind-closure view collapses to a single banner above the requirements
   # list. The top-of-page degraded banner already advertises that the

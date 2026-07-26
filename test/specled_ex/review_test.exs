@@ -300,7 +300,7 @@ defmodule SpecLedEx.ReviewTest do
     end
   end
 
-  # covers: specled.spec_review.coverage_tab_bind_closure
+  # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer specled.spec_review.coverage_generated_at_staleness specled.spec_review.coverage_degraded_banners_distinct specled.spec_review.coverage_no_tracer_manifest_banner
   describe "Coverage tab bind-closure integration" do
     alias SpecLedEx.Review.Html
 

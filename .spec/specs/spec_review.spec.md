@@ -256,47 +256,13 @@ decisions:
   priority: must
   stability: evolving
 - id: specled.spec_review.coverage_tab_bind_closure
-  statement: |
-    Each subject's Coverage pivot shall render, per requirement, a one-line bind-closure
-    summary sourced from `SpecLedEx.Review.CoverageClosure.build_v2/2`'s v2-envelope
-    reach data, of the form "Closure: N MFAs — K executed (X.X%). Self-verified:
-    yes/no. Tagged tests: T1 (executed), T2 (linked)." — where N is
-    `closure_mfa_count`, K is the count of `covered_mfas`, X.X% is
-    `closure_coverage_pct`, "Self-verified" reflects `self_verified?`, and the tagged
-    tests list every `tagged_tests` entry with its evidence `:strength` ("claimed" /
-    "linked" / "executed"). A "Reached by tests" row naming every `"executed"`-
-    strength tagged test shall render exclusively when the subject's coverage mode
-    is `:per_test` (`:ok_per_test`) — aggregate coverage has no per-test attribution
-    to name, so the row stays absent there. Under `:ok_per_test`, per-requirement MFA
-    coverage is real line→MFA intersection via
-    `CoverageTriangulation.per_test_requirement_reach/3` and
-    `SpecLedEx.Coverage.MfaLines` (not a file-level proxy). `"executed"` strength and
-    the per_test `closure_coverage_pct` for non-degraded / fully-hooked runs are
-    exact within the chained window: later tests also inherit serialized runner /
-    `setup_all` activity since the prior tail, and a process a test spawns that
-    outlives its tail snapshot can increment counters after the window closes (see
-    `specled.decision.per_test_sync_boundary`) — the closure line, "Reached by tests"
-    row, Self-verified row, and subject-card rollup badge shall each be discoverably
-    qualified with that claim. When the envelope is unhooked-degraded
-    (`meta.unhooked_modules` non-empty), the same surfaces shall instead carry an
-    honest degraded qualifier naming those modules; hooked windows remain exact
-    within the same disclosed chained-window bounds. MFAs whose modules lack abstract code
-    (`:no_debug_info`) shall render as a distinct note, not as covered or uncovered.
-    Each subject card shall additionally carry a rollup badge summarizing the
-    subject's coverage status (a self-verified/total count and mode when coverage
-    data loaded, or a muted "coverage unavailable" chip when degraded). The v2
-    envelope's own `generated_at` timestamp shall render in the Coverage tab with an
-    elapsed-time note, flagged as possibly stale past a fixed age threshold.
-    `:no_coverage_artifact`, `:legacy_artifact` (naming `mix spec.cover.test` as the
-    re-run command), `:invalid_artifact`, and `:async_contaminated` (a `:per_test`
-    envelope degraded by a window-invalidating `meta.degraded_reasons` entry —
-    `:async` or `:counters_harvested`) shall each render their own
-    distinct honest banner in place of the per-row summaries — never collapsing into
-    one another, into a fake 0%, or into an empty-but-ok result; a missing compiler
-    tracer manifest (`:no_tracer_manifest`) shall render a single "Binding closure
-    unavailable" banner. All degraded states piggyback the page-level `:degraded`
-    leg state machinery rather than rendering empty closure rows that would be
-    misread as the absence of test coverage.
+  statement: >-
+    Coverage-tab bind-closure behavior shall be governed by the split
+    requirements that follow this umbrella requirement: closure line format,
+    reached-by-tests gating, exact/degraded attribution qualifiers, rollup
+    badge, generated-at staleness, degraded-status banners, no-tracer banner,
+    v2 envelope data, unresolvable-source notes, and missing-attribution
+    handling.
   priority: must
   stability: evolving
 - id: specled.spec_review.coverage_closure_line_format
@@ -420,7 +386,7 @@ decisions:
     misreporting as trustworthy `:ok_per_test`) degrade distinctly rather
     than collapsing into one empty-but-ok result. `Review.build_view/3`
     calls `build_v2/2` and the Coverage pivot renders its v2 shape, per
-    `coverage_tab_bind_closure`. The prior v1 record-list path (`build/2`)
+    the split Coverage-tab requirements above. The prior v1 record-list path (`build/2`)
     had zero callers and zero tests once `build_view/3` switched over, and
     was deleted rather than kept dead.
   priority: must
@@ -858,7 +824,6 @@ decisions:
     - specled.spec_review.triangle_code_classification
     - specled.spec_review.degraded_leg_state
     - specled.spec_review.decisions_governance_inline
-    - specled.spec_review.coverage_tab_bind_closure
     - specled.spec_review.coverage_closure_line_format
     - specled.spec_review.coverage_reached_by_tests_per_test_only
     - specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
@@ -945,7 +910,8 @@ decisions:
     - specled.spec_review.triangle_code_classification
     - specled.spec_review.degraded_leg_state
     - specled.spec_review.decisions_governance_inline
-    - specled.spec_review.coverage_tab_bind_closure
+    - specled.spec_review.coverage_degraded_banners_distinct
+    - specled.spec_review.coverage_no_tracer_manifest_banner
     - specled.spec_review.review_queue_navigation
     - specled.spec_review.change_scoped_overview
     - specled.spec_review.repo_state_health_pane
@@ -958,7 +924,7 @@ decisions:
 - kind: source_file
   target: lib/specled_ex/review/coverage_closure.ex
   covers:
-    - specled.spec_review.coverage_tab_bind_closure
+    - specled.spec_review.coverage_tab_v2_envelope_data_layer
 - kind: source_file
   target: lib/specled_ex/coverage_triangulation.ex
   covers:

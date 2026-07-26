@@ -1,5 +1,5 @@
 defmodule SpecLedEx.Review.CoverageClosure do
-  # covers: specled.spec_review.coverage_tab_bind_closure
+  # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
   @moduledoc """
   Computes per-requirement bind-closure reach data for the spec.review HTML
   Coverage tab, via `build_v2/2` (see its `@doc` for the envelope-based
