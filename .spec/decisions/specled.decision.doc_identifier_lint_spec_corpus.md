@@ -66,11 +66,21 @@ Two facts complicate a blanket extension:
   would reject correct prose. The `must` names this boundary
   instead of claiming coverage the lint does not have.
 
-  That collision argument covers the four largest stems only. They match 51 of
-  the 82 unguarded codes; the other 31 are matched by none of them, and at
-  least five narrower stems (`surface_target_`, `scenario_cover_`,
-  `meta_field_`, `spec_requirement_`, `invalid_id_`) collide with nothing in
-  the corpus today. Those clusters are guardable, at the cost of one more
+  That collision argument covers the four largest stems only. They match many
+  of the unguarded codes but by no means all — dozens are matched by none of
+  the four — and at least five narrower stems (`surface_target_`,
+  `scenario_cover_`, `meta_field_`, `spec_requirement_`, `invalid_id_`)
+  collide with nothing in the corpus today.
+
+  Deliberately no totals here. "How many codes does the implementation emit"
+  has no answer until someone fixes whether `check/5` debug outputs count
+  alongside `finding/5` findings, whether the three `Mix.raise` prefixes count,
+  and whether a code reached only through a helper counts — choices that move
+  the total by several either way, as two independent reviewers of this text
+  found when they agreed on the comparison and disagreed on the denominator. A
+  bare total invites that round trip every time the text is read. The
+  comparative claim is the load-bearing one and is stable under every counting
+  rule tried. Those clusters are guardable, at the cost of one more
   hand-maintained allowlist each — the reflection alternative stays rejected.
   That widening is deferred, not refused; it belongs with the rest of the lint
   hardening rather than in a spec-honesty fix.

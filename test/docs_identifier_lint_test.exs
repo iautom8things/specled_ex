@@ -32,11 +32,13 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
        pattern would flag the bare spelling as fabricated, so it counts as a
        false positive.
 
-       That reasoning covers the four largest stems only — they match 51 of the
-       82 unguarded codes. The other 31 are matched by none of them, and at
-       least five narrower stems (`surface_target_`, `scenario_cover_`,
-       `meta_field_`, `spec_requirement_`, `invalid_id_`) collide with nothing
-       in the corpus today. Those are guardable, and unguarded for a different
+       That reasoning covers the four largest stems only. They match many of
+       the unguarded codes but by no means all — dozens are matched by none of
+       the four — and at least five narrower stems (`surface_target_`,
+       `scenario_cover_`, `meta_field_`, `spec_requirement_`, `invalid_id_`)
+       collide with nothing in the corpus today. (No totals: the emitted-code
+       denominator shifts with whether `check/5` outputs and `Mix.raise`
+       prefixes count, so the comparison is stated and the total is not.) Those are guardable, and unguarded for a different
        reason: each needs its own hand-maintained allowlist, since
        `specled.decision.doc_identifier_lint_spec_corpus` rejects deriving the
        code set by reflection over lib/. Deferred to specled_-vk0, not
@@ -272,10 +274,16 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
   @tag spec: "specled.package.doc_identifier_integrity"
   test "the guarded-family count is exactly the number the must claims" do
     # specled.package.doc_identifier_integrity says "the five code families
-    # guarded today" and names them. Nothing else makes that number
-    # self-defending: adding a sixth pattern here without updating the must
-    # would silently turn an accurate statement into an undercount, and every
-    # other test in this file would stay green — none of them counts families.
+    # guarded today" and names them. Adding a sixth pattern here without
+    # updating the must would turn an accurate statement into an undercount,
+    # and no other test in this file would notice — none of them counts
+    # families.
+    #
+    # This is a speed bump, not a guarantee: it pins the lint's count but never
+    # reads package.spec.md, so a coordinated edit that adds a pattern AND
+    # bumps this to 6 while forgetting the must still passes. It forces a
+    # deliberate stop at the right moment, which is the most a test on this
+    # side of the boundary can do.
     assert length(@token_patterns) == 5
   end
 
