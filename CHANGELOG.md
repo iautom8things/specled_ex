@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.9.3 — 2026-07-26
+
+Spec-honesty gate for go-live: removes the two provably false statements in the
+shipped `.spec/` corpus, and widens the doc-identifier lint so the requirement
+describing it is true rather than aspirational. Every claim was verified against
+the implementation before editing. No `lib/` changes — the diff is two subject
+specs, one decision record, and two test files. (specled_-cz0)
+
+- Doc-identifier lint widened from three guarded finding-code families to five,
+  adding `evidence/*` (7 codes) and `cross_field/*` (8 codes). Both are real
+  emitted namespaces the lint never scanned, so eight existing references in
+  `.spec/specs/evidence_store.spec.md` and `.spec/specs/mix_tasks.spec.md` come
+  under guard for the first time. Two new tests back this: one pins each added
+  family in both directions (a family in the allowlist but not the patterns is
+  never scanned; in the patterns but not the allowlist rejects every real
+  reference), and one pins the guarded-family count to the number the
+  requirement states, so adding a sixth family cannot silently make that
+  statement an undercount.
+- `specled.package.doc_identifier_integrity` rewritten to claim only what is
+  enforced. It now names the scanned corpus (`skills/**`, `docs/**`,
+  `README.md`, `.spec/**`, with `CHANGELOG.md` and the agent rule files
+  explicitly outside it), enumerates the five guarded families, and separates
+  the two distinct reasons the remaining bare snake_case codes stay
+  author-enforced: stems that collide with the corpus and are unusable, versus
+  narrower stems that are guardable but deferred on the cost of another
+  hand-maintained allowlist. The prior wording asserted enforcement the lint
+  did not have.
+- `specled.triangulation.scenario.test_only_change_scenario_gate` rewritten to
+  describe the `CoverageTriangulation.findings/3` call its covering test
+  actually performs. The previous `given:`/`when:` described a
+  `mix spec.cover.test` fixture capture followed by a `mix spec.check` run on
+  the branch; `mix spec.check` never runs triangulation at all (Decision 1,
+  `specled.decision.aggregate_first_spec_coverage`). The same false claim was
+  corrected where a test comment restated it.
+- `specled.decision.doc_identifier_lint_spec_corpus` updated to record the
+  widened family list, the measured stem-collision counts behind the
+  guarded/unguarded boundary, and why the record states no emitted-code totals —
+  the denominator moves with classification choices that are not settled
+  (whether `check/5` outputs and `Mix.raise` prefixes count), so it states the
+  stable comparison instead.
+
 ## 0.9.2 — 2026-07-25
 
 Docs-accuracy fast-follow from the specled_-hj4.2 verification notes: corrects
