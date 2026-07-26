@@ -21,11 +21,15 @@
     {
       "text": "LESSONS\n- [untested-clause] Assert a doc clause with needles UNIQUE to its section, or scope the search to the text between its heading and the next heading; bare identifier tokens are satisfied incidentally by unrelated prose elsewhere in the same file, leaving the clause guarded by its heading alone (from specled_-48i)",
       "timestamp": "2026-07-26T21:14:21Z"
+    },
+    {
+      "text": "LESSONS\n- [untested-clause] Assert a doc clause with needles UNIQUE to its section, or scope the search to the text between its heading and the next heading; bare identifier tokens are satisfied incidentally by unrelated prose elsewhere in the same file, leaving the clause guarded by its heading alone (from specled_-48i)\n- [other] Before adding an assertion, grep the existing spec-verification block for the same clause. A new assertion that duplicates an existing byte-exact check — especially a weaker substring of it — is scope creep and bounces, even when the surrounding work is correct (from specled_-48i)\n- [untested-clause] Run the falsifiability gate against the SPECIFIC clause you strengthened, not whichever clause is convenient. Demonstrating a break on an already-load-bearing assertion proves nothing about the weak one (from specled_-48i)\n\n(Supersedes the earlier LESSONS comment on this epic; this is the current full list.)",
+      "timestamp": "2026-07-26T21:18:32Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "[EPIC] Impromptu: doc-lint content verification, lint hardening, coverage-requirement retirement, cross-VM temp-name ADR reconciliation",
   "type": "epic",
-  "updated_at": "2026-07-26T21:14:21Z"
+  "updated_at": "2026-07-26T21:18:32Z"
 }
