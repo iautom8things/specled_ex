@@ -49,11 +49,15 @@
     {
       "text": "LESSONS\n- [stale-spec] When a diff rewrites a spec reconciliation note, re-verify every file the note names against the actual diff — never assert a change that did not happen (from specled_-0x4.2)\n- [other] Touch a non-Advances subject spec ONLY when the branch guard demands it — prove with a committed-revert probe, not intuition; and when updating a true reconciliation note, extend it rather than replace it with a narrower claim (from specled_-wli)\n- [other] Gate-demand revert probes MUST commit the revert (detached HEAD ok): ChangeAnalysis.changed_files/3 unions committed diff with worktree/staged/untracked, so checkout-only reverts are vacuous; and if the file is already in git diff --name-only origin/main..\u003cbranch-base\u003e, the probe is uninformative by construction (from specled_-wli audit)",
       "timestamp": "2026-07-26T12:08:35Z"
+    },
+    {
+      "text": "LESSONS\n- [stale-spec] When a diff rewrites a spec reconciliation note, re-verify every file the note names against the actual diff — never assert a change that did not happen (from specled_-0x4.2)\n- [other] Touch a non-Advances subject spec ONLY when the branch guard demands it — prove with a committed-revert probe, not intuition; and when updating a true reconciliation note, extend it rather than replace it with a narrower claim (from specled_-wli)\n- [other] Gate-demand revert probes MUST commit the revert (detached HEAD ok): ChangeAnalysis.changed_files/3 unions committed diff with worktree/staged/untracked, so checkout-only reverts are vacuous (from specled_-wli audit)\n- [untested-clause] Never tag a test with a requirement id whose behavior the test does not assert — false credit is the exact over-crediting defect attribution work exists to remove (from specled_-0x4.3)\n- [other] A per-test @tag spec: list must carry the FULL union of ids the test vouches for — ExUnit per-test tags OVERWRITE @moduletag at runtime even though the gate scanner unions them; and scenario then-clauses must state observable outcomes, with attribution bookkeeping only ever an additional clause (from specled_-0x4.3)",
+      "timestamp": "2026-07-26T12:53:36Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fast-follow: spec.check verdict contract + teaching sweep",
   "type": "epic",
-  "updated_at": "2026-07-26T12:08:35Z"
+  "updated_at": "2026-07-26T12:53:36Z"
 }
