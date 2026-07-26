@@ -45,11 +45,15 @@
     {
       "text": "LESSONS (additions from specled_-gai verify pass 2; full list continues from the prior LESSONS comment)\n- [untested-clause] Prose you NEWLY AUTHOR into a requirement is subject to the falsifiability gate exactly like code. specled_-gai fixed an unfalsifiable `must` by writing a concrete statement — and two clauses of the NEW statement (\"sorted reached_files, sorted unreached_files\") could not fail. Falsify EVERY clause of a statement you write, one mutation per clause; proving the cheapest clause (a separate function head) says nothing about the data-shape clauses beside it (from specled_-gai)\n- [untested-clause] An ORDER or SORTEDNESS clause is unfalsifiable when every fixture holds a single-element collection — order is unobservable, so `Enum.sort(:desc)` passes. Before asserting sortedness in a requirement, confirm some fixture has \u003e= 2 elements in that collection (from specled_-gai)\n- [other] `append_only` blocks deleting a requirement id (`append_only/requirement_deleted`, append_only.ex:114-137) unless an authorizing `.spec/decisions/` ADR resolves it — so \"just delete the empty requirement\" is NOT available to a ticket whose Allowed touches exclude `.spec/decisions/`. Conversely `detect_must_downgraded` compares only MODAL CLASS, so a full statement rewrite that keeps \"shall\" is invisible to the guard. Rewriting a requirement in place is the guard-legal move, which is exactly why the NO-ORPHANED-CONTRACT gate must be run by hand (from specled_-gai; the audit's recommended \"delete the umbrella\" end state was unachievable and the implementer was right to reject it)",
       "timestamp": "2026-07-26T21:57:01Z"
+    },
+    {
+      "text": "MERGE GATE 2 — green. Ran after specled_-gai closed.\n\nEpic HEAD: 0b08f08e (ff of the rebased specled_-gai/retire-compound-coverage-req)\n  mix compile --warnings-as-errors  exit 0\n  mix format --check-formatted      exit 0\n  mix deps.unlock --check-unused    exit 0\n  mix test                          3 properties, 1246 tests, 0 failures\n  mix spec.check (bare)             spec.check result=pass; validate errors=0 warnings=0;\n                                    branch changed_files=8 findings=2 info-only,\n                                    change_type=cross_cutting\n\nNo flake accepts. 2/4 children closed (48i, gai). specled_-vk0 approved and awaiting rebase\n+ merge; specled_-ymn still in audit pass 2 with a red stage gate and one bounce remaining.\n\nNote for the remaining two merges: both were branched before their predecessors landed, so\nneither can fast-forward and each needs a cold rebase worker. vk0's file set (docs identifier\nlint test + package.spec.md decisions line + its governing ADR) is disjoint from everything\nmerged so far.",
+      "timestamp": "2026-07-26T22:29:33Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "[EPIC] Impromptu: doc-lint content verification, lint hardening, coverage-requirement retirement, cross-VM temp-name ADR reconciliation",
   "type": "epic",
-  "updated_at": "2026-07-26T21:57:01Z"
+  "updated_at": "2026-07-26T22:29:33Z"
 }
