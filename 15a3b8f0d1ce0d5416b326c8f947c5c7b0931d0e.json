@@ -7,8 +7,8 @@
       "message": "Changed file lib/specled_ex/review/coverage_closure.ex impacts subject specled.triangulation; spec.md not co-changed, but realization attested binding(s) SpecLedEx.Review.CoverageClosure.build_v2/2 as clean — informational only."
     }
   ],
-  "run_at": "2026-07-26T22:31:05.074469Z",
-  "run_id": "00b3a10201c284951166e7c528e117d3",
+  "run_at": "2026-07-26T22:31:13.162007Z",
+  "run_id": "964fc46913403c099c0d64f0b64d7065",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "15a3b8f0d1ce0d5416b326c8f947c5c7b0931d0e",
