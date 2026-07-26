@@ -2169,7 +2169,9 @@ defmodule SpecLedEx.Verifier do
   # keeps every downstream branch on today's shared-fate path (degradation
   # contract — see specled.decision.evidence_based_attribution).
   defp run_merged_command(cmd, root, timeout_ms, cover_ids, tag_map) do
-    # Cross-VM-unique temp name; see SpecLedEx.TempName for the shared rationale.
+    # Cross-VM-unique name (see SpecLedEx.TempName): a VM-local counter here
+    # lets a nested specled run's cleanup delete/truncate this run's artifact
+    # mid-stream — a completed run then mass-reports cover_not_executed.
     artifact_path =
       Path.join(System.tmp_dir!(), "specled_attr_#{SpecLedEx.TempName.cross_vm_suffix()}.jsonl")
 
@@ -2298,7 +2300,9 @@ defmodule SpecLedEx.Verifier do
   end
 
   defp run_command(target, root, timeout_ms, opts \\ []) do
-    # Cross-VM-unique temp name; see SpecLedEx.TempName for the shared rationale.
+    # Cross-VM-unique name (see SpecLedEx.TempName): a VM-local counter lets
+    # one run's cleanup delete another's in-flight script (exit 127 blamed on
+    # an innocent subject).
     tmp_out = Path.join(System.tmp_dir!(), "specled_cmd_#{SpecLedEx.TempName.cross_vm_suffix()}")
 
     # Write a wrapper script to avoid shell escaping issues with nested quotes.
@@ -2396,7 +2400,9 @@ defmodule SpecLedEx.Verifier do
     if is_binary(dir) and dir != "" and (result.timed_out or result.exit_code != 0) do
       File.mkdir_p!(dir)
 
-      # Cross-VM-unique temp name; see SpecLedEx.TempName for the shared rationale.
+      # Same cross-VM-unique scheme as run_command's temp names: concurrent
+      # specled runs may share a capture dir, and a per-VM-only unique name
+      # could overwrite another run's forensic log.
       path = Path.join(dir, "specled_cmd_#{SpecLedEx.TempName.cross_vm_suffix()}.log")
 
       File.write!(path, """

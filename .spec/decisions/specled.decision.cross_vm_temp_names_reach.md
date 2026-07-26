@@ -7,6 +7,7 @@ affects:
   - specled.branch_guard
   - specled.compiler_tracer
   - specled.index_state
+  - specled.realized_by
   - specled.spec_review
   - specled.tagged_tests
   - specled.verification
@@ -60,11 +61,18 @@ in-flight file.
 
 ## Consequences
 
-- The decision graph now names every subject that owns code creating or
-  documenting cross-VM-visible temp names.
+- The decision graph names the subjects that own the temp surfaces this ADR
+  enumerates: `System.tmp_dir!()` command scripts and attribution artifacts,
+  `SPECLED_COMMAND_OUTPUT_DIR` captures, review/base-view/spec-diff parse
+  inputs, and write-rename siblings.
+- `SpecLedEx.Evidence.Git.temp_path/2` is deliberately outside that set.
+  It allocates under the repo-local `.git/specled-tmp`, which is none of the
+  enumerated locations, and every name it returns already mixes 8 bytes of
+  CSPRNG hex with the counter — so `System.unique_integer/1` is not acting
+  alone there and no conversion is implied for `specled.evidence_store`.
 - HashStore's atomic write path removes the last fixed-name write-rename
   sibling in `lib/`.
 - The tracer exception is falsifiable: dropping the pid segment from the tmp
   sibling name breaks the compiler tracer proof.
-- Site comments point at `SpecLedEx.TempName`; the helper moduledoc is the
-  single narrative for the shared rationale.
+- `SpecLedEx.TempName` moduledoc carries the shared rationale for the
+  enumerated surfaces; each call site names the helper.

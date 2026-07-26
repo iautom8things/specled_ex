@@ -42,6 +42,7 @@ decisions:
   - specled.decision.realized_by_tier_implication
   - specled.decision.file_touch_yields_to_realization
   - specled.decision.realization_drift_acceptance
+  - specled.decision.cross_vm_temp_names_reach
 ```
 
 ## Requirements
