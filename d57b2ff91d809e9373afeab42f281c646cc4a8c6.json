@@ -13,8 +13,8 @@
       "message": "Changed file test/specled_ex/coverage/boundary_test.exs impacts subject specs that were not updated: specled.coverage_capture"
     }
   ],
-  "run_at": "2026-07-26T10:52:51.335102Z",
-  "run_id": "f5d285233c8145f72fd80acf69a3eec9",
+  "run_at": "2026-07-26T10:52:53.162730Z",
+  "run_id": "454865229b5e9ca9cefafea0834ae25a",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "d57b2ff91d809e9373afeab42f281c646cc4a8c6",
