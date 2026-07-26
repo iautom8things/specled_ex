@@ -105,11 +105,15 @@
     {
       "text": "ORCHESTRATED\nChildren closed: 12\nBOUNCEs encountered: 5\nUser escalations: 0\n\nEpic branch `specled_-dn4/fast-follow-per-test` @ bfced80 is rebased onto origin/main (134d0e8,\nrelease 0.8.0) and gate-green: `spec.check result=pass`, exit 0, 1236 tests / 0 failures, 0 ERROR\nfindings, format + deps + warnings-as-errors all clean. 18 commits, 90 files, +2046/-683 vs main.\n\nNOT pushed and NO PR opened — that is the human checkpoint.\n\nONE ITEM NEEDS A HUMAN DECISION AT PR REVIEW:\nappend_only/same_pr_self_authorization (WARNING, non-blocking). ADR\nspecled.decision.coverage_qualifier_requirement_ids is new in this diff and its `affects:` list\nexactly matches the two requirement ids it deletes in the same diff, so the ADR self-authorizes\nits own deletion. The gate's own verdict is \"visible but not blocked; review decides.\" Three\nindependent graders each surfaced it and each judged it expected. Options: confirm the\nself-authorization, or split the id removal into a follow-on PR.\n\nDOCUMENTED RESIDUAL CARRIED (not defects, all ticketed):\n- specled_-dn4.12 / dn4.13 — dn4.9's two skipped sub-items (resolver consolidation blocked by an\n  API-boundary attestation failure; persistent_term skip pre-authorized). Reparented OUT of the epic.\n- specled_-n5s, specled_-npo, specled_-zd8, specled_-ygi — filed from the dn4.9 audit. ygi is a\n  REAL BUG found while tracing: the v1 file-level detectors join repo-relative paths against\n  absolute ones, so execution_reach and untested_realization can never match.\n- specled_-zr6, specled_-odl — open flake classes in the gate path.\n- specled_-4a6, specled_-14t — spec↔enforcement drift found by the dn4.8/dn4.10 graders.",
       "timestamp": "2026-07-26T01:04:59Z"
+    },
+    {
+      "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/22 (release 0.9.0). Babysitting CI.",
+      "timestamp": "2026-07-26T01:18:29Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-26T01:18:28Z"
+  "updated_at": "2026-07-26T01:18:29Z"
 }
