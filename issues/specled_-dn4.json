@@ -120,6 +120,10 @@
     {
       "text": "CI green on all three checks (Check Specs, Elixir 1.18.4/OTP 26.2.5, Elixir 1.19.5/OTP 28.3.1) after 1 integration commit (specled_-ygi rebase) + 1 changelog commit. Both first-run failures were intermittent and are ticketed, not waved through: specled_-zr6 (StreamData generator space, 3rd strike) and new specled_-k1o (boundary_test.exs:185 under the tagged_tests subset; not reproducible in 2 local attempts incl. CI's exact toolchain). Merging.",
       "timestamp": "2026-07-26T01:31:50Z"
+    },
+    {
+      "text": "SHIPPED. PR #22 merged as 87070d8 (release 0.9.0). Post-merge CI on main went red on a flaky test (specled_-k1o — TOCTOU race in dn4.6's boundary chaining test cleanup, not shipped behavior); fixed in PR #23, merged as 3b27616. Main is now GREEN on all three checks (Check Specs, Elixir 1.18.4/OTP 26.2.5, Elixir 1.19.5/OTP 28.3.1) at VERSION 0.9.0. All 12 children closed.",
+      "timestamp": "2026-07-26T01:57:33Z"
     }
   ],
   "priority": 1,
