@@ -463,5 +463,130 @@ defmodule Mix.Tasks.SpecTriangleTest do
         refute message_contains?(messages, "detector_unavailable")
       end)
     end
+
+    # covers: specled.triangulation.execution_reach_metric
+    # covers: specled.triangulation.v1_file_level_path_identity
+    @tag spec: [
+           "specled.triangulation.spec_triangle_task",
+           "specled.triangulation.execution_reach_metric",
+           "specled.triangulation.v1_file_level_path_identity"
+         ]
+    test "per_test execution_reach joins repo-relative record files against closure compile sources",
+         %{root: root} do
+      preserve_tracer_manifest(fn ->
+        write_subject_spec(
+          root,
+          "status_subject",
+          meta: %{
+            "id" => "specled.status",
+            "kind" => "workflow",
+            "status" => "active",
+            "surface" => ["lib/specled_ex/status.ex"],
+            "realized_by" => %{
+              "implementation" => ["SpecLedEx.Coverage.category_summary/3"]
+            }
+          },
+          requirements: [
+            %{
+              "id" => "specled.status.coverage_summary",
+              "statement" => "Status shall summarize current coverage categories.",
+              "priority" => "must"
+            }
+          ]
+        )
+
+        write_tracer_edges(%{{SpecLedEx.Coverage, :category_summary, 3} => []})
+
+        # Repo-root-relative record identity, exactly as the formatter
+        # writes it since specled_-dn4.9.
+        records = [
+          %{
+            test_id: "T.t1",
+            file: "lib/specled_ex/coverage.ex",
+            lines_hit: [1],
+            tags: %{file: "test/a_test.exs", test: "t1"},
+            test_pid: self()
+          }
+        ]
+
+        artifact_path = Path.join(root, ".spec/_coverage/per_test.coverdata")
+
+        write_envelope_term(artifact_path, %{
+          version: 2,
+          mode: :per_test,
+          generated_at: ~U[2026-07-23 00:00:00Z],
+          source: "test.coverdata",
+          files: [],
+          mfas: [],
+          payload: records,
+          degraded: false
+        })
+
+        Mix.Tasks.Spec.Triangle.run([
+          "--root",
+          root,
+          "--artifact-path",
+          artifact_path,
+          "specled.status"
+        ])
+
+        messages = drain_shell_messages()
+
+        # The requirement's closure file (SpecLedEx.Coverage's compile
+        # source) and the record file must land on the same repo-relative
+        # identity — 0/1 here means the join compared absolute against
+        # relative and could never match.
+        assert message_contains?(messages, "execution_reach: 1/1 (1.00)")
+        refute message_contains?(messages, File.cwd!())
+      end)
+    end
+
+    # covers: specled.triangulation.v1_file_level_path_identity
+    @tag spec: [
+           "specled.triangulation.spec_triangle_task",
+           "specled.triangulation.v1_file_level_path_identity"
+         ]
+    test "an out-of-repo compile source renders no closure file instead of an absolute path",
+         %{root: root} do
+      preserve_tracer_manifest(fn ->
+        write_subject_spec(
+          root,
+          "external_subject",
+          meta: %{
+            "id" => "external.subject",
+            "kind" => "module",
+            "status" => "active",
+            "surface" => ["lib/external.ex"],
+            "realized_by" => %{"implementation" => ["Enum.map/2"]}
+          },
+          requirements: [
+            %{
+              "id" => "external.subject.r1",
+              "statement" => "Behavior realized by an out-of-repo module.",
+              "priority" => "must"
+            }
+          ]
+        )
+
+        write_tracer_edges(%{{Enum, :map, 2} => []})
+
+        Mix.Tasks.Spec.Triangle.run([
+          "--root",
+          root,
+          "--artifact-path",
+          Path.join(root, ".spec/_coverage/missing.coverdata"),
+          "external.subject"
+        ])
+
+        messages = drain_shell_messages()
+
+        # Enum compiles outside the repo, so its closure MFA renders with no
+        # closure file — never with an absolute source path no coverage
+        # record could ever equal.
+        assert message_contains?(messages, "closure_mfas: Enum.map/2")
+        assert message_contains?(messages, "closure_files: (none)")
+        refute message_contains?(messages, "enum.ex")
+      end)
+    end
   end
 end

@@ -241,6 +241,19 @@ decisions:
     shall not be removed from the coverage-percentage denominator.
   priority: must
   stability: evolving
+- id: specled.triangulation.v1_file_level_path_identity
+  statement: >-
+    The v1 file-level joins (`findings/3`, `execution_reach_map/2`,
+    `per_requirement_reach/2`) shall receive requirement `closure_files`
+    under the same repository-root-relative identity as coverage-record
+    `:file` values. Producers deriving closure files from module compile
+    sources (`mix spec.triangle`, `Review.CoverageClosure`) shall emit them
+    repository-root-relative; a compile source outside the repository root
+    contributes no closure file. Such a requirement keeps
+    `binding_present?: true` from its closure MFAs — an unresolvable file
+    identity shall not collapse to a "no binding" verdict.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -366,6 +379,18 @@ decisions:
   covers:
     - specled.triangulation.per_test_path_identity
     - specled.triangulation.per_test_unresolvable_source_partition
+- id: specled.triangulation.scenario.v1_closure_file_identity_join
+  given:
+    - "a per-test coverage record whose :file is repository-root-relative"
+    - "a requirement whose closure module compiled from an absolute source under the repository root"
+    - "a second requirement whose only closure module compiled outside the repository root"
+  when:
+    - "the v1 file-level joins run over producer-built closure maps"
+  then:
+    - "the repo-relative record joins the first requirement's closure file and execution_reach counts it as exercised"
+    - "the out-of-repo requirement carries no closure file yet stays binding_present? via its closure MFAs"
+  covers:
+    - specled.triangulation.v1_file_level_path_identity
 ```
 
 ## Verification
@@ -406,4 +431,5 @@ decisions:
     - specled.triangulation.per_test_requirement_reach
     - specled.triangulation.per_test_path_identity
     - specled.triangulation.per_test_unresolvable_source_partition
+    - specled.triangulation.v1_file_level_path_identity
 ```

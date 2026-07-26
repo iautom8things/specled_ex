@@ -429,7 +429,11 @@ defmodule Mix.Tasks.Spec.Triangle do
             Enum.map(requirements, fn req ->
               %{
                 id: req.id,
-                binding_present?: req.closure_files != [],
+                # MFA-based, not file-based: an out-of-repo compile source
+                # contributes no closure file, but the binding still exists —
+                # the MFA-level untested-realization gate reads this and must
+                # keep flagging it.
+                binding_present?: req.closure_mfas != [],
                 closure_files: req.closure_files,
                 closure_mfas: req.closure_mfas
               }
@@ -448,8 +452,8 @@ defmodule Mix.Tasks.Spec.Triangle do
     case Code.ensure_loaded(mod) do
       {:module, ^mod} ->
         case mod.module_info(:compile)[:source] do
-          path when is_list(path) -> [List.to_string(path)]
-          path when is_binary(path) -> [path]
+          path when is_list(path) -> repo_relative_source(List.to_string(path))
+          path when is_binary(path) -> repo_relative_source(path)
           _ -> []
         end
 
@@ -458,6 +462,22 @@ defmodule Mix.Tasks.Spec.Triangle do
     end
   rescue
     _ -> []
+  end
+
+  # Coverage-record `:file` values are repo-root-relative
+  # (CoverageTriangulation.repo_relative_source_path/1); closure files must
+  # carry the same identity or the execution-reach join can never match. A
+  # source outside the repo root resolves to no file rather than an absolute
+  # path no record can equal.
+  defp repo_relative_source(path) do
+    root = File.cwd!() |> Path.expand()
+    absolute = Path.expand(path, root)
+
+    if String.starts_with?(absolute, root <> "/") do
+      [Path.relative_to(absolute, root)]
+    else
+      []
+    end
   end
 
   # ---------------------------------------------------------------------------

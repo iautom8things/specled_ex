@@ -120,7 +120,10 @@ defmodule SpecLedEx.Review.CoverageClosure do
 
     %{
       id: req_id,
-      binding_present?: closure_files != [],
+      # MFA-based, not file-based: an out-of-repo compile source contributes
+      # no closure file, but the binding still exists — the MFA-level
+      # untested-realization gate reads this and must keep flagging it.
+      binding_present?: closure_mfa_tuples != [],
       closure_files: closure_files,
       closure_mfas: Enum.map(closure_mfa_tuples, &mfa_to_string/1)
     }
@@ -133,8 +136,8 @@ defmodule SpecLedEx.Review.CoverageClosure do
     case Code.ensure_loaded(mod) do
       {:module, ^mod} ->
         case mod.module_info(:compile)[:source] do
-          path when is_list(path) -> [List.to_string(path)]
-          path when is_binary(path) -> [path]
+          path when is_list(path) -> repo_relative_source(List.to_string(path))
+          path when is_binary(path) -> repo_relative_source(path)
           _ -> []
         end
 
@@ -143,6 +146,22 @@ defmodule SpecLedEx.Review.CoverageClosure do
     end
   rescue
     _ -> []
+  end
+
+  # Coverage-record `:file` values are repo-root-relative
+  # (CoverageTriangulation.repo_relative_source_path/1); closure files must
+  # carry the same identity or file-level joins against records can never
+  # match. A source outside the repo root resolves to no file rather than an
+  # absolute path no record can equal.
+  defp repo_relative_source(path) do
+    root = File.cwd!() |> Path.expand()
+    absolute = Path.expand(path, root)
+
+    if String.starts_with?(absolute, root <> "/") do
+      [Path.relative_to(absolute, root)]
+    else
+      []
+    end
   end
 
   defp fetch_field(map, key) when is_map(map) and is_binary(key) do
