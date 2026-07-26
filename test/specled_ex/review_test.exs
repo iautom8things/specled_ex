@@ -2,8 +2,8 @@ defmodule SpecLedEx.ReviewTest do
   # async: false is load-shedding, not a correctness constraint: nothing here
   # shares state (every test gets a unique tmp root). The mechanism is
   # inferred, not reproduced — a loaded-machine gate run red-lighted a test in
-  # this module (specled_-odl) whose idle runtime is ~75ms, every test here
-  # shells out to git several times, and serializing keeps those spawns out
+  # this module (specled_-odl) whose idle runtime is ~75ms, most tests here
+  # shell out to git several times, and serializing keeps those spawns out
   # of the async phase's fork burst. If the flake recurs with this in place,
   # the hypothesis is wrong; specled_-td7 tracks the forensics that would
   # settle it.
