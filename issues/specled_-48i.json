@@ -1,7 +1,9 @@
 {
   "assignee": "",
   "blocked_by": [],
-  "blocks": [],
+  "blocks": [
+    "specled_-vk0"
+  ],
   "created": "2026-07-26T00:59:56Z",
   "description": "Advances: specled.package\n\nFrom specled_-zhe cold verification (2026-07-25): specled.package.adoption_guide and specled.package.concepts_guide are must requirements verified by kind: source_file, which verifier.ex satisfies with file existence plus a substring match on the covers marker. Every content clause the requirement statements name (greenfield+brownfield paths, severity-graduation step, Phase 4a/4b split, verdict read protocol in adoption.md; triangle, realized_by tiers, graceful degrade, drift acceptance paths, verdict protocol in concepts.md) could be deleted with spec.check staying green — which is how the N4-N11 doc rot went undetected. Fix needs a content-lint test asserting the clauses exist plus a spec-verification change in .spec/specs/package.spec.md (tagged_tests or command kind replacing/augmenting the source_file stubs). All clauses verified present as of specled_-zhe commit.",
   "id": "specled_-48i",
@@ -11,5 +13,5 @@
   "status": "open",
   "title": "Content-lint verification for adoption_guide/concepts_guide must requirements (source_file is existence-only)",
   "type": "task",
-  "updated_at": "2026-07-26T20:38:15Z"
+  "updated_at": "2026-07-26T20:38:16Z"
 }
