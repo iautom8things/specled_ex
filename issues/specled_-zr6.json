@@ -5,7 +5,9 @@
   "created": "2026-07-25T12:51:24Z",
   "description": "Found by the specled_-dn4 merge gate 2026-07-25. property Tracer.merge_edges/3 (specled.compiler_tracer.merge_on_flush) at test/specled_ex/compiler/tracer_test.exs:241-255 fails deterministically under seed 407930 with StreamData.TooManyDuplicatesError: uniq_list_of draws from a tiny module-atom space (ModA..ModD observed) and 10 consecutive duplicates abort generation. Reproduced identically at main (14f6e72) with the same seed — pre-existing, NOT caused by the dn4 epic; passes under typical seeds (4 independent full-suite green runs same day). Fix: widen the generator space or bound uniqueness (e.g. uniq_list_of(member_of(mods), max_length: length(mods)) or drop uniq constraint). Any seed can strike CI.",
   "id": "specled_-zr6",
-  "labels": [],
+  "labels": [
+    "phase:implementing"
+  ],
   "comments": [
     {
       "text": "CORRECTION + second strike (orchestrator, 2026-07-25). This is NOT seed-deterministic as the original title claimed: first strike was seed 407930 (dn4.3 merge gate), second strike seed 437710 (during specled_-dn4.11 implementation). Two different seeds, same signature — same lesson the ya8 triage produced: report this class as a failure RATE, not a seed. Root cause is unchanged and understood: StreamData uniq_list_of draws from a ~4-atom module space, so 10 consecutive duplicate draws abort generation; any seed can hit it. Priority stands at P2 — it has now cost two adjudication detours. Fix: widen the generator space or bound uniqueness (e.g. uniq_list_of(member_of(mods), max_length: length(mods)) or drop the uniq constraint).",
@@ -16,5 +18,5 @@
   "status": "in_progress",
   "title": "Flaky property failure: tracer_test.exs:241 merge_edges uniq_list_of over ~4-atom space (TooManyDuplicatesError; NOT seed-deterministic)",
   "type": "task",
-  "updated_at": "2026-07-26T00:34:32Z"
+  "updated_at": "2026-07-26T00:34:33Z"
 }
