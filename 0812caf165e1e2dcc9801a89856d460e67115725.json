@@ -42,8 +42,8 @@
       "message": "Changed file test/specled_ex/review/coverage_closure_test.exs impacts subject specs that were not updated: specled.spec_review, specled.triangulation"
     }
   ],
-  "run_at": "2026-07-26T00:56:55.855167Z",
-  "run_id": "db4f19cc15b7d1629dc6dba6be6bcb89",
+  "run_at": "2026-07-26T01:04:12.186322Z",
+  "run_id": "dfe982585f9ba347a151d9e109c6a5a5",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "0812caf165e1e2dcc9801a89856d460e67115725",
