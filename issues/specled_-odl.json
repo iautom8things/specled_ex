@@ -2,6 +2,7 @@
   "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-07-26T11:35:08Z",
   "created": "2026-07-25T18:25:22Z",
   "description": "Found by specled_-dn4.5 cold re-verification (2026-07-25T18:24:48Z, Note 1). Under bare 'mix spec.check' the tagged_tests verification leg intermittently red-lights on three tests — test/specled_ex/verifier_test.exs:1452, :1681 and test/specled_ex/review_test.exs:135 — when the machine is loaded. All three passed on an immediate re-run and in isolation. Not attributable to dn4.5.\n\nThis is a THIRD flake class in this codebase's gate path, after specled_-ya8 (async code-server mutation, FIXED) and specled_-zr6 (StreamData generator space, open). Unlike zr6 it is load-sensitive rather than seed-sensitive, so it strikes exactly when the machine is busy — i.e. during parallel orchestration, which is when a red gate is most expensive.\n\nFix direction: serialize these three or widen their timing budget; commits c478563 (ya8) and d300c21 already hardened neighboring tests and are the pattern to follow.\n\nOut of the dn4 epic (pre-existing; no gate blocked). If it red-lights two dn4 merge gates it should be escalated in like ya8 was.",
   "id": "specled_-odl",
@@ -63,8 +64,8 @@
     }
   ],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "Load-fragile tagged_tests leg: verifier_test.exs:1452/:1681 and review_test.exs:135 intermittently fail under machine load",
   "type": "task",
-  "updated_at": "2026-07-26T11:35:07Z"
+  "updated_at": "2026-07-26T11:35:08Z"
 }
