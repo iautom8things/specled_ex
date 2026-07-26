@@ -41,11 +41,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: 08c7d7f6-61ab-4208-bd23-ed5eaed321c2\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/08c7d7f6-61ab-4208-bd23-ed5eaed321c2.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations (the one outside-Allowed file is audit-expanded scope per the\n2026-07-26T12:07 AUDIT adjudication), passing targeted verification, complete\nseam disclosure, and no seam substituting production wiring. No further auditor\nwas spawned per policy.",
       "timestamp": "2026-07-26T12:19:44Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-0x4/verdict-teaching-fast-follow. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-26T12:25:14Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Dedup --base validator: expose one public validator for spec.check and BranchCheck",
   "type": "task",
-  "updated_at": "2026-07-26T12:19:44Z"
+  "updated_at": "2026-07-26T12:25:14Z"
 }
