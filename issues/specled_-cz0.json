@@ -67,11 +67,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: 24970538-f855-40e7-a51c-fa477a4d5032\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/24970538-f855-40e7-a51c-fa477a4d5032.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. No auditor was spawned per policy.\n\nGate conditions checked individually:\n- Verdict PASS, Gaps none (comment 13, 278ac0f..f33bddf), standing PASS on\n  5595a8f..c98b31b (comment 11) and on 4f07955..833a83f (comment 7).\n- Files outside Allowed globs: 0. The ticket carries no Allowed-touches or\n  Out-of-Scope glob sections, so scope was judged against its stated fix\n  targets; all 5 files are the two named specs, the ADR recording the lint\n  boundary, the lint, and the covering test.\n- Out-of-Scope globs: 0. No encroachment on specled_-dn4.8 (F37, F39) or on\n  specled_-vk0's deferred items, which are referenced as deferred, not\n  implemented.\n- Spec stubs run 4, passed 4.\n- specled.package.doc_identifier_integrity — covered by\n  test/docs_identifier_lint_test.exs:171 and the both-directions test; would\n  fail if a corpus token in a guarded family were misspelled or dropped from\n  lib. Seams: synthetic @decision_file path never opened, inline strings.\n- specled.triangulation.pure_function — covered by\n  test/integration/scenario_test_only_change_test.exs:63 and :97; would fail if\n  findings/3 emitted any finding against a fully-exercised closure or became\n  non-deterministic. Seams: the no-filesystem half is proven by :erlang.trace at\n  test/specled_ex/coverage_triangulation_test.exs:43, cited and verified at both\n  ends.\n- Test-quality gate: 3 blocking findings, 3 resolved, 0 waived.\n- No disclosed seam substitutes production wiring.\n\nEvery commit in 4f07955..f33bddf was reviewed by at least one cold reviewer;\nintermediate FAIL verdicts were each remediated and re-verified.",
       "timestamp": "2026-07-26T04:39:58Z"
+    },
+    {
+      "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/26 (release 0.9.3, branch fix/specled_-cz0-spec-honesty @ 010e8c2). Ticket was already closed on the verifier PASS; PR body says 'Closes specled_-cz0' which is a no-op. Babysitting CI.",
+      "timestamp": "2026-07-26T10:14:14Z"
     }
   ],
   "priority": 1,
   "status": "closed",
   "title": "Spec-honesty slice: fix the two provably false statements in the shipped .spec/ corpus",
   "type": "task",
-  "updated_at": "2026-07-26T04:40:03Z"
+  "updated_at": "2026-07-26T10:14:14Z"
 }
