@@ -73,11 +73,15 @@
     {
       "text": "CI green on PR #28 (all 3 checks pass, 0 fix commits, no review comments). Proceeding to merge per user instruction.",
       "timestamp": "2026-07-26T20:21:30Z"
+    },
+    {
+      "text": "Squash-merged to main (402f4a2). Watching post-merge Specs run.",
+      "timestamp": "2026-07-26T20:22:22Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fast-follow: spec.check verdict contract + teaching sweep",
   "type": "epic",
-  "updated_at": "2026-07-26T20:22:21Z"
+  "updated_at": "2026-07-26T20:22:22Z"
 }
