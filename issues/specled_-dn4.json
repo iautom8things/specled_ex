@@ -6,7 +6,6 @@
   "description": "Fast-follows specled_-pzd (Per-test exact attribution via synchronous boundary hook), shipped as PR #20 / release 0.7.0 (merge 14f6e72). Split out at delivery. Source: critical-review consolidated report ~/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-24/specled_-pzd-per-test-sync-boundary/20260724-141032-consolidated.md — 0C/3H (all 3 Highs fixed pre-merge in 731b686), 16M/27L remain as Tier-2/3 action plan.",
   "id": "specled_-dn4",
   "labels": [
-    "phase:in-ci",
     "slug:fast-follow-per-test"
   ],
   "comments": [
@@ -127,5 +126,5 @@
   "status": "in_progress",
   "title": "Fast-follow: per-test sync boundary — review Tier-2/3 remediation",
   "type": "epic",
-  "updated_at": "2026-07-26T01:31:50Z"
+  "updated_at": "2026-07-26T01:57:33Z"
 }
