@@ -6,11 +6,12 @@
   "description": "Fast-follows specled_-hj4 (spec.check verdict contract + teaching sweep), shipping as 0.8.0. Split out at delivery so the remaining findings land as ONE PR rather than several.\n\nHolds: (a) the Tier-2/Tier-3 findings from the pre-ship critical review (consolidated report 2026-07-25, review_commit 1077675, at ~/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-25/specled_-hj4-spec-check-verdict-contract/20260725-110602-consolidated.md), and (b) the doc/skill accuracy tickets surfaced by the hj4.1/hj4.2 verifiers.\n\nPost-calibration the review found 0 Critical / 0 High. Both Tier-1 items were fixed before merge (CHANGELOG accuracy in f338abb; protocol-sentence truth in specled_-hj4.3).",
   "id": "specled_-0x4",
   "labels": [
-    "phase:implementing"
+    "phase:implementing",
+    "slug:fast-follow-spec-check"
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fast-follow: spec.check verdict contract + teaching sweep",
   "type": "epic",
-  "updated_at": "2026-07-26T00:34:29Z"
+  "updated_at": "2026-07-26T00:37:02Z"
 }
