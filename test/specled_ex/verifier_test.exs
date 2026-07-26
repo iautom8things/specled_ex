@@ -1475,7 +1475,15 @@ defmodule SpecLedEx.VerifierTest do
 
     report = run_two_subject_merged(root, shim, run_commands: true)
 
-    assert report["status"] == "pass"
+    # This site went red once under orchestration load with no surviving
+    # explanation (specled_-odl). The gate forensics preserve whatever the inner
+    # run printed — and a bare `report["status"] == "pass"` prints only
+    # `"fail" == "pass"`: no finding, no exit code, nothing to work from on a
+    # failure that will not reproduce. Carry the findings into the message so
+    # the preserved output is worth having.
+    assert report["status"] == "pass",
+           "expected a green merged run, got #{inspect(report["status"])}; findings: " <>
+             inspect(report["findings"], limit: :infinity, printable_limit: :infinity)
 
     artifact_name =
       root |> Path.join("attr_path.txt") |> File.read!() |> String.trim() |> Path.basename()
