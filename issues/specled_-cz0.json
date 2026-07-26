@@ -71,11 +71,15 @@
     {
       "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/26 (release 0.9.3, branch fix/specled_-cz0-spec-honesty @ 010e8c2). Ticket was already closed on the verifier PASS; PR body says 'Closes specled_-cz0' which is a no-op. Babysitting CI.",
       "timestamp": "2026-07-26T10:14:14Z"
+    },
+    {
+      "text": "CI green on PR #26, first pass — no fix commits needed. Check Specs 1m56s, Test (Elixir 1.18.4/OTP 26.2.5) 1m32s, Test (Elixir 1.19.5/OTP 28.3.1) 1m40s. mergeStateStatus=CLEAN, no review comments. Ready for merge.",
+      "timestamp": "2026-07-26T10:16:33Z"
     }
   ],
   "priority": 1,
   "status": "closed",
   "title": "Spec-honesty slice: fix the two provably false statements in the shipped .spec/ corpus",
   "type": "task",
-  "updated_at": "2026-07-26T10:14:14Z"
+  "updated_at": "2026-07-26T10:16:33Z"
 }
