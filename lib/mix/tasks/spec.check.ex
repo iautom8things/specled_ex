@@ -68,7 +68,7 @@ defmodule Mix.Tasks.Spec.Check do
       )
 
     if rest != [] or invalid != [] do
-      print_verdict("fail", tier: "validate", error_findings: 0)
+      print_usage_verdict()
     end
 
     SpecLedEx.TaskArgs.validate!("spec.check", rest, invalid)
@@ -292,7 +292,7 @@ defmodule Mix.Tasks.Spec.Check do
         normalized
 
       {:error, message} ->
-        print_verdict("fail", tier: "validate", error_findings: 0)
+        print_usage_verdict()
         Mix.raise("Invalid value for --min-strength: #{message}")
     end
   end
@@ -309,7 +309,7 @@ defmodule Mix.Tasks.Spec.Check do
       )
 
     if exit_code != 0 do
-      print_verdict("fail", tier: "validate", error_findings: 0)
+      print_usage_verdict()
       Mix.raise("--base #{inspect(base)} does not resolve to a commit")
     end
 
@@ -320,6 +320,10 @@ defmodule Mix.Tasks.Spec.Check do
   # covers: specled.tasks.branch_findings_breakdown
   defp print_verdict("pass") do
     Mix.shell().info("spec.check result=pass")
+  end
+
+  defp print_usage_verdict do
+    print_verdict("fail", tier: "usage", error_findings: 0)
   end
 
   defp print_verdict("fail", tier: tier, error_findings: error_findings) do

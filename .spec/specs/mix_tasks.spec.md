@@ -273,9 +273,12 @@ decisions:
     on stdout for every pass and fail path where the task itself reports a
     verdict before raising on failures. The verdict shall be the last stdout
     line and the only line the task itself emits matching `^<task> result=`:
-    `spec.check result=pass`, `spec.check result=fail tier=<validate|branch>
+    `spec.check result=pass`, `spec.check result=fail tier=<usage|validate|branch>
     error_findings=<N>`, `spec.validate result=pass`, or `spec.validate
-    result=fail tier=validate error_findings=<N>`. Verbatim-relayed
+    result=fail tier=validate error_findings=<N>`. `tier=usage` identifies
+    task-level pre-flight rejections before validation starts; otherwise
+    `error_findings` counts error-severity findings only and may be zero when
+    strict validation fails on warning-severity findings. Verbatim-relayed
     `kind: command` output is exempt from the task-emitted uniqueness clause,
     even when captured command output contains a task-name-prefixed line.
   priority: must
@@ -299,12 +302,13 @@ decisions:
   covers:
     - specled.tasks.verdict_line
   given:
-    - A spec.check or spec.validate invocation completes successfully, fails validation, fails branch enforcement, or is rejected after task-level argument, min-strength, or spec.check --base validation.
+    - A spec.check or spec.validate invocation completes successfully, fails validation, fails branch enforcement, or is rejected during task-level argument, min-strength, or spec.check --base pre-flight handling before validation starts.
   when:
     - The task prints its human stdout, including output printed immediately before raising and any verbatim-relayed command output.
   then:
     - The final stdout message is the task-specific `result=pass` or `result=fail` verdict.
     - A failing verdict includes the failing tier and error finding count.
+    - A spec.check pre-flight rejection uses `tier=usage` and does not print a `validate status=` line.
     - "The task itself emits exactly one line matching `^<task> result=`, excluding verbatim-relayed `kind: command` output."
 - id: specled.tasks.branch_findings_breakdown.summary_and_order
   covers:

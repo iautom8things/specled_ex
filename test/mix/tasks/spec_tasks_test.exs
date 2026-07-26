@@ -586,6 +586,7 @@ defmodule Mix.Tasks.SpecTasksTest do
     assert message_contains?(messages, "priv/spec_init/README.md.eex")
   end
 
+  @tag spec: ["specled.tasks.verdict_line"]
   test "spec.check fails for strict findings", %{root: root} do
     failing_root = Path.join(root, "failing")
     File.mkdir_p!(failing_root)
@@ -921,6 +922,7 @@ defmodule Mix.Tasks.SpecTasksTest do
     refute File.exists?(Path.join(root, ".spec/state.json"))
   end
 
+  @tag spec: ["specled.tasks.verdict_line"]
   test "spec.check rejects strict toggles because it is always strict", %{root: root} do
     assert_raise Mix.Error, ~r/Invalid arguments for spec.check: --no-strict/, fn ->
       Mix.Tasks.Spec.Check.run(["--root", root, "--no-strict"])
@@ -928,7 +930,7 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     messages = drain_shell_messages()
 
-    assert List.last(messages) == "spec.check result=fail tier=validate error_findings=0"
+    assert List.last(messages) == "spec.check result=fail tier=usage error_findings=0"
   end
 
   test "spec.validate rejects invalid min strength values", %{root: root} do
@@ -941,6 +943,7 @@ defmodule Mix.Tasks.SpecTasksTest do
     assert List.last(messages) == "spec.validate result=fail tier=validate error_findings=0"
   end
 
+  @tag spec: ["specled.tasks.verdict_line"]
   test "spec.check rejects invalid min strength values", %{root: root} do
     assert_raise Mix.Error, ~r/Invalid value for --min-strength/, fn ->
       Mix.Tasks.Spec.Check.run(["--root", root, "--min-strength", "strongest"])
@@ -948,7 +951,7 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     messages = drain_shell_messages()
 
-    assert List.last(messages) == "spec.check result=fail tier=validate error_findings=0"
+    assert List.last(messages) == "spec.check result=fail tier=usage error_findings=0"
   end
 
   @tag spec: ["specled.tasks.verdict_line"]
@@ -969,6 +972,6 @@ defmodule Mix.Tasks.SpecTasksTest do
     messages = drain_shell_messages()
 
     refute message_contains?(messages, "validate status=")
-    assert List.last(messages) == "spec.check result=fail tier=validate error_findings=0"
+    assert List.last(messages) == "spec.check result=fail tier=usage error_findings=0"
   end
 end
