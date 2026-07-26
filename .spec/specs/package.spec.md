@@ -122,6 +122,7 @@ decisions:
   covers:
     - specled.package.index_and_state
     - specled.package.declarative_governance
+    - specled.package.concepts_guide
     - specled.package.doc_identifier_integrity
 - kind: readme_file
   target: README.md
@@ -156,9 +157,5 @@ decisions:
   execute: true
   covers:
     - specled.package.adoption_guide
-    - specled.package.concepts_guide
-- kind: source_file
-  target: docs/concepts.md
-  covers:
     - specled.package.concepts_guide
 ```
