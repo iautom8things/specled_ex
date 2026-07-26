@@ -9,20 +9,30 @@ defmodule SpecLedEx.Integration.ScenarioTestOnlyChangeTest do
   alias SpecLedEx.CoverageTriangulation
 
   # ---------------------------------------------------------------------------
-  # Scenario 2 (from specled.triangulation.scenario.test_only_change_scenario_gate):
+  # Transcribed verbatim from specled.triangulation.scenario.test_only_change_scenario_gate
+  # in .spec/specs/triangulation.spec.md. Keep the two in sync — a paraphrase
+  # here that drifts from the spec block is the defect class specled_-cz0 exists
+  # to remove.
   #
-  #   Given a subject with an implementation closure whose files are unchanged
-  #   And   per-test coverage captured on the pre-change commit
-  #   And   a branch that edits only a test file (no code change)
-  #   When  CoverageTriangulation.findings/3 runs against the captured coverage
-  #   Then  no branch_guard_realization_drift-style triangulation finding fires
-  #         for the subject (closure-exercise is unchanged)
-  #   And   findings/3 remains pure — no filesystem access, no Mix globals
+  #   Given a subject whose requirement declares a present binding with one
+  #         closure file and one closure MFA
+  #   And   per-test coverage records captured before the change, showing that
+  #         closure file exercised
+  #   And   a branch that edits only the covering test file, leaving the closure
+  #         unchanged
+  #   When  `CoverageTriangulation.findings/3` is called with those captured
+  #         records, the closure map, and the tag index — `mix spec.check` never
+  #         runs triangulation and is not a consumer of this detector
+  #         (Decision 1, `specled.decision.aggregate_first_spec_coverage`)
+  #   Then  no `branch_guard_untested_realization` finding references the subject
+  #         (the closure is still exercised)
+  #   And   no `branch_guard_realization_drift` finding is emitted at all — drift
+  #         is an implementation-tier concern that triangulation never reports
   #
-  # Drift is an implementation-tier concern, not a triangulation concern. The
-  # triangulation pure function asserts only its inputs; a test-only edit does
-  # not alter closure_files or coverage_records, so no triangulation findings
-  # are emitted against the subject under test.
+  # The scenario has no purity `then:` clause. The no-filesystem/no-processes
+  # half of specled.triangulation.pure_function is proven by tracing in
+  # test/specled_ex/coverage_triangulation_test.exs:43, not here; this file
+  # covers the requirement's test-only-change behavior and determinism.
   # ---------------------------------------------------------------------------
 
   @closure_map %{
@@ -84,7 +94,7 @@ defmodule SpecLedEx.Integration.ScenarioTestOnlyChangeTest do
            "triangulation must not emit drift findings (that is the implementation tier)"
   end
 
-  test "findings/3 is pure — repeated calls produce equal outputs and touch no filesystem" do
+  test "findings/3 is deterministic — repeated calls produce equal outputs" do
     records = [
       %{
         test_id: "SubjectUnderTestTest.test stable",
@@ -105,9 +115,10 @@ defmodule SpecLedEx.Integration.ScenarioTestOnlyChangeTest do
 
     # A `mix spec.triangle` / `mix spec.review` run against a test-only branch
     # would observe no new triangulation finding (the closure is still
-    # exercised); `mix spec.check` never runs triangulation at all. Here we
-    # just assert the pure function honors that invariant.
-    assert first |> Enum.filter(&(&1["code"] != "detector_unavailable")) |> Enum.map(& &1["code"]) ==
-             []
+    # exercised); `mix spec.check` never runs triangulation at all. Assert that
+    # literally: NO finding, not "no finding other than detector_unavailable".
+    # detector_unavailable is itself a triangulation finding, so filtering it
+    # out would let a spurious one fire against a fully-exercised closure.
+    assert first == []
   end
 end

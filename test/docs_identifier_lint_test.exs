@@ -123,6 +123,12 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
   @token_patterns [
     ~r{(?<![\w/])append_only/[a-z_]+},
     ~r{(?<![\w/])overlap/[a-z_]+},
+    # `evidence` is unlike the other four families in that it is also a real
+    # directory name (`lib/specled_ex/evidence/`). Slash-prefixed path mentions
+    # are already skipped by the lookbehind, but a bare relative path written
+    # after a space — "see evidence/sync.ex" — would match and be reported as a
+    # fabricated code. No such reference exists today; tightening the lookbehind
+    # bounds is tracked in specled_-vk0.
     ~r{(?<![\w/])evidence/[a-z_]+},
     ~r{(?<![\w/])cross_field/[a-z_]+},
     ~r{(?<![\w/])branch_guard_[a-z_]+}
@@ -215,6 +221,11 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
   # the rejection path a controlled input, so they cannot defend the allow-marker's
   # contract. These do. Each states the regression it catches.
 
+  # Both paths are arguments to `unknown_tokens/2`, which passes them only to
+  # `marker_scoped?/1` and never opens them — they select which side of the
+  # marker-scope boundary a line is judged on, nothing more. @decision_file is
+  # deliberately a name no file carries, so it cannot start meaning something
+  # else if a real ADR is added or renamed.
   @decision_file ".spec/decisions/specled.decision.example.md"
   @guidance_file "docs/concepts.md"
 
@@ -236,20 +247,23 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
 
   @tag spec: "specled.package.doc_identifier_integrity"
   test "the evidence/* and cross_field/* families are guarded in both directions" do
-    # These two families joined the guarded set later than the other three, and
-    # the live corpus proves almost nothing about them: it holds four evidence
-    # references and a single cross_field one, all correct. Catches a widening
-    # that added a family to @known_codes but not @token_patterns (nothing
-    # would ever be scanned for it) or to @token_patterns but not @known_codes
-    # (every real reference to it would fail). A family needs both halves
-    # before it is genuinely guarded.
-    for real <- ~w(evidence/entry_quarantined cross_field/affects_unresolved) do
-      assert unknown_tokens("`#{real}` fires here", @decision_file) == []
-    end
+    # These two families joined the guarded set later than the other three. The
+    # live corpus exercises them unevenly — eight evidence references across
+    # four distinct codes, but only one cross_field reference — and it can only
+    # ever prove the @known_codes half, never the @token_patterns half: a family
+    # missing from @token_patterns is simply never scanned, so the corpus stays
+    # green while nothing is checked. These controlled inputs cover both halves.
+    # A family needs both before it is genuinely guarded.
+    #
+    # Asserted with flat_map rather than a loop so one run reports every broken
+    # family at once; a per-family loop stops at the first failure.
+    reals = ~w(evidence/entry_quarantined cross_field/affects_unresolved)
+    assert Enum.flat_map(reals, &unknown_tokens("`#{&1}` fires here", @decision_file)) == []
 
-    for fake <- ~w(evidence/totally_made_up cross_field/totally_made_up) do
-      assert unknown_tokens("see `#{fake}` for details", @decision_file) == [fake]
-    end
+    fakes = ~w(evidence/totally_made_up cross_field/totally_made_up)
+
+    assert Enum.flat_map(fakes, &unknown_tokens("see `#{&1}` for details", @decision_file)) ==
+             fakes
   end
 
   @tag spec: "specled.package.doc_identifier_integrity"
