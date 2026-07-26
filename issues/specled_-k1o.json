@@ -6,9 +6,15 @@
   "description": "Advances: specled.coverage_capture\n\nObserved once in CI on PR #22 (run 30182946991's predecessor, job 'Check Specs', Elixir 1.19.5/OTP 28.3.1): the dn4.6 test 'chains each tail into the next head with one snapshot per test after the initial read' at test/specled_ex/coverage/boundary_test.exs:185 failed, surfacing as TWO specled.coverage_capture verification_command_failed findings. It passed on the very next CI run with no code change to that test.\n\nNOT reproducible locally in two honest attempts:\n- Elixir 1.18.1/OTP 27, exact tagged_tests command: 969 tests, 0 failures.\n- Elixir 1.19.5/OTP 28.3.1 (CI's exact toolchain for that job, via asdf env override, after clearing the stale tracer beam): 969 tests, 0 failures.\nThe plain 'Test (Elixir 1.19.5 / OTP 28.3.1)' matrix leg also passed on the failing run, so it is NOT a toolchain difference. The distinguishing feature of the Check Specs job is that it runs a specific FILE SUBSET with --include integration, so suspect ordering/isolation rather than version.\n\nHypothesis worth checking first: the test drives snapshot_fn from an Agent holding exactly three snapshots and asserts one snapshot per test after the initial read. Any path that calls snapshot_fn a different number of times (an extra head, a retried tail, or a module-cache miss changing modules_fn/snapshot_fn interplay) underflows that list and fails the test. A fixed-length Agent queue is a brittle way to assert call counts — consider counting calls explicitly and returning a computed snapshot, so an unexpected call count fails with a clear count assertion instead of a list underflow.\n\nThis is the FOURTH flake class tracked in this gate path, after specled_-ya8 (fixed), specled_-zr6 (open) and specled_-odl (open).",
   "id": "specled_-k1o",
   "labels": [],
+  "comments": [
+    {
+      "text": "ROOT CAUSE FOUND — my earlier hypothesis (Agent snapshot-list underflow) was WRONG. The post-merge failure on main gave the actual signature: '** (exit) exited in: GenServer.stop(pid, :normal, :infinity) ** (EXIT) no process'. It is a TOCTOU race in the test's own cleanup, not in the chaining logic: the Agent is start_link'd to the test process, but on_exit runs in a separate process AFTER the test process exits, so the agent is usually already dead — and when Process.alive?/1 happens to catch it alive it can die before Agent.stop/1 lands. Fixed by using start_supervised!/1, which is what .claude/rules/testing.md mandates and what the two sibling tests at :112 and :169 in the same file already do; only this test (added late in dn4.6) deviated. A/B proof under identical load, 20 runs of test/specled_ex/coverage/ at --max-cases 16: original 1/20 failures with CI's exact signature, fixed 0/20; plus 25/25 clean on boundary_test alone. PR: https://github.com/iautom8things/specled_ex/pull/23",
+      "timestamp": "2026-07-26T01:41:45Z"
+    }
+  ],
   "priority": 2,
   "status": "open",
   "title": "Intermittent: boundary_test.exs:185 chaining test fails under the spec-gate tagged_tests subset",
   "type": "bug",
-  "updated_at": "2026-07-26T01:31:23Z"
+  "updated_at": "2026-07-26T01:41:45Z"
 }
