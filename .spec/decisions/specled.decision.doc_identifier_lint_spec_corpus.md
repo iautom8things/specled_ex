@@ -68,8 +68,11 @@ Two facts complicate a blanket extension:
 
   The must calls those four "heavily-referenced", on this basis: each occurs
   24-69 times in the scanned corpus (`detector_` 69, `requirement_` 45,
-  `verification_` 39, `decision_` 24), against zero occurrences for every
-  deferred stem. Corpus occurrences, not emitted-code counts — the two orders
+  `verification_` 39, `decision_` 24), against zero collisions for every
+  deferred stem — and zero occurrences for `surface_target_`,
+  `scenario_cover_`, and `meta_field_`, while `spec_requirement_` occurs 12
+  times and `invalid_id_` once, every one of those matches being the stem's own
+  real code. Corpus occurrences, not emitted-code counts — the two orders
   differ sharply, and conflating them is what produced an earlier draft calling
   these the "largest" stems when `detector_` matches exactly one emitted code.
   Occurrence count is the property the argument actually needs, since a stem
@@ -79,26 +82,27 @@ Two facts complicate a blanket extension:
   many of the unguarded codes but by no means all — many others are matched by
   none of the four — and at least five narrower stems (`surface_target_`,
   `scenario_cover_`, `meta_field_`, `spec_requirement_`, `invalid_id_`)
-  collide with nothing in the corpus today.
+  collide with nothing in the corpus today. Those clusters are guardable, at
+  the cost of one more hand-maintained allowlist each — the reflection
+  alternative stays rejected. That widening is deferred, not refused; it
+  belongs with the rest of the lint hardening rather than in a spec-honesty
+  fix.
 
   Deliberately no totals here. "How many codes does the implementation emit"
   has no answer until someone fixes whether `check/5` debug outputs count
   alongside `finding/5` findings, whether the three `Mix.raise` prefixes count,
-  and whether a code reached only through a helper counts — choices that move
-  the total by several either way, as two independent reviewers of this text
-  found when they agreed on the comparison and disagreed on the denominator. A
-  bare total invites that round trip every time the text is read. The
-  comparative claim is the load-bearing one and is stable under every counting
-  rule tried. Those clusters are guardable, at the cost of one more
-  hand-maintained allowlist each — the reflection alternative stays rejected.
-  That widening is deferred, not refused; it belongs with the rest of the lint
-  hardening rather than in a spec-honesty fix.
+  and whether a code reached only through a helper counts. The first of those
+  alone moves the total from 79 to 40; the other two move it by about three
+  each. Two independent reviewers of this text agreed on the comparison and
+  disagreed on the denominator for exactly that reason. A bare total invites
+  that round trip every time the text is read; the comparative claim is the
+  load-bearing one and is stable under every counting rule tried.
 
   Keeping the two reasons apart is load-bearing, not pedantry. Collapsing them
   into "bare codes cannot be guarded" is what produced the overclaim this
   boundary text was written to replace, and the sentence refutes itself the
   moment anyone checks: `spec_requirement_too_short` is a bare code that none
-  of the four large stems matches, and its own stem is collision-free.
+  of those four stems matches, and its own stem is collision-free.
 - File-path segments that happen to match a token pattern (e.g. the trailing
   segment of `.../config/branch_guard_test.exs`) are not finding codes; the
   token patterns carry a `(?<![\w/])` lookbehind so a slash-prefixed path
