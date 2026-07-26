@@ -9,9 +9,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-0x4",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: cx-202607260641-xde-impl1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-xde/codex-cx-202607260641-xde-impl1/log\n\nCommit: 6f01dfe6dbfb6ed948392490b26f797fd5af630b\nFiles touched: .spec/specs/package.spec.md; skills/spec-led-bootstrap/SKILL.md; skills/spec-led-bootstrap/references/detection-matrix.md\nTests added: none — docs-only ticket\nVerification stubs flipped: none\nVerification tier: change-scoped — mix test test/mix/tasks/spec_check_test.exs; mix spec.next; mix spec.check --no-run-commands; grep verification for coverage verdict placement and detector_unavailable probe instructions; mix format --check-formatted; full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 2\n\nSummary: Added --verbose to the bootstrap conformance and umbrella capability probes so info-level detector_unavailable findings are visible on stdout. Updated the package spec current truth to record that detector_unavailable probe instructions use --verbose, and verified docs/coverage.md no longer places the spec.check verdict read-protocol sentence in the spec.cover.test exit-code passage.",
+      "timestamp": "2026-07-26T10:49:03Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Docs: relocate verdict protocol in coverage.md; add --verbose to detector_unavailable probes",
   "type": "task",
-  "updated_at": "2026-07-26T10:44:40Z"
+  "updated_at": "2026-07-26T10:49:03Z"
 }
