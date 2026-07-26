@@ -76,6 +76,7 @@ decisions:
     - The loop suggests running spec.check.
   then:
     - The suggestion includes the verdict read protocol sentence.
+    - The human-loop and JSON-loop tests that assert the sentence carry this requirement's per-test attribution.
 ```
 
 ## Verification
