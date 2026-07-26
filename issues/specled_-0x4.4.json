@@ -6,7 +6,7 @@
   "description": "Advances: specled.package\n\nSurfaced by the specled_-j3k auditor (2026-07-25). skills/spec-led-bootstrap/references/task-templates.md:30 and :66 instruct replacing the \u003cPROJECT_VERIFICATION_COMMAND\u003e placeholder in the scaffolded .spec/AGENTS.md — but priv/spec_init/AGENTS.md.eex contains no such placeholder (same N13-class falsehood fixed in adoption-phases.md by specled_-j3k commit ee60621). task-templates.md now contradicts the corrected adoption-phases.md wording ('the scaffolded template ships without one and has no placeholder to replace, so add the line').\n\nDeliverable: reword both task-templates.md sites to say the verification-command line must be ADDED to the scaffolded AGENTS.md (no placeholder exists), matching adoption-phases.md phase0 done-criteria wording. Whole-file sweep of task-templates.md for any other scaffold-content claims while there (verify each against priv/spec_init/ before changing).\n\n## Spec co-change authorization\n\nEditing .spec/specs/package.spec.md and the tool-managed baseline .spec/realization_hashes.json (via its documented regeneration path) is IN SCOPE when the spec gate demands co-change for the touched skill surface. This authorization comes before any scope warning below.\n\n## Allowed touches\n\n- skills/spec-led-bootstrap/references/task-templates.md\n- .spec/specs/package.spec.md\n- .spec/realization_hashes.json\n\n## Out of Scope (files)\n\n- lib/**, test/**, priv/** — docs-only ticket; priv/spec_init/ is read-only reference truth here\n- skills/spec-led-bootstrap/SKILL.md, references/adoption-phases.md, references/detection-matrix.md — already corrected by specled_-j3k / specled_-xde\n- docs/**\n\n## Out of Scope (intent)\n\n- No severity/default claims changes beyond the placeholder wording\n- No code changes\n- Scaffold-content claims corrected ONLY when verified false against priv/spec_init/ (verify each against the actual template before changing)\n\n## Verification\n\n- mix spec.check --no-run-commands --base \u003cbase\u003e passes with the specled.package subject co-changed or unchanged-as-appropriate\n- grep -r PROJECT_VERIFICATION_COMMAND skills/ returns nothing\n- Both former placeholder sites (~:30, ~:66) now instruct ADDING the verification-command line to the scaffolded AGENTS.md, matching adoption-phases.md phase0 done-criteria wording",
   "id": "specled_-0x4.4",
   "labels": [
-    "phase:implementing"
+    "phase:verifying"
   ],
   "parent": "specled_-0x4",
   "comments": [
@@ -19,5 +19,5 @@
   "status": "in_progress",
   "title": "Bootstrap skill accuracy follow-up: task-templates.md still instructs replacing the nonexistent \u003cPROJECT_VERIFICATION_COMMAND\u003e placeholder",
   "type": "task",
-  "updated_at": "2026-07-26T11:14:55Z"
+  "updated_at": "2026-07-26T11:15:16Z"
 }
