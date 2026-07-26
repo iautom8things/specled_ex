@@ -61,11 +61,15 @@
     {
       "text": "APPROVED. Standalone worktree branch specled_-odl/load-fragile-tagged-tests at 6cede8a9, 4 commits ahead of main; no epic merge-back applicable. Ready for a release PR to main (merge gates: mix compile --warnings-as-errors, mix test, mix format --check-formatted, mix deps.unlock --check-unused, bare mix spec.check). Closing per auditor sign-off.",
       "timestamp": "2026-07-26T11:35:07Z"
+    },
+    {
+      "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/27 (release 0.9.4, branch fix/specled_-odl-load-fragile-tagged-tests at 181079f9). Local pre-flight green: bare spec.check --base origin/main pass, full suite --cover 84.06% vs threshold 83. Babysitting CI.",
+      "timestamp": "2026-07-26T12:18:42Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "Load-fragile tagged_tests leg: verifier_test.exs:1452/:1681 and review_test.exs:135 intermittently fail under machine load",
   "type": "task",
-  "updated_at": "2026-07-26T11:35:08Z"
+  "updated_at": "2026-07-26T12:18:42Z"
 }
