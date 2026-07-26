@@ -6,7 +6,7 @@
   "description": "Advances: specled.package\n\nFrom specled_-hj4.2 verification notes N1+N2 (2026-07-25). N1: docs/coverage.md:47 appends the spec.check verdict read-protocol sentence to a paragraph about mix spec.cover.test exit codes, but spec.cover.test never prints a verdict line (print_verdict exists only in spec.check.ex / spec.validate.ex) — relocate to a real spec.check passage or drop the surface; ticket-authoring defect, sentence itself is verbatim-correct. N2: instructions telling adopters to run mix spec.check and look for detector_unavailable silently return nothing because detector_unavailable defaults to :info and filter_for_stdout suppresses info without --verbose/SPECLED_SHOW_INFO=1 — add --verbose at skills/spec-led-bootstrap/SKILL.md:464-467, :135-137, references/detection-matrix.md:130-137, :236-240.\n\n## Spec co-change authorization\n\nEditing .spec/specs/package.spec.md and the tool-managed baseline .spec/realization_hashes.json (via its documented regeneration path) is IN SCOPE when the spec gate demands co-change for the touched doc/skill surfaces.\n\n## Allowed touches\n\n- docs/coverage.md\n- skills/spec-led-bootstrap/SKILL.md\n- skills/spec-led-bootstrap/references/detection-matrix.md\n- .spec/specs/package.spec.md\n- .spec/realization_hashes.json\n\n## Out of Scope (files)\n\n- lib/**, test/** — docs-only ticket\n- skills/spec-led-bootstrap/references/task-templates.md — specled_-0x4.4 owns it\n- docs/adoption.md, docs/concepts.md — already swept by specled_-zhe\n\n## Out of Scope (intent)\n\n- No code changes\n- No severity/default-behavior changes — wording and placement fixes only, per N1+N2\n- Do not weaken or reword the verdict read-protocol sentence itself (it is verbatim-correct); only relocate it to a passage genuinely about mix spec.check, or drop the misplaced surface\n\n## Verification\n\n- mix spec.check --no-run-commands passes on the stage branch\n- The verdict read-protocol sentence no longer sits in a mix spec.cover.test passage in docs/coverage.md; if kept, it sits in a passage about mix spec.check\n- All four instruction sites tell adopters to use --verbose (or SPECLED_SHOW_INFO=1) when probing for detector_unavailable: SKILL.md ~:464-467, ~:135-137, references/detection-matrix.md ~:130-137, ~:236-240",
   "id": "specled_-xde",
   "labels": [
-    "phase:implementing"
+    "phase:verifying"
   ],
   "parent": "specled_-0x4",
   "comments": [
@@ -19,5 +19,5 @@
   "status": "in_progress",
   "title": "Docs: relocate verdict protocol in coverage.md; add --verbose to detector_unavailable probes",
   "type": "task",
-  "updated_at": "2026-07-26T10:49:03Z"
+  "updated_at": "2026-07-26T10:50:24Z"
 }
