@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
   "created": "2026-07-25T17:17:20Z",
@@ -8,8 +8,8 @@
   "labels": [],
   "parent": "specled_-0x4",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "Spec/test attribution and test-craft gaps in the verdict contract",
   "type": "task",
-  "updated_at": "2026-07-26T12:25:55Z"
+  "updated_at": "2026-07-26T12:29:53Z"
 }
