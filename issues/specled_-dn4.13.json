@@ -2,13 +2,15 @@
   "assignee": "",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-07-26T10:16:22Z",
+  "close_reason": "Won't-fix. Re-eval vs HEAD 4f07955: the persistent_term tradeoff was assessed during the dn4 epic and decided against — it saves at most two sub-microsecond ETS lookups per test while reintroducing exactly the cross-run key-leak class the Arming redesign closed (persistent_term is global-per-VM). Landed Arming resolver (arming.ex:9,26-36) keeps the cache module-private; leak closed (boundary_test.exs:87 refutes modules_cache_key/0). Reopen only with a measured hot-path win.",
   "created": "2026-07-25T19:05:21Z",
   "description": "specled_-dn4.9 re-derived item 9 after dn4.4: the landed SpecLedEx.Coverage.Arming resolver keeps the ETS modules cache private and closes the previous modules_cache_key/0 leak. No persistent_term change was made because it would need a demonstrated improvement over that design without reintroducing a cross-module key leak. Reassess only with measurement and an encapsulated key strategy.",
   "id": "specled_-dn4.13",
   "labels": [],
   "priority": 2,
-  "status": "open",
+  "status": "closed",
   "title": "Follow up: reassess persistent_term cache for coverage boundary modules",
   "type": "task",
-  "updated_at": "2026-07-25T19:09:50Z"
+  "updated_at": "2026-07-26T10:16:22Z"
 }
