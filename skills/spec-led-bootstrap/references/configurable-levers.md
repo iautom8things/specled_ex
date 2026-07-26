@@ -23,7 +23,7 @@ test_tags:
 ## guardrails.severities
 
 Append-only and overlap detectors. Default severity per code lives in
-SpecLedEx.Config; override here only when bootstrap is graduating.
+`SpecLedEx.BranchCheck`; override here only when bootstrap is graduating.
 
 ```yaml
 guardrails:
@@ -55,9 +55,9 @@ vs `:off`.
 branch_guard:
   severities:
     branch_guard_realization_drift: warning           # phase2 default; phase6 raises to error
-    branch_guard_dangling_binding: warning            # phase2 default; phase6 raises to error
-    branch_guard_requirement_without_test_tag: warning # phase3 brings online
-    branch_guard_unmapped_change: info                # phase1 brings online; usually :info, not warning
+    branch_guard_dangling_binding: warning            # bootstrap downgrade — code default is error; phase6 restores it
+    branch_guard_requirement_without_test_tag: warning # phase3 brings online (code default)
+    branch_guard_unmapped_change: info                # phase1 downgrade — code default is error
 ```
 
 `branch_guard_untested_realization`, `branch_guard_untethered_test`, and
@@ -96,8 +96,10 @@ branch_guard:
 > **Warning — YAML value form.** In `config.yml`, severity values are written
 > as **bare tokens** (`off`, `info`, `warning`, `error`), not Elixir atoms. The
 > leading-colon atom form is parsed by YAML as a string (`":off"`), which
-> `SpecLedEx.Config` drops with an unsurfaced diagnostic — the override is
-> a silent no-op and the code keeps its default severity. The atom notation used
+> `SpecLedEx.Config` drops and records as a diagnostic — `mix spec.check` and
+> `mix spec.validate` surface it as a `[CONFIG]` warning on stderr. The
+> override is still a no-op (the code keeps its default severity), so watch
+> for those lines. The atom notation used
 > in this prose describes the resolved severity; it is not the on-disk syntax.
 
 Bootstrap should never write `:info` for the high-trust codes
@@ -120,7 +122,7 @@ Spec-Drift: test_only
 Trailer downgrades apply to one PR (all commits in the range). They can
 demote `:error` → `:warning`/`:info` but cannot revive `:off`. The shorthand
 trailers (`refactor`, `docs_only`, `test_only`) downgrade common classes
-of low-risk codes — read SpecLedEx.Config for the exact mapping.
+of low-risk codes — read `SpecLedEx.BranchCheck.Trailer` for the exact mapping.
 
 ### The two-armed decision rubric
 

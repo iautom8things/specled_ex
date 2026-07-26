@@ -26,6 +26,13 @@ The package docs and bootstrap skill teach the same `mix spec.check` verdict
 read protocol as the live `spec.prime` and `spec.next` guidance, while avoiding
 placing that protocol on commands that do not emit a `spec.check result=` line.
 
+The bootstrap skill's reference pages state config-severity defaults as the
+code resolves them (`SpecLedEx.BranchCheck` per-code defaults and its
+`Trailer` preset mapping), describe dropped severity overrides as `[CONFIG]`
+stderr diagnostics rather than silent no-ops, and distinguish templates
+`mix spec.init` scaffolds from templates merely shipped under
+`priv/spec_init/` (the spec_review workflow is shipped, not scaffolded).
+
 ```yaml spec-meta
 id: specled.package
 kind: package
