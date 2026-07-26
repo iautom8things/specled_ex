@@ -21,11 +21,15 @@
     {
       "text": "AUDIT: APPROVE\n\nSession: b4d332bd-86cd-4b67-bc95-ec46ac5f5e8d\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/b4d332bd-86cd-4b67-bc95-ec46ac5f5e8d.jsonl\n\nReasoning: The one must this docs-only diff can affect, specled.package.doc_identifier_integrity, is load-bearing and falsifiable: test/docs_identifier_lint_test.exs:121-143 scans skills/**/*.md for fabricated finding codes and :145-163 rejects atom-form severities inside YAML blocks, with corpus-size pins (:128, :149) and explicit non-vacuousness proofs (:182-230) that feed the rejection path controlled inputs — the edited levers YAML uses bare tokens and real codes. Every corrected factual claim traces to code: @per_code_defaults with dangling_binding/unmapped_change = :error at lib/specled_ex/branch_check.ex:14-39, trailer presets at lib/specled_ex/branch_check/trailer.ex:45-49, [CONFIG] stderr emission in both spec.check.ex and spec.validate.ex (asserted by test/mix/tasks/spec_config_diagnostics_test.exs:27), AGENTS.md.eex greps exit 1 for both the placeholder and spec.sync, and spec.init.ex:7-13 @templates omits workflows/spec_review.yml.eex while the file ships in priv/spec_init/workflows/. Verifier's mechanical counts re-checked against git diff 134d0e8..HEAD: exactly 4 files, all inside the specled.package surface and the ticket's implied scope; SKILL.md seven-phases/seven-sections/--target/--depth and the adoption-phases five-item epic-done list all verified against the current files; remaining musts (mix_tasks command stub, index_and_state, declarative_governance, adoption/concepts source_file stubs) are unreachable from this diff and honestly disclosed as such. Seams: none disclosed and none found — the lint reads real repo files and the mix_tasks stub loads the real task table.\n\nResidual (out of ticket scope, not bounce-worthy): task-templates.md:30 and :66 still instruct replacing the \u003cPROJECT_VERIFICATION_COMMAND\u003e placeholder that priv/spec_init/AGENTS.md.eex never contained — the same N13-class falsehood, pre-existing at base 134d0e8 and absent from the ticket's N12-N14 enumeration, now contradicting the corrected adoption-phases.md phase0 text. Recommend a follow-up ticket; per audit mandate I did not fix it.",
       "timestamp": "2026-07-26T00:55:59Z"
+    },
+    {
+      "text": "APPROVED. Stage branch specled_-j3k/bootstrap-skill-accuracy fast-forwarded into epic branch specled_-0x4/verdict-teaching-fast-follow (134d0e8..ee60621); make smoke green in the epic worktree (1213 tests, 0 failures); stage worktree removed via make worktree-cleanup. Residual task-templates.md placeholder falsehood tracked as specled_-0x4.4. Closing per auditor sign-off.",
+      "timestamp": "2026-07-26T00:58:43Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Bootstrap skill accuracy: configurable-levers, adoption-phases, SKILL.md internal consistency",
   "type": "task",
-  "updated_at": "2026-07-26T00:55:59Z"
+  "updated_at": "2026-07-26T00:58:43Z"
 }
