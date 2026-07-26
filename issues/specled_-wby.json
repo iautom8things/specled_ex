@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-26T13:25:17Z",
+  "description": "Advances: specled.mix_tasks. Residuals from epic specled_-0x4 (wli + 0x4.3 verifier/audit advisories, 2026-07-26): (1) spec.validate's ARGUMENT pre-flight rejection still emits 'spec.validate result=fail tier=validate error_findings=0' (the tier-dishonesty class 0x4.2 fixed for spec.check and wli fixed for spec.validate min-strength) — observed via mix spec.validate --bogusflag; (2) the verdict grammar's alternatives list in mix_tasks.spec.md omits spec.validate's tier=usage min-strength fail path even though the U2 enumeration names it — reconcile the two spec surfaces; (3) spec.validate.ex:125-132 still hand-rolls validate_args!/2 instead of using SpecLedEx.TaskArgs.validate/3 — the duplication class specled_-wli removed for spec.check. Also worth folding in: the spec.validate min-strength pin at spec_tasks_test.exs (~:951 post-0x4.3) is untagged for verdict_line (whole-file stub still executes it; per-test attribution does not credit it), and Keyword.get's default :tier in both print_verdict clauses silently mislabels a future call site that forgets the key — consider Keyword.fetch! for :tier.",
+  "id": "specled_-wby",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "spec.validate tier=usage completion: argument pre-flight, grammar alternatives list, TaskArgs adoption",
+  "type": "task",
+  "updated_at": "2026-07-26T13:25:17Z"
+}
