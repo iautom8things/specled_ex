@@ -9,9 +9,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-0x4",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: 372ac8d0-f88a-482f-9695-db93b8e6f836\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/372ac8d0-f88a-482f-9695-db93b8e6f836.jsonl\n\nCommit: f33e952 (specled_-zhe/adopter-docs-accuracy, worktree /Users/mz/src/specled_ex-adopter-docs-accuracy, based on specled_-0x4/verdict-teaching-fast-follow @ 134d0e8)\nFiles touched: docs/adoption.md, docs/concepts.md, docs/coverage.md\nTests added: none (docs-only accuracy sweep; existing docs_identifier_lint_test.exs covers the touched files)\nVerification stubs flipped: none (specled.package verifications already execute: true)\nVerification tier: change-scoped — mix test test/specled_ex_test.exs test/docs_identifier_lint_test.exs test/specled_ex/index_state_test.exs (18 tests, 0 failures); mix spec.check --no-run-commands --base origin/main =\u003e spec.check result=pass (0 errors, 3 info); mix format --check-formatted; fresh-worktree smoke (compile --warnings-as-errors + full suite 1213 tests, 0 failures) ran pre-change; full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\nNotes: branch_guard_missing_subject_update (docs are specled.package surface) cleared via explicit trailer Spec-Drift: branch_guard_missing_subject_update=info with one-line reason in commit body — docs-accuracy corrections only, no current-truth change to package.spec.md. All eight claims (N4-N11) verified against lib/ before editing: tagged_tests.ex builds file-selector commands; module is Realization.Canonical; @per_code_defaults has 7 branch_guard_* codes; umbrella_unsupported is a reason field; spec.init @templates has 6 entries; implementation tier gated by realization.enabled_tiers; spec.triangle emits one detector_unavailable per selected subject (34 subjects indexed); store.ex @legacy_message uses an em dash.\n\nSummary: Corrected the eight stale/false adopter-doc claims from hj4.2 verification notes N4-N11 across docs/adoption.md, docs/concepts.md, and docs/coverage.md, each fix grounded in the current implementation rather than the doc's memory of it. Satisfies specled.package.adoption_guide / concepts_guide / doc_identifier_integrity: docs now name only implemented finding codes and describe commands as they actually behave.",
+      "timestamp": "2026-07-26T00:44:54Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Adopter docs accuracy sweep: stale/false claims in adoption.md, concepts.md, coverage.md",
   "type": "task",
-  "updated_at": "2026-07-26T00:37:10Z"
+  "updated_at": "2026-07-26T00:44:54Z"
 }
