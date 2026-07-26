@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
   "created": "2026-07-25T12:51:24Z",
@@ -13,8 +13,8 @@
     }
   ],
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "Flaky property failure: tracer_test.exs:241 merge_edges uniq_list_of over ~4-atom space (TooManyDuplicatesError; NOT seed-deterministic)",
   "type": "task",
-  "updated_at": "2026-07-25T16:03:16Z"
+  "updated_at": "2026-07-26T00:34:32Z"
 }
