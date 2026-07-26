@@ -1387,7 +1387,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       refute html =~ "(observed)"
     end
 
-    # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
+    # covers: specled.spec_review.coverage_no_debug_info_distinct_note
     test "renders a no-debug-info note when requirement reach lists no_debug_info_mfas" do
       reach = %{
         status: :ok_per_test,

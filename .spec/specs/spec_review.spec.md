@@ -257,12 +257,14 @@ decisions:
   stability: evolving
 - id: specled.spec_review.coverage_tab_bind_closure
   statement: >-
-    Coverage-tab bind-closure behavior shall be governed by the split
-    requirements that follow this umbrella requirement: closure line format,
-    reached-by-tests gating, exact/degraded attribution qualifiers, rollup
-    badge, generated-at staleness, degraded-status banners, no-tracer banner,
-    v2 envelope data, unresolvable-source notes, and missing-attribution
-    handling.
+    `SpecLedEx.CoverageTriangulation.per_requirement_reach/2` shall preserve
+    the v1 file-level bind-closure reach data that
+    `SpecLedEx.Review.CoverageClosure` can hand to the Coverage-tab renderer:
+    for each `{subject_id, requirement_id}` it returns `closure_mfa_count`,
+    `closure_file_count`, sorted `reached_files`, sorted `unreached_files`,
+    and sorted `reaching_tests`; a `:no_coverage_artifact` input returns
+    `:no_coverage_artifact` so Review can render the coverage artifact
+    unavailable degraded banner instead of pretending zero reach.
   priority: must
   stability: evolving
 - id: specled.spec_review.coverage_closure_line_format
@@ -386,9 +388,19 @@ decisions:
     misreporting as trustworthy `:ok_per_test`) degrade distinctly rather
     than collapsing into one empty-but-ok result. `Review.build_view/3`
     calls `build_v2/2` and the Coverage pivot renders its v2 shape, per
-    the split Coverage-tab requirements above. The prior v1 record-list path (`build/2`)
-    had zero callers and zero tests once `build_view/3` switched over, and
-    was deleted rather than kept dead.
+    the split Coverage-tab requirements in this section. The prior v1
+    record-list path (`build/2`) had zero callers and zero tests once
+    `build_view/3` switched over, and was deleted rather than kept dead.
+  priority: must
+  stability: evolving
+- id: specled.spec_review.coverage_no_debug_info_distinct_note
+  statement: >-
+    Each per-requirement Coverage view shall render `no_debug_info_mfas` in a
+    distinct "No debug info" note stating that module abstract code is missing
+    and those MFAs are not counted or reported as covered or uncovered. They
+    shall never be merged into the covered/uncovered lists, into the
+    source-identity-unavailable note, or silently omitted from the review
+    surface.
   priority: must
   stability: evolving
 - id: specled.spec_review.coverage_unresolvable_source_renders_distinct_note
@@ -726,6 +738,18 @@ decisions:
     - the retired "(file-level proxy)" string does not render
   covers:
     - specled.spec_review.coverage_line_mfa_intersection_qualifier
+- id: specled.spec_review.coverage_v1_requirement_reach_data_shape
+  given:
+    - coverage records and a closure map for the legacy v1 reach path
+  when:
+    - Review requests per-requirement bind-closure reach data
+  then:
+    - each requirement entry reports closure MFA and file counts
+    - reached and unreached files are partitioned by coverage-record file reach
+    - reaching tests are reported by display name
+    - the no-coverage-artifact sentinel is preserved for degraded rendering
+  covers:
+    - specled.spec_review.coverage_tab_bind_closure
 - id: specled.spec_review.coverage_no_debug_info_renders_distinct_note
   given:
     - a requirement whose v2 reach data reports an MFA under no_debug_info_mfas
@@ -735,7 +759,7 @@ decisions:
     - the MFA renders in a distinct no-debug-info note
     - the MFA is not counted or rendered as covered or uncovered
   covers:
-    - specled.spec_review.coverage_tab_bind_closure
+    - specled.spec_review.coverage_no_debug_info_distinct_note
 - id: specled.spec_review.coverage_unresolvable_source_and_missing_attribution
   given:
     - "an :ok_per_test requirement with unresolvable_source_mfas and a subject reach map with no :attribution key"
@@ -832,6 +856,7 @@ decisions:
     - specled.spec_review.coverage_generated_at_staleness
     - specled.spec_review.coverage_degraded_banners_distinct
     - specled.spec_review.coverage_no_tracer_manifest_banner
+    - specled.spec_review.coverage_no_debug_info_distinct_note
     - specled.spec_review.coverage_unresolvable_source_renders_distinct_note
     - specled.spec_review.coverage_missing_attribution_unqualified
 - kind: command
