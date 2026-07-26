@@ -65,11 +65,15 @@
     {
       "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/21 (head af5e005, base main). Advancing to phase:in-ci.",
       "timestamp": "2026-07-25T17:59:28Z"
+    },
+    {
+      "text": "ORCHESTRATED\nChildren closed: 3\nBOUNCEs encountered: 3\nUser escalations: 0\n\nMerged: PR #21 squashed to main as 134d0e8. Post-merge Specs run on main: success (2m18s). PR CI was green on the FIRST run — all three checks (Check Specs, Elixir 1.19.5/OTP 28.3.1, Elixir 1.18.4/OTP 26.2.5), no specled_-l05 flake. Epic worktree removed (FORCE=1 after verifying git diff main..branch was empty — squash captured every change). Released as 0.8.0. Tier-2/3 review findings live in fast-follow epic specled_-0x4 (7 children).",
+      "timestamp": "2026-07-26T00:23:13Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "spec.check verdict contract + teaching sweep",
   "type": "epic",
-  "updated_at": "2026-07-25T17:59:28Z"
+  "updated_at": "2026-07-26T00:23:13Z"
 }
