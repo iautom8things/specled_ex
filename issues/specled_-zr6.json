@@ -49,11 +49,15 @@
     {
       "text": "PR #24 CI green after 1 fix commit (branch-guard trailer). Proceeding to squash-merge per user instruction.",
       "timestamp": "2026-07-26T02:09:27Z"
+    },
+    {
+      "text": "Squash-merged to main as 581b272 (PR #24, release 0.9.1). Post-merge Specs run green. Remote + local PR branches deleted; worktree cleaned. Local stage branch specled_-zr6/fix-flaky-merge-edges-property left for /deliver triage.",
+      "timestamp": "2026-07-26T02:12:52Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "Flaky property failure: tracer_test.exs:241 merge_edges uniq_list_of over ~4-atom space (TooManyDuplicatesError; NOT seed-deterministic)",
   "type": "task",
-  "updated_at": "2026-07-26T02:09:27Z"
+  "updated_at": "2026-07-26T02:12:52Z"
 }
