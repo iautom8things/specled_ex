@@ -19,8 +19,8 @@
       "message": "Changed file docs/coverage.md impacts subject specs that were not updated: specled.package"
     }
   ],
-  "run_at": "2026-07-26T01:00:15.145787Z",
-  "run_id": "e9c3dca8df49ab670405bbef42719741",
+  "run_at": "2026-07-26T01:05:17.951721Z",
+  "run_id": "f026151a748c9d97c2608fb5fb445f75",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "33d13fd92954e62bb8026c8d6a49ecd9383b7237",
