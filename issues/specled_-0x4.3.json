@@ -9,9 +9,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-0x4",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: cx-202607260828-0x43-impl1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-0x4.3/codex-cx-202607260828-0x43-impl1/log\n\nCommit: 14d4068f55ffef999d39ff546d8f112834b83973\nFiles touched: .spec/specs/evidence_store.spec.md, .spec/specs/mix_tasks.spec.md, .spec/specs/next.spec.md, .spec/specs/prime.spec.md, test/mix/tasks/spec_check_test.exs, test/mix/tasks/spec_next_task_test.exs, test/mix/tasks/spec_prime_task_test.exs, test/mix/tasks/spec_tasks_test.exs, test_support/specled_ex_fixture_case.ex\nTests added/changed: test/mix/tasks/spec_check_test.exs, test/mix/tasks/spec_tasks_test.exs, test/mix/tasks/spec_prime_task_test.exs, test/mix/tasks/spec_next_task_test.exs\nVerification stubs flipped: none\nPer-item: U2 hoisted the current spec.check pass/validate/branch/usage and spec.validate pass/validate/usage path enumeration and explicitly excluded pre-report startup, parse/config, filesystem, and unexpected internal raises | U7 tagged the tier=branch partition test, spec.check/spec.validate pass tests, argument rejection tests, and all min-strength verdict tests without reducing existing per-test id sets | U8 moved prime protocol credit to its human/JSON proving tests and next credit to the golden/human-guidance proving tests; temporary removal of both prime proving-test protocol attributions failed tagged_tests coverage with tagged_tests_cover_missing_tag and requirement_without_test_tag | U13 added level-preserving drain_shell_events/0 and converted spec.validate pass plus spec.check validation-fail assertions to {:info, verdict} | U15/U16 extended the mixed fixture to emit warning, info, and error findings together and asserted chunked severity partitions instead of paired positions\nVerification tier: change-scoped — mix compile --warnings-as-errors; mix test test/mix/tasks/spec_check_test.exs test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_prime_task_test.exs test/mix/tasks/spec_next_task_test.exs; mix test --stale; mix spec.check --no-run-commands; mix format --check-formatted; committed-revert branch-guard probe; U8 attribution deletion self-check\nFinal-tier runs: 1\n\nSummary: Tightened the verdict contract's falsifiable scope and aligned verdict/protocol attribution with the tests that actually prove it. Added level-aware shell-event assertions and a growth-safe three-severity ordering proof; the non-Advances evidence note was retained only after a committed-revert probe proved the branch guard requires it.",
+      "timestamp": "2026-07-26T12:41:41Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Spec/test attribution and test-craft gaps in the verdict contract",
   "type": "task",
-  "updated_at": "2026-07-26T12:29:53Z"
+  "updated_at": "2026-07-26T12:41:41Z"
 }
