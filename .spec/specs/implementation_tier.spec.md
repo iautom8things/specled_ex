@@ -237,6 +237,11 @@ decisions:
 
 ## Verification
 
+Branch reconciliation note: `lib/specled_ex/branch_check.ex` is a shared
+dispatch surface for this subject. This branch changes only its `--base`
+pre-flight validation seam; implementation-tier dispatch and hashing semantics
+remain unchanged.
+
 ```yaml spec-verification
 - kind: tagged_tests
   execute: true

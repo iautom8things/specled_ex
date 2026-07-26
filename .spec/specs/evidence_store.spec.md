@@ -450,8 +450,8 @@ decisions:
 
 Branch reconciliation note: `test/mix/tasks/spec_check_test.exs` is a shared
 task test surface for this subject. This branch touches that file to assert the
-spec.check stdout verdict contract; the evidence-store requirements above
-remain unchanged.
+spec.check stdout verdict contract and to exercise three-rank branch-finding
+display ordering; the evidence-store requirements above remain unchanged.
 
 ```yaml spec-verification
 - kind: tagged_tests

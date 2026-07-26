@@ -24,7 +24,9 @@ reflecting any change to what this subject verifies.
 
 The package docs and bootstrap skill teach the same `mix spec.check` verdict
 read protocol as the live `spec.prime` and `spec.next` guidance, while avoiding
-placing that protocol on commands that do not emit a `spec.check result=` line.
+placing that protocol on commands that do not emit a `spec.check result=` line
+and using `--verbose` when instructing adopters to probe for info-level
+`detector_unavailable` findings on stdout.
 
 The bootstrap skill's reference pages state config-severity defaults as the
 code resolves them (`SpecLedEx.BranchCheck` per-code defaults and its
@@ -32,6 +34,9 @@ code resolves them (`SpecLedEx.BranchCheck` per-code defaults and its
 stderr diagnostics rather than silent no-ops, and distinguish templates
 `mix spec.init` scaffolds from templates merely shipped under
 `priv/spec_init/` (the spec_review workflow is shipped, not scaffolded).
+The phase0 task template tells adopters to add the project verification
+command to the scaffolded `.spec/AGENTS.md` because the template ships without
+one and has no placeholder to replace.
 
 ```yaml spec-meta
 id: specled.package
@@ -143,6 +148,15 @@ decisions:
   execute: true
   covers:
     - specled.package.adoption_guide
+- kind: command
+  target: >-
+    sh -c 'protocol="The verdict is the last stdout line starting with \`spec.check result=\` — not \`validate status=…\`. A non-zero exit means failure even if no verdict line appears." &&
+    grep -Fq "$protocol" docs/adoption.md &&
+    grep -Fq "$protocol" docs/concepts.md'
+  execute: true
+  covers:
+    - specled.package.adoption_guide
+    - specled.package.concepts_guide
 - kind: source_file
   target: docs/concepts.md
   covers:

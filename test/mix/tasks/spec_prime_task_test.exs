@@ -16,12 +16,29 @@ defmodule Mix.Tasks.SpecPrimeTaskTest do
                "specled.tasks.prime_json",
                "specled.tasks.status_summary",
                "specled.tasks.validate_exit_status",
-               "specled.tasks.validate_findings",
-               "specled.prime.verdict_read_protocol"
+               "specled.tasks.validate_findings"
              ]
 
   @verdict_protocol SpecLedEx.Next.verdict_read_protocol()
 
+  @tag spec: [
+         "specled.prime.command_execution_default",
+         "specled.prime.machine_output",
+         "specled.prime.session_context",
+         "specled.tasks.check_strict_gate",
+         "specled.tasks.decision_new_scaffold",
+         "specled.tasks.index_writes_state",
+         "specled.tasks.init_local_skill",
+         "specled.tasks.init_scaffold",
+         "specled.tasks.next_guidance",
+         "specled.tasks.no_app_start",
+         "specled.tasks.prime_context",
+         "specled.tasks.prime_json",
+         "specled.tasks.status_summary",
+         "specled.tasks.validate_exit_status",
+         "specled.tasks.validate_findings",
+         "specled.prime.verdict_read_protocol"
+       ]
   test "spec.prime stays read-only and skips command execution by default", %{root: root} do
     write_subject_spec(
       root,
@@ -78,6 +95,24 @@ defmodule Mix.Tasks.SpecPrimeTaskTest do
     assert message_contains?(bugfix_messages, fork_line)
   end
 
+  @tag spec: [
+         "specled.prime.command_execution_default",
+         "specled.prime.machine_output",
+         "specled.prime.session_context",
+         "specled.tasks.check_strict_gate",
+         "specled.tasks.decision_new_scaffold",
+         "specled.tasks.index_writes_state",
+         "specled.tasks.init_local_skill",
+         "specled.tasks.init_scaffold",
+         "specled.tasks.next_guidance",
+         "specled.tasks.no_app_start",
+         "specled.tasks.prime_context",
+         "specled.tasks.prime_json",
+         "specled.tasks.status_summary",
+         "specled.tasks.validate_exit_status",
+         "specled.tasks.validate_findings",
+         "specled.prime.verdict_read_protocol"
+       ]
   test "spec.prime forwards branch options and supports json output", %{root: root} do
     init_git_repo(root)
 

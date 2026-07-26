@@ -8,7 +8,7 @@ Provide the user-facing Mix tasks that scaffold, guide, summarize, and strictly 
 
 The `spec.init` scaffold's local skill and README, and the `spec.prime` loop, describe the missing-ADR condition as a two-armed fork: an ADR for durable cross-cutting policy, otherwise a `Spec-Drift: branch_guard_missing_decision_update=info` trailer with a one-line reason.
 
-The `spec.prime` and `spec.next` human guidance share the same verdict read-protocol text so task output and assertions do not drift by invisible Unicode punctuation.
+The `spec.prime` and `spec.next` human guidance share the same verdict read-protocol text so task output and assertions do not drift by invisible Unicode punctuation; `test/mix/tasks/spec_next_task_test.exs` pins that shared text to a literal golden assertion for `spec.next`.
 
 ```yaml spec-meta
 id: specled.mix_tasks
@@ -43,6 +43,7 @@ surface:
   - priv/spec_init/specs/package.spec.md.eex
   - skills/write-spec-led-specs/references/authoring-reference.md
   - test_support/specled_ex_fixture_case.ex
+  - test/specled_ex/task_args_test.exs
   - test/mix/tasks/spec_cover_ingest_test.exs
 realized_by:
   implementation:
@@ -269,13 +270,21 @@ decisions:
   stability: evolving
 - id: specled.tasks.verdict_line
   statement: >-
-    mix spec.check and mix spec.validate shall print a trailing verdict line
-    on stdout for every pass and fail path where the task itself reports a
-    verdict before raising on failures. The verdict shall be the last stdout
-    line and the only line the task itself emits matching `^<task> result=`:
-    `spec.check result=pass`, `spec.check result=fail tier=<validate|branch>
+    mix spec.check shall print a trailing verdict line on stdout on its pass
+    path and on its validation, branch-enforcement, argument-rejection,
+    min-strength, and --base pre-flight fail paths; mix spec.validate shall do
+    so on its pass path and on its validation, argument-rejection, and
+    min-strength pre-flight fail paths. Dependency-startup failures,
+    configuration or authored-spec parsing failures, filesystem failures, and
+    unexpected internal exceptions that raise before task verdict reporting
+    begins are excluded. On the enumerated paths, the verdict shall be the last
+    stdout line and the only line the task itself emits matching `^<task> result=`:
+    `spec.check result=pass`, `spec.check result=fail tier=<usage|validate|branch>
     error_findings=<N>`, `spec.validate result=pass`, or `spec.validate
-    result=fail tier=validate error_findings=<N>`. Verbatim-relayed
+    result=fail tier=validate error_findings=<N>`. `tier=usage` identifies
+    task-level pre-flight rejections before validation starts; otherwise
+    `error_findings` counts error-severity findings only and may be zero when
+    strict validation fails on warning-severity findings. Verbatim-relayed
     `kind: command` output is exempt from the task-emitted uniqueness clause,
     even when captured command output contains a task-name-prefixed line.
   priority: must
@@ -299,12 +308,13 @@ decisions:
   covers:
     - specled.tasks.verdict_line
   given:
-    - A spec.check or spec.validate invocation completes successfully, fails validation, fails branch enforcement, or is rejected after task-level argument, min-strength, or spec.check --base validation.
+    - A spec.check or spec.validate invocation completes successfully, fails validation, fails branch enforcement, or is rejected during task-level argument, min-strength, or spec.check --base pre-flight handling before validation starts.
   when:
     - The task prints its human stdout, including output printed immediately before raising and any verbatim-relayed command output.
   then:
     - The final stdout message is the task-specific `result=pass` or `result=fail` verdict.
     - A failing verdict includes the failing tier and error finding count.
+    - A spec.check pre-flight rejection and a spec.validate min-strength pre-flight rejection use `tier=usage`; spec.check does not print a `validate status=` line on that path.
     - "The task itself emits exactly one line matching `^<task> result=`, excluding verbatim-relayed `kind: command` output."
 - id: specled.tasks.branch_findings_breakdown.summary_and_order
   covers:

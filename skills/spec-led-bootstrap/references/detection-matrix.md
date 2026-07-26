@@ -80,7 +80,7 @@ rediscovered per contributor.
 
 ## Conformance findings — interpretation
 
-Run `mix spec.validate` and `mix spec.check --base HEAD~1` (or `--base HEAD`
+Run `mix spec.validate` and `mix spec.check --verbose --base HEAD~1` (or `--base HEAD`
 on a fresh repo) and classify each finding. The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears.
 
 ### Schema-fatal (identifier validator + parse errors)
@@ -234,7 +234,7 @@ These signals only matter when subject extraction will run (current_phase < 1).
 - Umbrella projects degrade the `realized_by` tiers to
   `detector_unavailable :umbrella_unsupported`. Do not gate this on a
   version string — probe the capability instead: if `mix.exs` declares
-  `apps_path:`, run `mix spec.check` once and look for
+  `apps_path:`, run `mix spec.check --verbose` once and look for
   `detector_unavailable` findings with reason `umbrella_unsupported`. If
   they appear, the installed SpecLedEx cannot walk realization tiers on
   this repo — classify as umbrella and recommend stopping at phase3. If a

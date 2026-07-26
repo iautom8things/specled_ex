@@ -67,28 +67,36 @@ defmodule Mix.Tasks.Spec.CheckTest do
                inspect(messages)
     end
 
-    @tag spec: ["specled.tasks.check_verbose_flag", "specled.tasks.branch_findings_breakdown"]
-    test "branch findings print non-error severities before errors", %{root: root} do
+    @tag spec: [
+           "specled.tasks.check_verbose_flag",
+           "specled.tasks.branch_findings_breakdown",
+           "specled.tasks.verdict_line"
+         ]
+    test "branch findings partition non-error severities before errors", %{root: root} do
       scaffold_mixed_branch_findings_fixture(root)
 
-      run_spec_check(root, ["--base", "HEAD", "--verbose"])
+      run_spec_check(root, ["--base", "HEAD~1", "--verbose"])
 
       messages = drain_shell_messages()
-      warning_index = Enum.find_index(messages, &String.contains?(&1, "[WARNING]"))
-      error_index = Enum.find_index(messages, &String.contains?(&1, "[ERROR]"))
+
+      severity_partitions =
+        messages
+        |> Enum.flat_map(fn message ->
+          case Regex.run(~r/^\[(ERROR|WARNING|INFO)\]/, message) do
+            [_, severity] -> [severity]
+            nil -> []
+          end
+        end)
+        |> Enum.chunk_by(& &1)
 
       assert message_contains?(
                messages,
-               "findings=2 (error=1 warning=1 info=0, info shown)"
+               "findings=3 (error=1 warning=1 info=1, info shown)"
              )
 
-      assert is_integer(warning_index),
-             "expected a displayed warning finding, got: #{inspect(messages)}"
+      assert Enum.map(severity_partitions, &hd/1) == ["WARNING", "INFO", "ERROR"],
+             "expected warning, info, and error partitions, got: #{inspect(messages)}"
 
-      assert is_integer(error_index),
-             "expected a displayed error finding, got: #{inspect(messages)}"
-
-      assert warning_index < error_index
       assert List.last(messages) == "spec.check result=fail tier=branch error_findings=1"
     end
 
@@ -187,11 +195,15 @@ defmodule Mix.Tasks.Spec.CheckTest do
   defp scaffold_mixed_branch_findings_fixture(root) do
     init_git_repo(root)
 
+    write_files(root, %{"README.md" => "# Bootstrap\n"})
+    commit_all(root, "initial without spec workspace")
+
     write_files(root, %{
       ".spec/config.yml" => """
-      branch_guard:
-        severities:
-          branch_guard_missing_subject_update: warning
+      realization:
+        enabled_tiers:
+          - api_boundary
+          - mystery
       """,
       "lib/example.ex" => "defmodule Example do\nend\n"
     })

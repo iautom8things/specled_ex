@@ -122,17 +122,26 @@ defmodule SpecLedEx.FixtureCase do
   def drain_shell_messages(messages \\ []) do
     receive do
       {:mix_shell, _level, payload} ->
-        message =
-          case payload do
-            [value] -> value
-            value -> inspect(value)
-          end
-
+        message = shell_message(payload)
         drain_shell_messages([message | messages])
     after
       0 -> Enum.reverse(messages)
     end
   end
+
+  def drain_shell_events, do: drain_shell_events([])
+
+  defp drain_shell_events(events) do
+    receive do
+      {:mix_shell, level, payload} ->
+        drain_shell_events([{level, shell_message(payload)} | events])
+    after
+      0 -> Enum.reverse(events)
+    end
+  end
+
+  defp shell_message([value]), do: value
+  defp shell_message(value), do: inspect(value)
 
   defp build_spec_document(title, sections) do
     body =

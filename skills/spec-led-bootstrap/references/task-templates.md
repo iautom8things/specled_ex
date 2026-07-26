@@ -27,10 +27,11 @@ Advances: <none — meta phase>
 
 Deliverable:
 Install `spec_led_ex` as a dev/test dep and scaffold `.spec/` via
-`mix spec.init`. Replace the `<PROJECT_VERIFICATION_COMMAND>` placeholder
-in `.spec/AGENTS.md` with the project's actual verification command — on
-containerized repos, write the split loop instead (git-sensitive
-`<host_check_cmd>` on the host; `<container_verify_cmd>` in the container).
+`mix spec.init`. Add the project's actual verification command to
+`.spec/AGENTS.md` — the scaffolded template ships without one and has no
+placeholder to replace; on containerized repos, write the split loop instead
+(git-sensitive `<host_check_cmd>` on the host; `<container_verify_cmd>` in
+the container).
 Run `mix spec.evidence.install_hook` and add `mix spec.sync` to the
 daily-loop guidance in `.spec/AGENTS.md` (the hook runs it best-effort on
 push; the manual run recovers from skipped hooks). Write the two-armed
@@ -63,7 +64,7 @@ Out of Scope (intent):
 Merge gate:
 - [ ] `mix compile --warnings-as-errors` clean
 - [ ] `mix spec.check` exits 0
-- [ ] `.spec/AGENTS.md` has no `<PROJECT_VERIFICATION_COMMAND>` placeholder remaining
+- [ ] `.spec/AGENTS.md` includes the project's actual verification command
 - [ ] `mix spec.evidence.install_hook` ran; `.spec/AGENTS.md` daily loop mentions `mix spec.sync`
 - [ ] Decision rubric present in `.spec/AGENTS.md` and `.spec/decisions/README.md`
 - [ ] Auditor APPROVE comment on the ticket
@@ -203,18 +204,17 @@ requirement ("Bootstrap draft — …") as part of promotion.
 Install the CI gate: a workflow step running
 `mix spec.check --base <pr-base>` on pull requests, and a `mix spec.review`
 render whose HTML artifact is uploaded/deployed per PR — start from the
-scaffolded template
+shipped template
 (`deps/spec_led_ex/priv/spec_init/workflows/spec_review.yml.eex`, copied to
 `.github/workflows/spec-review.yml`). When the repo shares a remote
 evidence ledger, fetch the `spec-evidence` ref read-only before the check;
 treat its attestations as unauthenticated hints, not proof that
 verification commands ran.
 
-Security caveat: the scaffolded template builds untrusted PR code in the same
-job that carries a write-scoped token and deploys the artifact. On public
-repos, split the render job (read-only, runs PR code) from the deploy/comment
-job (write token, no PR-code execution) with an artifact handoff, or keep the
-render read-only until the template is hardened. Tracked in `specled_-3q1`.
+Security note: the shipped workflow template uses a split render/deploy
+layout: the render job runs PR code with read-only scope, and the deploy job
+holds write scopes but only handles the rendered artifact. Keep that privilege
+split intact when copying it into the adopting repo.
 
 Verification:
 - Tests to pass: `mix spec.validate && mix spec.check --base origin/main`

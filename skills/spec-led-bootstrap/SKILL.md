@@ -121,7 +121,7 @@ If any spec files exist, run:
 
 ```bash
 mix spec.validate
-mix spec.check --base HEAD~1
+mix spec.check --verbose --base HEAD~1
 ```
 
 The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears.
@@ -462,7 +462,7 @@ parent and depend phase2 on the fan-out).
 - Umbrella → phase2 ticket includes the note that `realized_by` tiers will
   emit `detector_unavailable :umbrella_unsupported`; omit the phase4 /
   phase-4b / phase5 tickets when the capability probe confirms the degrade
-  (run `mix spec.check` once and look for `detector_unavailable` findings
+  (run `mix spec.check --verbose` once and look for `detector_unavailable` findings
   with reason `umbrella_unsupported` — probe the installed dep's behavior,
   not its version string). The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears.
 - Pre-ledger workspace (detection 1.2) → insert the migration ticket from
