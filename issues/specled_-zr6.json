@@ -13,11 +13,15 @@
     {
       "text": "CORRECTION + second strike (orchestrator, 2026-07-25). This is NOT seed-deterministic as the original title claimed: first strike was seed 407930 (dn4.3 merge gate), second strike seed 437710 (during specled_-dn4.11 implementation). Two different seeds, same signature — same lesson the ya8 triage produced: report this class as a failure RATE, not a seed. Root cause is unchanged and understood: StreamData uniq_list_of draws from a ~4-atom module space, so 10 consecutive duplicate draws abort generation; any seed can hit it. Priority stands at P2 — it has now cost two adjudication detours. Fix: widen the generator space or bound uniqueness (e.g. uniq_list_of(member_of(mods), max_length: length(mods)) or drop the uniq constraint).",
       "timestamp": "2026-07-25T16:03:16Z"
+    },
+    {
+      "text": "IMPLEMENTED\nSession: 2cbb17f7-cd07-4fcb-b499-81e73c2fd79e\nLog: /Users/mz/.claude-remembers/projects/-Users-mz-src-specled-ex/2cbb17f7-cd07-4fcb-b499-81e73c2fd79e.jsonl\n\nCommit: 7b9801a (branch specled_-zr6/fix-flaky-merge-edges-property)\nFiles touched: test/specled_ex/compiler/tracer_test.exs\nTests added: none (existing property fixed: \"merge keeps exactly non-session previous entries plus session edges, and is idempotent\")\nVerification stubs flipped: none\nVerification tier: change-scoped — test/specled_ex/compiler/tracer_test.exs full file; property at :241 under striking seeds 407930 and 437710 plus 60 random seeds (0 failures); mix compile --warnings-as-errors; mix format --check-formatted; mix spec.check --no-run-commands --base origin/main (result=pass); full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 2 (first spec.check run flagged branch_guard_missing_subject_update; cleared with the repo's Spec-Drift: test_only commit trailer — test-only change, current truth unchanged)\n\nSummary: Replaced session_modules \u003c- uniq_list_of(member_of(module_pool), max_length: 3) with a plain list_of(member_of(module_pool), max_length: 4). The generated list is immediately converted to a MapSet, so the uniq constraint was semantically redundant while making StreamData abort with TooManyDuplicatesError after 10 consecutive duplicate draws from the 4-atom pool — the flake that struck two different seeds. The property's assertions are unchanged; only the generator changed, and a comment documents why uniq_list_of must not return.",
+      "timestamp": "2026-07-26T00:41:41Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Flaky property failure: tracer_test.exs:241 merge_edges uniq_list_of over ~4-atom space (TooManyDuplicatesError; NOT seed-deterministic)",
   "type": "task",
-  "updated_at": "2026-07-26T00:34:42Z"
+  "updated_at": "2026-07-26T00:41:41Z"
 }
