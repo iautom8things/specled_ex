@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.9.4 — 2026-07-26
+
+Test-only hardening of the third flake class in the `mix spec.check` gate
+path: the load-fragile tagged_tests leg, which red-lighted only when the
+machine was busy — i.e. during parallel orchestration, when a red gate is
+most expensive. No `lib/` changes; the diff is two test files. The final
+shape survived a cold verify/audit cycle that twice narrowed it (a global
+ExUnit timeout raise and two preemptive module deadlines were rejected as
+evidence-free blast radius). (specled_-odl)
+
+- The two ticket-named modules, `SpecLedEx.VerifierTest` and
+  `SpecLedEx.ReviewTest`, get a module-scoped 2-minute ExUnit deadline
+  (`@moduletag timeout:`) instead of the default 60s: under machine load,
+  their subprocess-heavy tests (nested verifier runs spawning shell shims,
+  git-backed fixtures) slow down far more than CPU-bound ones, and the 60s
+  kill converted load into gate failures. The rest of the suite keeps the
+  tighter runaway-regression deadline.
+- The seven timeout-classification shim budgets in `verifier_test.exs` are
+  consolidated into a single `@timeout_shim_budget_ms` attribute at the
+  module top and widened 2000ms → 4000ms — d300c21 set 2000 as the margin
+  for the three-level spawn race (Port → sh → setsid sh → shim) and a
+  loaded gate run still lost that race. The attribute's comment records the
+  true wall cost: five of the seven sites pay 2× the budget because their
+  resume pass also times out (~48s of deliberate sleep per full run).
+- `SpecLedEx.ReviewTest` runs serially (`async: false`) to keep its per-test
+  git spawns out of the async phase's fork burst; the comment states the
+  mechanism as inferred and unreproduced, and nothing in the module requires
+  serialization for correctness.
+- Not closed by this release, deferred with rationale to specled_-td7:
+  `verifier_test.exs:1452` (no credible mechanism — no tight budget, nothing
+  to race, already-serial module) and the `docs_identifier_lint_test.exs:255`
+  reporting anomaly (a failing-test line that maps to no test declaration on
+  the tree that ran). td7 adds self-identifying failure descriptors and
+  gate-environment forensics (`SPECLED_COMMAND_OUTPUT_DIR`) so the next
+  occurrence is diagnosable instead of another guessing round.
+
 ## 0.9.3 — 2026-07-26
 
 Spec-honesty gate for go-live: removes the two provably false statements in the

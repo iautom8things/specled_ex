@@ -2,6 +2,24 @@ defmodule SpecLedEx.VerifierTest do
   # System.put_env PATH shims are VM-global.
   use SpecLedEx.FixtureCase, async: false
 
+  # specled_-odl: subprocess-heavy module (nested verifier runs spawn shell
+  # shims). Under machine load spawn latency inflates wall time far beyond the
+  # idle baseline, so this module gets deadline headroom over the 60s default.
+  # Scoped here rather than raised globally so the rest of the suite keeps
+  # the tighter runaway-regression deadline.
+  @moduletag timeout: to_timeout(minute: 2)
+
+  # Shared budget for the timeout-classification tests below whose assertions
+  # depend on the shim making progress (echoing the seed line, writing its
+  # artifact) before the process-group kill. Wall-time cost: each such test
+  # runs for the full budget — doubled where a resume pass also times out
+  # (five of the seven sites) — so this value trades directly against suite
+  # runtime (~48s of sleep at 4000). d300c21 widened it 300 -> 2000 for the
+  # three-level spawn race (Port -> sh -> setsid sh -> shim); a loaded gate
+  # run still lost that race at 2000 (specled_-odl), so it now carries 2x
+  # that margin.
+  @timeout_shim_budget_ms 4000
+
   @moduletag spec: [
                "specled.decisions.change_type_enum",
                "specled.decisions.change_type_optional",
@@ -1500,12 +1518,16 @@ defmodule SpecLedEx.VerifierTest do
     sleep 5
     """
 
-    # Budget generous enough that the shim reliably writes its artifact before
-    # the process-group kill even under a loaded merged run; the shim sleeps past
-    # it. This timeout leaves req.beta as a never-started remainder, so a resume
-    # pass runs (and, with this always-hang shim, also times out) — the assertions
-    # below hold across the merged first-and-resume outcome.
-    report = run_two_subject_merged(root, shim, run_commands: true, command_timeout_ms: 2000)
+    # The shim must write its artifact before the process-group kill; the shim
+    # sleeps past the budget. This timeout leaves req.beta as a never-started
+    # remainder, so a resume pass runs (and, with this always-hang shim, also
+    # times out) — the assertions below hold across the merged
+    # first-and-resume outcome.
+    report =
+      run_two_subject_merged(root, shim,
+        run_commands: true,
+        command_timeout_ms: @timeout_shim_budget_ms
+      )
 
     assert report["status"] == "fail"
 
@@ -1527,13 +1549,15 @@ defmodule SpecLedEx.VerifierTest do
     sleep 5
     """
 
-    # Budget generous enough that the shim child reliably reaches its first line
-    # (truncating the artifact to empty) before the process-group kill even under
-    # a loaded merged run; the shim then sleeps past it. A tighter budget races
-    # the three-level spawn (Port -> sh -> setsid sh -> shim); losing that race
-    # leaves the artifact absent rather than empty, flipping the classified
-    # message off "likely compile cost". Matches the 2000ms sibling timeout tests.
-    report = run_two_subject_merged(root, shim, run_commands: true, command_timeout_ms: 2000)
+    # The shim child must reach its first line (truncating the artifact to
+    # empty) before the process-group kill; the shim then sleeps past the
+    # budget. Losing the spawn race leaves the artifact absent rather than
+    # empty, flipping the classified message off "likely compile cost".
+    report =
+      run_two_subject_merged(root, shim,
+        run_commands: true,
+        command_timeout_ms: @timeout_shim_budget_ms
+      )
 
     timeouts = findings(report, "verification_command_timeout")
     assert length(timeouts) == 2
@@ -1572,10 +1596,13 @@ defmodule SpecLedEx.VerifierTest do
     esac
     """
 
-    # Budget generous enough that the first run reliably writes its artifact
-    # before the process-group kill even under a loaded merged run; the shim
-    # sleeps well past it so the timeout still fires.
-    report = run_two_subject_merged(root, shim, run_commands: true, command_timeout_ms: 2000)
+    # The first run must write its artifact before the process-group kill; the
+    # shim sleeps well past the budget so the timeout still fires.
+    report =
+      run_two_subject_merged(root, shim,
+        run_commands: true,
+        command_timeout_ms: @timeout_shim_budget_ms
+      )
 
     calls =
       Path.join(root, "calls.txt")
@@ -1620,8 +1647,12 @@ defmodule SpecLedEx.VerifierTest do
     esac
     """
 
-    # Both runs must write before their kills; keep the budget generous.
-    report = run_two_subject_merged(root, shim, run_commands: true, command_timeout_ms: 2000)
+    # Both runs must write before their kills.
+    report =
+      run_two_subject_merged(root, shim,
+        run_commands: true,
+        command_timeout_ms: @timeout_shim_budget_ms
+      )
 
     assert report["status"] == "fail"
 
@@ -1687,10 +1718,13 @@ defmodule SpecLedEx.VerifierTest do
     sleep 5
     """
 
-    # Budget generous enough that the shim reliably echoes the seed line and
-    # writes its artifact before the process-group kill; matches the 2000ms
-    # sibling timeout tests.
-    report = run_two_subject_merged(root, shim, run_commands: true, command_timeout_ms: 2000)
+    # The shim must echo the seed line and write its artifact before the
+    # process-group kill.
+    report =
+      run_two_subject_merged(root, shim,
+        run_commands: true,
+        command_timeout_ms: @timeout_shim_budget_ms
+      )
 
     timeouts = findings(report, "verification_command_timeout")
     assert timeouts != []
@@ -1709,15 +1743,18 @@ defmodule SpecLedEx.VerifierTest do
 
     # The shim never touches SPECLED_ATTRIBUTION_PATH, so the timeout
     # distributes shared-fate (command_timeout_details/1, not the attributed
-    # path). Budget generous enough that the shim reliably echoes the seed
-    # line before the process-group kill; matches the 2000ms sibling tests.
+    # path). The shim must echo the seed line before the process-group kill.
     shim = ~S"""
     echo "Running ExUnit with seed: 424242, max_cases: 8"
     sleep 5
     """
 
     try do
-      report = run_two_subject_merged(root, shim, run_commands: true, command_timeout_ms: 2000)
+      report =
+        run_two_subject_merged(root, shim,
+          run_commands: true,
+          command_timeout_ms: @timeout_shim_budget_ms
+        )
 
       timeouts = findings(report, "verification_command_timeout")
       assert length(timeouts) == 2
@@ -1779,8 +1816,12 @@ defmodule SpecLedEx.VerifierTest do
     esac
     """
 
-    # Both runs must write before their kills; keep the budget generous.
-    report = run_two_subject_merged(root, shim, run_commands: true, command_timeout_ms: 2000)
+    # Both runs must write before their kills.
+    report =
+      run_two_subject_merged(root, shim,
+        run_commands: true,
+        command_timeout_ms: @timeout_shim_budget_ms
+      )
 
     timeouts = findings(report, "verification_command_timeout")
     beta = Enum.find(timeouts, &(&1["subject_id"] == "beta"))
