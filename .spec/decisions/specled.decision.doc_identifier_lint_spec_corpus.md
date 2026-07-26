@@ -66,11 +66,20 @@ Two facts complicate a blanket extension:
   would reject correct prose. The `must` names this boundary
   instead of claiming coverage the lint does not have.
 
-  Two narrow clusters (`surface_target_*`, `scenario_cover_*`) collide with
-  nothing in the corpus today and could be guarded, at the cost of two more
-  hand-maintained allowlists — the reflection alternative stays rejected. That
-  widening is deferred, not refused; it belongs with the rest of the lint
+  That collision argument covers the four largest stems only. They match 51 of
+  the 82 unguarded codes; the other 31 are matched by none of them, and at
+  least five narrower stems (`surface_target_`, `scenario_cover_`,
+  `meta_field_`, `spec_requirement_`, `invalid_id_`) collide with nothing in
+  the corpus today. Those clusters are guardable, at the cost of one more
+  hand-maintained allowlist each — the reflection alternative stays rejected.
+  That widening is deferred, not refused; it belongs with the rest of the lint
   hardening rather than in a spec-honesty fix.
+
+  Keeping the two reasons apart is load-bearing, not pedantry. Collapsing them
+  into "bare codes cannot be guarded" is what produced the overclaim this
+  boundary text was written to replace, and the sentence refutes itself the
+  moment anyone checks: `spec_requirement_too_short` is a bare code that none
+  of the four large stems matches, and its own stem is collision-free.
 - File-path segments that happen to match a token pattern (e.g. the trailing
   segment of `.../config/branch_guard_test.exs`) are not finding codes; the
   token patterns carry a `(?<![\w/])` lookbehind so a slash-prefixed path

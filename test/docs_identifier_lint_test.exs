@@ -32,12 +32,22 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
        pattern would flag the bare spelling as fabricated, so it counts as a
        false positive.
 
-       Two small clusters (`surface_target_*`, `scenario_cover_*`) happen to
-       collide with nothing today and could be guarded — but only by hand-
-       maintaining their allowlists, since
+       That reasoning covers the four largest stems only — they match 51 of the
+       82 unguarded codes. The other 31 are matched by none of them, and at
+       least five narrower stems (`surface_target_`, `scenario_cover_`,
+       `meta_field_`, `spec_requirement_`, `invalid_id_`) collide with nothing
+       in the corpus today. Those are guardable, and unguarded for a different
+       reason: each needs its own hand-maintained allowlist, since
        `specled.decision.doc_identifier_lint_spec_corpus` rejects deriving the
-       code set by reflection over lib/. Tracked on specled_-vk0 with the rest
-       of the lint hardening; not claimed here.
+       code set by reflection over lib/. Deferred to specled_-vk0, not
+       impossible — the `must` keeps the two reasons apart on purpose.
+
+       Note the trap in conflating them: `spec_requirement_too_short` is one of
+       the exemplars named in the `must`, and NONE of the four large stems
+       matches it (`(?<![\w/])requirement_` cannot match mid-token, since the
+       preceding `_` is a word character). Its own stem `spec_requirement_` has
+       zero corpus collisions. A sentence claiming the four stems explain why
+       every bare code is author-enforced supplies its own counterexample.
     2. Inert config severities — the `:atom` value form inside a YAML block,
        which `SpecLedEx.Config` silently drops (a bare `off`/`info`/`warning`/
        `error` token is required). Scoped to the user-facing guidance corpus
