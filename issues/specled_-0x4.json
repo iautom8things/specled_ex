@@ -65,11 +65,15 @@
     {
       "text": "ORCHESTRATED\nChildren closed: 6 this run (8/8 total; zhe+j3k shipped earlier in PR #25)\nBOUNCEs encountered: 5\nUser escalations: 0",
       "timestamp": "2026-07-26T13:26:22Z"
+    },
+    {
+      "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/28 (release 0.9.5). Babysitting CI.",
+      "timestamp": "2026-07-26T20:18:39Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fast-follow: spec.check verdict contract + teaching sweep",
   "type": "epic",
-  "updated_at": "2026-07-26T20:18:38Z"
+  "updated_at": "2026-07-26T20:18:39Z"
 }
