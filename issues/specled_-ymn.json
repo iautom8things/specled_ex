@@ -21,11 +21,15 @@
     {
       "text": "SUPERSEDED: the ORCHESTRATOR ADMISSION comment above has been folded into the ticket DESCRIPTION (bw update, 2026-07-26), which is now the single canonical scope contract. The description carries the pre-flight corrections plus '## Allowed touches', '## Out of Scope (files)', '## Out of Scope (intent)', and '## Verification (gates)' as first-class sections, which is where the verifier's mechanical scope check reads them.\n\nRead the DESCRIPTION, not that comment. If the two ever disagree, the description wins.",
       "timestamp": "2026-07-26T20:56:42Z"
+    },
+    {
+      "text": "IMPLEMENTED\nSession: orch-233-ymn-impl-1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-ymn/codex-orch-233-ymn-impl-1/log\n\nCommit: 152c7b2028a0af3a3300c2d6d6a4248cfad70364\nFiles touched: .spec/decisions/specled.decision.cross_vm_temp_names.md, .spec/decisions/specled.decision.cross_vm_temp_names_reach.md, .spec/specs/binding.spec.md, .spec/specs/branch_guard.spec.md, .spec/specs/compiler_tracer.spec.md, .spec/specs/index_state.spec.md, .spec/specs/prose_guard.spec.md, .spec/specs/realized_by.spec.md, .spec/specs/spec_review.spec.md, .spec/specs/tagged_tests_verification.spec.md, .spec/specs/verification.spec.md, lib/specled_ex/realization/hash_store.ex, lib/specled_ex/temp_name.ex, lib/specled_ex/verifier.ex, test/specled_ex/compiler/tracer_test.exs, test/specled_ex/realization/hash_store_test.exs\nTests added: SpecLedEx.Compiler.TracerTest \"failed flush leaves a pid-bearing tmp sibling\"; SpecLedEx.Realization.HashStoreTest \"failed atomic write leaves a cross-VM-unique tmp sibling\"\nVerification stubs flipped: none; added covers to existing execute:true tagged_tests entries\nVerification tier: change-scoped — mix compile --warnings-as-errors; mix test test/specled_ex/realization/hash_store_test.exs test/specled_ex/compiler/tracer_test.exs test/integration/tracer_incremental_merge_test.exs test/specled_ex/verifier_test.exs; mix test --stale; mix spec.check --no-run-commands; full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: Converted the sole fixed-name lib/ write-rename sibling, lib/specled_ex/realization/hash_store.ex, to SpecLedEx.TempName.cross_vm_suffix/0; no second unconverted fixed-name sibling was present in lib/. Superseded the append-only original ADR with a new expanded-reach ADR and linked the affected subject specs while keeping the tracer's load-bearing exception. Falsifiability was proven locally: removing System.pid() from the tracer tmp name made the new tracer test fail, and reverting HashStore to a fixed .tmp sibling made the new HashStore test fail; both breaks were reverted before commit.",
+      "timestamp": "2026-07-26T21:08:51Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "hash_store.ex fixed-name .tmp write-rename sibling vs cross_vm_temp_names ADR",
   "type": "task",
-  "updated_at": "2026-07-26T20:58:08Z"
+  "updated_at": "2026-07-26T21:08:51Z"
 }
