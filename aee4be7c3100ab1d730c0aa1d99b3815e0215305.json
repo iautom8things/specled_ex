@@ -6,8 +6,8 @@
       "message": "Cross-cutting change spans multiple subjects but no decision file changed. Durable cross-cutting policy (it constrains future changes, spans subjects beyond this branch, or records a rejected alternative) needs an ADR; a change that is not durable policy does not.\n\n```\nfix: if this branch changes durable cross-cutting policy, add or revise an ADR (`mix spec.decision.new <id> --title \"...\"`); if it does not, record `Spec-Drift: branch_guard_missing_decision_update=info` as a git trailer on a commit in this range, with a one-line reason in the commit body.\n```"
     }
   ],
-  "run_at": "2026-07-26T11:34:26.669750Z",
-  "run_id": "4580f73ee5dbc473a8ab0a5c751b07c8",
+  "run_at": "2026-07-26T11:37:12.141397Z",
+  "run_id": "4ab18478e4fa20d89ed3f212b0156a39",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "aee4be7c3100ab1d730c0aa1d99b3815e0215305",
