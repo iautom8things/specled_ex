@@ -6,6 +6,7 @@
   "description": "Advances: specled.verification\n\nSurfaced by the specled_-hyt cold verifier (2026-07-24): lib/specled_ex/hash_store.ex:212 builds a FIXED-name write-rename sibling (.spec/realization_hashes.json.tmp) with no cross-VM uniqueness, while specled.decision.cross_vm_temp_names' decision clause lists 'write-rename siblings' among the locations that shall use SpecLedEx.TempName.cross_vm_suffix/0. Not a live collision hazard today (repo-local path, no System.unique_integer, no cross-run File.rm cleanup — the same safety reasoning as the ADR's tracer exception), but the ADR is currently contradicted by an unconverted, unexcepted site. Either convert the site to cross_vm_suffix() or record it as a second explicit exception in the ADR. Also worth a quick sweep for other fixed-name write-rename siblings in lib/ while there.",
   "id": "specled_-ymn",
   "labels": [],
+  "parent": "specled_-233",
   "comments": [
     {
       "text": "Scope widening from the specled_-hyt pre-ship critical review (consolidated report: ~/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-24/specled_-hyt-attr-sidecar-pid-entropy/20260724-140426-consolidated.md, review_commit d68b523, Tier 1 empty — 0C/0H/2M/12L). This ticket already covers F6 (hash_store fixed-name .tmp vs ADR wording). Two consensus/Tier-2 items land here too since all three are 'make the cross_vm_temp_names ADR's declared reach match reality':\n\n1. F1 (M, consensus spec+testing): the tracer's pid-separation guarantee is pinned by no test and anchored by no spec — merge_on_flush only requires 'unique temp file', the litter test passes with or without the pid, and the ADR exception is unfalsifiable. A future 'simplify back to unique_integer' edit in tracer.ex write_atomic stays green while reintroducing the cross-VM bug. Fix: assert the pid in the tracer tmp-name (or spec the exception falsifiably), link the ADR from the compiler_tracer subject.\n\n2. F5 (M): the ADR claims misparse-correctness properties for spec_review/index_state/branch_guard temp files (review.ex, spec_diff.ex, base_view.ex) but its affects: list names only verification + tagged_tests. Fix: extend affects:/subject decisions: linkage so the spec graph matches the ADR's stated reach.\n\nAlso worth folding in F2/CF2 (L, consensus idioms+simplicity): the cross-VM rationale is re-narrated in ~7 call sites; trim site comments to a one-line pointer at SpecLedEx.TempName so the moduledoc is the single narrative.",
@@ -16,5 +17,5 @@
   "status": "open",
   "title": "hash_store.ex fixed-name .tmp write-rename sibling vs cross_vm_temp_names ADR",
   "type": "task",
-  "updated_at": "2026-07-24T18:17:47Z"
+  "updated_at": "2026-07-26T20:38:15Z"
 }
