@@ -35,7 +35,7 @@ decisions:
   - specled.decision.file_backed_linked_strength
   - specled.decision.explicit_subject_ownership
   - specled.decision.tempfile_command_execution
-  - specled.decision.cross_vm_temp_names
+  - specled.decision.cross_vm_temp_names_reach
   - specled.decision.configurable_test_tag_enforcement
   - specled.decision.tagged_tests_file_selectors
   - specled.decision.verification_runtime_config

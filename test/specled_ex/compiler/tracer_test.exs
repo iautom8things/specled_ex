@@ -385,6 +385,40 @@ defmodule SpecLedEx.Compiler.TracerTest do
 
       assert litter == []
     end
+
+    @tag spec: "specled.compiler_tracer.atomic_tmp_name_includes_pid"
+    test "failed flush leaves a pid-bearing tmp sibling" do
+      try do
+        File.rm_rf!(@manifest_path)
+        File.mkdir_p!(@manifest_path)
+
+        env = %Macro.Env{module: AtomicFlushPidCaller, function: {:f, 0}}
+        Tracer.trace(:start, env)
+        Tracer.trace({:remote_function, [], Enum, :map, 2}, env)
+
+        assert_raise File.RenameError, fn ->
+          Tracer.trace(:on_module, env)
+        end
+
+        tmp_siblings =
+          @manifest_path
+          |> Path.dirname()
+          |> File.ls!()
+          |> Enum.filter(&String.starts_with?(&1, "xref_mfa.etf.tmp."))
+
+        assert Enum.any?(tmp_siblings, fn sibling ->
+                 String.starts_with?(sibling, "xref_mfa.etf.tmp.#{System.pid()}_")
+               end)
+      after
+        File.rm_rf!(@manifest_path)
+
+        @manifest_path
+        |> Path.dirname()
+        |> File.ls!()
+        |> Enum.filter(&String.starts_with?(&1, "xref_mfa.etf.tmp."))
+        |> Enum.each(&File.rm(Path.join(Path.dirname(@manifest_path), &1)))
+      end
+    end
   end
 
   describe "manifest_path/1" do

@@ -36,6 +36,7 @@ decisions:
   - specled.decision.aggregate_first_spec_coverage
   - specled.decision.coverage_qualifier_requirement_ids
   - specled.decision.coverage_identity_joins
+  - specled.decision.cross_vm_temp_names_reach
 ```
 
 ## Requirements

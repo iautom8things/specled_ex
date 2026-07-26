@@ -26,6 +26,8 @@ realized_by:
   implementation:
     - "SpecLedEx.Config.Prose.findings/3"
     - "SpecLedEx.Config.Prose.parse/1"
+decisions:
+  - specled.decision.cross_vm_temp_names_reach
 ```
 
 ## Requirements

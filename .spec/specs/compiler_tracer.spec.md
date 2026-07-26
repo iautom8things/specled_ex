@@ -42,6 +42,7 @@ realized_by:
     - "SpecLedEx.Compiler.Tracer.manifest_path/1"
 decisions:
   - specled.decision.custom_compile_tracer
+  - specled.decision.cross_vm_temp_names_reach
 ```
 
 ## Requirements
@@ -68,6 +69,13 @@ decisions:
     (unique temp file plus rename). The effective edge graph after an
     incremental compile shall equal the graph after a forced full
     compile of the same tree.
+  priority: must
+  stability: evolving
+- id: specled.compiler_tracer.atomic_tmp_name_includes_pid
+  statement: >-
+    The tracer's write-rename temp sibling shall include the OS pid in its
+    inlined uniqueness suffix, preserving cross-VM separation in host project
+    compiles where SpecLedEx.TempName may not be loadable.
   priority: must
   stability: evolving
 - id: specled.compiler_tracer.session_module_replacement
@@ -165,6 +173,15 @@ decisions:
     - N's entries are preserved
   covers:
     - specled.compiler_tracer.session_module_replacement
+- id: specled.compiler_tracer.scenario.atomic_tmp_name_pid_safe
+  given:
+    - a tracer flush whose final manifest rename fails after the temp file is written
+  when:
+    - the leftover temp sibling is inspected
+  then:
+    - the sibling name includes the current OS pid before the VM-local counter segment
+  covers:
+    - specled.compiler_tracer.atomic_tmp_name_includes_pid
 - id: specled.compiler_tracer.scenario.ghost_module_pruned
   given:
     - a manifest on disk containing entries for a module that no longer exists in the project
@@ -202,6 +219,7 @@ decisions:
     - specled.compiler_tracer.merge_on_flush
     - specled.compiler_tracer.session_module_replacement
     - specled.compiler_tracer.seed_time_ghost_prune
+    - specled.compiler_tracer.atomic_tmp_name_includes_pid
 - kind: tagged_tests
   execute: true
   covers:

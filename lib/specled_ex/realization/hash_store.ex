@@ -8,9 +8,10 @@ defmodule SpecLedEx.Realization.HashStore do
   subject-level realization changes. `.spec/state.json` carries no baseline —
   it is freely regenerable derived state.
 
-  Writes are atomic: `.spec/realization_hashes.json.tmp` is fully written and
-  fsynced, then renamed into place. A crash mid-write leaves the previously
-  committed state intact — partial writes are not a reachable state.
+  Writes are atomic: a cross-VM-unique `.spec/realization_hashes.json.tmp.*`
+  sibling is fully written and fsynced, then renamed into place. A crash
+  mid-write leaves the previously committed state intact — partial writes are
+  not a reachable state.
 
   Legacy migration: when `.spec/realization_hashes.json` is absent, reads fall
   back to the `"realization"` key of an existing `.spec/state.json` (where the
@@ -129,9 +130,9 @@ defmodule SpecLedEx.Realization.HashStore do
   @doc """
   Writes the realization hash map atomically, replacing the entire baseline.
 
-  Writes to `.spec/realization_hashes.json.tmp`, fsyncs the tmp file, then
-  renames over the target. The previous committed state is left intact on
-  crash.
+  Writes to a cross-VM-unique `.spec/realization_hashes.json.tmp.*` sibling,
+  fsyncs the tmp file, then renames over the target. The previous committed
+  state is left intact on crash.
   """
   @spec write(Path.t(), map()) :: :ok
   def write(root, realization) when is_map(realization) do
@@ -209,7 +210,7 @@ defmodule SpecLedEx.Realization.HashStore do
 
   defp persist(root, realization) do
     path = baseline_path(root)
-    tmp = path <> ".tmp"
+    tmp = "#{path}.tmp.#{SpecLedEx.TempName.cross_vm_suffix()}"
     File.mkdir_p!(Path.dirname(path))
 
     payload =

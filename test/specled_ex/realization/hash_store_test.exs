@@ -266,6 +266,33 @@ defmodule SpecLedEx.Realization.HashStoreTest do
       # realization_hashes.json.tmp was removed by rename
       refute File.exists?(path <> ".tmp")
     end
+
+    @tag spec: "specled.binding.hash_store_temp_name_cross_vm_unique"
+    test "failed atomic write leaves a cross-VM-unique tmp sibling", %{root: root} do
+      path = baseline_path(root)
+      File.rm_rf!(path)
+      File.mkdir_p!(path)
+
+      assert_raise File.RenameError, fn ->
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            "Foo.bar/1" => %{"hash" => "a", "hasher_version" => HashStore.hasher_version()}
+          }
+        })
+      end
+
+      tmp_siblings =
+        path
+        |> Path.dirname()
+        |> File.ls!()
+        |> Enum.filter(&String.starts_with?(&1, "realization_hashes.json.tmp."))
+
+      assert Enum.any?(tmp_siblings, fn sibling ->
+               String.match?(sibling, ~r/^realization_hashes\.json\.tmp\.\d+_[0-9a-f]{12}$/)
+             end)
+
+      refute File.exists?(path <> ".tmp")
+    end
   end
 
   describe "merge/2" do

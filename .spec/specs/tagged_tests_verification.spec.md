@@ -40,7 +40,7 @@ decisions:
   - specled.decision.tagged_tests_file_selectors
   - specled.decision.verification_runtime_config
   - specled.decision.evidence_based_attribution
-  - specled.decision.cross_vm_temp_names
+  - specled.decision.cross_vm_temp_names_reach
 ```
 
 ## Requirements
