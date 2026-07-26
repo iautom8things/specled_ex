@@ -10,11 +10,15 @@
     {
       "text": "SCOPE ADDITION from the specled_-dn4.9 audit (2026-07-26T00:25:30Z): source_to_binary/1 is now duplicated in BOTH lib/specled_ex/coverage/formatter.ex and lib/specled_ex/coverage_triangulation.ex, growing the very duplication this ticket is chartered to remove. Fold it into this ticket's scope alongside repo_relative_path/1 and repo_relative_source_path/1 — that is now three private copies of shared resolver logic across the two modules.",
       "timestamp": "2026-07-26T00:26:20Z"
+    },
+    {
+      "text": "Note from specled_-ygi: that ticket added a fourth byte-identical copy of the repo-relative source helper (now: Coverage.Formatter.repo_relative_path/1, CoverageTriangulation.repo_relative_source_path/1, Mix.Tasks.Spec.Triangle.repo_relative_source/1, Review.CoverageClosure.repo_relative_source/1). All four must stay in lockstep for the path-identity joins to hold; nothing enforces it. When consolidating the coverage source resolver, fold all four into the shared home (verifier suggested SpecLedEx.Coverage.Paths).",
+      "timestamp": "2026-07-26T01:20:48Z"
     }
   ],
   "priority": 2,
   "status": "open",
   "title": "Follow up: consolidate coverage source resolver without public API drift",
   "type": "task",
-  "updated_at": "2026-07-26T00:26:20Z"
+  "updated_at": "2026-07-26T01:20:48Z"
 }
