@@ -77,6 +77,14 @@ findings exposed. Twelve tickets, each cold-verified and audited independently.
   global and the VM-global `:debug_info` option. All are serialized.
   `per_test_requirement_reach/3` gains direct unit coverage of its partitions
   rather than being exercised only end-to-end. (specled_-ya8, specled_-dn4.7)
+- **The v1 file-level detectors can match again.** Making record `:files`
+  repo-root-relative (above) left `mix spec.triangle` and
+  `Review.CoverageClosure` joining those against `closure_files` still derived
+  from raw absolute `module_info(:compile)[:source]` — an identity that could
+  never match, so `execution_reach` always reported 0/M and
+  `untested_realization` was computed over an impossible join. Both
+  `mfa_source_file/1` producers now resolve to the same repo-root-relative
+  identity as record `:file` values. (specled_-ygi)
 - **Tier-3 hardening.** `Boundary.head/1` and `tail/2` tolerate a dead table via
   rescue rather than a TOCTOU pre-check; `per_test_boundary/1` tolerates a
   `setup_all` context instead of raising `FunctionClauseError`;
