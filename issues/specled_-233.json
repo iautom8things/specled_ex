@@ -9,6 +9,12 @@
     "phase:implementing",
     "slug:impromptu-doc-lint-content"
   ],
+  "comments": [
+    {
+      "text": "Worktree: /Users/mz/src/specled_ex-specled--233-impromptu-followups\nBranch: epic/specled_-233-impromptu-followups\nBase: 402f4a271032bacba697a3d03867b1614bc7e506 (main == origin/main at orchestration start)\n\nEpic smoke green at creation: mix compile --warnings-as-errors + full suite, 3 properties / 1245 tests / 0 failures.\n\nOrchestration config: implementers = Codex (agent-usage --headroom --tool codex =\u003e personal); verify/audit/rebase = Claude. Comment-marker mode (MARKERS.md). Not a sasa1977/boundary repo, so BOUNDARY_DELTA_LABELED=0 for every child and the boundary gate is inert.\n\nGenerated/derived state policy for this epic:\n  - .spec/state.json — derived, untracked, gitignored; never review scope, never committed. Regenerate with `mix spec.index --output .spec/state.json`.\n  - .spec/realization_hashes.json — COMMITTED baseline, NOT free generated state. Per .claude/rules/specled.md a rebase worker must NOT resolve conflicts here by regenerating (that silently absorbs realization drift). On conflict prefer the side whose branch legitimately changed the named bindings, or keep both entries when different bindings moved.\n\nMerge gate for this repo (host mix, no compose):\n  mix compile --warnings-as-errors \u0026\u0026 mix test \u0026\u0026 mix format --check-formatted \u0026\u0026 mix deps.unlock --check-unused \u0026\u0026 mix spec.check\nHash inputs for the unchanged-tree skip: lib, test, config, priv, mix.lock, .spec.",
+      "timestamp": "2026-07-26T20:41:26Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "[EPIC] Impromptu: doc-lint content verification, lint hardening, coverage-requirement retirement, cross-VM temp-name ADR reconciliation",
