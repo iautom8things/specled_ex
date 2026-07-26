@@ -21,6 +21,10 @@
     {
       "text": "CI green on PR #25 (all 3 checks pass, 0 fix commits needed, no review comments). Proceeding to merge per user instruction.",
       "timestamp": "2026-07-26T02:23:37Z"
+    },
+    {
+      "text": "Squash-merged to main (4f07955). Watching post-merge Specs run.",
+      "timestamp": "2026-07-26T02:24:34Z"
     }
   ],
   "priority": 2,
