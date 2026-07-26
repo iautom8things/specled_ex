@@ -29,8 +29,7 @@ Three rungs, lightest to heaviest. Do not overpay:
   to "check like CI."
 - `mix spec.check` (bare) — heaviest. All of the above **plus** executes every
   `execute: true` verification command (runs the tagged tests). Reserve for
-  pre-PR preflight only. The last line is the verdict — `spec.check
-  result=…`; nothing above it, including `validate status=…`, is the verdict.
+  pre-PR preflight only. The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears.
 
 Container-based repos may expose these as make targets (e.g. `make spec-check`
 = `--no-run-commands`, `make spec-check-full` = bare) — the semantics are the

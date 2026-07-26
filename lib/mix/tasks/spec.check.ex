@@ -67,10 +67,15 @@ defmodule Mix.Tasks.Spec.Check do
         aliases: [r: :root, o: :output, d: :debug]
       )
 
+    if rest != [] or invalid != [] do
+      print_verdict("fail", tier: "validate", error_findings: 0)
+    end
+
     SpecLedEx.TaskArgs.validate!("spec.check", rest, invalid)
 
-    min_strength = validate_min_strength!(opts[:min_strength])
     root = opts[:root] || File.cwd!()
+    min_strength = validate_min_strength!(opts[:min_strength])
+    validate_base!(root, opts[:base])
     spec_dir = opts[:spec_dir] || SpecLedEx.detect_spec_dir(root)
     authored_dir = SpecLedEx.detect_authored_dir(root, spec_dir)
     config = Config.load(root, path: config_path(root, spec_dir))
@@ -104,7 +109,7 @@ defmodule Mix.Tasks.Spec.Check do
     summary = report["summary"]
 
     Mix.shell().info(
-      "status=#{report["status"]} errors=#{summary["errors"]} warnings=#{summary["warnings"]}"
+      "validate status=#{report["status"]} errors=#{summary["errors"]} warnings=#{summary["warnings"]}"
     )
 
     if debug? do
@@ -113,6 +118,7 @@ defmodule Mix.Tasks.Spec.Check do
 
     if report["status"] == "fail" do
       print_validation_findings(report["findings"] || [], verbose?)
+      print_verdict("fail", tier: "validate", error_findings: summary["errors"])
       Mix.raise("Spec check failed: #{length(report["findings"] || [])} validation finding(s)")
     end
 
@@ -126,10 +132,13 @@ defmodule Mix.Tasks.Spec.Check do
     print_branch_report(branch_report, verbose?)
 
     if branch_report["status"] == "fail" do
+      branch_counts = severity_counts(branch_report["findings"] || [])
+      print_verdict("fail", tier: "branch", error_findings: branch_counts.error)
       Mix.raise("Spec check failed: #{length(branch_report["findings"] || [])} branch finding(s)")
     end
 
     record_evidence(root, report, branch_report)
+    print_verdict("pass")
   end
 
   # covers: specled.tasks.check_builds_compile_context
@@ -216,6 +225,7 @@ defmodule Mix.Tasks.Spec.Check do
   defp print_validation_findings(findings, verbose?) do
     findings
     |> filter_for_stdout(verbose?)
+    |> sort_findings_for_display()
     |> Enum.each(fn finding ->
       severity = String.upcase(finding["severity"] || "warning")
       subject_id = finding["subject_id"] || "global"
@@ -227,12 +237,16 @@ defmodule Mix.Tasks.Spec.Check do
   end
 
   defp print_branch_report(report, verbose?) do
+    severity_counts = severity_counts(report["findings"] || [])
+    info_visibility = if verbose?, do: "info shown", else: "info hidden; --verbose to show"
+
     Mix.shell().info(
-      "branch base=#{report["base"]} changed_files=#{report["summary"]["changed_files"]} findings=#{report["summary"]["findings"]}"
+      "branch base=#{report["base"]} changed_files=#{report["summary"]["changed_files"]} findings=#{report["summary"]["findings"]} (error=#{severity_counts.error} warning=#{severity_counts.warning} info=#{severity_counts.info}, #{info_visibility})"
     )
 
     (report["findings"] || [])
     |> filter_for_stdout(verbose?)
+    |> sort_findings_for_display()
     |> Enum.each(fn finding ->
       severity = String.upcase(finding["severity"] || "warning")
       file = finding["file"] || "-"
@@ -278,7 +292,71 @@ defmodule Mix.Tasks.Spec.Check do
         normalized
 
       {:error, message} ->
+        print_verdict("fail", tier: "validate", error_findings: 0)
         Mix.raise("Invalid value for --min-strength: #{message}")
     end
   end
+
+  defp validate_base!(_root, nil), do: :ok
+  defp validate_base!(_root, "HEAD"), do: :ok
+
+  defp validate_base!(root, base) when is_binary(base) do
+    {_output, exit_code} =
+      System.cmd(
+        "git",
+        ["-C", root, "rev-parse", "--verify", "#{base}^{commit}"],
+        stderr_to_stdout: true
+      )
+
+    if exit_code != 0 do
+      print_verdict("fail", tier: "validate", error_findings: 0)
+      Mix.raise("--base #{inspect(base)} does not resolve to a commit")
+    end
+
+    :ok
+  end
+
+  # covers: specled.tasks.verdict_line
+  # covers: specled.tasks.branch_findings_breakdown
+  defp print_verdict("pass") do
+    Mix.shell().info("spec.check result=pass")
+  end
+
+  defp print_verdict("fail", tier: tier, error_findings: error_findings) do
+    Mix.shell().info("spec.check result=fail tier=#{tier} error_findings=#{error_findings || 0}")
+  end
+
+  defp severity_counts(findings) do
+    Enum.reduce(findings, %{error: 0, warning: 0, info: 0}, fn finding, counts ->
+      case normalized_severity(finding) do
+        "error" -> Map.update!(counts, :error, &(&1 + 1))
+        "warning" -> Map.update!(counts, :warning, &(&1 + 1))
+        "info" -> Map.update!(counts, :info, &(&1 + 1))
+        _ -> counts
+      end
+    end)
+  end
+
+  defp sort_findings_for_display(findings) do
+    Enum.sort_by(findings, fn finding ->
+      {
+        severity_sort_rank(normalized_severity(finding)),
+        finding["file"] || "",
+        finding["subject_id"] || "",
+        finding["code"] || "",
+        finding["message"] || ""
+      }
+    end)
+  end
+
+  defp normalized_severity(finding) do
+    (finding["severity"] || finding[:severity] || "warning")
+    |> to_string()
+    |> String.downcase()
+  end
+
+  defp severity_sort_rank("warning"), do: 0
+  defp severity_sort_rank("info"), do: 1
+  defp severity_sort_rank("error"), do: 2
+  defp severity_sort_rank(_), do: 3
 end

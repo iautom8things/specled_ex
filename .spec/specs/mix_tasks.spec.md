@@ -8,6 +8,8 @@ Provide the user-facing Mix tasks that scaffold, guide, summarize, and strictly 
 
 The `spec.init` scaffold's local skill and README, and the `spec.prime` loop, describe the missing-ADR condition as a two-armed fork: an ADR for durable cross-cutting policy, otherwise a `Spec-Drift: branch_guard_missing_decision_update=info` trailer with a one-line reason.
 
+The `spec.prime` and `spec.next` human guidance share the same verdict read-protocol text so task output and assertions do not drift by invisible Unicode punctuation.
+
 `mix spec.cover.test --per-test`'s child-BEAM preload list (see `specled.tasks.dep_runtime_bootstrap` below) also resident-loads `SpecLedEx.Coverage.Snapshot` — the native/classic per-test engine module owned by `specled.coverage_capture` — for the same reason it already preloads `Formatter`, `Store`, `Coverage`, `Boundary`, and `SpecLedEx.Case`: a fixture's own `app.config` rewrite would otherwise evict the parent's lazily-loaded ebin before the formatter's `suite_started` handler or a hooked test's boundary setup could reach it. The task also creates a public anonymous ETS `:boundary_table` and arms it via the keyword form of the `:specled_ex, :spec_cover_run` seam (owned behavior documented under `specled.coverage_capture`).
 
 ```yaml spec-meta
@@ -267,6 +269,56 @@ decisions:
     that set, and pushes through the lease-guarded Sync production path.
   priority: must
   stability: evolving
+- id: specled.tasks.verdict_line
+  statement: >-
+    mix spec.check and mix spec.validate shall print a trailing verdict line
+    on stdout for every pass and fail path where the task itself reports a
+    verdict before raising on failures. The verdict shall be the last stdout
+    line and the only line the task itself emits matching `^<task> result=`:
+    `spec.check result=pass`, `spec.check result=fail tier=<validate|branch>
+    error_findings=<N>`, `spec.validate result=pass`, or `spec.validate
+    result=fail tier=validate error_findings=<N>`. Verbatim-relayed
+    `kind: command` output is exempt from the task-emitted uniqueness clause,
+    even when captured command output contains a task-name-prefixed line.
+  priority: must
+  stability: evolving
+- id: specled.tasks.branch_findings_breakdown
+  statement: >-
+    mix spec.check branch summaries shall print severity counts as
+    `findings=<N> (error=<E> warning=<W> info=<I>, info hidden; --verbose to
+    show)` when info findings are suppressed and `findings=<N> (error=<E>
+    warning=<W> info=<I>, info shown)` when verbose info output is enabled.
+    Branch and validation findings shall display errors after warning and info
+    findings without changing the underlying report map or recorded evidence.
+  priority: must
+  stability: evolving
+```
+
+## Scenarios
+
+```yaml spec-scenarios
+- id: specled.tasks.verdict_line.stdout_contract
+  covers:
+    - specled.tasks.verdict_line
+  given:
+    - A spec.check or spec.validate invocation completes successfully, fails validation, fails branch enforcement, or is rejected after task-level argument, min-strength, or spec.check --base validation.
+  when:
+    - The task prints its human stdout, including output printed immediately before raising and any verbatim-relayed command output.
+  then:
+    - The final stdout message is the task-specific `result=pass` or `result=fail` verdict.
+    - A failing verdict includes the failing tier and error finding count.
+    - "The task itself emits exactly one line matching `^<task> result=`, excluding verbatim-relayed `kind: command` output."
+- id: specled.tasks.branch_findings_breakdown.summary_and_order
+  covers:
+    - specled.tasks.branch_findings_breakdown
+  given:
+    - spec.check prints branch findings with error, warning, or info severities.
+  when:
+    - The branch summary and human finding lines are printed with and without verbose info output.
+  then:
+    - The summary reports error, warning, and info counts.
+    - The summary discloses whether info findings are hidden or shown.
+    - Error finding lines are displayed after warning and info finding lines.
 ```
 
 ## Verification
@@ -308,6 +360,11 @@ decisions:
   execute: true
   covers:
     - specled.tasks.check_verbose_flag
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.tasks.verdict_line
+    - specled.tasks.branch_findings_breakdown
 - kind: tagged_tests
   execute: true
   covers:

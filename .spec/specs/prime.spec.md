@@ -55,6 +55,27 @@ decisions:
     one-line reason.
   priority: must
   stability: evolving
+- id: specled.prime.verdict_read_protocol
+  statement: >-
+    The mix spec.prime default loop, in both its normal and --bugfix variants,
+    shall append this read protocol sentence wherever it suggests running
+    spec.check: "The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears."
+  priority: must
+  stability: evolving
+```
+
+## Scenarios
+
+```yaml spec-scenarios
+- id: specled.prime.verdict_read_protocol.loop_text
+  covers:
+    - specled.prime.verdict_read_protocol
+  given:
+    - mix spec.prime renders its normal or --bugfix default loop.
+  when:
+    - The loop suggests running spec.check.
+  then:
+    - The suggestion includes the verdict read protocol sentence.
 ```
 
 ## Verification
@@ -67,4 +88,5 @@ decisions:
     - specled.prime.command_execution_default
     - specled.prime.machine_output
     - specled.prime.decision_fork_loop_line
+    - specled.prime.verdict_read_protocol
 ```

@@ -3,6 +3,10 @@ defmodule SpecLedEx.Next do
 
   alias SpecLedEx.ChangeAnalysis
 
+  @verdict_read_protocol "The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears."
+
+  def verdict_read_protocol, do: @verdict_read_protocol
+
   def run(index, root, opts \\ []) do
     analysis = ChangeAnalysis.analyze(index, root, opts)
     focused_subject_ids = focused_subject_ids(analysis)
@@ -53,7 +57,10 @@ defmodule SpecLedEx.Next do
           report["uncovered_policy_files"] || []
         ) ++
         format_items("next_steps", report["next_steps"] || []) ++
-        format_items("commands", report["suggested_commands"] || [])
+        format_items(
+          "commands",
+          suggested_commands_with_protocol(report["suggested_commands"] || [])
+        )
 
     Enum.join(lines, "\n")
   end
@@ -304,6 +311,13 @@ defmodule SpecLedEx.Next do
 
   defp format_items(label, items) do
     ["#{label}:"] ++ Enum.map(items, &"- #{&1}")
+  end
+
+  # covers: specled.next.verdict_read_protocol
+  defp suggested_commands_with_protocol([]), do: []
+
+  defp suggested_commands_with_protocol(commands) do
+    commands ++ [verdict_read_protocol()]
   end
 
   defp format_optional_items(false, _label, _items), do: []

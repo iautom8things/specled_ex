@@ -22,7 +22,9 @@ defmodule Mix.Tasks.SpecTasksTest do
                "specled.tasks.status_summary",
                "specled.tasks.verification_severity_config",
                "specled.tasks.validate_exit_status",
-               "specled.tasks.validate_findings"
+               "specled.tasks.validate_findings",
+               "specled.tasks.verdict_line",
+               "specled.tasks.branch_findings_breakdown"
              ]
 
   test "spec.init scaffolds files, keeps existing content, and overwrites with force", %{
@@ -175,8 +177,10 @@ defmodule Mix.Tasks.SpecTasksTest do
     assert [%{"code" => "requirement_without_verification", "entity_id" => "warning.subject"}] =
              state["findings"]
 
-    assert message_contains?(messages, "spec.validate wrote")
-    assert message_contains?(messages, "status=fail errors=0 warnings=1")
+    assert message_contains?(messages, "state wrote")
+    assert message_contains?(messages, "validate status=fail errors=0 warnings=1")
+    assert List.last(messages) == "spec.validate result=fail tier=validate error_findings=0"
+    assert Enum.count(messages, &String.starts_with?(&1, "spec.validate")) == 1
 
     assert message_contains?(
              messages,
@@ -188,6 +192,10 @@ defmodule Mix.Tasks.SpecTasksTest do
     assert_raise Mix.Error, ~r/Invalid arguments for spec.validate: --strcit/, fn ->
       Mix.Tasks.Spec.Validate.run(["--root", root, "--strcit"])
     end
+
+    messages = drain_shell_messages()
+
+    assert List.last(messages) == "spec.validate result=fail tier=validate error_findings=0"
   end
 
   test "spec.decision.new scaffolds a decision ADR", %{root: root} do
@@ -263,9 +271,10 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     messages = drain_shell_messages()
 
-    assert Enum.any?(messages, &String.contains?(&1, "status=pass errors=0 warnings=0"))
+    assert Enum.any?(messages, &String.contains?(&1, "validate status=pass errors=0 warnings=0"))
     assert Enum.any?(messages, &String.contains?(&1, "debug_checks="))
     assert Enum.any?(messages, &String.contains?(&1, "[PASS] passing.subject"))
+    assert List.last(messages) == "spec.validate result=pass"
   end
 
   test "spec.validate requires explicit --run-commands to execute commands", %{root: root} do
@@ -411,10 +420,18 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     messages = drain_shell_messages()
 
+    assert message_contains?(messages, "validate status=pass errors=0 warnings=0")
+
+    assert message_contains?(
+             messages,
+             "branch base=HEAD changed_files=1 findings=1 (error=1 warning=0 info=0, info hidden; --verbose to show)"
+           )
+
     assert message_contains?(messages, "branch_guard_missing_subject_update")
     assert message_contains?(messages, "branch change_type=single_subject")
     assert message_contains?(messages, "branch impacted_subjects=example.subject")
     assert message_contains?(messages, "branch next=mix spec.next --base HEAD")
+    assert List.last(messages) == "spec.check result=fail tier=branch error_findings=1"
   end
 
   test "spec.check requires a decision update for cross-cutting changes", %{root: root} do
@@ -586,7 +603,80 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     messages = drain_shell_messages()
     assert message_contains?(messages, "requirement_without_verification")
+    assert List.last(messages) == "spec.check result=fail tier=validate error_findings=0"
     refute File.exists?(Path.join(failing_root, ".spec/state.json"))
+  end
+
+  @tag spec: ["specled.tasks.verdict_line", "specled.tasks.branch_findings_breakdown"]
+  test "validation findings print non-error severities before errors", %{root: root} do
+    write_files(root, %{
+      "README.md" => "# mixed.validation.unknown\n",
+      ".spec/config.yml" =>
+        "verification:\n  severities:\n    verification_unknown_cover: error\n"
+    })
+
+    write_subject_spec(
+      root,
+      "mixed_validation",
+      meta: %{
+        "id" => "mixed.validation",
+        "kind" => "module",
+        "status" => "active"
+      },
+      requirements: [
+        %{
+          "id" => "mixed.validation.covered",
+          "priority" => "must",
+          "statement" => "This requirement is intentionally long enough to avoid the prose guard."
+        }
+      ],
+      verification: [
+        %{
+          "kind" => "source_file",
+          "target" => "README.md",
+          "covers" => ["mixed.validation.unknown"]
+        }
+      ]
+    )
+
+    assert_raise Mix.Error, ~r/Spec validate failed: 2 finding/, fn ->
+      Mix.Tasks.Spec.Validate.run(["--root", root, "--strict"])
+    end
+
+    validate_messages = drain_shell_messages()
+
+    validate_warning_index =
+      Enum.find_index(validate_messages, &String.contains?(&1, "[WARNING]"))
+
+    validate_error_index = Enum.find_index(validate_messages, &String.contains?(&1, "[ERROR]"))
+
+    assert is_integer(validate_warning_index),
+           "expected a displayed validation warning, got: #{inspect(validate_messages)}"
+
+    assert is_integer(validate_error_index),
+           "expected a displayed validation error, got: #{inspect(validate_messages)}"
+
+    assert validate_warning_index < validate_error_index
+
+    assert List.last(validate_messages) ==
+             "spec.validate result=fail tier=validate error_findings=1"
+
+    assert_raise Mix.Error, ~r/Spec check failed: 2 validation finding/, fn ->
+      Mix.Tasks.Spec.Check.run(["--root", root])
+    end
+
+    check_messages = drain_shell_messages()
+    check_warning_index = Enum.find_index(check_messages, &String.contains?(&1, "[WARNING]"))
+    check_error_index = Enum.find_index(check_messages, &String.contains?(&1, "[ERROR]"))
+
+    assert is_integer(check_warning_index),
+           "expected a displayed validation warning, got: #{inspect(check_messages)}"
+
+    assert is_integer(check_error_index),
+           "expected a displayed validation error, got: #{inspect(check_messages)}"
+
+    assert check_warning_index < check_error_index
+    assert List.last(check_messages) == "spec.check result=fail tier=validate error_findings=1"
   end
 
   test "spec.check executes commands by default", %{root: root} do
@@ -612,7 +702,40 @@ defmodule Mix.Tasks.SpecTasksTest do
     refute File.exists?(Path.join(root, ".spec/state.json"))
     assert File.read!(Path.join(root, "checked.txt")) == "checked"
     assert message_contains?(messages, "debug_checks=")
-    assert message_contains?(messages, "status=pass errors=0 warnings=0")
+    assert message_contains?(messages, "validate status=pass errors=0 warnings=0")
+    assert List.last(messages) == "spec.check result=pass"
+    assert Enum.count(messages, &String.starts_with?(&1, "spec.check result=")) == 1
+  end
+
+  @tag spec: ["specled.tasks.verdict_line"]
+  test "spec.check keeps its verdict last when failed command output echoes task result", %{
+    root: root
+  } do
+    write_subject_spec(
+      root,
+      "echoed_command",
+      meta: %{"id" => "echoed.command", "kind" => "module", "status" => "active"},
+      requirements: [%{"id" => "echoed.command.requirement", "statement" => "Covered"}],
+      verification: [
+        %{
+          "kind" => "command",
+          "target" => "sh -c 'printf \"spec.check result=pass\\n\"; exit 1'",
+          "covers" => ["echoed.command.requirement"],
+          "execute" => true
+        }
+      ]
+    )
+
+    assert_raise Mix.Error, ~r/Spec check failed: 1 validation finding/, fn ->
+      Mix.Tasks.Spec.Check.run(["--root", root])
+    end
+
+    messages = drain_shell_messages()
+    output = Enum.join(messages, "\n")
+
+    assert output =~ "\nspec.check result=pass\n"
+    assert List.last(messages) == "spec.check result=fail tier=validate error_findings=1"
+    assert Enum.count(messages, &String.starts_with?(&1, "spec.check result=")) == 1
   end
 
   @tag spec: [
@@ -748,7 +871,8 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     messages = drain_shell_messages()
 
-    assert message_contains?(messages, "status=pass errors=0 warnings=0")
+    assert message_contains?(messages, "validate status=pass errors=0 warnings=0")
+    assert List.last(messages) == "spec.check result=pass"
     refute message_contains?(messages, "requirement_without_verification")
     refute File.exists?(Path.join(root, ".spec/state.json"))
   end
@@ -801,11 +925,50 @@ defmodule Mix.Tasks.SpecTasksTest do
     assert_raise Mix.Error, ~r/Invalid arguments for spec.check: --no-strict/, fn ->
       Mix.Tasks.Spec.Check.run(["--root", root, "--no-strict"])
     end
+
+    messages = drain_shell_messages()
+
+    assert List.last(messages) == "spec.check result=fail tier=validate error_findings=0"
   end
 
   test "spec.validate rejects invalid min strength values", %{root: root} do
     assert_raise Mix.Error, ~r/Invalid value for --min-strength/, fn ->
       Mix.Tasks.Spec.Validate.run(["--root", root, "--min-strength", "strongest"])
     end
+
+    messages = drain_shell_messages()
+
+    assert List.last(messages) == "spec.validate result=fail tier=validate error_findings=0"
+  end
+
+  test "spec.check rejects invalid min strength values", %{root: root} do
+    assert_raise Mix.Error, ~r/Invalid value for --min-strength/, fn ->
+      Mix.Tasks.Spec.Check.run(["--root", root, "--min-strength", "strongest"])
+    end
+
+    messages = drain_shell_messages()
+
+    assert List.last(messages) == "spec.check result=fail tier=validate error_findings=0"
+  end
+
+  @tag spec: ["specled.tasks.verdict_line"]
+  test "spec.check rejects invalid base refs with a verdict before raising", %{root: root} do
+    init_git_repo(root)
+
+    assert_raise Mix.Error,
+                 ~r/--base "definitely-not-a-real-ref" does not resolve to a commit/,
+                 fn ->
+                   Mix.Tasks.Spec.Check.run([
+                     "--root",
+                     root,
+                     "--base",
+                     "definitely-not-a-real-ref"
+                   ])
+                 end
+
+    messages = drain_shell_messages()
+
+    refute message_contains?(messages, "validate status=")
+    assert List.last(messages) == "spec.check result=fail tier=validate error_findings=0"
   end
 end

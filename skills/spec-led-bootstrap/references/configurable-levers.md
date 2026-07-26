@@ -146,6 +146,8 @@ mix spec.check --verbose             # surface :info findings
 SPECLED_SHOW_INFO=1 mix spec.check   # same, env var form
 ```
 
+The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears.
+
 Bootstrap should note in `.spec/AGENTS.md`:
 
 > CI always runs the full gate. `--no-run-commands` is for the fast local

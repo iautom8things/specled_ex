@@ -81,7 +81,7 @@ rediscovered per contributor.
 ## Conformance findings — interpretation
 
 Run `mix spec.validate` and `mix spec.check --base HEAD~1` (or `--base HEAD`
-on a fresh repo) and classify each finding.
+on a fresh repo) and classify each finding. The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears.
 
 ### Schema-fatal (identifier validator + parse errors)
 

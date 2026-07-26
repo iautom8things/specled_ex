@@ -64,6 +64,28 @@ decisions:
   statement: mix spec.next shall stay read-only and return guidance output without writing current-truth files or derived state.
   priority: must
   stability: evolving
+- id: specled.next.verdict_read_protocol
+  statement: >-
+    The mix spec.next human command suggestions shall include this read
+    protocol sentence after suggested spec.check commands: "The verdict is the
+    last stdout line starting with `spec.check result=` — not `validate
+    status=…`. A non-zero exit means failure even if no verdict line appears."
+  priority: must
+  stability: evolving
+```
+
+## Scenarios
+
+```yaml spec-scenarios
+- id: specled.next.verdict_read_protocol.commands
+  covers:
+    - specled.next.verdict_read_protocol
+  given:
+    - mix spec.next renders human command suggestions for a changed branch.
+  when:
+    - The suggestions include a spec.check command.
+  then:
+    - The commands section also includes the verdict read protocol sentence.
 ```
 
 ## Verification
@@ -77,4 +99,5 @@ decisions:
     - specled.next.decision_fork_guidance
     - specled.next.bugfix_guidance
     - specled.next.read_only
+    - specled.next.verdict_read_protocol
 ```

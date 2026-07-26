@@ -16,8 +16,11 @@ defmodule Mix.Tasks.SpecPrimeTaskTest do
                "specled.tasks.prime_json",
                "specled.tasks.status_summary",
                "specled.tasks.validate_exit_status",
-               "specled.tasks.validate_findings"
+               "specled.tasks.validate_findings",
+               "specled.prime.verdict_read_protocol"
              ]
+
+  @verdict_protocol SpecLedEx.Next.verdict_read_protocol()
 
   test "spec.prime stays read-only and skips command execution by default", %{root: root} do
     write_subject_spec(
@@ -48,6 +51,7 @@ defmodule Mix.Tasks.SpecPrimeTaskTest do
     assert message_contains?(messages, "Next")
     assert message_contains?(messages, "Read `.spec/README.md` and `.spec/decisions/README.md`")
     assert message_contains?(messages, "run_commands=false")
+    assert message_contains?(messages, @verdict_protocol)
   end
 
   @tag spec: "specled.prime.decision_fork_loop_line"
@@ -146,5 +150,7 @@ defmodule Mix.Tasks.SpecPrimeTaskTest do
 
     assert report["loop"]["steps"]
            |> Enum.any?(&String.contains?(&1, "mix spec.check --base HEAD"))
+
+    assert report["loop"]["steps"] |> Enum.any?(&String.contains?(&1, @verdict_protocol))
   end
 end

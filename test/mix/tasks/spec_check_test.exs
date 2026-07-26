@@ -34,6 +34,11 @@ defmodule Mix.Tasks.Spec.CheckTest do
 
       messages = drain_shell_messages()
 
+      assert message_contains?(
+               messages,
+               "findings=1 (error=0 warning=0 info=1, info hidden; --verbose to show)"
+             )
+
       refute Enum.any?(messages, fn msg ->
                String.contains?(msg, "[INFO]") and
                  String.contains?(msg, "append_only/no_baseline")
@@ -49,12 +54,42 @@ defmodule Mix.Tasks.Spec.CheckTest do
 
       messages = drain_shell_messages()
 
+      assert message_contains?(
+               messages,
+               "findings=1 (error=0 warning=0 info=1, info shown)"
+             )
+
       assert Enum.any?(messages, fn msg ->
                String.contains?(msg, "[INFO]") and
                  String.contains?(msg, "append_only/no_baseline")
              end),
              "--verbose must print [INFO] append_only/no_baseline on stdout; got: " <>
                inspect(messages)
+    end
+
+    @tag spec: ["specled.tasks.check_verbose_flag", "specled.tasks.branch_findings_breakdown"]
+    test "branch findings print non-error severities before errors", %{root: root} do
+      scaffold_mixed_branch_findings_fixture(root)
+
+      run_spec_check(root, ["--base", "HEAD", "--verbose"])
+
+      messages = drain_shell_messages()
+      warning_index = Enum.find_index(messages, &String.contains?(&1, "[WARNING]"))
+      error_index = Enum.find_index(messages, &String.contains?(&1, "[ERROR]"))
+
+      assert message_contains?(
+               messages,
+               "findings=2 (error=1 warning=1 info=0, info shown)"
+             )
+
+      assert is_integer(warning_index),
+             "expected a displayed warning finding, got: #{inspect(messages)}"
+
+      assert is_integer(error_index),
+             "expected a displayed error finding, got: #{inspect(messages)}"
+
+      assert warning_index < error_index
+      assert List.last(messages) == "spec.check result=fail tier=branch error_findings=1"
     end
 
     @tag spec: "specled.tasks.check_verbose_flag"
@@ -147,6 +182,37 @@ defmodule Mix.Tasks.Spec.CheckTest do
     index = SpecLedEx.index(root)
     SpecLedEx.write_state(index, nil, root)
     commit_all(root, "add spec and state.json")
+  end
+
+  defp scaffold_mixed_branch_findings_fixture(root) do
+    init_git_repo(root)
+
+    write_files(root, %{
+      ".spec/config.yml" => """
+      branch_guard:
+        severities:
+          branch_guard_missing_subject_update: warning
+      """,
+      "lib/example.ex" => "defmodule Example do\nend\n"
+    })
+
+    write_subject_spec(
+      root,
+      "example",
+      meta: %{
+        "id" => "example.subject",
+        "kind" => "module",
+        "status" => "active",
+        "surface" => ["lib/example.ex"]
+      }
+    )
+
+    commit_all(root, "initial")
+
+    write_files(root, %{
+      "lib/example.ex" => "defmodule Example do\n  def run, do: :ok\nend\n",
+      "lib/orphan.ex" => "defmodule Orphan do\nend\n"
+    })
   end
 
   # Runs mix spec.check and treats an expected Mix.Error (when findings flip
