@@ -18,8 +18,8 @@
     }
   ],
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "title": "Retire duplicated coverage_tab_bind_closure parent statement once lib/** covers markers can be repointed",
   "type": "task",
-  "updated_at": "2026-07-26T20:56:41Z"
+  "updated_at": "2026-07-26T20:58:07Z"
 }
