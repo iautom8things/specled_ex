@@ -2,13 +2,15 @@
   "assignee": "",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-07-26T00:29:38Z",
+  "close_reason": "Duplicate of specled_-npo (same dn4.9 audit finding, filed 35s apart by parallel audit agents; npo carries the Advances: header).",
   "created": "2026-07-26T00:26:18Z",
   "description": "Found by the specled_-dn4.9 audit (2026-07-26T00:25:30Z). specled.coverage_capture.envelope_meta's statement covers the tolerant READ of a missing :meta, but never states the present-but-non-map rejection rule that store_test.exs now asserts after dn4.9 item 14. The test is ahead of the requirement.\n\nFix: state the rejection rule in the requirement so the assertion has an owning clause. Additive, so append-only-safe.",
   "id": "specled_-pj8",
   "labels": [],
   "priority": 3,
-  "status": "open",
+  "status": "closed",
   "title": "envelope_meta requirement under-specifies its own test: present-but-non-map :meta rejection is asserted but unstated",
   "type": "task",
-  "updated_at": "2026-07-26T00:26:18Z"
+  "updated_at": "2026-07-26T00:29:38Z"
 }
