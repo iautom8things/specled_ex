@@ -17,11 +17,15 @@
     {
       "text": "WAVE 1 SPAWNED 2026-07-26. Implementers: Codex (profile personal, effort high). base_sha=402f4a271032bacba697a3d03867b1614bc7e506 for all three.\n\n  specled_-48i  stage=/Users/mz/src/specled_ex-concepts-content-lint            branch=specled_-48i/concepts-content-lint            session=orch-233-48i-impl-1\n  specled_-gai  stage=/Users/mz/src/specled_ex-retire-compound-coverage-req     branch=specled_-gai/retire-compound-coverage-req     session=orch-233-gai-impl-1\n  specled_-ymn  stage=/Users/mz/src/specled_ex-cross-vm-temp-adr                branch=specled_-ymn/cross-vm-temp-adr                session=orch-233-ymn-impl-1\n\nAll three stage smokes green before spawn (mix compile --warnings-as-errors + full suite, 3 properties / 1245 tests / 0 failures each).\n\nspecled_-vk0 held: blocked by specled_-48i (shared .spec/specs/package.spec.md). Spawns in wave 2 off the post-48i epic HEAD.\n\nAll four ticket descriptions were rewritten during admission into canonical scope contracts (## Pre-flight corrections / ## Allowed touches / ## Out of Scope (files) / ## Out of Scope (intent) / ## Verification (gates)); the earlier ORCHESTRATOR ADMISSION comments are marked SUPERSEDED. Admission found and corrected four substantive ticket defects: gai's marker inventory undercounted 4 lib files/6 markers as 3 files; 48i's gap was already largely closed by cz0/0x4 and is now scoped to concepts_guide only; ymn advances specled.verification but edits a specled.binding-owned file (co-change authorized explicitly); vk0's family-widening item was already shipped by cz0.\n\nSide finding filed standalone as specled_-pii (not adopted into this epic — not required for any child to succeed): the subject-lookup command documented in .claude/rules/beadwork.md and specled.md, bw list --grep \"Advances:.*\u003csubject.id\u003e\", silently returns zero because --grep is a literal substring search.",
       "timestamp": "2026-07-26T20:58:09Z"
+    },
+    {
+      "text": "LESSONS\n- [untested-clause] Assert a doc clause with needles UNIQUE to its section, or scope the search to the text between its heading and the next heading; bare identifier tokens are satisfied incidentally by unrelated prose elsewhere in the same file, leaving the clause guarded by its heading alone (from specled_-48i)",
+      "timestamp": "2026-07-26T21:14:21Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "[EPIC] Impromptu: doc-lint content verification, lint hardening, coverage-requirement retirement, cross-VM temp-name ADR reconciliation",
   "type": "epic",
-  "updated_at": "2026-07-26T20:58:09Z"
+  "updated_at": "2026-07-26T21:14:21Z"
 }
