@@ -18,8 +18,8 @@
       "message": "Changed file lib/mix/tasks/spec.validate.ex impacts subject specled.prose_guard; spec.md not co-changed, but realization attested binding(s) Mix.Tasks.Spec.Validate as clean — informational only."
     }
   ],
-  "run_at": "2026-07-26T13:18:17.956483Z",
-  "run_id": "e816bc2f0c4d16a2226527bed90522b3",
+  "run_at": "2026-07-26T13:18:31.539516Z",
+  "run_id": "0e8c8991e93b6d7e8f7d42fce1181b69",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "5eb42c2a2af7f7acff5d926cc1094d2d042f01c8",
