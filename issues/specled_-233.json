@@ -9,8 +9,8 @@
     "slug:impromptu-doc-lint-content"
   ],
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "[EPIC] Impromptu: doc-lint content verification, lint hardening, coverage-requirement retirement, cross-VM temp-name ADR reconciliation",
   "type": "epic",
-  "updated_at": "2026-07-26T20:38:33Z"
+  "updated_at": "2026-07-26T20:41:25Z"
 }
