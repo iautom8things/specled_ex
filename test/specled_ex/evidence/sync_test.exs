@@ -1,11 +1,6 @@
 defmodule SpecLedEx.Evidence.SyncTest do
   use SpecLedEx.FixtureCase, async: false
 
-  # specled_-odl: subprocess-heavy module (git plumbing per test, slowest test
-  # ~5s idle); deadline headroom over the 60s default for loaded-machine gate
-  # runs, scoped here rather than globally.
-  @moduletag timeout: to_timeout(minute: 2)
-
   import SpecLedEx.EvidenceHelpers
 
   alias SpecLedEx.Evidence.{Entry, Store, Sync}

@@ -5,8 +5,8 @@ defmodule SpecLedEx.VerifierTest do
   # specled_-odl: subprocess-heavy module (nested verifier runs spawn shell
   # shims). Under machine load spawn latency inflates wall time far beyond the
   # idle baseline, so this module gets deadline headroom over the 60s default.
-  # Scoped here rather than raised globally so the other ~1200 tests keep the
-  # tighter runaway-regression deadline.
+  # Scoped here rather than raised globally so the rest of the suite keeps
+  # the tighter runaway-regression deadline.
   @moduletag timeout: to_timeout(minute: 2)
 
   # Shared budget for the timeout-classification tests below whose assertions

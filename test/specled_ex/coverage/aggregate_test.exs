@@ -9,10 +9,6 @@ defmodule SpecLedEx.Coverage.AggregateTest do
   # so this is a real production-path smoke test, not seam-only coverage.
   use SpecLedEx.IntegrationCase, async: false
 
-  # specled_-odl: child-BEAM-per-test module; deadline headroom over the 60s
-  # default for loaded-machine gate runs, scoped here rather than globally.
-  @moduletag timeout: to_timeout(minute: 2)
-
   @moduletag spec: [
                "specled.coverage_capture.aggregate_ingest",
                "specled.coverage_capture.aggregate_empty_coverage",
