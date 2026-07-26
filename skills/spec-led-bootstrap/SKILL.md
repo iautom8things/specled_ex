@@ -1,7 +1,7 @@
 ---
 name: spec-led-bootstrap
 description: "Adopt SpecLedEx in a repo: install the dep, scaffold .spec/, extract initial subjects, produce a phased bw epic. For repos with a healthy .spec/, use /spec-led-development instead."
-argument-hint: "[--target greenfield|brownfield|infer] [--depth phase0..phase6; common stops: phase0|phase1|phase2|phase4|phase6]"
+argument-hint: "[--depth phase0..phase6; common stops: phase0|phase1|phase2|phase4|phase6]"
 ---
 
 # /spec-led-bootstrap — Land SpecLedEx in a Repository
@@ -14,8 +14,8 @@ It is **state-detecting, target-driven, and beadwork-tracked**:
 1. **Detect** — read what is already in place (dep, `.spec/`, specs, conformance,
    adoption-phase signals) and classify the repo's current state.
 2. **Target** — choose how far down the adoption ladder this bootstrap should
-   carry the repo. The brownfield ladder has six phases; bootstrap can stop at
-   any of them.
+   carry the repo. The adoption ladder has seven phases (0 through 6);
+   bootstrap can stop at any of them.
 3. **Extract** (when needed) — for repos with no specs, propose subject
    boundaries from existing module structure. This is the hard step and gets
    its own ceremony — see [references/subject-extraction.md](references/subject-extraction.md).
@@ -581,7 +581,7 @@ suspect candidates with a note "shares surface with existing subject
 - [ ] If subjects were extracted: every `.spec/specs/<id>.spec.md` parses (`mix spec.validate` clean)
 - [ ] One bw epic exists with a single-line `Target phase:` field in its description
 - [ ] Stage tickets cover phase0..target_phase, in order, with dependencies wired
-- [ ] Every stage ticket has all five sections: Advances, Deliverable, Verification, Out of Scope (files), Out of Scope (intent), Merge gate
+- [ ] Every stage ticket has all seven sections: Advances, Deliverable, Verification, Out of Scope (files), Allowed touches, Out of Scope (intent), Merge gate
 - [ ] If subject extraction ran, the user saw the list before drafts were written
 - [ ] If the workspace was pre-ledger (tracked `.spec/state.json`): migration ticket created and wired to block phase1+
 - [ ] If `target_phase < phase6`: standalone graduation-review ticket created and deferred ~4 weeks

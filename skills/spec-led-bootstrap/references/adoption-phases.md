@@ -36,15 +36,17 @@ is opt-in via the mix tasks.
 - `mix spec.init` has run on the worktree
 - `mix compile --warnings-as-errors` passes (catches dep version mismatch)
 - `mix spec.check` exits 0 with no findings beyond `detector_unavailable`
-- `.spec/AGENTS.md` references the project verification command (replace
-  the `<PROJECT_VERIFICATION_COMMAND>` placeholder); on containerized
+- `.spec/AGENTS.md` references the project verification command — the
+  scaffolded template ships without one and has no placeholder to replace,
+  so add the line; on containerized
   repos, document the split loop (`<host_check_cmd>` on the host,
   `<container_verify_cmd>` in the container)
 - `mix spec.evidence.install_hook` has run (pre-push hook installed, or
   the append-snippet printed for repos with an existing hook)
-- The daily-loop guidance in `.spec/AGENTS.md` mentions `mix spec.sync`
-  as the evidence reconciliation step (the pre-push hook runs it
-  best-effort; a manual run recovers from skipped hooks)
+- Add `mix spec.sync` to the daily-loop guidance in `.spec/AGENTS.md` as
+  the evidence reconciliation step — the scaffolded template does not
+  mention it (the pre-push hook runs it best-effort; a manual run
+  recovers from skipped hooks)
 - The two-armed decision rubric (durable/cross-cutting → ADR;
   ticket-local → `Spec-Drift:` trailer with a one-line reason) is written
   into `.spec/AGENTS.md` and `.spec/decisions/README.md`
@@ -106,14 +108,18 @@ not exist (intentional).
 - `mix spec.check --base origin/main` clean
 - First clean check committed `.spec/realization_hashes.json` so subsequent
   runs have baseline hashes to compare against
-- CI runs `mix spec.check --base <pr-base>` on pull requests (severities
-  still warning-level, so it reports without hard-failing). The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears.
+- CI runs `mix spec.check --base <pr-base>` on pull requests. The gate is
+  not automatically soft: `branch_guard_dangling_binding` and
+  `branch_guard_unmapped_change` default to `error` in code, so keep them
+  downgraded in `.spec/config.yml` for as long as the team wants
+  report-only CI. The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears.
 - CI renders `mix spec.review` and uploads/deploys the HTML artifact —
-  start from the scaffolded workflow template
-  (`deps/spec_led_ex/priv/spec_init/workflows/spec_review.yml.eex`, copied
-  to `.github/workflows/spec-review.yml`)
+  start from the workflow template shipped in the package
+  (`deps/spec_led_ex/priv/spec_init/workflows/spec_review.yml.eex`);
+  `mix spec.init` does not copy it, so copy it to
+  `.github/workflows/spec-review.yml` yourself
 
-**Security caveat (scaffolded workflow).** The scaffolded template builds
+**Security caveat (shipped workflow template).** The shipped template builds
 untrusted PR code in the same job that holds a write-scoped token and deploys
 the artifact. On a public repo that is a privilege-escalation surface: split
 the render (read-only, runs PR code) from the deploy/comment job (write token,
@@ -307,5 +313,5 @@ The epic closes when:
    of [task-templates.md](task-templates.md) for the ticket body and its
    rationale.
 
-Once those four hold, future spec work flows through `/spec-led-development`
+Once those five hold, future spec work flows through `/spec-led-development`
 and `/distill` rather than this skill.

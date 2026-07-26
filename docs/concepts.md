@@ -242,7 +242,7 @@ with it.*
     check authorizes the modal downgrade; the spec edit rides along.
   - **Should have been canonical.** A rename, reordering, or
     stylistic refactor that the canonicalizer failed to absorb. File
-    a defect against `SpecLedEx.Realization.Canonicalizer`; do not
+    a defect against `SpecLedEx.Realization.Canonical`; do not
     weaken the spec to match. The `Spec-Drift: refactor` trailer
     exists for the honest case where the author confirms the change
     is behavior-preserving and the canonicalizer simply does not yet
@@ -551,7 +551,11 @@ A single session touches at most two sides of the triangle on purpose:
 
 The verification command is aggregated: every `tagged_tests` entry across
 the repo is collapsed into a single
-`mix test --only spec:<id>... --include integration <files>` invocation.
+`mix test --include integration <files>` invocation over the
+scanner-resolved backing files (plus the attribution formatter flags) —
+file selectors rather than `--only spec:<id>` filters, so list-valued
+`@tag spec:` and inherited `@moduletag`/`@describetag` entries execute too
+(see the `tagged_tests_file_selectors` decision).
 One BEAM boot for the whole spec corpus, not one per subject. The
 primitives that make this fast (`SpecLedEx.TaggedTests`,
 `SpecLedEx.TagScanner` with AST-based `@tag spec:` extraction, the

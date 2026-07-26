@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.9.2 — 2026-07-25
+
+Docs-accuracy fast-follow from the specled_-hj4.2 verification notes: corrects
+false or stale claims in the adopter docs and the spec-led-bootstrap skill,
+each verified against the implementation before editing. No behavior changes.
+(specled_-0x4)
+
+- Adopter docs accuracy sweep across `docs/adoption.md`, `docs/concepts.md`,
+  and `docs/coverage.md`: tagged_tests aggregation builds file-selector
+  commands rather than `--only spec:<id>` filters; the branch-guard gate table
+  now lists all seven `branch_guard_*` codes including the two `error`-default
+  codes it omitted; `umbrella_unsupported` is a `detector_unavailable` reason
+  field, not an overridable finding code; `mix spec.init` writes six files
+  including both starter subjects; the Phase 5 implementation tier requires the
+  `realization.enabled_tiers` opt-in; graceful degrade emits one
+  `detector_unavailable` per enabled realization tier and per selected subject;
+  the canonicalizer is `SpecLedEx.Realization.Canonical`; the legacy-artifact
+  message is quoted as `store.ex` emits it. (specled_-zhe)
+- Bootstrap skill accuracy (`skills/spec-led-bootstrap/`): dropped severity
+  overrides are documented as surfaced `[CONFIG]` stderr warnings, not silent
+  no-ops; per-code severity defaults and the `Spec-Drift:` preset mapping are
+  attributed to `SpecLedEx.BranchCheck` and `SpecLedEx.BranchCheck.Trailer`
+  rather than `SpecLedEx.Config`; `branch_guard_dangling_binding` and
+  `branch_guard_unmapped_change` are documented as `error` code defaults, so
+  phase2 CI is not automatically report-only; scaffold claims corrected (no
+  `<PROJECT_VERIFICATION_COMMAND>` placeholder exists, the scaffolded AGENTS.md
+  does not mention `mix spec.sync`, and the spec_review workflow template is
+  shipped in `priv/spec_init/` but never copied by `mix spec.init`); SKILL.md
+  internal consistency repaired (seven phases, all seven ticket sections, the
+  unconsumed `--target` argument-hint removed). (specled_-j3k)
+
 ## 0.9.1 — 2026-07-25
 
 - Fixed the flaky `Tracer.merge_edges/3` property test: `uniq_list_of` over the
