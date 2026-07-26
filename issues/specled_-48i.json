@@ -19,11 +19,15 @@
     {
       "text": "SUPERSEDED: the ORCHESTRATOR ADMISSION comment above has been folded into the ticket DESCRIPTION (bw update, 2026-07-26), which is now the single canonical scope contract. The description carries the pre-flight corrections plus '## Allowed touches', '## Out of Scope (files)', '## Out of Scope (intent)', and '## Verification (gates)' as first-class sections, which is where the verifier's mechanical scope check reads them.\n\nRead the DESCRIPTION, not that comment. If the two ever disagree, the description wins.",
       "timestamp": "2026-07-26T20:56:41Z"
+    },
+    {
+      "text": "IMPLEMENTED\nSession: orch-233-48i-impl-1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-48i/codex-orch-233-48i-impl-1/log\nLog capture note: sandbox denied creating the required log path; command transcript was captured at /private/tmp/codex-orch-233-48i-impl-1.log.\n\nCommit: c0f0b7b470119689b29a0e7f4fad0f88bd1c6677\nFiles touched: .spec/specs/package.spec.md; test/docs_concepts_content_lint_test.exs\nTests added: SpecLedEx.DocsConceptsContentLintTest — \"concepts guide preserves the required spec-triangle, tier, degrade, and drift clauses\"\nVerification stubs flipped: none; specled.package.concepts_guide was moved from existence-only source_file verification to the existing execute:true tagged_tests verification.\nVerification tier: change-scoped — mix compile --warnings-as-errors; mix test test/docs_concepts_content_lint_test.exs; mix test --stale; mix spec.check --no-run-commands; specific concepts_guide tagged_tests verification executed via the touched test file; full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: Added a focused concepts guide content-lint test tagged to specled.package.concepts_guide, asserting the spec triangle, realized_by tiers, detector_unavailable graceful-degrade rule, drift acceptance paths, and verdict protocol. Updated package.spec.md so concepts_guide is verified through tagged_tests rather than the prior docs/concepts.md source_file presence check. Falsifiability gate passed: temporarily changing the docs/concepts.md \"**Delete-and-reseed**\" clause to \"**Reseed**\" made mix test test/docs_concepts_content_lint_test.exs fail with the expected missing intentional drift acceptance path message, then the doc was reverted before commit; no epic lessons were present to check.",
+      "timestamp": "2026-07-26T21:03:46Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Content-lint verification for adoption_guide/concepts_guide must requirements (source_file is existence-only)",
   "type": "task",
-  "updated_at": "2026-07-26T20:58:07Z"
+  "updated_at": "2026-07-26T21:03:46Z"
 }
