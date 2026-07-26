@@ -39,11 +39,15 @@
     {
       "text": "APPROVED per AUDIT: APPROVE (2026-07-26T00:25:30Z). Merging into specled_-dn4/fast-follow-per-test.\n\nAll three verifier Notes adjudicated as genuinely advisory (N2 was chartered outright). Five\nfollow-ups recommended by the audit are being carved as STANDALONE tickets, not epic children —\nthe epic's expansion ledger stays at three and none of the five is required for this epic's\ndeliverable.",
       "timestamp": "2026-07-26T00:26:09Z"
+    },
+    {
+      "text": "APPROVED. Merged into specled_-dn4/fast-follow-per-test. Closing per orchestrator sign-off. (Gate initially red on 49 phantom branch findings from a stale base — origin/main moved to 0.8.0 mid-epic; after rebasing the epic onto 134d0e8 the gate is green: spec.check result=pass, exit 0, 1236 tests 0 failures, 0 ERROR findings. Approved with the three advisory behavior-change notes from the 00:25:30Z audit, all filed as standalone follow-ups.)",
+      "timestamp": "2026-07-26T01:03:56Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "Tier-3 seam cleanups, cheap perf, robustness batch (F9/F13/F16/F17/F19/F20/F46, F25, F21/F22/F24, F44/F15, F10/F42/F43)",
   "type": "task",
-  "updated_at": "2026-07-26T00:26:09Z"
+  "updated_at": "2026-07-26T01:03:56Z"
 }
