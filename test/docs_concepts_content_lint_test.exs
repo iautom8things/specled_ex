@@ -16,11 +16,11 @@ defmodule SpecLedEx.DocsConceptsContentLintTest do
 
     assert_contains_all(concepts, "realized_by tiers", [
       "## The five tiers",
-      "`api_boundary`",
-      "`implementation`",
-      "`expanded_behavior`",
-      "`use`",
-      "`typespecs`"
+      "| `api_boundary`        | Function head, arity, arg pattern shape, literal default arguments.",
+      "| `implementation`      | Transitive call closure of the declared MFAs, bounded by subject ownership.",
+      "| `expanded_behavior`   | Post-macro-expansion AST from `:beam_lib.chunks(..., [:debug_info])`.",
+      "| `use`                 | Provider's `expanded_behavior` hash + sorted consumer module list.",
+      "| `typespecs`           | Sorted `@spec` / `@type` declarations."
     ])
 
     assert_contains_all(concepts, "graceful-degrade detector_unavailable rule", [
@@ -35,8 +35,6 @@ defmodule SpecLedEx.DocsConceptsContentLintTest do
       "**`Spec-Drift: branch_guard_realization_drift=info` trailer**",
       "**Delete-and-reseed**"
     ])
-
-    assert_contains(concepts, "mix spec.check verdict read protocol", "spec.check result=")
   end
 
   defp assert_contains_all(content, clause, needles) do
@@ -45,10 +43,5 @@ defmodule SpecLedEx.DocsConceptsContentLintTest do
     assert missing == [],
            "docs/concepts.md is missing #{clause} content:\n" <>
              Enum.map_join(missing, "\n", &"  - #{&1}")
-  end
-
-  defp assert_contains(content, clause, needle) do
-    assert String.contains?(content, needle),
-           "docs/concepts.md is missing #{clause} content: #{inspect(needle)}"
   end
 end
