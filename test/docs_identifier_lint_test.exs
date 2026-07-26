@@ -13,7 +13,7 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
        fabricated code that survives in a spec scenario or an ADR is just as
        misleading as one in a skill.
 
-       Those five are every emitted family carrying a namespace or a ratified
+       Those five are every emitted family carrying a namespace or a shared
        prefix. The rest of the emitted codes — `detector_unavailable`,
        `spec_requirement_too_short`, and the several dozen bare validator and
        tag-scanner codes — are plain snake_case, and the stem patterns that
@@ -257,6 +257,16 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     # Catches: the lint silently stops rejecting unknown codes at all.
     assert unknown_tokens("see `branch_guard_totally_made_up` for details", @decision_file) ==
              ["branch_guard_totally_made_up"]
+  end
+
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "the guarded-family count is exactly the number the must claims" do
+    # specled.package.doc_identifier_integrity says "the five code families
+    # guarded today" and names them. Nothing else makes that number
+    # self-defending: adding a sixth pattern here without updating the must
+    # would silently turn an accurate statement into an undercount, and every
+    # other test in this file would stay green — none of them counts families.
+    assert length(@token_patterns) == 5
   end
 
   @tag spec: "specled.package.doc_identifier_integrity"
