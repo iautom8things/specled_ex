@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-26T00:26:19Z",
+  "description": "Found by the specled_-dn4.9 audit (2026-07-26T00:25:30Z, ruling N2 — chartered removal, but the asymmetry it leaves is worth resolving).\n\ndn4.9 item 4 removed 'state.modules || state.modules_fn.()' from flush/1, so flush now raises where it previously recovered. The neighbouring record_inventory/2 still carries its own %{modules: nil} recovery clause. Unreachable under ExUnit's real lifecycle, but one sibling defending against a state the other no longer defends against is a latent trap for the next reader.\n\nFix: pick one — restore the fallback in flush/1, drop the sibling clause in record_inventory/2, or comment why they legitimately differ.",
+  "id": "specled_-5ui",
+  "labels": [],
+  "priority": 3,
+  "status": "open",
+  "title": "Formatter defensive asymmetry: record_inventory/2 recovers from %{modules: nil} but flush/1 no longer does",
+  "type": "task",
+  "updated_at": "2026-07-26T00:26:19Z"
+}
