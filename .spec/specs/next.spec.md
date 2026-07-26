@@ -85,8 +85,8 @@ decisions:
   when:
     - The suggestions include a spec.check command.
   then:
-    - The commands section also includes the verdict read protocol sentence.
-    - A direct golden assertion compares the shared helper output with the full literal sentence, so future wording changes require an intentional test update.
+    - The human command-suggestion test that directly asserts the commands section includes the verdict read protocol sentence carries this requirement's per-test attribution.
+    - The direct golden assertion carries the same per-test attribution and compares the shared helper output with the full literal sentence, so future wording changes require an intentional test update.
 ```
 
 ## Verification

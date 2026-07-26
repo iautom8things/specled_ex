@@ -17,8 +17,7 @@ defmodule Mix.Tasks.SpecNextTaskTest do
                "specled.tasks.prime_json",
                "specled.tasks.status_summary",
                "specled.tasks.validate_exit_status",
-               "specled.tasks.validate_findings",
-               "specled.next.verdict_read_protocol"
+               "specled.tasks.validate_findings"
              ]
 
   @verdict_protocol SpecLedEx.Next.verdict_read_protocol()
@@ -29,6 +28,25 @@ defmodule Mix.Tasks.SpecNextTaskTest do
              "The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears."
   end
 
+  @tag spec: [
+         "specled.next.bugfix_guidance",
+         "specled.next.change_classification",
+         "specled.next.read_only",
+         "specled.next.reconciliation_status",
+         "specled.tasks.check_strict_gate",
+         "specled.tasks.decision_new_scaffold",
+         "specled.tasks.index_writes_state",
+         "specled.tasks.init_local_skill",
+         "specled.tasks.init_scaffold",
+         "specled.tasks.next_guidance",
+         "specled.tasks.no_app_start",
+         "specled.tasks.prime_context",
+         "specled.tasks.prime_json",
+         "specled.tasks.status_summary",
+         "specled.tasks.validate_exit_status",
+         "specled.tasks.validate_findings",
+         "specled.next.verdict_read_protocol"
+       ]
   test "spec.next guides a covered local change", %{root: root} do
     init_git_repo(root)
 

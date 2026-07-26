@@ -188,6 +188,7 @@ defmodule Mix.Tasks.SpecTasksTest do
            )
   end
 
+  @tag spec: ["specled.tasks.verdict_line"]
   test "spec.validate rejects invalid CLI options", %{root: root} do
     assert_raise Mix.Error, ~r/Invalid arguments for spec.validate: --strcit/, fn ->
       Mix.Tasks.Spec.Validate.run(["--root", root, "--strcit"])
@@ -254,6 +255,7 @@ defmodule Mix.Tasks.SpecTasksTest do
     refute File.exists?(Path.join(root, "ran.txt"))
   end
 
+  @tag spec: ["specled.tasks.verdict_line"]
   test "spec.validate emits debug output on passing runs", %{root: root} do
     write_files(root, %{"README.md" => "readme\n# passing.requirement"})
 
@@ -269,12 +271,13 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     Mix.Tasks.Spec.Validate.run(["--root", root, "--debug"])
 
-    messages = drain_shell_messages()
+    events = drain_shell_events()
+    messages = Enum.map(events, &elem(&1, 1))
 
     assert Enum.any?(messages, &String.contains?(&1, "validate status=pass errors=0 warnings=0"))
     assert Enum.any?(messages, &String.contains?(&1, "debug_checks="))
     assert Enum.any?(messages, &String.contains?(&1, "[PASS] passing.subject"))
-    assert List.last(messages) == "spec.validate result=pass"
+    assert List.last(events) == {:info, "spec.validate result=pass"}
   end
 
   test "spec.validate requires explicit --run-commands to execute commands", %{root: root} do
@@ -602,9 +605,13 @@ defmodule Mix.Tasks.SpecTasksTest do
       Mix.Tasks.Spec.Check.run(["--root", failing_root])
     end
 
-    messages = drain_shell_messages()
+    events = drain_shell_events()
+    messages = Enum.map(events, &elem(&1, 1))
     assert message_contains?(messages, "requirement_without_verification")
-    assert List.last(messages) == "spec.check result=fail tier=validate error_findings=0"
+
+    assert List.last(events) ==
+             {:info, "spec.check result=fail tier=validate error_findings=0"}
+
     refute File.exists?(Path.join(failing_root, ".spec/state.json"))
   end
 
@@ -680,6 +687,7 @@ defmodule Mix.Tasks.SpecTasksTest do
     assert List.last(check_messages) == "spec.check result=fail tier=validate error_findings=1"
   end
 
+  @tag spec: ["specled.tasks.verdict_line"]
   test "spec.check executes commands by default", %{root: root} do
     write_subject_spec(
       root,
@@ -900,6 +908,7 @@ defmodule Mix.Tasks.SpecTasksTest do
     refute File.exists?(Path.join(root, ".spec/state.json"))
   end
 
+  @tag spec: ["specled.tasks.verdict_line"]
   test "spec.check forwards min strength to strict verify", %{root: root} do
     write_files(root, %{"lib/linked.ex" => "# req.forwarded\n"})
 
@@ -933,6 +942,7 @@ defmodule Mix.Tasks.SpecTasksTest do
     assert List.last(messages) == "spec.check result=fail tier=usage error_findings=0"
   end
 
+  @tag spec: ["specled.tasks.verdict_line"]
   test "spec.validate rejects invalid min strength values", %{root: root} do
     assert_raise Mix.Error, ~r/Invalid value for --min-strength/, fn ->
       Mix.Tasks.Spec.Validate.run(["--root", root, "--min-strength", "strongest"])

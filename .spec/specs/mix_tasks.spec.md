@@ -270,10 +270,15 @@ decisions:
   stability: evolving
 - id: specled.tasks.verdict_line
   statement: >-
-    mix spec.check and mix spec.validate shall print a trailing verdict line
-    on stdout for every pass and fail path where the task itself reports a
-    verdict before raising on failures. The verdict shall be the last stdout
-    line and the only line the task itself emits matching `^<task> result=`:
+    mix spec.check shall print a trailing verdict line on stdout on its pass
+    path and on its validation, branch-enforcement, argument-rejection,
+    min-strength, and --base pre-flight fail paths; mix spec.validate shall do
+    so on its pass path and on its validation, argument-rejection, and
+    min-strength pre-flight fail paths. Dependency-startup failures,
+    configuration or authored-spec parsing failures, filesystem failures, and
+    unexpected internal exceptions that raise before task verdict reporting
+    begins are excluded. On the enumerated paths, the verdict shall be the last
+    stdout line and the only line the task itself emits matching `^<task> result=`:
     `spec.check result=pass`, `spec.check result=fail tier=<usage|validate|branch>
     error_findings=<N>`, `spec.validate result=pass`, or `spec.validate
     result=fail tier=validate error_findings=<N>`. `tier=usage` identifies
