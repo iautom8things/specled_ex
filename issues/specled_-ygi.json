@@ -2,6 +2,7 @@
   "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-07-26T01:21:40Z",
   "created": "2026-07-26T00:26:19Z",
   "description": "Found by the specled_-dn4.9 audit (2026-07-26T00:25:30Z) while tracing item 2's path-identity fold. This is a real defect, not a cleanup.\n\ndn4.5 normalized the per-test lane to repo-relative path identity, and dn4.9 item 2 extended repo-relative :files into the v1 records. But the v1 file-level detectors still join those repo-relative :files / owned_files against ABSOLUTE closure_files derived from raw module_info(:compile)[:source] — see lib/mix/tasks/spec.triangle.ex:447 and lib/specled_ex/review/coverage_closure.ex:132. A repo-relative string can never equal an absolute one, so execution_reach and untested_realization can never match.\n\nImpact: those two detectors silently report nothing rather than reporting wrongly — same silent-failure class this epic spent the day correcting on the per-test lane, now visible on the v1 lane.\n\nFix: extend dn4.5's per_test_path_identity normalization to the v1 path so both sides of the join agree. Verify by constructing a case that SHOULD match and asserting it does — the current tests pass because nothing ever matches.",
   "id": "specled_-ygi",
@@ -43,7 +44,7 @@
     }
   ],
   "priority": 1,
-  "status": "in_progress",
+  "status": "closed",
   "title": "v1 file-level detectors can never match: repo-relative :files joined against absolute closure_files",
   "type": "bug",
   "updated_at": "2026-07-26T01:21:40Z"
