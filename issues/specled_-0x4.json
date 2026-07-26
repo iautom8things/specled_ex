@@ -61,11 +61,15 @@
     {
       "text": "MINI-RETRO\nbounces: 5 (stale-spec ×1 [0x4.2]; other/probe-methodology ×1 [wli→verifier]; other/scope-authorization ×1 [wli→implementer]; untested-clause+attribution ×1 [0x4.3]; other/gate-red-revert ×1 [0x4.3])\nfull_suite_runs: 6 (epic-worktree smoke after each merge; plus 4 executed bare spec.check merge gates, 1 unchanged-hash skip)\nfinals_gt1: 1 (specled_-xde: 2 final-tier runs)\nflake_accepts: 0\nescalations: 0\nlessons_kept/retired: 6/0",
       "timestamp": "2026-07-26T13:25:02Z"
+    },
+    {
+      "text": "ORCHESTRATED\nChildren closed: 6 this run (8/8 total; zhe+j3k shipped earlier in PR #25)\nBOUNCEs encountered: 5\nUser escalations: 0",
+      "timestamp": "2026-07-26T13:26:22Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fast-follow: spec.check verdict contract + teaching sweep",
   "type": "epic",
-  "updated_at": "2026-07-26T13:25:02Z"
+  "updated_at": "2026-07-26T13:26:22Z"
 }
