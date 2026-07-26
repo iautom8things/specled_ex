@@ -9,9 +9,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-0x4",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: cx-202607260724-0x41-impl1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-0x4.1/codex-cx-202607260724-0x41-impl1/log\n\nCommit: 6025d9729f08b5fa937ae0cf66b1c21561a6f88a\nFiles touched: .spec/specs/mix_tasks.spec.md, .spec/specs/next.spec.md, .spec/specs/package.spec.md, test/mix/tasks/spec_next_task_test.exs\nTests added: Mix.Tasks.SpecNextTaskTest \"verdict read protocol is pinned to the literal wording\"\nVerification stubs flipped: none; added an execute:true package command verification for the adoption/concepts protocol sentence\nFix (b) decision: adopted — bound only docs/adoption.md and docs/concepts.md to the exact protocol sentence because those are the named adoption_guide/concepts_guide surfaces with existence-only coverage; did not bind the broader bootstrap/reference markdown corpus to avoid an overly brittle gate.\nMutation check: temporarily changed SpecLedEx.Next.verdict_read_protocol/0 to \"MUTANT: totally different sentence.\"; targeted task tests failed at the new golden assertion and the mutation was reverted. Temporarily removed the protocol sentence from docs/concepts.md; mix spec.validate --run-commands failed with specled.package verification_command_failed for the new command verification, and the doc probe was reverted.\nVerification tier: change-scoped — mix compile --warnings-as-errors; mix test test/mix/tasks/spec_next_task_test.exs test/mix/tasks/spec_prime_task_test.exs; mix spec.check --no-run-commands; mix format --check-formatted; full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: Added a literal golden test for the verdict read-protocol helper so unilateral edits to the shared constant now fail. Updated current-truth specs for next/package, added the narrow package doc command verification for adoption and concepts, and reconciled mix_tasks with a minimal factual note required by the branch guard.",
+      "timestamp": "2026-07-26T11:34:40Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Golden test + doc-coverage binding for the verdict read-protocol sentence",
   "type": "task",
-  "updated_at": "2026-07-26T11:26:43Z"
+  "updated_at": "2026-07-26T11:34:40Z"
 }
