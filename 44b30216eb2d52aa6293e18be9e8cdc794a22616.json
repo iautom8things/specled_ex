@@ -7,8 +7,8 @@
       "message": "Changed file test/specled_ex/compiler/tracer_test.exs impacts subject specs that were not updated: specled.compiler_tracer"
     }
   ],
-  "run_at": "2026-07-26T00:44:35.850001Z",
-  "run_id": "b35d30166ceb75b037b92c1aafdb19da",
+  "run_at": "2026-07-26T00:47:40.334486Z",
+  "run_id": "d2feca5d9ae6fe8dac57a35ec9fe3bc3",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "44b30216eb2d52aa6293e18be9e8cdc794a22616",
