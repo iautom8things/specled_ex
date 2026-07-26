@@ -6,10 +6,10 @@
   "description": "Advances: specled.spec_review\n\nFollow-up to specled_-q6l.5 (split over-compound spec_review.coverage_tab_bind_closure requirement). That ticket added 8 new per-contract requirement ids under specled.spec_review (coverage_closure_line_format, coverage_reached_by_tests_per_test_only, coverage_observed_approximate_qualifier, coverage_file_level_proxy_qualifier, coverage_rollup_badge, coverage_generated_at_staleness, coverage_degraded_banners_distinct, coverage_no_tracer_manifest_banner), each with its own scenario and named covering test in test/specled_ex/review/html_test.exs.\n\nIt deliberately left the original compound requirement specled.spec_review.coverage_tab_bind_closure id and full statement UNCHANGED (not shrunk to a pointer, not removed) because lib/** was out of scope for that ticket, and three source_file verification entries (lib/specled_ex/review/coverage_closure.ex, lib/specled_ex/coverage_triangulation.ex, lib/specled_ex/review/html.ex) carry \"# covers: specled.spec_review.coverage_tab_bind_closure\" comments that must keep resolving to a known requirement id per SpecLedEx.Verifier file-content covers check. Editing/removing the id without repointing those lib/** comments would break the LINKED-strength file-kind verification or leave dangling references.\n\nThis ticket: once lib/** edits are in scope, repoint those three covers comments to the appropriate new split ids and either delete the now-redundant compound requirement or shrink it to a short umbrella/pointer sentence, removing the prose duplication between the compound statement and its 8 children.",
   "id": "specled_-gai",
   "labels": [],
-  "parent": "specled_-xkn",
+  "parent": "specled_-233",
   "priority": 3,
   "status": "open",
   "title": "Retire duplicated coverage_tab_bind_closure parent statement once lib/** covers markers can be repointed",
   "type": "task",
-  "updated_at": "2026-07-24T14:22:05Z"
+  "updated_at": "2026-07-26T20:38:15Z"
 }
