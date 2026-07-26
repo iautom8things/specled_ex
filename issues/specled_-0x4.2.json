@@ -9,9 +9,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-0x4",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: cx-202607260641-0x42-impl1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-0x4.2/codex-cx-202607260641-0x42-impl1/log\n\nCommit: ce2cd050799806639fd8f9356327b22a6836b949\nFiles touched: .spec/specs/branch_guard.spec.md, .spec/specs/mix_tasks.spec.md, .spec/specs/status.spec.md, .spec/specs/verification.spec.md, lib/mix/tasks/spec.check.ex, test/mix/tasks/spec_tasks_test.exs\nTests added: None; updated existing Mix.Tasks.SpecTasksTest tests: spec.check fails for strict findings; spec.check rejects strict toggles because it is always strict; spec.check rejects invalid min strength values; spec.check rejects invalid base refs with a verdict before raising\nVerification stubs flipped: none (specled.tasks.verdict_line tagged_tests verification was already execute: true)\nVerification tier: change-scoped — mix compile --warnings-as-errors; mix test test/mix/tasks/spec_tasks_test.exs test/mix/tasks/spec_check_test.exs; mix test --stale; mix format --check-formatted; mix spec.check --no-run-commands; full-system\n  proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: Added tier=usage for spec.check pre-flight argument, min-strength, and --base rejections before validation starts. Updated the mix_tasks verdict grammar and existing pins so usage rejections are distinct from warning-only validation failures that legitimately remain tier=validate with error_findings=0.",
+      "timestamp": "2026-07-26T10:53:29Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Verdict grammar: pre-flight rejections report tier=validate with error_findings=0",
   "type": "task",
-  "updated_at": "2026-07-26T10:43:46Z"
+  "updated_at": "2026-07-26T10:53:29Z"
 }
