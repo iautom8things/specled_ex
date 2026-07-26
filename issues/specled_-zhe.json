@@ -5,11 +5,13 @@
   "created": "2026-07-25T13:25:31Z",
   "description": "Advances: specled.package\nFrom specled_-hj4.2 verification notes N4-N11 (2026-07-25), all pre-existing claims in touched files, verified against lib/. N4: docs/concepts.md:553-554 + docs/adoption.md:312 claim tagged_tests use mix test --only spec:\u003cid\u003e; implementation builds file-selector commands (tagged_tests.ex:105), decision ADR tagged_tests_file_selectors records the drop. N5: concepts.md:246-247 names SpecLedEx.Realization.Canonicalizer; module is ...Realization.Canonical. N6: adoption.md:39-48 \"full set\" table lists 6 branch-guard codes; @per_code_defaults has 9 incl. two :error codes missing. N7: adoption.md:457 treats umbrella_unsupported as a finding code in severity overrides (it is a reason field; override is a no-op; :489-491 has it right). N8: adoption.md:80-82 says spec.init writes 4 files; @templates has 6. N9: adoption.md:407-413 Phase 5 realized_by.implementation guidance omits that the implementation tier must be enabled via realization.enabled_tiers config. N10: coverage.md:278 quotes ASCII -- where store.ex:110-112 emits an em dash. N11: adoption.md:328-331 \"exactly one detector_unavailable finding\" — measured 34 via mix spec.triangle --all.",
   "id": "specled_-zhe",
-  "labels": [],
+  "labels": [
+    "phase:implementing"
+  ],
   "parent": "specled_-0x4",
   "priority": 2,
   "status": "in_progress",
   "title": "Adopter docs accuracy sweep: stale/false claims in adoption.md, concepts.md, coverage.md",
   "type": "task",
-  "updated_at": "2026-07-26T00:37:09Z"
+  "updated_at": "2026-07-26T00:37:10Z"
 }
