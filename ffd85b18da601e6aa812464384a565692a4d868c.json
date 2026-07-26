@@ -7,8 +7,8 @@
       "message": "Changed file lib/specled_ex/verifier.ex impacts subject specled.decisions; spec.md not co-changed, but realization attested binding(s) SpecLedEx.Verifier.verify_decision/4 as clean — informational only."
     }
   ],
-  "run_at": "2026-07-26T21:21:18.871943Z",
-  "run_id": "ca033766924d6a689aa9b2a440ed7f7b",
+  "run_at": "2026-07-26T21:34:01.342504Z",
+  "run_id": "4f09db1d5d9269aed889d0f1c842e5d3",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "ffd85b18da601e6aa812464384a565692a4d868c",
