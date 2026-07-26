@@ -257,10 +257,11 @@ defmodule SpecLedEx.CoverageTriangulation do
   in the MFA's source file" proxy.
 
   `line_index` is `%{module => fun_index | :no_debug_info}` where `fun_index`
-  is `%{{fun, arity} => MapSet.t(line)}`. MFAs whose module is
-  `:no_debug_info` (or whose `{fun, arity}` is absent from the fun index)
-  land in `no_debug_info_mfas` rather than covered/uncovered — callers must
-  surface them, never silently proxy.
+  is `%{{fun, arity} => MapSet.t(line)}`. Only the explicit
+  `:no_debug_info` state lands in `no_debug_info_mfas`. An absent module,
+  absent `{fun, arity}`, unresolved repo-relative compile source, or malformed
+  MFA identity lands in `unresolvable_source_mfas`. Callers must surface both
+  partitions, never silently proxy or report them as ordinary uncovered MFAs.
 
   Pure: no filesystem access. Production caller is
   `SpecLedEx.Review.CoverageClosure.build_v2/2`'s `:per_test` clause.
@@ -272,6 +273,7 @@ defmodule SpecLedEx.CoverageTriangulation do
             covered_mfas: [mfa_string()],
             uncovered_mfas: [mfa_string()],
             no_debug_info_mfas: [mfa_string()],
+            unresolvable_source_mfas: [mfa_string()],
             reaching_tests: [String.t()]
           }
         }
@@ -297,39 +299,48 @@ defmodule SpecLedEx.CoverageTriangulation do
   defp requirement_per_test_reach(req, per_test, line_index, source_by_module) do
     closure_mfas = req |> Map.get(:closure_mfas, []) |> Enum.uniq()
 
-    {covered, uncovered, no_debug, reaching} =
-      Enum.reduce(closure_mfas, {[], [], [], MapSet.new()}, fn mfa_str,
-                                                               {cov, unc, ndi, reach_acc} ->
+    {covered, uncovered, no_debug, unresolvable, reaching} =
+      Enum.reduce(closure_mfas, {[], [], [], [], MapSet.new()}, fn mfa_str,
+                                                                   {cov, unc, ndi, unr, reach_acc} ->
         case SpecLedEx.Coverage.MfaKey.parse(mfa_str) do
           {:ok, {mod, fun, arity}} ->
-            case Map.get(line_index, mod, :no_debug_info) do
-              :no_debug_info ->
-                {cov, unc, [mfa_str | ndi], reach_acc}
+            case Map.fetch(line_index, mod) do
+              :error ->
+                {cov, unc, ndi, [mfa_str | unr], reach_acc}
 
-              fun_index when is_map(fun_index) ->
+              {:ok, :no_debug_info} ->
+                {cov, unc, [mfa_str | ndi], unr, reach_acc}
+
+              {:ok, fun_index} when is_map(fun_index) ->
                 case Map.fetch(fun_index, {fun, arity}) do
                   :error ->
-                    {cov, unc, [mfa_str | ndi], reach_acc}
+                    {cov, unc, ndi, [mfa_str | unr], reach_acc}
 
                   {:ok, mfa_lines} ->
-                    source = Map.get(source_by_module, mod)
-                    hit_tests = tests_hitting_mfa(per_test, source, mfa_lines)
+                    case Map.fetch(source_by_module, mod) do
+                      :error ->
+                        {cov, unc, ndi, [mfa_str | unr], reach_acc}
 
-                    if hit_tests == [] do
-                      {cov, [mfa_str | unc], ndi, reach_acc}
-                    else
-                      {
-                        [mfa_str | cov],
-                        unc,
-                        ndi,
-                        Enum.reduce(hit_tests, reach_acc, &MapSet.put(&2, &1))
-                      }
+                      {:ok, source} ->
+                        hit_tests = tests_hitting_mfa(per_test, source, mfa_lines)
+
+                        if hit_tests == [] do
+                          {cov, [mfa_str | unc], ndi, unr, reach_acc}
+                        else
+                          {
+                            [mfa_str | cov],
+                            unc,
+                            ndi,
+                            unr,
+                            Enum.reduce(hit_tests, reach_acc, &MapSet.put(&2, &1))
+                          }
+                        end
                     end
                 end
             end
 
           _ ->
-            {cov, [mfa_str | unc], ndi, reach_acc}
+            {cov, unc, ndi, [mfa_str | unr], reach_acc}
         end
       end)
 
@@ -342,29 +353,31 @@ defmodule SpecLedEx.CoverageTriangulation do
       covered_mfas: covered_sorted,
       uncovered_mfas: uncovered_sorted,
       no_debug_info_mfas: Enum.sort(no_debug),
+      unresolvable_source_mfas: Enum.sort(unresolvable),
       reaching_tests: reaching |> MapSet.to_list() |> Enum.sort()
     }
   end
 
-  defp tests_hitting_mfa(_per_test, nil, _mfa_lines), do: []
-
   defp tests_hitting_mfa(per_test, source, mfa_lines) do
-    source_norm = normalize_path(source)
-
     Enum.reduce(per_test, [], fn t, acc ->
-      hit_lines = Map.get(t.lines_by_file, source_norm, MapSet.new())
+      hit_lines = Map.get(t.lines_by_file, source, MapSet.new())
 
-      if MapSet.size(MapSet.intersection(hit_lines, mfa_lines)) > 0 do
-        [format_test_display(t) | acc]
-      else
+      if MapSet.disjoint?(hit_lines, mfa_lines) do
         acc
+      else
+        [format_test_display(t) | acc]
       end
     end)
   end
 
-  # Like group_records_by_test/1 but keeps per-file line sets so MFA
-  # intersection can run. Empty lines_hit records are ignored (same as v1).
   defp group_records_with_lines(records) do
+    group_records(records, :with_lines)
+  end
+
+  # Empty lines_hit records are ignored in both modes. `:with_lines` keeps
+  # per-file line sets for MFA intersection; `:files_only` exposes the same
+  # file set and tag metadata used by the v1 detectors.
+  defp group_records(records, mode) when mode in [:with_lines, :files_only] do
     records
     |> Enum.group_by(& &1.test_id)
     |> Enum.map(fn {test_id, recs} ->
@@ -372,9 +385,14 @@ defmodule SpecLedEx.CoverageTriangulation do
         recs
         |> Enum.filter(fn r -> r.lines_hit != [] end)
         |> Enum.reduce(%{}, fn r, acc ->
-          file = normalize_path(r.file)
-          lines = MapSet.new(r.lines_hit)
-          Map.update(acc, file, lines, &MapSet.union(&1, lines))
+          case repo_relative_source_path(r.file) do
+            nil ->
+              acc
+
+            file ->
+              lines = MapSet.new(r.lines_hit)
+              Map.update(acc, file, lines, &MapSet.union(&1, lines))
+          end
         end)
 
       first = hd(recs)
@@ -383,16 +401,26 @@ defmodule SpecLedEx.CoverageTriangulation do
       %{
         test_id: test_id,
         test_file: normalize_path(test_file_from_tags(tags)),
-        test_name: Map.get(tags, :test) || Map.get(tags, "test") || "",
-        lines_by_file: lines_by_file
+        test_name: Map.get(tags, :test) || Map.get(tags, "test") || ""
       }
+      |> put_group_payload(mode, tags, lines_by_file)
     end)
     |> Enum.sort_by(& &1.test_id)
   end
 
-  # Resolve each indexed module to its compile-time source path so record
-  # `:file` values (also source paths) can be matched. Modules without a
-  # loadable source contribute nothing — their MFAs never intersect.
+  defp put_group_payload(test, :with_lines, _tags, lines_by_file),
+    do: Map.put(test, :lines_by_file, lines_by_file)
+
+  defp put_group_payload(test, :files_only, tags, lines_by_file) do
+    test
+    |> Map.put(:files, Map.keys(lines_by_file) |> Enum.sort())
+    |> Map.put(:spec_ids, extract_tag_list(tags, :spec))
+    |> Map.put(:opt_out?, opt_out_tag?(tags))
+  end
+
+  # Resolve each indexed module to the same repo-root-relative identity used
+  # for record `:file` values. Missing sources stay absent so callers can put
+  # their MFAs in the explicit unresolvable-source partition.
   defp module_source_index(line_index) do
     line_index
     |> Map.keys()
@@ -405,20 +433,32 @@ defmodule SpecLedEx.CoverageTriangulation do
   end
 
   defp module_source_file(mod) when is_atom(mod) do
-    case Code.ensure_loaded(mod) do
-      {:module, ^mod} ->
-        case mod.module_info(:compile)[:source] do
-          path when is_list(path) -> List.to_string(path)
-          path when is_binary(path) -> path
-          _ -> nil
-        end
-
-      _ ->
-        nil
+    with {_kind, _loaded_path} <- :code.is_loaded(mod),
+         source when is_list(source) or is_binary(source) <-
+           mod.module_info(:compile)[:source] do
+      source
+      |> source_to_binary()
+      |> repo_relative_source_path()
+    else
+      _ -> nil
     end
   rescue
     _ -> nil
   end
+
+  defp source_to_binary(source) when is_list(source), do: List.to_string(source)
+  defp source_to_binary(source) when is_binary(source), do: source
+
+  defp repo_relative_source_path(path) when is_binary(path) do
+    root = File.cwd!() |> Path.expand()
+    absolute = Path.expand(path, root)
+
+    if String.starts_with?(absolute, root <> "/") do
+      Path.relative_to(absolute, root)
+    end
+  end
+
+  defp repo_relative_source_path(_), do: nil
 
   defp format_test_display(%{test_file: file, test_name: name}) do
     file = if file in [nil, ""], do: "(unknown)", else: file
@@ -431,28 +471,7 @@ defmodule SpecLedEx.CoverageTriangulation do
   # ---------------------------------------------------------------------------
 
   defp group_records_by_test(records) do
-    records
-    |> Enum.group_by(& &1.test_id)
-    |> Enum.map(fn {test_id, recs} ->
-      files =
-        recs
-        |> Enum.filter(fn r -> r.lines_hit != [] end)
-        |> Enum.map(&normalize_path(&1.file))
-        |> Enum.uniq()
-
-      first = hd(recs)
-      tags = Map.get(first, :tags, %{}) || %{}
-
-      %{
-        test_id: test_id,
-        test_file: normalize_path(test_file_from_tags(tags)),
-        test_name: Map.get(tags, :test) || Map.get(tags, "test") || "",
-        files: files,
-        spec_ids: extract_tag_list(tags, :spec),
-        opt_out?: opt_out_tag?(tags)
-      }
-    end)
-    |> Enum.sort_by(& &1.test_id)
+    group_records(records, :files_only)
   end
 
   defp test_file_from_tags(tags) do

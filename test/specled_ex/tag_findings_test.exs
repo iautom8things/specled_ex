@@ -1,5 +1,5 @@
 defmodule SpecLedEx.TagFindingsTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.verify.requirement_without_test_tag",

@@ -20,6 +20,10 @@ defmodule SpecLedEx.Review.CoverageClosureTest do
   # covers: specled.triangulation.aggregate_requirement_reach_mfa_intersection
   # covers: specled.triangulation.per_test_requirement_reach
   # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
+  # async-safety: build_v2's closure-file normalization reads the VM-global
+  # cwd (File.cwd!/0). Safe here because the only File.cd!/1 in the suite
+  # lives in an async: false module (realization/binding_test.exs), and
+  # ExUnit never overlaps async and sync modules.
   use ExUnit.Case, async: true
 
   @moduletag spec: [
@@ -188,6 +192,140 @@ defmodule SpecLedEx.Review.CoverageClosureTest do
   end
 
   describe "build_v2/2 — tagged_tests evidence strength" do
+    test "per_test reach is computed once with the full multi-subject closure map" do
+      source = FixtureA.module_info(:compile)[:source] |> List.to_string()
+
+      line_index = %{
+        FixtureA => %{{:run, 1} => MapSet.new([10])},
+        FixtureB => %{{:run, 1} => MapSet.new([20])}
+      }
+
+      records = [
+        %{
+          test_id: "T.a",
+          file: source,
+          lines_hit: [10],
+          tags: %{file: "test/a_test.exs", test: "a"},
+          test_pid: self()
+        },
+        %{
+          test_id: "T.b",
+          file: source,
+          lines_hit: [20],
+          tags: %{file: "test/b_test.exs", test: "b"},
+          test_pid: self()
+        }
+      ]
+
+      parent = self()
+
+      per_test_reach_fn = fn payload, closure_map, index ->
+        send(parent, {:per_test_reach, payload, closure_map, index})
+
+        SpecLedEx.CoverageTriangulation.per_test_requirement_reach(
+          payload,
+          closure_map,
+          index
+        )
+      end
+
+      reach =
+        CoverageClosure.build_v2(fixture_index(),
+          tracer_edges: @edges,
+          envelope: %{mode: :per_test, payload: records, degraded: false, meta: %{}},
+          line_index: line_index,
+          per_test_reach_fn: per_test_reach_fn
+        )
+
+      assert_receive {:per_test_reach, ^records, closure_map, ^line_index}
+      assert closure_map.subjects |> Map.keys() |> Enum.sort() == ["subject_a", "subject_b"]
+      refute_receive {:per_test_reach, _records, _closure_map, _line_index}
+
+      assert reach["subject_a"].by_requirement["subject_a.req1"].covered_mfas == [
+               @fixture_a_mfa
+             ]
+
+      assert reach["subject_b"].by_requirement["subject_b.req1"].covered_mfas == [
+               @fixture_b_mfa
+             ]
+    end
+
+    # covers: specled.triangulation.v1_file_level_path_identity
+    @tag spec: ["specled.triangulation.v1_file_level_path_identity"]
+    test "closure_files in the reach closure map join repo-relative record files through the v1 file-level reach" do
+      parent = self()
+
+      per_test_reach_fn = fn payload, closure_map, index ->
+        send(parent, {:closure_map, closure_map})
+        SpecLedEx.CoverageTriangulation.per_test_requirement_reach(payload, closure_map, index)
+      end
+
+      CoverageClosure.build_v2(fixture_index(),
+        tracer_edges: @edges,
+        envelope: %{mode: :per_test, payload: [], degraded: false},
+        line_index: %{},
+        per_test_reach_fn: per_test_reach_fn
+      )
+
+      assert_receive {:closure_map, closure_map}
+      [req] = closure_map.subjects["subject_a"].requirements
+
+      # FixtureA's compile source is this file's absolute path; the closure
+      # map must carry it repo-root-relative or file-level joins against
+      # repo-relative record files can never match.
+      assert req.closure_files == ["test/specled_ex/review/coverage_closure_test.exs"]
+      assert req.binding_present?
+
+      # Drive the SHOULD-match case through the v1 file-level consumer of
+      # this closure map: a repo-relative record must reach the closure file.
+      records = [
+        %{
+          test_id: "T.t1",
+          file: "test/specled_ex/review/coverage_closure_test.exs",
+          lines_hit: [3],
+          tags: %{file: "test/a_test.exs", test: "t1"},
+          test_pid: self()
+        }
+      ]
+
+      reach = SpecLedEx.CoverageTriangulation.per_requirement_reach(records, closure_map)
+      entry = reach[{"subject_a", "subject_a.req1"}]
+
+      assert entry.reached_files == ["test/specled_ex/review/coverage_closure_test.exs"]
+      assert entry.unreached_files == []
+      assert entry.reaching_tests == ["test/a_test.exs :: t1"]
+    end
+
+    # covers: specled.triangulation.v1_file_level_path_identity
+    @tag spec: ["specled.triangulation.v1_file_level_path_identity"]
+    test "an out-of-repo compile source contributes no closure file but keeps binding_present? from its closure MFAs" do
+      parent = self()
+
+      per_test_reach_fn = fn payload, closure_map, index ->
+        send(parent, {:closure_map, closure_map})
+        SpecLedEx.CoverageTriangulation.per_test_requirement_reach(payload, closure_map, index)
+      end
+
+      CoverageClosure.build_v2(fixture_index_with_external_binding(),
+        tracer_edges: %{{Enum, :map, 2} => []},
+        envelope: %{mode: :per_test, payload: [], degraded: false},
+        line_index: %{},
+        per_test_reach_fn: per_test_reach_fn
+      )
+
+      assert_receive {:closure_map, closure_map}
+      [req] = closure_map.subjects["subject_ext"].requirements
+
+      # Enum compiles outside any consuming repository, so no repo-relative
+      # identity exists for it — the closure carries no file rather than an
+      # absolute path no record can equal. The binding itself must not
+      # collapse: the MFA-level untested-realization gate reads
+      # binding_present? and must keep flagging this requirement.
+      assert req.closure_files == []
+      assert req.closure_mfas == ["Enum.map/2"]
+      assert req.binding_present?
+    end
+
     test "aggregate mode: a tagged test is \"linked\" when the closure has any execution, \"claimed\" when it has none" do
       linked_envelope = aggregate_envelope(mfas: [%{mfa: @fixture_a_mfa, covered: true}])
       claimed_envelope = aggregate_envelope(mfas: [%{mfa: @fixture_a_mfa, covered: false}])
@@ -355,12 +493,114 @@ defmodule SpecLedEx.Review.CoverageClosureTest do
       req = reach["subject_a"].by_requirement["subject_a.req1"]
 
       assert req.no_debug_info_mfas == [@fixture_a_mfa]
+      assert req.unresolvable_source_mfas == []
       assert req.covered_mfas == []
       assert req.uncovered_mfas == []
       # closure_mfa_count still counts the MFA; executed is 0 because nothing
       # was provably covered — pct is a real 0.0, not the zero-closure sentinel.
       assert req.closure_mfa_count == 1
       assert req.closure_coverage_pct == 0.0
+    end
+
+    @tag spec: [
+           "specled.triangulation.per_test_unresolvable_source_partition",
+           "specled.spec_review.coverage_tab_v2_envelope_data_layer"
+         ]
+    test "per_test mode: CoverageClosure preserves unresolvable MFAs in the percentage denominator" do
+      reach =
+        CoverageClosure.build_v2(fixture_index(),
+          tracer_edges: @edges,
+          envelope: %{mode: :per_test, payload: [], degraded: false, meta: %{}},
+          line_index: %{FixtureB => %{{:run, 1} => MapSet.new([20])}}
+        )
+
+      req = reach["subject_a"].by_requirement["subject_a.req1"]
+
+      assert req.unresolvable_source_mfas == [@fixture_a_mfa]
+      assert req.no_debug_info_mfas == []
+      assert req.covered_mfas == []
+      assert req.uncovered_mfas == []
+      assert req.closure_mfa_count == 1
+      assert req.closure_coverage_pct == 0.0
+    end
+
+    @tag spec: "specled.triangulation.per_test_path_identity"
+    test "per_test mode: repo-relative record paths join an absolute compile source path" do
+      source =
+        FixtureA.module_info(:compile)[:source]
+        |> List.to_string()
+        |> Path.relative_to_cwd()
+
+      records = [
+        %{
+          test_id: "T.relative",
+          file: source,
+          lines_hit: [17],
+          tags: %{file: "test/relative_test.exs", test: "relative"}
+        }
+      ]
+
+      req =
+        single_requirement_reach(
+          @fixture_a_mfa,
+          records,
+          %{FixtureA => %{{:run, 1} => MapSet.new([17])}}
+        )
+
+      assert req.covered_mfas == [@fixture_a_mfa]
+      assert req.reaching_tests == ["test/relative_test.exs :: relative"]
+      assert req.unresolvable_source_mfas == []
+    end
+
+    @tag spec: "specled.triangulation.per_test_unresolvable_source_partition"
+    test "per_test mode: a closure module absent from the line index is unresolvable, not no-debug or uncovered" do
+      req = single_requirement_reach(@fixture_a_mfa, [], %{})
+
+      assert req.unresolvable_source_mfas == [@fixture_a_mfa]
+      assert req.no_debug_info_mfas == []
+      assert req.uncovered_mfas == []
+      assert req.closure_mfa_count == 1
+      assert req.executed_mfa_count == 0
+    end
+
+    @tag spec: "specled.triangulation.per_test_unresolvable_source_partition"
+    test "per_test mode: an MFA absent from an otherwise present function index is unresolvable" do
+      req =
+        single_requirement_reach(
+          @fixture_a_mfa,
+          [],
+          %{FixtureA => %{{:other, 0} => MapSet.new([1])}}
+        )
+
+      assert req.unresolvable_source_mfas == [@fixture_a_mfa]
+      assert req.no_debug_info_mfas == []
+      assert req.uncovered_mfas == []
+    end
+
+    @tag spec: "specled.triangulation.per_test_unresolvable_source_partition"
+    test "per_test mode: a module whose compile source cannot resolve is unresolvable" do
+      module = UnloadableIdentityModule
+      mfa = MfaKey.format({module, :run, 1})
+
+      req =
+        single_requirement_reach(
+          mfa,
+          [],
+          %{module => %{{:run, 1} => MapSet.new([1])}}
+        )
+
+      assert req.unresolvable_source_mfas == [mfa]
+      assert req.no_debug_info_mfas == []
+      assert req.uncovered_mfas == []
+    end
+
+    @tag spec: "specled.triangulation.per_test_unresolvable_source_partition"
+    test "per_test mode: an unparseable closure MFA is unresolvable rather than uncovered" do
+      req = single_requirement_reach("not-an-mfa", [], %{})
+
+      assert req.unresolvable_source_mfas == ["not-an-mfa"]
+      assert req.no_debug_info_mfas == []
+      assert req.uncovered_mfas == []
     end
 
     test "per_test mode: unhooked-degraded envelope stays :ok_per_test with attribution :degraded_unhooked (not :async_contaminated)" do
@@ -451,6 +691,20 @@ defmodule SpecLedEx.Review.CoverageClosureTest do
   # Fixtures
   # ---------------------------------------------------------------------------
 
+  defp single_requirement_reach(mfa, records, line_index) do
+    closure_map = %{
+      subjects: %{
+        "subject" => %{
+          requirements: [%{id: "subject.requirement", closure_mfas: [mfa]}]
+        }
+      }
+    }
+
+    records
+    |> SpecLedEx.CoverageTriangulation.per_test_requirement_reach(closure_map, line_index)
+    |> Map.fetch!({"subject", "subject.requirement"})
+  end
+
   defp aggregate_envelope(mfas: mfas) do
     %{
       version: 2,
@@ -486,6 +740,21 @@ defmodule SpecLedEx.Review.CoverageClosureTest do
             }
           },
           "requirements" => [%{"id" => "subject_b.req1"}]
+        }
+      ]
+    }
+  end
+
+  defp fixture_index_with_external_binding do
+    %{
+      "subjects" => [
+        %{
+          "meta" => %{
+            "id" => "subject_ext",
+            "surface" => ["lib/fixture_ext.ex"],
+            "realized_by" => %{"implementation" => ["Enum.map/2"]}
+          },
+          "requirements" => [%{"id" => "subject_ext.req1"}]
         }
       ]
     }

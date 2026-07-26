@@ -194,12 +194,20 @@ defmodule Mix.Tasks.Spec.Cover.Test do
     # below is inert and setup {SpecLedEx.Coverage, :per_test_boundary}
     # no-ops. The public anonymous ETS table carries hooked tests' exclusive
     # [head, tail] window rows for Formatter.flush/1 to prefer.
-    boundary_table = :ets.new(:anon, [:public, :set])
+    boundary_table =
+      :ets.new(:anon, [
+        :public,
+        :set,
+        read_concurrency: true,
+        write_concurrency: true
+      ])
+
     Application.put_env(:specled_ex, :spec_cover_run, boundary_table: boundary_table)
 
     # Ensure the formatter module is resident before ExUnit boots its
     # formatter GenServers; in a child BEAM (fixture run) the parent app's
     # ebin must already be on the code path for this to succeed.
+    {:module, _} = Code.ensure_loaded(SpecLedEx.Coverage.Arming)
     {:module, _} = Code.ensure_loaded(SpecLedEx.Coverage.Formatter)
     {:module, _} = Code.ensure_loaded(SpecLedEx.Coverage.Store)
     {:module, _} = Code.ensure_loaded(SpecLedEx.Coverage.Snapshot)
@@ -208,6 +216,7 @@ defmodule Mix.Tasks.Spec.Cover.Test do
     {:module, _} = Code.ensure_loaded(SpecLedEx.Case)
 
     install_formatter()
+    suite_started_at = DateTime.utc_now()
 
     try do
       Mix.Task.run("test", ["--cover" | argv])
@@ -215,6 +224,33 @@ defmodule Mix.Tasks.Spec.Cover.Test do
       if async_files != [] do
         warn_about_async_true(async_files)
       end
+
+      assert_fresh_per_test_artifact!(Store.default_path(), suite_started_at)
+    end
+  end
+
+  defp assert_fresh_per_test_artifact!(path, suite_started_at) do
+    status = Store.read_status(path)
+
+    if per_test_artifact_fresh?(path, suite_started_at) do
+      :ok
+    else
+      Mix.raise(
+        "mix spec.cover.test --per-test: coverage artifact is stale; " <>
+          "the suite did not write a fresh #{path} (status: #{inspect(status)})"
+      )
+    end
+  end
+
+  @doc false
+  def per_test_artifact_fresh?(path, suite_started_at)
+      when is_binary(path) and is_struct(suite_started_at, DateTime) do
+    with {:ok, _stats} <- Store.read_status(path),
+         {:ok, %{generated_at: %DateTime{} = generated_at}} <- Store.read_v2(path),
+         :gt <- DateTime.compare(generated_at, suite_started_at) do
+      true
+    else
+      _ -> false
     end
   end
 

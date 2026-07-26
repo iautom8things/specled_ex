@@ -265,6 +265,25 @@ defmodule SpecLedEx.Coverage.StoreTest do
       assert {:ok, envelope} = Store.read_v2(path)
       assert envelope.meta == %{}
     end
+
+    @tag spec: "specled.coverage_capture.envelope_meta"
+    test "read_v2 rejects envelopes with non-map :meta as invalid artifacts", %{path: path} do
+      malformed =
+        Store.build_envelope(%{
+          mode: :per_test,
+          source: "mix spec.cover.test --per-test",
+          files: [%{file: "lib/a.ex", lines_hit: [1]}],
+          mfas: [],
+          payload: [],
+          degraded: true
+        })
+        |> Map.put(:meta, [:not, :a, :map])
+
+      File.mkdir_p!(Path.dirname(path))
+      File.write!(path, :erlang.term_to_binary(malformed))
+
+      assert {:error, :invalid_artifact} = Store.read_v2(path)
+    end
   end
 
   describe "read_status/1" do

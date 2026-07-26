@@ -30,7 +30,7 @@ placing that protocol on commands that do not emit a `spec.check result=` line.
 id: specled.package
 kind: package
 status: active
-summary: Elixir package for Spec Led Development. Provides Mix tasks to scaffold, orient, index, guide, validate, summarize, and strictly check authored specs. Docs include coverage capture (docs/coverage.md), including the per-test boundary-hook wiring subsection and Stage-2 auditor/unhooked-degrade claim (exact up to escaped processes).
+summary: Elixir package for Spec Led Development. Provides Mix tasks to scaffold, orient, index, guide, validate, summarize, and strictly check authored specs. Docs include coverage capture (docs/coverage.md), including the per-test boundary-hook wiring subsection and Stage-2 auditor/unhooked-degrade claim (exact within disclosed chained windows).
 surface:
   - README.md
   - CHANGELOG.md
@@ -122,8 +122,18 @@ decisions:
   execute: true
   covers:
     - specled.package.mix_tasks
-- kind: source_file
-  target: docs/adoption.md
+- kind: command
+  target: >-
+    sh -c 'grep -Fq "## Greenfield" docs/adoption.md &&
+    grep -Fq "## Brownfield" docs/adoption.md &&
+    grep -Fq "Same as greenfield step 6: graduate" docs/adoption.md &&
+    grep -Fq "enforcement: error" docs/adoption.md &&
+    grep -Fq "guardrails:" docs/adoption.md &&
+    grep -Fq "branch_guard:" docs/adoption.md &&
+    grep -Fq "### Phase 4a — Aggregate coverage (zero wiring)" docs/adoption.md &&
+    grep -Fq "### Phase 4b — Per-test attribution (opt-in)" docs/adoption.md &&
+    grep -Fq "setup {SpecLedEx.Coverage, :per_test_boundary}" docs/adoption.md'
+  execute: true
   covers:
     - specled.package.adoption_guide
 - kind: source_file

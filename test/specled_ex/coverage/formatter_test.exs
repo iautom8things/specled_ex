@@ -1,5 +1,6 @@
 defmodule SpecLedEx.Coverage.FormatterTest do
-  use ExUnit.Case, async: true
+  # Shares Application env arming seam with other coverage tests — must not race.
+  use ExUnit.Case, async: false
 
   import ExUnit.CaptureIO
 
@@ -62,6 +63,8 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       assert is_reference(state.table)
       assert :ets.info(state.table, :named_table) == false
       assert :ets.info(state.table, :type) == :set
+      assert :ets.info(state.table, :read_concurrency) == true
+      assert :ets.info(state.table, :write_concurrency) == true
 
       :ets.delete(state.table)
     end
@@ -122,7 +125,6 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       assert state.artifact_path == ".spec/_coverage/per_test.coverdata"
       assert state.modules == nil
       assert state.baseline == %{}
-      assert state.diagnostic_count == 0
       refute state.degraded_async?
 
       :ets.delete(state.table)
@@ -182,7 +184,9 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       assert state.modules == [Fixture]
       assert state.baseline == %{Fixture => [{line, 1}]}
       assert %{Fixture => file} = state.file_map
-      assert file =~ "formatter_test.exs"
+
+      source = Fixture.module_info(:compile)[:source] |> List.to_string()
+      assert file == Path.relative_to_cwd(source)
 
       :ets.delete(state.table)
     end
@@ -287,6 +291,7 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       tests = Keyword.get(opts, :tests, [])
       boundary_rows = Keyword.get(opts, :boundary_rows, [])
       boundary_tid = Keyword.get(opts, :boundary_table)
+      modules = Keyword.get(opts, :modules, [Fixture])
 
       tmp_path = tmp_artifact()
 
@@ -302,7 +307,7 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       seam =
         [
           snapshot_fn: snapshot_fn,
-          modules_fn: fn -> [Fixture] end,
+          modules_fn: fn -> modules end,
           artifact_path: tmp_path
         ]
         |> then(fn s ->
@@ -347,8 +352,7 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       true =
         :ets.insert(
           boundary_tid,
-          {{AbcTest, :"test x"},
-           %{hits: %{Fixture => [line_boundary]}, diagnostics: 0, tags: %{}}}
+          {{AbcTest, :"test x"}, %{hits: %{Fixture => [line_boundary]}, diagnostics: 0}}
         )
 
       # Baseline → final increases both lines; only boundary line is attributed.
@@ -386,6 +390,58 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       assert line_other in rem_lines
       refute envelope.degraded
       refute Map.has_key?(envelope.meta, :degraded_reasons)
+    end
+
+    @tag spec: [
+           "specled.coverage_capture.envelope_meta",
+           "specled.coverage_capture.formatter_auditor",
+           "specled.coverage_capture.path_identity",
+           "specled.coverage_capture.unmapped_modules_meta"
+         ]
+    test "flush uses repo-relative source identities and surfaces hit modules absent from its single file map" do
+      mapped_line = __ENV__.line
+      unmapped_line = mapped_line + 1
+      boundary_tid = new_boundary_table()
+      unmapped = UnloadableCoverageModule
+
+      true =
+        :ets.insert(
+          boundary_tid,
+          {{IdentityTest, :"test x"},
+           %{
+             hits: %{Fixture => [mapped_line], unmapped => [unmapped_line]},
+             diagnostics: 0
+           }}
+        )
+
+      snapshots = [
+        %{Fixture => [{mapped_line, 0}], unmapped => [{unmapped_line, 0}]},
+        %{Fixture => [{mapped_line, 1}], unmapped => [{unmapped_line, 1}]}
+      ]
+
+      test = %ExUnit.Test{
+        module: IdentityTest,
+        name: :"test x",
+        tags: %{file: "test/identity_test.exs", test_pid: self()}
+      }
+
+      {_output, path} =
+        flush_suite(
+          snapshots: snapshots,
+          tests: [test],
+          modules: [Fixture, unmapped],
+          boundary_table: boundary_tid
+        )
+
+      assert {:ok, envelope} = SpecLedEx.Coverage.Store.read_v2(path)
+      assert [record] = envelope.payload
+      refute Path.type(record.file) == :absolute
+      assert record.file == Path.relative_to_cwd(__ENV__.file)
+      assert envelope.meta.unmapped_modules == [unmapped]
+
+      refute Enum.any?(envelope.meta[:unattributed] || [], fn {_file, lines} ->
+               unmapped_line in lines
+             end)
     end
 
     @tag spec: [
@@ -493,7 +549,7 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       true =
         :ets.insert(
           boundary_tid,
-          {{HarvestTest, :"test x"}, %{hits: %{Fixture => [line]}, diagnostics: 1, tags: %{}}}
+          {{HarvestTest, :"test x"}, %{hits: %{Fixture => [line]}, diagnostics: 1}}
         )
 
       snapshots = [
@@ -523,7 +579,7 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       true =
         :ets.insert(
           boundary_tid,
-          {{RanTest, :"test ran"}, %{hits: %{Fixture => [line]}, diagnostics: 0, tags: %{}}}
+          {{RanTest, :"test ran"}, %{hits: %{Fixture => [line]}, diagnostics: 0}}
         )
 
       snapshots = [
@@ -640,8 +696,7 @@ defmodule SpecLedEx.Coverage.FormatterTest do
       true =
         :ets.insert(
           boundary_tid,
-          {{HookedTest, :"test hooked"},
-           %{hits: %{Fixture => [line_hooked]}, diagnostics: 0, tags: %{}}}
+          {{HookedTest, :"test hooked"}, %{hits: %{Fixture => [line_hooked]}, diagnostics: 0}}
         )
 
       snapshots = [

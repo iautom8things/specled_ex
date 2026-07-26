@@ -1,14 +1,14 @@
 defmodule SpecLedEx.Coverage.MfaLinesTest do
   # covers: specled.coverage_capture.mfa_lines_index
-  use ExUnit.Case, async: true
+  # Flips the VM-global :debug_info compiler option — must not race.
+  use ExUnit.Case, async: false
 
   @moduletag spec: ["specled.coverage_capture.mfa_lines_index"]
 
   alias SpecLedEx.Coverage.MfaLines
 
   setup do
-    tmp = Path.join(System.tmp_dir!(), "mfa_lines_test_#{:erlang.unique_integer([:positive])}")
-    File.mkdir_p!(tmp)
+    tmp = tmp_dir!("mfa_lines_test")
     Code.prepend_path(tmp)
 
     on_exit(fn ->
@@ -33,6 +33,16 @@ defmodule SpecLedEx.Coverage.MfaLinesTest do
     end)
 
     %{tmp: tmp}
+  end
+
+  defp tmp_dir!(prefix) do
+    path = Path.join(System.tmp_dir!(), "#{prefix}_#{random_suffix()}")
+    File.mkdir!(path)
+    path
+  end
+
+  defp random_suffix do
+    8 |> :crypto.strong_rand_bytes() |> Base.url_encode64(padding: false)
   end
 
   describe "index/1" do

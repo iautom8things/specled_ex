@@ -2,7 +2,8 @@ defmodule SpecLedEx.Integration.ScenarioTierDispatchTest do
   # covers: specled.branch_guard.tier_dispatch_wires_orchestrator
   # covers: specled.branch_guard.tier_dispatch_surfaces_drift
   # covers: specled.branch_guard.tier_dispatch_surfaces_dangling
-  use SpecLedEx.Case
+  # Mutates the global code server with same-name fixture modules; must not race.
+  use SpecLedEx.FixtureCase, async: false
 
   alias SpecLedEx.BranchCheck
   alias SpecLedEx.Index

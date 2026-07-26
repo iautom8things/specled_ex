@@ -1,5 +1,5 @@
 defmodule SpecLedEx.Config.ProseTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.prose_guard.config_thresholds",

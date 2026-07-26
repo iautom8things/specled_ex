@@ -1,5 +1,5 @@
 defmodule SpecLedEx.ModalClassTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.modal_class.classify_case_and_punctuation_insensitive",

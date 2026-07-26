@@ -1,5 +1,5 @@
 defmodule SpecLedEx.Evidence.EntryTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   alias SpecLedEx.Evidence.Entry
 

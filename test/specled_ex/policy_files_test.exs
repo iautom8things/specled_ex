@@ -1,5 +1,5 @@
 defmodule SpecLedEx.PolicyFilesTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.policy_files.change_analysis_delegates",
@@ -65,7 +65,7 @@ defmodule SpecLedEx.PolicyFilesTest do
     @tag spec: "specled.policy_files.classify_kinds"
     test "test/ and test_support/ are :test" do
       assert PolicyFiles.classify("test/specled_ex_test.exs") == :test
-      assert PolicyFiles.classify("test_support/specled_ex_case.ex") == :test
+      assert PolicyFiles.classify("test_support/specled_ex_fixture_case.ex") == :test
     end
 
     @tag spec: "specled.policy_files.classify_kinds"

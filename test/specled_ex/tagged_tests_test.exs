@@ -1,5 +1,5 @@
 defmodule SpecLedEx.TaggedTestsTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.tagged_tests.build_command",

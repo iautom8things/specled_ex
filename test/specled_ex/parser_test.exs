@@ -1,5 +1,5 @@
 defmodule SpecLedEx.ParserTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.parser.info_string_tokens",

@@ -1,5 +1,5 @@
 defmodule SpecLedEx.BranchCheck.SeverityTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.severity.known_values",

@@ -8,10 +8,13 @@ defmodule SpecLedEx.Coverage.Formatter do
   the synchronous boundary hook (`SpecLedEx.Coverage.per_test_boundary/1` /
   `use SpecLedEx.Case`) — head snapshot at setup, tail snapshot in `on_exit`,
   which `ExUnit.Runner` awaits via `exec_on_exit/3` before spawning the next
-  test. Hooked tests' `[head, tail]` windows are therefore disjoint
-  (**exact up to escaped processes**: a process a test spawns that outlives
-  its tail snapshot can still increment shared counters after the window
-  closes, landing in a later window or the unattributed remainder).
+  test. The windows are disjoint, but after the first hooked test a window
+  also contains everything since the prior hooked tail: serialized runner /
+  `setup_all` work and any intervening unhooked tests. A process a test
+  spawns that outlives its tail can likewise increment shared
+  `:cover`/native counters in a later window or the unattributed remainder.
+  Neither source of leakage is detected at runtime. See
+  `specled.decision.per_test_sync_boundary`.
 
   ## Suite lifecycle (auditor)
 
@@ -108,41 +111,37 @@ defmodule SpecLedEx.Coverage.Formatter do
   use GenServer
 
   alias SpecLedEx.Coverage
-  alias SpecLedEx.Coverage.{Snapshot, Store}
-
-  @arming_app :specled_ex
-  @arming_key :spec_cover_run
+  alias SpecLedEx.Coverage.{Arming, Snapshot, Store}
 
   # `opts` here is not a caller's intent — ExUnit forwards its entire
   # application environment to every formatter GenServer it starts (see
   # `moduledoc`). It is ignored; config comes only from the arming seam.
   @impl GenServer
   def init(_opts) do
-    case armed() do
+    case Arming.resolve(:formatter) do
       :disarmed ->
-        IO.puts(:stderr, disarmed_notice())
+        IO.puts(
+          :stderr,
+          "[SpecLedEx.Coverage.Formatter] disabled: per-test coverage capture requires " <>
+            "`mix spec.cover.test --per-test` (it arms via " <>
+            "Application.put_env(:specled_ex, :spec_cover_run, true)). Wiring this " <>
+            "formatter directly into ExUnit.start/1 without that task is a no-op."
+        )
+
         {:ok, :disabled}
 
-      seam_opts ->
-        config = Coverage.init(Keyword.merge(production_defaults(), seam_opts))
+      {:armed, arming} ->
+        config =
+          Coverage.init(
+            snapshot_fn: arming.snapshot_fn,
+            modules_fn: arming.modules_fn,
+            artifact_path: arming.artifact_path
+          )
+
         state = Coverage.install(config)
         {:ok, run_init(state)}
     end
   end
-
-  defp armed do
-    case Application.get_env(@arming_app, @arming_key) do
-      opts when is_list(opts) -> opts
-      true -> []
-      _disarmed -> :disarmed
-    end
-  end
-
-  defp production_defaults do
-    [snapshot_fn: &default_snapshot_fn/1]
-  end
-
-  defp default_snapshot_fn(modules), do: Snapshot.take(Snapshot.runtime_mode(), modules)
 
   # Per-run bookkeeping layered on top of the static config
   # `Coverage.install/1` resolves. `:modules` and `:file_map` are populated
@@ -154,16 +153,8 @@ defmodule SpecLedEx.Coverage.Formatter do
       modules: nil,
       file_map: %{},
       baseline: %{},
-      diagnostic_count: 0,
       degraded_async?: false
     })
-  end
-
-  defp disarmed_notice do
-    "[SpecLedEx.Coverage.Formatter] disabled: per-test coverage capture requires " <>
-      "`mix spec.cover.test --per-test` (it arms via " <>
-      "Application.put_env(:specled_ex, :spec_cover_run, true)). Wiring this " <>
-      "formatter directly into ExUnit.start/1 without that task is a no-op."
   end
 
   @impl GenServer
@@ -243,8 +234,9 @@ defmodule SpecLedEx.Coverage.Formatter do
   end
 
   # Compacts `%{module => [line]}` hits into `[{file, sorted_lines}]`,
-  # merging lines from different modules that map to the same file and
-  # dropping modules this run couldn't attribute to a source file.
+  # merging lines from different modules that map to the same file. Modules
+  # this run couldn't attribute are surfaced separately in
+  # `meta.unmapped_modules`.
   defp compact_hits_to_files(hits_by_module, file_map) do
     hits_by_module
     |> Enum.reduce(%{}, fn {mod, lines}, acc ->
@@ -266,42 +258,78 @@ defmodule SpecLedEx.Coverage.Formatter do
   defp on_disk_pid(_), do: self()
 
   defp source_file(module) do
-    case Code.ensure_loaded(module) do
-      {:module, ^module} ->
-        case module.module_info(:compile)[:source] do
-          source when is_list(source) -> List.to_string(source)
-          source when is_binary(source) -> source
-          _ -> nil
-        end
-
-      _ ->
-        nil
+    with {_kind, _loaded_path} <- :code.is_loaded(module),
+         source when is_list(source) or is_binary(source) <-
+           module.module_info(:compile)[:source] do
+      source
+      |> source_to_binary()
+      |> repo_relative_path()
+    else
+      _ -> nil
     end
   rescue
     _ -> nil
   end
 
+  defp source_to_binary(source) when is_list(source), do: List.to_string(source)
+  defp source_to_binary(source) when is_binary(source), do: source
+
+  defp repo_relative_path(path) when is_binary(path) do
+    root = File.cwd!() |> Path.expand()
+    absolute = Path.expand(path, root)
+
+    if String.starts_with?(absolute, root <> "/") do
+      Path.relative_to(absolute, root)
+    end
+  end
+
+  defp repo_relative_path(_), do: nil
+
   defp flush(%{table: table, artifact_path: path} = state) do
-    modules = state.modules || state.modules_fn.()
+    modules = state.modules
     final = state.snapshot_fn.(modules)
-    {run_total_hits, suite_diagnostics} = Snapshot.diff(state.baseline || %{}, final)
+    {run_total_hits, suite_diagnostics} = Snapshot.diff(state.baseline, final)
 
     boundary_index = load_boundary_index()
     inventory = :ets.tab2list(table)
 
-    {records, boundary_diagnostics, used_boundary?, unhooked_by_module} =
-      Enum.reduce(inventory, {[], 0, false, %{}}, fn entry, {acc, diag_acc, used?, unhooked} ->
-        {recs, diag, from_boundary?, unhooked} =
-          records_for_inventory(entry, boundary_index, state.file_map, unhooked)
-
-        {acc ++ recs, diag_acc + diag, used? or from_boundary?, unhooked}
+    {boundary_inventory, unhooked_inventory} =
+      Enum.split_with(inventory, fn {_key, row} ->
+        Map.get(boundary_index, row.test_key) != nil
       end)
+
+    boundary_rows =
+      Enum.map(boundary_inventory, fn {_key, row} ->
+        {row, Map.fetch!(boundary_index, row.test_key)}
+      end)
+
+    records =
+      Enum.flat_map(boundary_rows, fn {row, boundary_row} ->
+        records_for_inventory(row, boundary_row, state.file_map)
+      end)
+
+    boundary_diagnostics =
+      Enum.sum(Enum.map(boundary_rows, fn {_row, boundary_row} -> boundary_row.diagnostics end))
+
+    used_boundary? = boundary_rows != []
+
+    unhooked_by_module =
+      Enum.frequencies_by(unhooked_inventory, fn {_key, row} -> row.module end)
 
     attributed_hits = union_boundary_hits(boundary_index)
     unattributed_hits = subtract_hits(run_total_hits, attributed_hits)
     unattributed_files = compact_hits_to_files(unattributed_hits, state.file_map)
 
-    total_diagnostics = state.diagnostic_count + boundary_diagnostics + length(suite_diagnostics)
+    unmapped_modules =
+      [attributed_hits, unattributed_hits]
+      |> Enum.flat_map(fn hits ->
+        for {mod, lines} <- hits, lines != [], do: mod
+      end)
+      |> Enum.uniq()
+      |> Enum.filter(&(Map.get(state.file_map, &1) == nil))
+      |> Enum.sort_by(&to_string/1)
+
+    total_diagnostics = boundary_diagnostics + length(suite_diagnostics)
 
     if total_diagnostics > 0 do
       IO.puts(:stderr, diagnostic_notice(total_diagnostics))
@@ -346,6 +374,7 @@ defmodule SpecLedEx.Coverage.Formatter do
       |> maybe_put(:boundary, used_boundary?, true)
       |> maybe_put(:unhooked_modules, unhooked_modules != [], unhooked_modules)
       |> maybe_put(:unattributed, unattributed_files != [], unattributed_files)
+      |> maybe_put(:unmapped_modules, unmapped_modules != [], unmapped_modules)
       |> maybe_put(:degraded_reasons, degraded?, degraded_reasons)
 
     envelope =
@@ -368,75 +397,27 @@ defmodule SpecLedEx.Coverage.Formatter do
     end
   end
 
-  # Prefer a boundary-table row when present for a test's `{module, name}`
-  # key. Unhooked inventory entries produce no payload records — their
-  # coverage folds into the suite remainder via set subtraction.
-  defp records_for_inventory({key, row}, boundary_index, file_map, unhooked) do
-    test_key = Map.get(row, :test_key) || fallback_test_key(key)
-    module = Map.get(row, :module) || inventory_module_from_key(test_key)
-
-    case test_key && Map.get(boundary_index, test_key) do
-      nil ->
-        unhooked =
-          if is_atom(module) do
-            Map.update(unhooked, module, 1, &(&1 + 1))
-          else
-            unhooked
-          end
-
-        {[], 0, false, unhooked}
-
-      boundary_row ->
-        files = compact_hits_to_files(boundary_row.hits, file_map)
-
-        recs =
-          Enum.map(files, fn {file, lines} ->
-            %{
-              test_id: row.test_id,
-              file: file,
-              lines_hit: lines,
-              tags: row.tags,
-              test_pid: row.test_pid
-            }
-          end)
-
-        {recs, boundary_row.diagnostics, true, unhooked}
-    end
+  # Turn one already-selected boundary row into payload records using the
+  # suite's single module-to-source map. The boundary-vs-unhooked choice is
+  # made once in `flush/1` before this function is called.
+  defp records_for_inventory(row, boundary_row, file_map) do
+    boundary_row.hits
+    |> compact_hits_to_files(file_map)
+    |> Enum.map(fn {file, lines} ->
+      %{
+        test_id: row.test_id,
+        file: file,
+        lines_hit: lines,
+        tags: row.tags,
+        test_pid: row.test_pid
+      }
+    end)
   end
 
-  defp inventory_module_from_key({mod, _name}) when is_atom(mod), do: mod
-  defp inventory_module_from_key(_), do: nil
-
-  defp fallback_test_key({mod, name}) when is_atom(mod) and is_atom(name), do: {mod, name}
-  defp fallback_test_key(_), do: nil
-
   defp load_boundary_index do
-    case Application.get_env(@arming_app, @arming_key) do
-      opts when is_list(opts) ->
-        case Keyword.get(opts, :boundary_table) do
-          tid when is_reference(tid) or is_atom(tid) ->
-            case :ets.info(tid) do
-              :undefined ->
-                %{}
-
-              _ ->
-                modules_key = SpecLedEx.Coverage.Boundary.modules_cache_key()
-
-                tid
-                |> :ets.tab2list()
-                |> Enum.reduce(%{}, fn
-                  {^modules_key, _}, acc -> acc
-                  {key, row}, acc when is_tuple(key) and is_map(row) -> Map.put(acc, key, row)
-                  _, acc -> acc
-                end)
-            end
-
-          _ ->
-            %{}
-        end
-
-      _ ->
-        %{}
+    case Arming.resolve(:boundary) do
+      {:armed, config} -> Arming.boundary_index(config)
+      :disarmed -> %{}
     end
   end
 

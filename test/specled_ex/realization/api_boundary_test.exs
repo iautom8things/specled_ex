@@ -1,5 +1,6 @@
 defmodule SpecLedEx.Realization.ApiBoundaryTest do
-  use ExUnit.Case, async: true
+  # Mutates the global code server with same-name fixture modules; must not race.
+  use ExUnit.Case, async: false
 
   @moduletag spec: [
                "specled.api_boundary.dangling_finding_emitted",

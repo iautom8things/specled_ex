@@ -120,7 +120,10 @@ defmodule SpecLedEx.Review.CoverageClosure do
 
     %{
       id: req_id,
-      binding_present?: closure_files != [],
+      # MFA-based, not file-based: an out-of-repo compile source contributes
+      # no closure file, but the binding still exists — the MFA-level
+      # untested-realization gate reads this and must keep flagging it.
+      binding_present?: closure_mfa_tuples != [],
       closure_files: closure_files,
       closure_mfas: Enum.map(closure_mfa_tuples, &mfa_to_string/1)
     }
@@ -133,8 +136,8 @@ defmodule SpecLedEx.Review.CoverageClosure do
     case Code.ensure_loaded(mod) do
       {:module, ^mod} ->
         case mod.module_info(:compile)[:source] do
-          path when is_list(path) -> [List.to_string(path)]
-          path when is_binary(path) -> [path]
+          path when is_list(path) -> repo_relative_source(List.to_string(path))
+          path when is_binary(path) -> repo_relative_source(path)
           _ -> []
         end
 
@@ -143,6 +146,22 @@ defmodule SpecLedEx.Review.CoverageClosure do
     end
   rescue
     _ -> []
+  end
+
+  # Coverage-record `:file` values are repo-root-relative
+  # (CoverageTriangulation.repo_relative_source_path/1); closure files must
+  # carry the same identity or file-level joins against records can never
+  # match. A source outside the repo root resolves to no file rather than an
+  # absolute path no record can equal.
+  defp repo_relative_source(path) do
+    root = File.cwd!() |> Path.expand()
+    absolute = Path.expand(path, root)
+
+    if String.starts_with?(absolute, root <> "/") do
+      [Path.relative_to(absolute, root)]
+    else
+      []
+    end
   end
 
   defp fetch_field(map, key) when is_map(map) and is_binary(key) do
@@ -185,6 +204,7 @@ defmodule SpecLedEx.Review.CoverageClosure do
           covered_mfas: [String.t()],
           uncovered_mfas: [String.t()],
           no_debug_info_mfas: [String.t()],
+          unresolvable_source_mfas: [String.t()],
           tagged_tests: [v2_tagged_test()],
           self_verified?: boolean()
         }
@@ -206,8 +226,8 @@ defmodule SpecLedEx.Review.CoverageClosure do
 
     * `:ok_aggregate` / `:ok_per_test` — envelope loaded; mode-tagged so
       renderers can distinguish real per-test MFA attribution
-      (`:ok_per_test`, exact up to escaped processes when the envelope is
-      non-degraded / fully hooked) from cumulative MFA-level coverage
+      (`:ok_per_test`, exact within disclosed chained windows when the
+      envelope is non-degraded / fully hooked) from cumulative MFA-level coverage
       (`:ok_aggregate`). Under `:ok_per_test`, subject maps may also carry
       `:attribution` (`:exact` | `:degraded_unhooked`) and
       `:unhooked_modules` read from envelope `meta` (Stage 2).
@@ -241,6 +261,10 @@ defmodule SpecLedEx.Review.CoverageClosure do
       `SpecLedEx.Coverage.MfaLines` — not a file-level proxy.
     * `:no_debug_info_mfas` — closure MFAs whose module has no abstract
       code; neither covered nor uncovered, surfaced as a distinct note.
+    * `:unresolvable_source_mfas` — closure MFAs whose module index, MFA line
+      entry, compile source, or MFA identity could not be resolved. They stay
+      in the denominator and are surfaced separately from no-debug and
+      ordinary uncovered MFAs.
     * `:closure_coverage_pct` — `covered / total * 100`, or the atom
       `:no_closure_mfas` when the closure has zero MFAs. This is a
       deliberately distinct value from `0.0`: a requirement with no closure
@@ -273,6 +297,8 @@ defmodule SpecLedEx.Review.CoverageClosure do
     * `:line_index` — pre-built `MfaLines.index/1` result (skips indexing;
       tests use this to inject a stub without relying on fixture BEAM
       layout).
+    * `:per_test_reach_fn` — test-only three-argument replacement for
+      `CoverageTriangulation.per_test_requirement_reach/3`.
   """
   @spec build_v2(map(), keyword()) :: %{optional(String.t()) => v2_subject_reach()}
   def build_v2(index, opts \\ []) when is_map(index) do
@@ -355,21 +381,41 @@ defmodule SpecLedEx.Review.CoverageClosure do
           end
       end
 
-    Map.new(subject_reqs, fn {subject_id, {subject, requirements}} ->
-      closure_map = %{
-        subjects: %{
-          subject_id => %{owned_files: subject.surface, requirements: requirements}
-        }
-      }
+    closure_map = %{
+      subjects:
+        Map.new(subject_reqs, fn {subject_id, {subject, requirements}} ->
+          {subject_id, %{owned_files: subject.surface, requirements: requirements}}
+        end)
+    }
 
+    requirement_reach =
+      case envelope.mode do
+        :aggregate ->
+          CoverageTriangulation.aggregate_requirement_reach(envelope, closure_map)
+
+        :per_test ->
+          per_test_reach_fn =
+            Keyword.get(
+              opts,
+              :per_test_reach_fn,
+              &CoverageTriangulation.per_test_requirement_reach/3
+            )
+
+          per_test_reach_fn.(
+            envelope.payload,
+            closure_map,
+            line_index
+          )
+      end
+
+    Map.new(subject_reqs, fn {subject_id, {_subject, requirements}} ->
       by_req =
         v2_by_requirement(
           envelope,
-          closure_map,
+          requirement_reach,
           subject_id,
           requirements,
-          tag_index,
-          line_index
+          tag_index
         )
 
       reach =
@@ -461,19 +507,17 @@ defmodule SpecLedEx.Review.CoverageClosure do
   end
 
   defp v2_by_requirement(
-         %{mode: :aggregate} = envelope,
-         closure_map,
+         %{mode: :aggregate},
+         requirement_reach,
          subject_id,
          requirements,
-         tag_index,
-         _line_index
+         tag_index
        ) do
-    reach = CoverageTriangulation.aggregate_requirement_reach(envelope, closure_map)
     spec_tags = Map.get(tag_index, :spec, %{})
 
     Map.new(requirements, fn req ->
       r =
-        Map.get(reach, {subject_id, req.id}, %{
+        Map.get(requirement_reach, {subject_id, req.id}, %{
           closure_mfa_count: 0,
           executed_mfa_count: 0,
           covered_mfas: [],
@@ -498,32 +542,23 @@ defmodule SpecLedEx.Review.CoverageClosure do
   end
 
   defp v2_by_requirement(
-         %{mode: :per_test} = envelope,
-         closure_map,
+         %{mode: :per_test},
+         requirement_reach,
          subject_id,
          requirements,
-         tag_index,
-         line_index
+         tag_index
        ) do
-    # Real per-test MFA reach: line→MFA intersection via MfaLines, not the
-    # retired file-level "any hit in the MFA's source file" proxy.
-    per_req =
-      CoverageTriangulation.per_test_requirement_reach(
-        envelope.payload,
-        closure_map,
-        line_index
-      )
-
     spec_tags = Map.get(tag_index, :spec, %{})
 
     Map.new(requirements, fn req ->
       r =
-        Map.get(per_req, {subject_id, req.id}, %{
+        Map.get(requirement_reach, {subject_id, req.id}, %{
           closure_mfa_count: 0,
           executed_mfa_count: 0,
           covered_mfas: [],
           uncovered_mfas: [],
           no_debug_info_mfas: [],
+          unresolvable_source_mfas: [],
           reaching_tests: []
         })
 
@@ -565,6 +600,7 @@ defmodule SpecLedEx.Review.CoverageClosure do
       covered_mfas: r.covered_mfas,
       uncovered_mfas: r.uncovered_mfas,
       no_debug_info_mfas: Map.get(r, :no_debug_info_mfas, []),
+      unresolvable_source_mfas: Map.get(r, :unresolvable_source_mfas, []),
       tagged_tests: tagged_tests,
       self_verified?: self_verified?
     }

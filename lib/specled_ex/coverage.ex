@@ -4,10 +4,14 @@ defmodule SpecLedEx.Coverage do
 
   ## Wiring the per-test boundary hook
 
-  Adopters that want exclusive per-test attribution under
+  Adopters that want chained per-test attribution under
   `mix spec.cover.test --per-test` wire the hook once per case template:
 
       setup {SpecLedEx.Coverage, :per_test_boundary}
+
+  Declare that setup before any other setup callbacks whose coverage should
+  belong to the test body. ExUnit runs `on_exit` callbacks in LIFO order, so
+  registering the boundary hook first makes its tail snapshot run last.
 
   Or, for bare `ExUnit.Case` modules, `use SpecLedEx.Case` (which injects
   that setup line). The hook no-ops unless the task has armed the
@@ -22,6 +26,7 @@ defmodule SpecLedEx.Coverage do
   @root_files ~w(README.md CHANGELOG.md AGENTS.md mix.exs)
 
   @default_artifact_path ".spec/_coverage/per_test.coverdata"
+  @boundary_table_options [:public, :set, read_concurrency: true, write_concurrency: true]
 
   @typedoc """
   Pure formatter configuration produced by `init/2`.
@@ -44,9 +49,9 @@ defmodule SpecLedEx.Coverage do
   Wire with `setup {SpecLedEx.Coverage, :per_test_boundary}` (or
   `use SpecLedEx.Case`). When the `:specled_ex, :spec_cover_run` seam is
   unarmed or lacks a `:boundary_table`, this is a pure no-op. When armed,
-  it takes a head snapshot and registers an `on_exit` that takes the tail
-  snapshot, diffs the window, and inserts the row into the boundary ETS
-  table for the formatter to consume on flush.
+  it ensures the chained head snapshot exists and registers an `on_exit`
+  that takes the tail snapshot, diffs the window, and inserts the row into
+  the boundary ETS table for the formatter to consume on flush.
   """
   @spec per_test_boundary(map()) :: :ok
   def per_test_boundary(context) when is_map(context) do
@@ -54,12 +59,12 @@ defmodule SpecLedEx.Coverage do
       :unarmed ->
         :ok
 
-      head_snapshot ->
+      :armed ->
         key = boundary_key(context)
-        tags = boundary_tags(context)
 
         ExUnit.Callbacks.on_exit(fn ->
-          Boundary.tail(key, head_snapshot, tags)
+          {module, name} = key
+          Boundary.tail(module, name)
         end)
 
         :ok
@@ -70,23 +75,8 @@ defmodule SpecLedEx.Coverage do
     {mod, name}
   end
 
-  defp boundary_tags(context) when is_map(context) do
-    Map.drop(context, [
-      :case,
-      :describe,
-      :describe_line,
-      :file,
-      :line,
-      :module,
-      :registered,
-      :test,
-      :test_pid,
-      :test_type,
-      :async,
-      :seed,
-      :report,
-      :type
-    ])
+  defp boundary_key(%{module: mod}) when is_atom(mod) do
+    {mod, :__setup_all__}
   end
 
   @doc """
@@ -130,12 +120,14 @@ defmodule SpecLedEx.Coverage do
   Allocates the impure resources for a coverage run (anonymous ETS) and
   returns a runtime state that combines the config with `:table`.
 
-  The ETS table is anonymous (`:ets.new(:anon, [:public, :set])`) so multiple
-  formatters can coexist within a single VM (as occurs in unit tests).
+  The ETS table is anonymous
+  (`:ets.new(:anon, [:public, :set, read_concurrency: true, write_concurrency: true])`)
+  so multiple formatters can coexist within a single VM (as occurs in unit
+  tests).
   """
   @spec install(config()) :: map()
   def install(config) when is_map(config) do
-    table = :ets.new(:anon, [:public, :set])
+    table = :ets.new(:anon, @boundary_table_options)
     Map.put(config, :table, table)
   end
 

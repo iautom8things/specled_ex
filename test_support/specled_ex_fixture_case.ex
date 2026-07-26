@@ -1,11 +1,11 @@
-defmodule SpecLedEx.Case do
+defmodule SpecLedEx.FixtureCase do
   use ExUnit.CaseTemplate
 
   using opts do
     quote do
       use ExUnit.Case, async: Keyword.get(unquote(opts), :async, true)
 
-      import SpecLedEx.Case
+      import SpecLedEx.FixtureCase
     end
   end
 

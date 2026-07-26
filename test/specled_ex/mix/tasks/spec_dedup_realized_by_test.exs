@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Spec.DedupRealizedByTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.tasks.dedup_realized_by_proposal",

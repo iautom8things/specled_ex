@@ -1,5 +1,111 @@
 # Changelog
 
+## 0.9.0 — 2026-07-25
+
+Fast-follow remediation of the 0.7.0 per-test attribution release: every Tier-2
+and Tier-3 finding from its critical review, plus the honesty repairs those
+findings exposed. Twelve tickets, each cold-verified and audited independently.
+(specled_-dn4)
+
+- **The per-test cost model and attribution bound are now true rather than
+  flattering.** The shipped claim that the hot path was "two snapshot reads +
+  one `Snapshot.diff/2` + one ETS insert" understated O(modules × lines) reads
+  twice per test plus an `ExUnit.OnExitHandler` deep copy of the head snapshot.
+  Boundary windows are now chained — `tail(N)` is reused as `head(N+1)`, so the
+  `on_exit` closure captures only `{module, name}` and the snapshot lives in
+  ETS. Chaining widens the window, and the widening is disclosed rather than
+  buried: later windows inherit serialized runner/`setup_all` and any
+  intervening unhooked-test activity since the prior tail, and a tail raising
+  before its single `:ets.insert/2` leaves the chained head unadvanced. The
+  corrected bound — "exact within disclosed chained windows" — is propagated
+  through the subject specs, the decision record, `docs/coverage.md`, the
+  review renderer, the README and the adoption guide, with a measured
+  per-hooked-test overhead figure published alongside it.
+  (specled_-dn4.6, specled_-dn4.11)
+- **`mix spec.cover.test --per-test` no longer exits 0 on a stale artifact.** A
+  formatter crash previously left the previous run's `.coverdata` on disk while
+  the task reported success. The task now asserts artifact freshness
+  (`generated_at` against a timestamp captured before the suite) and raises on a
+  missing, refused or stale write. A red suite still surfaces its own failure
+  rather than a fabricated stale-artifact one. (specled_-dn4.6)
+- **Capture and review now share one path identity, and unresolvable sources
+  are their own partition instead of silently reading as uncovered.** Both
+  lanes normalize to repo-root-relative paths, so a `nil` source or a
+  path-shape mismatch can no longer masquerade as a genuine miss.
+  `no_debug_info_mfas` no longer conflates three distinct states, malformed MFA
+  identities get their own partition, and modules missing from the file map are
+  surfaced as `meta.unmapped_modules` rather than vanishing from both the
+  payload and the remainder that is supposed to catch them. Reported
+  percentages may fall as a result; that is the point. (specled_-dn4.5)
+- **Unknown provenance renders unqualified.** A subject reach map with no
+  `:attribution` key previously defaulted to `:exact` at five review surfaces —
+  the strongest available claim for data that never asserted one. All five now
+  render without a qualifier. (specled_-dn4.5)
+- **One arming-seam resolver.** Three independent decoders of
+  `:specled_ex, :spec_cover_run` across `Boundary` and `Formatter` disagreed on
+  table validity, so an armed seam carrying a non-reference table made
+  `Boundary` write rows the formatter silently ignored — and the three paths
+  variously crashed, no-oped, or crashed differently. `SpecLedEx.Coverage.Arming`
+  is now the sole decoder, returning `{:armed, config} | :disarmed` with one
+  stated liveness predicate, and it owns the module cache key that previously
+  leaked across modules. (specled_-dn4.4)
+- **Suite-end flush is linear again.** `Formatter.flush/1`'s quadratic
+  `acc ++ recs` accumulation is replaced with `split_with`/`flat_map`/
+  `frequencies_by`; measured 14.1s → 183ms at 40k records, with payload order,
+  `meta` key set and stderr notice text byte-identical. (specled_-dn4.2)
+- **specled can dogfood its own headline ergonomic.** The shipped
+  `SpecLedEx.Case` template was silently shadowed in the host test VM by a
+  same-named fixture helper, so the public case template was never exercised
+  and 133 `undefined or private` warnings went unreported. The fixture is
+  renamed to `SpecLedEx.FixtureCase`, and the case-template contract is proved
+  behaviorally in a child BEAM against the shipped module rather than by
+  grepping its own source. (specled_-dn4.3)
+- **Spec evidence repaired.** The two coverage qualifier requirement ids
+  asserted the opposite of their own names and are renamed under a deprecation
+  ADR; a scenario whose premise required a lazy-capture row that no longer
+  exists is corrected; the `no_debug_info` rendering obligation gains a covering
+  scenario and its test regains its `covers:` linkage; the adoption-guide
+  requirement is verified by asserted content instead of mere file existence;
+  and `specled.decisions.reference_validation` gains the
+  `change_type: deprecates` carve-out its own enforcement already applied — a
+  mandated deprecation ceremony that `mix spec.check` had made unperformable.
+  (specled_-dn4.8, specled_-dn4.10)
+- **Coverage tests are order-independent and the reach engine is directly
+  tested.** Three integration modules mutated the global code server while
+  `async: true` (reproduced at 8/15 failures under stress, 0/15 after the fix);
+  the formatter and MFA-lines suites mutated a production-read Application
+  global and the VM-global `:debug_info` option. All are serialized.
+  `per_test_requirement_reach/3` gains direct unit coverage of its partitions
+  rather than being exercised only end-to-end. (specled_-ya8, specled_-dn4.7)
+- **The v1 file-level detectors can match again.** Making record `:files`
+  repo-root-relative (above) left `mix spec.triangle` and
+  `Review.CoverageClosure` joining those against `closure_files` still derived
+  from raw absolute `module_info(:compile)[:source]` — an identity that could
+  never match, so `execution_reach` always reported 0/M and
+  `untested_realization` was computed over an impossible join. Both
+  `mfa_source_file/1` producers now resolve to the same repo-root-relative
+  identity as record `:file` values. (specled_-ygi)
+- **Tier-3 hardening.** `Boundary.head/1` and `tail/2` tolerate a dead table via
+  rescue rather than a TOCTOU pre-check; `per_test_boundary/1` tolerates a
+  `setup_all` context instead of raising `FunctionClauseError`;
+  `Store.classify_v2/1` rejects a present-but-non-map `:meta`; source resolution
+  no longer loads modules as a side effect of a function documented as pure; the
+  anonymous coverage ETS tables declare read/write concurrency; and the five
+  review attribution dispatches fold into one helper. Dead state, a duplicated
+  snapshot default, and a tuple-arity ladder are removed. (specled_-dn4.9)
+
+**Changed behavior worth checking before you upgrade.**
+
+- `SpecLedEx.Coverage.Boundary.tail/3` is now `tail/2`; the write-only `:tags`
+  field is gone from the boundary row. (specled_-dn4.1)
+- `mix spec.cover.test --per-test` gains a new failure mode: it raises on a
+  stale or missing artifact where it previously exited 0.
+- Review surfaces render no qualifier where they previously rendered
+  "exact up to escaped processes"; that wording is retired repo-wide in favour
+  of the chained-window bound.
+- The anonymous ETS option list quoted by `specled.coverage_capture.anonymous_ets`
+  now includes `read_concurrency` and `write_concurrency`.
+
 ## 0.8.0 — 2026-07-25
 
 - `mix spec.check` and `mix spec.validate` now end every run they report on
@@ -31,14 +137,18 @@
 
 ## 0.7.0 — 2026-07-24
 
-- Per-test coverage attribution is now exact. `mix spec.cover.test
+- Per-test coverage attribution is now exact within disclosed chained windows.
+  `mix spec.cover.test
   --per-test` gains a synchronous boundary hook: `SpecLedEx.Case` (a
   shippable `ExUnit.CaseTemplate`) or a one-line
   `setup {SpecLedEx.Coverage, :per_test_boundary}` in an existing case
   template snapshots each hooked test's coverage window at the
   Runner-awaited `setup`/`on_exit` boundary, so per-test line hits are
-  deterministic and exclusive (qualified only by processes a test spawns
-  that outlive its tail snapshot). The coverage formatter is demoted from
+  deterministic within the chained [head, tail] window: later hooked tests
+  inherit serialized runner/setup_all and any intervening unhooked-test
+  activity since the prior hooked tail, and processes that outlive their tail
+  snapshot can still leak into a later window or the aggregate remainder. The
+  coverage formatter is demoted from
   measurement engine to auditor — it takes one baseline and one final
   snapshot, attributes hooked windows from the boundary table, folds the
   unattributed remainder into the envelope, and degrades honestly when
@@ -49,7 +159,7 @@
   from line→MFA intersection (`CoverageTriangulation.per_test_requirement_reach/3`
   + `SpecLedEx.Coverage.MfaLines.index/1`), retiring the file-level proxy
   (specled_-jjq). Per-subject cards carry an attribution qualifier
-  ("exact up to escaped processes" / "degraded: unhooked"). (specled_-pzd)
+  ("exact within chained windows" / "degraded: unhooked"). (specled_-pzd)
 - Degradation provenance is recorded, not inferred: a degraded per-test
   envelope carries `meta.degraded_reasons` (`:async` |
   `:counters_harvested` | `:unhooked`), `Store.degraded_reasons/1` is the

@@ -1,5 +1,5 @@
 defmodule SpecLedEx.BranchCheck.RealizationConfigTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   alias SpecLedEx.{BranchCheck, Index, StateJsonFixture}
   alias SpecLedEx.Realization.HashStore

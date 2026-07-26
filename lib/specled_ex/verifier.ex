@@ -1720,7 +1720,7 @@ defmodule SpecLedEx.Verifier do
 
   defp add_decision_affects_debug_checks(checks, meta, subject_ids, claim_ids, decision_id, file) do
     Enum.reduce(list_field(meta, "affects"), checks, fn affect, acc ->
-      if valid_decision_affect?(affect, subject_ids, claim_ids) do
+      if valid_decision_affect?(affect, subject_ids, claim_ids, string_field(meta, "change_type")) do
         [
           check(
             "pass",
@@ -1918,7 +1918,7 @@ defmodule SpecLedEx.Verifier do
 
   defp add_decision_affects_findings(findings, meta, subject_ids, claim_ids, decision_id, file) do
     Enum.reduce(list_field(meta, "affects"), findings, fn affect, acc ->
-      if valid_decision_affect?(affect, subject_ids, claim_ids) do
+      if valid_decision_affect?(affect, subject_ids, claim_ids, string_field(meta, "change_type")) do
         acc
       else
         [
@@ -2092,9 +2092,10 @@ defmodule SpecLedEx.Verifier do
     _ -> false
   end
 
-  defp valid_decision_affect?(affect, subject_ids, claim_ids) do
+  defp valid_decision_affect?(affect, subject_ids, claim_ids, change_type) do
     is_binary(affect) and affect != "" and
-      (MapSet.member?(subject_ids, affect) or
+      (change_type == "deprecates" or
+         MapSet.member?(subject_ids, affect) or
          MapSet.member?(claim_ids, affect) or
          String.starts_with?(affect, "repo."))
   end

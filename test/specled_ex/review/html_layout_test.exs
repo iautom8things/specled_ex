@@ -10,7 +10,7 @@ defmodule SpecLedEx.Review.HtmlLayoutTest do
   # — the CSS token sets, the localStorage wiring, the fragment-addressable
   # panes — since ExUnit renders a string rather than driving a browser.
 
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   alias SpecLedEx.Evidence.{Entry, Store}
   alias SpecLedEx.Review

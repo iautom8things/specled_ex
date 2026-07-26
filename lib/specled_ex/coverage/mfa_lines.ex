@@ -70,14 +70,11 @@ defmodule SpecLedEx.Coverage.MfaLines do
   defp collect_lines({:clause, anno, pats, guards, body}, acc),
     do: collect_lines([pats, guards, body], add_anno(anno, acc))
 
+  defp collect_lines({}, acc), do: acc
+
   defp collect_lines(term, acc) when is_tuple(term) do
-    case term do
-      {a, b, c, d, e} -> collect_lines([b, c, d, e], maybe_add_anno(a, acc))
-      {a, b, c, d} -> collect_lines([b, c, d], maybe_add_anno(a, acc))
-      {a, b, c} -> collect_lines([b, c], maybe_add_anno(a, acc))
-      {a, b} -> collect_lines(b, maybe_add_anno(a, acc))
-      other -> Enum.reduce(Tuple.to_list(other), acc, &collect_lines/2)
-    end
+    [head | tail] = Tuple.to_list(term)
+    collect_lines(tail, maybe_add_anno(head, acc))
   end
 
   defp collect_lines(_term, acc), do: acc

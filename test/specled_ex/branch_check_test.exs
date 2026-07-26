@@ -1,5 +1,5 @@
 defmodule SpecLedEx.BranchCheckTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.branch_guard.new_requirement_tag_warning",

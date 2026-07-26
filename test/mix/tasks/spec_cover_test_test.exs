@@ -13,6 +13,7 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
                "specled.coverage_capture.per_test_async_contamination",
                "specled.coverage_capture.per_test_allow_async_degrade",
                "specled.coverage_capture.per_test_v2_envelope",
+               "specled.coverage_capture.per_test_artifact_freshness",
                "specled.coverage_capture.cumulative_parity",
                "specled.coverage_capture.per_test_exclusive_attribution",
                "specled.coverage_capture.boundary_row_exclusive",
@@ -24,6 +25,72 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
              ]
 
   alias SpecLedEx.Coverage.Store
+
+  defp tmp_dir!(prefix) do
+    path = Path.join(System.tmp_dir!(), "#{prefix}_#{random_suffix()}")
+    File.mkdir!(path)
+    path
+  end
+
+  defp random_suffix do
+    8 |> :crypto.strong_rand_bytes() |> Base.url_encode64(padding: false)
+  end
+
+  describe "per-test artifact freshness predicate" do
+    @tag spec: "specled.coverage_capture.per_test_artifact_freshness"
+    test "classifies missing, refused, stale successful, and fresh successful artifacts" do
+      root = tmp_dir!("specled_cover_freshness")
+
+      on_exit(fn -> File.rm_rf!(root) end)
+
+      artifact = Path.join(root, ".spec/_coverage/per_test.coverdata")
+      suite_started_at = ~U[2026-01-01 00:00:00Z]
+
+      refute Mix.Tasks.Spec.Cover.Test.per_test_artifact_fresh?(artifact, suite_started_at)
+
+      refused =
+        Store.build_envelope(%{
+          mode: :per_test,
+          generated_at: ~U[2026-01-01 00:00:01Z],
+          source: "refused",
+          files: [],
+          mfas: [],
+          payload: [],
+          degraded: false
+        })
+
+      assert {:error, :empty_files} = Store.write_v2(refused, artifact)
+      refute Mix.Tasks.Spec.Cover.Test.per_test_artifact_fresh?(artifact, suite_started_at)
+
+      stale =
+        Store.build_envelope(%{
+          mode: :per_test,
+          generated_at: ~U[2020-01-01 00:00:00Z],
+          source: "stale",
+          files: ["lib/stale.ex"],
+          mfas: [],
+          payload: [],
+          degraded: false
+        })
+
+      :ok = Store.write_v2(stale, artifact)
+      refute Mix.Tasks.Spec.Cover.Test.per_test_artifact_fresh?(artifact, suite_started_at)
+
+      fresh =
+        Store.build_envelope(%{
+          mode: :per_test,
+          generated_at: ~U[2026-01-01 00:00:01Z],
+          source: "fresh",
+          files: ["lib/fresh.ex"],
+          mfas: [],
+          payload: [],
+          degraded: false
+        })
+
+      :ok = Store.write_v2(fresh, artifact)
+      assert Mix.Tasks.Spec.Cover.Test.per_test_artifact_fresh?(artifact, suite_started_at)
+    end
+  end
 
   describe "default mode (aggregate ingest)" do
     @tag :integration
@@ -181,6 +248,52 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
       assert envelope.degraded,
              "would fail if the formatter didn't flag the async-contaminated test's records, " <>
                "leaving the v2 envelope indistinguishable from a clean --per-test run"
+    end
+
+    @tag :integration
+    @tag spec: "specled.coverage_capture.per_test_artifact_freshness"
+    test "a stale successful artifact cannot make a formatter run with no fresh write exit 0" do
+      root = scaffold_empty_fixture()
+      on_exit(fn -> File.rm_rf!(root) end)
+
+      artifact = Path.join(root, ".spec/_coverage/per_test.coverdata")
+
+      stale =
+        Store.build_envelope(%{
+          mode: :per_test,
+          generated_at: ~U[2020-01-01 00:00:00Z],
+          source: "stale",
+          files: ["lib/stale.ex"],
+          mfas: [],
+          payload: [],
+          degraded: false
+        })
+
+      :ok = Store.write_v2(stale, artifact)
+
+      {output, status} = run_fixture_mix_test(root, ["spec.cover.test", "--per-test"])
+
+      assert status != 0,
+             "would fail if run_per_test/2 accepted the previous run's artifact. Output:\n#{output}"
+
+      assert output =~ "coverage artifact is stale"
+      assert {:ok, %{generated_at: ~U[2020-01-01 00:00:00Z]}} = Store.read_v2(artifact)
+    end
+
+    @tag :integration
+    @tag spec: "specled.coverage_capture.per_test_artifact_freshness"
+    test "a red per-test suite preserves its failing exit without inventing a stale-artifact failure" do
+      root = scaffold_exclusive_fixture(failing?: true)
+      on_exit(fn -> File.rm_rf!(root) end)
+
+      {output, status} = run_fixture_mix_test(root, ["spec.cover.test", "--per-test"])
+
+      assert status != 0
+      refute output =~ "coverage artifact is stale"
+
+      artifact = Path.join(root, ".spec/_coverage/per_test.coverdata")
+      assert {:ok, envelope} = Store.read_v2(artifact)
+      assert DateTime.after?(envelope.generated_at, ~U[2020-01-01 00:00:00Z])
     end
   end
 
@@ -399,9 +512,7 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
     failing? = Keyword.get(opts, :failing?, false)
     async_true? = Keyword.get(opts, :async_true?, false)
 
-    base =
-      System.tmp_dir!()
-      |> Path.join("specled_cover_fixture_#{System.unique_integer([:positive])}")
+    base = tmp_dir!("specled_cover_fixture")
 
     File.mkdir_p!(Path.join(base, "lib"))
     File.mkdir_p!(Path.join(base, "test"))
@@ -427,9 +538,7 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
 
   # One hooked (SpecLedEx.Case) + one unhooked bare ExUnit.Case module.
   defp scaffold_partial_hook_fixture do
-    base =
-      System.tmp_dir!()
-      |> Path.join("specled_cover_partial_#{System.unique_integer([:positive])}")
+    base = tmp_dir!("specled_cover_partial")
 
     File.mkdir_p!(Path.join(base, "lib"))
     File.mkdir_p!(Path.join(base, "test"))
@@ -468,10 +577,8 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
   end
 
   # Two-test fixture hooked via SpecLedEx.Case; tests call disjoint functions.
-  defp scaffold_exclusive_fixture do
-    base =
-      System.tmp_dir!()
-      |> Path.join("specled_cover_exclusive_#{System.unique_integer([:positive])}")
+  defp scaffold_exclusive_fixture(opts \\ []) do
+    base = tmp_dir!("specled_cover_exclusive")
 
     File.mkdir_p!(Path.join(base, "lib"))
     File.mkdir_p!(Path.join(base, "test"))
@@ -482,7 +589,7 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
 
     File.write!(
       Path.join([base, "test", "exclusive_test.exs"]),
-      exclusive_test_module()
+      exclusive_test_module(Keyword.get(opts, :failing?, false))
     )
 
     base
@@ -506,13 +613,15 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
     """
   end
 
-  defp exclusive_test_module do
+  defp exclusive_test_module(failing?) do
+    path_a_expected = if failing?, do: 4, else: 3
+
     """
     defmodule ExclusiveTest do
       use SpecLedEx.Case, async: false
 
       test "path_a" do
-        assert Covered.path_a() == 3
+        assert Covered.path_a() == #{path_a_expected}
       end
 
       test "path_b" do
@@ -582,9 +691,7 @@ defmodule Mix.Tasks.Spec.Cover.TestTest do
   end
 
   defp scaffold_empty_fixture do
-    base =
-      System.tmp_dir!()
-      |> Path.join("specled_cover_empty_fixture_#{System.unique_integer([:positive])}")
+    base = tmp_dir!("specled_cover_empty_fixture")
 
     File.mkdir_p!(Path.join(base, "lib"))
     File.mkdir_p!(Path.join(base, "test"))

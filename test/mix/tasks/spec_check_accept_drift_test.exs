@@ -5,7 +5,7 @@ defmodule Mix.Tasks.SpecCheckAcceptDriftTest do
   # not resurface once the branch merges and the `Spec-Drift:` trailer window
   # closes. Kept in its own file (tagged only for `specled.tasks`) so it does not
   # pull the broad `spec_tasks_test.exs` moduletag onto the change.
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   alias SpecLedEx.Realization.HashStore
 

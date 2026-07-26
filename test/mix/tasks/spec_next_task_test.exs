@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.SpecNextTaskTest do
-  use SpecLedEx.Case
+  use SpecLedEx.FixtureCase
 
   @moduletag spec: [
                "specled.next.bugfix_guidance",

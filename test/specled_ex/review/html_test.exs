@@ -1195,7 +1195,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       # reaches "executed" and the mode-gated row does not render.
       refute html =~ "Reached by tests"
       # Aggregate mode has no per-test attribution qualifier.
-      refute html =~ "exact up to escaped processes"
+      refute html =~ "exact within chained windows"
       refute html =~ "file-level proxy"
     end
 
@@ -1265,8 +1265,8 @@ defmodule SpecLedEx.Review.HtmlTest do
                "Reached by tests:</span> <code class=\"cov-closure-test\">test/a_test.exs :: t1</code>, <code class=\"cov-closure-test\">test/b_test.exs :: t2</code>."
     end
 
-    # covers: specled.spec_review.coverage_observed_approximate_qualifier
-    test "per-test closure line renders the exact-up-to-escaped-processes qualifier" do
+    # covers: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
+    test "per-test closure line renders the exact-within-chained-windows qualifier" do
       reach = %{
         status: :ok_per_test,
         attribution: :exact,
@@ -1292,22 +1292,30 @@ defmodule SpecLedEx.Review.HtmlTest do
           )
         )
 
-      # Discoverability: the closure line carries the exact-up-to-escaped-
-      # processes qualifier (file-level proxy note is retired).
-      assert html =~ "exact up to escaped processes"
+      # Discoverability: the closure line carries the exact-within-
+      # chained-windows qualifier (file-level proxy note is retired).
+      assert html =~ "exact within chained windows"
       refute html =~ "file-level proxy"
       refute html =~ "treat as observed, not exact"
 
       # Reached-by and self-verified share the same claim language.
       assert html =~ "escaped processes"
+      assert html =~ "Per-test attribution is exact within disclosed chained windows"
+      assert html =~ "inherit runner/setup_all and intervening unhooked-test activity"
+
+      assert html =~
+               ~s|title="Per-test MFA coverage is exact within disclosed chained windows: later hooked tests inherit runner/setup_all and intervening unhooked-test activity since the previous hooked tail; escaped processes can still increment counters after their tail snapshot closes — see specled.decision.per_test_sync_boundary."|
 
       assert html =~
                ~s|Self-verified: yes. <span class="cov-closure-self-verified-note"|
 
-      assert html =~ "(exact up to escaped processes)</span>"
+      assert html =~
+               ~s|specled.decision.per_test_sync_boundary.">(exact within chained windows)</span></span>|
+
+      assert html =~ "(exact within chained windows)</span>"
     end
 
-    # covers: specled.spec_review.coverage_file_level_proxy_qualifier
+    # covers: specled.spec_review.coverage_line_mfa_intersection_qualifier
     test "degraded unhooked per-test run names unhooked modules on the closure line and banner" do
       reach = %{
         status: :ok_per_test,
@@ -1335,10 +1343,24 @@ defmodule SpecLedEx.Review.HtmlTest do
       assert html =~ "OtherUnhooked"
       assert html =~ "Per-test coverage is degraded (unhooked modules)"
       assert html =~ "setup {SpecLedEx.Coverage, :per_test_boundary}"
+
+      assert html =~
+               "unhooked modules (UnhookedCase, OtherUnhooked) fold into the aggregate remainder"
+
+      assert html =~
+               "Per-test run degraded: unhooked modules (UnhookedCase, OtherUnhooked) fold into the aggregate remainder; hooked tests remain exact only within disclosed chained windows."
+
+      assert html =~
+               "Per-test run is degraded — unhooked modules (UnhookedCase, OtherUnhooked) fold into the aggregate remainder; hooked tests remain exact only within disclosed chained windows."
+
+      assert html =~
+               "remainder; hooked tests remain exact only within disclosed chained windows. Add"
+
+      assert html =~ "hooked tests remain exact only within disclosed chained windows"
       refute html =~ "file-level proxy"
     end
 
-    # covers: specled.spec_review.coverage_observed_approximate_qualifier
+    # covers: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
     test "aggregate mode's \"Self-verified: no.\" row carries no exact/degraded qualifier" do
       reach = %{
         status: :ok_aggregate,
@@ -1361,10 +1383,11 @@ defmodule SpecLedEx.Review.HtmlTest do
 
       assert html =~ "Self-verified: no."
       refute html =~ "cov-closure-self-verified-note"
-      refute html =~ "exact up to escaped processes"
+      refute html =~ "exact within chained windows"
       refute html =~ "(observed)"
     end
 
+    # covers: specled.spec_review.coverage_tab_bind_closure specled.spec_review.coverage_tab_v2_envelope_data_layer
     test "renders a no-debug-info note when requirement reach lists no_debug_info_mfas" do
       reach = %{
         status: :ok_per_test,
@@ -1393,6 +1416,84 @@ defmodule SpecLedEx.Review.HtmlTest do
       assert html =~ "No debug info"
       assert html =~ "Ghost.Mod.fun/1"
       assert html =~ "not counted as covered or uncovered"
+    end
+
+    @tag spec: "specled.spec_review.coverage_unresolvable_source_renders_distinct_note"
+    test "renders an unresolvable-source note without laundering the MFA into covered or uncovered" do
+      reach = %{
+        status: :ok_per_test,
+        attribution: :exact,
+        by_requirement: %{
+          "subj.a.req1" =>
+            req_reach(
+              covered_mfas: [],
+              uncovered_mfas: [],
+              unresolvable_source_mfas: ["Ghost.Mod.fun/1"]
+            )
+        }
+      }
+
+      html =
+        IO.iodata_to_binary(
+          Html.render_coverage_tab(
+            coverage_subject(
+              closure_reach: reach,
+              requirements: [
+                %{"id" => "subj.a.req1", "statement" => "S", "priority" => "must"}
+              ]
+            )
+          )
+        )
+
+      assert html =~ "Source identity unavailable"
+      assert html =~ "Ghost.Mod.fun/1"
+      assert html =~ "retained in the closure denominator"
+      assert html =~ "not reported as covered or uncovered"
+    end
+
+    @tag spec: "specled.spec_review.coverage_missing_attribution_unqualified"
+    test "keyless per-test reach stays unqualified across closure, reached-by, self-verified, and rollup surfaces" do
+      reach = %{
+        status: :ok_per_test,
+        by_requirement: %{
+          "subj.a.req1" =>
+            req_reach(
+              self_verified?: true,
+              tagged_tests: [
+                %{file: "test/a_test.exs", test_name: "t1", strength: "executed"}
+              ]
+            )
+        }
+      }
+
+      tab_html =
+        IO.iodata_to_binary(
+          Html.render_coverage_tab(
+            coverage_subject(
+              closure_reach: reach,
+              requirements: [
+                %{"id" => "subj.a.req1", "statement" => "S", "priority" => "must"}
+              ]
+            )
+          )
+        )
+
+      badge_html = IO.iodata_to_binary(Html.render_subject_coverage_badge(reach))
+
+      assert tab_html =~ "Reached by tests:"
+      assert tab_html =~ ~s|<span class="cov-reached-by-tests-label" title="">|
+      assert tab_html =~ "Self-verified: yes."
+      refute tab_html =~ "cov-closure-attribution-note"
+      refute tab_html =~ "cov-closure-self-verified-note"
+      refute tab_html =~ "exact within disclosed chained windows"
+      refute tab_html =~ "exact within chained windows"
+      refute tab_html =~ "degraded: unhooked"
+
+      assert badge_html =~ "1/1 self-verified (per-test)"
+      assert badge_html =~ ~s|title="1 of 1 requirements self-verified under per-test coverage"|
+      refute badge_html =~ "exact within disclosed chained windows"
+      refute badge_html =~ "exact within chained windows"
+      refute badge_html =~ "(degraded)"
     end
 
     test "renders the empty-closure form when the requirement has no closure MFAs" do
@@ -1555,8 +1656,8 @@ defmodule SpecLedEx.Review.HtmlTest do
       assert html =~ "1/2 self-verified (per-test)"
     end
 
-    # covers: specled.spec_review.coverage_observed_approximate_qualifier
-    test "per-test mode's rollup badge carries a discoverable exact-up-to-escaped-processes qualifier" do
+    # covers: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
+    test "per-test mode's rollup badge carries a discoverable exact-within-chained-windows qualifier" do
       reach = %{
         status: :ok_per_test,
         attribution: :exact,
@@ -1568,12 +1669,35 @@ defmodule SpecLedEx.Review.HtmlTest do
 
       html = IO.iodata_to_binary(Html.render_subject_coverage_badge(reach))
 
-      assert html =~ "1/2 self-verified (per-test) (exact up to escaped processes)"
-      assert html =~ "exact up to escaped processes"
+      assert html =~ "1/2 self-verified (per-test) (exact within chained windows)"
+      assert html =~ "exact within chained windows"
+      assert html =~ "inherit runner/setup_all and intervening unhooked-test activity"
       refute html =~ "(observed)"
     end
 
-    # covers: specled.spec_review.coverage_observed_approximate_qualifier
+    # covers: specled.spec_review.coverage_line_mfa_intersection_qualifier
+    test "degraded per-test rollup badge names the unhooked-module qualifier" do
+      reach = %{
+        status: :ok_per_test,
+        attribution: :degraded_unhooked,
+        unhooked_modules: [UnhookedCase],
+        by_requirement: %{
+          "a" => %{self_verified?: true},
+          "b" => %{self_verified?: false}
+        }
+      }
+
+      html = IO.iodata_to_binary(Html.render_subject_coverage_badge(reach))
+
+      assert html =~ "1/2 self-verified (per-test) (degraded)"
+
+      assert html =~
+               "unhooked modules (UnhookedCase) fold into the aggregate remainder"
+
+      assert html =~ "hooked tests remain exact only within disclosed chained windows"
+    end
+
+    # covers: specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
     test "aggregate mode's rollup badge carries no exact/degraded qualifier" do
       reach = %{
         status: :ok_aggregate,
@@ -1587,7 +1711,8 @@ defmodule SpecLedEx.Review.HtmlTest do
 
       assert html =~ "0/2 self-verified (aggregate)"
       refute html =~ "(observed)"
-      refute html =~ "exact up to escaped processes"
+      refute html =~ "disclosed chained windows"
+      refute html =~ "exact within chained windows"
     end
 
     test "renders a muted coverage-unavailable chip for each degraded status" do

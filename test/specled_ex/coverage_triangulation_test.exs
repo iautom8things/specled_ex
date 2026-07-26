@@ -11,6 +11,9 @@ defmodule SpecLedEx.CoverageTriangulationTest do
   # covers: specled.triangulation.envelope_aggregate_underspecified_realization
   # covers: specled.triangulation.envelope_async_contaminated
   # covers: specled.triangulation.aggregate_requirement_reach_mfa_intersection
+  # covers: specled.triangulation.per_test_requirement_reach
+  # covers: specled.triangulation.per_test_path_identity
+  # covers: specled.triangulation.per_test_unresolvable_source_partition
   use ExUnit.Case, async: true
 
   @moduletag spec: [
@@ -26,10 +29,14 @@ defmodule SpecLedEx.CoverageTriangulationTest do
                "specled.triangulation.envelope_per_test_only_detectors_unavailable",
                "specled.triangulation.envelope_aggregate_underspecified_realization",
                "specled.triangulation.envelope_async_contaminated",
-               "specled.triangulation.aggregate_requirement_reach_mfa_intersection"
+               "specled.triangulation.aggregate_requirement_reach_mfa_intersection",
+               "specled.triangulation.per_test_requirement_reach",
+               "specled.triangulation.per_test_path_identity",
+               "specled.triangulation.per_test_unresolvable_source_partition"
              ]
 
   alias SpecLedEx.CoverageTriangulation
+  alias SpecLedEx.Coverage.MfaKey
 
   describe "findings/3 — purity (specled.triangulation.pure_function)" do
     @tag spec: "specled.triangulation.pure_function"
@@ -737,6 +744,98 @@ defmodule SpecLedEx.CoverageTriangulationTest do
       reach = CoverageTriangulation.aggregate_requirement_reach(envelope, fixture_closure_map())
 
       refute Map.has_key?(reach[{"subject_a", "subject_a.req1"}], :reaching_tests)
+    end
+  end
+
+  describe "per_test_requirement_reach/3" do
+    @tag spec: [
+           "specled.triangulation.per_test_requirement_reach",
+           "specled.triangulation.per_test_path_identity",
+           "specled.triangulation.per_test_unresolvable_source_partition"
+         ]
+    test "partitions MFA reach by line intersection for a full multi-subject closure map" do
+      source = "lib/specled_ex/coverage_triangulation.ex"
+      covered = MfaKey.format({CoverageTriangulation, :per_test_requirement_reach, 3})
+      uncovered = MfaKey.format({CoverageTriangulation, :aggregate_requirement_reach, 2})
+      missing_fun = MfaKey.format({CoverageTriangulation, :missing, 0})
+      no_debug = MfaKey.format({NoDebugFixture, :missing_abstract_code, 0})
+      absent_module = MfaKey.format({AbsentFixture, :lost, 0})
+      external_source = MfaKey.format({String, :length, 1})
+      malformed = "not-an-mfa"
+
+      closure_map = %{
+        subjects: %{
+          "subject_a" => %{
+            requirements: [
+              %{id: "subject_a.lines", closure_mfas: [covered, uncovered]},
+              %{id: "subject_a.no_debug", closure_mfas: [no_debug, missing_fun]}
+            ]
+          },
+          "subject_b" => %{
+            requirements: [
+              %{
+                id: "subject_b.unresolvable",
+                closure_mfas: [absent_module, external_source, malformed]
+              }
+            ]
+          }
+        }
+      }
+
+      records = [
+        coverage_record(
+          test_id: "A.covered",
+          file: source,
+          lines_hit: [11, 30],
+          tags: %{file: "test/a_test.exs", test: "covered line"}
+        ),
+        coverage_record(
+          test_id: "A.unrelated",
+          file: source,
+          lines_hit: [99],
+          tags: %{file: "test/a_test.exs", test: "unrelated line"}
+        )
+      ]
+
+      line_index = %{
+        CoverageTriangulation => %{
+          {:per_test_requirement_reach, 3} => MapSet.new([10, 11]),
+          {:aggregate_requirement_reach, 2} => MapSet.new([20])
+        },
+        NoDebugFixture => :no_debug_info,
+        String => %{{:length, 1} => MapSet.new([1])}
+      }
+
+      reach = CoverageTriangulation.per_test_requirement_reach(records, closure_map, line_index)
+
+      line_req = reach[{"subject_a", "subject_a.lines"}]
+      assert line_req.closure_mfa_count == 2
+      assert line_req.executed_mfa_count == 1
+      assert line_req.covered_mfas == [covered]
+      assert line_req.uncovered_mfas == [uncovered]
+      assert line_req.no_debug_info_mfas == []
+      assert line_req.unresolvable_source_mfas == []
+      assert line_req.reaching_tests == ["test/a_test.exs :: covered line"]
+
+      no_debug_req = reach[{"subject_a", "subject_a.no_debug"}]
+      assert no_debug_req.closure_mfa_count == 2
+      assert no_debug_req.executed_mfa_count == 0
+      assert no_debug_req.covered_mfas == []
+      assert no_debug_req.uncovered_mfas == []
+      assert no_debug_req.no_debug_info_mfas == [no_debug]
+      assert no_debug_req.unresolvable_source_mfas == [missing_fun]
+
+      unresolved_req = reach[{"subject_b", "subject_b.unresolvable"}]
+      assert unresolved_req.closure_mfa_count == 3
+      assert unresolved_req.executed_mfa_count == 0
+      assert unresolved_req.covered_mfas == []
+      assert unresolved_req.uncovered_mfas == []
+      assert unresolved_req.no_debug_info_mfas == []
+
+      assert unresolved_req.unresolvable_source_mfas ==
+               [external_source, absent_module, malformed] |> Enum.sort()
+
+      assert unresolved_req.reaching_tests == []
     end
   end
 
