@@ -8,7 +8,7 @@ Provide the user-facing Mix tasks that scaffold, guide, summarize, and strictly 
 
 The `spec.init` scaffold's local skill and README, and the `spec.prime` loop, describe the missing-ADR condition as a two-armed fork: an ADR for durable cross-cutting policy, otherwise a `Spec-Drift: branch_guard_missing_decision_update=info` trailer with a one-line reason.
 
-The `spec.prime` and `spec.next` human guidance share the same verdict read-protocol text so task output and assertions do not drift by invisible Unicode punctuation.
+The `spec.prime` and `spec.next` human guidance share the same verdict read-protocol text so task output and assertions do not drift by invisible Unicode punctuation; `test/mix/tasks/spec_next_task_test.exs` pins that shared text to a literal golden assertion for `spec.next`.
 
 ```yaml spec-meta
 id: specled.mix_tasks

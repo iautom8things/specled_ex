@@ -86,6 +86,7 @@ decisions:
     - The suggestions include a spec.check command.
   then:
     - The commands section also includes the verdict read protocol sentence.
+    - A direct golden assertion compares the shared helper output with the full literal sentence, so future wording changes require an intentional test update.
 ```
 
 ## Verification

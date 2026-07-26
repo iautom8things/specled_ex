@@ -23,6 +23,12 @@ defmodule Mix.Tasks.SpecNextTaskTest do
 
   @verdict_protocol SpecLedEx.Next.verdict_read_protocol()
 
+  @tag spec: "specled.next.verdict_read_protocol"
+  test "verdict read protocol is pinned to the literal wording" do
+    assert SpecLedEx.Next.verdict_read_protocol() ==
+             "The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears."
+  end
+
   test "spec.next guides a covered local change", %{root: root} do
     init_git_repo(root)
 

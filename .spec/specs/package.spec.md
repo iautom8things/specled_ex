@@ -148,6 +148,15 @@ decisions:
   execute: true
   covers:
     - specled.package.adoption_guide
+- kind: command
+  target: >-
+    sh -c 'protocol="The verdict is the last stdout line starting with \`spec.check result=\` — not \`validate status=…\`. A non-zero exit means failure even if no verdict line appears." &&
+    grep -Fq "$protocol" docs/adoption.md &&
+    grep -Fq "$protocol" docs/concepts.md'
+  execute: true
+  covers:
+    - specled.package.adoption_guide
+    - specled.package.concepts_guide
 - kind: source_file
   target: docs/concepts.md
   covers:
