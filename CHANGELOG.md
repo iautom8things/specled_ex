@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.1 — 2026-07-25
+
+- Fixed the flaky `Tracer.merge_edges/3` property test: `uniq_list_of` over the
+  4-atom module pool aborted with `StreamData.TooManyDuplicatesError` after 10
+  consecutive duplicate draws, so any unlucky seed could strike CI (two
+  independent seeds already had). The generator now uses a plain `list_of` —
+  semantically equivalent since the drawn list is immediately converted to a
+  `MapSet` — which makes the abort structurally impossible and widens coverage
+  to the previously unreachable full 4-module session set. The property's
+  assertions are unchanged. (specled_-zr6)
+
 ## 0.9.0 — 2026-07-25
 
 Fast-follow remediation of the 0.7.0 per-test attribution release: every Tier-2

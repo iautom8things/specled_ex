@@ -255,7 +255,10 @@ defmodule SpecLedEx.Compiler.TracerTest do
       check all(
               previous <- edges_gen,
               session_edges <- edges_gen,
-              session_modules <- uniq_list_of(member_of(module_pool), max_length: 3)
+              # Plain list_of, not uniq_list_of: MapSet.new/1 dedupes below, and
+              # uniq_list_of over a 4-atom pool aborts with TooManyDuplicatesError
+              # under unlucky seeds (10 consecutive duplicate draws).
+              session_modules <- list_of(member_of(module_pool), max_length: 4)
             ) do
         session_set = MapSet.new(session_modules)
         merged = Tracer.merge_edges(previous, session_set, session_edges)
