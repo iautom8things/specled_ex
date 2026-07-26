@@ -25,6 +25,10 @@
     {
       "text": "Squash-merged to main (4f07955). Watching post-merge Specs run.",
       "timestamp": "2026-07-26T02:24:34Z"
+    },
+    {
+      "text": "Delivered slice: PR #25 squash-merged to main as 4f07955, released 0.9.2, post-merge Specs run green. Children specled_-zhe and specled_-j3k shipped and closed. Epic stays in_progress: 6 children remain (specled_-xde, specled_-wli, specled_-0x4.1..4). Phase label reverted to implementing.",
+      "timestamp": "2026-07-26T02:28:15Z"
     }
   ],
   "priority": 2,
