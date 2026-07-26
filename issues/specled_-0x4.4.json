@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-26T00:56:40Z",
+  "description": "Advances: specled.package\n\nSurfaced by the specled_-j3k auditor (2026-07-25). skills/spec-led-bootstrap/references/task-templates.md:30 and :66 instruct replacing the \u003cPROJECT_VERIFICATION_COMMAND\u003e placeholder in the scaffolded .spec/AGENTS.md — but priv/spec_init/AGENTS.md.eex contains no such placeholder (same N13-class falsehood fixed in adoption-phases.md by specled_-j3k commit ee60621). task-templates.md now contradicts the corrected adoption-phases.md wording ('the scaffolded template ships without one and has no placeholder to replace, so add the line').\n\nDeliverable: reword both task-templates.md sites to say the verification-command line must be ADDED to the scaffolded AGENTS.md (no placeholder exists), matching adoption-phases.md phase0 done-criteria wording. Whole-file sweep of task-templates.md for any other scaffold-content claims while there (verify each against priv/spec_init/ before changing).\n\nVerification: mix spec.check --no-run-commands --base \u003cbase\u003e passes with the specled.package subject co-changed or unchanged-as-appropriate; grep for PROJECT_VERIFICATION_COMMAND in skills/ returns nothing.\n\nOut of Scope (intent): no severity/default claims changes beyond the placeholder wording; no code changes.",
+  "id": "specled_-0x4.4",
+  "labels": [],
+  "parent": "specled_-0x4",
+  "priority": 2,
+  "status": "open",
+  "title": "Bootstrap skill accuracy follow-up: task-templates.md still instructs replacing the nonexistent \u003cPROJECT_VERIFICATION_COMMAND\u003e placeholder",
+  "type": "task",
+  "updated_at": "2026-07-26T00:56:40Z"
+}
