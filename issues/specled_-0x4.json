@@ -69,11 +69,15 @@
     {
       "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/28 (release 0.9.5). Babysitting CI.",
       "timestamp": "2026-07-26T20:18:39Z"
+    },
+    {
+      "text": "CI green on PR #28 (all 3 checks pass, 0 fix commits, no review comments). Proceeding to merge per user instruction.",
+      "timestamp": "2026-07-26T20:21:30Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fast-follow: spec.check verdict contract + teaching sweep",
   "type": "epic",
-  "updated_at": "2026-07-26T20:18:39Z"
+  "updated_at": "2026-07-26T20:21:30Z"
 }
