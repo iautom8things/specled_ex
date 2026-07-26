@@ -37,11 +37,15 @@
     {
       "text": "4th strike, and 2nd time tonight it has blocked CI: failed the OTP-26 leg on the specled_-dn4 release PR #22 and again on hotfix PR #23 (run 30183524006). Both times a plain rerun cleared it. This is now the single most expensive open flake in the gate path — each strike costs a full CI cycle. Noting that a worktree (specled_-zr6/fix-flaky-merge-edges-property) is already open on it by another session, so not duplicating that work.",
       "timestamp": "2026-07-26T01:52:47Z"
+    },
+    {
+      "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/24 (release 0.9.1). Babysitting CI.",
+      "timestamp": "2026-07-26T02:02:02Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "Flaky property failure: tracer_test.exs:241 merge_edges uniq_list_of over ~4-atom space (TooManyDuplicatesError; NOT seed-deterministic)",
   "type": "task",
-  "updated_at": "2026-07-26T01:52:47Z"
+  "updated_at": "2026-07-26T02:02:02Z"
 }
