@@ -28,9 +28,13 @@ things attach to that claim:
    [`docs/coverage.md`](coverage.md) for the full contract.
 
 `mix spec.check` cross-checks the first two sides — `realized_by:` hash
-drift and `@tag spec:` presence — and degrades each to a single
-`detector_unavailable` finding when its inputs are missing rather than
-failing the build, which is what makes incremental adoption safe. Coverage
+drift and `@tag spec:` presence. When a realization detector's
+prerequisites are missing, the affected tiers degrade to
+`detector_unavailable` findings instead of failing the build — one finding
+per enabled tier (e.g. reason `umbrella_unsupported`), or one per affected
+module for `debug_info_stripped` — which is what makes incremental adoption
+safe. The `@tag spec:` side has no degrade path: with test-tag scanning
+disabled, that check simply does not run. Coverage
 triangulation (the third side) is a separate, read-only diagnostic tier:
 `mix spec.check` never runs it and never gates on it, regardless of
 `.spec/config.yml`. Read triangulation from `mix spec.triangle` or `mix
@@ -44,6 +48,9 @@ The full set of branch-guard codes `mix spec.check` gates on:
 | `branch_guard_dangling_binding`               | `realized_by:` names an MFA the compiler cannot resolve   |
 | `branch_guard_requirement_without_test_tag`   | New `must` requirement has no backing `@tag spec:`        |
 | `branch_guard_unmapped_change`                | Changed file does not belong to any subject's surface     |
+| `branch_guard_missing_subject_update`         | Changed file sits in a subject's surface but that subject's spec did not change |
+| `branch_guard_missing_decision_update`        | Cross-cutting change spans multiple subjects with no decision file change |
+| `branch_guard_realization_unknown_tier`       | `realization.enabled_tiers` in `.spec/config.yml` names a tier that does not exist |
 | `append_only/*`                               | Spec corpus regressed (deletion, downgrade, etc.)         |
 | `overlap/*`                                   | Two requirements/scenarios collide within a subject       |
 
@@ -77,9 +84,11 @@ mix deps.get
 mix spec.init
 ```
 
-`spec.init` writes `.spec/README.md`, `.spec/AGENTS.md`,
-`.spec/decisions/README.md`, and `.spec/config.yml`. In an interactive run it
-also offers to scaffold a local Skill for agents working on the repo.
+`spec.init` writes `.spec/README.md`, `.spec/AGENTS.md`, `.spec/config.yml`,
+`.spec/decisions/README.md`, and two starter subjects —
+`.spec/specs/spec_system.spec.md` and `.spec/specs/package.spec.md`. In an
+interactive run it also offers to scaffold a local Skill for agents working on
+the repo.
 
 ### 2. Turn on test-tag scanning immediately
 
@@ -309,9 +318,12 @@ verification with `kind: tagged_tests`:
     - billing.invoice_numbering.monotonic
 ```
 
-Aggregation across all subjects collapses to one `mix test --only spec:...`
-invocation per `spec.check` run, which is materially cheaper than N cold BEAM
-boots.
+Aggregation across all subjects collapses to one `mix test` invocation per
+`spec.check` run — listing the scanner-resolved test files that back the
+tagged ids, not `--only spec:` filters (see the
+`tagged_tests_file_selectors` decision; file selectors keep list-valued
+`@tag spec:` and inherited `@moduletag`/`@describetag` entries executable) —
+which is materially cheaper than N cold BEAM boots.
 
 ### Phase 4a — Aggregate coverage (zero wiring)
 
@@ -325,10 +337,11 @@ mix spec.cover.test
 mix spec.triangle --all
 ```
 
-Without the coverage artifact, `mix spec.triangle`/`mix spec.review` each
-emit exactly one `detector_unavailable` finding (`reason:
-:no_coverage_artifact`) and fall silent. With it, the three diagnostics
-come online:
+Without the coverage artifact, `mix spec.triangle`/`mix spec.review` emit
+one `detector_unavailable` finding (`reason: :no_coverage_artifact`) per
+selected subject — so `mix spec.triangle --all` prints one per indexed
+subject — and fall silent. With the artifact, the three diagnostics come
+online:
 
 - `branch_guard_untested_realization` — closure exists, no test reaches it
 - `branch_guard_untethered_test` — `@tag spec:` claims A but execution hits B
@@ -412,7 +425,16 @@ mix spec.cover.test --per-test
 ### Phase 5 — `implementation` tier (closure)
 
 Add `realized_by.implementation:` for subjects whose internal call closure you
-want guarded against silent drift. The compile tracer captures call edges
+want guarded against silent drift. The bindings alone do nothing: the
+`implementation` tier is excluded from the default tier set, so `mix
+spec.check` skips it until `.spec/config.yml` opts in explicitly:
+
+```yaml
+realization:
+  enabled_tiers: [api_boundary, implementation]
+```
+
+With the tier enabled, the compile tracer captures call edges
 during `mix compile`; closure walking stops at subject boundaries and emits
 hash-references rather than inlining, so a downstream subject's hash flip
 ripples cleanly upstream without spurious cross-subject drift.
@@ -459,7 +481,7 @@ PR. Reach for them deliberately — every escape hatch is a small honesty debt.
 
 | Hatch                                            | Scope                          | When to use |
 |--------------------------------------------------|--------------------------------|-------------|
-| `:off` in `branch_guard.severities` or `guardrails.severities` | Workspace, durable | The finding code does not apply to your project (e.g. `umbrella_unsupported`). |
+| `:off` in `branch_guard.severities` or `guardrails.severities` | Workspace, durable | The finding code does not apply to your project (e.g. the realization codes on an umbrella project, where the tiers only degrade to `detector_unavailable` with reason `umbrella_unsupported` — a reason field, not an overridable code). |
 | `:info` in either severity map                   | Workspace, durable             | You want the finding visible in local evidence and under `--verbose` but not in default output. |
 | `Spec-Drift: <code>=<severity>` git trailer      | One PR (any commit in the range) | Surgical, one-off downgrade for a specific PR. Cannot revive `:off`. |
 | `Spec-Drift: refactor`/`docs_only`/`test_only`   | One PR                         | Common shorthand for whole classes of low-risk changes. |
