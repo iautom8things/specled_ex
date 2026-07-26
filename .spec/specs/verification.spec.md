@@ -393,8 +393,9 @@ decisions:
 
 Branch reconciliation note: `test/mix/tasks/spec_tasks_test.exs` is a shared
 task test surface for this subject. This branch touches that file to assert the
-spec.validate min-strength pre-flight rejection's usage-tier verdict token; the
-verification requirements above remain unchanged.
+spec.check stdout verdict
+contract's usage-tier pre-flight rejection token; the verification requirements
+above remain unchanged.
 
 ```yaml spec-verification
 - kind: tagged_tests
