@@ -75,6 +75,7 @@ decisions:
   - specled.decision.local_skill_scaffold
   - specled.decision.explicit_subject_ownership
   - specled.decision.guided_reconciliation_loop
+  - specled.decision.doc_identifier_lint_spec_corpus
 ```
 
 ## Requirements
