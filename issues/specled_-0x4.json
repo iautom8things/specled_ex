@@ -33,11 +33,15 @@
     {
       "text": "COORDINATION: fresh epic worktree specled_ex-verdict-teaching-fast-follow (branch specled_-0x4/verdict-teaching-fast-follow) recreated from main c13d1bd (0.9.3) for the remaining 6 children. Stale pre-0.9.2 branch deleted (content shipped in 4f07955).",
       "timestamp": "2026-07-26T10:37:38Z"
+    },
+    {
+      "text": "LESSONS\n- [stale-spec] When a diff rewrites a spec reconciliation note, re-verify every file the note names against the actual diff — never assert a change that did not happen (from specled_-0x4.2)",
+      "timestamp": "2026-07-26T11:13:43Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fast-follow: spec.check verdict contract + teaching sweep",
   "type": "epic",
-  "updated_at": "2026-07-26T10:37:38Z"
+  "updated_at": "2026-07-26T11:13:43Z"
 }
