@@ -1538,7 +1538,9 @@ defmodule SpecLedEx.VerifierTest do
     alpha = Enum.find(timeouts, &(&1["subject_id"] == "alpha"))
     beta = Enum.find(timeouts, &(&1["subject_id"] == "beta"))
 
-    assert alpha["message"] =~ "timed out while running test/alpha_test.exs:42"
+    # Location AND event id: the id is the half that survives a test file
+    # edited between the gate run and the reading of its report.
+    assert alpha["message"] =~ "timed out while running test/alpha_test.exs:42 (AlphaTest.hang)"
     assert beta["message"] =~ "1 cover id(s) never started (timeout remainder)"
   end
 
@@ -1975,6 +1977,92 @@ defmodule SpecLedEx.VerifierTest do
       assert captured =~ "exit_code: 3"
       assert captured =~ "timed_out: false"
       assert captured =~ "capture_nonce_7c1f"
+      assert captured =~ "git_head:"
+    after
+      System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
+    end
+  end
+
+  @tag spec: "specled.verify.command_capture_run_provenance"
+  test "the capture records the verification root's HEAD and dirty paths", %{root: root} do
+    capture_dir = Path.join(root, "capture")
+    System.put_env("SPECLED_COMMAND_OUTPUT_DIR", capture_dir)
+
+    # A real work tree at the verification root: provenance answers "which tree
+    # produced this report", which is only checkable against a HEAD and a dirty
+    # set that actually exist.
+    init_git_repo(root)
+    File.write!(Path.join(root, "committed.txt"), "committed\n")
+    commit_all(root, "base")
+    head = root |> git!(["rev-parse", "HEAD"]) |> String.trim()
+
+    # The skew the provenance exists to expose: the tree that runs the gate is
+    # not the committed tree.
+    File.write!(Path.join(root, "dirty_nonce_a91c.txt"), "edited between runs\n")
+
+    try do
+      report =
+        verify_subject(
+          root,
+          %{
+            "requirements" => [%{"id" => "req.cap", "statement" => "Captured"}],
+            "verification" => [
+              %{
+                "kind" => "command",
+                "target" => "exit 3",
+                "covers" => ["req.cap"],
+                "execute" => true
+              }
+            ]
+          },
+          run_commands: true
+        )
+
+      assert report["status"] == "fail"
+
+      assert [capture_path] = Path.wildcard(Path.join(capture_dir, "specled_cmd_*.log"))
+      captured = File.read!(capture_path)
+      assert captured =~ "git_head: #{head}"
+      assert captured =~ "git_dirty:"
+      assert captured =~ "dirty_nonce_a91c.txt"
+    after
+      System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
+    end
+  end
+
+  @tag spec: "specled.tagged_tests.failed_run_preserves_attribution_artifact"
+  test "a failing merged run files its attribution artifact beside the output capture",
+       %{root: root} do
+    capture_dir = Path.join(root, "capture")
+    System.put_env("SPECLED_COMMAND_OUTPUT_DIR", capture_dir)
+
+    shim = ~S"""
+    cat >> "$SPECLED_ATTRIBUTION_PATH" <<'JSONL'
+    {"event":"test_finished","id":"AlphaTest.boom","file":"test/alpha_test.exs","line":42,"spec":["req.alpha"],"state":"failed"}
+    {"event":"suite_finished"}
+    JSONL
+    echo merged_nonce_5d20
+    exit 1
+    """
+
+    try do
+      report = run_two_subject_merged(root, shim, run_commands: true)
+
+      assert report["status"] == "fail"
+
+      assert [capture_path] = Path.wildcard(Path.join(capture_dir, "specled_cmd_*.log"))
+      assert File.read!(capture_path) =~ "merged_nonce_5d20"
+
+      # Same basename as the output capture: a capture directory holds every
+      # failing command from the run, and an artifact that cannot be tied back
+      # to its command is not evidence.
+      artifact_path = Path.rootname(capture_path) <> ".attribution.jsonl"
+      assert File.exists?(artifact_path)
+
+      artifact = File.read!(artifact_path)
+      assert artifact =~ ~s("id":"AlphaTest.boom")
+      assert artifact =~ ~s("state":"failed")
+      assert artifact =~ ~s("event":"suite_finished")
     after
       System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
     end

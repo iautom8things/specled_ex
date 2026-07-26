@@ -560,7 +560,20 @@ decisions:
     `meta.unattributed` as `[{file, sorted_lines}]`. When any boundary or
     run-total hit belongs to a module the suite-start file map cannot resolve,
     the envelope shall carry `meta.unmapped_modules` as a sorted unique module
-    list.
+    list. `write_v2/2` shall tolerate a missing `:meta` on the same terms as
+    `read_v2/1` — it is additive, so an envelope without it is well-formed —
+    and shall reject a present-but-non-map `:meta` as malformed.
+  priority: must
+  stability: evolving
+- id: specled.coverage_capture.write_v2_argument_error_contract
+  statement: >-
+    Every malformed-envelope rejection in
+    `SpecLedEx.Coverage.Store.write_v2/2` shall raise the `ArgumentError` the
+    function documents, whichever field is malformed or missing. A caller
+    catching the documented exception must never be handed a different
+    exception type instead — an optional field read with dot access raises
+    `KeyError`, which that caller does not catch and cannot anticipate from
+    the docs.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.degraded_reasons
@@ -934,8 +947,18 @@ decisions:
     - "the decoded envelope has `meta: %{}`"
     - "when flush consumes a boundary row, the written envelope carries `meta.boundary: true`"
     - "the unmapped hit module is retained in `meta.unmapped_modules`"
+    - "an envelope stripped of `:meta` is accepted by `write_v2/2` and reads back with `meta: %{}`"
   covers:
     - specled.coverage_capture.envelope_meta
+- id: specled.coverage_capture.scenario.write_v2_argument_error_contract
+  given:
+    - "a well-formed v2 envelope"
+  when:
+    - "`Store.write_v2/2` is called with that envelope carrying a non-map `:meta`, and again with a required field removed"
+  then:
+    - "each call raises `ArgumentError`, the exception the function documents — never `KeyError`"
+  covers:
+    - specled.coverage_capture.write_v2_argument_error_contract
 - id: specled.coverage_capture.scenario.degraded_reasons_overlap
   given:
     - "an armed formatter whose run is degraded by BOTH an async-tagged test and an unhooked test"
@@ -1054,6 +1077,7 @@ decisions:
   covers:
     - specled.coverage_capture.boundary_noop_unarmed
     - specled.coverage_capture.envelope_meta
+    - specled.coverage_capture.write_v2_argument_error_contract
 - kind: tagged_tests
   execute: true
   covers:

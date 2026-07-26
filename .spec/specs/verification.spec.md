@@ -39,6 +39,7 @@ decisions:
   - specled.decision.configurable_test_tag_enforcement
   - specled.decision.tagged_tests_file_selectors
   - specled.decision.verification_runtime_config
+  - specled.decision.gate_failure_forensics
 ```
 
 ## Requirements
@@ -146,6 +147,21 @@ decisions:
     shall emit a one-line stderr warning naming the failure rather than
     failing silently. When the variable is unset or blank, no capture
     occurs.
+  priority: must
+  stability: evolving
+- id: specled.verify.command_capture_run_provenance
+  statement: >
+    Each command-verification output capture (see
+    specled.verify.command_output_capture_dir) shall additionally record the
+    provenance of the tree that produced it: the verification root's git HEAD
+    and its dirty path list at run time, with the dirty list truncated after a
+    fixed bound and the omitted count stated. A finding's `file:line` is valid
+    only against the tree that ran, so a working tree edited between the gate
+    run and the reading of its report makes the report look fabricated;
+    recording HEAD and the dirty set makes that skew detectable instead of
+    inexplicable. When the verification root is not a git work tree, or git is
+    unavailable, the capture shall record the provenance as unavailable rather
+    than failing or omitting the field.
   priority: must
   stability: evolving
 - id: specled.verify.command_findings_echo_exunit_seed
@@ -316,6 +332,18 @@ decisions:
     - the unwritable capture directory leaves the verification result unchanged and emits a one-line stderr warning naming the capture failure
   covers:
     - specled.verify.command_output_capture_dir
+- id: specled.verify.scenario.command_capture_records_run_provenance
+  given:
+    - SPECLED_COMMAND_OUTPUT_DIR names a writable directory
+    - a verification root that is a git work tree with a commit and one uncommitted file
+    - a failing command verification
+  when:
+    - verification runs with run_commands true
+  then:
+    - the capture file records the root's HEAD sha
+    - the capture file records the dirty path list, naming the uncommitted file
+  covers:
+    - specled.verify.command_capture_run_provenance
 - id: specled.verify.scenario.command_finding_echoes_seed
   given:
     - "a generic command verification whose output contains `Running ExUnit with seed: 424242` and exits non-zero"
@@ -416,6 +444,7 @@ above remain unchanged.
     - specled.verify.command_timeout_cli_precedence
     - specled.verify.command_exit_code_recorded
     - specled.verify.command_output_capture_dir
+    - specled.verify.command_capture_run_provenance
     - specled.verify.command_findings_echo_exunit_seed
 - kind: tagged_tests
   execute: true

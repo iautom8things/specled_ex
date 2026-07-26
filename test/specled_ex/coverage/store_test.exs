@@ -196,6 +196,40 @@ defmodule SpecLedEx.Coverage.StoreTest do
       refute File.exists?(path)
     end
 
+    @tag spec: [
+           "specled.coverage_capture.write_v2_argument_error_contract",
+           "specled.coverage_capture.envelope_meta"
+         ]
+    test "write_v2 keeps its documented ArgumentError contract for a malformed envelope",
+         %{path: path} do
+      envelope =
+        Store.build_envelope(%{
+          mode: :aggregate,
+          source: "mix spec.cover.test",
+          files: [%{file: "lib/a.ex", lines_hit: [1]}],
+          mfas: [],
+          payload: nil
+        })
+
+      # write_v2/2 documents ArgumentError for a malformed envelope. A caller
+      # catching that per the docs must not be handed a KeyError instead, which
+      # is what dot-accessing `:meta` produced for an envelope simply lacking
+      # the key.
+      assert_raise ArgumentError, ~r/:meta must be a map/, fn ->
+        Store.write_v2(%{envelope | meta: [boundary: true]}, path)
+      end
+
+      assert_raise ArgumentError, ~r/missing required field :files/, fn ->
+        Store.write_v2(Map.delete(envelope, :files), path)
+      end
+
+      # `:meta` is additive, so an envelope written without it is valid on the
+      # write path exactly as read_v2/1 tolerates it, defaulting to %{}.
+      assert :ok = Store.write_v2(Map.delete(envelope, :meta), path)
+      assert {:ok, decoded} = Store.read_v2(path)
+      assert decoded.meta == %{}
+    end
+
     test "write_v2 creates the parent directory if missing" do
       tmp_dir =
         Path.join(System.tmp_dir!(), "store_v2_mkdir_#{System.unique_integer([:positive])}")

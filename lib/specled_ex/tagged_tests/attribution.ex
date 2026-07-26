@@ -137,14 +137,38 @@ defmodule SpecLedEx.TaggedTests.Attribution do
     |> Enum.uniq()
   end
 
+  # A descriptor names the test both by location and by the formatter's event
+  # id (`Module.test name`). The location alone is only meaningful against the
+  # exact tree the run executed: a session that edits a test file between gate
+  # runs shifts every line below the edit, so a finding generated against tree
+  # state A and read against state B points at a different test — or at blank
+  # space — and the report looks like it fabricated the line. The event id does
+  # not shift, so a mismatched pair is self-diagnosing: the id says which test
+  # actually failed and the disagreement says the trees differ.
   defp descriptor(event) do
+    case {location_of(event), test_id_of(event)} do
+      {nil, nil} -> "unknown test"
+      {nil, id} -> id
+      {location, nil} -> location
+      {location, id} -> "#{location} (#{id})"
+    end
+  end
+
+  defp location_of(event) do
     file = Map.get(event, "file")
     line = Map.get(event, "line")
 
     cond do
       is_binary(file) and is_integer(line) -> "#{file}:#{line}"
       is_binary(file) -> file
-      true -> Map.get(event, "id") || "unknown test"
+      true -> nil
+    end
+  end
+
+  defp test_id_of(event) do
+    case Map.get(event, "id") do
+      id when is_binary(id) and id != "" -> id
+      _ -> nil
     end
   end
 end

@@ -2181,6 +2181,8 @@ defmodule SpecLedEx.Verifier do
         |> run_command(root, timeout_ms, env: [{"SPECLED_ATTRIBUTION_PATH", artifact_path}])
         |> Map.put(:command, cmd)
 
+      preserve_failed_artifact(base, artifact_path)
+
       case Attribution.read_artifact(artifact_path) do
         {:ok, events} ->
           cover_locations = cover_locations(cover_ids, tag_map, root)
@@ -2194,6 +2196,31 @@ defmodule SpecLedEx.Verifier do
     after
       File.rm(artifact_path)
     end
+  end
+
+  # The attribution artifact is primary evidence for a red merged run: it is the
+  # only record of which tagged tests started, which finished, and in what
+  # state, and findings quote at most a descriptor list distilled from it. The
+  # `after File.rm/1` above destroys it on every run, including the failing ones
+  # worth diagnosing — so when the run's output was captured, the artifact is
+  # filed beside it under the same basename, keeping log and artifact
+  # correlatable inside a capture directory shared by several failing commands.
+  # Same best-effort contract as preserve_failed_output/3.
+  defp preserve_failed_artifact(result, artifact_path) do
+    with capture when is_binary(capture) <- Map.get(result, :output_capture_path),
+         {:ok, contents} <- File.read(artifact_path) do
+      File.write!(Path.rootname(capture) <> ".attribution.jsonl", contents)
+    end
+
+    :ok
+  rescue
+    e in File.Error ->
+      IO.puts(
+        :stderr,
+        "specled: attribution artifact capture failed (#{Exception.message(e)}); verification result unaffected"
+      )
+
+      :ok
   end
 
   # Single resume pass over the never-started remainder after a merged-run
@@ -2377,8 +2404,10 @@ defmodule SpecLedEx.Verifier do
         timeout_ms: timeout_ms
       }
 
-      preserve_failed_output(result, target)
-      result
+      case preserve_failed_output(result, target, root) do
+        path when is_binary(path) -> Map.put(result, :output_capture_path, path)
+        nil -> result
+      end
     after
       File.rm(tmp_out)
       File.rm(tmp_script)
@@ -2392,9 +2421,12 @@ defmodule SpecLedEx.Verifier do
   # there before the temp files are removed, so CI can upload the directory as
   # an artifact. Findings truncate long output and drop it entirely on timeout;
   # without this, the seed and counterexample of a non-reproducing merged-run
-  # failure are unrecoverable once the runner is gone. Best-effort by contract:
-  # a capture failure must never alter the verification result.
-  defp preserve_failed_output(result, target) do
+  # failure are unrecoverable once the runner is gone. Returns the capture path
+  # so callers with further evidence (the merged run's attribution artifact) can
+  # file it under the same basename, or nil when nothing was captured.
+  # Best-effort by contract: a capture failure must never alter the
+  # verification result.
+  defp preserve_failed_output(result, target, root) do
     dir = System.get_env("SPECLED_COMMAND_OUTPUT_DIR")
 
     if is_binary(dir) and dir != "" and (result.timed_out or result.exit_code != 0) do
@@ -2410,12 +2442,13 @@ defmodule SpecLedEx.Verifier do
       exit_code: #{inspect(result.exit_code)}
       timed_out: #{result.timed_out}
       timeout_ms: #{result.timeout_ms}
+      #{run_provenance(root)}
       --- output ---
       #{result.output}
       """)
-    end
 
-    :ok
+      path
+    end
   rescue
     # Narrow by design: only filesystem failures (unwritable dir, disk full)
     # are the tolerated best-effort case, and even those must not fail
@@ -2427,7 +2460,53 @@ defmodule SpecLedEx.Verifier do
         "specled: forensic output capture failed (#{Exception.message(e)}); verification result unaffected"
       )
 
-      :ok
+      nil
+  end
+
+  # How many dirty paths the capture lists before summarizing the rest. A
+  # working tree mid-rebase or with an unignored build directory can carry
+  # thousands; the point is to show that the run was NOT on a clean HEAD and
+  # name the likely files, not to mirror `git status`.
+  @provenance_dirty_limit 50
+
+  # Run-time provenance: which tree actually produced this output. Findings name
+  # test locations, and a location is only valid against the tree the run
+  # executed — a session that edits between gate runs reads the report against a
+  # different tree, where the line has shifted or gone blank, and the report
+  # looks like it invented the line (this is exactly what happened to the
+  # docs_identifier_lint_test.exs:255 report). Recording HEAD and the dirty set
+  # at run time makes that skew detectable rather than inexplicable. Silent by
+  # design outside a git work tree: provenance is a bonus on the capture, and a
+  # verified tree is not required to be version-controlled.
+  defp run_provenance(root) do
+    case git(root, ["rev-parse", "HEAD"]) do
+      nil -> "git_head: unavailable (no git work tree at the verification root)"
+      head -> "git_head: #{head}\n#{dirty_provenance(git(root, ["status", "--porcelain"]))}"
+    end
+  end
+
+  defp dirty_provenance(nil), do: "git_dirty: unavailable"
+  defp dirty_provenance(""), do: "git_dirty: none (clean work tree)"
+
+  defp dirty_provenance(porcelain) do
+    entries = String.split(porcelain, "\n", trim: true)
+    {listed, rest} = Enum.split(entries, @provenance_dirty_limit)
+    more = if rest == [], do: "", else: "\n  ... and #{length(rest)} more"
+
+    "git_dirty: #{length(entries)} path(s)\n  #{Enum.join(listed, "\n  ")}#{more}"
+  end
+
+  defp git(root, args) do
+    case System.cmd("git", args, cd: root, stderr_to_stdout: true) do
+      {output, 0} -> String.trim_trailing(output)
+      _ -> nil
+    end
+  rescue
+    # git absent from PATH (ErlangError :enoent) or an unusable cd
+    # (ArgumentError/File.Error). Provenance is strictly a bonus on the
+    # capture, so every one of these degrades to "unavailable" rather than
+    # costing the caller its forensic log.
+    _ in [ErlangError, ArgumentError, File.Error] -> nil
   end
 
   # SIGKILLs the target's process group recorded by the job-control wrapper.

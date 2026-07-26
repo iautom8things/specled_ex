@@ -323,7 +323,18 @@ defmodule SpecLedEx.Coverage.Store do
 
     unless is_list(envelope.files), do: raise(ArgumentError, "envelope :files must be a list")
     unless is_list(envelope.mfas), do: raise(ArgumentError, "envelope :mfas must be a list")
-    unless is_map(envelope.meta), do: raise(ArgumentError, "envelope :meta must be a map")
+
+    # `:meta` is deliberately absent from @v2_required_fields — it is additive,
+    # and that list also gates classify_v2/1, where requiring it would reject
+    # every pre-Stage-1 artifact the read path is specified to tolerate. Read
+    # it with the same default here so a missing :meta stays valid on write;
+    # only a present-but-non-map value is malformed, and it must surface as the
+    # documented ArgumentError rather than a KeyError from `envelope.meta`
+    # that no caller following the docs would catch.
+    unless is_map(Map.get(envelope, :meta, %{})) do
+      raise(ArgumentError, "envelope :meta must be a map")
+    end
+
     :ok
   end
 

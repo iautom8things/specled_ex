@@ -29,6 +29,27 @@ Use this folder to maintain authored Spec Led Development subjects and generated
 - Use `mix spec.validate --debug` only when you need low-level verification output.
 - Run `mix spec.status` when you need coverage or weak-spot summaries.
 
+## Gate Forensics
+
+Every gate path here arms `SPECLED_COMMAND_OUTPUT_DIR` at
+`tmp/specled-command-output` (gitignored): `.claude/settings.json` for agent
+shells, `make check`, and `scripts/check_specs.sh`. CI points it at the runner
+temp dir it uploads as an artifact.
+
+When a verification command fails or times out, that directory receives:
+
+- `specled_cmd_<suffix>.log` — the command, exit code, timeout state, the tree
+  provenance at run time (`git_head` and `git_dirty`), and the command's FULL
+  output. Findings truncate that output and drop it entirely on timeout.
+- `specled_cmd_<suffix>.attribution.jsonl` — for a merged `tagged_tests` run,
+  the per-test evidence artifact the run streamed.
+
+Read these before theorizing about a red gate leg you cannot reproduce. The
+provenance lines are there because a finding's `file:line` is only valid
+against the tree that ran: if the working tree changed between the gate run and
+your inspection, the line has moved, and the test id in parentheses — not the
+line — is authoritative.
+
 ## Generated vs Committed State
 
 - `.spec/state.json` is fully derived local state. Generate it when you need

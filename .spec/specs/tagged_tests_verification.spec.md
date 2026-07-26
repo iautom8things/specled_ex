@@ -41,6 +41,7 @@ decisions:
   - specled.decision.verification_runtime_config
   - specled.decision.evidence_based_attribution
   - specled.decision.cross_vm_temp_names_reach
+  - specled.decision.gate_failure_forensics
 ```
 
 ## Requirements
@@ -212,6 +213,35 @@ decisions:
     tests as hang suspects and count the cover ids that never started (the
     timeout remainder). When the artifact recorded no events, the finding shall
     state that the run timed out before any test started (likely compile cost).
+  priority: must
+  stability: evolving
+- id: specled.tagged_tests.descriptors_self_identify
+  statement: >-
+    Every test named in a `{:failed, tests}` or `{:in_flight, tests}` outcome
+    shall be described by BOTH its `file:line` location and the formatter's
+    event id (`Module.test name`), so a finding identifies its test
+    independently of the tree it is read against. A location alone is valid
+    only against the exact tree that ran: a session editing test files between
+    gate runs shifts every line below the edit, so a report read against the
+    shifted tree points at a different test — or at blank space — with nothing
+    to say which. When an event carries only one of the two, the descriptor
+    shall degrade to the half it has, and to a fixed placeholder when it has
+    neither.
+  priority: must
+  stability: evolving
+- id: specled.tagged_tests.failed_run_preserves_attribution_artifact
+  statement: >-
+    When a merged run fails or times out and its output was captured under
+    SPECLED_COMMAND_OUTPUT_DIR (see
+    specled.verify.command_output_capture_dir), the run's streaming attribution
+    artifact shall be copied into that capture directory before the temp
+    artifact is deleted, under the output capture's basename so the two stay
+    correlatable inside a directory holding several failing commands. The
+    artifact is the run's only per-test record — findings distil it down to a
+    descriptor list — and every merged run otherwise deletes it. The copy shall
+    be best-effort on the same contract as the output capture: a filesystem
+    failure shall not alter the verification result, and shall emit a one-line
+    stderr warning rather than failing silently.
   priority: must
   stability: evolving
 - id: specled.tagged_tests.strength_claimed_on_untagged_cover
@@ -498,6 +528,30 @@ decisions:
     - the double-timeout finding keeps 111111 as the primary seed echo and names resume pass seed 222222 next to the resume run's hang suspect, never presenting 222222 as the primary seed
   covers:
     - specled.tagged_tests.findings_echo_exunit_seed
+- id: specled.tagged_tests.scenario.descriptors_carry_location_and_id
+  given:
+    - an artifact recording a failed test and a started-but-unfinished test, each with a file, a line, and an event id
+    - further events carrying only one of location or id, and one carrying neither
+  when:
+    - SpecLedEx.TaggedTests.Attribution.attribute/2 classifies the covers
+    - a merged run times out and the timeout finding names its hang suspect
+  then:
+    - "each failing and in-flight test is named as `file:line (Module.test name)`"
+    - an event with only one half is named by that half, and an event with neither is named by a fixed placeholder
+    - the timeout finding names the hang suspect by location and event id together
+  covers:
+    - specled.tagged_tests.descriptors_self_identify
+- id: specled.tagged_tests.scenario.failed_run_preserves_attribution_artifact
+  given:
+    - SPECLED_COMMAND_OUTPUT_DIR names a writable directory
+    - a merged run whose command writes an attribution artifact recording a failed test, then exits non-zero
+  when:
+    - verification runs with run_commands true
+  then:
+    - the capture directory holds the run's output capture and, under the same basename, a copy of the attribution artifact
+    - the preserved artifact still carries the failed test's recorded event, state, and the run's `suite_finished`
+  covers:
+    - specled.tagged_tests.failed_run_preserves_attribution_artifact
 - id: specled.tagged_tests.scenario.attribution_artifact_name_cross_vm_safe
   given:
     - a merged tagged_tests run whose command records the `SPECLED_ATTRIBUTION_PATH` it received
@@ -540,4 +594,6 @@ decisions:
     - specled.tagged_tests.resume_double_timeout_signal
     - specled.tagged_tests.findings_echo_exunit_seed
     - specled.tagged_tests.attribution_artifact_name_cross_vm_unique
+    - specled.tagged_tests.descriptors_self_identify
+    - specled.tagged_tests.failed_run_preserves_attribution_artifact
 ```

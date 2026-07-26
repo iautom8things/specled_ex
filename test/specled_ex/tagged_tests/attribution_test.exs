@@ -82,13 +82,16 @@ defmodule SpecLedEx.TaggedTests.AttributionTest do
         suite_finished()
       ]
 
-      assert Attribution.attribute(events, ["req.a"]) == %{"req.a" => {:failed, ["test/a.exs:9"]}}
+      assert Attribution.attribute(events, ["req.a"]) ==
+               %{"req.a" => {:failed, ["test/a.exs:9 (M.fail)"]}}
     end
 
     @tag spec: "specled.tagged_tests.attribution_partial_outcomes"
     test "an invalid state also counts as failed" do
       events = [finished("req.a", "M.a", "test/a.exs", 3, "invalid"), suite_finished()]
-      assert Attribution.attribute(events, ["req.a"]) == %{"req.a" => {:failed, ["test/a.exs:3"]}}
+
+      assert Attribution.attribute(events, ["req.a"]) ==
+               %{"req.a" => {:failed, ["test/a.exs:3 (M.a)"]}}
     end
 
     @tag spec: "specled.tagged_tests.attribution_partial_outcomes"
@@ -99,7 +102,9 @@ defmodule SpecLedEx.TaggedTests.AttributionTest do
       ]
 
       assert %{"req.a" => {:in_flight, suspects}} = Attribution.attribute(events, ["req.a"])
-      assert Enum.sort(suspects) == ["test/a.exs:42", "test/a.exs:50"]
+
+      assert Enum.sort(suspects) ==
+               ["test/a.exs:42 (M.hang1)", "test/a.exs:50 (M.hang2)"]
     end
 
     @tag spec: "specled.tagged_tests.attribution_partial_outcomes"
@@ -164,11 +169,64 @@ defmodule SpecLedEx.TaggedTests.AttributionTest do
 
       assert attribution == %{
                "req.pass" => :passed,
-               "req.fail" => {:failed, ["test/f.exs:2"]},
-               "req.hang" => {:in_flight, ["test/h.exs:3"]},
+               "req.fail" => {:failed, ["test/f.exs:2 (M.f)"]},
+               "req.hang" => {:in_flight, ["test/h.exs:3 (M.h)"]},
                # excluded-only but no suite_finished → treated as a timeout remainder
                "req.skip" => :not_started,
                "req.none" => :not_started
+             }
+    end
+  end
+
+  describe "self-identifying descriptors" do
+    @describetag spec: "specled.tagged_tests.descriptors_self_identify"
+
+    test "a failing test is named by location AND by the formatter's event id" do
+      events = [
+        finished(
+          "req.a",
+          "DocsLintTest.test a code IS flagged",
+          "test/docs_lint.exs",
+          255,
+          "failed"
+        ),
+        suite_finished()
+      ]
+
+      # The id is what survives a tree that moved. A gate report generated
+      # against tree state A and read against state B points its line at a
+      # different test — or at blank space — and without the id the report is
+      # indistinguishable from one that fabricated the line.
+      assert Attribution.attribute(events, ["req.a"]) ==
+               %{
+                 "req.a" =>
+                   {:failed, ["test/docs_lint.exs:255 (DocsLintTest.test a code IS flagged)"]}
+               }
+    end
+
+    test "a hang suspect is named by location AND by the formatter's event id" do
+      events = [started("req.a", "SlowTest.test hangs", "test/slow.exs", 7)]
+
+      assert Attribution.attribute(events, ["req.a"]) ==
+               %{"req.a" => {:in_flight, ["test/slow.exs:7 (SlowTest.test hangs)"]}}
+    end
+
+    test "an event missing one half degrades to the half it has" do
+      no_id = [finished("req.a", nil, "test/a.exs", 3, "failed"), suite_finished()]
+      assert Attribution.attribute(no_id, ["req.a"]) == %{"req.a" => {:failed, ["test/a.exs:3"]}}
+
+      no_line = [finished("req.b", "M.t", "test/b.exs", nil, "failed"), suite_finished()]
+
+      assert Attribution.attribute(no_line, ["req.b"]) ==
+               %{"req.b" => {:failed, ["test/b.exs (M.t)"]}}
+
+      no_file = [finished("req.c", "M.t", nil, nil, "failed"), suite_finished()]
+      assert Attribution.attribute(no_file, ["req.c"]) == %{"req.c" => {:failed, ["M.t"]}}
+
+      neither = [finished("req.d", nil, nil, nil, "failed"), suite_finished()]
+
+      assert Attribution.attribute(neither, ["req.d"]) == %{
+               "req.d" => {:failed, ["unknown test"]}
              }
     end
   end
