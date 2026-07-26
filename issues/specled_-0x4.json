@@ -29,11 +29,15 @@
     {
       "text": "Delivered slice: PR #25 squash-merged to main as 4f07955, released 0.9.2, post-merge Specs run green. Children specled_-zhe and specled_-j3k shipped and closed. Epic stays in_progress: 6 children remain (specled_-xde, specled_-wli, specled_-0x4.1..4). Phase label reverted to implementing.",
       "timestamp": "2026-07-26T02:28:15Z"
+    },
+    {
+      "text": "COORDINATION: fresh epic worktree specled_ex-verdict-teaching-fast-follow (branch specled_-0x4/verdict-teaching-fast-follow) recreated from main c13d1bd (0.9.3) for the remaining 6 children. Stale pre-0.9.2 branch deleted (content shipped in 4f07955).",
+      "timestamp": "2026-07-26T10:37:38Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Fast-follow: spec.check verdict contract + teaching sweep",
   "type": "epic",
-  "updated_at": "2026-07-26T02:28:15Z"
+  "updated_at": "2026-07-26T10:37:38Z"
 }
