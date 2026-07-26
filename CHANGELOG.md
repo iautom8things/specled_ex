@@ -1,5 +1,55 @@
 # Changelog
 
+## 0.9.5 — 2026-07-26
+
+Fast-follow slice of the spec.check verdict-contract + teaching-sweep epic
+(specled_-0x4): the remaining pre-ship critical-review findings and the
+hj4-verifier doc/skill accuracy items, landed as one PR.
+
+### Fixed
+
+- `mix spec.check` pre-flight rejections (unknown arguments, invalid
+  `--min-strength`, bad `--base`) now report `tier=usage` instead of falsely
+  claiming `tier=validate` on runs where validation never started; the
+  verdict-grammar requirement documents what `error_findings=0` means on a
+  fail verdict, and the formerly identical test pins now assert distinct
+  verdicts (specled_-0x4.2)
+- `mix spec.validate`'s min-strength pre-flight rejection likewise reports
+  `tier=usage` (specled_-wli)
+- Bootstrap skill: `detector_unavailable` probe instructions now include
+  `--verbose`, so the info-level findings adopters are told to look for are
+  actually visible on stdout (specled_-xde)
+- Bootstrap skill: `task-templates.md` no longer instructs replacing a
+  nonexistent `<PROJECT_VERIFICATION_COMMAND>` placeholder in the scaffolded
+  AGENTS.md (the line must be added), and its workflow-template and
+  security-note claims were corrected against the shipped
+  `priv/spec_init/` templates (specled_-0x4.4)
+
+### Changed
+
+- One shared `--base` validator (`SpecLedEx.BranchCheck.validate_base/2`) now
+  backs both `mix spec.check` and `BranchCheck`, removing logic-for-logic
+  copies that could silently diverge; `TaskArgs` gains a non-raising
+  `validate/3` so verdict-print and raise derive from one evaluation; both
+  tasks' `print_verdict/2` read options order-insensitively via
+  `Keyword.get/3` (specled_-wli)
+- The `specled.tasks.verdict_line` requirement now enumerates every
+  verdict-emitting path explicitly and names the excluded pre-report raise
+  paths, replacing the circular "where the task itself reports a verdict"
+  scope clause (specled_-0x4.3)
+
+### Added
+
+- Golden literal test pinning the verdict read-protocol sentence, so a
+  unilateral edit to the shared constant fails a test; plus an
+  `execute: true` doc verification binding `docs/adoption.md` and
+  `docs/concepts.md` to the exact sentence (specled_-0x4.1)
+- Level-preserving `drain_shell_events/0` test helper with pass- and
+  fail-path `{:info, verdict}` assertions; a three-severity display-ordering
+  proof in one run of the mixed fixture; and verdict-contract test
+  attribution aligned with the tests that actually prove it — including the
+  previously uncredited `tier=branch` form (specled_-0x4.3)
+
 ## 0.9.4 — 2026-07-26
 
 Test-only hardening of the third flake class in the `mix spec.check` gate
