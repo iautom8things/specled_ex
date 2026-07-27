@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-26g",
     "specled_-npo"
@@ -21,8 +21,8 @@
     }
   ],
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "title": "safe_decode/2 defaults to unsafe mode; add regression guards for non-safe carve-outs",
   "type": "task",
-  "updated_at": "2026-07-27T12:29:22Z"
+  "updated_at": "2026-07-27T12:32:39Z"
 }
