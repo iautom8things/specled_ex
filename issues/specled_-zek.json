@@ -47,11 +47,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: b19669f0-1a1a-42a6-b6f8-39da90177a9c\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/b19669f0-1a1a-42a6-b6f8-39da90177a9c.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. TEST_CRITIC: PASS (iteration 1; iteration 2\ntouched only the spec file, leaving the graded test diff unchanged). No auditor was\nspawned per policy — this is iteration 2 and the iteration-1 auditor's gap is\nindependently confirmed closed.\n\nGate detail: every `must` in specled.tagged_tests and specled.verification accounted\nfor individually — 48 enumerated lines. The bounce gap is closed on the terms that\nmattered: the requirement and the scenario that covers it now state ONE contract, with\nno placement or containment claim (\"next to\", \"alongside\", \"in the resume-timeout\nsuffix\" all gone), and each surviving clause was graded against the assertions rather\nthan against the auditor's supplied wording. The reword is a precision change, not a\nweakening — modal and `priority: must` intact, the negative (\"never read as primary\")\nsurvives in both places, and the scenario count per requirement is unchanged so\n`append_only/scenario_regression` is not implicated.\n\nWorth recording: the defect that caused this ticket's bounce originated in its own\nADMISSION VERIFICATION mandate, whose arm-(a) replacement text reintroduced the\npositional claim it was meant to remove. The implementer applied that text faithfully\nin iteration 1. The auditor wrote correct replacement wording rather than sending the\nimplementer back to the faulty source, which is why iteration 2 landed in one pass.",
       "timestamp": "2026-07-27T11:17:27Z"
+    },
+    {
+      "text": "APPROVED. Merged into epic/specled_-k6s-0.11.0-fast-follow at 9524395e (confirmed present on the epic branch). Epic smoke green: 1275 tests, 0 failures. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-27T11:44:26Z"
     }
   ],
   "priority": 3,
   "status": "in_progress",
   "title": "Seed-echo test/spec precision polish (viv pre-ship review Tier-2)",
   "type": "task",
-  "updated_at": "2026-07-27T11:17:28Z"
+  "updated_at": "2026-07-27T11:44:26Z"
 }
