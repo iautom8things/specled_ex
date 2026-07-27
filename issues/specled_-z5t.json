@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [
     "specled_-xkn.2"
@@ -20,8 +20,8 @@
     }
   ],
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "Bootstrap skill: adoption-phases.md phase0 done-criterion needs --verbose for detector_unavailable visibility",
   "type": "task",
-  "updated_at": "2026-07-27T10:15:38Z"
+  "updated_at": "2026-07-27T10:26:52Z"
 }
