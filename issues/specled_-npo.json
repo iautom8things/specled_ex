@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [
     "specled_-xkn.1"
@@ -28,8 +28,8 @@
     }
   ],
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "title": "envelope_meta requirement under-specifies its own test: present-but-non-map :meta rejection is asserted but unstated",
   "type": "task",
-  "updated_at": "2026-07-27T10:12:34Z"
+  "updated_at": "2026-07-27T10:20:40Z"
 }
