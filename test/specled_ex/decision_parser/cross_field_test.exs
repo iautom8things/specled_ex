@@ -203,6 +203,40 @@ defmodule SpecLedEx.DecisionParser.CrossFieldTest do
       errors = CrossField.validate(d, index(subjects: [{"subj.x", ["subj.x.req_1"]}]))
       refute "cross_field/affects_unresolved" in codes_in(errors)
     end
+
+    # Pins the CrossField R4 `repo.` carve-out (reject_repo_namespace/1). The
+    # verifier has an independent predicate; this path is only reached via
+    # DecisionParser → CrossField. Both directions are required: accept alone
+    # cannot distinguish "carve-out works" from "check disabled".
+    # change_type must not be "deprecates" or R6 short-circuits before R4.
+    @tag spec: "specled.decisions.cross_field_affects_resolve"
+    test "repo-prefixed affects are accepted without resolving; non-repo unresolved still fails" do
+      idx = index(subjects: ["subj.x"])
+
+      exempt =
+        decision(%{
+          "id" => "adr.a",
+          "status" => "accepted",
+          "affects" => ["repo.governance"],
+          "change_type" => "narrows-scope",
+          "reverses_what" => "scope is too broad"
+        })
+
+      errors = CrossField.validate(exempt, idx)
+      refute "cross_field/affects_unresolved" in codes_in(errors)
+
+      still_checked =
+        decision(%{
+          "id" => "adr.b",
+          "status" => "accepted",
+          "affects" => ["missing.subject"],
+          "change_type" => "narrows-scope",
+          "reverses_what" => "scope is too broad"
+        })
+
+      errors = CrossField.validate(still_checked, idx)
+      assert "cross_field/affects_unresolved" in codes_in(errors)
+    end
   end
 
   # ---- R5 ----
