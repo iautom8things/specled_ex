@@ -36,11 +36,11 @@ Use this folder to maintain authored Spec Led Development subjects and generated
 the runner temp dir it uploads as an artifact.
 
 `.claude/settings.json` also arms it for agent shells, but only for sessions
-whose project directory is a checkout carrying that file, and its value is
-relative to wherever the gate was invoked from. If you are running the gate as
-an agent and want the capture guaranteed, run `bash ./scripts/check_specs.sh`
-rather than bare `mix spec.check`, or check `echo $SPECLED_COMMAND_OUTPUT_DIR`
-first. See specled_-4f7.
+whose project directory is a checkout carrying that file — a session rooted at
+an older checkout does not inherit it. If you are running the gate as an agent
+and want the capture guaranteed, run `bash ./scripts/check_specs.sh` rather
+than bare `mix spec.check`, or check `echo $SPECLED_COMMAND_OUTPUT_DIR` first.
+See specled_-4f7.
 
 When a verification command fails or times out, that directory receives:
 

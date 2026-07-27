@@ -65,12 +65,17 @@ fault occurs is not an instrument.
 Two of those paths are unconditional: CI, and the `make check` /
 `scripts/check_specs.sh` wrappers. The third is not, and the difference is
 worth stating rather than glossing. `.claude/settings.json` arms agent shells
-only for sessions whose project directory is a checkout carrying this file, and
-its value is relative, so it resolves against the directory the gate was
-invoked from. An agent session rooted at a checkout that predates this change —
-or one invoking the gate from a subdirectory — is not covered. Coverage of the
-agent-shell path is therefore a property of where the session was started, not
-a guarantee; see specled_-4f7 for the residual.
+only for sessions whose project directory is a checkout carrying this file, so
+a session rooted at a checkout that predates this change is not covered —
+measured, during this ticket's own verification. Coverage of the agent-shell
+path is therefore a property of where the session was started, not a guarantee;
+see specled_-4f7 for the residual.
+
+The settings value is relative. That is harmless only because no gate path can
+run with a working directory other than the repo root — `mix` refuses without a
+`mix.exs`, `make` without a Makefile, and `scripts/check_specs.sh` cd's to the
+git toplevel first. If a future gate path can be invoked from a subdirectory,
+that relative value starts scattering captures and must become absolute.
 
 ## Alternatives Rejected
 

@@ -16,12 +16,14 @@
 # Temporary files, for example, from tests.
 /tmp/
 
-# Gate forensics (SPECLED_COMMAND_OUTPUT_DIR). The agent-shell default in
-# .claude/settings.json is a RELATIVE path, so it resolves against whatever
-# directory the gate was invoked from — `/tmp/` above only covers the repo
-# root. The leading `**/` is load-bearing: a pattern with a slash anywhere but
-# the end is anchored to this file's directory, so `tmp/specled-command-output/`
-# would match only the root case `/tmp/` already covers.
+# Gate forensics (SPECLED_COMMAND_OUTPUT_DIR). Defense in depth, not a case
+# that arises today: the agent-shell default in .claude/settings.json is a
+# RELATIVE path, but every gate path refuses to run outside the repo root
+# (`mix` wants a mix.exs, `make` a Makefile, check_specs.sh cd's to the git
+# toplevel), so it resolves at the root that `/tmp/` above already covers. This
+# rule costs nothing and holds if that ever stops being true. The leading `**/`
+# is what makes it non-anchored — a pattern with a slash anywhere but the end
+# is anchored to this file's directory.
 **/tmp/specled-command-output/
 
 # If the VM crashes, it generates a dump, let's ignore it too.
