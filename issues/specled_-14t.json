@@ -8,7 +8,7 @@
   "description": "Found by specled_-dn4.10 cold verification (2026-07-25): lib/specled_ex/verifier.ex valid_decision_affect?/4 accepts any ADR affect prefixed 'repo.' without resolving it against anything, and the 'repo.' namespace is documented nowhere in the .spec/ corpus. Pre-existing; same species of spec↔enforcement drift dn4.10 was carved to fix (reference_validation carve-out). Fix: either document the repo.* namespace and its resolution semantics in decision_governance.spec.md, or remove the prefix exemption if it is dead. Out of dn4 epic scope.",
   "id": "specled_-14t",
   "labels": [
-    "phase:verifying"
+    "phase:implementing"
   ],
   "parent": "specled_-k6s",
   "comments": [
@@ -41,5 +41,5 @@
   "status": "in_progress",
   "title": "Document or remove the unverified 'repo.' affect-prefix exemption in Verifier.valid_decision_affect?/4",
   "type": "task",
-  "updated_at": "2026-07-27T12:19:59Z"
+  "updated_at": "2026-07-27T12:20:00Z"
 }
