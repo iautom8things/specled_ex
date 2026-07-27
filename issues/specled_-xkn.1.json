@@ -37,11 +37,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: b19669f0-1a1a-42a6-b6f8-39da90177a9c\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/b19669f0-1a1a-42a6-b6f8-39da90177a9c.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. TEST_CRITIC: PASS. No auditor was\nspawned per policy.\n\nGate detail: all 42 `must` requirements on specled.coverage_capture (41 pre-existing plus\nthe new `decode_atom_policy`) accounted for individually. `realization_hashes.json` diff\nempty and no public `Store` head re-signatured — the change is confined to the private\n`safe_decode/2` default, which is what kept the api_boundary bindings stable.\n\nTwo things carried the weight here and both were done properly:\n\n1. The decode-site inventory. Every `safe_decode`/`binary_to_term` call in `lib/` was read\n   individually and no site inherits atom-resurrecting decode implicitly — `read_v2/1`\n   opts in explicitly with its justification comment retained, and the v1 and sidecar paths\n   are fail-closed. That is the actual security property the ticket exists to establish,\n   and it was checked per-site rather than asserted.\n\n2. The never-interned property, which decides whether the guards prove anything. The critic\n   confirmed both guards build the hostile name as a STRING and plant it via\n   `:binary.replace/3` into the encoded ETF, passing only a same-length placeholder to\n   `String.to_atom/1` — no `Module.concat`, no atom literal in source, lowercase and\n   un-prefixed so it cannot collide with any Elixir module atom, and VM-globally unique\n   between the two files. Had the atom been interned, both guards would have passed\n   vacuously while looking green.\n\nThe verifier re-ran both falsifiability sweeps itself rather than accepting the record:\napplying a blanket `[:safe]` to each carve-out turns its guard RED, which is precisely the\nfuture event these guards exist to catch. The new requirement states both halves and the\ntests are tagged to it, so this does not repeat the \"test ahead of the requirement\" class.",
       "timestamp": "2026-07-27T12:54:13Z"
+    },
+    {
+      "text": "APPROVED. Merged into epic/specled_-k6s-0.11.0-fast-follow at 423ab1a1 (confirmed present on the epic branch). Realization-hash baseline diff EMPTY, re-checked at the epic level. Epic smoke green: 1281 tests, 0 failures. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-27T13:01:00Z"
     }
   ],
   "priority": 3,
   "status": "in_progress",
   "title": "safe_decode/2 defaults to unsafe mode; add regression guards for non-safe carve-outs",
   "type": "task",
-  "updated_at": "2026-07-27T12:54:13Z"
+  "updated_at": "2026-07-27T13:01:00Z"
 }
