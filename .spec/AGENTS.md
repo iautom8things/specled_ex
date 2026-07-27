@@ -29,6 +29,37 @@ Use this folder to maintain authored Spec Led Development subjects and generated
 - Use `mix spec.validate --debug` only when you need low-level verification output.
 - Run `mix spec.status` when you need coverage or weak-spot summaries.
 
+## Gate Forensics
+
+`make check` and `scripts/check_specs.sh` arm `SPECLED_COMMAND_OUTPUT_DIR` at
+`tmp/specled-command-output` (gitignored) whenever it is unset — note that
+presetting it to the empty string defeats `make check`, whose `?=` treats empty
+as set, after which the verifier's own `dir != ""` guard ignores it.
+`scripts/check_specs.sh` is unaffected: POSIX `:-` substitutes on unset OR
+empty, so it re-arms the default either way. CI points it at
+the runner temp dir it uploads as an artifact.
+
+`.claude/settings.json` also arms it for agent shells, but only for sessions
+whose project directory is a checkout carrying that file — a session rooted at
+an older checkout does not inherit it. If you are running the gate as an agent
+and want the capture guaranteed, run `bash ./scripts/check_specs.sh` rather
+than bare `mix spec.check`, or check `echo $SPECLED_COMMAND_OUTPUT_DIR` first.
+See specled_-4f7.
+
+When a verification command fails or times out, that directory receives:
+
+- `specled_cmd_<suffix>.log` — the command, exit code, timeout state, the tree
+  provenance at run time (`git_head` and `git_dirty`), and the command's FULL
+  output. Findings truncate that output and drop it entirely on timeout.
+- `specled_cmd_<suffix>.attribution.jsonl` — for a merged `tagged_tests` run,
+  the per-test evidence artifact the run streamed.
+
+Read these before theorizing about a red gate leg you cannot reproduce. The
+provenance lines are there because a finding's `file:line` is only valid
+against the tree that ran: if the working tree changed between the gate run and
+your inspection, the line has moved, and the test id in parentheses — not the
+line — is authoritative.
+
 ## Generated vs Committed State
 
 - `.spec/state.json` is fully derived local state. Generate it when you need

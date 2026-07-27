@@ -2178,7 +2178,10 @@ defmodule SpecLedEx.Verifier do
     try do
       base =
         cmd
-        |> run_command(root, timeout_ms, env: [{"SPECLED_ATTRIBUTION_PATH", artifact_path}])
+        |> run_command(root, timeout_ms,
+          env: [{"SPECLED_ATTRIBUTION_PATH", artifact_path}],
+          preserve_artifact: artifact_path
+        )
         |> Map.put(:command, cmd)
 
       case Attribution.read_artifact(artifact_path) do
@@ -2377,7 +2380,7 @@ defmodule SpecLedEx.Verifier do
         timeout_ms: timeout_ms
       }
 
-      preserve_failed_output(result, target)
+      preserve_failed_output(result, target, root, Keyword.get(opts, :preserve_artifact))
       result
     after
       File.rm(tmp_out)
@@ -2392,9 +2395,27 @@ defmodule SpecLedEx.Verifier do
   # there before the temp files are removed, so CI can upload the directory as
   # an artifact. Findings truncate long output and drop it entirely on timeout;
   # without this, the seed and counterexample of a non-reproducing merged-run
-  # failure are unrecoverable once the runner is gone. Best-effort by contract:
-  # a capture failure must never alter the verification result.
-  defp preserve_failed_output(result, target) do
+  # failure are unrecoverable once the runner is gone.
+  #
+  # `artifact_path`, when given, is the merged run's streaming attribution
+  # artifact — the only per-test record of which tagged tests started, finished,
+  # and in what state, which run_merged_command/5's `after File.rm/1` otherwise
+  # destroys on every run, including the failing ones worth diagnosing. It is
+  # filed beside the log under the same basename so the two stay correlatable in
+  # a capture directory holding several failing commands. Both writes live under
+  # ONE guard on purpose: a second rescue would be a second best-effort contract
+  # to prove, and no test we have found reaches a state that distinguishes it
+  # from this one (the capture name carries a per-run nonce, so nothing can
+  # pre-block the artifact write alone). Such states do EXIST — a disk filling
+  # between the two writes, a race at the artifact path, or a capture directory
+  # deep enough that the log path fits under the OS limit and the 14-bytes-longer
+  # artifact path does not. None is a state a reasonable test would construct,
+  # which is what makes a separate contract impractical to prove rather than
+  # strictly impossible.
+  #
+  # Best-effort by contract: a capture failure must never alter the
+  # verification result.
+  defp preserve_failed_output(result, target, root, artifact_path) do
     dir = System.get_env("SPECLED_COMMAND_OUTPUT_DIR")
 
     if is_binary(dir) and dir != "" and (result.timed_out or result.exit_code != 0) do
@@ -2410,9 +2431,12 @@ defmodule SpecLedEx.Verifier do
       exit_code: #{inspect(result.exit_code)}
       timed_out: #{result.timed_out}
       timeout_ms: #{result.timeout_ms}
+      #{run_provenance(root)}
       --- output ---
       #{result.output}
       """)
+
+      preserve_artifact(artifact_path, path)
     end
 
     :ok
@@ -2428,6 +2452,73 @@ defmodule SpecLedEx.Verifier do
       )
 
       :ok
+  end
+
+  defp preserve_artifact(nil, _capture_path), do: :ok
+
+  defp preserve_artifact(artifact_path, capture_path) do
+    case File.read(artifact_path) do
+      {:ok, contents} ->
+        File.write!(Path.rootname(capture_path) <> ".attribution.jsonl", contents)
+
+      {:error, _} ->
+        :ok
+    end
+  end
+
+  # How many dirty paths the capture lists before summarizing the rest. A
+  # working tree mid-rebase or with an unignored build directory can carry
+  # thousands; the point is to show that the run was NOT on a clean HEAD and
+  # name the likely files, not to mirror `git status`.
+  @provenance_dirty_limit 50
+
+  # Run-time provenance: which tree actually produced this output. Findings name
+  # test locations, and a location is only valid against the tree the run
+  # executed — a session that edits between gate runs reads the report against a
+  # different tree, where the line has shifted or gone blank, and the report
+  # looks like it invented the line (this is exactly what happened to the
+  # docs_identifier_lint_test.exs:255 report). Recording HEAD and the dirty set
+  # at run time makes that skew detectable rather than inexplicable. Degrades
+  # rather than fails outside version control: provenance is a bonus on the
+  # capture, and a verified tree is not required to be a git repository.
+  defp run_provenance(root) do
+    case git(root, ["rev-parse", "HEAD"]) do
+      # One message for every way HEAD fails to resolve — not a work tree, an
+      # unborn branch with no commits yet, or git missing from PATH. Which of
+      # the three does not help the reader; knowing the field was answered
+      # rather than omitted does.
+      nil -> "git_head: unavailable (no resolvable git HEAD at the verification root)"
+      head -> "git_head: #{head}\n#{dirty_provenance(git(root, ["status", "--porcelain"]))}"
+    end
+  end
+
+  defp dirty_provenance(nil), do: "git_dirty: unavailable"
+  defp dirty_provenance(""), do: "git_dirty: none (clean work tree)"
+
+  defp dirty_provenance(porcelain) do
+    entries = String.split(porcelain, "\n", trim: true)
+    {listed, rest} = Enum.split(entries, @provenance_dirty_limit)
+    more = if rest == [], do: "", else: "\n  ... and #{length(rest)} more"
+
+    "git_dirty: #{length(entries)} path(s)\n  #{Enum.join(listed, "\n  ")}#{more}"
+  end
+
+  defp git(root, args) do
+    case System.cmd("git", args, cd: root, stderr_to_stdout: true) do
+      {output, 0} -> String.trim_trailing(output)
+      _ -> nil
+    end
+  rescue
+    # The one cause known to occur here is git absent from PATH
+    # (ErlangError :enoent). A non-existent :cd directory does NOT raise —
+    # measured: System.cmd returns {"", 2}, which the `_ -> nil` arm above
+    # already covers. ArgumentError needs a non-string :cd, and `root` is a
+    # binary on every production path; no reachable System.cmd path was found
+    # that raises File.Error at all. Both are listed as belt and braces, not
+    # because they are expected. Provenance is strictly a bonus on the capture,
+    # so every one of these degrades to "unavailable" rather than costing the
+    # caller its forensic log.
+    _ in [ErlangError, ArgumentError, File.Error] -> nil
   end
 
   # SIGKILLs the target's process group recorded by the job-control wrapper.

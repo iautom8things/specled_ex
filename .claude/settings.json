@@ -1,4 +1,7 @@
 {
+  "env": {
+    "SPECLED_COMMAND_OUTPUT_DIR": "tmp/specled-command-output"
+  },
   "hooks": {
     "PreToolUse": [
       {

@@ -41,7 +41,27 @@ test: ## Run the test suite
 compile: ## Compile with warnings-as-errors
 	mix compile --warnings-as-errors
 
-check: ## Run the spec verification gate
+# Forensic capture directory for the gate. A failing or timed-out verification
+# command persists its full output — and, for a merged tagged_tests run, its
+# attribution artifact — here; findings truncate that output and drop it
+# entirely on timeout, so a flake that does not reproduce leaves no evidence
+# without this. Gitignored.
+#
+# What keeps this directory holding gate evidence and nothing else is
+# test/test_helper.exs, which unsets the variable inside the BEAM before
+# ExUnit.start/0 — so the suite's deliberate command failures write nothing
+# here however the variable reached them, plain shell or agent shell. That is
+# the load-bearing half; remove it and this directory fills with noise.
+#
+# The `check:`-scoped export below is hygiene on top, not a second line of
+# defence: it keeps a plain shell from carrying a gate variable at all.
+# Removing it would not put noise in this directory.
+#
+# Override in the environment to relocate; CI sets its own.
+SPECLED_COMMAND_OUTPUT_DIR ?= $(CURDIR)/tmp/specled-command-output
+
+check: export SPECLED_COMMAND_OUTPUT_DIR := $(SPECLED_COMMAND_OUTPUT_DIR)
+check: ## Run the spec verification gate (failing-command forensics land in tmp/specled-command-output)
 	mix spec.check
 
 # Worktree workflow
