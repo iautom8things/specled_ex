@@ -35,7 +35,7 @@ is opt-in via the mix tasks.
 **Stage-ticket done criteria:**
 - `mix spec.init` has run on the worktree
 - `mix compile --warnings-as-errors` passes (catches dep version mismatch)
-- `mix spec.check` exits 0 with no findings beyond `detector_unavailable`
+- `mix spec.check --verbose` exits 0 with no findings beyond `detector_unavailable` (info-level findings are hidden without `--verbose`; `SPECLED_SHOW_INFO=1` is equivalent)
 - `.spec/AGENTS.md` references the project verification command — the
   scaffolded template ships without one and has no placeholder to replace,
   so add the line; on containerized
