@@ -13,8 +13,8 @@
       "message": "Changed file test/specled_ex/realization/hash_store_test.exs impacts subject specs that were not updated: specled.binding, specled.realized_by"
     }
   ],
-  "run_at": "2026-07-27T10:17:22.768026Z",
-  "run_id": "1bc0d86d45280659eb71cf7c2ebe5cc2",
+  "run_at": "2026-07-27T10:22:21.880280Z",
+  "run_id": "21259eab5be75485fadfecfe9c4d67e4",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "30e4879d85189b82964be9f27fb4ea812b3042d4",
