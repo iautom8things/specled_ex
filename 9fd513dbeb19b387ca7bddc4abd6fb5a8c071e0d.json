@@ -7,8 +7,8 @@
       "message": "Changed file skills/spec-led-bootstrap/references/adoption-phases.md impacts subject specs that were not updated: specled.package"
     }
   ],
-  "run_at": "2026-07-27T10:27:52.658045Z",
-  "run_id": "01b51e87d19cc00e083c6adffa27ad15",
+  "run_at": "2026-07-27T10:30:29.961645Z",
+  "run_id": "76683b24618260bba616e5bcf8bf461f",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "9fd513dbeb19b387ca7bddc4abd6fb5a8c071e0d",
