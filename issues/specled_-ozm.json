@@ -54,11 +54,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: b19669f0-1a1a-42a6-b6f8-39da90177a9c\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/b19669f0-1a1a-42a6-b6f8-39da90177a9c.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. TEST_CRITIC: PASS. No auditor was\nspawned per policy — this is iteration 2 and the iteration-1 auditor's gap is\nindependently confirmed closed.\n\nGate detail: all 6 `must` requirements on specled.package accounted for individually.\nThe bounce gap is closed and was re-proved by the verifier itself — deleting the item-5\nbranch turns the new test RED with the OLD false \"does not appear outside the marker\"\nmessage, which is the specific overclaim the branch exists to remove.\n\nOn the two beyond-mandate changes, both were judged IN SCOPE with reasoning I accept:\n- `fixture_file/1` -\u003e `File.rm_rf!(dir)` repairs a regression that mandate item 7 itself\n  introduced (folding a fresh CSPRNG suffix into the directory name mints a new dir per\n  call, turning one fixed leaked dir into an unbounded per-run leak), and was explicitly\n  ordered by the audit bounce. The dir is unique per call, so the recursive delete cannot\n  reach another test's or another VM's fixture.\n- Corpus guard N=8 -\u003e N=30: the verifier counted the live corpus three independent ways\n  (51 files, including via a probe reproducing `decision_files/0` exactly) and confirmed\n  N=30 is conservative — 20 files of headroom, and ADR removal is `append_only/decision_deleted`\n  at `:error`, so dropping below 31 is not a reachable state. It then proved the guard\n  FIRES by repointing `decision_files/0` at a nonexistent directory.\nIteration-1's work was re-checked for regression across the second commit: both original\nregression tests still go RED under a grammar revert, no `s` modifier appeared, and all\nfour real markers in the live corpus are still honoured.",
       "timestamp": "2026-07-27T12:34:52Z"
+    },
+    {
+      "text": "APPROVED. Merged into epic/specled_-k6s-0.11.0-fast-follow at 0fe458ef (confirmed present on the epic branch, both commits). Epic smoke green: 1279 tests, 0 failures. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-27T12:42:05Z"
     }
   ],
   "priority": 3,
   "status": "in_progress",
   "title": "Stale-allow-marker sweep has two evasion holes: '\u003e' in reason text defeats the comment strip, and bare unwrapped markers escape the sweep entirely",
   "type": "bug",
-  "updated_at": "2026-07-27T12:34:53Z"
+  "updated_at": "2026-07-27T12:42:05Z"
 }
