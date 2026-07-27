@@ -65,11 +65,15 @@
     {
       "text": "LESSONS (append)\n- [untested-clause] A new branch you ADD needs its own controlled-input test, even when the branch is message-only and both arms emit a violation. Two tickets in a row shipped one uncovered (specled_-ozm's non-guarded-family marker message, specled_-14t's CrossField `repo.` filter) — in both cases deleting the new branch left the whole suite green. A message-only branch is the WORST case to leave unpinned, because it rots with nothing failing (from specled_-ozm, specled_-14t)\n- [untested-clause] When a fix touches two independent code paths that share only a string literal, a test on one path does not cover the other. specled_-14t's verifier predicate (`valid_decision_affect?/4`) and CrossField R4 both implement the `repo.` rule; the added verifier test exercises neither the CrossField branch nor its spec clause (from specled_-14t)",
       "timestamp": "2026-07-27T12:15:38Z"
+    },
+    {
+      "text": "LESSONS (append)\n- [other] `:code.purge` / `:code.delete` on a cover-tracked `lib/` module DESTROYS its coverage counters — under native coverage the counters live in the loaded module instance, so the module is silently dropped from the `--cover` tally, not merely reduced. This repo runs `mix test --include integration --cover` in CI against an 83% threshold with ~0.05 points of headroom, and specled's own `Coverage.Snapshot` reads `:code.get_coverage/2` from the same counters. If a test must construct a loadable-but-not-loaded module, define a throwaway module inside the test (test/ is not cover-tracked) rather than purging a real one (from specled_-dn4.12)\n- [other] Change-scoped verification cannot see coverage-tally damage: the implementer and the verifier both ran targeted `mix test` and saw green, because the defect only appears under `--cover` across a wider file set. When a diff manipulates the code server, module loading, or process/ETS global state, the reviewer must ask what the CHANGE-SCOPED run structurally cannot observe (from specled_-dn4.12)",
+      "timestamp": "2026-07-27T12:34:09Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "[EPIC] Impromptu: 0.11.0 fast-follow sweep — gate-forensics reach, spec.validate usage tier, doc-lint hardening, coverage-store safety, review polish",
   "type": "epic",
-  "updated_at": "2026-07-27T12:15:38Z"
+  "updated_at": "2026-07-27T12:34:09Z"
 }
