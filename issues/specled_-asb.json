@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-ehv"
   ],
@@ -20,8 +20,8 @@
     }
   ],
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "title": "tracer_test merge_edges property: non-session caller present in both previous and session_edges has no value-provenance assertion",
   "type": "task",
-  "updated_at": "2026-07-27T11:33:34Z"
+  "updated_at": "2026-07-27T11:41:06Z"
 }
