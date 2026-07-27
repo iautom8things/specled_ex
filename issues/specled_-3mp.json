@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-27T02:37:22Z",
+  "description": "No spec subject change in the structural sense; this edits specled.tagged_tests.failed_run_preserves_attribution_artifact within subject specled.tagged_tests.\n\nFollow-up from specled_-td7, recommended independently by two cold audit rounds (2026-07-27).\n\nThe requirement currently says the artifact copy shall be best-effort \"under the SAME guard as the output capture, not a parallel one of its own ... One guard, one contract, one proof.\" The middle clause is a constraint on SOURCE STRUCTURE, not an observable outcome, and no test can enforce it. A surviving mutation demonstrates the gap: wrapping the preserve_artifact/2 call in its own silent `try ... rescue _ in File.Error -\u003e :ok end` — the exact arrangement the clause forbids — leaves the suite green.\n\nWhy it cannot be tested, established across three verification rounds: distinguishing one shared guard from two parallel ones needs a state where the LOG write succeeds and the ARTIFACT write specifically fails. The capture filename carries a per-run nonce, so nothing can pre-block that path. Exotic states exist (a disk filling between the two adjacent writes; a capture directory deep enough that the log path fits under the OS path limit while the 14-bytes-longer artifact path does not) but none is a state a reasonable test constructs.\n\nProposed fix: trim the must to what is observable and already tested — a filesystem failure in either write leaves the verification result unchanged and emits the one-line stderr warning (verifier_test.exs, the merged unwritable-dir test and the generic sibling). Move the single-guard rationale to the code comment, where it already lives, and out of normative text.\n\nPrecedent on the same branch: an equivalent structural assertion was caught in this requirement own scenario `then` clause and replaced with a real outcome clause; the identical reflex was left standing in the `must`.\n\nDeliberately deferred from specled_-td7 rather than done there: spec surgery on a branch that had already produced eleven prose defects was judged worse than tracking it.",
+  "id": "specled_-3mp",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Trim failed_run_preserves_attribution_artifact's must to its observable content",
+  "type": "task",
+  "updated_at": "2026-07-27T02:37:22Z"
+}
