@@ -4,6 +4,7 @@
     "specled_-pii"
   ],
   "blocks": [],
+  "closed_at": "2026-07-27T11:36:29Z",
   "created": "2026-07-27T01:18:47Z",
   "description": "No spec subject (environment/config wiring; the forensics behavior it feeds is specled.verify.command_output_capture_dir).\n\nFollow-up from specled_-td7, found by its round-2 cold verifier (2026-07-27).\n\nspecled_-td7 armed SPECLED_COMMAND_OUTPUT_DIR in every gate path the repo owns. Two of the three are unconditional (CI; the make check / scripts/check_specs.sh wrappers). The third is not, and the ADR now says so rather than overclaiming.\n\n.claude/settings.json only reaches agent sessions whose PROJECT DIRECTORY is a checkout carrying that file. MEASURED during td7: in an agent session rooted at the primary checkout (on main, which does not yet carry the change), SPECLED_COMMAND_OUTPUT_DIR is unset even when cwd is inside the stage worktree. That is plausibly the exact shape of session in which the original flakes were observed, so the primary use case is the least covered one. After this branch merges to main the primary checkout will carry it, which closes most of the gap - but not for sessions already running, and not across sibling worktrees created from an older base.\n\nSecond, narrower issue: the settings.json value is RELATIVE (tmp/specled-command-output), so it resolves against whatever directory the gate was invoked from. An agent running mix spec.check from a subdirectory writes captures there instead of at the repo root. td7 mitigated the gitignore consequence (**/tmp/specled-command-output/ now covers subdirectories) but not the scattering itself.\n\nOptions worth weighing, none obviously right:\n- absolute path via a settings.json variable expansion, if the harness supports it in env values (unverified - td7 chose relative specifically because expansion was not confirmed)\n- make scripts/check_specs.sh the documented agent-facing gate command instead of bare mix spec.check, so the wrapper (which already defaults the variable against $ROOT) is always in the path\n- accept and document, on the grounds that CI is where non-reproducing failures most need capturing\n\nNot a blocker for td7: the wrapper and CI legs work and were verified by execution.",
   "id": "specled_-4f7",
@@ -40,8 +41,8 @@
     }
   ],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "Gate forensics: the agent-shell arming path is conditional on session root and cwd",
   "type": "task",
-  "updated_at": "2026-07-27T11:36:28Z"
+  "updated_at": "2026-07-27T11:36:29Z"
 }
