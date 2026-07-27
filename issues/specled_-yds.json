@@ -36,6 +36,10 @@
     {
       "text": "APPROVED. Merged into epic/specled_-k6s-0.11.0-fast-follow. Closing per orchestrator sign-off.",
       "timestamp": "2026-07-27T11:25:07Z"
+    },
+    {
+      "text": "ORCHESTRATOR CORRECTION — this ticket was closed in error and has been reopened.\n\nAt 2026-07-27T~11:20Z I ran `git merge --ff-only specled_-yds/concepts-lint-helpers | tail -2 \u0026\u0026 make smoke \u0026\u0026 ... \u0026\u0026 bw close`. Piping the merge into `tail` made the\npipeline's exit status `tail`'s, not git's. The merge had actually FAILED\n(\"Not possible to fast-forward\" — this stage was cut before specled_-ehv landed), but\nthe `\u0026\u0026` chain saw success and ran on, so the ticket was closed with its commit\n(1822b637) still only on its own branch and absent from the epic branch. The `make\nsmoke` in that chain ran against an epic tree that did not contain this work, so it\nwas not evidence for anything about this ticket.\n\nNo work was lost and nothing incorrect was merged. Reopening, rebasing onto the current\nepic head, then merging and closing on real evidence.\n\nGrading verdicts stand unchanged: VERIFY: PASS, TEST_CRITIC: PASS,\nAUDIT: APPROVE (auto — selective audit). This was a merge-mechanics error by the\norchestrator, not a defect in the deliverable.",
+      "timestamp": "2026-07-27T11:25:42Z"
     }
   ],
   "priority": 3,
