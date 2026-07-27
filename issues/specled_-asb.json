@@ -8,7 +8,7 @@
   "description": "Advances: specled.compiler_tracer.merge_on_flush\n\nFound by the elixir-test-critic during specled_-zr6 verification (2026-07-25). The merge_edges property (test/specled_ex/compiler/tracer_test.exs:241-293) asserts value provenance only for session-module callers. For a caller present in BOTH previous and session_edges whose module is NOT in session_set (~21% of generated draws), no assertion pins which value wins — mutants reversing Map.merge precedence or concatenating callee lists instead of replacing survived 2000 property cases. The state is production-reachable: during a parallel compile, module B's flush sees module A's fresh edges via session_edges() before A's :on_module fires and marks it a session module (lib/specled_ex/compiler/tracer.ex:183-209). Impact bounded — A's own later flush corrects the manifest — so exposure is transient intermediate manifests. Cheapest fix: one example test asserting the session_edges entry wins over a same-key previous entry when the caller's module is not in session_set. Pre-existing; NOT introduced or worsened by specled_-zr6.",
   "id": "specled_-asb",
   "labels": [
-    "phase:implementing"
+    "phase:verifying"
   ],
   "parent": "specled_-k6s",
   "comments": [
@@ -29,5 +29,5 @@
   "status": "in_progress",
   "title": "tracer_test merge_edges property: non-session caller present in both previous and session_edges has no value-provenance assertion",
   "type": "task",
-  "updated_at": "2026-07-27T11:42:38Z"
+  "updated_at": "2026-07-27T11:46:39Z"
 }
