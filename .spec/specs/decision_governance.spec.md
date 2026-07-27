@@ -30,6 +30,7 @@ decisions:
   - specled.decision.change_type_enum_v1
   - specled.decision.adr_append_only
   - specled.decision.deprecates_affect_reference_carveout
+  - specled.decision.repo_namespace_affect_carveout
 ```
 
 ## Requirements
@@ -42,9 +43,15 @@ decisions:
 - id: specled.decisions.reference_validation
   statement: >-
     The verifier shall reject ADR affects or supersession links that do not
-    resolve, except that `change_type: deprecates` ADRs may list affects ids
-    absent from the current index because the target is being retired, and
-    shall warn when a subject references an unknown ADR id.
+    resolve, except that (1) `change_type: deprecates` ADRs may list affects
+    ids absent from the current index because the target is being retired,
+    and (2) ADR `affects:` ids in the reserved `repo.` prefix namespace are
+    repo-scoped governance identifiers that intentionally resolve against
+    nothing in the index and are accepted without resolution — the namespace
+    names repo-level policy areas, not spec subjects, requirements, or ADR
+    ids, and acceptance is a literal `String.starts_with?/2` prefix test, not
+    a registry lookup — and shall warn when a subject references an unknown
+    ADR id.
   priority: must
   stability: evolving
 - id: specled.decisions.change_type_enum
@@ -104,7 +111,10 @@ decisions:
     does not resolve in the current index, except that
     `change_type: deprecates` exempts its `affects:` targets from the
     resolution check (the point of deprecation is that the target id
-    is being removed).
+    is being removed), and except that ids in the reserved `repo.` prefix
+    namespace are accepted without resolution (literal
+    `String.starts_with?/2` prefix test; the namespace names repo-level
+    policy areas, not spec subjects, requirements, or ADR ids).
   priority: must
   stability: evolving
 - id: specled.decisions.cross_field_adr_append_only

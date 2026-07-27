@@ -452,6 +452,39 @@ defmodule SpecLedEx.VerifierTest do
            )
   end
 
+  @tag spec: "specled.decisions.reference_validation"
+  test "repo-prefixed affects are accepted without index resolution", %{root: root} do
+    report =
+      Verifier.verify(
+        %{
+          "subjects" => [base_subject(%{})],
+          "decisions" => [
+            %{
+              "file" => ".spec/decisions/repo_namespace.md",
+              "meta" => %{
+                "id" => "repo.governance.repo_namespace",
+                "status" => "accepted",
+                "date" => "2026-07-27",
+                "affects" => ["repo.governance"]
+              },
+              "sections" => ["Context", "Decision", "Consequences"],
+              "parse_errors" => []
+            }
+          ]
+        },
+        root,
+        debug: true
+      )
+
+    refute "decision_unknown_affect" in finding_codes(report)
+
+    assert Enum.any?(
+             report["checks"],
+             &(&1["code"] == "decision_affect_valid" and
+                 &1["message"] == "Decision affect valid: repo.governance")
+           )
+  end
+
   test "verify only fails warnings in strict mode", %{root: root} do
     index = %{
       "subjects" => [
