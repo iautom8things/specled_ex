@@ -1,7 +1,8 @@
 {
   "assignee": "",
   "blocked_by": [
-    "specled_-26g"
+    "specled_-26g",
+    "specled_-npo"
   ],
   "blocks": [],
   "created": "2026-07-24T14:22:04Z",
@@ -13,5 +14,5 @@
   "status": "open",
   "title": "safe_decode/2 defaults to unsafe mode; add regression guards for non-safe carve-outs",
   "type": "task",
-  "updated_at": "2026-07-27T08:36:36Z"
+  "updated_at": "2026-07-27T08:36:37Z"
 }
