@@ -82,11 +82,15 @@
     {
       "text": "Squash-merged to main (02258a0b) as release 0.10.0. PR #30.",
       "timestamp": "2026-07-27T09:31:40Z"
+    },
+    {
+      "text": "DELIVERED. Squash-merged as 02258a0b (PR #30), released 0.10.0. Post-merge Specs run on main: green (run 30254325058). No deploy or hex-publish workflow in this repo, so /monitor-app is not applicable — the post-merge Specs run is the whole health signal. Worktree cleaned via make worktree-cleanup FORCE=1; both branch refs removed. Follow-ups left open: specled_-3mp (standalone), specled_-4f7 and specled_-npo (adopted into specled_-k6s).",
+      "timestamp": "2026-07-27T09:36:50Z"
     }
   ],
   "priority": 3,
   "status": "in_progress",
   "title": "Self-identifying failing-test descriptors + gate forensics for tagged_tests flake reports",
   "type": "task",
-  "updated_at": "2026-07-27T09:36:49Z"
+  "updated_at": "2026-07-27T09:36:50Z"
 }
