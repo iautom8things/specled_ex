@@ -1,5 +1,73 @@
 # Changelog
 
+## 0.9.6 — 2026-07-26
+
+Impromptu epic (specled_-233) bundling five independently-surfaced follow-ups
+onto one PR. The through-line is falsifiability: each item replaced a guard that
+could not fail — an existence check standing in for a content check, a `must`
+whose only verification was blind to it, an ADR asserting reach it did not have,
+and a build-staleness test a same-second edit defeated.
+
+### Fixed
+
+- `specled.package.concepts_guide` moved off existence-only `source_file`
+  verification onto an `execute: true` tagged_tests content lint, so the clauses
+  the requirement names — the spec triangle, the `realized_by` tiers, the
+  graceful-degrade `detector_unavailable` rule, and all three drift-acceptance
+  paths — can no longer be deleted with the gate green. Each needle is unique to
+  its section, because bare identifier tokens were satisfied incidentally by
+  unrelated prose elsewhere in the document (specled_-48i)
+- The over-compound `specled.spec_review.coverage_tab_bind_closure` requirement
+  is retired: its eight per-contract children now own the prose, and the eight
+  `# covers:` markers across `lib/` and `test/` point at the split id each call
+  site actually implements. The surviving id carries a concrete, falsifiable
+  `per_requirement_reach/2` data contract instead of a statement-free umbrella,
+  and a `:no_debug_info` render contract that had been dropped without
+  restatement is restored as its own requirement — the
+  `specled.decision.coverage_identity_joins` consequence that depended on it is
+  no longer orphaned (specled_-gai)
+- The last fixed-name write-rename sibling in `lib/`
+  (`.spec/realization_hashes.json.tmp`, built by `Realization.HashStore`) now
+  derives its uniqueness from `SpecLedEx.TempName.cross_vm_suffix/0`, so
+  `specled.decision.cross_vm_temp_names` is no longer contradicted by an
+  unconverted, unexcepted site. The compiler tracer's pid-separation guarantee
+  is now falsifiable — a test fails when `System.pid()` is dropped, pinning the
+  actual pid value rather than a digit class, which a VM-local counter satisfied
+  before. A superseding ADR reconciles the declared reach in both directions
+  across seven governed subjects, with `specled.evidence_store` explicitly
+  excluded and justified rather than silently omitted (specled_-ymn)
+- `bootstrap_tracer!` could run a permanently stale tracer beam. Staleness was
+  decided by `src.mtime > beam.mtime`, and `File.stat!/1` mtimes have
+  one-second granularity — so an edit or a `git checkout` revert landing in the
+  same second as the previous compile left the comparison false and a mutated
+  artifact fresh indefinitely. Unrecoverable in practice, because the tracer
+  source is excluded from `elixirc_paths/1` (a module cannot trace its own
+  recompilation) and `mix compile --force` therefore never rebuilds it; the
+  symptom was a clean working tree running stale code. Staleness is now keyed on
+  the source content **and** the compiling toolchain, the latter because a beam
+  is loadable only by a compatible OTP and a matrix-leg switch leaves an
+  artifact whose source is byte-identical (specled_-pr6)
+
+### Added
+
+- The doc-identifier lint gains five guards, each falsifiable in the direction
+  it protects: the token patterns' `(?<![\w/])` lookbehind is pinned in both
+  directions, so neither tightening nor loosening it can silently change
+  coverage; `severity_corpus/0`'s deliberate `.spec/**` exclusion is asserted on
+  both arms; guarded codes are asserted digit-free, with that decision recorded
+  in the governing ADR rather than left implicit; stale allow-markers are swept
+  for both rot directions (a token that has become a real emitted code, and a
+  token no longer present on its line); and the hand-maintained `@known_codes`
+  mirror now fails on a code **deleted** from `lib/` as well as one added, so
+  docs naming a dead code no longer pass (specled_-vk0)
+
+### Changed
+
+- `specled.package`'s `decisions:` list now names
+  `specled.decision.doc_identifier_lint_spec_corpus`, so the must that states
+  which finding-code families are mechanically guarded has an in-corpus pointer
+  to where the deliberate non-guarding of the rest is justified (specled_-vk0)
+
 ## 0.9.5 — 2026-07-26
 
 Fast-follow slice of the spec.check verdict-contract + teaching-sweep epic
