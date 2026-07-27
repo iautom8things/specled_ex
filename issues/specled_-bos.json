@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-27T13:10:53Z",
+  "description": "No spec subject — test hygiene follow-up.\n\nSurfaced by the elixir-test-critic while grading specled_-dn4.12 iteration 3 (epic specled_-k6s, 2026-07-27), and explicitly graded NON-BLOCKING there. Filed rather than bounced because dn4.12 was at its bounce cap and this is a \"should\"-level hygiene point, not a defect in what that ticket delivered.\n\ntest/specled_ex/coverage/paths_test.exs (~:85 and ~:91) names the ephemeral beam directory with `:erlang.unique_integer([:positive])`:\n\n    Path.join(System.tmp_dir!(), \"specled_paths_ephemeral_#{uid}\")\n\n.spec/decisions/specled.decision.cross_vm_temp_names_reach.md (as amended by specled_-ehv, already merged) says at its Decision section: \"New tests that allocate shared-tmp roots should reach for `SpecLedEx.TempName.cross_vm_suffix/0` as well.\" This test allocates a shared-tmp root, so the guidance applies.\n\nWHY IT IS A REAL (SMALL) HAZARD, per the critic: specled runs NESTED — a merged `mix spec.check` executes host-project tests that may themselves exercise specled — and both VMs share `System.tmp_dir!()`. `:erlang.unique_integer([:positive])` restarts low in each fresh VM, so two concurrent VMs can mint the same directory name. On collision, the first `File.rm_rf!` (paths_test.exs:~115) deletes the other VM tree before its force-load at ~:126, failing that test RED for a reason unrelated to the code under test.\n\nFIX (one line, supplied by the critic):\n\n    Path.join(System.tmp_dir!(), \"specled_paths_ephemeral_#{SpecLedEx.TempName.cross_vm_suffix()}\")\n\nKeep `uid` for the MODULE NAME only — the module name needs to be unique within the VM, not across VMs, and changing it is unnecessary churn.\n\nDO NOT change where the beam is written. It must stay outside `Mix.Project.compile_path()` and outside `test/test_support/`; putting it in either reproduces the coverage-tally defect that cost dn4.12 two bounces (`:code.purge` on a cover-compiled module drops it from both numerator and denominator of the `--cover` tally). Verify with:\n  mix test --cover test/specled_ex/review/coverage_closure_test.exs test/specled_ex/coverage/paths_test.exs\nSpecLedEx.Review.CoverageClosure must keep its row and there must be no \"Failed to collect coverage information\" warning.\n\nAlso confirm both `ensure_module/2` collapse mutants still turn the discrimination test RED after the change.\n\nDeliberately left standalone rather than admitted into specled_-k6s: that epic is mid-flight and this did not go through its admission gate.",
+  "id": "specled_-bos",
+  "labels": [],
+  "priority": 4,
+  "status": "open",
+  "title": "paths_test ephemeral beam root uses unique_integer where the ADR asks for cross_vm_suffix",
+  "type": "task",
+  "updated_at": "2026-07-27T13:10:53Z"
+}
