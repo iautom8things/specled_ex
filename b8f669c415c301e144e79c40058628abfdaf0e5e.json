@@ -60,8 +60,8 @@
       "message": "Changed file is not covered by any current-truth subject: test/specled_ex/coverage/paths_test.exs"
     }
   ],
-  "run_at": "2026-07-27T10:45:05.509013Z",
-  "run_id": "b5c295fdcc5d58e1bb82b471686ad763",
+  "run_at": "2026-07-27T12:23:28.973200Z",
+  "run_id": "34108d934b57b3c275e2d1b60ed53f0e",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "b8f669c415c301e144e79c40058628abfdaf0e5e",
