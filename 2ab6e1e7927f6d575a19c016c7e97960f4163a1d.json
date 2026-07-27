@@ -49,8 +49,8 @@
       "message": "Changed file test/specled_ex/review/html_test.exs impacts subject specs that were not updated: specled.spec_review"
     }
   ],
-  "run_at": "2026-07-27T11:42:17.669943Z",
-  "run_id": "dfeaf1eeddba6f6656c5ef450aae7e89",
+  "run_at": "2026-07-27T11:49:16.360870Z",
+  "run_id": "19e212fa3258c0db12270caf83e15de8",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "2ab6e1e7927f6d575a19c016c7e97960f4163a1d",
