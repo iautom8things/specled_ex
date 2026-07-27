@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-pii"
   ],
@@ -24,8 +24,8 @@
     }
   ],
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "Gate forensics: the agent-shell arming path is conditional on session root and cwd",
   "type": "task",
-  "updated_at": "2026-07-27T10:56:25Z"
+  "updated_at": "2026-07-27T11:00:25Z"
 }
