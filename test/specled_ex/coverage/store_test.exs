@@ -79,6 +79,7 @@ defmodule SpecLedEx.Coverage.StoreTest do
       assert :erlang.term_to_binary(decoded) == :erlang.term_to_binary(records)
     end
 
+    @tag spec: "specled.coverage_capture.decode_atom_policy"
     test "read raises rather than resurrecting a never-interned atom from a hostile artifact" do
       tmp_path =
         Path.join(
@@ -150,7 +151,8 @@ defmodule SpecLedEx.Coverage.StoreTest do
   describe "v2 envelope round trip" do
     @describetag spec: [
                    "specled.coverage_capture.store_v2_envelope",
-                   "specled.coverage_capture.store_v2_legacy_rejection"
+                   "specled.coverage_capture.store_v2_legacy_rejection",
+                   "specled.coverage_capture.decode_atom_policy"
                  ]
 
     setup do
@@ -322,6 +324,39 @@ defmodule SpecLedEx.Coverage.StoreTest do
 
       assert {:error, :invalid_artifact} = Store.read_v2(path)
     end
+
+    # CF1 positive guard: a foreign/never-interned module atom in an aggregate
+    # envelope must still decode successfully via read_v2/1's explicit unsafe
+    # opt-in. A future blanket `[:safe]` sweep on that carve-out must fail this
+    # test loudly. Would fail if read_v2/1 used `[:safe]` decode.
+    @tag spec: "specled.coverage_capture.decode_atom_policy"
+    test "read_v2 succeeds on an envelope whose :files name a never-interned module atom",
+         %{path: path} do
+      {hostile_name, hostile_binary} =
+        hostile_atom_binary(fn atom ->
+          %{
+            version: 2,
+            mode: :aggregate,
+            generated_at: ~U[2024-01-01 00:00:00Z],
+            source: "mix spec.cover.ingest",
+            files: [
+              %{file: "lib/foreign.ex", module: atom, lines_hit: [1], lines_total: 1}
+            ],
+            mfas: [],
+            payload: nil,
+            degraded: false,
+            meta: %{}
+          }
+        end)
+
+      File.mkdir_p!(Path.dirname(path))
+      File.write!(path, hostile_binary)
+
+      assert {:ok, envelope} = Store.read_v2(path)
+      assert [%{module: mod} | _] = envelope.files
+      assert is_atom(mod)
+      assert String.to_existing_atom(hostile_name) == mod
+    end
   end
 
   describe "read_status/1" do
@@ -380,6 +415,7 @@ defmodule SpecLedEx.Coverage.StoreTest do
       assert {:refused, :not_found} = Store.read_status(path)
     end
 
+    @tag spec: "specled.coverage_capture.decode_atom_policy"
     test "rejects a hostile sidecar carrying a never-interned atom without interning it", %{
       path: path
     } do

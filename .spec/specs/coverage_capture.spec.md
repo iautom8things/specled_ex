@@ -426,6 +426,17 @@ decisions:
     artifacts are never auto-migrated or deleted.
   priority: must
   stability: evolving
+- id: specled.coverage_capture.decode_atom_policy
+  statement: >-
+    v1 `Store.read/1` and the `last_run.status` sidecar (`Store.read_status/1`)
+    shall decode with `[:safe]` and reject never-interned atoms. `Store.read_v2/1`
+    shall decode without `[:safe]` because an ingested or merged aggregate
+    envelope may legitimately name a module absent from this BEAM, and shall
+    return `{:ok, envelope}` in that case (the foreign module atom is
+    resurrected). No Store call site may obtain atom-resurrecting decode
+    behaviour by default; the v2 path opts in explicitly.
+  priority: must
+  stability: evolving
 - id: specled.coverage_capture.aggregate_ingest
   statement: >-
     `SpecLedEx.Coverage.Aggregate.ingest/2` shall stop, restart, and import
@@ -775,6 +786,21 @@ decisions:
     - "the garbage artifact yields `{:error, :invalid_artifact}`"
   covers:
     - specled.coverage_capture.store_v2_legacy_rejection
+- id: specled.coverage_capture.scenario.decode_atom_policy
+  given:
+    - "a v1 ETF artifact whose term carries a never-interned atom"
+    - "a last_run.status sidecar whose term carries a never-interned atom"
+    - "a well-formed v2 envelope ETF whose `:files` entry carries a never-interned `:module` atom (byte-patched; never interned via `String.to_atom/1`)"
+  when:
+    - "`Store.read/1` is called on the hostile v1 artifact"
+    - "`Store.read_status/1` is called on the path whose sidecar is hostile"
+    - "`Store.read_v2/1` is called on the foreign-module v2 envelope"
+  then:
+    - "`read/1` raises rather than resurrecting the never-interned atom"
+    - "`read_status/1` returns `{:refused, _}` without interning the atom"
+    - "`read_v2/1` returns `{:ok, envelope}` and the foreign module atom is reachable via `String.to_existing_atom/1`"
+  covers:
+    - specled.coverage_capture.decode_atom_policy
 - id: specled.coverage_capture.scenario.spec_cover_test_per_test_forces_serial
   given:
     - "a child-BEAM fixture with no `async: true` test modules"
@@ -1046,6 +1072,7 @@ decisions:
   covers:
     - specled.coverage_capture.store_v2_envelope
     - specled.coverage_capture.store_v2_legacy_rejection
+    - specled.coverage_capture.decode_atom_policy
 - kind: tagged_tests
   execute: true
   covers:

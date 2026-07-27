@@ -621,6 +621,57 @@ defmodule SpecLedEx.Realization.ImplementationTest do
     ]
   end
 
+  # Builds ETF bytes for `term_builder.(atom)` where `atom` is guaranteed never
+  # to have been interned in this VM — same byte-patch technique as
+  # StoreTest.hostile_atom_binary/1. Do not use String.to_atom/1 or Module.concat/1
+  # to plant the hostile name; both intern and defeat the guard.
+  defp hostile_atom_binary(term_builder) do
+    hostile_name = "hostile_never_interned_#{System.unique_integer([:positive, :monotonic])}"
+    placeholder_name = String.duplicate("x", byte_size(hostile_name))
+    encoded = :erlang.term_to_binary(term_builder.(String.to_atom(placeholder_name)))
+    {hostile_name, :binary.replace(encoded, placeholder_name, hostile_name)}
+  end
+
+  # ---------------------------------------------------------------------------
+  # CF1: tracer-manifest raw reader must keep unsafe decode so a foreign
+  # module atom captured in another BEAM still loads. Reachable via
+  # hashes_for_seeding/3's opts[:tracer_manifest] → load_tracer_edges →
+  # read_tracer_etf (binary_to_term without [:safe]).
+  # ---------------------------------------------------------------------------
+  describe "tracer manifest unsafe decode (foreign module atom)" do
+    @tag spec: "specled.compiler_tracer.etf_read_direct"
+    test "hashes_for_seeding loads a tracer_manifest whose keys name a never-interned module",
+         %{root: root} do
+      # Would fail if Implementation.read_tracer_etf/1 used [:safe]: the
+      # foreign module atom would not intern and String.to_existing_atom/1
+      # would raise after a silent empty-map fallback.
+      {hostile_name, hostile_binary} =
+        hostile_atom_binary(fn atom ->
+          %{
+            {atom, :foreign_fun, 0} => [{Enum, :map, 2}],
+            {SpecLedEx.ImplFixtures.A, :foo, 1} => [{SpecLedEx.ImplFixtures.B, :bar, 1}],
+            {SpecLedEx.ImplFixtures.B, :bar, 1} => [{SpecLedEx.ImplFixtures.B, :helper, 1}]
+          }
+        end)
+
+      etf = Path.join(root, "xref_hostile.etf")
+      File.write!(etf, hostile_binary)
+
+      # Prove the name is not interned before the production read.
+      assert_raise ArgumentError, fn -> String.to_existing_atom(hostile_name) end
+
+      subjects = seeding_subjects()
+      hashes = Implementation.hashes_for_seeding(subjects, nil, tracer_manifest: etf)
+
+      assert is_map(hashes)
+      assert Map.has_key?(hashes, "A")
+
+      # Production reader resurrected the foreign module atom (unsafe decode).
+      hostile_atom = String.to_existing_atom(hostile_name)
+      assert is_atom(hostile_atom)
+    end
+  end
+
   # ---------------------------------------------------------------------------
   # S2: read-time ghost filtering + determinism contract
   # ---------------------------------------------------------------------------
