@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-27T20:28:41Z",
+  "description": "DISCLOSURE — not a repair ticket. Do not mass-relabel or rewrite lifecycle history under this id. This epic does not fix lifecycle policy.\n\nWhat is wrong (audit-verified 2026-07-26, not re-derived): 25 of 197 closes never passed through in_progress; 5 ran full IMPLEMENTED-\u003eVERIFY-\u003eAUDIT while bw ready still offered them unclaimed; 2 closed tickets still carry phase:* labels.\n\nRepairable? Historical status paths not repairable as history; phase:* labels rewritable in principle but not by this disclosure. NOT prevented by adf-3yz — see adf-l5t.8. Full write-up: agentic-dotfiles docs/specled-ex-board-disclosure.md finding 7.",
+  "id": "specled_-flj",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "DISCLOSURE (no repair): lifecycle hygiene; see adf-l5t.8 (not this epic)",
+  "type": "task",
+  "updated_at": "2026-07-27T20:28:41Z"
+}
