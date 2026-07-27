@@ -35,11 +35,15 @@
     {
       "text": "ORCHESTRATOR NOTE — comment trail correction (not a pipeline marker)\n\nThe `VERIFY: FAIL` comment on THIS ticket concerning\n`.spec/decisions/specled.decision.cross_vm_temp_names_reach.md`,\n`test/specled_ex/compiler/tracer_test.exs` and\n`test/specled_ex/realization/hash_store_test.exs` is VOID. That is specled_-ehv's\nverification, mis-posted here. Cause: the shared session scratchpad plus zsh\n`noclobber` — the posting agent's heredoc write was refused and its fallback `cat`\nread another verifier's file. The posting agent retracted it in the first line of its\nreal comment.\n\nAuthoritative grading record for specled_-z5t is the `VERIFY: PASS` that carries the\nretraction. Anyone reconstructing this ticket's phase from comments should read that\none, not the stray.",
       "timestamp": "2026-07-27T10:40:38Z"
+    },
+    {
+      "text": "AUDIT: APPROVE (auto — selective audit)\nSession: b19669f0-1a1a-42a6-b6f8-39da90177a9c\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/b19669f0-1a1a-42a6-b6f8-39da90177a9c.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. TEST_CRITIC: n/a (no Elixir test files in\ndiff). No auditor was spawned per policy.\n\nGate detail: all 6 `must` requirements on specled.package were accounted for\nindividually with per-requirement blast-radius reasoning. The three central claims\nwere validated by execution, not reading: `--verbose` is a real flag whose bare-run\noutput hides the info finding and whose verbose-run output shows it (this commit is\nitself the specimen); `SPECLED_SHOW_INFO=1` produces identical output and shares the\ncode path at spec.check.ex:207-214; and `detector_unavailable` was checked byte-by-byte\nwith `od -c` against the literals in lib/. That last check mattered — the verifier\ndisclosed that the doc-identifier lint's @token_patterns covers only five prefixed\nfamilies, so a typo in this bare snake_case token would have shipped silently. It\nclosed that disclosed seam by hand rather than reporting it and moving on.\nBranch-guard co-change cleared by a load-bearing `Spec-Drift:` trailer with\npackage.spec.md byte-identical to base.\n\nFollow-up carved separately, not blocking: adoption-phases.md:38 and\ntask-templates.md:45 now read inconsistently, and docs/adoption.md:519-520 remains a\nbare-`spec.check` PROBE instruction — a stronger case than the criterion this ticket\nfixed. The implementer disclosed both rather than folding them in, which was correct.",
+      "timestamp": "2026-07-27T10:42:56Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Bootstrap skill: adoption-phases.md phase0 done-criterion needs --verbose for detector_unavailable visibility",
   "type": "task",
-  "updated_at": "2026-07-27T10:40:38Z"
+  "updated_at": "2026-07-27T10:42:56Z"
 }
