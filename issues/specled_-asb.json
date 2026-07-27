@@ -35,11 +35,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: b19669f0-1a1a-42a6-b6f8-39da90177a9c\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/b19669f0-1a1a-42a6-b6f8-39da90177a9c.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. TEST_CRITIC: PASS. No auditor was\nspawned per policy.\n\nGate detail: all 10 `must` requirements on specled.compiler_tracer accounted for\nindividually; one-file diff (+14/-0) with `lib/specled_ex/compiler/tracer.ex` absent, so\nthe temporary mutations were reverted. The verifier re-proved BOTH named mutants red\nitself rather than accepting the implementer's paste — reversing the `Map.merge`\nargument order and concatenating instead of replacing — and confirmed the assertion is\nexact list equality, which is what kills them cleanly where a membership check would\nnot. It also checked the converse that mattered here: that the pre-existing property\ndoes NOT already cover a non-session caller present in both maps, so the new test adds\nreal coverage rather than duplicating it.",
       "timestamp": "2026-07-27T12:07:56Z"
+    },
+    {
+      "text": "APPROVED. Merged into epic/specled_-k6s-0.11.0-fast-follow at 847067bc (confirmed present on the epic branch). Epic smoke green: 1276 tests, 0 failures. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-27T12:12:38Z"
     }
   ],
   "priority": 3,
   "status": "in_progress",
   "title": "tracer_test merge_edges property: non-session caller present in both previous and session_edges has no value-provenance assertion",
   "type": "task",
-  "updated_at": "2026-07-27T12:07:57Z"
+  "updated_at": "2026-07-27T12:12:38Z"
 }
