@@ -7,9 +7,15 @@
   "id": "specled_-pr6",
   "labels": [],
   "parent": "specled_-233",
+  "comments": [
+    {
+      "text": "Adopted into epic specled_-233 on the user's instruction (2026-07-27) so it ships on that epic's single PR. The epic branch already impacts specled.compiler_tracer via specled_-ymn, and mix.exs is on that subject's surface, so the bundling is coherent rather than opportunistic.\n\nImplementation note before starting: bootstrap_tracer!/0 is a `defp` on SpecLedEx.MixProject, so the regression test this ticket demands cannot call it as written. Fix will take option 1 (content digest, not mtime) AND make the entry point testable by threading src/ebin as parameters, so the test can drive a real bootstrap against scratch paths and assert a rebuild happens when content changes with mtimes held EQUAL — the exact condition the current `\u003e` comparison misses.",
+      "timestamp": "2026-07-27T01:05:13Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "bootstrap_tracer! can run a permanently stale tracer beam: same-second mtime tie defeats its staleness check and mix compile --force cannot heal it",
   "type": "bug",
-  "updated_at": "2026-07-27T01:05:12Z"
+  "updated_at": "2026-07-27T01:05:13Z"
 }
