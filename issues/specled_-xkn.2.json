@@ -32,11 +32,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: b19669f0-1a1a-42a6-b6f8-39da90177a9c\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/b19669f0-1a1a-42a6-b6f8-39da90177a9c.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. TEST_CRITIC: n/a (no Elixir test files\nin diff). No auditor was spawned per policy.\n\nGate detail: this ticket LOWERS A CI GATE (coverage threshold 83 -\u003e 82), so the verifier\nwas told to judge that change rather than accept it, and did:\n- Arithmetic checked against the figures the diff itself records (83.68 - 82 = 1.68pp;\n  both legs clear 82, native with 1.73pp).\n- The margin AND its rationale sit immediately above the threshold at mix.exs:27-34,\n  labelled as an explicit option-(a) disposition — satisfying \"pick one and write it down\"\n  rather than changing the number silently.\n- The rationale names a concrete mechanism, not \"the number was tight\": a purge/delete on\n  a cover-tracked module drops it from BOTH numerator and denominator of the `--cover`\n  tally. The verifier independently confirmed that mechanism can bite in THIS repo, since\n  `mix.exs` puts `test/test_support` beams in the cover-compiled app ebin.\n\nThat mechanism claim did not come from this ticket — it was measured by specled_-dn4.12's\ngraders while grading a sibling, and the orchestrator carried it across. It is the reason\nthis ticket had evidence for lowering rather than merely documenting.\n\nNumber provenance passed all four sub-checks: every figure carries its leg, commit and\ndate; the (elixir, otp) pairs match the workflow matrix; the carried-forward 2026-07-24\neb259ac figures are labelled as carried-forward rather than presented as current; and the\nstated reason the legs differ (`Snapshot.runtime_mode/0` returning `:native` on OTP \u003e= 27)\nwas verified from source. The stale 83.05% prose in specs.yml is gone, replaced by a\npointer — one source of truth, which was item 2's whole point. Branch guard cleared by\nco-change on both halves.",
       "timestamp": "2026-07-27T12:58:30Z"
+    },
+    {
+      "text": "APPROVED. Merged into epic/specled_-k6s-0.11.0-fast-follow at 2d4535c1 (confirmed present on the epic branch). Epic smoke green: 1283 tests, 0 failures. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-27T13:13:28Z"
     }
   ],
   "priority": 3,
   "status": "in_progress",
   "title": "Document per-leg coverage provenance; widen or justify sub-1pp threshold headroom",
   "type": "task",
-  "updated_at": "2026-07-27T12:58:31Z"
+  "updated_at": "2026-07-27T13:13:28Z"
 }
