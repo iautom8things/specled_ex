@@ -33,11 +33,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: b19669f0-1a1a-42a6-b6f8-39da90177a9c\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/b19669f0-1a1a-42a6-b6f8-39da90177a9c.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. TEST_CRITIC: PASS. No auditor was\nspawned per policy.\n\nGate detail: all 27 `must` requirements on specled.mix_tasks were accounted for\nindividually — 9 in blast radius with covered-by / would-fail-if / seams, 18 named\none by one with the justification that the diff touches no file they realize and the\ntwo cross-task surfaces (SpecLedEx.TaskArgs, lib/mix/tasks/spec.check.ex) are\nbyte-unchanged. Stubs run 2, passed 2. The end state was proven by execution rather\nthan asserted: `mix spec.validate --bogusflag` emits exactly\n`spec.validate result=fail tier=usage error_findings=0`, and all three fail-path\n`print_verdict` call sites were checked for the `Keyword.fetch!(opts, :tier)` KeyError\nrisk. `.spec/realization_hashes.json` diff empty.\n\nCarried forward, not blocking: the verifier disclosed that the `error_findings || 0`\nnil guard at spec.validate.ex:230 has no test driving `summary[\"errors\"] == nil`.\nThat gap is pre-existing, not introduced here, and outside this ticket's mandate.",
       "timestamp": "2026-07-27T10:42:56Z"
+    },
+    {
+      "text": "APPROVED. Merged into epic/specled_-k6s-0.11.0-fast-follow. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-27T11:00:21Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "spec.validate tier=usage completion: argument pre-flight, grammar alternatives list, TaskArgs adoption",
   "type": "task",
-  "updated_at": "2026-07-27T10:42:56Z"
+  "updated_at": "2026-07-27T11:00:21Z"
 }
