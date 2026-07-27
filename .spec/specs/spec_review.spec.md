@@ -920,6 +920,11 @@ list; `triangle_code_classification` and related requirements remain unchanged.
     - specled.spec_review.shared_file_fanin_collapse
     - specled.spec_review.shared_file_group_pane
     - specled.spec_review.shared_file_spec_modal
+- kind: command
+  target: mix test test/specled_ex/spec_review_workflow_test.exs
+  execute: true
+  covers:
+    - specled.spec_review.gh_pages_privilege_separation
 - kind: source_file
   target: lib/mix/tasks/spec.review.ex
   covers:
