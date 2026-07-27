@@ -24,7 +24,7 @@ Every beadwork task that implements behavior includes an `Advances:` field listi
 Advances: <subject.id>[, <subject.id>...]
 ```
 
-- To find tasks for a subject: `bw list --grep "Advances:.*<subject.id>"`
+- To find tasks for a subject: `bw list --all --grep "Advances: <subject.id>"` (`--grep` is a literal substring search over title and description — regex metacharacters match literally and will return zero)
 - To find specs for a task: read the `Advances:` line, then open `.spec/specs/<subject>.spec.md`
 
 See `specled.md` for what to do with those subjects once you've found them.

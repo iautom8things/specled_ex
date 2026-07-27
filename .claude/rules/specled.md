@@ -43,9 +43,7 @@ same.
 
 Read `.spec/AGENTS.md` before implementing any feature.
 
-Use `bw list --grep "Advances:.*<subject.id>"` to find tasks that advance a
-specific subject. For planning-phase context, run `bw-plan prime` if that
-tooling is present in the repo.
+Use `bw list --all --grep "Advances: <subject.id>"` to find tasks that advance a specific subject (`--grep` is literal, not regex). For planning-phase context, run `bw-plan prime` if that tooling is present in the repo.
 
 ## Implementing Against Specs
 
