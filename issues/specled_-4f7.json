@@ -35,11 +35,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: b19669f0-1a1a-42a6-b6f8-39da90177a9c\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/b19669f0-1a1a-42a6-b6f8-39da90177a9c.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. TEST_CRITIC: n/a (no Elixir test files\nin diff). No auditor was spawned per policy.\n\nGate detail: no `Advances:` subject, so the requirement-coverage and seam clauses are\nvacuous rather than skipped, and the verifier said so instead of fabricating entries.\nThe corpus-scoped clause carried the weight and was met by execution: 20 claims\nvalidated, 18 by running the real commands — including the decisive three, that the\nwrapper actually arms SPECLED_COMMAND_OUTPUT_DIR when the variable is unset, that\n`make check` is genuinely equivalent, and that bare `mix spec.check` leaves no capture\n(the premise the whole ticket rests on). Item B records a decision with a reason rather\nthan deferring, and no dangling `specled_-4f7` forward reference survives in the tree.",
       "timestamp": "2026-07-27T11:17:26Z"
+    },
+    {
+      "text": "APPROVED. Merged into epic/specled_-k6s-0.11.0-fast-follow at 1ef97ad1 (confirmed present on the epic branch). Epic smoke green: 1275 tests, 0 failures. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-27T11:36:28Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Gate forensics: the agent-shell arming path is conditional on session root and cwd",
   "type": "task",
-  "updated_at": "2026-07-27T11:17:27Z"
+  "updated_at": "2026-07-27T11:36:28Z"
 }
