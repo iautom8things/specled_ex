@@ -18,8 +18,8 @@
       "message": "Changed file test/mix/tasks/spec_tasks_test.exs impacts subject specs that were not updated: specled.branch_guard, specled.status, specled.verification"
     }
   ],
-  "run_at": "2026-07-27T10:31:46.331554Z",
-  "run_id": "67e481a72db093ef8609655efe26c98c",
+  "run_at": "2026-07-27T10:32:02.850460Z",
+  "run_id": "c016692737c3e3d9ec496aac49ff7063",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "ff630ca274cbd84da281e890201b3bb09700a993",
