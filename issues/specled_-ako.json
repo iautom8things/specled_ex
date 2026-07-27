@@ -2,6 +2,7 @@
   "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-07-27T11:12:50Z",
   "created": "2026-07-26T22:20:00Z",
   "description": "Advances: specled.spec_review\n\nFollow-up from specled_-gai (epic specled_-233, 2026-07-26). Ruled base-parity advisory by cold audit pass 2 and confirmed by verify passes 2 and 3; deliberately NOT actioned in that ticket because hardening it requires logic changes to lib/specled_ex/review/html.ex and test/specled_ex/review/html_test.exs, which specled_-gai's Allowed touches restricted to covers-comment repointing.\n\nTHE GAP. specled.spec_review.coverage_no_debug_info_distinct_note requires that no_debug_info MFAs 'are not counted or reported as covered or uncovered'. Its covering test (test/specled_ex/review/html_test.exs:1391) asserts only that the rendered page SAYS SO — it does not assert the count.\n\nDemonstrated during verification: patching lib/specled_ex/review/html.ex so that\n\n    executed_count = length(covered) + length(no_debug)\n\nmakes the renderer report the no-debug MFA as executed in the closure line WHILE STILL printing 'not counted as covered or uncovered', and mix test test/specled_ex/review/html_test.exs stays green at 97 tests / 0 failures. So the requirement's central numeric claim has no failure mode; only its disclaimer text does.\n\nWHY THIS IS NOT A specled_-gai DEFECT. At base 402f4a27 the identical clause lived inside the compound specled.spec_review.coverage_tab_bind_closure statement and carried exactly the same evidence — the same test, asserting the same rendered text. specled_-gai relocated the clause into its own requirement id with its own executed verification entry, which is strictly an improvement; it neither introduced nor weakened the gap. Taking ownership of an id does not oblige test-hardening outside a ticket's Allowed touches.\n\nFIX. Add a numeric assertion to the covering test so the count itself is load-bearing — e.g. assert the closure line reports the no-debug MFA as NEITHER covered nor uncovered (assert the expected 'K executed' value, or refute the inflated one). Then verify the fix by falsification: apply the executed_count mutation above and confirm the test goes RED before committing.\n\nWORTH CHECKING WHILE THERE. The same shape may affect the sibling clause in specled.spec_review.coverage_unresolvable_source_renders_distinct_note — confirm whether its 'unqualified'/'not counted' behavior is asserted numerically or only as rendered text.",
   "id": "specled_-ako",
@@ -40,7 +41,7 @@
     }
   ],
   "priority": 3,
-  "status": "in_progress",
+  "status": "closed",
   "title": "coverage_no_debug_info_distinct_note 'not counted as covered' half is verified only as rendered disclaimer text",
   "type": "task",
   "updated_at": "2026-07-27T11:12:50Z"
