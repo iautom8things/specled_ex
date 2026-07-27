@@ -31,11 +31,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: b19669f0-1a1a-42a6-b6f8-39da90177a9c\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/b19669f0-1a1a-42a6-b6f8-39da90177a9c.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. TEST_CRITIC: n/a (no Elixir test files\nin diff). No auditor was spawned per policy.\n\nGate detail for the record: this ticket has no `Advances:` subject, so the\nrequirement-coverage and seam-disclosure clauses are vacuously satisfied rather\nthan skipped — there are no `must` requirements and no covering tests to\ndisclose. The verifier said so explicitly instead of fabricating entries. The\ncorpus-scoped clause carried the weight here and was met by execution: 17 claims\nvalidated, 16 by running the real `bw` CLI, including a four-metacharacter probe\nproving `--grep` has no regex mode in any form, and a 4/18/14 count reconciliation\nproving the `--all` claim.",
       "timestamp": "2026-07-27T10:37:36Z"
+    },
+    {
+      "text": "APPROVED. Merged into epic/specled_-k6s-0.11.0-fast-follow. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-27T10:45:39Z"
     }
   ],
   "priority": 3,
   "status": "in_progress",
   "title": "Documented subject-lookup command bw list --grep 'Advances:.*\u003cid\u003e' silently returns zero (--grep is literal, not regex)",
   "type": "bug",
-  "updated_at": "2026-07-27T10:37:46Z"
+  "updated_at": "2026-07-27T10:45:39Z"
 }
