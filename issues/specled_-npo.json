@@ -6,6 +6,7 @@
   "description": "Advances: specled.coverage_capture\n\nFound by the specled_-dn4.9 audit (2026-07-26T00:25:30Z). specled.coverage_capture.envelope_meta's statement covers the tolerant READ of a missing :meta, but never states the present-but-non-map rejection rule that store_test.exs now asserts after dn4.9 item 14. The test is ahead of the requirement.\n\nFix: state the rejection rule in the requirement so the assertion has an owning clause. Purely additive, so append-only-safe.",
   "id": "specled_-npo",
   "labels": [],
+  "parent": "specled_-k6s",
   "comments": [
     {
       "text": "Resolved by branch specled_-td7/self-identifying-descriptors, commit 3bbd7e7b, while implementing specled_-n5s (session a5f50a6d-689f-4616-80ad-806b0595aa28).\n\nn5s's fix needed an owning clause for write_v2/2's exception contract in specled.coverage_capture, and its new test asserts the present-but-non-map :meta rejection — leaving that rule unstated would have widened this ticket rather than left it alone. specled.coverage_capture.envelope_meta now states: write_v2/2 tolerates a missing :meta on the same terms as read_v2/1, and rejects a present-but-non-map :meta as malformed. Covered by scenario specled.coverage_capture.scenario.envelope_meta_tolerant_read.\n\nNot closing it here — that call belongs to whoever grades the PR. Verify against the branch and close if satisfied.",
@@ -20,5 +21,5 @@
   "status": "open",
   "title": "envelope_meta requirement under-specifies its own test: present-but-non-map :meta rejection is asserted but unstated",
   "type": "task",
-  "updated_at": "2026-07-27T00:10:19Z"
+  "updated_at": "2026-07-27T08:36:24Z"
 }
