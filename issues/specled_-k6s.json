@@ -45,11 +45,15 @@
     {
       "text": "ORCHESTRATOR RULING — how the Selective Audit Gate's requirement-coverage clause is\nbeing applied in this epic. Recorded so every routing decision here is auditable.\n\nThe clause reads: \"Every `must` has both `covered by \u003ctest\u003e` and a concrete\n`Would fail if \u003cfailure\u003e` line; none is `NOT COVERED`.\"\n\nSubjects in this repo carry many `must` requirements (specled.mix_tasks has 27,\nspecled.package 6, specled.coverage_capture 41) while a typical ticket here touches\none. Verifiers have handled that two different ways, and the two are NOT equivalent:\n\nMEETS THE CLAUSE — the verifier accounts for EVERY `must` individually: either a\n`covered by` + `Would fail if` + `Seams:` line, or the requirement is NAMED and given\na checkable justification for being unreachable by this diff. Nothing is left silent.\n  - specled_-wby: all 27 enumerated (9 in radius with coverage, 18 named individually\n    with the justification that the diff touches no file they realize and the two\n    shared surfaces are byte-unchanged). AUTO-APPROVED.\n  - specled_-z5t: all 6 enumerated with per-requirement blast-radius reasoning.\n    AUTO-APPROVED.\n  - specled_-pii: no `Advances:` subject, so the clause is vacuous rather than\n    skipped, and the verifier said so instead of fabricating entries. AUTO-APPROVED.\n\nDOES NOT MEET IT — the verifier covers the touched requirement and disposes of the\nrest as a group (\"the remaining musts are not reachable\", \"not in this diff's blast\nradius\") without naming them. The claim may well be true, but it is unchecked, and an\nunchecked group claim is exactly what silent omission looks like. These go to audit.\n  - specled_-4pl and specled_-npo: routed to audit on this basis. Both audits then\n    APPROVED after enumerating the requirements themselves and confirming the scoping\n    held. Cost: one extra grader each. Correct call — the audit is what turned an\n    assertion into a checked fact.\n\nRationale: the clause exists to stop a `must` being left unproven. Individual\nenumeration satisfies that intent whether the disposition is \"covered\" or \"cannot be\nreached, here is why\". A group dismissal does not, because nobody has looked.\nThis ruling is applied uniformly for the rest of the epic.",
       "timestamp": "2026-07-27T10:42:35Z"
+    },
+    {
+      "text": "MERGE GATE — after specled_-pii close (epic head b06603fd). mix compile --warnings-as-errors: green. mix test: 3 properties, 1272 tests, 0 failures. mix format --check-formatted: green. mix deps.unlock --check-unused: green. mix spec.check --no-run-commands: see next line. Bare spec.check deferred to the single serial end-of-epic run per this epic's FLAKE POLICY. Closed so far: specled_-npo, specled_-pii.",
+      "timestamp": "2026-07-27T10:48:08Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "[EPIC] Impromptu: 0.11.0 fast-follow sweep — gate-forensics reach, spec.validate usage tier, doc-lint hardening, coverage-store safety, review polish",
   "type": "epic",
-  "updated_at": "2026-07-27T10:42:35Z"
+  "updated_at": "2026-07-27T10:48:08Z"
 }
