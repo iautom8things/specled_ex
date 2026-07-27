@@ -20,11 +20,15 @@
     {
       "text": "CORRECTION to my IMPLEMENTED record above: the 'RESOLVES specled_-npo as a byproduct' line is overstated and should be read as 'partially addresses'. The n5s verifier established that npo's mandate is about read_v2/1's rejection rule, while the clause I added has write_v2/2 as its subject. npo stays open; correction posted there too. The n5s fix itself is unaffected — verifier verdict on n5s is PASS.\n\nSession: a5f50a6d-689f-4616-80ad-806b0595aa28\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/a5f50a6d-689f-4616-80ad-806b0595aa28.jsonl",
       "timestamp": "2026-07-27T00:10:25Z"
+    },
+    {
+      "text": "APPROVED. Verified PASS by a cold verifier and carried through three audit rounds as authorized co-tenant on branch specled_-td7/self-identifying-descriptors (at c1120bee), per the user's explicit request to land it in one PR with specled_-td7. Every audit round judged the bundling acceptable: the three n5s files are disjoint from td7's and its spec delta adds requirement ids touching no td7 subject.\n\nHeld in_progress for the ship arc, same as td7 — /deliver closes it.\n\nStanding correction: my 'RESOLVES specled_-npo' claim in the IMPLEMENTED record above was overstated. npo's mandate is the read path; this branch's clause is the write path. npo remains open.\n\nSession: a5f50a6d-689f-4616-80ad-806b0595aa28\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/a5f50a6d-689f-4616-80ad-806b0595aa28.jsonl",
+      "timestamp": "2026-07-27T02:39:24Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Store.write_v2/2 raises KeyError on an envelope lacking :meta, contradicting its documented ArgumentError contract",
   "type": "bug",
-  "updated_at": "2026-07-27T00:10:25Z"
+  "updated_at": "2026-07-27T02:39:24Z"
 }
