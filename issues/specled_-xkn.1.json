@@ -8,7 +8,9 @@
   "created": "2026-07-24T14:22:04Z",
   "description": "Review F3 + CF1 (consensus spec+testing). Store.safe_decode/2 with opts=[] decodes UNSAFE (atom-resurrecting) despite its name — rename or flip the default to fail closed, making unsafe opt-in at the two documented carve-out sites (read_v2 envelope, load_tracer_edges manifest readers). CF1: those non-safe carve-outs have no positive regression-guard test — add tests pinning that a fresh-BEAM decode of a foreign-module artifact still succeeds there (the justification for keeping them unsafe), so a future blanket-[:safe] sweep fails loudly.",
   "id": "specled_-xkn.1",
-  "labels": [],
+  "labels": [
+    "phase:implementing"
+  ],
   "parent": "specled_-k6s",
   "comments": [
     {
