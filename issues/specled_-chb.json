@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
   "created": "2026-07-26T23:50:46Z",
@@ -18,8 +18,8 @@
     }
   ],
   "priority": 4,
-  "status": "open",
+  "status": "in_progress",
   "title": "Trim the re-narrated cross-VM rationale at the three verifier.ex temp-name call sites to one-line pointers",
   "type": "task",
-  "updated_at": "2026-07-27T10:20:26Z"
+  "updated_at": "2026-07-27T12:08:40Z"
 }
