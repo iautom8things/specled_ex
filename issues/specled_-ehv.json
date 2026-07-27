@@ -61,11 +61,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: b19669f0-1a1a-42a6-b6f8-39da90177a9c\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/b19669f0-1a1a-42a6-b6f8-39da90177a9c.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. TEST_CRITIC: PASS. No auditor was\nspawned per policy — this is iteration 2 and the iteration-1 auditor's two gaps\nare both independently confirmed closed.\n\nGate detail: all 22 `must` requirements on specled.verification accounted for\nindividually. Gap 1 (mix format) closed by execution over the whole tree. Gap 2 (ADR\nprescribing a remedy unsatisfiable for the class it governs) closed by splitting the\nclass — self-allocated roots use `cross_vm_suffix/0`, genuinely shared dirs filter on\nthe writer's `System.pid()` prefix — and the ADR now states WHY a fresh CSPRNG suffix\nis the wrong tool for the shared-dir half. The critic confirmed producer and filter\nagree by running the pid-bearing-sibling test, which rules out the failure mode where\na literal/format-string mismatch silently turns both the assert and the sweep into\nno-ops.\n\nOne advisory carried out of this ticket rather than bounced: the new ADR sentence names\n`SpecLedEx.TempName.cross_vm_suffix/0` specifically, while two existing self-allocating\nroots satisfy the same property with local CSPRNG helpers\n(`test_support/specled_ex_fixture_case.ex:178`, `coverage/mfa_lines_test.exs:38`). Both\ngraders judged the invariant intact and the point advisory. Filed as standalone ticket\nspecled_-cjh (one-clause softening to \"a cross-VM-unique suffix, such as ...\") rather\nthan spending this ticket's remaining bounce on a one-word prose change. Recorded here\nso the decision is traceable rather than silent.",
       "timestamp": "2026-07-27T11:10:41Z"
+    },
+    {
+      "text": "APPROVED. Merged into epic/specled_-k6s-0.11.0-fast-follow. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-27T11:21:06Z"
     }
   ],
   "priority": 3,
   "status": "in_progress",
   "title": "cross_vm_temp_names 'test-only usages remain fine' carve-out does not follow from its own premise; 30 test files use the pattern it warns about",
   "type": "task",
-  "updated_at": "2026-07-27T11:10:41Z"
+  "updated_at": "2026-07-27T11:21:06Z"
 }
