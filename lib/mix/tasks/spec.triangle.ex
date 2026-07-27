@@ -453,36 +453,9 @@ defmodule Mix.Tasks.Spec.Triangle do
 
   defp mfa_to_string(other), do: to_string(other)
 
+  # Path identity via SpecLedEx.Coverage.Paths (load?: true keeps ensure_loaded).
   defp mfa_source_file({mod, _fun, _arity}) do
-    case Code.ensure_loaded(mod) do
-      {:module, ^mod} ->
-        case mod.module_info(:compile)[:source] do
-          path when is_list(path) -> repo_relative_source(List.to_string(path))
-          path when is_binary(path) -> repo_relative_source(path)
-          _ -> []
-        end
-
-      _ ->
-        []
-    end
-  rescue
-    _ -> []
-  end
-
-  # Coverage-record `:file` values are repo-root-relative
-  # (CoverageTriangulation.repo_relative_source_path/1); closure files must
-  # carry the same identity or the execution-reach join can never match. A
-  # source outside the repo root resolves to no file rather than an absolute
-  # path no record can equal.
-  defp repo_relative_source(path) do
-    root = File.cwd!() |> Path.expand()
-    absolute = Path.expand(path, root)
-
-    if String.starts_with?(absolute, root <> "/") do
-      [Path.relative_to(absolute, root)]
-    else
-      []
-    end
+    SpecLedEx.Coverage.Paths.repo_relative_list(SpecLedEx.Coverage.Paths.module_source(mod, true))
   end
 
   # ---------------------------------------------------------------------------

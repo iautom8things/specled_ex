@@ -257,33 +257,7 @@ defmodule SpecLedEx.Coverage.Formatter do
   defp on_disk_pid(%{test_pid: pid}) when is_pid(pid), do: pid
   defp on_disk_pid(_), do: self()
 
-  defp source_file(module) do
-    with {_kind, _loaded_path} <- :code.is_loaded(module),
-         source when is_list(source) or is_binary(source) <-
-           module.module_info(:compile)[:source] do
-      source
-      |> source_to_binary()
-      |> repo_relative_path()
-    else
-      _ -> nil
-    end
-  rescue
-    _ -> nil
-  end
-
-  defp source_to_binary(source) when is_list(source), do: List.to_string(source)
-  defp source_to_binary(source) when is_binary(source), do: source
-
-  defp repo_relative_path(path) when is_binary(path) do
-    root = File.cwd!() |> Path.expand()
-    absolute = Path.expand(path, root)
-
-    if String.starts_with?(absolute, root <> "/") do
-      Path.relative_to(absolute, root)
-    end
-  end
-
-  defp repo_relative_path(_), do: nil
+  defp source_file(module), do: SpecLedEx.Coverage.Paths.module_source(module, false)
 
   defp flush(%{table: table, artifact_path: path} = state) do
     modules = state.modules
