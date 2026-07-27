@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-27T11:10:23Z",
+  "description": "No spec subject — ADR prose precision fix.\n\nSurfaced by the elixir-test-critic while grading specled_-ehv iteration 2 (epic specled_-k6s, 2026-07-27). NOT a defect introduced by that ticket, and graded advisory by both its verifier and its critic — the safety invariant holds today.\n\n.spec/decisions/specled.decision.cross_vm_temp_names_reach.md now says, for the assert-on-contents class: \"A test that allocates its own root shall name that root with SpecLedEx.TempName.cross_vm_suffix/0.\"\n\nThat names a MECHANISM where the requirement is a PROPERTY. Two existing self-allocating roots that assert on or sweep directory contents satisfy cross-VM uniqueness with local CSPRNG helpers instead of the named function:\n- test/test_support/specled_ex_fixture_case.ex:178 unique_temp_suffix/0 — used by the File.ls! sites in test/specled_ex/evidence/tree_hash_test.exs:68 and test/specled_ex/evidence/store_test.exs:141\n- test/specled_ex/coverage/mfa_lines_test.exs:38 random_suffix/0 — ls-and-purge sweep at :15\n\nBoth embed :crypto.strong_rand_bytes, so no test in the repo has an ls-able root that can cross-VM collide. The invariant holds; only the mechanism differs. But as written the ADR is literally broader than the code it governs, which is the exact defect class specled_-ehv was opened to remove.\n\nFIX (one clause): soften to \"shall name that root with a cross-VM-unique suffix, such as SpecLedEx.TempName.cross_vm_suffix/0\", making the prose exactly as broad as the code. Do NOT convert the two existing helpers to call the named function — churn for no semantic gain, and it would drag their owning subjects into branch-guard for nothing.\n\nBody prose only. Do NOT touch the ADR affects: frontmatter (widening trips specled.append_only.adr_affects_widened).\n\nDeliberately left standalone rather than admitted into specled_-k6s: that epic is mid-flight and this did not go through its admission gate.",
+  "id": "specled_-cjh",
+  "labels": [],
+  "priority": 3,
+  "status": "open",
+  "title": "cross_vm_temp_names_reach ADR names one helper where the invariant is the property, not the mechanism",
+  "type": "task",
+  "updated_at": "2026-07-27T11:10:23Z"
+}
