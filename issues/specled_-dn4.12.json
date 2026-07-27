@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [
     "specled_-b23",
@@ -29,8 +29,8 @@
     }
   ],
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "Follow up: consolidate coverage source resolver without public API drift",
   "type": "task",
-  "updated_at": "2026-07-27T10:12:23Z"
+  "updated_at": "2026-07-27T10:19:06Z"
 }
