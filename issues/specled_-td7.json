@@ -6,7 +6,7 @@
   "description": "No spec subject (diagnostics enhancement; touches specled.tagged_tests realization when implemented).\n\nFollow-up from specled_-odl. The 2026-07-26 cz0-session observation reported 'failing tests: test/docs_identifier_lint_test.exs:255' where line 255 was blank on the tree that ran — the descriptor path (TaggedTests.Formatter -\u003e JSONL artifact -\u003e Attribution.descriptor/1) can only emit ExUnit declaration lines (test.tags.line), so the anomaly is unexplained: either the event carried wrong data or the compiled beam did not match the inspected source. specled_-odl hardened the timing side but could not diagnose this.\n\nTwo changes: (1) include the event id (module + test name) alongside file:line in failing-test and hang-suspect descriptors in SpecLedEx.TaggedTests.Attribution.descriptor/1, so the next mismatched line self-identifies regardless of line drift — this changes finding-message format asserted at e.g. test/specled_ex/verifier_test.exs:1519 ('timed out while running test/alpha_test.exs:42') and will show as realization drift on attribution.ex; (2) set SPECLED_COMMAND_OUTPUT_DIR in orchestration/gate environments so a red tagged_tests leg preserves the inner suite's full output (the verifier's forensic capture already exists in preserve_failed_output/2 but was unset during every observation to date, which is why no failure output was ever captured).",
   "id": "specled_-td7",
   "labels": [
-    "phase:implementing"
+    "phase:in-ci"
   ],
   "comments": [
     {
@@ -82,5 +82,5 @@
   "status": "in_progress",
   "title": "Self-identifying failing-test descriptors + gate forensics for tagged_tests flake reports",
   "type": "task",
-  "updated_at": "2026-07-27T02:39:24Z"
+  "updated_at": "2026-07-27T08:14:11Z"
 }
