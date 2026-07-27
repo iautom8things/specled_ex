@@ -80,11 +80,15 @@
     {
       "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/30 (release 0.10.0). Rebased onto ca703617 — linear, 10 commits + release prep, merge commit gone. Babysitting CI.",
       "timestamp": "2026-07-27T08:14:11Z"
+    },
+    {
+      "text": "Squash-merged to main (02258a0b) as release 0.10.0. PR #30.",
+      "timestamp": "2026-07-27T09:31:40Z"
     }
   ],
   "priority": 3,
   "status": "in_progress",
   "title": "Self-identifying failing-test descriptors + gate forensics for tagged_tests flake reports",
   "type": "task",
-  "updated_at": "2026-07-27T09:31:39Z"
+  "updated_at": "2026-07-27T09:31:40Z"
 }
