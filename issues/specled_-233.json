@@ -6,7 +6,7 @@
   "description": "No spec subject — bookkeeping epic.\n\nImpromptu epic created 2026-07-26 to land four independently-surfaced follow-up tickets on a SINGLE PR. Children were each carved by an earlier ticket's cold verification or critical review and had no owning epic (gai was reparented here from specled_-xkn; xkn retains its other three children).\n\nChildren and the subjects they advance:\n  - specled_-48i  specled.package      content-lint verification for adoption_guide/concepts_guide must requirements\n  - specled_-vk0  specled.package      doc-identifier lint hardening (lookbehind bounds, severity-corpus asymmetry, digit codes, stale-marker sweep, two-way mirror)\n  - specled_-gai  specled.spec_review  retire duplicated coverage_tab_bind_closure compound statement, repoint lib/** covers markers\n  - specled_-ymn  specled.verification cross_vm_temp_names ADR vs hash_store fixed-name .tmp sibling; tracer pid-separation falsifiability; ADR affects: reach\n\nSequencing rationale: 48i and vk0 both edit .spec/specs/package.spec.md (48i the adoption_guide/concepts_guide verification entries, vk0 the decisions: list plus must wording), so 48i blocks vk0 to avoid a real same-file merge conflict. gai and ymn touch disjoint specs and lib files and run concurrently with 48i.\n\nOrchestrated by /orchestrate-epic. Implementers: Codex. Verify/audit/rebase: Claude.",
   "id": "specled_-233",
   "labels": [
-    "phase:in-ci",
+    "phase:deploying",
     "slug:impromptu-doc-lint-content"
   ],
   "comments": [
@@ -83,5 +83,5 @@
   "status": "in_progress",
   "title": "[EPIC] Impromptu: doc-lint content verification, lint hardening, coverage-requirement retirement, cross-VM temp-name ADR reconciliation",
   "type": "epic",
-  "updated_at": "2026-07-27T01:47:51Z"
+  "updated_at": "2026-07-27T01:48:20Z"
 }
