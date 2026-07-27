@@ -8,7 +8,7 @@
   "description": "No spec subject — repo agent-rules accuracy fix.\n\n.claude/rules/beadwork.md and .claude/rules/specled.md both document the subject-to-ticket lookup as:\n\n    bw list --grep \"Advances:.*\u003csubject.id\u003e\"\n\nbw list --grep is a LITERAL substring search over title and description (bw list --help: '-g, --grep TEXT  Search title and description'). The '.*' is matched literally, so the documented form returns 'no issues found' for every subject. Verified 2026-07-26 against untouched tickets: 'Advances:.*specled.realized_by' returns nothing, 'Advances: specled.realized_by' correctly returns specled_-l05.\n\nImpact is a silent zero, not an error — an agent following the rule file concludes no tickets advance a subject and proceeds on that false premise. That is the same fail-quiet shape the specled_-233 epic tickets exist to remove.\n\nFix: correct both rule files to the literal form 'bw list --grep \"Advances: \u003csubject.id\u003e\"'. Check whether any skill or workflow file in the vault copies the regex form too. Consider whether bw list should gain a real regex mode, or whether --grep should reject a pattern containing regex metacharacters rather than silently matching them literally.\n\nFound by the orchestrator during specled_-233 admission while verifying the Advances: line survived a description rewrite.",
   "id": "specled_-pii",
   "labels": [
-    "phase:verifying"
+    "phase:merging"
   ],
   "parent": "specled_-k6s",
   "comments": [
@@ -37,5 +37,5 @@
   "status": "in_progress",
   "title": "Documented subject-lookup command bw list --grep 'Advances:.*\u003cid\u003e' silently returns zero (--grep is literal, not regex)",
   "type": "bug",
-  "updated_at": "2026-07-27T10:37:36Z"
+  "updated_at": "2026-07-27T10:37:46Z"
 }
