@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [
     "specled_-26g",
@@ -26,8 +26,8 @@
     }
   ],
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "title": "cross_vm_temp_names 'test-only usages remain fine' carve-out does not follow from its own premise; 30 test files use the pattern it warns about",
   "type": "task",
-  "updated_at": "2026-07-27T10:11:43Z"
+  "updated_at": "2026-07-27T10:13:38Z"
 }
