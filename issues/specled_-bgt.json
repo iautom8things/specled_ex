@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-27T20:28:42Z",
+  "description": "DISCLOSURE — not a repair ticket. Do not change priority, comment on, or close specled_-l05 under this id.\n\nWhat is wrong (live-checked 2026-07-27): specled_-l05 remains open at P1. Newest comment (2026-07-25) is a ship-pipeline escalation from hj4 merge gates; relative to the 2026-07-24 rescope and frozen corpus (stale-baseline), that escalation is a superseded board signal still leaving the ticket at P1.\n\nRepairable? Priority YES in principle (rewritable field). Newest comment NO (append-only). This disclosure does neither. Not an S1-S5 hard gate. Full write-up: agentic-dotfiles docs/specled-ex-board-disclosure.md finding 8.",
+  "id": "specled_-bgt",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "DISCLOSURE (no repair): specled_-l05 still P1 with superseded escalation",
+  "type": "task",
+  "updated_at": "2026-07-27T20:28:42Z"
+}
