@@ -298,9 +298,10 @@ decisions:
     line itself. When a resume pass ran, the finding's primary seed echo
     shall be the FIRST run's seed (the retained output belongs to the first
     run); when the resume pass itself timed out and its own output contains
-    a seed line, the resume-timeout suffix shall additionally name that
-    resume seed next to the resume run's hang suspects, so each seed is
-    paired with the run it reproduces. When no seed line is present in the
+    a seed line, the resume-timeout suffix shall also name that resume
+    seed in the resume-timeout suffix, alongside the resume run's hang
+    suspects, so each seed is paired with the run it reproduces. When no
+    seed line is present in the
     retained output, findings shall be unchanged — no seed note is
     appended. The seed-echo mechanism itself is shared with generic
     `command` verifications (see

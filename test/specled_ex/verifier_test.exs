@@ -1895,6 +1895,9 @@ defmodule SpecLedEx.VerifierTest do
     seeded = Enum.find(failures, &(&1["message"] =~ "Running ExUnit with seed"))
     seedless = Enum.find(failures, &(&1["message"] =~ "boom"))
 
+    assert seeded
+    assert seedless
+
     assert seeded["message"] =~
              "exunit seed: 424242 — append --seed 424242 to the command to reproduce"
 
@@ -2260,6 +2263,10 @@ defmodule SpecLedEx.VerifierTest do
 
       assert stderr =~ "specled: forensic output capture failed"
       assert stderr =~ "verification result unaffected"
+      # Dynamic half of preserve_failed_output/4's warning (Exception.message).
+      # Would fail if the warning dropped the exception message body.
+      assert stderr =~ "not a directory"
+      assert stderr =~ Path.join(blocker, "nested")
     after
       System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
     end
@@ -2323,6 +2330,10 @@ defmodule SpecLedEx.VerifierTest do
       assert failure["message"] =~ "exit_code=3"
       assert stderr =~ "specled: forensic output capture failed"
       assert stderr =~ "verification result unaffected"
+      # Dynamic half of preserve_failed_output/4's warning (Exception.message).
+      # Would fail if the warning dropped the exception message body.
+      assert stderr =~ "not a directory"
+      assert stderr =~ Path.join(blocker, "nested")
     after
       System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
     end
