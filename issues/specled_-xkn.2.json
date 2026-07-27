@@ -6,10 +6,10 @@
   "description": "Review F15/CF2 (consensus testing+spec). mix test --cover now gates BOTH matrix legs at threshold 83: native OTP 28 measures 83.73%, classic OTP 26 measures 83.68% (measured 2026-07-24 at eb259ac) — different totals because OTP-conditional code paths differ per leg, and the mix.exs comment/baseline never says which leg the 83.05% provenance number came from. Document per-leg provenance next to the threshold and either widen headroom or add a ratchet policy note. Related: the 90% ratchet follow-up from specled_-6v6.",
   "id": "specled_-xkn.2",
   "labels": [],
-  "parent": "specled_-xkn",
+  "parent": "specled_-k6s",
   "priority": 3,
   "status": "open",
   "title": "Document per-leg coverage provenance; widen or justify sub-1pp threshold headroom",
   "type": "task",
-  "updated_at": "2026-07-24T14:22:04Z"
+  "updated_at": "2026-07-27T08:36:29Z"
 }
