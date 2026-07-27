@@ -45,11 +45,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: b19669f0-1a1a-42a6-b6f8-39da90177a9c\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/b19669f0-1a1a-42a6-b6f8-39da90177a9c.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations, passing targeted verification, complete seam disclosure, and\nno seam substituting production wiring. TEST_CRITIC: PASS. No auditor was\nspawned per policy.\n\nGate detail: all 41 `must` requirements on specled.coverage_capture accounted for\nindividually. One-file, one-hunk diff entirely inside the `setup do ... end` block —\nthe verifier confirmed from the diff that no test body changed, so `refute\nFile.exists?(path)` and the explicit `mkdir_p!` calls are byte-identical and outside\nthe hunk. The end-state claim (no test in the repo writes or deletes\n`System.tmp_dir!()/last_run.status`) was re-derived by the verifier's own search rather\nthan accepted from the implementer's paste. The orchestrator's coherence override was\nfollowed: `SpecLedEx.TempName.cross_vm_suffix/0`, not the `System.unique_integer` the\nadmission comment suggested before specled_-ehv's ADR landed.\n\nNoted, no action: the verifier corrected the admission's arithmetic — there are two\nexplicit `mkdir_p!(Path.dirname(path))` calls in the block, not three; the third reaches\nthe same effect through `Store.write/2`, which does its own `mkdir_p!`. All remain\ncorrect under a pre-created directory. Changes nothing about the verdict.",
       "timestamp": "2026-07-27T11:48:39Z"
+    },
+    {
+      "text": "APPROVED. Merged into epic/specled_-k6s-0.11.0-fast-follow at 9af2ed86 (confirmed present on the epic branch). Epic smoke green: 1275 tests, 0 failures. Closing per orchestrator sign-off.",
+      "timestamp": "2026-07-27T12:00:12Z"
     }
   ],
   "priority": 3,
   "status": "in_progress",
   "title": "Unique-dir the Store.read_status sidecar tests (shared $TMPDIR/last_run.status pollution)",
   "type": "task",
-  "updated_at": "2026-07-27T11:48:39Z"
+  "updated_at": "2026-07-27T12:00:12Z"
 }
