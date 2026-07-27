@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [
     "specled_-4f7"
@@ -20,8 +20,8 @@
     }
   ],
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "title": "Documented subject-lookup command bw list --grep 'Advances:.*\u003cid\u003e' silently returns zero (--grep is literal, not regex)",
   "type": "bug",
-  "updated_at": "2026-07-27T10:15:38Z"
+  "updated_at": "2026-07-27T10:26:54Z"
 }
