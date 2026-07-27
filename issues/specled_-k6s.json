@@ -37,11 +37,15 @@
     {
       "text": "LESSONS (append)\n- [other] `mix format --check-formatted` is a declared merge gate in CLAUDE.md and must be run before completion on EVERY ticket, even when the ticket's Verification section omits it. Hand-wrapping a call the formatter would collapse is the usual way it fails (from specled_-ehv)\n\nORCHESTRATOR CORRECTION: the SCOPE CONTRACT comments posted for the wave-1 tickets\nehv, 4pl, dn4.12, npo, z5t and pii omitted `mix format --check-formatted` from their\nVerification sections. That was an orchestrator omission, not an implementer miss.\nThe delegated-implementer prompt template has been amended so every subsequent spawn\ncarries the requirement unconditionally; the six affected tickets get it via this\nlessons block and, where already bounced, via their bounce comment.",
       "timestamp": "2026-07-27T10:32:37Z"
+    },
+    {
+      "text": "LESSONS (append) — ROOT CAUSE of the two mis-posted verdicts\n\nBoth stray comments (on specled_-dn4.12 at 10:27:33Z and on specled_-z5t) have the\nsame cause, now identified by the z5t verifier:\n\nThe session scratchpad is SHARED across every agent. Graders were writing their comment\nbodies to generic filenames there (`verify.txt`, `ehv_comment.txt`, ...). zsh runs with\n`noclobber`, so a `\u003e` redirect onto an existing path FAILS SILENTLY from the agent's\npoint of view; the fallback `cat` then reads whatever a different agent left at that\npath, and the agent posts another ticket's verdict under its own marker.\n\n- [other] A grader must write its comment body to a UNIQUELY NAMED file — include the ticket id, e.g. `\u003cscratchpad\u003e/\u003cticket-id\u003e.verify.txt` — and must use `\u003e|` (or `rm -f` first) because zsh `noclobber` makes a plain `\u003e` onto an existing file fail. Then re-read the file and confirm it names the ticket you graded BEFORE running `bw comment` (from specled_-dn4.12, specled_-z5t)\n\nOrchestrator action: this instruction is now carried in every grader prompt. Both stray\ncomments are marked VOID on their tickets and were retracted by their posting agents;\nneither changed a routing decision.",
+      "timestamp": "2026-07-27T10:40:38Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "[EPIC] Impromptu: 0.11.0 fast-follow sweep — gate-forensics reach, spec.validate usage tier, doc-lint hardening, coverage-store safety, review polish",
   "type": "epic",
-  "updated_at": "2026-07-27T10:32:37Z"
+  "updated_at": "2026-07-27T10:40:38Z"
 }
