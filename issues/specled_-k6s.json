@@ -61,11 +61,15 @@
     {
       "text": "specled_-k6s parked specled_-vbo: bounce cap exhausted — command-tier privilege guard cannot be made sound by recognising command text (3 iterations, each closing the named evasions and leaving a larger set open; absolute-path spelling `/usr/bin/git fetch` defeats even the verbs the guard knows). Needs a human decision on narrowing the guard's claim vs allowlisting the run surface vs moving the boundary into the template. See the ESCALATED comment on specled_-vbo for the three options.\n\nstill running: specled_-14t, specled_-dn4.12, specled_-asb, specled_-ozm, specled_-chb\nnext: specled_-xkn.1",
       "timestamp": "2026-07-27T12:07:22Z"
+    },
+    {
+      "text": "LESSONS (append)\n- [untested-clause] A new branch you ADD needs its own controlled-input test, even when the branch is message-only and both arms emit a violation. Two tickets in a row shipped one uncovered (specled_-ozm's non-guarded-family marker message, specled_-14t's CrossField `repo.` filter) — in both cases deleting the new branch left the whole suite green. A message-only branch is the WORST case to leave unpinned, because it rots with nothing failing (from specled_-ozm, specled_-14t)\n- [untested-clause] When a fix touches two independent code paths that share only a string literal, a test on one path does not cover the other. specled_-14t's verifier predicate (`valid_decision_affect?/4`) and CrossField R4 both implement the `repo.` rule; the added verifier test exercises neither the CrossField branch nor its spec clause (from specled_-14t)",
+      "timestamp": "2026-07-27T12:15:38Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "[EPIC] Impromptu: 0.11.0 fast-follow sweep — gate-forensics reach, spec.validate usage tier, doc-lint hardening, coverage-store safety, review polish",
   "type": "epic",
-  "updated_at": "2026-07-27T12:07:22Z"
+  "updated_at": "2026-07-27T12:15:38Z"
 }
