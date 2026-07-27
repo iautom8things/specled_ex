@@ -105,6 +105,29 @@ decisions:
     so fixture compiles produce the same manifest shape.
   priority: must
   stability: evolving
+- id: specled.compiler_tracer.bootstrap_rebuilds_on_content_change
+  statement: >-
+    Because `lib/specled_ex/compiler/tracer.ex` is excluded from
+    `elixirc_paths/1` — a module cannot trace its own recompilation — the
+    `mix.exs` bootstrap is that file's only build path, and `mix compile
+    --force` consequently cannot rebuild it. The bootstrap shall decide
+    staleness by comparing a digest of the source's CONTENT against a
+    digest recorded beside the artifact on the last successful compile,
+    and shall never decide it by comparing source and artifact mtimes:
+    `File.stat!/1` mtimes have one-second granularity, so an mtime
+    comparison leaves a mutated artifact permanently fresh whenever an
+    edit or a revert lands in the same second as the previous compile,
+    presenting as a clean working tree running stale code.
+  priority: must
+  stability: evolving
+- id: specled.compiler_tracer.bootstrap_digest_recorded_after_success
+  statement: >-
+    The `mix.exs` bootstrap shall record the source digest only after the
+    compile succeeds, so a failed compile leaves the artifact stale and
+    the next bootstrap retries it, rather than marking a
+    never-successfully-built artifact as fresh.
+  priority: must
+  stability: evolving
 - id: specled.compiler_tracer.single_file_cap
   statement: >-
     All tracer logic shall live in a single file
@@ -202,6 +225,26 @@ decisions:
     - the function did not spawn a subprocess
   covers:
     - specled.compiler_tracer.xref_in_process
+- id: specled.compiler_tracer.scenario.bootstrap_same_mtime_content_change
+  given:
+    - a tracer source already compiled by the mix.exs bootstrap, with its recorded digest beside the artifact
+  when:
+    - the source's content changes and the source and artifact mtimes are then forced to be identical
+  then:
+    - the bootstrap recompiles the source rather than treating the artifact as fresh
+    - the recorded digest is updated to the new source digest
+  covers:
+    - specled.compiler_tracer.bootstrap_rebuilds_on_content_change
+- id: specled.compiler_tracer.scenario.bootstrap_failed_compile_stays_stale
+  given:
+    - a tracer source whose content does not compile
+  when:
+    - the mix.exs bootstrap attempts to compile it
+  then:
+    - the compile raises and no digest is recorded
+    - a subsequent bootstrap of a valid source still recompiles rather than treating the artifact as fresh
+  covers:
+    - specled.compiler_tracer.bootstrap_digest_recorded_after_success
 ```
 
 ## Verification
@@ -220,6 +263,11 @@ decisions:
     - specled.compiler_tracer.session_module_replacement
     - specled.compiler_tracer.seed_time_ghost_prune
     - specled.compiler_tracer.atomic_tmp_name_includes_pid
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.compiler_tracer.bootstrap_rebuilds_on_content_change
+    - specled.compiler_tracer.bootstrap_digest_recorded_after_success
 - kind: tagged_tests
   execute: true
   covers:

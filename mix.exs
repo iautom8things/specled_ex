@@ -44,14 +44,39 @@ defmodule SpecLedEx.MixProject do
 
   defp bootstrap_tracer! do
     ebin = Path.join([Mix.Project.build_path(), "lib", "spec_led_ex", "ebin"])
-    src = Path.expand(@tracer_source)
-    beam = Path.join(ebin, "Elixir.SpecLedEx.Compiler.Tracer.beam")
 
-    stale? =
-      not File.regular?(beam) or
-        File.stat!(src).mtime > File.stat!(beam).mtime
+    compile_tracer_if_stale!(
+      Path.expand(@tracer_source),
+      ebin,
+      "Elixir.SpecLedEx.Compiler.Tracer"
+    )
 
-    if stale? do
+    Code.prepend_path(ebin)
+    Code.ensure_loaded(SpecLedEx.Compiler.Tracer)
+  end
+
+  @doc """
+  Compiles `src` into `ebin` when the artifact does not match the source's CONTENT.
+
+  Staleness is decided by comparing a SHA-256 digest of the source against a
+  digest recorded beside the beam on the last successful compile — never by
+  comparing mtimes. An mtime comparison is unsound here: `File.stat!/1` mtimes
+  have one-second granularity, so an edit (or a `git checkout` revert) landing in
+  the same second as the previous compile leaves `src.mtime > beam.mtime` false
+  and the stale artifact is treated as fresh indefinitely. That failure mode is
+  unrecoverable by ordinary means, because `@tracer_source` is excluded from
+  `elixirc_paths/1` and so `mix compile --force` never rebuilds it — the symptom
+  is a pristine tree running mutated code.
+
+  Public and parameterised only so the regression test can drive it against
+  scratch paths; production callers use `bootstrap_tracer!/0`.
+  """
+  def compile_tracer_if_stale!(src, ebin, module_basename) do
+    beam = Path.join(ebin, module_basename <> ".beam")
+    digest_path = Path.join(ebin, module_basename <> ".srcdigest")
+    digest = source_digest(src)
+
+    if tracer_stale?(beam, digest_path, digest) do
       File.mkdir_p!(ebin)
       prev = Code.get_compiler_option(:tracers) || []
 
@@ -63,10 +88,23 @@ defmodule SpecLedEx.MixProject do
       after
         Code.put_compiler_option(:tracers, prev)
       end
-    end
 
-    Code.prepend_path(ebin)
-    Code.ensure_loaded(SpecLedEx.Compiler.Tracer)
+      # Recorded only after a successful compile, so a failed compile leaves the
+      # artifact stale rather than marking it fresh.
+      File.write!(digest_path, digest)
+      :compiled
+    else
+      :fresh
+    end
+  end
+
+  @doc false
+  def source_digest(src) do
+    :crypto.hash(:sha256, File.read!(src)) |> Base.encode16(case: :lower)
+  end
+
+  defp tracer_stale?(beam, digest_path, digest) do
+    not File.regular?(beam) or File.read(digest_path) != {:ok, digest}
   end
 
   # Run "mix help compile.app" to learn about applications.
