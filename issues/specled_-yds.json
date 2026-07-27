@@ -39,8 +39,8 @@
     }
   ],
   "priority": 3,
-  "status": "closed",
+  "status": "in_progress",
   "title": "Harden docs content-lint test helpers: vacuous empty-needle pass, padding-coupled table needles, one-test-per-clause-group",
   "type": "task",
-  "updated_at": "2026-07-27T11:25:08Z"
+  "updated_at": "2026-07-27T11:25:42Z"
 }
