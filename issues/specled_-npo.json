@@ -10,11 +10,15 @@
     {
       "text": "Resolved by branch specled_-td7/self-identifying-descriptors, commit 3bbd7e7b, while implementing specled_-n5s (session a5f50a6d-689f-4616-80ad-806b0595aa28).\n\nn5s's fix needed an owning clause for write_v2/2's exception contract in specled.coverage_capture, and its new test asserts the present-but-non-map :meta rejection — leaving that rule unstated would have widened this ticket rather than left it alone. specled.coverage_capture.envelope_meta now states: write_v2/2 tolerates a missing :meta on the same terms as read_v2/1, and rejects a present-but-non-map :meta as malformed. Covered by scenario specled.coverage_capture.scenario.envelope_meta_tolerant_read.\n\nNot closing it here — that call belongs to whoever grades the PR. Verify against the branch and close if satisfied.",
       "timestamp": "2026-07-26T20:58:34Z"
+    },
+    {
+      "text": "CORRECTION to my previous comment on this ticket — the earlier 'Resolved by' claim was OVERSTATED. Do not close npo on the specled_-td7 branch.\n\nThe cold verifier for specled_-n5s caught it: npo's mandate names a READ-path rule. The assertion npo says is unowned is store_test.exs 'read_v2 rejects envelopes with non-map :meta as invalid artifacts' (dn4.9 item 14), whose outcome is {:error, :invalid_artifact}. The clause I added to specled.coverage_capture.envelope_meta has write_v2/2 as its grammatical subject throughout, so it gives the WRITE-path assertion an owning clause and leaves read_v2/1's rejection rule exactly as unstated as npo found it.\n\nnpo is at most half-discharged by that branch. Remaining work, per the verifier's suggested remedy: one clause stating that read_v2/1 classifies a present-but-non-map :meta as {:error, :invalid_artifact}.\n\nSession: a5f50a6d-689f-4616-80ad-806b0595aa28\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/a5f50a6d-689f-4616-80ad-806b0595aa28.jsonl",
+      "timestamp": "2026-07-27T00:10:19Z"
     }
   ],
   "priority": 3,
   "status": "open",
   "title": "envelope_meta requirement under-specifies its own test: present-but-non-map :meta rejection is asserted but unstated",
   "type": "task",
-  "updated_at": "2026-07-26T20:58:34Z"
+  "updated_at": "2026-07-27T00:10:19Z"
 }
