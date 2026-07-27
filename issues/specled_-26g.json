@@ -6,6 +6,7 @@
   "blocks": [
     "specled_-xkn.1"
   ],
+  "closed_at": "2026-07-27T12:00:14Z",
   "created": "2026-07-24T13:08:50Z",
   "description": "Surfaced during specled_-6v6 verification: store_test.exs read_status tests place artifacts directly in System.tmp_dir!(), so they share the machine-global $TMPDIR/last_run.status sidecar (store.ex:265 resolves \u003cdirname(path)\u003e/last_run.status). A stale leftover from an earlier session made 'read_status/1 returns {:refused, :not_found}' (store_test.exs:266) fail on a dirty machine; CI is immune (fresh TMPDIR per run). Fix: give those tests a unique temp dir each. Not part of epic specled_-q6l.",
   "id": "specled_-26g",
@@ -50,8 +51,8 @@
     }
   ],
   "priority": 3,
-  "status": "in_progress",
+  "status": "closed",
   "title": "Unique-dir the Store.read_status sidecar tests (shared $TMPDIR/last_run.status pollution)",
   "type": "task",
-  "updated_at": "2026-07-27T12:00:13Z"
+  "updated_at": "2026-07-27T12:00:14Z"
 }
