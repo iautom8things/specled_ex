@@ -401,13 +401,18 @@ defmodule SpecLedEx.Coverage.StoreTest do
                  ]
 
     setup do
-      tmp_path =
-        Path.join(System.tmp_dir!(), "store_load_#{System.unique_integer([:positive])}.coverdata")
+      # Same isolation as the read_status/1 setup above: write_v2 drops the
+      # last_run.status sidecar in dirname(path), so the artifact needs a
+      # test-private directory or the sidecar becomes machine-global shared
+      # state (specled_-26g). New shared-tmp roots use cross_vm_suffix/0 per
+      # specled.decision.cross_vm_temp_names_reach.
+      tmp_dir =
+        Path.join(System.tmp_dir!(), "store_load_#{SpecLedEx.TempName.cross_vm_suffix()}")
 
-      on_exit(fn ->
-        File.rm_rf!(tmp_path)
-        File.rm_rf!(Path.join(Path.dirname(tmp_path), "last_run.status"))
-      end)
+      File.mkdir_p!(tmp_dir)
+      tmp_path = Path.join(tmp_dir, "per_test.coverdata")
+
+      on_exit(fn -> File.rm_rf!(tmp_dir) end)
 
       {:ok, path: tmp_path}
     end
