@@ -32,7 +32,11 @@ specled dogfoods itself. Before implementing:
 4. At session start, run `mix spec.prime --base HEAD`
 5. After code/tests change, run `mix spec.next`
 
-The verification gate before closing a task is `mix spec.check`. All targets for the
+The verification gate before closing a task is `bash ./scripts/check_specs.sh`
+(or `make check`). The wrapper arms `SPECLED_COMMAND_OUTPUT_DIR` at
+`$ROOT/tmp/specled-command-output` so a failing or timed-out verification leaves
+forensics; bare `mix spec.check` in a session whose project directory is a
+checkout without `.claude/settings.json` leaves nothing. All targets for the
 subjects you advanced must pass.
 
 ## Merge Gates
@@ -43,4 +47,4 @@ Before merging any new code, the following checks MUST pass:
 - [ ] `mix test`
 - [ ] `mix format --check-formatted`
 - [ ] `mix deps.unlock --check-unused`
-- [ ] `mix spec.check`
+- [ ] `bash ./scripts/check_specs.sh` (or `make check`)

@@ -69,7 +69,8 @@ only for sessions whose project directory is a checkout carrying this file, so
 a session rooted at a checkout that predates this change is not covered —
 measured, during this ticket's own verification. Coverage of the agent-shell
 path is therefore a property of where the session was started, not a guarantee;
-see specled_-4f7 for the residual.
+run `bash ./scripts/check_specs.sh` or `make check` when you need the capture
+guaranteed.
 
 The settings value is relative. That is harmless only because no gate path can
 run with a working directory other than the repo root — `mix` refuses without a
@@ -90,6 +91,14 @@ that relative value starts scattering captures and must become absolute.
   project's filesystem on every red verification, with no way to decline.
   Default-on belongs in the gate wrappers, which the consuming project owns,
   not in the library.
+- **Absolute path in settings.json via variable expansion.** Even if Claude
+  Code expanded `$CLAUDE_PROJECT_DIR` inside `env` values, an absolute value
+  would pin captures to the session's project directory rather than the
+  worktree the gate actually ran in. This repo's multi-worktree workflow
+  routinely roots a session at one checkout while the gate runs in a sibling
+  stage worktree; a relative value resolves against that worktree's repo root
+  (every gate path refuses to run with cwd elsewhere). Relative is therefore
+  chosen deliberately, not by default.
 
 ## Consequences
 
