@@ -41,8 +41,8 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
        prefixes count, so the comparison is stated and the total is not.) Those are guardable, and unguarded for a different
        reason: each needs its own hand-maintained allowlist, since
        `specled.decision.doc_identifier_lint_spec_corpus` rejects deriving the
-       code set by reflection over lib/. Deferred to specled_-vk0, not
-       impossible — the `must` keeps the two reasons apart on purpose.
+       code set by reflection over lib/. Deferred, not impossible — the
+       `must` keeps the two reasons apart on purpose.
 
        Note the trap in conflating them: `spec_requirement_too_short` is one of
        the exemplars named in the `must`, and NONE of the four large stems
@@ -136,10 +136,11 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     branch_guard_underspecified_realization
   )
 
-  @known_code_list @append_only_codes ++
-                     @overlap_codes ++
-                     @evidence_codes ++ @cross_field_codes ++ @branch_guard_codes
-  @known_codes MapSet.new(@known_code_list)
+  @known_codes MapSet.new(
+                 @append_only_codes ++
+                   @overlap_codes ++
+                   @evidence_codes ++ @cross_field_codes ++ @branch_guard_codes
+               )
 
   # The leading `(?<![\w/])` negative lookbehind keeps the token from matching
   # inside a file path or a longer identifier — e.g. the `branch_guard_test`
@@ -152,8 +153,8 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     # directory name (`lib/specled_ex/evidence/`). Slash-prefixed path mentions
     # are already skipped by the lookbehind, but a bare relative path written
     # after a space — "see evidence/sync.ex" — would match and be reported as a
-    # fabricated code. No such reference exists today; tightening the lookbehind
-    # bounds is tracked in specled_-vk0.
+    # fabricated code. No such reference exists today; the residual risk remains
+    # if a bare relative path of that form is ever introduced in the corpus.
     ~r{(?<![\w/])evidence/[a-z_]+},
     ~r{(?<![\w/])cross_field/[a-z_]+},
     ~r{(?<![\w/])branch_guard_[a-z_]+}
