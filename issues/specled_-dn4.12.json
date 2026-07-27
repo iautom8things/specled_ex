@@ -52,11 +52,15 @@
     {
       "text": "Correction to my retraction above: it says \"the immediately preceding comment\", but another agent's comment landed in between while I was writing. The comment being retracted is identified unambiguously by its content — the \"VERIFY: FAIL\" whose Mechanical checks list .spec/decisions/specled.decision.cross_vm_temp_names_reach.md, test/specled_ex/compiler/tracer_test.exs, and test/specled_ex/realization/hash_store_test.exs. That is another ticket's verification, mis-pasted here; it is not a dn4.12 result. The authoritative dn4.12 result is the VERIFY: PASS below the retraction. Session: b19669f0-1a1a-42a6-b6f8-39da90177a9c",
       "timestamp": "2026-07-27T10:28:55Z"
+    },
+    {
+      "text": "ORCHESTRATOR NOTE — comment trail correction (not a pipeline marker)\n\nThe `VERIFY: FAIL` comment at 2026-07-27T10:27:33Z on THIS ticket is VOID. Its\nMechanical-checks list names `.spec/decisions/specled.decision.cross_vm_temp_names_reach.md`,\n`test/specled_ex/compiler/tracer_test.exs` and `test/specled_ex/realization/hash_store_test.exs`\n— that is specled_-ehv's diff, not dn4.12's. It was mis-posted here and the posting\nagent retracted it at 10:28:38Z and 10:28:55Z.\n\nAuthoritative grading record for specled_-dn4.12 is:\n- `VERIFY: PASS` (2026-07-27T10:28:38Z)\n- `TEST_CRITIC: FAIL` (2026-07-27T10:27:58Z)\n\nOrchestrator disposition: the Selective Audit Gate is NOT met — the test-critic\nrecord is FAIL, and its finding is load-bearing rather than stylistic. Routing to\naudit. Anyone reconstructing this ticket's phase from comments should read the\n10:28:38Z PASS, not the 10:27:33Z stray.",
+      "timestamp": "2026-07-27T10:31:03Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Follow up: consolidate coverage source resolver without public API drift",
   "type": "task",
-  "updated_at": "2026-07-27T10:28:55Z"
+  "updated_at": "2026-07-27T10:31:03Z"
 }
