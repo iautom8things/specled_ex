@@ -9,7 +9,7 @@
   "description": "specled_-dn4.9 re-derived item 1 after dn4.5: formatter.ex and coverage_triangulation.ex still need one shared module-to-source/repo-relative resolver, but doing it inside SpecLedEx.Coverage added public API and tripped api-boundary attestation. Revisit with an internal module/file explicitly scoped for this helper or another design that does not widen public API. Evidence: full mix test failed guard_ergonomics_attestation_test until the public helper was removed; both private copies were kept non-loading via :code.is_loaded/1.",
   "id": "specled_-dn4.12",
   "labels": [
-    "phase:auditing"
+    "phase:implementing"
   ],
   "parent": "specled_-k6s",
   "comments": [
@@ -82,5 +82,5 @@
   "status": "in_progress",
   "title": "Follow up: consolidate coverage source resolver without public API drift",
   "type": "task",
-  "updated_at": "2026-07-27T12:45:24Z"
+  "updated_at": "2026-07-27T12:47:44Z"
 }
