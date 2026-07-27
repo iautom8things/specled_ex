@@ -562,7 +562,10 @@ decisions:
     the envelope shall carry `meta.unmapped_modules` as a sorted unique module
     list. `write_v2/2` shall tolerate a missing `:meta` on the same terms as
     `read_v2/1` — it is additive, so an envelope without it is well-formed —
-    and shall reject a present-but-non-map `:meta` as malformed.
+    and shall reject a present-but-non-map `:meta` as malformed. `read_v2/1`
+    shall classify an envelope whose `:meta` key is present but not a map as
+    `{:error, :invalid_artifact}`, never as a well-formed envelope with a
+    defaulted `meta: %{}`.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.write_v2_argument_error_contract
@@ -941,6 +944,7 @@ decisions:
   given:
     - "a v2 envelope written without a `:meta` key (pre-Stage-1 shape)"
     - "a formatter flush with a hit module absent from the suite-start file map"
+    - "a v2 envelope whose `:meta` key holds a non-map term"
   when:
     - "`Store.read_v2/1` reads that path"
   then:
@@ -948,6 +952,7 @@ decisions:
     - "when flush consumes a boundary row, the written envelope carries `meta.boundary: true`"
     - "the unmapped hit module is retained in `meta.unmapped_modules`"
     - "an envelope stripped of `:meta` is accepted by `write_v2/2` and reads back with `meta: %{}`"
+    - "an envelope whose present `:meta` is not a map reads back as `{:error, :invalid_artifact}`"
   covers:
     - specled.coverage_capture.envelope_meta
 - id: specled.coverage_capture.scenario.write_v2_argument_error_contract
