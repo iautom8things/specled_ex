@@ -45,7 +45,23 @@ directories, and write-rename siblings) shall derive its uniqueness from
 `SpecLedEx.TempName.cross_vm_suffix/0`.
 
 For any cross-VM-visible path in `lib/`, `System.unique_integer/1` alone is
-not an acceptable uniqueness source. Test-only usages remain fine.
+not an acceptable uniqueness source.
+
+`System.unique_integer/1`-named roots under `System.tmp_dir!()` in `test/` are
+ACCEPTED RISK, not safe-by-construction. The nesting hazard is identical to
+`lib/`'s: a `mix spec.check` merged run executes the host project's tests
+inside a specled run, so two VMs can still mint the same root and one
+`on_exit` `File.rm_rf!` can delete the other's scratch tree. The accepted
+blast radius is a flaked test rather than a corrupted subject artifact, and
+blanket conversion of every existing test root would drag their owning
+subjects into branch-guard's impacted set for no semantic gain.
+
+That permission does **not** extend to tests that assert on directory contents
+(`File.ls!` over a shared or tmp root, or a cleanup sweep that deletes by glob
+in a shared dir). Those shall use `SpecLedEx.TempName.cross_vm_suffix/0`,
+because there a collision produces a false failure or raise rather than a
+deleted scratch dir. New tests that allocate shared-tmp roots should reach for
+`SpecLedEx.TempName.cross_vm_suffix/0` as well.
 
 The HashStore write-rename sibling is not an exception. It shall use
 `SpecLedEx.TempName.cross_vm_suffix/0` and therefore leave no fixed
@@ -76,3 +92,7 @@ in-flight file.
   sibling name breaks the compiler tracer proof.
 - `SpecLedEx.TempName` moduledoc carries the shared rationale for the
   enumerated surfaces; each call site names the helper.
+- `SpecLedEx.TempName.cross_vm_suffix/0` is public and available to tests
+  (already used from `test/specled_ex/compiler/tracer_bootstrap_test.exs`).
+  Existing test-only `System.unique_integer/1` roots that do not assert on
+  directory contents are left alone under the accepted-risk carve-out above.

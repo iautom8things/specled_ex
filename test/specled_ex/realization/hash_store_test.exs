@@ -7,7 +7,7 @@ defmodule SpecLedEx.Realization.HashStoreTest do
 
   setup do
     root =
-      Path.join(System.tmp_dir!(), "specled_hashstore_#{:erlang.unique_integer([:positive])}")
+      Path.join(System.tmp_dir!(), "specled_hashstore_#{SpecLedEx.TempName.cross_vm_suffix()}")
 
     File.mkdir_p!(Path.join(root, ".spec"))
     on_exit(fn -> File.rm_rf!(root) end)
