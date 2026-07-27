@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
   "created": "2026-07-26T21:43:13Z",
@@ -18,8 +18,8 @@
     }
   ],
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "title": "Harden docs content-lint test helpers: vacuous empty-needle pass, padding-coupled table needles, one-test-per-clause-group",
   "type": "task",
-  "updated_at": "2026-07-27T10:18:14Z"
+  "updated_at": "2026-07-27T10:38:31Z"
 }
