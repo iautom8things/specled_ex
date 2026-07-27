@@ -1,6 +1,7 @@
 defmodule SpecLedEx.Coverage.PathsTest do
-  # module_source/2 load?-discrimination purges a production module mid-suite;
-  # must not race concurrent async cases that might still reference it.
+  # load?-discrimination mutates the code path and purges an ephemeral
+  # fixture module; keep serial so concurrent suites never observe a half
+  # torn-down beam path.
   use ExUnit.Case, async: false
 
   alias SpecLedEx.Coverage.Paths
@@ -69,19 +70,49 @@ defmodule SpecLedEx.Coverage.PathsTest do
     end
 
     test "loadable-but-not-loaded module discriminates load?: false from load?: true" do
-      # The only input that can split the two ensure_module/2 clauses: an
-      # in-repo module that is on the code path but not currently loaded.
-      # Do not purge Paths — that is the subject under test.
-      mod = SpecLedEx.Review.CoverageClosure
-      expected = "lib/specled_ex/review/coverage_closure.ex"
+      # The only input that can split the two ensure_module/2 clauses: a
+      # module that is on the code path but not currently loaded.
+      #
+      # Build an ephemeral beam outside Mix.Project.compile_path() so cover
+      # never compiled it and purging cannot de-instrument a tracked lib/
+      # module. Beam directory and recorded :source are independent: put
+      # the beam in a throwaway dir, but compile with an in-repo :file so
+      # Paths.repo_relative/1 still resolves (the path need not exist).
+      # Do not define the module inline in this .exs (no beam => after purge
+      # ensure_loaded returns :nofile and both load? modes agree on nil).
+      # Do not place a fixture under test/test_support/ (same ebin cover walks).
+      # Do not purge a dependency module (dep sources / out-of-checkout break).
+      uid = :erlang.unique_integer([:positive])
+      mod = Module.concat([SpecLedEx, Coverage, PathsTest, Ephemeral, :"M#{uid}"])
+      # In-repo path recorded as compile :source — nothing reads the file.
+      expected = "lib/specled_ex/coverage/paths_test_ephemeral.ex"
 
-      assert Code.ensure_loaded?(mod)
+      tmp_dir =
+        Path.join(System.tmp_dir!(), "specled_paths_ephemeral_#{uid}")
+
+      File.mkdir_p!(tmp_dir)
+
+      source = """
+      defmodule #{inspect(mod)} do
+        def ping, do: :ok
+      end
+      """
+
+      [{^mod, bytecode}] = Code.compile_string(source, expected)
+      File.write!(Path.join(tmp_dir, "#{mod}.beam"), bytecode)
+      true = :code.add_patha(String.to_charlist(tmp_dir))
+
+      # compile_string left the module loaded; purge so it is loadable-but-unloaded.
       :code.purge(mod)
       :code.delete(mod)
       :code.purge(mod)
 
       on_exit(fn ->
-        _ = Code.ensure_loaded(mod)
+        :code.purge(mod)
+        :code.delete(mod)
+        :code.purge(mod)
+        :code.del_path(String.to_charlist(tmp_dir))
+        File.rm_rf!(tmp_dir)
       end)
 
       refute match?({_kind, _path}, :code.is_loaded(mod))
