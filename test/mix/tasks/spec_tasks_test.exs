@@ -188,6 +188,7 @@ defmodule Mix.Tasks.SpecTasksTest do
            )
   end
 
+  @tag spec: ["specled.tasks.verdict_line"]
   test "spec.validate rejects invalid CLI options", %{root: root} do
     assert_raise Mix.Error, ~r/Invalid arguments for spec.validate: --strcit/, fn ->
       Mix.Tasks.Spec.Validate.run(["--root", root, "--strcit"])
@@ -195,7 +196,7 @@ defmodule Mix.Tasks.SpecTasksTest do
 
     messages = drain_shell_messages()
 
-    assert List.last(messages) == "spec.validate result=fail tier=validate error_findings=0"
+    assert List.last(messages) == "spec.validate result=fail tier=usage error_findings=0"
   end
 
   test "spec.decision.new scaffolds a decision ADR", %{root: root} do
@@ -938,6 +939,7 @@ defmodule Mix.Tasks.SpecTasksTest do
     assert List.last(messages) == "spec.check result=fail tier=usage error_findings=0"
   end
 
+  @tag spec: ["specled.tasks.verdict_line"]
   test "spec.validate rejects invalid min strength values", %{root: root} do
     assert_raise Mix.Error, ~r/Invalid value for --min-strength/, fn ->
       Mix.Tasks.Spec.Validate.run(["--root", root, "--min-strength", "strongest"])

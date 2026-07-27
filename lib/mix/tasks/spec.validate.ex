@@ -5,6 +5,7 @@ defmodule Mix.Tasks.Spec.Validate do
 
   alias SpecLedEx.Config
   alias SpecLedEx.Config.Prose
+  alias SpecLedEx.TaskArgs
   alias SpecLedEx.Validator.RealizedByDedupCheck
   alias SpecLedEx.VerificationStrength
 
@@ -46,7 +47,14 @@ defmodule Mix.Tasks.Spec.Validate do
         aliases: [r: :root, o: :output, s: :strict, d: :debug]
       )
 
-    validate_args!(rest, invalid)
+    case TaskArgs.validate("spec.validate", rest, invalid) do
+      :ok ->
+        :ok
+
+      {:error, message} ->
+        print_verdict("fail", tier: "usage", error_findings: 0)
+        Mix.raise(message)
+    end
 
     min_strength = validate_min_strength!(opts[:min_strength])
     root = opts[:root] || File.cwd!()
@@ -114,21 +122,11 @@ defmodule Mix.Tasks.Spec.Validate do
         Mix.shell().info("[#{severity}] #{subject_id} #{code} #{file} :: #{message}")
       end)
 
-      print_verdict("fail", error_findings: summary["errors"])
+      print_verdict("fail", tier: "validate", error_findings: summary["errors"])
       Mix.raise("Spec validate failed: #{length(report["findings"] || [])} finding(s)")
     end
 
     print_verdict("pass")
-  end
-
-  defp validate_args!([], []), do: :ok
-
-  defp validate_args!(rest, invalid) do
-    invalid_flags = Enum.map(invalid, fn {flag, _value} -> flag end)
-    extra_args = Enum.map(rest, &inspect/1)
-    details = Enum.join(invalid_flags ++ extra_args, ", ")
-    print_verdict("fail", error_findings: 0)
-    Mix.raise("Invalid arguments for spec.validate: #{details}")
   end
 
   defp maybe_put_test_tags(index_opts, task_opts) do
@@ -225,7 +223,7 @@ defmodule Mix.Tasks.Spec.Validate do
   end
 
   defp print_verdict("fail", opts) do
-    tier = Keyword.get(opts, :tier, "validate")
+    tier = Keyword.fetch!(opts, :tier)
     error_findings = Keyword.get(opts, :error_findings, 0)
 
     Mix.shell().info(
