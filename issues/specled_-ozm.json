@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-4pl",
     "specled_-ehv"
@@ -23,8 +23,8 @@
     }
   ],
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "title": "Stale-allow-marker sweep has two evasion holes: '\u003e' in reason text defeats the comment strip, and bare unwrapped markers escape the sweep entirely",
   "type": "bug",
-  "updated_at": "2026-07-27T11:33:33Z"
+  "updated_at": "2026-07-27T11:39:27Z"
 }
