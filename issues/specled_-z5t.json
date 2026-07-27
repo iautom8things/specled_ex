@@ -4,6 +4,7 @@
   "blocks": [
     "specled_-xkn.2"
   ],
+  "closed_at": "2026-07-27T11:07:13Z",
   "created": "2026-07-26T13:25:11Z",
   "description": "Advances: specled.package. From the specled_-xde verifier (2026-07-26, epic specled_-0x4): skills/spec-led-bootstrap/references/adoption-phases.md:38 states the phase criterion 'mix spec.check exits 0 with no findings beyond detector_unavailable'. Applying that criterion requires seeing info-level findings, which bare mix spec.check hides — the adopter sees only 'info hidden; --verbose to show'. It is a criterion rather than a probe instruction (weaker than the four N2 sites xde fixed) but the same trap. Add --verbose (or the SPECLED_SHOW_INFO=1 form) to that line, matching the style specled_-xde used at the four probe sites.",
   "id": "specled_-z5t",
@@ -44,8 +45,8 @@
     }
   ],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "Bootstrap skill: adoption-phases.md phase0 done-criterion needs --verbose for detector_unavailable visibility",
   "type": "task",
-  "updated_at": "2026-07-27T11:07:12Z"
+  "updated_at": "2026-07-27T11:07:13Z"
 }
