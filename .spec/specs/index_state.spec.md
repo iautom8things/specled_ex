@@ -29,6 +29,7 @@ decisions:
   - specled.decision.explicit_subject_ownership
   - specled.decision.configurable_test_tag_enforcement
   - specled.decision.dedicated_realization_baseline
+  - specled.decision.cross_vm_temp_names_reach
 ```
 
 ## Requirements

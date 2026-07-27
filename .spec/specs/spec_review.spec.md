@@ -36,6 +36,7 @@ decisions:
   - specled.decision.aggregate_first_spec_coverage
   - specled.decision.coverage_qualifier_requirement_ids
   - specled.decision.coverage_identity_joins
+  - specled.decision.cross_vm_temp_names_reach
 ```
 
 ## Requirements
@@ -256,47 +257,15 @@ decisions:
   priority: must
   stability: evolving
 - id: specled.spec_review.coverage_tab_bind_closure
-  statement: |
-    Each subject's Coverage pivot shall render, per requirement, a one-line bind-closure
-    summary sourced from `SpecLedEx.Review.CoverageClosure.build_v2/2`'s v2-envelope
-    reach data, of the form "Closure: N MFAs — K executed (X.X%). Self-verified:
-    yes/no. Tagged tests: T1 (executed), T2 (linked)." — where N is
-    `closure_mfa_count`, K is the count of `covered_mfas`, X.X% is
-    `closure_coverage_pct`, "Self-verified" reflects `self_verified?`, and the tagged
-    tests list every `tagged_tests` entry with its evidence `:strength` ("claimed" /
-    "linked" / "executed"). A "Reached by tests" row naming every `"executed"`-
-    strength tagged test shall render exclusively when the subject's coverage mode
-    is `:per_test` (`:ok_per_test`) — aggregate coverage has no per-test attribution
-    to name, so the row stays absent there. Under `:ok_per_test`, per-requirement MFA
-    coverage is real line→MFA intersection via
-    `CoverageTriangulation.per_test_requirement_reach/3` and
-    `SpecLedEx.Coverage.MfaLines` (not a file-level proxy). `"executed"` strength and
-    the per_test `closure_coverage_pct` for non-degraded / fully-hooked runs are
-    exact within the chained window: later tests also inherit serialized runner /
-    `setup_all` activity since the prior tail, and a process a test spawns that
-    outlives its tail snapshot can increment counters after the window closes (see
-    `specled.decision.per_test_sync_boundary`) — the closure line, "Reached by tests"
-    row, Self-verified row, and subject-card rollup badge shall each be discoverably
-    qualified with that claim. When the envelope is unhooked-degraded
-    (`meta.unhooked_modules` non-empty), the same surfaces shall instead carry an
-    honest degraded qualifier naming those modules; hooked windows remain exact
-    within the same disclosed chained-window bounds. MFAs whose modules lack abstract code
-    (`:no_debug_info`) shall render as a distinct note, not as covered or uncovered.
-    Each subject card shall additionally carry a rollup badge summarizing the
-    subject's coverage status (a self-verified/total count and mode when coverage
-    data loaded, or a muted "coverage unavailable" chip when degraded). The v2
-    envelope's own `generated_at` timestamp shall render in the Coverage tab with an
-    elapsed-time note, flagged as possibly stale past a fixed age threshold.
-    `:no_coverage_artifact`, `:legacy_artifact` (naming `mix spec.cover.test` as the
-    re-run command), `:invalid_artifact`, and `:async_contaminated` (a `:per_test`
-    envelope degraded by a window-invalidating `meta.degraded_reasons` entry —
-    `:async` or `:counters_harvested`) shall each render their own
-    distinct honest banner in place of the per-row summaries — never collapsing into
-    one another, into a fake 0%, or into an empty-but-ok result; a missing compiler
-    tracer manifest (`:no_tracer_manifest`) shall render a single "Binding closure
-    unavailable" banner. All degraded states piggyback the page-level `:degraded`
-    leg state machinery rather than rendering empty closure rows that would be
-    misread as the absence of test coverage.
+  statement: >-
+    `SpecLedEx.CoverageTriangulation.per_requirement_reach/2` shall preserve
+    the v1 file-level bind-closure reach data that
+    `SpecLedEx.Review.CoverageClosure` can hand to the Coverage-tab renderer:
+    for each `{subject_id, requirement_id}` it returns `closure_mfa_count`,
+    `closure_file_count`, `reached_files`, `unreached_files`, and sorted
+    `reaching_tests`; a `:no_coverage_artifact` input returns
+    `:no_coverage_artifact` so Review can render the coverage artifact
+    unavailable degraded banner instead of pretending zero reach.
   priority: must
   stability: evolving
 - id: specled.spec_review.coverage_closure_line_format
@@ -420,9 +389,19 @@ decisions:
     misreporting as trustworthy `:ok_per_test`) degrade distinctly rather
     than collapsing into one empty-but-ok result. `Review.build_view/3`
     calls `build_v2/2` and the Coverage pivot renders its v2 shape, per
-    `coverage_tab_bind_closure`. The prior v1 record-list path (`build/2`)
-    had zero callers and zero tests once `build_view/3` switched over, and
-    was deleted rather than kept dead.
+    the split Coverage-tab requirements in this section. The prior v1
+    record-list path (`build/2`) had zero callers and zero tests once
+    `build_view/3` switched over, and was deleted rather than kept dead.
+  priority: must
+  stability: evolving
+- id: specled.spec_review.coverage_no_debug_info_distinct_note
+  statement: >-
+    Each per-requirement Coverage view shall render `no_debug_info_mfas` in a
+    distinct "No debug info" note stating that module abstract code is missing
+    and those MFAs are not counted or reported as covered or uncovered. They
+    shall never be merged into the covered/uncovered lists, into the
+    source-identity-unavailable note, or silently omitted from the review
+    surface.
   priority: must
   stability: evolving
 - id: specled.spec_review.coverage_unresolvable_source_renders_distinct_note
@@ -760,6 +739,18 @@ decisions:
     - the retired "(file-level proxy)" string does not render
   covers:
     - specled.spec_review.coverage_line_mfa_intersection_qualifier
+- id: specled.spec_review.coverage_v1_requirement_reach_data_shape
+  given:
+    - coverage records and a closure map for the legacy v1 reach path
+  when:
+    - Review requests per-requirement bind-closure reach data
+  then:
+    - each requirement entry reports closure MFA and file counts
+    - reached and unreached files are partitioned by coverage-record file reach
+    - reaching tests are reported by display name
+    - the no-coverage-artifact sentinel is preserved for degraded rendering
+  covers:
+    - specled.spec_review.coverage_tab_bind_closure
 - id: specled.spec_review.coverage_no_debug_info_renders_distinct_note
   given:
     - a requirement whose v2 reach data reports an MFA under no_debug_info_mfas
@@ -769,7 +760,7 @@ decisions:
     - the MFA renders in a distinct no-debug-info note
     - the MFA is not counted or rendered as covered or uncovered
   covers:
-    - specled.spec_review.coverage_tab_bind_closure
+    - specled.spec_review.coverage_no_debug_info_distinct_note
 - id: specled.spec_review.coverage_unresolvable_source_and_missing_attribution
   given:
     - "an :ok_per_test requirement with unresolvable_source_mfas and a subject reach map with no :attribution key"
@@ -858,7 +849,6 @@ decisions:
     - specled.spec_review.triangle_code_classification
     - specled.spec_review.degraded_leg_state
     - specled.spec_review.decisions_governance_inline
-    - specled.spec_review.coverage_tab_bind_closure
     - specled.spec_review.coverage_closure_line_format
     - specled.spec_review.coverage_reached_by_tests_per_test_only
     - specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
@@ -867,6 +857,7 @@ decisions:
     - specled.spec_review.coverage_generated_at_staleness
     - specled.spec_review.coverage_degraded_banners_distinct
     - specled.spec_review.coverage_no_tracer_manifest_banner
+    - specled.spec_review.coverage_no_debug_info_distinct_note
     - specled.spec_review.coverage_unresolvable_source_renders_distinct_note
     - specled.spec_review.coverage_missing_attribution_unqualified
 - kind: command
@@ -945,7 +936,8 @@ decisions:
     - specled.spec_review.triangle_code_classification
     - specled.spec_review.degraded_leg_state
     - specled.spec_review.decisions_governance_inline
-    - specled.spec_review.coverage_tab_bind_closure
+    - specled.spec_review.coverage_degraded_banners_distinct
+    - specled.spec_review.coverage_no_tracer_manifest_banner
     - specled.spec_review.review_queue_navigation
     - specled.spec_review.change_scoped_overview
     - specled.spec_review.repo_state_health_pane
@@ -958,7 +950,7 @@ decisions:
 - kind: source_file
   target: lib/specled_ex/review/coverage_closure.ex
   covers:
-    - specled.spec_review.coverage_tab_bind_closure
+    - specled.spec_review.coverage_tab_v2_envelope_data_layer
 - kind: source_file
   target: lib/specled_ex/coverage_triangulation.ex
   covers:

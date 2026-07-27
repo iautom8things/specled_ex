@@ -136,11 +136,10 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     branch_guard_underspecified_realization
   )
 
-  @known_codes MapSet.new(
-                 @append_only_codes ++
-                   @overlap_codes ++
-                   @evidence_codes ++ @cross_field_codes ++ @branch_guard_codes
-               )
+  @known_code_list @append_only_codes ++
+                     @overlap_codes ++
+                     @evidence_codes ++ @cross_field_codes ++ @branch_guard_codes
+  @known_codes MapSet.new(@known_code_list)
 
   # The leading `(?<![\w/])` negative lookbehind keeps the token from matching
   # inside a file path or a longer identifier — e.g. the `branch_guard_test`
@@ -166,6 +165,7 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
   # shape, so a second approximate copy of the token grammar here could only
   # drift from the real one.
   @allow_marker_pattern ~r{spec-lint:allow-code=([a-z_/]+)}
+  @allow_marker_comment_pattern ~r{<!--\s*spec-lint:allow-code=[^>]*-->}
 
   # ...and the marker is honoured ONLY in decision records. Guidance docs, skill
   # files, README, and subject specs get no escape hatch: those surfaces had none
@@ -178,10 +178,34 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
   # Elixir-atom severity value inside a YAML mapping, e.g. `code: :off`.
   @atom_severity_pattern ~r/:\s+:(off|info|warning|error)\b/
 
+  @guarded_code_shape ~r{\A(?:append_only/[a-z0-9_]+|overlap/[a-z0-9_]+|evidence/[a-z0-9_]+|cross_field/[a-z0-9_]+|branch_guard_[a-z0-9_]+)\z}
+  @digit_bearing_code ~r/\d/
+
+  @implementation_code_files ~w(
+    lib/specled_ex/append_only.ex
+    lib/specled_ex/branch_check.ex
+    lib/specled_ex/coverage_triangulation.ex
+    lib/specled_ex/decision_parser/cross_field.ex
+    lib/specled_ex/evidence/store.ex
+    lib/specled_ex/evidence/sync.ex
+    lib/specled_ex/overlap.ex
+    lib/mix/tasks/spec.check.ex
+    lib/mix/tasks/spec.prune.ex
+    lib/mix/tasks/spec.sync.ex
+  )
+
+  @implementation_code_patterns [
+    ~r{"((?:append_only/[a-z0-9_]+|overlap/[a-z0-9_]+|evidence/[a-z0-9_]+|cross_field/[a-z0-9_]+|branch_guard_[a-z0-9_]+))(?:"|:)}
+  ]
+
   # Finding-code integrity is checked across guidance docs/skills AND the
   # repo-resident spec workspace.
   defp finding_code_corpus do
     normalize(guidance_files() ++ Path.wildcard(".spec/**/*.md"))
+  end
+
+  defp decision_files do
+    normalize(Path.wildcard(".spec/decisions/**/*.md"))
   end
 
   # The atom-severity check stays on the user-facing guidance corpus; `.spec/**`
@@ -230,17 +254,29 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     assert length(files) > 8,
            "severity corpus collapsed to #{length(files)} files — this check is a no-op"
 
-    offenders =
-      for file <- files,
-          {lineno, line} <- yaml_block_lines(File.read!(file)),
-          Regex.match?(@atom_severity_pattern, line) do
-        "#{file}:#{lineno}: atom-form severity #{inspect(String.trim(line))}" <>
-          " — use a bare token (off/info/warning/error)"
-      end
+    offenders = atom_severity_offenders(files)
 
     assert offenders == [],
            "Config severities in YAML blocks must be bare tokens, not Elixir atoms:\n" <>
              Enum.join(offenders, "\n")
+  end
+
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "severity lint scans guidance docs but excludes spec fixtures" do
+    assert Enum.any?(finding_code_corpus(), &String.starts_with?(&1, ".spec/"))
+    refute Enum.any?(severity_corpus(), &String.starts_with?(&1, ".spec/"))
+
+    assert atom_severity_offenders([".spec/specs/prose_guard.spec.md"]) != []
+
+    assert atom_severity_offenders([
+             fixture_file("""
+             ```yaml
+             branch_guard:
+               severities:
+                 branch_guard_realization_drift: :warning
+             ```
+             """)
+           ]) != []
   end
 
   # The corpus scans above only prove the corpus is clean TODAY — they never feed
@@ -309,6 +345,37 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
   end
 
   @tag spec: "specled.package.doc_identifier_integrity"
+  test "path-like guarded tokens stay suppressed while a code on the same line is caught" do
+    line =
+      "closure file .../config/branch_guard_test.exs still names " <>
+        "`branch_guard_totally_made_up` as a code"
+
+    assert unknown_tokens(line, @decision_file) == ["branch_guard_totally_made_up"]
+  end
+
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "the hand-maintained known-code mirror matches implementation anchors both ways" do
+    implementation_codes = implementation_guarded_codes()
+
+    assert implementation_codes == @known_codes,
+           "guarded finding-code mirror drifted\n" <>
+             "missing from @known_codes: #{inspect(MapSet.difference(implementation_codes, @known_codes) |> Enum.sort())}\n" <>
+             "dead in @known_codes: #{inspect(MapSet.difference(@known_codes, implementation_codes) |> Enum.sort())}"
+  end
+
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "guarded implementation codes do not contain digits" do
+    digit_codes =
+      implementation_guarded_codes()
+      |> Enum.filter(&Regex.match?(@digit_bearing_code, &1))
+      |> Enum.sort()
+
+    assert digit_codes == [],
+           "digit-bearing guarded finding codes require a deliberate lint grammar decision: " <>
+             inspect(digit_codes)
+  end
+
+  @tag spec: "specled.package.doc_identifier_integrity"
   test "an allow-marker exempts the exact token it names, in a decision record" do
     # Catches: the marker stops working, so legitimately-budgeted codes in
     # decision records start failing the suite.
@@ -352,6 +419,35 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     assert unknown_tokens(line, @decision_file) == ["branch_guard_unmarked_two"]
   end
 
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "decision-record allow-markers remain necessary and never hide real codes" do
+    violations = stale_allow_marker_violations(decision_files())
+
+    assert violations == [],
+           "Stale or unnecessary spec-lint allow-markers found:\n" <>
+             Enum.join(violations, "\n")
+  end
+
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "an allow-marker for a real implementation code is stale" do
+    line =
+      "`branch_guard_realization_drift` " <>
+        "<!-- spec-lint:allow-code=branch_guard_realization_drift obsolete -->"
+
+    assert stale_allow_marker_violations([{line, @decision_file, 1}]) == [
+             ~s|#{@decision_file}:1: allow-marker names real implementation code "branch_guard_realization_drift" — remove the marker|
+           ]
+  end
+
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "an allow-marker must name a token outside the marker on the same line" do
+    line = "<!-- spec-lint:allow-code=branch_guard_totally_made_up stale -->"
+
+    assert stale_allow_marker_violations([{line, @decision_file, 1}]) == [
+             ~s|#{@decision_file}:1: allow-marker names "branch_guard_totally_made_up" but that token does not appear outside the marker on the same line|
+           ]
+  end
+
   # Finding-code-shaped tokens on `line` that neither the implementation emits
   # (@known_codes) nor an on-line allow-marker exempts.
   defp unknown_tokens(line, file) do
@@ -362,8 +458,7 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
         @known_codes
       end
 
-    for pattern <- @token_patterns,
-        token <- pattern |> Regex.scan(line) |> List.flatten() |> Enum.uniq(),
+    for token <- guarded_tokens(line),
         not MapSet.member?(allowed, token) do
       token
     end
@@ -376,6 +471,95 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     |> Regex.scan(line)
     |> Enum.map(fn [_full, code] -> code end)
     |> MapSet.new()
+  end
+
+  defp stale_allow_marker_violations(files) when is_list(files) do
+    files
+    |> Enum.flat_map(fn
+      {line, file, lineno} ->
+        stale_allow_marker_violations_for_line(line, file, lineno)
+
+      file ->
+        file
+        |> File.stream!()
+        |> Enum.with_index(1)
+        |> Enum.flat_map(fn {line, lineno} ->
+          stale_allow_marker_violations_for_line(line, file, lineno)
+        end)
+    end)
+  end
+
+  defp stale_allow_marker_violations_for_line(line, file, lineno) do
+    tokens_outside_marker =
+      line
+      |> then(&Regex.replace(@allow_marker_comment_pattern, &1, ""))
+      |> guarded_tokens()
+      |> MapSet.new()
+
+    line
+    |> allowed_codes()
+    |> Enum.sort()
+    |> Enum.flat_map(fn code ->
+      cond do
+        MapSet.member?(@known_codes, code) ->
+          [
+            "#{file}:#{lineno}: allow-marker names real implementation code " <>
+              "#{inspect(code)} — remove the marker"
+          ]
+
+        not MapSet.member?(tokens_outside_marker, code) ->
+          [
+            "#{file}:#{lineno}: allow-marker names #{inspect(code)} but that token " <>
+              "does not appear outside the marker on the same line"
+          ]
+
+        true ->
+          []
+      end
+    end)
+  end
+
+  defp guarded_tokens(line) do
+    @token_patterns
+    |> Enum.flat_map(fn pattern ->
+      pattern
+      |> Regex.scan(line)
+      |> List.flatten()
+    end)
+    |> Enum.uniq()
+  end
+
+  defp implementation_guarded_codes do
+    @implementation_code_files
+    |> Enum.flat_map(fn file ->
+      source = File.read!(file)
+
+      Enum.flat_map(@implementation_code_patterns, fn pattern ->
+        pattern
+        |> Regex.scan(source)
+        |> Enum.map(fn [_full, code] -> code end)
+      end)
+    end)
+    |> Enum.filter(&Regex.match?(@guarded_code_shape, &1))
+    |> MapSet.new()
+  end
+
+  defp atom_severity_offenders(files) do
+    for file <- files,
+        {lineno, line} <- yaml_block_lines(File.read!(file)),
+        Regex.match?(@atom_severity_pattern, line) do
+      "#{file}:#{lineno}: atom-form severity #{inspect(String.trim(line))}" <>
+        " — use a bare token (off/info/warning/error)"
+    end
+  end
+
+  defp fixture_file(content) do
+    dir = Path.join(System.tmp_dir!(), "specled_docs_identifier_lint_test")
+    File.mkdir_p!(dir)
+    path = Path.join(dir, "fixture-#{System.unique_integer([:positive])}.md")
+    File.write!(path, content)
+    on_exit(fn -> File.rm(path) end)
+    path
   end
 
   # Returns {lineno, line} tuples for every source line that sits inside a

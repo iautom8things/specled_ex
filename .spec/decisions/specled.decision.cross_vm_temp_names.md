@@ -1,11 +1,12 @@
 ---
 id: specled.decision.cross_vm_temp_names
-status: accepted
+status: superseded
 date: 2026-07-24
 affects:
   - specled.verification
   - specled.tagged_tests
 change_type: clarifies
+superseded_by: specled.decision.cross_vm_temp_names_reach
 ---
 
 # Shared-Tmp Temp Names Shall Be Cross-VM Unique via SpecLedEx.TempName

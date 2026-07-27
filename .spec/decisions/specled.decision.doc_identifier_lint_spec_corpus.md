@@ -107,6 +107,11 @@ Two facts complicate a blanket extension:
   segment of `.../config/branch_guard_test.exs`) are not finding codes; the
   token patterns carry a `(?<![\w/])` lookbehind so a slash-prefixed path
   segment is never treated as a code and needs no marker.
+- Guarded emitted codes do not contain digits today. The lint asserts that
+  absence rather than widening its token grammar speculatively; if an emitted
+  `append_only/*`, `overlap/*`, `evidence/*`, `cross_field/*`, or
+  `branch_guard_*` code needs a digit, that change must deliberately revisit
+  the token grammar and its false-positive boundary in the same patch.
 
 Rejected: a blanket `.spec/` exemption (defeats the check); extending the
 atom-severity check into `.spec/**` (false positives on fixture config);

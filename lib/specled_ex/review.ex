@@ -53,7 +53,7 @@ defmodule SpecLedEx.Review do
 
     claims_by_subject = group_claims_by_subject(verifier_report)
 
-    # covers: specled.spec_review.coverage_tab_bind_closure
+    # covers: specled.spec_review.coverage_tab_v2_envelope_data_layer
     # Per-requirement bind-closure reach, read from the v2 coverage envelope:
     # closure-MFA coverage %, tagged-test evidence strength, and the
     # self-verified composite. Degrades to a status atom when the tracer
@@ -62,7 +62,7 @@ defmodule SpecLedEx.Review do
     closure_reach_opts = Keyword.get(opts, :closure_reach_opts, [])
     closure_reach_by_subject = CoverageClosure.build_v2(index, closure_reach_opts)
 
-    # covers: specled.spec_review.coverage_tab_bind_closure
+    # covers: specled.spec_review.coverage_generated_at_staleness
     # The coverage artifact's own `generated_at` (for the Coverage tab's
     # staleness note) is fetched independently of CoverageClosure.build_v2/2,
     # which does not expose it — this is a display-only concern, not a
@@ -769,7 +769,7 @@ defmodule SpecLedEx.Review do
     end
   end
 
-  # covers: specled.spec_review.coverage_tab_bind_closure
+  # covers: specled.spec_review.coverage_generated_at_staleness
   # The Coverage tab's staleness note needs the v2 envelope's own
   # `generated_at`, a field CoverageClosure.build_v2/2 does not expose (it
   # returns only :status/:by_requirement — see the flag-1 addendum on

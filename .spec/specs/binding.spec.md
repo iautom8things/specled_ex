@@ -38,6 +38,7 @@ decisions:
   - specled.decision.deterministic_hashing
   - specled.decision.file_touch_yields_to_realization
   - specled.decision.dedicated_realization_baseline
+  - specled.decision.cross_vm_temp_names_reach
 ```
 
 ## Requirements
@@ -98,9 +99,16 @@ decisions:
 - id: specled.binding.hash_store_atomic
   statement: >-
     SpecLedEx.Realization.HashStore.write/2 shall write
-    `.spec/realization_hashes.json` atomically via `.tmp` + fsync +
+    `.spec/realization_hashes.json` atomically via a temp sibling + fsync +
     rename. A crash mid-write shall leave the previous committed state
     intact — partial writes are not a reachable state.
+  priority: must
+  stability: evolving
+- id: specled.binding.hash_store_temp_name_cross_vm_unique
+  statement: >-
+    HashStore's write-rename temp sibling shall derive its suffix from
+    SpecLedEx.TempName.cross_vm_suffix/0 so concurrent BEAM VMs writing
+    `.spec/realization_hashes.json` never share a fixed `.tmp` path.
   priority: must
   stability: evolving
 - id: specled.binding.hash_store_dedicated_file
@@ -235,6 +243,16 @@ decisions:
     - no partial `.spec/realization_hashes.json` is observed
   covers:
     - specled.binding.hash_store_atomic
+- id: specled.binding.scenario.hash_store_tmp_name_cross_vm_safe
+  given:
+    - a HashStore write whose final rename fails after the temp file is written
+  when:
+    - the leftover temp sibling is inspected
+  then:
+    - the sibling name includes the OS pid plus random hex suffix from SpecLedEx.TempName
+    - the fixed `.spec/realization_hashes.json.tmp` path is absent
+  covers:
+    - specled.binding.hash_store_temp_name_cross_vm_unique
 - id: specled.binding.scenario.baseline_round_trip_dedicated_file
   given:
     - a realization map written via HashStore.write/2
@@ -337,6 +355,7 @@ decisions:
   execute: true
   covers:
     - specled.binding.hash_store_atomic
+    - specled.binding.hash_store_temp_name_cross_vm_unique
 - kind: tagged_tests
   execute: true
   covers:

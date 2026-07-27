@@ -44,6 +44,7 @@ decisions:
   - specled.decision.file_touch_yields_to_realization
   - specled.decision.realization_tiers_nil_default
   - specled.decision.decision_fork_advertised_at_decision_points
+  - specled.decision.cross_vm_temp_names_reach
 ```
 
 ## Requirements

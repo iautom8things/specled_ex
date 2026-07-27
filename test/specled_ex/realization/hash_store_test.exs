@@ -17,6 +17,13 @@ defmodule SpecLedEx.Realization.HashStoreTest do
   defp baseline_path(root), do: Path.join([root, ".spec", "realization_hashes.json"])
   defp state_path(root), do: Path.join([root, ".spec", "state.json"])
 
+  defp tmp_siblings(path) do
+    path
+    |> Path.dirname()
+    |> File.ls!()
+    |> Enum.filter(&String.starts_with?(&1, "realization_hashes.json.tmp."))
+  end
+
   describe "write/2 + read/1" do
     test "round-trips a simple realization payload", %{root: root} do
       payload = %{
@@ -263,7 +270,33 @@ defmodule SpecLedEx.Realization.HashStoreTest do
       assert File.regular?(path)
       assert {:ok, _decoded} = Jason.decode(File.read!(path))
 
-      # realization_hashes.json.tmp was removed by rename
+      # Temp siblings were removed by rename.
+      refute Enum.any?(tmp_siblings(path))
+    end
+
+    @tag spec: "specled.binding.hash_store_temp_name_cross_vm_unique"
+    test "failed atomic write leaves a cross-VM-unique tmp sibling", %{root: root} do
+      path = baseline_path(root)
+      File.rm_rf!(path)
+      File.mkdir_p!(path)
+
+      assert_raise File.RenameError, fn ->
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            "Foo.bar/1" => %{"hash" => "a", "hasher_version" => HashStore.hasher_version()}
+          }
+        })
+      end
+
+      tmp_siblings = tmp_siblings(path)
+
+      assert Enum.any?(tmp_siblings, fn sibling ->
+               String.match?(
+                 sibling,
+                 ~r/^realization_hashes\.json\.tmp\.#{System.pid()}_[0-9a-f]{12}$/
+               )
+             end)
+
       refute File.exists?(path <> ".tmp")
     end
   end
@@ -367,7 +400,7 @@ defmodule SpecLedEx.Realization.HashStoreTest do
     end
 
     @tag spec: ["specled.realized_by.silent_seed_uses_merge"]
-    test "atomic write — realization_hashes.json.tmp is removed after merge", %{root: root} do
+    test "atomic write — temp siblings are removed after merge", %{root: root} do
       :ok =
         HashStore.merge(root, %{
           "api_boundary" => %{
@@ -377,7 +410,7 @@ defmodule SpecLedEx.Realization.HashStoreTest do
 
       path = baseline_path(root)
       assert File.regular?(path)
-      refute File.exists?(path <> ".tmp")
+      refute Enum.any?(tmp_siblings(path))
     end
 
     @tag spec: ["specled.realized_by.silent_seed_uses_merge"]
