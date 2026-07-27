@@ -437,9 +437,9 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     files = decision_files()
 
     # Siblings at the finding-code and severity corpus tests pin size so a
-    # reorg or cwd change cannot silently no-op the lint. N=8 is conservative
-    # against the live `.spec/decisions/` tree (dozen+ files today).
-    assert length(files) > 8,
+    # reorg or cwd change cannot silently no-op the lint. N=30 is conservative
+    # against the live `.spec/decisions/` tree (~51 files today).
+    assert length(files) > 30,
            "decision corpus collapsed to #{length(files)} files — the sweep is a no-op"
 
     assert Enum.all?(files, &String.starts_with?(&1, ".spec/decisions/")),
@@ -469,6 +469,20 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
 
     assert stale_allow_marker_violations([{line, @decision_file, 1}]) == [
              ~s|#{@decision_file}:1: allow-marker names "branch_guard_totally_made_up" but that token does not appear outside the marker on the same line|
+           ]
+  end
+
+  # Item 5 (specled_-ozm): a marker naming a non-guarded bare code must not
+  # fall through to the false "does not appear outside the marker" claim —
+  # `guarded_tokens/1` can never yield such a token. Would fail if the
+  # non-guarded-family branch is deleted and the outside-marker arm reclaims it.
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "an allow-marker naming a non-guarded code is reported as unnecessary" do
+    line =
+      "`detector_unavailable` <!-- spec-lint:allow-code=detector_unavailable budgeted -->"
+
+    assert stale_allow_marker_violations([{line, @decision_file, 1}]) == [
+             ~s|#{@decision_file}:1: allow-marker names "detector_unavailable", which is not in a guarded family — the marker is unnecessary|
            ]
   end
 
@@ -623,7 +637,9 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     File.mkdir_p!(dir)
     path = Path.join(dir, "fixture-#{System.unique_integer([:positive])}.md")
     File.write!(path, content)
-    on_exit(fn -> File.rm(path) end)
+    # Dir is VM-unique via cross_vm_suffix/0, so rm_rf of the whole dir is safe
+    # and required — removing only the file leaks an empty dir per run.
+    on_exit(fn -> File.rm_rf!(dir) end)
     path
   end
 
