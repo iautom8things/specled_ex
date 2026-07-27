@@ -1,4 +1,4 @@
-<!-- agentic-worktree: module=host-elixir version=0.22.0 -->
+<!-- agentic-worktree: module=host-elixir version=0.23.0 -->
 
 ---
 description: Worktree-first workflow for host-run Elixir projects.
