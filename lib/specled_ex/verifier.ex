@@ -2404,8 +2404,12 @@ defmodule SpecLedEx.Verifier do
   # filed beside the log under the same basename so the two stay correlatable in
   # a capture directory holding several failing commands. Both writes live under
   # ONE guard on purpose: a second rescue would be a second best-effort contract
-  # to prove, reachable only through a filesystem state the first has already
-  # excluded.
+  # to prove, and no test can reach a state that distinguishes it from this one
+  # (the capture name carries a per-run nonce, so nothing can pre-block the
+  # artifact write alone). Not that such states cannot EXIST — a disk filling
+  # between the two writes, or a race at the artifact path, would reach a second
+  # rescue — only that none is reachable from a test, which is what makes a
+  # separate contract unprovable rather than merely redundant.
   #
   # Best-effort by contract: a capture failure must never alter the
   # verification result.
@@ -2503,14 +2507,15 @@ defmodule SpecLedEx.Verifier do
       _ -> nil
     end
   rescue
-    # git absent from PATH (ErlangError :enoent), or a malformed :cd VALUE such
-    # as a non-string (ArgumentError). A merely non-existent :cd directory does
-    # NOT raise — measured: System.cmd returns {"", 2} and the `_ -> nil` arm
-    # above already covers it. File.Error is listed for belt and braces; no
-    # reachable System.cmd path was found that raises it. Provenance is
-    # strictly a bonus on the capture, so every one of these degrades to
-    # "unavailable" rather than
-    # costing the caller its forensic log.
+    # The one cause known to occur here is git absent from PATH
+    # (ErlangError :enoent). A non-existent :cd directory does NOT raise —
+    # measured: System.cmd returns {"", 2}, which the `_ -> nil` arm above
+    # already covers. ArgumentError needs a non-string :cd, and `root` is a
+    # binary on every production path; no reachable System.cmd path was found
+    # that raises File.Error at all. Both are listed as belt and braces, not
+    # because they are expected. Provenance is strictly a bonus on the capture,
+    # so every one of these degrades to "unavailable" rather than costing the
+    # caller its forensic log.
     _ in [ErlangError, ArgumentError, File.Error] -> nil
   end
 

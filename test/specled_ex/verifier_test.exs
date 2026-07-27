@@ -2222,9 +2222,13 @@ defmodule SpecLedEx.VerifierTest do
     # What it does NOT prove, stated plainly because the obvious reading is
     # that it does: the artifact write itself is still never exercised here.
     # An unwritable directory makes File.mkdir_p! raise before the log write,
-    # so preserve_artifact/2 is not reached — verified by making it raise
-    # unconditionally, which leaves this test green and reddens only the happy
-    # path below. Pinning the artifact write specifically would need a state
+    # so preserve_artifact/2 is not reached. Verified by raising at the head of
+    # preserve_artifact/2's non-nil clause and running the WHOLE module: this
+    # test stays green, while two others redden — "a failing merged run files
+    # its attribution artifact beside the output capture" (:2174, above) and
+    # "a shared-fate timeout finding echoes the ExUnit seed and its capture
+    # records timed_out" (:1764), which is also a merged, capture-armed run
+    # that gets past the log write. Pinning the artifact write would need a state
     # where the LOG write succeeds and the ARTIFACT write fails, i.e. a
     # directory pre-created at `Path.rootname(capture) <> ".attribution.jsonl"`
     # — and the capture name carries a per-run nonce, so no test can know it in

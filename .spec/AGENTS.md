@@ -32,7 +32,9 @@ Use this folder to maintain authored Spec Led Development subjects and generated
 ## Gate Forensics
 
 `make check` and `scripts/check_specs.sh` arm `SPECLED_COMMAND_OUTPUT_DIR` at
-`tmp/specled-command-output` (gitignored) unconditionally, and CI points it at
+`tmp/specled-command-output` (gitignored) whenever it is unset — note that
+presetting it to the empty string defeats both, since `make`'s `?=` treats
+empty as set and the verifier's own guard then ignores it. CI points it at
 the runner temp dir it uploads as an artifact.
 
 `.claude/settings.json` also arms it for agent shells, but only for sessions

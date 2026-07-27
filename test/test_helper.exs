@@ -17,8 +17,9 @@ System.put_env("GIT_CONFIG_NOSYSTEM", "1")
 # directory collects those deliberate failures alongside the one genuine
 # capture. The count is seed-dependent, not fixed: the first capture-exercising
 # test to finish deletes the variable in its own cleanup, so everything
-# scheduled after it writes nothing. Measured on this module at seeds 0, 1 and
-# 424242: 9, 10 and 4 files. Unsetting it here makes that 0, deterministically.
+# scheduled after it writes nothing. Measured on test/specled_ex/verifier_test.exs
+# alone (not the whole suite) at seeds 0, 1 and 424242: 9, 10 and 4 files.
+# Unsetting it here makes that 0, deterministically.
 #
 # Costs the gate nothing: the capture that matters is written by the OUTER
 # `mix spec.check` BEAM about this suite's run, not by this BEAM about its own
