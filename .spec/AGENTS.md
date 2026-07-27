@@ -31,10 +31,16 @@ Use this folder to maintain authored Spec Led Development subjects and generated
 
 ## Gate Forensics
 
-Every gate path here arms `SPECLED_COMMAND_OUTPUT_DIR` at
-`tmp/specled-command-output` (gitignored): `.claude/settings.json` for agent
-shells, `make check`, and `scripts/check_specs.sh`. CI points it at the runner
-temp dir it uploads as an artifact.
+`make check` and `scripts/check_specs.sh` arm `SPECLED_COMMAND_OUTPUT_DIR` at
+`tmp/specled-command-output` (gitignored) unconditionally, and CI points it at
+the runner temp dir it uploads as an artifact.
+
+`.claude/settings.json` also arms it for agent shells, but only for sessions
+whose project directory is a checkout carrying that file, and its value is
+relative to wherever the gate was invoked from. If you are running the gate as
+an agent and want the capture guaranteed, run `bash ./scripts/check_specs.sh`
+rather than bare `mix spec.check`, or check `echo $SPECLED_COMMAND_OUTPUT_DIR`
+first. See specled_-4f7.
 
 When a verification command fails or times out, that directory receives:
 

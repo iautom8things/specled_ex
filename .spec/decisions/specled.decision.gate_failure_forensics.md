@@ -58,10 +58,19 @@ across `specled.verification` and `specled.tagged_tests`:
    files.
 
 The capture stays opt-in via `SPECLED_COMMAND_OUTPUT_DIR` — a library must not
-write to a consumer's filesystem uninvited — but every gate path this repo owns
-(CI, `make check`, `scripts/check_specs.sh`, and agent shells via
-`.claude/settings.json`) arms it by default. An instrument that is off in every
-environment where the fault occurs is not an instrument.
+write to a consumer's filesystem uninvited — but the gate paths this repo owns
+arm it by default. An instrument that is off in every environment where the
+fault occurs is not an instrument.
+
+Two of those paths are unconditional: CI, and the `make check` /
+`scripts/check_specs.sh` wrappers. The third is not, and the difference is
+worth stating rather than glossing. `.claude/settings.json` arms agent shells
+only for sessions whose project directory is a checkout carrying this file, and
+its value is relative, so it resolves against the directory the gate was
+invoked from. An agent session rooted at a checkout that predates this change —
+or one invoking the gate from a subdirectory — is not covered. Coverage of the
+agent-shell path is therefore a property of where the session was started, not
+a guarantee; see specled_-4f7 for the residual.
 
 ## Alternatives Rejected
 
