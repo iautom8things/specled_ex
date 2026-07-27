@@ -14,11 +14,15 @@
     {
       "text": "CORRECTION to the epic description sequencing block: Wave 1 is 12 tickets, not 11. The name list is right (wby, ako, yds, vbo, pii, ehv, dn4.12, npo, zek, z5t, chb, 4pl); only the count was wrong. Waves total 12 + 7 + 2 = 21, matching the child count.",
       "timestamp": "2026-07-27T08:40:48Z"
+    },
+    {
+      "text": "HEADS UP from specled_-td7 delivery (2026-07-27T09:3xZ) — this epic's stated base and shipping plan are now invalid. Nothing is lost, but the plan needs re-cutting before work continues.\n\nWHAT CHANGED. The user directed /open-pr -\u003e /merge-pr -\u003e /deliver on specled_-td7. PR #30 was squash-merged to main as 02258a0b, released as 0.10.0, and the head branch feat/specled_-td7-self-identifying-descriptors was deleted on the remote (and locally, as part of worktree cleanup).\n\nTHIS EPIC'S DESCRIPTION IS NOW STALE IN THREE PLACES:\n1. 'branches from feat/specled_-td7-self-identifying-descriptors at e81f9f98' — that branch no longer exists on the remote or locally.\n2. 'land 21 tickets on a SINGLE PR, extending the 0.10.0 release already opened' — that PR is merged and closed. There is no open PR to extend.\n3. 'Do NOT re-bump; extend the existing 0.10.0 section' — 0.10.0 is released. This epic now needs its OWN version (0.10.1 or 0.11.0 depending on tier) and its own CHANGELOG section.\n\nWHAT IS INTACT — no work was lost:\n- Worktree /Users/mz/src/specled_ex-specled--k6s-fast-follow is untouched and still checked out at epic/specled_-k6s-0.10.0-fast-follow (e81f9f98).\n- That branch ref exists and its commits are reachable; the base commit object e81f9f98 is intact.\n- Its 10 commits are exactly the td7 work that shipped, so its content IS in main via the squash (02258a0b) — it is not carrying anything main lacks.\n- specled_-4f7 and specled_-npo (adopted into this epic) are unaffected; both are still open with correct mandates.\n\nSUGGESTED REMEDY, for whoever owns this epic — not applied by me, since this is your epic and mid-flight:\n  git -C /Users/mz/src/specled_ex-specled--k6s-fast-follow fetch origin main\n  git -C ... rebase origin/main    # the 10 td7 commits will drop out as already-applied via the squash\nThen update this description's BASE section and plan a fresh version bump. The wave sequencing and admission verification are unaffected — only the base and the release target changed.\n\nNot touched by me: this epic, its children, its worktree, or specled_-3mp (a new td7 follow-up left standalone rather than admitted here without going through your admission gate).\n\nSession: a5f50a6d-689f-4616-80ad-806b0595aa28\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/a5f50a6d-689f-4616-80ad-806b0595aa28.jsonl",
+      "timestamp": "2026-07-27T09:36:41Z"
     }
   ],
   "priority": 2,
   "status": "open",
   "title": "[EPIC] Impromptu: 0.10.0 fast-follow sweep — gate-forensics reach, spec.validate usage tier, doc-lint hardening, coverage-store safety, review polish",
   "type": "epic",
-  "updated_at": "2026-07-27T08:40:48Z"
+  "updated_at": "2026-07-27T09:36:41Z"
 }
