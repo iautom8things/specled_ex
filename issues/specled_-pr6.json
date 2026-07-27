@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-27T00:36:24Z",
+  "description": "Advances: specled.compiler_tracer",
+  "id": "specled_-pr6",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "bootstrap_tracer! can run a permanently stale tracer beam: same-second mtime tie defeats its staleness check and mix compile --force cannot heal it",
+  "type": "bug",
+  "updated_at": "2026-07-27T00:36:24Z"
+}
