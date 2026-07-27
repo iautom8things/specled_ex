@@ -7,8 +7,8 @@
       "message": "Changed file test/docs_identifier_lint_test.exs impacts subject specs that were not updated: specled.package"
     }
   ],
-  "run_at": "2026-07-27T10:22:19.549465Z",
-  "run_id": "b16e0cea11e21dceddaad9120a533861",
+  "run_at": "2026-07-27T10:23:35.110369Z",
+  "run_id": "8a764bdaa68917050d872515389c694d",
   "schema_version": 1,
   "specled_version": "0.2.0",
   "tree_hash": "95f84ce8732eae9898a028589067c275fb903433",
