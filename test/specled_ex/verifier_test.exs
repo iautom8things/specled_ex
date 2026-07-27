@@ -2002,10 +2002,12 @@ defmodule SpecLedEx.VerifierTest do
       assert captured =~ "capture_nonce_7c1f"
 
       # Deliberately no provenance assertion here: whether this root is inside a
-      # work tree depends on where the host puts TMPDIR, so any assertion this
-      # test could make would pass on both branches and prove nothing. The two
-      # provenance branches are pinned deterministically by their own tests
-      # below.
+      # work tree depends on where the host puts TMPDIR, so this test can only
+      # assert something both branches satisfy. Such an assertion is not
+      # worthless — it would catch the field being omitted entirely — but the
+      # two provenance branches are each pinned deterministically by their own
+      # tests below, which catch that same failure and more, so it would add
+      # nothing here.
     after
       System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
     end
@@ -2212,12 +2214,22 @@ defmodule SpecLedEx.VerifierTest do
   @tag spec: "specled.tagged_tests.failed_run_preserves_attribution_artifact"
   test "a merged run whose capture dir is unwritable keeps its findings and warns once",
        %{root: root} do
-    # The sibling unwritable-dir test drives a GENERIC command, so
-    # run_merged_command/5 is never on the stack and the artifact copy is never
-    # reached. Without this, the merged path — the only path that carries an
-    # artifact — has never been observed surviving a capture failure, and the
-    # requirement's "a filesystem failure in either write shall not alter the
-    # verification result" holds only for the write that was already proven.
+    # What this proves: the MERGED path — the only path that carries an
+    # artifact — survives a capture failure with its findings and claim
+    # strengths intact. The sibling unwritable-dir test cannot show that; it
+    # drives a generic command, so run_merged_command/5 is never on the stack.
+    #
+    # What it does NOT prove, stated plainly because the obvious reading is
+    # that it does: the artifact write itself is still never exercised here.
+    # An unwritable directory makes File.mkdir_p! raise before the log write,
+    # so preserve_artifact/2 is not reached — verified by making it raise
+    # unconditionally, which leaves this test green and reddens only the happy
+    # path below. Pinning the artifact write specifically would need a state
+    # where the LOG write succeeds and the ARTIFACT write fails, i.e. a
+    # directory pre-created at `Path.rootname(capture) <> ".attribution.jsonl"`
+    # — and the capture name carries a per-run nonce, so no test can know it in
+    # advance. That half of the requirement's "either write" rests on the two
+    # writes sharing one guard by construction, not on a test.
     blocker = Path.join(root, "blocker")
     File.write!(blocker, "")
 

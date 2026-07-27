@@ -2503,9 +2503,13 @@ defmodule SpecLedEx.Verifier do
       _ -> nil
     end
   rescue
-    # git absent from PATH (ErlangError :enoent) or an unusable cd
-    # (ArgumentError/File.Error). Provenance is strictly a bonus on the
-    # capture, so every one of these degrades to "unavailable" rather than
+    # git absent from PATH (ErlangError :enoent), or a malformed :cd VALUE such
+    # as a non-string (ArgumentError). A merely non-existent :cd directory does
+    # NOT raise — measured: System.cmd returns {"", 2} and the `_ -> nil` arm
+    # above already covers it. File.Error is listed for belt and braces; no
+    # reachable System.cmd path was found that raises it. Provenance is
+    # strictly a bonus on the capture, so every one of these degrades to
+    # "unavailable" rather than
     # costing the caller its forensic log.
     _ in [ErlangError, ArgumentError, File.Error] -> nil
   end
