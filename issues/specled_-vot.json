@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-27T20:28:40Z",
+  "description": "DISCLOSURE — not a repair ticket. Do not reparent under this id.\n\nWhat is wrong: specled_-dn4.12 and specled_-dn4.13 use epic-child dotted ids implying children of specled_-dn4 without matching parent edge to that epic (audit 2026-07-26). Live board 2026-07-27: dn4.12 parent=specled_-k6s (not dn4); dn4.13 parent=null.\n\nRepairable? YES in principle (parent edge rewritable). This disclosure does not set/clear parent. Prevents recurrence: adf-3yz S4 parenting rule (--parent not -p). Full write-up: agentic-dotfiles docs/specled-ex-board-disclosure.md finding 5.",
+  "id": "specled_-vot",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "DISCLOSURE (no repair): dn4.12/.13 dotted ids without proper dn4 parent",
+  "type": "task",
+  "updated_at": "2026-07-27T20:28:40Z"
+}
