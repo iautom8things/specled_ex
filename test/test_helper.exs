@@ -8,19 +8,23 @@
 System.put_env("GIT_CONFIG_GLOBAL", "/dev/null")
 System.put_env("GIT_CONFIG_NOSYSTEM", "1")
 
-# Every gate path arms SPECLED_COMMAND_OUTPUT_DIR (.claude/settings.json,
-# `make check`, scripts/check_specs.sh) so a verification command that reddens
-# once and never reproduces leaves its full output behind. This suite fails
-# verification commands on purpose by the dozen — inheriting the gate's capture
-# directory buries the one genuine capture under ~30 deliberate ones, and a
-# forensic directory you have to search is most of the way back to not having
-# one.
+# The gate wrappers — `make check`, scripts/check_specs.sh, and CI — arm
+# SPECLED_COMMAND_OUTPUT_DIR so a verification command that reddens once and
+# never reproduces leaves its full output behind. `.claude/settings.json` arms
+# it for agent sessions rooted at a checkout carrying that file.
 #
-# Unsetting it here costs the gate nothing: the capture that matters is written
-# by the OUTER `mix spec.check` BEAM about this suite's run, not by this BEAM
-# about its own fixtures. Tests that exercise capture set their own directory,
-# which also makes their cleanup exact rather than accidental — "unset" is now
-# the deliberate baseline they restore to.
+# This suite fails verification commands on purpose, so an inherited capture
+# directory collects those deliberate failures alongside the one genuine
+# capture. The count is seed-dependent, not fixed: the first capture-exercising
+# test to finish deletes the variable in its own cleanup, so everything
+# scheduled after it writes nothing. Measured on this module at seeds 0, 1 and
+# 424242: 9, 10 and 4 files. Unsetting it here makes that 0, deterministically.
+#
+# Costs the gate nothing: the capture that matters is written by the OUTER
+# `mix spec.check` BEAM about this suite's run, not by this BEAM about its own
+# fixtures. Tests that exercise capture set their own directory, which also
+# makes their cleanup exact rather than accidental — "unset" is the deliberate
+# baseline they restore to.
 System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
 
 Mix.shell(Mix.Shell.Process)
