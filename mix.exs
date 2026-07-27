@@ -98,9 +98,21 @@ defmodule SpecLedEx.MixProject do
     end
   end
 
-  @doc false
+  @doc """
+  Digest keying the compiled artifact to both the source CONTENT and the
+  toolchain that produced it.
+
+  The toolchain is part of the key because a beam is only loadable by a
+  compatible OTP: compiling under OTP 28 and then running the OTP 26 matrix leg
+  in the same worktree leaves an artifact the older child BEAM cannot load, so
+  fixture subprocess compiles silently proceed with no tracer at all and fail
+  with signatures that mimic real regressions. Content alone cannot distinguish
+  that case — the source is byte-identical across legs — so the version pair is
+  mixed in and a leg switch rebuilds automatically.
+  """
   def source_digest(src) do
-    :crypto.hash(:sha256, File.read!(src)) |> Base.encode16(case: :lower)
+    payload = [File.read!(src), "\n", System.otp_release(), "/", System.version()]
+    :crypto.hash(:sha256, IO.iodata_to_binary(payload)) |> Base.encode16(case: :lower)
   end
 
   defp tracer_stale?(beam, digest_path, digest) do

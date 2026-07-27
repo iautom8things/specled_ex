@@ -47,6 +47,9 @@ defmodule SpecLedEx.Compiler.TracerBootstrapTest do
   defp digest_path(ebin, module), do: Path.join(ebin, "Elixir." <> module <> ".srcdigest")
   defp posix_mtime(path), do: File.stat!(path, time: :posix).mtime
 
+  defp content_only_digest(src),
+    do: :crypto.hash(:sha256, File.read!(src)) |> Base.encode16(case: :lower)
+
   describe "compile_tracer_if_stale!/3" do
     @tag spec: ["specled.compiler_tracer.bootstrap_rebuilds_on_content_change"]
     test "compiles when no artifact exists yet", %{ebin: ebin, src: src} do
@@ -113,6 +116,32 @@ defmodule SpecLedEx.Compiler.TracerBootstrapTest do
       File.touch!(src, posix_mtime(beam_path(ebin, module)) - 60)
 
       assert bootstrap(src, ebin, module) == :compiled
+    end
+
+    @tag spec: ["specled.compiler_tracer.bootstrap_rebuilds_on_content_change"]
+    test "the digest keys on the toolchain, so a matrix-leg switch is not seen as fresh",
+         %{src: src} do
+      write_source!(src, probe_module(), "same content")
+      digest = SpecLedEx.MixProject.source_digest(src)
+
+      # The digest must be a function of the toolchain as well as the content:
+      # an OTP-28-built beam is unloadable under OTP 26 even though the source is
+      # byte-identical, so content alone would call the stale artifact fresh.
+      refute digest == content_only_digest(src),
+             "digest must not be over source content alone"
+
+      assert digest ==
+               :crypto.hash(
+                 :sha256,
+                 IO.iodata_to_binary([
+                   File.read!(src),
+                   "\n",
+                   System.otp_release(),
+                   "/",
+                   System.version()
+                 ])
+               )
+               |> Base.encode16(case: :lower)
     end
 
     @tag spec: ["specled.compiler_tracer.bootstrap_digest_recorded_after_success"]

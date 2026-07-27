@@ -117,7 +117,13 @@ decisions:
     `File.stat!/1` mtimes have one-second granularity, so an mtime
     comparison leaves a mutated artifact permanently fresh whenever an
     edit or a revert lands in the same second as the previous compile,
-    presenting as a clean working tree running stale code.
+    presenting as a clean working tree running stale code. The digest
+    shall additionally key on the compiling toolchain (OTP release and
+    Elixir version), because a beam is loadable only by a compatible
+    OTP: content alone cannot distinguish an artifact built under a
+    different matrix leg, whose source is byte-identical, and loading
+    such an artifact makes fixture subprocess compiles proceed with no
+    tracer at all.
   priority: must
   stability: evolving
 - id: specled.compiler_tracer.bootstrap_digest_recorded_after_success
