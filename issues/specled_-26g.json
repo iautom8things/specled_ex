@@ -29,11 +29,15 @@
     {
       "text": "IMPLEMENTED\nSession: k6s-26g-impl-1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-26g/grok-k6s-26g-impl-1/log\n\nCommit: PLACEHOLDER_SHA\nFiles touched: test/specled_ex/coverage/store_test.exs\nTests added: none (setup-only isolation; existing load/1 tests unchanged)\nVerification stubs flipped: none\nVerification tier: change-scoped — mix compile --warnings-as-errors; mix test test/specled_ex/coverage/store_test.exs (30 tests, 0 failures); mix format --check-formatted; mix spec.check --no-run-commands (result=pass); full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: Replaced describe \"load/1\" setup so the coverdata path lives under a private `store_load_\u003ccross_vm_suffix\u003e/` directory instead of flat in System.tmp_dir!(). Removes the only remaining test path that wrote/deleted machine-global $TMPDIR/last_run.status (write_v2 status sidecar + on_exit rm_rf!). End-state proof: `rg -n last_run.status lib test` shows only production store.ex docs/impl, isolation comments, and the already-private read_status hostile-sidecar path at store_test.exs:388 (dirname(path) of a unique-dir root). git diff --name-only is exactly one file. Epic lessons checked: no ADR/spec written; no branch-flag invariant to dual-test; format green; completion on specled_-26g.",
       "timestamp": "2026-07-27T11:37:20Z"
+    },
+    {
+      "text": "IMPLEMENTED\nSession: k6s-26g-impl-1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-26g/grok-k6s-26g-impl-1/log\n\nCommit: 646606b23dc438ee5a164db88b354b3b415f64b3\nFiles touched: test/specled_ex/coverage/store_test.exs\nTests added: none (setup-only isolation; existing load/1 tests unchanged)\nVerification stubs flipped: none\nVerification tier: change-scoped — mix compile --warnings-as-errors; mix test test/specled_ex/coverage/store_test.exs (30 tests, 0 failures); mix format --check-formatted; mix spec.check --no-run-commands (result=pass); full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: Replaced describe \"load/1\" setup so the coverdata path lives under a private `store_load_\u003ccross_vm_suffix\u003e/` directory instead of flat in System.tmp_dir!(). Removes the only remaining test path that wrote/deleted machine-global $TMPDIR/last_run.status (write_v2 status sidecar + on_exit rm_rf!). End-state proof: `rg -n last_run.status lib test` shows only production store.ex docs/impl, isolation comments, and the already-private read_status hostile-sidecar path at store_test.exs:388 (dirname(path) of a unique-dir root). git diff --name-only is exactly one file. Epic lessons checked: no ADR/spec written; no branch-flag invariant to dual-test; format green; completion on specled_-26g.",
+      "timestamp": "2026-07-27T11:37:27Z"
     }
   ],
   "priority": 3,
   "status": "in_progress",
   "title": "Unique-dir the Store.read_status sidecar tests (shared $TMPDIR/last_run.status pollution)",
   "type": "task",
-  "updated_at": "2026-07-27T11:37:20Z"
+  "updated_at": "2026-07-27T11:37:27Z"
 }
