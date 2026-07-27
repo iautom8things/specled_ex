@@ -14,11 +14,15 @@
     {
       "text": "specled_-gai reparented out of this epic to specled_-233 (2026-07-26), an impromptu single-PR epic bundling it with specled_-48i, specled_-vk0, specled_-ymn. Reason: gai's precondition ('once lib/** edits are in scope') is satisfied there, and the other three tickets ship on the same PR. This epic retains specled_-26g, specled_-xkn.1, specled_-xkn.2.",
       "timestamp": "2026-07-26T20:38:16Z"
+    },
+    {
+      "text": "SUPERSEDED by specled_-k6s (2026-07-27). All three remaining children reparented out: specled_-26g, specled_-xkn.1, specled_-xkn.2 now hang off specled_-k6s and ship on its single 0.10.0 PR.\n\nThis epic now has zero children and no work of its own. Close it once specled_-k6s lands. Precedent: specled_-gai was reparented out of here to specled_-233 on 2026-07-26 for the same reason - the children had a live single-PR home and this container did not.\n",
+      "timestamp": "2026-07-27T08:37:26Z"
     }
   ],
   "priority": 2,
   "status": "open",
   "title": "Fast-follow: q6l coverage-gate remediation — review mediums",
   "type": "epic",
-  "updated_at": "2026-07-26T20:38:16Z"
+  "updated_at": "2026-07-27T08:37:26Z"
 }
