@@ -61,11 +61,15 @@
     {
       "text": "LESSONS (addition — grader hygiene, from the specled_-ymn merge investigation)\n- [other] A falsification probe can POISON the build in a way `mix compile --force` cannot heal. lib/specled_ex/compiler/tracer.ex is excluded from elixirc_paths (it is the compiler tracer), so its only build path is bootstrap_tracer!/0, whose staleness check is `src.mtime \u003e beam.mtime` — strictly greater, one-second granularity. Mutate it, run the suite, then `git checkout --` in the same second and the MUTATED beam is fresh forever, with a pristine `git status` and a 0-byte diff. After probing that file, verify the revert took EFFECT (not just that the source looks right) by `touch`ing it or deleting the beam. Diagnostic tell: if a failing temp name's two numeric components differ by a constant across runs (the unique_integer stride, 32 here), both are counters and you are running a stale beam. Filed as specled_-pr6 (from specled_-ymn)\n- [other] \"Reverted; git diff HEAD is empty\" is NOT proof a probe left no trace. It proves the SOURCE is restored, not that the artifact built from the mutation is gone. For any file with a bespoke or excluded build path, assert on observed BEHAVIOUR after the revert, not on tree cleanliness",
       "timestamp": "2026-07-27T00:37:01Z"
+    },
+    {
+      "text": "MERGE GATE 4 — green. Ran after specled_-ymn closed. FINAL gate; all four children merged.\n\nEpic HEAD: 8fec4a15\n  mix compile --warnings-as-errors  exit 0\n  mix format --check-formatted      exit 0\n  mix deps.unlock --check-unused    exit 0\n  mix test                          3 properties, 1255 tests, 0 failures (base was 1245; +10 net)\n  mix spec.check (bare)             spec.check result=pass\n    validate status=pass errors=0 warnings=0\n    branch changed_files=23 findings=1 (error=0 warning=0 info=1), change_type=cross_cutting\n    impacted_subjects=specled.binding, specled.compiler_tracer, specled.package,\n                      specled.realized_by, specled.spec_review, specled.triangulation,\n                      specled.verification\n\nNote: the tracer beam was force-rebuilt (touch lib/specled_ex/compiler/tracer.ex, content diff\n0 bytes) BEFORE this gate, defensively against specled_-pr6 — the epic worktree had been\ncompiling all epic long and a gate validating a stale tracer beam would be worthless.\n\nMINI-RETRO\nbounces: 5 (untested-clause x3, stale-spec x1, other x1)\nfull_suite_runs: 4\nfinals_gt1: 2\nflake_accepts: 0\nescalations: 0\nlessons_kept/retired: 19/0",
+      "timestamp": "2026-07-27T00:43:19Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "[EPIC] Impromptu: doc-lint content verification, lint hardening, coverage-requirement retirement, cross-VM temp-name ADR reconciliation",
   "type": "epic",
-  "updated_at": "2026-07-27T00:37:01Z"
+  "updated_at": "2026-07-27T00:43:19Z"
 }
