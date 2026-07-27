@@ -298,12 +298,12 @@ decisions:
     line itself. When a resume pass ran, the finding's primary seed echo
     shall be the FIRST run's seed (the retained output belongs to the first
     run); when the resume pass itself timed out and its own output contains
-    a seed line, the resume-timeout suffix shall also name that resume
-    seed in the resume-timeout suffix, alongside the resume run's hang
-    suspects, so each seed is paired with the run it reproduces. When no
-    seed line is present in the
-    retained output, findings shall be unchanged — no seed note is
-    appended. The seed-echo mechanism itself is shared with generic
+    a seed line, the same finding shall also name that resume seed with its
+    own `--seed` reproduction hint, labelled as the resume pass's seed so it
+    is never read as the run's primary seed echo, so each seed is paired
+    with the run it reproduces. When no seed line is present in the retained
+    output, findings shall be unchanged — no seed note is appended.
+    The seed-echo mechanism itself is shared with generic
     `command` verifications (see
     specled.verify.command_findings_echo_exunit_seed); this requirement
     pins the merged-run distribution and multi-run pairing behavior.
@@ -528,7 +528,7 @@ decisions:
   then:
     - every seeded run's `verification_command_failed` and `verification_command_timeout` finding — attributed and shared-fate alike — echoes seed 424242 with a `--seed 424242` reproduction hint
     - the seedless run's findings contain no seed note and no `--seed` hint
-    - the double-timeout finding keeps 111111 as the primary seed echo and names resume pass seed 222222 next to the resume run's hang suspect, never presenting 222222 as the primary seed
+    - the double-timeout finding keeps 111111 as the primary seed echo and also names resume pass seed 222222 with its own `--seed` hint labelled as the resume pass's seed, never presenting 222222 as the primary seed
   covers:
     - specled.tagged_tests.findings_echo_exunit_seed
 - id: specled.tagged_tests.scenario.descriptors_carry_location_and_id
