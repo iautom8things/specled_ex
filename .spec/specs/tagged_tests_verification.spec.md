@@ -545,14 +545,14 @@ decisions:
     - specled.tagged_tests.descriptors_self_identify
 - id: specled.tagged_tests.scenario.failed_run_preserves_attribution_artifact
   given:
-    - SPECLED_COMMAND_OUTPUT_DIR names a writable directory
+    - SPECLED_COMMAND_OUTPUT_DIR names a writable directory, and in a second run an unwritable one
     - a merged run whose command writes an attribution artifact recording a failed test, then exits non-zero
   when:
     - verification runs with run_commands true
   then:
     - the capture directory holds the run's output capture and, under the same basename, a copy of the attribution artifact
     - the preserved artifact still carries the failed test's recorded event, state, and the run's `suite_finished`
-    - removing the shared capture guard reddens the output capture's own unwritable-directory scenario, so the artifact copy has no separately provable contract
+    - the same merged run against an unwritable capture directory keeps its findings and claim strengths unchanged and emits the one-line stderr warning
   covers:
     - specled.tagged_tests.failed_run_preserves_attribution_artifact
 - id: specled.tagged_tests.scenario.attribution_artifact_name_cross_vm_safe

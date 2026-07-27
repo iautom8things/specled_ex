@@ -159,9 +159,10 @@ decisions:
     only against the tree that ran, so a working tree edited between the gate
     run and the reading of its report makes the report look fabricated;
     recording HEAD and the dirty set makes that skew detectable instead of
-    inexplicable. When the verification root is not a git work tree, or git is
-    unavailable, the capture shall record the provenance as unavailable rather
-    than failing or omitting the field.
+    inexplicable. When the root's HEAD cannot be resolved — not a git work
+    tree, an unborn branch with no commits, or git unavailable — the capture
+    shall record the provenance as unavailable rather than failing or omitting
+    the field, so a reader can tell an unanswered question from an unasked one.
   priority: must
   stability: evolving
 - id: specled.verify.command_findings_echo_exunit_seed
@@ -336,6 +337,7 @@ decisions:
   given:
     - SPECLED_COMMAND_OUTPUT_DIR names a writable directory
     - a verification root that is a git work tree with a commit, run three ways — one uncommitted file, a clean tree, and a tree dirtied past the listing bound
+    - a fourth root whose HEAD cannot be resolved (an initialized work tree on an unborn branch)
     - a failing command verification
   when:
     - verification runs with run_commands true
@@ -344,6 +346,7 @@ decisions:
     - the capture file records the dirty path list, naming the uncommitted file
     - the clean tree is recorded as clean rather than as an empty list
     - the over-bound tree lists at most the bound and states the omitted count
+    - the unresolvable-HEAD root is recorded as unavailable — the field is present and says why, rather than being omitted or failing the run
   covers:
     - specled.verify.command_capture_run_provenance
 - id: specled.verify.scenario.command_finding_echoes_seed

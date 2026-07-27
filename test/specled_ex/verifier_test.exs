@@ -2001,11 +2001,11 @@ defmodule SpecLedEx.VerifierTest do
       assert captured =~ "timed_out: false"
       assert captured =~ "capture_nonce_7c1f"
 
-      # Pinned as a shape, not as a bare prefix: this root's git status depends
-      # on where the host puts TMPDIR, so both branches are legitimate here —
-      # but `=~ "git_head:"` would also pass on a truncated or empty value,
-      # which is the whole failure mode the line exists to rule out.
-      assert captured =~ ~r/git_head: (unavailable \(no git work tree|[0-9a-f]{40}\n)/
+      # Deliberately no provenance assertion here: whether this root is inside a
+      # work tree depends on where the host puts TMPDIR, so any assertion this
+      # test could make would pass on both branches and prove nothing. The two
+      # provenance branches are pinned deterministically by their own tests
+      # below.
     after
       System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
     end
@@ -2061,6 +2061,49 @@ defmodule SpecLedEx.VerifierTest do
       assert captured =~ "git_dirty: 1 path(s)"
       assert captured =~ "dirty_nonce_a91c.txt"
       refute captured =~ "and 0 more"
+    after
+      System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
+    end
+  end
+
+  @tag spec: "specled.verify.command_capture_run_provenance"
+  test "a root with no resolvable HEAD records the provenance as unavailable", %{root: root} do
+    capture_dir = Path.join(root, "capture")
+
+    # A work tree with no commits: `rev-parse HEAD` fails on the unborn branch,
+    # so this arm fires on EVERY machine. Relying on a fresh tmp dir being
+    # outside any repository would make the branch ambient — and on a host whose
+    # TMPDIR sits inside a checkout the test would silently observe the other
+    # branch while still passing.
+    init_git_repo(root)
+    System.put_env("SPECLED_COMMAND_OUTPUT_DIR", capture_dir)
+
+    try do
+      report =
+        verify_subject(
+          root,
+          %{
+            "requirements" => [%{"id" => "req.cap", "statement" => "Captured"}],
+            "verification" => [
+              %{
+                "kind" => "command",
+                "target" => "exit 3",
+                "covers" => ["req.cap"],
+                "execute" => true
+              }
+            ]
+          },
+          run_commands: true
+        )
+
+      assert report["status"] == "fail"
+
+      assert [capture_path] = Path.wildcard(Path.join(capture_dir, "specled_cmd_*.log"))
+      captured = File.read!(capture_path)
+
+      # Answered, not omitted: the field is present and says why it is empty.
+      assert captured =~ "git_head: unavailable (no resolvable git HEAD at the verification root)"
+      refute captured =~ "git_dirty:"
     after
       System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
     end
@@ -2161,6 +2204,46 @@ defmodule SpecLedEx.VerifierTest do
       assert artifact =~ ~s("id":"AlphaTest.boom")
       assert artifact =~ ~s("state":"failed")
       assert artifact =~ ~s("event":"suite_finished")
+    after
+      System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
+    end
+  end
+
+  @tag spec: "specled.tagged_tests.failed_run_preserves_attribution_artifact"
+  test "a merged run whose capture dir is unwritable keeps its findings and warns once",
+       %{root: root} do
+    # The sibling unwritable-dir test drives a GENERIC command, so
+    # run_merged_command/5 is never on the stack and the artifact copy is never
+    # reached. Without this, the merged path — the only path that carries an
+    # artifact — has never been observed surviving a capture failure, and the
+    # requirement's "a filesystem failure in either write shall not alter the
+    # verification result" holds only for the write that was already proven.
+    blocker = Path.join(root, "blocker")
+    File.write!(blocker, "")
+
+    shim = ~S"""
+    cat >> "$SPECLED_ATTRIBUTION_PATH" <<'JSONL'
+    {"event":"test_finished","id":"AlphaTest.boom","file":"test/alpha_test.exs","line":42,"spec":["req.alpha"],"state":"failed"}
+    {"event":"suite_finished"}
+    JSONL
+    exit 1
+    """
+
+    System.put_env("SPECLED_COMMAND_OUTPUT_DIR", Path.join(blocker, "nested"))
+
+    try do
+      {report, stderr} =
+        ExUnit.CaptureIO.with_io(:stderr, fn ->
+          run_two_subject_merged(root, shim, run_commands: true)
+        end)
+
+      # The run is reported exactly as it would be with no capture armed at all.
+      assert report["status"] == "fail"
+      assert [_ | _] = findings(report, "verification_command_failed")
+      assert claim_for(report, "req.alpha")["strength"] == "linked"
+
+      assert stderr =~ "specled: forensic output capture failed"
+      assert stderr =~ "verification result unaffected"
     after
       System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
     end

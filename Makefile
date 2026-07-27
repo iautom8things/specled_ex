@@ -47,12 +47,13 @@ compile: ## Compile with warnings-as-errors
 # entirely on timeout, so a flake that does not reproduce leaves no evidence
 # without this. Gitignored.
 #
-# This file exports it for `check` only, so `make test` from a plain shell adds
-# nothing. That is a property of this file alone, not of every environment:
-# .claude/settings.json arms the same variable for agent shells globally, so
-# `make test` THERE does deposit a log per deliberate command failure in the
-# suite. Harmless — gitignored, and the capture never alters a result — but do
-# not read this export as a guarantee that only the gate writes here.
+# Two mechanisms keep this directory holding gate evidence and nothing else,
+# and BOTH are required. This file exports the variable for `check` only, so
+# `make test` from a plain shell adds nothing. That alone is not enough:
+# .claude/settings.json arms the variable for agent shells globally, where
+# `make test` would inherit it — so test/test_helper.exs unsets it for the
+# suite, whose verification-command failures are deliberate and would bury the
+# one genuine capture. Remove either and this directory fills with noise.
 #
 # Override in the environment to relocate; CI sets its own.
 SPECLED_COMMAND_OUTPUT_DIR ?= $(CURDIR)/tmp/specled-command-output

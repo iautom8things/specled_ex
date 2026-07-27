@@ -2472,12 +2472,16 @@ defmodule SpecLedEx.Verifier do
   # different tree, where the line has shifted or gone blank, and the report
   # looks like it invented the line (this is exactly what happened to the
   # docs_identifier_lint_test.exs:255 report). Recording HEAD and the dirty set
-  # at run time makes that skew detectable rather than inexplicable. Silent by
-  # design outside a git work tree: provenance is a bonus on the capture, and a
-  # verified tree is not required to be version-controlled.
+  # at run time makes that skew detectable rather than inexplicable. Degrades
+  # rather than fails outside version control: provenance is a bonus on the
+  # capture, and a verified tree is not required to be a git repository.
   defp run_provenance(root) do
     case git(root, ["rev-parse", "HEAD"]) do
-      nil -> "git_head: unavailable (no git work tree at the verification root)"
+      # One message for every way HEAD fails to resolve — not a work tree, an
+      # unborn branch with no commits yet, or git missing from PATH. Which of
+      # the three does not help the reader; knowing the field was answered
+      # rather than omitted does.
+      nil -> "git_head: unavailable (no resolvable git HEAD at the verification root)"
       head -> "git_head: #{head}\n#{dirty_provenance(git(root, ["status", "--porcelain"]))}"
     end
   end
