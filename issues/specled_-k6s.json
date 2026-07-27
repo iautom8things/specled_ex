@@ -57,11 +57,15 @@
     {
       "text": "LESSONS (append)\n- [untested-clause] A guard that enumerates FORBIDDEN spellings is only as good as the enumeration. specled_-vbo caught `github.event.pull_request.head.sha` but not `${{ github.head_ref }}`, `$GITHUB_HEAD_REF`, or `gh pr checkout` — documented aliases for the same value. When a requirement forbids an ACT, prefer deny-by-default over a denylist: allowlist the permitted shapes and reject the rest (from specled_-vbo)\n- [other] Mutation testing must be ADVERSARIAL, not confirmatory. specled_-vbo's first verifier mutated four clauses, saw RED, and passed the ticket — while two evasions were live. Its second verifier ran 21 mutants plus an unmutated control (so the harness could be shown not trivially red) and found four more. Design mutants to BEAT the guard, not to confirm it (from specled_-vbo)",
       "timestamp": "2026-07-27T11:40:26Z"
+    },
+    {
+      "text": "specled_-k6s parked specled_-vbo: bounce cap exhausted — command-tier privilege guard cannot be made sound by recognising command text (3 iterations, each closing the named evasions and leaving a larger set open; absolute-path spelling `/usr/bin/git fetch` defeats even the verbs the guard knows). Needs a human decision on narrowing the guard's claim vs allowlisting the run surface vs moving the boundary into the template. See the ESCALATED comment on specled_-vbo for the three options.\n\nstill running: specled_-14t, specled_-dn4.12, specled_-asb, specled_-ozm, specled_-chb\nnext: specled_-xkn.1",
+      "timestamp": "2026-07-27T12:07:22Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "[EPIC] Impromptu: 0.11.0 fast-follow sweep — gate-forensics reach, spec.validate usage tier, doc-lint hardening, coverage-store safety, review polish",
   "type": "epic",
-  "updated_at": "2026-07-27T11:40:26Z"
+  "updated_at": "2026-07-27T12:07:22Z"
 }
