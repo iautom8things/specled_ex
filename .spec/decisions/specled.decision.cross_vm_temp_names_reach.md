@@ -58,9 +58,23 @@ subjects into branch-guard's impacted set for no semantic gain.
 
 That permission does **not** extend to tests that assert on directory contents
 (`File.ls!` over a shared or tmp root, or a cleanup sweep that deletes by glob
-in a shared dir). Those shall use `SpecLedEx.TempName.cross_vm_suffix/0`,
-because there a collision produces a false failure or raise rather than a
-deleted scratch dir. New tests that allocate shared-tmp roots should reach for
+in a shared dir), because there a collision produces a false failure or raise
+rather than a deleted scratch dir. The remedy depends on which half of the
+class the test is in:
+
+- A test that **allocates its own root** shall name that root with
+  `SpecLedEx.TempName.cross_vm_suffix/0`, so the tree is cross-VM unique before
+  any `File.ls!` or cleanup runs against it.
+- A test that **reads or sweeps a genuinely shared directory it cannot
+  uniquify** (e.g. `_build/<env>/.spec`) shall filter on the writer's
+  `System.pid()` prefix instead. A freshly minted
+  `SpecLedEx.TempName.cross_vm_suffix/0` embeds CSPRNG bytes present in no file
+  on disk and therefore cannot match names another writer produced — using it
+  as a filter would make a litter assert vacuous and a glob-delete sweep a
+  no-op. Both the shared-root `File.ls!` assert and the after-sweep cleanup
+  fall in this half.
+
+New tests that allocate shared-tmp roots should reach for
 `SpecLedEx.TempName.cross_vm_suffix/0` as well.
 
 The HashStore write-rename sibling is not an exception. It shall use

@@ -381,9 +381,7 @@ defmodule SpecLedEx.Compiler.TracerTest do
         @manifest_path
         |> Path.dirname()
         |> File.ls!()
-        |> Enum.filter(
-          &String.starts_with?(&1, "xref_mfa.etf.tmp.#{System.pid()}_")
-        )
+        |> Enum.filter(&String.starts_with?(&1, "xref_mfa.etf.tmp.#{System.pid()}_"))
 
       assert litter == []
     end
@@ -417,9 +415,7 @@ defmodule SpecLedEx.Compiler.TracerTest do
         @manifest_path
         |> Path.dirname()
         |> File.ls!()
-        |> Enum.filter(
-          &String.starts_with?(&1, "xref_mfa.etf.tmp.#{System.pid()}_")
-        )
+        |> Enum.filter(&String.starts_with?(&1, "xref_mfa.etf.tmp.#{System.pid()}_"))
         |> Enum.each(&File.rm(Path.join(Path.dirname(@manifest_path), &1)))
       end
     end
