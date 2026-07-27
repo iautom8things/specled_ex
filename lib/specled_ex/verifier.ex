@@ -2404,12 +2404,14 @@ defmodule SpecLedEx.Verifier do
   # filed beside the log under the same basename so the two stay correlatable in
   # a capture directory holding several failing commands. Both writes live under
   # ONE guard on purpose: a second rescue would be a second best-effort contract
-  # to prove, and no test can reach a state that distinguishes it from this one
-  # (the capture name carries a per-run nonce, so nothing can pre-block the
-  # artifact write alone). Not that such states cannot EXIST — a disk filling
-  # between the two writes, or a race at the artifact path, would reach a second
-  # rescue — only that none is reachable from a test, which is what makes a
-  # separate contract unprovable rather than merely redundant.
+  # to prove, and no test we have found reaches a state that distinguishes it
+  # from this one (the capture name carries a per-run nonce, so nothing can
+  # pre-block the artifact write alone). Such states do EXIST — a disk filling
+  # between the two writes, a race at the artifact path, or a capture directory
+  # deep enough that the log path fits under the OS limit and the 14-bytes-longer
+  # artifact path does not. None is a state a reasonable test would construct,
+  # which is what makes a separate contract impractical to prove rather than
+  # strictly impossible.
   #
   # Best-effort by contract: a capture failure must never alter the
   # verification result.
