@@ -6,6 +6,7 @@
   "description": "No spec subject — bookkeeping epic.\n\nImpromptu epic created 2026-07-27 to land 21 independently-surfaced follow-up tickets on a SINGLE PR as release 0.11.0. Children were each carved by an earlier ticket cold verification, critical review, or the 0.9.6 / 0.10.0 fast-follow sweeps, and had no owning epic.\n\n## BASE AND RELEASE\n\nREBASED 2026-07-27. This epic originally branched from feat/specled_-td7-self-identifying-descriptors to keep specled_-td7 and specled_-n5s on the same PR. That branch has since MERGED to main as 02258a0b (PR #30, release 0.10.0), so td7 and n5s are shipped and are NO LONGER part of this epic. Main then advanced again with 2023373d (PR #31, worktree workflow host-elixir 0.22.0 -\u003e 0.23.0).\n\nThis epic now branches from main at 2023373d and targets release 0.11.0. VERSION in tree is 0.10.0 (the shipped value); the release step bumps it to 0.11.0 and opens a NEW CHANGELOG section. There is no pre-opened section to extend.\n\n## ADMISSION VERIFICATION (2026-07-27)\n\nAll 22 candidate tickets were cold-verified by one fresh-context agent each before this epic was formed. Result: zero already_done, zero obsolete. One premise_wrong (specled_-4pl) and three partially_done (specled_-26g, specled_-npo, specled_-4f7) had their mandates narrowed or rewritten during admission — see the per-ticket ADMISSION comments, which SUPERSEDE those four descriptions. specled_-4a6 was verified still_applicable but CUT from this epic by user decision; see its comment.\n\nVerification ran against tree e81f9f98, which is content-identical to what merged as 02258a0b. Ticket line-number citations therefore still resolve on this base. The one thing that changed underfoot is the worktree tooling (make/worktree.mk is new) — see the orientation comment.\n\n## SEQUENCING RATIONALE\n\nWaves are derived from a file-collision map, not from caution. Every serialization names the file the two tickets share; tickets with disjoint file sets run concurrently.\n\nWave 1 (12, fully parallel): wby, ako, yds, vbo, pii, ehv, dn4.12, npo, zek, z5t, chb, 4pl\nWave 2 (7, each behind exactly one Wave-1 ticket): 26g\u003c-ehv, asb\u003c-ehv, zd8\u003c-dn4.12, b23\u003c-dn4.12, ozm\u003c-4pl+ehv, 14t\u003c-zek, 4f7\u003c-pii\nWave 3 (2): xkn.1\u003c-26g+npo, xkn.2\u003c-z5t+ozm\n\nOrchestrated by /orchestrate-epic.",
   "id": "specled_-k6s",
   "labels": [
+    "phase:implementing",
     "slug:impromptu-0-11-0"
   ],
   "comments": [
@@ -30,5 +31,5 @@
   "status": "in_progress",
   "title": "[EPIC] Impromptu: 0.11.0 fast-follow sweep — gate-forensics reach, spec.validate usage tier, doc-lint hardening, coverage-store safety, review polish",
   "type": "epic",
-  "updated_at": "2026-07-27T10:07:56Z"
+  "updated_at": "2026-07-27T10:08:30Z"
 }
