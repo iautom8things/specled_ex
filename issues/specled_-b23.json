@@ -1,6 +1,8 @@
 {
   "assignee": "",
-  "blocked_by": [],
+  "blocked_by": [
+    "specled_-dn4.12"
+  ],
   "blocks": [],
   "created": "2026-07-26T01:21:30Z",
   "description": "Advances: specled.triangulation\n\nThree advisory findings from the specled_-ygi cold verification (VERIFY comment 2026-07-26T01:15:21Z on specled_-ygi), none blocking, all v1-lane polish:\n\n1. binding_present? clause of specled.triangulation.v1_file_level_path_identity is pinned on only one of the two producers. Reverting mix spec.triangle's binding_present? line to file-based breaks no test: spec_triangle_test.exs's out-of-repo case drives the missing-artifact path only, never an aggregate envelope, so the MFA-level untested gate (coverage_triangulation.ex:986) is unexercised through that producer. Add an aggregate-envelope case to spec_triangle_test.exs with an out-of-repo-only binding asserting branch_guard_untested_realization still fires.\n\n2. binding_present? (now closure_mfas != []) is also true when Code.ensure_loaded fails for every closure module — previously false. Arguably correct (unloadable binding = dangling-binding concern, not missing-test evidence) but the requirement statement only speaks of out-of-repo sources. Extend the specled.triangulation.v1_file_level_path_identity statement to state the unloadable-module posture explicitly.\n\n3. .spec/specs/triangulation.spec.md:28 still reads \"The v1 functions and mix spec.triangle are unchanged\" — scoped to the v2-addition paragraph and true historically, but now contradicted as a standing claim by the v1_file_level_path_identity requirement. Reword to past tense (\"the v2 addition left ... unchanged\").\n\nOrigin: specled_-ygi pipeline (implementer session 141a62c8-2350-4ae5-99f3-bd2ca8af46fd). Standalone: does not block the dn4 epic.",
@@ -11,5 +13,5 @@
   "status": "open",
   "title": "v1-lane polish from specled_-ygi verification: aggregate-gate binding_present? coverage in spec.triangle, unloadable-module wording, stale v1-unchanged sentence",
   "type": "task",
-  "updated_at": "2026-07-27T08:36:27Z"
+  "updated_at": "2026-07-27T08:36:35Z"
 }
