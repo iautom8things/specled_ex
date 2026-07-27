@@ -16,6 +16,12 @@
 # Temporary files, for example, from tests.
 /tmp/
 
+# Gate forensics (SPECLED_COMMAND_OUTPUT_DIR). Deliberately unanchored: the
+# agent-shell default in .claude/settings.json is a RELATIVE path, so it
+# resolves against whatever directory the gate was invoked from, not just the
+# repo root that `/tmp/` above covers.
+tmp/specled-command-output/
+
 # If the VM crashes, it generates a dump, let's ignore it too.
 erl_crash.dump
 

@@ -335,13 +335,15 @@ decisions:
 - id: specled.verify.scenario.command_capture_records_run_provenance
   given:
     - SPECLED_COMMAND_OUTPUT_DIR names a writable directory
-    - a verification root that is a git work tree with a commit and one uncommitted file
+    - a verification root that is a git work tree with a commit, run three ways — one uncommitted file, a clean tree, and a tree dirtied past the listing bound
     - a failing command verification
   when:
     - verification runs with run_commands true
   then:
     - the capture file records the root's HEAD sha
     - the capture file records the dirty path list, naming the uncommitted file
+    - the clean tree is recorded as clean rather than as an empty list
+    - the over-bound tree lists at most the bound and states the omitted count
   covers:
     - specled.verify.command_capture_run_provenance
 - id: specled.verify.scenario.command_finding_echoes_seed

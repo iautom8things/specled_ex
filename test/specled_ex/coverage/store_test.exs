@@ -196,25 +196,14 @@ defmodule SpecLedEx.Coverage.StoreTest do
       refute File.exists?(path)
     end
 
-    @tag spec: [
-           "specled.coverage_capture.write_v2_argument_error_contract",
-           "specled.coverage_capture.envelope_meta"
-         ]
-    test "write_v2 keeps its documented ArgumentError contract for a malformed envelope",
+    # Split to match the requirements they pin: bundling them put the
+    # specled_-n5s regression pin behind two unrelated validations, so a
+    # regression in either would stop the bug pin from ever executing.
+    @tag spec: "specled.coverage_capture.write_v2_argument_error_contract"
+    test "every malformed-envelope rejection raises ArgumentError, never a substitute type",
          %{path: path} do
-      envelope =
-        Store.build_envelope(%{
-          mode: :aggregate,
-          source: "mix spec.cover.test",
-          files: [%{file: "lib/a.ex", lines_hit: [1]}],
-          mfas: [],
-          payload: nil
-        })
+      envelope = valid_v2_envelope()
 
-      # write_v2/2 documents ArgumentError for a malformed envelope. A caller
-      # catching that per the docs must not be handed a KeyError instead, which
-      # is what dot-accessing `:meta` produced for an envelope simply lacking
-      # the key.
       assert_raise ArgumentError, ~r/:meta must be a map/, fn ->
         Store.write_v2(%{envelope | meta: [boundary: true]}, path)
       end
@@ -222,12 +211,27 @@ defmodule SpecLedEx.Coverage.StoreTest do
       assert_raise ArgumentError, ~r/missing required field :files/, fn ->
         Store.write_v2(Map.delete(envelope, :files), path)
       end
+    end
 
-      # `:meta` is additive, so an envelope written without it is valid on the
-      # write path exactly as read_v2/1 tolerates it, defaulting to %{}.
-      assert :ok = Store.write_v2(Map.delete(envelope, :meta), path)
+    @tag spec: "specled.coverage_capture.envelope_meta"
+    test "write_v2 accepts an envelope without :meta and it reads back as %{}", %{path: path} do
+      # The specled_-n5s defect: `:meta` is additive, so an envelope lacking it
+      # is well-formed on the write path exactly as read_v2/1 tolerates it.
+      # Dot-accessing it raised KeyError out of a function documenting
+      # ArgumentError — an exception no caller following the docs would catch.
+      assert :ok = Store.write_v2(Map.delete(valid_v2_envelope(), :meta), path)
       assert {:ok, decoded} = Store.read_v2(path)
       assert decoded.meta == %{}
+    end
+
+    defp valid_v2_envelope do
+      Store.build_envelope(%{
+        mode: :aggregate,
+        source: "mix spec.cover.test",
+        files: [%{file: "lib/a.ex", lines_hit: [1]}],
+        mfas: [],
+        payload: nil
+      })
     end
 
     test "write_v2 creates the parent directory if missing" do

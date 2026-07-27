@@ -1466,14 +1466,26 @@ defmodule SpecLedEx.VerifierTest do
   # across concurrent BEAMs sharing tmp_dir — a nested specled run's cleanup
   # then deletes/truncates this run's in-flight artifact, and a completed
   # merged run silently degrades to mass cover_not_executed.
-  @tag spec: "specled.tagged_tests.attribution_artifact_name_cross_vm_unique"
+  @tag spec: [
+         "specled.tagged_tests.attribution_artifact_name_cross_vm_unique",
+         "specled.tagged_tests.failed_run_preserves_attribution_artifact"
+       ]
   test "attribution artifact names embed the OS pid and random entropy", %{root: root} do
     shim = ~S"""
     echo "$SPECLED_ATTRIBUTION_PATH" > attr_path.txt
     exit 0
     """
 
+    capture_dir = Path.join(root, "capture")
+    System.put_env("SPECLED_COMMAND_OUTPUT_DIR", capture_dir)
+    on_exit(fn -> System.delete_env("SPECLED_COMMAND_OUTPUT_DIR") end)
+
     report = run_two_subject_merged(root, shim, run_commands: true)
+
+    # The negative half of the preservation contract: a GREEN run writes nothing
+    # into the consumer's filesystem. A library that leaves artifacts behind on
+    # success is a defect regardless of how useful they are on failure.
+    assert Path.wildcard(Path.join(capture_dir, "*")) == []
 
     # This site went red once under orchestration load with no surviving
     # explanation (specled_-odl). The gate forensics preserve whatever the inner
@@ -1516,7 +1528,10 @@ defmodule SpecLedEx.VerifierTest do
     refute Enum.any?(findings(report, "verification_command_failed"))
   end
 
-  @tag spec: "specled.tagged_tests.timeout_names_hang_suspects"
+  @tag spec: [
+         "specled.tagged_tests.timeout_names_hang_suspects",
+         "specled.tagged_tests.descriptors_self_identify"
+       ]
   test "a timeout names in-flight hang suspects and counts the never-started remainder",
        %{root: root} do
     shim = ~S"""
@@ -1985,7 +2000,12 @@ defmodule SpecLedEx.VerifierTest do
       assert captured =~ "exit_code: 3"
       assert captured =~ "timed_out: false"
       assert captured =~ "capture_nonce_7c1f"
-      assert captured =~ "git_head:"
+
+      # Pinned as a shape, not as a bare prefix: this root's git status depends
+      # on where the host puts TMPDIR, so both branches are legitimate here —
+      # but `=~ "git_head:"` would also pass on a truncated or empty value,
+      # which is the whole failure mode the line exists to rule out.
+      assert captured =~ ~r/git_head: (unavailable \(no git work tree|[0-9a-f]{40}\n)/
     after
       System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
     end
@@ -1994,19 +2014,26 @@ defmodule SpecLedEx.VerifierTest do
   @tag spec: "specled.verify.command_capture_run_provenance"
   test "the capture records the verification root's HEAD and dirty paths", %{root: root} do
     capture_dir = Path.join(root, "capture")
-    System.put_env("SPECLED_COMMAND_OUTPUT_DIR", capture_dir)
 
     # A real work tree at the verification root: provenance answers "which tree
     # produced this report", which is only checkable against a HEAD and a dirty
-    # set that actually exist.
+    # set that actually exist. The capture dir is committed as ignored so the
+    # dirty COUNT is exact — relying on git skipping an empty untracked
+    # directory would make the count flip the moment a capture lands in it.
     init_git_repo(root)
     File.write!(Path.join(root, "committed.txt"), "committed\n")
+    File.write!(Path.join(root, ".gitignore"), "capture/\nclean_capture/\n")
     commit_all(root, "base")
     head = root |> git!(["rev-parse", "HEAD"]) |> String.trim()
 
     # The skew the provenance exists to expose: the tree that runs the gate is
     # not the committed tree.
     File.write!(Path.join(root, "dirty_nonce_a91c.txt"), "edited between runs\n")
+
+    # Armed only once the fallible git fixture setup above has succeeded: a
+    # raising git!/2 before the `try` would leak this VM-global into every
+    # later test in this sync module.
+    System.put_env("SPECLED_COMMAND_OUTPUT_DIR", capture_dir)
 
     try do
       report =
@@ -2031,8 +2058,68 @@ defmodule SpecLedEx.VerifierTest do
       assert [capture_path] = Path.wildcard(Path.join(capture_dir, "specled_cmd_*.log"))
       captured = File.read!(capture_path)
       assert captured =~ "git_head: #{head}"
-      assert captured =~ "git_dirty:"
+      assert captured =~ "git_dirty: 1 path(s)"
       assert captured =~ "dirty_nonce_a91c.txt"
+      refute captured =~ "and 0 more"
+    after
+      System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
+    end
+  end
+
+  @tag spec: "specled.verify.command_capture_run_provenance"
+  test "a clean tree says so, and an overlong dirty list is bounded with the omitted count",
+       %{root: root} do
+    capture_dir = Path.join(root, "capture")
+
+    # Both capture dirs are committed as ignored, so every dirty count below is
+    # exact and independent of whether a capture happens to have landed yet.
+    init_git_repo(root)
+    File.write!(Path.join(root, "committed.txt"), "committed\n")
+    File.write!(Path.join(root, ".gitignore"), "capture/\nclean_capture/\n")
+    commit_all(root, "base")
+
+    failing = %{
+      "requirements" => [%{"id" => "req.cap", "statement" => "Captured"}],
+      "verification" => [
+        %{"kind" => "command", "target" => "exit 3", "covers" => ["req.cap"], "execute" => true}
+      ]
+    }
+
+    clean_dir = Path.join(root, "clean_capture")
+
+    # Armed only after the fallible git fixture setup above (see the sibling
+    # provenance test).
+    System.put_env("SPECLED_COMMAND_OUTPUT_DIR", clean_dir)
+
+    try do
+      verify_subject(root, failing, run_commands: true)
+
+      assert [clean_capture] = Path.wildcard(Path.join(clean_dir, "specled_cmd_*.log"))
+      assert File.read!(clean_capture) =~ "git_dirty: none (clean work tree)"
+
+      # A tree mid-rebase, or with an unignored build directory, emits thousands
+      # of paths. The bound is what keeps the capture readable; without the
+      # omitted count it would also be silently incomplete, which is worse than
+      # long.
+      System.put_env("SPECLED_COMMAND_OUTPUT_DIR", capture_dir)
+      for i <- 1..60, do: File.write!(Path.join(root, "dirty_#{i}.txt"), "x\n")
+
+      verify_subject(root, failing, run_commands: true)
+
+      assert [capture_path] = Path.wildcard(Path.join(capture_dir, "specled_cmd_*.log"))
+      captured = File.read!(capture_path)
+
+      # Exactly the 60 dirty paths, bounded at @provenance_dirty_limit — both
+      # capture dirs are gitignored in the fixture's base commit.
+      assert captured =~ "git_dirty: 60 path(s)"
+      assert captured =~ "... and 10 more"
+
+      listed =
+        captured
+        |> String.split("\n")
+        |> Enum.count(&String.match?(&1, ~r/^  \?\? dirty_\d+\.txt$/))
+
+      assert listed == 50
     after
       System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
     end
@@ -2065,7 +2152,10 @@ defmodule SpecLedEx.VerifierTest do
       # failing command from the run, and an artifact that cannot be tied back
       # to its command is not evidence.
       artifact_path = Path.rootname(capture_path) <> ".attribution.jsonl"
-      assert File.exists?(artifact_path)
+
+      assert File.exists?(artifact_path),
+             "expected the preserved artifact at #{artifact_path}; capture dir holds " <>
+               inspect(Path.wildcard(Path.join(capture_dir, "*")))
 
       artifact = File.read!(artifact_path)
       assert artifact =~ ~s("id":"AlphaTest.boom")

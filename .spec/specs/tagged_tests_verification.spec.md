@@ -239,9 +239,11 @@ decisions:
     correlatable inside a directory holding several failing commands. The
     artifact is the run's only per-test record — findings distil it down to a
     descriptor list — and every merged run otherwise deletes it. The copy shall
-    be best-effort on the same contract as the output capture: a filesystem
-    failure shall not alter the verification result, and shall emit a one-line
-    stderr warning rather than failing silently.
+    be best-effort under the SAME guard as the output capture, not a parallel
+    one of its own: a filesystem failure in either write shall not alter the
+    verification result, and shall emit the one-line stderr warning that
+    specled.verify.command_output_capture_dir requires rather than failing
+    silently. One guard, one contract, one proof.
   priority: must
   stability: evolving
 - id: specled.tagged_tests.strength_claimed_on_untagged_cover
@@ -550,6 +552,7 @@ decisions:
   then:
     - the capture directory holds the run's output capture and, under the same basename, a copy of the attribution artifact
     - the preserved artifact still carries the failed test's recorded event, state, and the run's `suite_finished`
+    - removing the shared capture guard reddens the output capture's own unwritable-directory scenario, so the artifact copy has no separately provable contract
   covers:
     - specled.tagged_tests.failed_run_preserves_attribution_artifact
 - id: specled.tagged_tests.scenario.attribution_artifact_name_cross_vm_safe

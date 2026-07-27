@@ -211,7 +211,7 @@ defmodule SpecLedEx.TaggedTests.AttributionTest do
                %{"req.a" => {:in_flight, ["test/slow.exs:7 (SlowTest.test hangs)"]}}
     end
 
-    test "an event missing one half degrades to the half it has" do
+    test "a descriptor degrades to whichever half the event carries" do
       no_id = [finished("req.a", nil, "test/a.exs", 3, "failed"), suite_finished()]
       assert Attribution.attribute(no_id, ["req.a"]) == %{"req.a" => {:failed, ["test/a.exs:3"]}}
 
@@ -228,6 +228,23 @@ defmodule SpecLedEx.TaggedTests.AttributionTest do
       assert Attribution.attribute(neither, ["req.d"]) == %{
                "req.d" => {:failed, ["unknown test"]}
              }
+    end
+
+    test "an empty id and a non-integer line degrade like the absent ones" do
+      # A present-but-empty id is not an id. Without the `id != ""` guard the
+      # descriptor renders a bare `(...)` that reads like a truncated name.
+      empty_id = [finished("req.e", "", "test/e.exs", 3, "failed"), suite_finished()]
+
+      assert Attribution.attribute(empty_id, ["req.e"]) ==
+               %{"req.e" => {:failed, ["test/e.exs:3"]}}
+
+      # JSON encoders do emit stringified numbers. A non-integer line must fall
+      # to the file-only arm rather than interpolate into a location that looks
+      # authoritative and is not.
+      string_line = [finished("req.f", "M.t", "test/f.exs", "9", "failed"), suite_finished()]
+
+      assert Attribution.attribute(string_line, ["req.f"]) ==
+               %{"req.f" => {:failed, ["test/f.exs (M.t)"]}}
     end
   end
 

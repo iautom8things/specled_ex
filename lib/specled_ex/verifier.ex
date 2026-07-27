@@ -2178,10 +2178,11 @@ defmodule SpecLedEx.Verifier do
     try do
       base =
         cmd
-        |> run_command(root, timeout_ms, env: [{"SPECLED_ATTRIBUTION_PATH", artifact_path}])
+        |> run_command(root, timeout_ms,
+          env: [{"SPECLED_ATTRIBUTION_PATH", artifact_path}],
+          preserve_artifact: artifact_path
+        )
         |> Map.put(:command, cmd)
-
-      preserve_failed_artifact(base, artifact_path)
 
       case Attribution.read_artifact(artifact_path) do
         {:ok, events} ->
@@ -2196,31 +2197,6 @@ defmodule SpecLedEx.Verifier do
     after
       File.rm(artifact_path)
     end
-  end
-
-  # The attribution artifact is primary evidence for a red merged run: it is the
-  # only record of which tagged tests started, which finished, and in what
-  # state, and findings quote at most a descriptor list distilled from it. The
-  # `after File.rm/1` above destroys it on every run, including the failing ones
-  # worth diagnosing — so when the run's output was captured, the artifact is
-  # filed beside it under the same basename, keeping log and artifact
-  # correlatable inside a capture directory shared by several failing commands.
-  # Same best-effort contract as preserve_failed_output/3.
-  defp preserve_failed_artifact(result, artifact_path) do
-    with capture when is_binary(capture) <- Map.get(result, :output_capture_path),
-         {:ok, contents} <- File.read(artifact_path) do
-      File.write!(Path.rootname(capture) <> ".attribution.jsonl", contents)
-    end
-
-    :ok
-  rescue
-    e in File.Error ->
-      IO.puts(
-        :stderr,
-        "specled: attribution artifact capture failed (#{Exception.message(e)}); verification result unaffected"
-      )
-
-      :ok
   end
 
   # Single resume pass over the never-started remainder after a merged-run
@@ -2404,10 +2380,8 @@ defmodule SpecLedEx.Verifier do
         timeout_ms: timeout_ms
       }
 
-      case preserve_failed_output(result, target, root) do
-        path when is_binary(path) -> Map.put(result, :output_capture_path, path)
-        nil -> result
-      end
+      preserve_failed_output(result, target, root, Keyword.get(opts, :preserve_artifact))
+      result
     after
       File.rm(tmp_out)
       File.rm(tmp_script)
@@ -2421,12 +2395,21 @@ defmodule SpecLedEx.Verifier do
   # there before the temp files are removed, so CI can upload the directory as
   # an artifact. Findings truncate long output and drop it entirely on timeout;
   # without this, the seed and counterexample of a non-reproducing merged-run
-  # failure are unrecoverable once the runner is gone. Returns the capture path
-  # so callers with further evidence (the merged run's attribution artifact) can
-  # file it under the same basename, or nil when nothing was captured.
+  # failure are unrecoverable once the runner is gone.
+  #
+  # `artifact_path`, when given, is the merged run's streaming attribution
+  # artifact — the only per-test record of which tagged tests started, finished,
+  # and in what state, which run_merged_command/5's `after File.rm/1` otherwise
+  # destroys on every run, including the failing ones worth diagnosing. It is
+  # filed beside the log under the same basename so the two stay correlatable in
+  # a capture directory holding several failing commands. Both writes live under
+  # ONE guard on purpose: a second rescue would be a second best-effort contract
+  # to prove, reachable only through a filesystem state the first has already
+  # excluded.
+  #
   # Best-effort by contract: a capture failure must never alter the
   # verification result.
-  defp preserve_failed_output(result, target, root) do
+  defp preserve_failed_output(result, target, root, artifact_path) do
     dir = System.get_env("SPECLED_COMMAND_OUTPUT_DIR")
 
     if is_binary(dir) and dir != "" and (result.timed_out or result.exit_code != 0) do
@@ -2447,8 +2430,10 @@ defmodule SpecLedEx.Verifier do
       #{result.output}
       """)
 
-      path
+      preserve_artifact(artifact_path, path)
     end
+
+    :ok
   rescue
     # Narrow by design: only filesystem failures (unwritable dir, disk full)
     # are the tolerated best-effort case, and even those must not fail
@@ -2460,7 +2445,19 @@ defmodule SpecLedEx.Verifier do
         "specled: forensic output capture failed (#{Exception.message(e)}); verification result unaffected"
       )
 
-      nil
+      :ok
+  end
+
+  defp preserve_artifact(nil, _capture_path), do: :ok
+
+  defp preserve_artifact(artifact_path, capture_path) do
+    case File.read(artifact_path) do
+      {:ok, contents} ->
+        File.write!(Path.rootname(capture_path) <> ".attribution.jsonl", contents)
+
+      {:error, _} ->
+        :ok
+    end
   end
 
   # How many dirty paths the capture lists before summarizing the rest. A

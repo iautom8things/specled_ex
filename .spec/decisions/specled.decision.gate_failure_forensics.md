@@ -86,9 +86,10 @@ environment where the fault occurs is not an instrument.
 - An armed capture directory accumulates one log per failing command, plus one
   JSONL artifact per failing merged run. Repo-local defaults point at
   gitignored `tmp/`; CI points at the runner temp dir it uploads.
-- Each capture costs two `git` invocations at write time. They run only on the
-  failure path, and a root that is not a work tree records the provenance as
-  unavailable rather than failing.
+- Each capture costs at most two `git` invocations at write time — one outside
+  a work tree, where `rev-parse HEAD` fails and the dirty query is skipped.
+  They run only on the failure path, and a root that is not a work tree records
+  the provenance as unavailable rather than failing.
 - The preserved artifact holds the same per-test data the run streamed —
   module, test name, file, line, spec ids, state. It is evidence about the test
   suite, not about the code under test, and carries nothing the repository does

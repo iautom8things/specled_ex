@@ -45,9 +45,16 @@ compile: ## Compile with warnings-as-errors
 # command persists its full output — and, for a merged tagged_tests run, its
 # attribution artifact — here; findings truncate that output and drop it
 # entirely on timeout, so a flake that does not reproduce leaves no evidence
-# without this. Gitignored via /tmp/. Exported for `check` only, so an ordinary
-# `make test` does not litter the directory with the suite's deliberate
-# command failures. Override in the environment to relocate; CI sets its own.
+# without this. Gitignored.
+#
+# This file exports it for `check` only, so `make test` from a plain shell adds
+# nothing. That is a property of this file alone, not of every environment:
+# .claude/settings.json arms the same variable for agent shells globally, so
+# `make test` THERE does deposit a log per deliberate command failure in the
+# suite. Harmless — gitignored, and the capture never alters a result — but do
+# not read this export as a guarantee that only the gate writes here.
+#
+# Override in the environment to relocate; CI sets its own.
 SPECLED_COMMAND_OUTPUT_DIR ?= $(CURDIR)/tmp/specled-command-output
 
 check: export SPECLED_COMMAND_OUTPUT_DIR := $(SPECLED_COMMAND_OUTPUT_DIR)

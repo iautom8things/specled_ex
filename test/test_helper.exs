@@ -8,6 +8,21 @@
 System.put_env("GIT_CONFIG_GLOBAL", "/dev/null")
 System.put_env("GIT_CONFIG_NOSYSTEM", "1")
 
+# Every gate path arms SPECLED_COMMAND_OUTPUT_DIR (.claude/settings.json,
+# `make check`, scripts/check_specs.sh) so a verification command that reddens
+# once and never reproduces leaves its full output behind. This suite fails
+# verification commands on purpose by the dozen — inheriting the gate's capture
+# directory buries the one genuine capture under ~30 deliberate ones, and a
+# forensic directory you have to search is most of the way back to not having
+# one.
+#
+# Unsetting it here costs the gate nothing: the capture that matters is written
+# by the OUTER `mix spec.check` BEAM about this suite's run, not by this BEAM
+# about its own fixtures. Tests that exercise capture set their own directory,
+# which also makes their cleanup exact rather than accidental — "unset" is now
+# the deliberate baseline they restore to.
+System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
+
 Mix.shell(Mix.Shell.Process)
 
 ExUnit.start()
