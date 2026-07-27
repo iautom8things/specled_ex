@@ -1,5 +1,68 @@
 # Changelog
 
+## 0.10.0 — 2026-07-27
+
+Gate forensics: a verification run that fails or times out now leaves behind
+enough evidence to diagnose it without reproducing it. Three flake
+investigations in this repo hit the same wall — the run that failed was the
+only run that failed, and nothing survived it. Recorded as
+`specled.decision.gate_failure_forensics` (specled_-td7).
+
+### Added
+
+- Failing-test and hang-suspect descriptors carry the formatter's event id
+  alongside `file:line`: `test/a_test.exs:42 (AlphaTest.test hangs)`. A line
+  number is only valid against the tree that ran, so a session editing test
+  files between gate runs produces a report that points at a different test —
+  or at blank space — with nothing to say which. The id does not shift, so a
+  mismatched pair is self-diagnosing
+  (`specled.tagged_tests.descriptors_self_identify`, specled_-td7)
+- Command-verification captures record the provenance of the tree that
+  produced them: the verification root's git HEAD and its dirty path list at
+  run time, the list bounded with the omitted count stated. Makes
+  report-versus-inspection tree skew detectable rather than a matter of git
+  archaeology. A root whose HEAD cannot be resolved — not a work tree, an
+  unborn branch, or git absent — is recorded as unavailable rather than
+  omitted (`specled.verify.command_capture_run_provenance`, specled_-td7)
+- A merged `tagged_tests` run that fails or times out preserves its streaming
+  attribution artifact beside the output capture under the same basename,
+  instead of deleting the run's only per-test record with the rest of its temp
+  files (`specled.tagged_tests.failed_run_preserves_attribution_artifact`,
+  specled_-td7)
+- `SPECLED_COMMAND_OUTPUT_DIR` is now armed by every gate path this repo owns:
+  `make check`, `scripts/check_specs.sh`, and agent shells via
+  `.claude/settings.json`. It was unset in every environment where the observed
+  flakes actually occurred, which is why no failure output was ever captured.
+  The capture itself stays opt-in — a library must not write to a consuming
+  project's filesystem uninvited (specled_-td7)
+- `specled.coverage_capture.write_v2_argument_error_contract`: every
+  malformed-envelope rejection in `Store.write_v2/2` raises the `ArgumentError`
+  the function documents, never a substitute type (specled_-n5s)
+
+### Fixed
+
+- `SpecLedEx.Coverage.Store.write_v2/2` raised `KeyError` for an envelope
+  lacking `:meta`, from a function whose docs promise `ArgumentError` — an
+  exception no caller following the docs would catch. `:meta` is read with
+  `Map.get/3` rather than added to `@v2_required_fields`, because that list
+  also gates `classify_v2/1`, where requiring it would reject every
+  pre-Stage-1 artifact the read path is specified to tolerate (specled_-n5s)
+- `test/test_helper.exs` unsets `SPECLED_COMMAND_OUTPUT_DIR` for the suite.
+  The suite fails verification commands on purpose, so an inherited capture
+  directory buried the one genuine capture under deliberate ones. The count
+  before depended on test order — the first capture-exercising test to finish
+  unset the variable for everything scheduled after it — and reached 30 files
+  in a single module run; it is 0 at every seed now. The capture that matters
+  is written by the outer `mix spec.check` run, not by the suite about its own
+  fixtures (specled_-td7)
+
+### Changed
+
+- Finding messages naming failing or hung tests are longer by one
+  parenthesized test id per descriptor. Consumers matching the bare
+  `file:line` prefix still match; anything anchoring the end of a descriptor
+  does not (specled_-td7)
+
 ## 0.9.6 — 2026-07-26
 
 Impromptu epic (specled_-233) bundling five independently-surfaced follow-ups
