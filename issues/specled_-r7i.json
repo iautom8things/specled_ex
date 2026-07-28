@@ -2,13 +2,15 @@
   "assignee": "",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-07-28T13:02:36Z",
+  "close_reason": "Duplicate of specled_-bgt (same disclosure finding, double-created 2026-07-27 20:44 batch, 16 min after the 20:28 original). Content preserved on specled_-bgt.",
   "created": "2026-07-27T20:45:10Z",
   "description": "No spec subject. DISCLOSURE — not a repair ticket.\n\nFinding from agentic-dotfiles epic adf-3yz stage S6 (docs/specled-ex-board-disclosure.md finding 8).\n\nWhat is wrong (live-check):\n- Id: specled_-l05\n- Status: open\n- Priority: 1 (P1)\n- Newest comment (2026-07-25T17:30:10Z): escalation evidence from the specled_-hj4 ship pipeline. That escalation is superseded relative to the ticket's own rescope (2026-07-24) and the frozen corpus finding that standing drift is stale-baseline, not env-sensitivity — yet the comment remains the newest board signal and priority is still P1.\n\nRepairable?\n- Priority: YES in principle (rewritable field). This disclosure does NOT change it.\n- Superseded newest comment: append-only; can only be superseded by a newer clarifying comment.\n\nPrevents recurrence: Not a hard gate from S1–S5. Ops triage only.\n\nThis ticket records the damage. Do not mutate pre-existing records as part of S6.",
   "id": "specled_-r7i",
   "labels": [],
   "priority": 2,
-  "status": "open",
+  "status": "closed",
   "title": "DISCLOSURE (no repair): specled_-l05 still P1 with superseded escalation",
   "type": "task",
-  "updated_at": "2026-07-27T20:45:10Z"
+  "updated_at": "2026-07-28T13:02:36Z"
 }
