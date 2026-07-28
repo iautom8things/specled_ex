@@ -452,6 +452,39 @@ defmodule SpecLedEx.VerifierTest do
            )
   end
 
+  @tag spec: "specled.decisions.reference_validation"
+  test "repo-prefixed affects are accepted without index resolution", %{root: root} do
+    report =
+      Verifier.verify(
+        %{
+          "subjects" => [base_subject(%{})],
+          "decisions" => [
+            %{
+              "file" => ".spec/decisions/repo_namespace.md",
+              "meta" => %{
+                "id" => "repo.governance.repo_namespace",
+                "status" => "accepted",
+                "date" => "2026-07-27",
+                "affects" => ["repo.governance"]
+              },
+              "sections" => ["Context", "Decision", "Consequences"],
+              "parse_errors" => []
+            }
+          ]
+        },
+        root,
+        debug: true
+      )
+
+    refute "decision_unknown_affect" in finding_codes(report)
+
+    assert Enum.any?(
+             report["checks"],
+             &(&1["code"] == "decision_affect_valid" and
+                 &1["message"] == "Decision affect valid: repo.governance")
+           )
+  end
+
   test "verify only fails warnings in strict mode", %{root: root} do
     index = %{
       "subjects" => [
@@ -1895,6 +1928,9 @@ defmodule SpecLedEx.VerifierTest do
     seeded = Enum.find(failures, &(&1["message"] =~ "Running ExUnit with seed"))
     seedless = Enum.find(failures, &(&1["message"] =~ "boom"))
 
+    assert seeded
+    assert seedless
+
     assert seeded["message"] =~
              "exunit seed: 424242 — append --seed 424242 to the command to reproduce"
 
@@ -2260,6 +2296,10 @@ defmodule SpecLedEx.VerifierTest do
 
       assert stderr =~ "specled: forensic output capture failed"
       assert stderr =~ "verification result unaffected"
+      # Dynamic half of preserve_failed_output/4's warning (Exception.message).
+      # Would fail if the warning dropped the exception message body.
+      assert stderr =~ "not a directory"
+      assert stderr =~ Path.join(blocker, "nested")
     after
       System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
     end
@@ -2323,6 +2363,10 @@ defmodule SpecLedEx.VerifierTest do
       assert failure["message"] =~ "exit_code=3"
       assert stderr =~ "specled: forensic output capture failed"
       assert stderr =~ "verification result unaffected"
+      # Dynamic half of preserve_failed_output/4's warning (Exception.message).
+      # Would fail if the warning dropped the exception message body.
+      assert stderr =~ "not a directory"
+      assert stderr =~ Path.join(blocker, "nested")
     after
       System.delete_env("SPECLED_COMMAND_OUTPUT_DIR")
     end

@@ -67,16 +67,17 @@ Two facts complicate a blanket extension:
   instead of claiming coverage the lint does not have.
 
   The must calls those four "heavily-referenced", on this basis: each occurs
-  24-69 times in the scanned corpus (`detector_` 69, `requirement_` 45,
-  `verification_` 39, `decision_` 24), against zero collisions for every
-  deferred stem — and zero occurrences for `surface_target_`,
-  `scenario_cover_`, and `meta_field_`, while `spec_requirement_` occurs 12
-  times and `invalid_id_` once, every one of those matches being the stem's own
-  real code. Corpus occurrences, not emitted-code counts — the two orders
-  differ sharply, and conflating them is what produced an earlier draft calling
-  these the "largest" stems when `detector_` matches exactly one emitted code.
-  Occurrence count is the property the argument actually needs, since a stem
-  that appears often in the corpus is the one likely to collide with it.
+  many times in the scanned corpus, against zero collisions for every deferred
+  stem — and zero occurrences for `surface_target_`, `scenario_cover_`, and
+  `meta_field_`, while `spec_requirement_` occurs 12 times and `invalid_id_`
+  once, every one of those matches being the stem's own real code. Corpus
+  occurrences, not emitted-code counts — the two orders differ sharply, and
+  conflating them is what produced an earlier draft calling these the "largest"
+  stems when `detector_` matches exactly one emitted code. Occurrence count is
+  the property the argument actually needs, since a stem that appears often in
+  the corpus is the one likely to collide with it. Absolute occurrence totals
+  for the four stems are deliberately omitted here: they drift as the corpus
+  grows, while the comparative claim (many vs. zero) is the load-bearing one.
 
   That collision argument covers only the four stems named above. They match
   many of the unguarded codes but by no means all — many others are matched by

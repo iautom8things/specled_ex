@@ -1396,6 +1396,9 @@ defmodule SpecLedEx.Review.HtmlTest do
           "subj.a.req1" =>
             req_reach(
               covered_mfas: [],
+              uncovered_mfas: [],
+              closure_mfa_count: 1,
+              closure_coverage_pct: 0.0,
               no_debug_info_mfas: ["Ghost.Mod.fun/1"]
             )
         }
@@ -1413,9 +1416,13 @@ defmodule SpecLedEx.Review.HtmlTest do
           )
         )
 
+      # Numeric claim: no_debug MFA is neither covered nor uncovered (0 executed).
+      # Would fail if executed_count incorrectly folded no_debug_info_mfas into covered.
+      assert html =~ "Closure:</span> 1 MFA — 0 executed (0.0%)."
       assert html =~ "No debug info"
       assert html =~ "Ghost.Mod.fun/1"
       assert html =~ "not counted as covered or uncovered"
+      refute html =~ "Source identity unavailable"
     end
 
     @tag spec: "specled.spec_review.coverage_unresolvable_source_renders_distinct_note"
@@ -1428,6 +1435,8 @@ defmodule SpecLedEx.Review.HtmlTest do
             req_reach(
               covered_mfas: [],
               uncovered_mfas: [],
+              closure_mfa_count: 1,
+              closure_coverage_pct: 0.0,
               unresolvable_source_mfas: ["Ghost.Mod.fun/1"]
             )
         }
@@ -1445,10 +1454,14 @@ defmodule SpecLedEx.Review.HtmlTest do
           )
         )
 
+      # Numeric claim: unresolvable MFA stays in the denominator, not reported as covered.
+      # Would fail if executed_count incorrectly folded unresolvable_source_mfas into covered.
+      assert html =~ "Closure:</span> 1 MFA — 0 executed (0.0%)."
       assert html =~ "Source identity unavailable"
       assert html =~ "Ghost.Mod.fun/1"
       assert html =~ "retained in the closure denominator"
       assert html =~ "not reported as covered or uncovered"
+      refute html =~ "No debug info"
     end
 
     @tag spec: "specled.spec_review.coverage_missing_attribution_unqualified"

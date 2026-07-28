@@ -1,13 +1,45 @@
 defmodule SpecLedEx.MixProject do
   use Mix.Project
 
+  # `VERSION` is the single source of truth for the release version — it is what
+  # the CHANGELOG sections are keyed on. Read via `__DIR__` rather than a bare
+  # relative path so resolution does not depend on the caller's cwd. If this
+  # project is ever published to Hex, `VERSION` must be added to
+  # `package[:files]` or the packaged tarball will fail to evaluate this.
+  @version File.read!(Path.join(__DIR__, "VERSION")) |> String.trim()
+
   def project do
     [
       app: :spec_led_ex,
-      version: "0.2.0",
+      version: @version,
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
-      test_coverage: [summary: [threshold: 83]],
+      # Coverage gate threshold + per-leg provenance (single source of truth).
+      #
+      # CI matrix legs (.github/workflows/specs.yml) both run
+      # `mix test --include integration --cover` and must clear this threshold:
+      #   - native:  Elixir 1.19.5 / OTP 28.3.1
+      #   - classic: Elixir 1.18.4 / OTP 26.2.5
+      # Totals differ because SpecLedEx.Coverage.Snapshot.runtime_mode/0 returns
+      # :native on OTP >= 27 and :classic below, so a different set of lines is
+      # reachable per leg.
+      #
+      # Historical measurements (NOT re-measured on this tree; carried forward
+      # with stamp explicit so they are not read as current):
+      #   measured 2026-07-24 at eb259ac —
+      #     native  (Elixir 1.19.5 / OTP 28.3.1): 83.73%
+      #     classic (Elixir 1.18.4 / OTP 26.2.5): 83.68%  ← lower leg
+      # Command used at that stamp: `mix test --include integration --cover`.
+      #
+      # Headroom disposition (option a): threshold 82, ~1.68pp below the
+      # classic-leg total at the stamp above. The previous 83 left only
+      # ~0.68pp of headroom, which is too thin: ordinary suite changes that
+      # :code.purge/:code.delete cover-tracked modules (including
+      # test/test_support/** under this project's compile path) drop those
+      # modules from BOTH numerator and denominator of the --cover tally and
+      # can erase sub-1pp margin. Raise-toward-90 remains a separate follow-up
+      # (promised by specled_-6v6; not filed from this ticket).
+      test_coverage: [summary: [threshold: 82]],
       test_ignore_filters: [&String.starts_with?(&1, "test/fixtures/")],
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: [tracers: tracers()],

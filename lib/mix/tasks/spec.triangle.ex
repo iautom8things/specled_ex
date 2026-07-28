@@ -430,9 +430,14 @@ defmodule Mix.Tasks.Spec.Triangle do
               %{
                 id: req.id,
                 # MFA-based, not file-based: an out-of-repo compile source
-                # contributes no closure file, but the binding still exists —
-                # the MFA-level untested-realization gate reads this and must
-                # keep flagging it.
+                # (or a closure module that fails `Code.ensure_loaded/1`)
+                # contributes no closure file, but the binding still exists.
+                # Kept MFA-based so the closure map matches the shape
+                # `SpecLedEx.CoverageTriangulation` consumers expect
+                # (coverage_triangulation.ex:579, :986). This task's own
+                # rendering paths currently never read it — aggregate findings
+                # are filtered to `detector_unavailable` (spec.triangle.ex:376)
+                # and the v1 legs join on `closure_files`, not `binding_present?`.
                 binding_present?: req.closure_mfas != [],
                 closure_files: req.closure_files,
                 closure_mfas: req.closure_mfas

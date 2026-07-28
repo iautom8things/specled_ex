@@ -141,7 +141,9 @@ defmodule SpecLedEx.DecisionParser.CrossField do
     end
   end
 
-  # R4: affects must reference existing ids in current_index (unless R6 carve-out).
+  # R4: affects must reference existing ids in current_index (unless R6 carve-out
+  # or the reserved `repo.` prefix namespace — see
+  # specled.decision.repo_namespace_affect_carveout).
   defp apply_rule(:r4_affects_resolve, decision, current_index) do
     id = decision_id(decision)
     meta = meta(decision)
@@ -157,7 +159,7 @@ defmodule SpecLedEx.DecisionParser.CrossField do
         # R6: deprecates targets may be absent from current_index (that is the point).
         nil
 
-      unresolved = first_unresolved(affects, resolvable) ->
+      unresolved = first_unresolved(reject_repo_namespace(affects), resolvable) ->
         error(
           4,
           "cross_field/affects_unresolved",
@@ -283,6 +285,11 @@ defmodule SpecLedEx.DecisionParser.CrossField do
 
   defp first_unresolved(ids, resolvable) do
     Enum.find(ids, fn id -> not MapSet.member?(resolvable, id) end)
+  end
+
+  # Reserved repo-scoped governance identifiers (literal prefix test; not a registry).
+  defp reject_repo_namespace(ids) do
+    Enum.reject(ids, &String.starts_with?(&1, "repo."))
   end
 
   defp resolvable_ids(current_index) do

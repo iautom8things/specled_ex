@@ -14,6 +14,7 @@ defmodule SpecLedEx.CoverageTriangulationTest do
   # covers: specled.triangulation.per_test_requirement_reach
   # covers: specled.triangulation.per_test_path_identity
   # covers: specled.triangulation.per_test_unresolvable_source_partition
+  # covers: specled.triangulation.v1_file_level_path_identity
   use ExUnit.Case, async: true
 
   @moduletag spec: [
@@ -692,6 +693,45 @@ defmodule SpecLedEx.CoverageTriangulationTest do
       refute Enum.any?(findings, fn f ->
                f["code"] == "branch_guard_underspecified_realization" and
                  f["subject_id"] == "subject_a"
+             end)
+    end
+
+    @tag spec: "specled.triangulation.v1_file_level_path_identity"
+    test "out-of-repo binding keeps binding_present? true and still fires untested_realization" do
+      # Pins the producer at the unit level: a requirement whose closure MFAs
+      # are present but whose closure_files are empty (out-of-repo or
+      # unloadable-module source contributing no closure file) must retain
+      # binding_present?: true and still trip branch_guard_untested_realization
+      # when zero closure MFAs are covered. Would fail if the aggregate gate's
+      # second conjunct were reverted from `closure_mfas != []` back to
+      # `closure_files != []` — an empty closure_files list would then exclude
+      # the requirement even with binding_present? held true.
+      closure_map = %{
+        subjects: %{
+          "subject_a" => %{
+            owned_files: ["lib/a.ex"],
+            requirements: [
+              %{
+                id: "subject_a.req1",
+                binding_present?: true,
+                closure_files: [],
+                closure_mfas: ["Enum.map/2"]
+              }
+            ]
+          }
+        }
+      }
+
+      tag_index = %{spec: %{"subject_a.req1" => []}, opt_out: []}
+
+      envelope = aggregate_envelope(mfas: [], files: [])
+
+      findings = CoverageTriangulation.envelope_findings(envelope, closure_map, tag_index)
+
+      assert Enum.any?(findings, fn f ->
+               f["code"] == "branch_guard_untested_realization" and
+                 f["requirement_id"] == "subject_a.req1" and
+                 f["mode"] == "aggregate"
              end)
     end
   end

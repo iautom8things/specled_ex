@@ -41,8 +41,8 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
        prefixes count, so the comparison is stated and the total is not.) Those are guardable, and unguarded for a different
        reason: each needs its own hand-maintained allowlist, since
        `specled.decision.doc_identifier_lint_spec_corpus` rejects deriving the
-       code set by reflection over lib/. Deferred to specled_-vk0, not
-       impossible — the `must` keeps the two reasons apart on purpose.
+       code set by reflection over lib/. Deferred, not impossible — the
+       `must` keeps the two reasons apart on purpose.
 
        Note the trap in conflating them: `spec_requirement_too_short` is one of
        the exemplars named in the `must`, and NONE of the four large stems
@@ -136,10 +136,11 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     branch_guard_underspecified_realization
   )
 
-  @known_code_list @append_only_codes ++
-                     @overlap_codes ++
-                     @evidence_codes ++ @cross_field_codes ++ @branch_guard_codes
-  @known_codes MapSet.new(@known_code_list)
+  @known_codes MapSet.new(
+                 @append_only_codes ++
+                   @overlap_codes ++
+                   @evidence_codes ++ @cross_field_codes ++ @branch_guard_codes
+               )
 
   # The leading `(?<![\w/])` negative lookbehind keeps the token from matching
   # inside a file path or a longer identifier — e.g. the `branch_guard_test`
@@ -152,20 +153,24 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     # directory name (`lib/specled_ex/evidence/`). Slash-prefixed path mentions
     # are already skipped by the lookbehind, but a bare relative path written
     # after a space — "see evidence/sync.ex" — would match and be reported as a
-    # fabricated code. No such reference exists today; tightening the lookbehind
-    # bounds is tracked in specled_-vk0.
+    # fabricated code. No such reference exists today; the residual risk remains
+    # if a bare relative path of that form is ever introduced in the corpus.
     ~r{(?<![\w/])evidence/[a-z_]+},
     ~r{(?<![\w/])cross_field/[a-z_]+},
     ~r{(?<![\w/])branch_guard_[a-z_]+}
   ]
 
   # Per-token allow-marker: `<!-- spec-lint:allow-code=<token> reason -->`.
-  # Exempts only the exact token it names, on the line it appears on. One flat
-  # character class: the downstream `MapSet.member?/2` already gates on token
-  # shape, so a second approximate copy of the token grammar here could only
-  # drift from the real one.
-  @allow_marker_pattern ~r{spec-lint:allow-code=([a-z_/]+)}
-  @allow_marker_comment_pattern ~r{<!--\s*spec-lint:allow-code=[^>]*-->}
+  # Requires the HTML-comment wrapper — bare `spec-lint:allow-code=...` prose
+  # is not a marker and grants no exemption (and is invisible to the
+  # staleness sweep for the same reason). Exempts only the exact token it
+  # names, on the line it appears on. Reason text may contain `>`; matching
+  # is non-greedy to `-->` and stays single-line-scoped (no `s` modifier —
+  # the corpus is streamed line-by-line via File.stream!/1). One grammar
+  # serves both exemption (`allowed_codes/1`) and strip
+  # (`stale_allow_marker_violations_for_line/3`); a second approximate copy
+  # could only drift from the real one.
+  @allow_marker_pattern ~r{<!--\s*spec-lint:allow-code=([a-z_/]+)\b.*?-->}
 
   # ...and the marker is honoured ONLY in decision records. Guidance docs, skill
   # files, README, and subject specs get no escape hatch: those surfaces had none
@@ -266,7 +271,11 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     assert Enum.any?(finding_code_corpus(), &String.starts_with?(&1, ".spec/"))
     refute Enum.any?(severity_corpus(), &String.starts_with?(&1, ".spec/"))
 
-    assert atom_severity_offenders([".spec/specs/prose_guard.spec.md"]) != []
+    # Any-of the live subject specs: several carry atom-form severity inside a
+    # YAML block as the input under test. Pinning one path (e.g. prose_guard)
+    # broke on a reword of that scenario's `given:`; the any-of survives as
+    # long as the shape remains somewhere under .spec/specs/.
+    assert atom_severity_offenders(Path.wildcard(".spec/specs/*.spec.md")) != []
 
     assert atom_severity_offenders([
              fixture_file("""
@@ -360,7 +369,11 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     assert implementation_codes == @known_codes,
            "guarded finding-code mirror drifted\n" <>
              "missing from @known_codes: #{inspect(MapSet.difference(implementation_codes, @known_codes) |> Enum.sort())}\n" <>
-             "dead in @known_codes: #{inspect(MapSet.difference(@known_codes, implementation_codes) |> Enum.sort())}"
+             "present in @known_codes but not extracted from @implementation_code_files " <>
+             "(#{inspect(@implementation_code_files)}): " <>
+             "#{inspect(MapSet.difference(@known_codes, implementation_codes) |> Enum.sort())} " <>
+             "— likelier cause is a stale @implementation_code_files list missing a new " <>
+             "lib file that emits the code, not a dead entry to delete"
   end
 
   @tag spec: "specled.package.doc_identifier_integrity"
@@ -421,7 +434,18 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
 
   @tag spec: "specled.package.doc_identifier_integrity"
   test "decision-record allow-markers remain necessary and never hide real codes" do
-    violations = stale_allow_marker_violations(decision_files())
+    files = decision_files()
+
+    # Siblings at the finding-code and severity corpus tests pin size so a
+    # reorg or cwd change cannot silently no-op the lint. N=30 is conservative
+    # against the live `.spec/decisions/` tree (~51 files today).
+    assert length(files) > 30,
+           "decision corpus collapsed to #{length(files)} files — the sweep is a no-op"
+
+    assert Enum.all?(files, &String.starts_with?(&1, ".spec/decisions/")),
+           "decision_files/0 returned a path outside .spec/decisions/"
+
+    violations = stale_allow_marker_violations(files)
 
     assert violations == [],
            "Stale or unnecessary spec-lint allow-markers found:\n" <>
@@ -446,6 +470,46 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     assert stale_allow_marker_violations([{line, @decision_file, 1}]) == [
              ~s|#{@decision_file}:1: allow-marker names "branch_guard_totally_made_up" but that token does not appear outside the marker on the same line|
            ]
+  end
+
+  # Item 5 (specled_-ozm): a marker naming a non-guarded bare code must not
+  # fall through to the false "does not appear outside the marker" claim —
+  # `guarded_tokens/1` can never yield such a token. Would fail if the
+  # non-guarded-family branch is deleted and the outside-marker arm reclaims it.
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "an allow-marker naming a non-guarded code is reported as unnecessary" do
+    line =
+      "`detector_unavailable` <!-- spec-lint:allow-code=detector_unavailable budgeted -->"
+
+    assert stale_allow_marker_violations([{line, @decision_file, 1}]) == [
+             ~s|#{@decision_file}:1: allow-marker names "detector_unavailable", which is not in a guarded family — the marker is unnecessary|
+           ]
+  end
+
+  # Hole 1 regression (specled_-ozm): a `>` in the reason text used to
+  # terminate `@allow_marker_comment_pattern`'s `[^>]*` early, so the marker
+  # was never stripped and rot direction (b) could not fire. Would fail if
+  # the strip grammar reverts to `[^>]*` (or any first-`>`-terminating class).
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "an allow-marker whose reason contains > is still stripped for the stale sweep" do
+    line = "<!-- spec-lint:allow-code=branch_guard_totally_made_up see A > B -->"
+
+    assert stale_allow_marker_violations([{line, @decision_file, 1}]) == [
+             ~s|#{@decision_file}:1: allow-marker names "branch_guard_totally_made_up" but that token does not appear outside the marker on the same line|
+           ]
+  end
+
+  # Hole 2 regression (specled_-ozm): bare unwrapped `spec-lint:allow-code=...`
+  # used to grant a real exemption via `@allow_marker_pattern` while remaining
+  # invisible to the staleness strip (which required the wrapper). Would fail
+  # if the exemption grammar again accepts bare unwrapped markers.
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "a bare unwrapped allow-marker does not exempt a fabricated code" do
+    line =
+      "a `branch_guard_totally_made_up` code " <>
+        "spec-lint:allow-code=branch_guard_totally_made_up no wrapper"
+
+    assert unknown_tokens(line, @decision_file) == ["branch_guard_totally_made_up"]
   end
 
   # Finding-code-shaped tokens on `line` that neither the implementation emits
@@ -492,7 +556,7 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
   defp stale_allow_marker_violations_for_line(line, file, lineno) do
     tokens_outside_marker =
       line
-      |> then(&Regex.replace(@allow_marker_comment_pattern, &1, ""))
+      |> then(&Regex.replace(@allow_marker_pattern, &1, ""))
       |> guarded_tokens()
       |> MapSet.new()
 
@@ -505,6 +569,12 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
           [
             "#{file}:#{lineno}: allow-marker names real implementation code " <>
               "#{inspect(code)} — remove the marker"
+          ]
+
+        not Regex.match?(@guarded_code_shape, code) ->
+          [
+            "#{file}:#{lineno}: allow-marker names #{inspect(code)}, which is not " <>
+              "in a guarded family — the marker is unnecessary"
           ]
 
         not MapSet.member?(tokens_outside_marker, code) ->
@@ -553,12 +623,23 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     end
   end
 
+  # Directory name carries `SpecLedEx.TempName.cross_vm_suffix/0` so concurrent
+  # VMs cannot share a fixed dir whose on_exit File.rm deletes the other VM's
+  # fixture between write and read (see
+  # `specled.decision.cross_vm_temp_names_reach`).
   defp fixture_file(content) do
-    dir = Path.join(System.tmp_dir!(), "specled_docs_identifier_lint_test")
+    dir =
+      Path.join(
+        System.tmp_dir!(),
+        "specled_docs_identifier_lint_test_#{SpecLedEx.TempName.cross_vm_suffix()}"
+      )
+
     File.mkdir_p!(dir)
     path = Path.join(dir, "fixture-#{System.unique_integer([:positive])}.md")
     File.write!(path, content)
-    on_exit(fn -> File.rm(path) end)
+    # Dir is VM-unique via cross_vm_suffix/0, so rm_rf of the whole dir is safe
+    # and required — removing only the file leaks an empty dir per run.
+    on_exit(fn -> File.rm_rf!(dir) end)
     path
   end
 

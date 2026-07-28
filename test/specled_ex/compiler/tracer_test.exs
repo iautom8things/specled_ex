@@ -237,6 +237,20 @@ defmodule SpecLedEx.Compiler.TracerTest do
       assert merged[{ModNew, :n, 0}] == [{Alpha, :a, 0}, {Beta, :b, 1}]
     end
 
+    # Non-session caller present in BOTH maps: session_edges must win by exact
+    # list replacement (Map.merge(previous_kept, session_edges)). The property
+    # only asserts value provenance for session-module callers; without this
+    # fixture, reverse-merge and concatenate mutants survive.
+    @tag spec: "specled.compiler_tracer.merge_on_flush"
+    test "non-session caller collision prefers session_edges value over previous" do
+      previous = %{{ModOverlap, :f, 1} => [{String, :old_callee, 1}]}
+      session_edges = %{{ModOverlap, :f, 1} => [{String, :upcase, 1}]}
+
+      merged = Tracer.merge_edges(previous, MapSet.new([]), session_edges)
+
+      assert merged[{ModOverlap, :f, 1}] == [{String, :upcase, 1}]
+    end
+
     @tag spec: "specled.compiler_tracer.merge_on_flush"
     property "merge keeps exactly non-session previous entries plus session edges, and is idempotent" do
       module_pool = [ModA, ModB, ModC, ModD]
@@ -381,7 +395,7 @@ defmodule SpecLedEx.Compiler.TracerTest do
         @manifest_path
         |> Path.dirname()
         |> File.ls!()
-        |> Enum.filter(&String.contains?(&1, ".tmp."))
+        |> Enum.filter(&String.starts_with?(&1, "xref_mfa.etf.tmp.#{System.pid()}_"))
 
       assert litter == []
     end
@@ -415,7 +429,7 @@ defmodule SpecLedEx.Compiler.TracerTest do
         @manifest_path
         |> Path.dirname()
         |> File.ls!()
-        |> Enum.filter(&String.starts_with?(&1, "xref_mfa.etf.tmp."))
+        |> Enum.filter(&String.starts_with?(&1, "xref_mfa.etf.tmp.#{System.pid()}_"))
         |> Enum.each(&File.rm(Path.join(Path.dirname(@manifest_path), &1)))
       end
     end

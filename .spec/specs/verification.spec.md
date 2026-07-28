@@ -139,14 +139,16 @@ decisions:
     When the SPECLED_COMMAND_OUTPUT_DIR environment variable names a
     directory, each command verification that fails or times out shall
     persist its full captured output, command target, exit code, and
-    timeout state to a uniquely named file in that directory (creating the
-    directory if needed) before temp-file cleanup, so CI can upload the
-    capture as an artifact. Passing commands shall write nothing. Capture
-    shall be best-effort: a filesystem capture failure (for example an
-    unwritable directory) shall not alter the verification result, but
-    shall emit a one-line stderr warning naming the failure rather than
-    failing silently. When the variable is unset or blank, no capture
-    occurs.
+    timeout state to a cross-VM-unique file in that directory (OS pid
+    plus random entropy, via the shared SpecLedEx.TempName.cross_vm_suffix/0
+    helper; creating the directory if needed) before temp-file cleanup, so
+    CI can upload the capture as an artifact and concurrent runs that share
+    a capture dir cannot overwrite each other's forensic logs. Passing
+    commands shall write nothing. Capture shall be best-effort: a
+    filesystem capture failure (for example an unwritable directory) shall
+    not alter the verification result, but shall emit a one-line stderr
+    warning naming the failure rather than failing silently. When the
+    variable is unset or blank, no capture occurs.
   priority: must
   stability: evolving
 - id: specled.verify.command_capture_run_provenance

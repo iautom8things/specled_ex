@@ -14,7 +14,8 @@ serves the compile/exports/runtime edge-kind classification.
 
 `mix.exs` is bound here for the tracer's own registration
 (`registered_in_mix_exs`). An edit to an unrelated top-level key — e.g.
-`test_coverage: [summary: [threshold: ...]]` — legitimately touches this
+`test_coverage: [summary: [threshold: ...]]`, or the coverage-gate
+provenance comment immediately above that key — legitimately touches this
 subject's tracked surface without reflecting any change to tracer
 registration or behavior.
 

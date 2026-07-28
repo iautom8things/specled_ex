@@ -281,7 +281,7 @@ decisions:
     stdout line and the only line the task itself emits matching `^<task> result=`:
     `spec.check result=pass`, `spec.check result=fail tier=<usage|validate|branch>
     error_findings=<N>`, `spec.validate result=pass`, or `spec.validate
-    result=fail tier=validate error_findings=<N>`. `tier=usage` identifies
+    result=fail tier=<usage|validate> error_findings=<N>`. `tier=usage` identifies
     task-level pre-flight rejections before validation starts; otherwise
     `error_findings` counts error-severity findings only and may be zero when
     strict validation fails on warning-severity findings. Verbatim-relayed
@@ -314,7 +314,7 @@ decisions:
   then:
     - The final stdout message is the task-specific `result=pass` or `result=fail` verdict.
     - A failing verdict includes the failing tier and error finding count.
-    - A spec.check pre-flight rejection and a spec.validate min-strength pre-flight rejection use `tier=usage`; spec.check does not print a `validate status=` line on that path.
+    - spec.check and spec.validate pre-flight rejections — unknown arguments, invalid --min-strength, and spec.check's bad --base — use `tier=usage`; spec.check does not print a `validate status=` line on that path.
     - "The task itself emits exactly one line matching `^<task> result=`, excluding verbatim-relayed `kind: command` output."
 - id: specled.tasks.branch_findings_breakdown.summary_and_order
   covers:

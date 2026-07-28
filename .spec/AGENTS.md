@@ -41,10 +41,10 @@ the runner temp dir it uploads as an artifact.
 
 `.claude/settings.json` also arms it for agent shells, but only for sessions
 whose project directory is a checkout carrying that file — a session rooted at
-an older checkout does not inherit it. If you are running the gate as an agent
-and want the capture guaranteed, run `bash ./scripts/check_specs.sh` rather
-than bare `mix spec.check`, or check `echo $SPECLED_COMMAND_OUTPUT_DIR` first.
-See specled_-4f7.
+an older checkout does not inherit it. Agent-shell coverage is therefore a
+property of where the session was started, not a guarantee; run
+`bash ./scripts/check_specs.sh` (or `make check`) when you need the capture
+guaranteed, or check `echo $SPECLED_COMMAND_OUTPUT_DIR` first.
 
 When a verification command fails or times out, that directory receives:
 

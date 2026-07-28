@@ -121,11 +121,12 @@ jobs:
 
       - name: Run tests
         # Includes :integration (child-BEAM fixture runs). --cover arms the
-        # mix.exs test_coverage threshold gate (lowered 90 -> 83, just below
-        # the measured 83.05% true coverage as of 2026-07-23 epic bef5400;
-        # raising coverage to 90 is tracked as a separate ratchet follow-up).
-        # snapshot_test.exs's cover-compiled tmp fixture modules now run
-        # entirely in a quarantined child BEAM (their own :cover coordinator,
-        # never this run's), so they can no longer leak spurious 100% rows
-        # into the tally or crash the HTML report with :no_source_code_found.
+        # mix.exs test_coverage threshold gate — per-leg provenance, measured
+        # totals, and headroom disposition live in the comment above
+        # test_coverage: in mix.exs (single source of truth; do not restate
+        # numbers here). snapshot_test.exs's cover-compiled tmp fixture
+        # modules run entirely in a quarantined child BEAM (their own :cover
+        # coordinator, never this run's), so they can no longer leak spurious
+        # 100% rows into the tally or crash the HTML report with
+        # :no_source_code_found.
         run: mix test --include integration --cover

@@ -27,13 +27,20 @@ Three rungs, lightest to heaviest. Do not overpay:
   branch guard + realization-drift + test-tag consistency, with **no**
   command/test execution. Cheap. Use this mid-iteration and whenever you want
   to "check like CI."
-- `mix spec.check` (bare) — heaviest. All of the above **plus** executes every
-  `execute: true` verification command (runs the tagged tests). Reserve for
-  pre-PR preflight only. The verdict is the last stdout line starting with `spec.check result=` — not `validate status=…`. A non-zero exit means failure even if no verdict line appears.
+- `bash ./scripts/check_specs.sh` (or `make check`) — heaviest. All of the
+  above **plus** executes every `execute: true` verification command (runs the
+  tagged tests). Reserve for pre-PR preflight only. The wrapper arms
+  `SPECLED_COMMAND_OUTPUT_DIR` at `$ROOT/tmp/specled-command-output` so a
+  failing or timed-out verification leaves forensics; bare `mix spec.check` in
+  a session whose project directory is a checkout without `.claude/settings.json`
+  leaves nothing. The verdict is the last stdout line starting with
+  `spec.check result=` — not `validate status=…`. A non-zero exit means failure
+  even if no verdict line appears.
 
-Container-based repos may expose these as make targets (e.g. `make spec-check`
-= `--no-run-commands`, `make spec-check-full` = bare) — the semantics are the
-same.
+This repo's armed make target is `make check` (exports
+`SPECLED_COMMAND_OUTPUT_DIR` to `$(CURDIR)/tmp/specled-command-output`).
+Container-based repos may expose `make spec-check` / `make spec-check-full`
+instead — same structural tiers, different arming.
 
 ## Files
 
@@ -43,9 +50,7 @@ same.
 
 Read `.spec/AGENTS.md` before implementing any feature.
 
-Use `bw list --grep "Advances:.*<subject.id>"` to find tasks that advance a
-specific subject. For planning-phase context, run `bw-plan prime` if that
-tooling is present in the repo.
+Use `bw list --all --grep "Advances: <subject.id>"` to find tasks that advance a specific subject (`--grep` is literal, not regex). For planning-phase context, run `bw-plan prime` if that tooling is present in the repo.
 
 ## Implementing Against Specs
 
@@ -58,7 +63,10 @@ Beadwork tasks list the subjects they advance in an `Advances:` field (see `bead
 
 ## Verification Gate
 
-Before closing a task, `mix spec.check` must pass for every subject you advanced, the project must compile cleanly, and no tests may regress.
+Before closing a task, `bash ./scripts/check_specs.sh` (or `make check`) must
+pass for every subject you advanced, the project must compile cleanly, and no
+tests may regress. Prefer the wrapper over bare `mix spec.check` so
+`SPECLED_COMMAND_OUTPUT_DIR` is armed.
 
 ## Spec Updates
 
