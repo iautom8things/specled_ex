@@ -1,4 +1,4 @@
-<!-- agent-rules: generated v0.13.2 -->
+<!-- agent-rules: generated v0.14.0 -->
 ---
 description: Elixir language patterns. Timeouts, behaviour impls, list access, immutability, guards, OTP primitives.
 # Writing conventions only — paths cover ~every file, so native read-triggered

@@ -1,4 +1,4 @@
-<!-- agent-rules: generated v0.13.2 -->
+<!-- agent-rules: generated v0.14.0 -->
 ---
 description: Specled — repo-resident behavioral specs and the verification loop. Specs are the source of truth for "what must be true."
 # Deliberately NOT write_only: specs-as-source-of-truth must be in context when
@@ -76,8 +76,17 @@ If a requirement is wrong (impossible, contradictory, or misunderstood):
 - `.spec/state.json` is derived local state, written only on request
   (`mix spec.index --output .spec/state.json` or
   `mix spec.validate --output .spec/state.json`) — `mix spec.check` never
-  writes it. It is untracked and gitignored, so it cannot conflict on rebase
-  or merge; never commit it or treat it as shared source of truth.
+  writes it. It is never a source of truth, so never reason from it and never
+  resolve a spec question by reading it.
+
+  Whether it is *tracked* varies by repo — check before assuming
+  (`git ls-files --error-unmatch .spec/state.json`):
+  - **Untracked / gitignored** — it cannot conflict; leave it alone.
+  - **Tracked** (the common case in the larger adopters) — it will conflict on
+    rebase or merge whenever two branches touched specs. Treat the conflict as
+    noise: take either side, finish the merge, then regenerate deliberately with
+    `mix spec.index --output .spec/state.json` (not `mix spec.check`, which does
+    not write it) and commit that. Do not hand-resolve the hunks.
 - `.spec/realization_hashes.json` is the committed realization-hash baseline
   that drift detection compares against. Do NOT resolve conflicts in it by
   regenerating — that recomputes hashes from the merged tree and silently

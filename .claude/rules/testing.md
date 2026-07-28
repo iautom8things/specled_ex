@@ -1,4 +1,4 @@
-<!-- agent-rules: generated v0.13.2 -->
+<!-- agent-rules: generated v0.14.0 -->
 ---
 description: ExUnit test patterns. Test cases, Mox, Oban, process lifecycle, LiveView assertions.
 # Deliberately NOT write_only: knowing how to READ tests matters when debugging
