@@ -25,9 +25,10 @@ summary: >-
   Additive v2 envelope path (`envelope_findings/3`,
   `aggregate_requirement_reach/2`) consumes a `Coverage.Store` v2 envelope
   directly instead of a raw per-test record list — see
-  `specled.triangulation.envelope_*` requirements below. The v1 functions and
-  `mix spec.triangle` are unchanged; only `mix spec.triangle` and `mix
-  spec.review` may ever consume either path (Decision: never `mix spec.check`).
+  `specled.triangulation.envelope_*` requirements below. The v2 addition left
+  the v1 functions and `mix spec.triangle` unchanged; only `mix spec.triangle`
+  and `mix spec.review` may ever consume either path (Decision: never `mix
+  spec.check`).
 surface:
   - lib/specled_ex/coverage_triangulation.ex
   - lib/specled_ex/review/coverage_closure.ex
@@ -249,9 +250,12 @@ decisions:
     `:file` values. Producers deriving closure files from module compile
     sources (`mix spec.triangle`, `Review.CoverageClosure`) shall emit them
     repository-root-relative; a compile source outside the repository root
-    contributes no closure file. Such a requirement keeps
-    `binding_present?: true` from its closure MFAs — an unresolvable file
-    identity shall not collapse to a "no binding" verdict.
+    contributes no closure file, and a closure module that fails
+    `Code.ensure_loaded/1` likewise contributes no closure file. Such a
+    requirement keeps `binding_present?: true` from its closure MFAs — in both
+    cases the binding dangles (out-of-repo source or unloadable module), which
+    is a dangling-binding concern, not evidence of a missing test — so an
+    unresolvable file identity shall not collapse to a "no binding" verdict.
   priority: must
   stability: evolving
 ```
