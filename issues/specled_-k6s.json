@@ -89,6 +89,10 @@
     {
       "text": "CI green on PR #32 with 0 fix commits — first run, all three checks passed.\n\n  Check Specs                        SUCCESS\n  Test (Elixir 1.19.5 / OTP 28.3.1)  SUCCESS  1284 tests, 0 failures, 84.08%\n  Test (Elixir 1.18.4 / OTP 26.2.5)  SUCCESS  1284 tests, 0 failures, 84.10%\n\nmergeStateStatus=CLEAN, mergeable=MERGEABLE, no reviews or comments.\n\nThe classic-leg pre-flight gap flagged at PR-open is now closed: it ran 84.10%,\n~2.1pp over the 82 threshold. Local native pre-flight measured 84.13% against\nCI's 84.08% — 0.05pp apart, consistent.\n\nNOTE for a future coverage ticket (not filed): at this tree the CLASSIC leg is\nthe HIGHER of the two (84.10 vs 84.08 native), inverting the relationship\nrecorded in the mix.exs provenance block (83.73 native / 83.68 classic at\neb259ac, 2026-07-24). That block is explicitly stamped \"NOT re-measured on this\ntree\", so it is not a false claim — the stamping did its job. But the \"\u003c- lower\nleg\" annotation is now stale as a general statement and the ~1.68pp headroom\ndisposition was reasoned from the classic leg being lower. Worth re-measuring\nand restamping when someone next touches the threshold.\n\nNot merged. Awaiting the human call.",
       "timestamp": "2026-07-28T12:23:55Z"
+    },
+    {
+      "text": "Squash-merged to main as c2d21349 (2026-07-28T12:26:24Z). PR #32 MERGED, remote\nbranch feat/specled_-k6s-0-11-0-fast-follow-sweep deleted.\n\nmain is now at c2d21349 with VERSION 0.11.0. Post-merge Specs run 30358957974\nin progress.\n\nNo deploy exists for this repo — it is a library with no Hex package and no\ndeploy/release/publish workflow, so `phase:deploying` here means \"merged, post-\nmerge gate running\", not an actual deployment. /monitor-app does not apply.\n\nThe epic remains OPEN with three children: specled_-dn4.12 and specled_-vbo\nparked for human decision, specled_-zd8 blocked behind dn4.12.\n\nTheir branches are based on 2d4535c1, which is NOT an ancestor of the squashed\nmain. Whoever resumes them must rebase onto main first.",
+      "timestamp": "2026-07-28T12:27:40Z"
     }
   ],
   "priority": 2,
