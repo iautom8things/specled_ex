@@ -93,11 +93,15 @@
     {
       "text": "Squash-merged to main as c2d21349 (2026-07-28T12:26:24Z). PR #32 MERGED, remote\nbranch feat/specled_-k6s-0-11-0-fast-follow-sweep deleted.\n\nmain is now at c2d21349 with VERSION 0.11.0. Post-merge Specs run 30358957974\nin progress.\n\nNo deploy exists for this repo — it is a library with no Hex package and no\ndeploy/release/publish workflow, so `phase:deploying` here means \"merged, post-\nmerge gate running\", not an actual deployment. /monitor-app does not apply.\n\nThe epic remains OPEN with three children: specled_-dn4.12 and specled_-vbo\nparked for human decision, specled_-zd8 blocked behind dn4.12.\n\nTheir branches are based on 2d4535c1, which is NOT an ancestor of the squashed\nmain. Whoever resumes them must rebase onto main first.",
       "timestamp": "2026-07-28T12:27:40Z"
+    },
+    {
+      "text": "Post-merge Specs run 30358957974 GREEN on main @ c2d21349. Release 0.11.0 landed.\n\nEpic worktree cleaned via make worktree-cleanup NAME=specled_ex-specled--k6s-0-11-0-fast-follow\nWORKTREE_CLEANUP_BASE=main FORCE=1. Both halves verified: the worktree is gone\nfrom git worktree list and the branch ref feat/specled_-k6s-0-11-0-fast-follow-sweep\nis deleted.\n\nLEFT IN PLACE deliberately, for /deliver to triage:\n  - local branch epic/specled_-k6s-0.11.0-fast-follow (no worktree; content is\n    on main via the squash). Not deleted unprompted.\n  - 19 stage worktrees, including the parked specled_-dn4.12 and specled_-vbo ones.\n\n/monitor-app does NOT apply: this repo is a library with no Hex package and no\ndeploy/release/publish workflow. The Specs run is the only post-merge gate and\nit is green. There is no prod signal to check.\n\nEpic stays OPEN and in_progress: dn4.12 + vbo parked, zd8 blocked behind dn4.12.",
+      "timestamp": "2026-07-28T12:30:06Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "[EPIC] Impromptu: 0.11.0 fast-follow sweep — gate-forensics reach, spec.validate usage tier, doc-lint hardening, coverage-store safety, review polish",
   "type": "epic",
-  "updated_at": "2026-07-28T12:27:40Z"
+  "updated_at": "2026-07-28T12:30:06Z"
 }
