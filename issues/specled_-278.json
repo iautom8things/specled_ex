@@ -6,9 +6,10 @@
   "description": "DISCLOSURE — not a repair ticket. This ticket does not authorize rewriting close_reason fields.\n\nWhat is wrong (field text live-checked 2026-07-27; causal narrative from 2026-07-26 audit):\nspecled_-8qg, specled_-pj8, and specled_-5ui are closed with close_reason text claiming they were filed by parallel audit agents. The audit finding: ONE agent, one episode, one hook fail-open.\n\nRepairable? YES in principle (close_reason is a rewritable field). This disclosure does NOT rewrite it. Prevents recurrence: adf-3yz S2. Full write-up: agentic-dotfiles docs/specled-ex-board-disclosure.md finding 3.",
   "id": "specled_-278",
   "labels": [],
-  "priority": 2,
+  "parent": "specled_-b4s",
+  "priority": 4,
   "status": "open",
   "title": "DISCLOSURE (no repair): false close_reason on specled_-8qg, -pj8, -5ui",
   "type": "task",
-  "updated_at": "2026-07-27T20:28:39Z"
+  "updated_at": "2026-07-28T13:03:11Z"
 }
