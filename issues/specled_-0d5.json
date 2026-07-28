@@ -2,13 +2,15 @@
   "assignee": "",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-07-28T13:02:34Z",
+  "close_reason": "Duplicate of specled_-ndd (same disclosure finding, double-created 2026-07-27 20:44 batch, 16 min after the 20:28 original). Content preserved on specled_-ndd.",
   "created": "2026-07-27T20:45:07Z",
   "description": "No spec subject. DISCLOSURE — not a repair ticket.\n\nFinding from agentic-dotfiles epic adf-3yz stage S6 (docs/specled-ex-board-disclosure.md finding 4).\n\nWhat is wrong: specled_-ygi plus four batched follow-ups were created with no Advances: header in the description (same dn4.9 audit batch episode as finding 3). Live-check: ygi description has no leading Advances: line.\n\nRepairable? PARTIALLY — description is rewritable so Advances: could be added later, but that does not restore create-time gate history. Missing create-time enforcement is process damage.\n\nPrevents recurrence: S2 (adf-3yz.2).\n\nThis ticket records the damage. Do not mutate pre-existing records as part of S6.",
   "id": "specled_-0d5",
   "labels": [],
   "priority": 2,
-  "status": "open",
+  "status": "closed",
   "title": "DISCLOSURE (no repair): creates without Advances: (ygi + 4 follow-ups)",
   "type": "task",
-  "updated_at": "2026-07-27T20:45:07Z"
+  "updated_at": "2026-07-28T13:02:34Z"
 }
