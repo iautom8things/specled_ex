@@ -6,9 +6,10 @@
   "description": "DISCLOSURE — not a repair ticket. Do not rewrite comments on affected records. bw comments are append-only.\n\nWhat is wrong (audit-verified 2026-07-26, not re-derived): 16 of 22 Codex IMPLEMENTED comments carry the dn4 orchestrator session id eb717ea1-b20d-491a-a5f9-322b223bfe82 instead of the delegated worker session.\n\nCorrect value: Session/Log from agent-session lines for the worker, not inherited CLAUDE_CODE_SESSION_ID.\n\nRepairable? NO for existing comments (append-only). Prevents recurrence: adf-3yz S1 (adf-3yz.1). Full write-up: agentic-dotfiles docs/specled-ex-board-disclosure.md finding 1.",
   "id": "specled_-0vh",
   "labels": [],
-  "priority": 2,
+  "parent": "specled_-b4s",
+  "priority": 4,
   "status": "open",
   "title": "DISCLOSURE (no repair): misattributed Codex IMPLEMENTED session ids (16/22)",
   "type": "task",
-  "updated_at": "2026-07-27T20:28:38Z"
+  "updated_at": "2026-07-28T13:03:11Z"
 }
