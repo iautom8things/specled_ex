@@ -2,6 +2,8 @@
   "assignee": "",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-07-28T13:02:16Z",
+  "close_reason": "All children (26g, gai, xkn.1, xkn.2) closed via k6s / prior releases; epic empty.",
   "created": "2026-07-24T14:22:04Z",
   "description": "Fast-follows specled_-q6l (aggregate-first spec coverage fast-follow), shipped in PR #17 / v0.6.1 (4a374be). Carries the calibrated Medium findings from the 5-persona critical review (consolidated: ~/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-07-24/specled_-q6l-fast-follow-aggregate-first/20260724-094831-consolidated.md) plus follow-ups surfaced during orchestration.",
   "id": "specled_-xkn",
@@ -21,8 +23,8 @@
     }
   ],
   "priority": 2,
-  "status": "open",
+  "status": "closed",
   "title": "Fast-follow: q6l coverage-gate remediation — review mediums",
   "type": "epic",
-  "updated_at": "2026-07-27T08:37:26Z"
+  "updated_at": "2026-07-28T13:02:16Z"
 }
