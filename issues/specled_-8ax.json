@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-27T20:45:09Z",
+  "description": "No spec subject. DISCLOSURE — not a repair ticket.\n\nFinding from agentic-dotfiles epic adf-3yz stage S6 (docs/specled-ex-board-disclosure.md finding 7).\n\nWhat is wrong (ticket-audit counts, not re-derived):\n- 25 of 197 closes never passed through in_progress\n- 5 tickets ran full IMPLEMENTED→VERIFY→AUDIT while still unclaimed\n- 2 closed tickets still carry a phase:* label\n\nRepairable? MIXED:\n- Historical never-in_progress transitions: not repairable as history\n- Stale phase:* labels: rewritable but out of scope for S6\n- Pipeline-while-unclaimed: process damage; comments remain as evidence\n\nPrevents recurrence? NOT by epic adf-3yz. Reference adf-l5t.8 (two-board / lifecycle-model follow-up). Do not reopen that design here.\n\nThis ticket records the damage. Do not mutate pre-existing records as part of S6.",
+  "id": "specled_-8ax",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "DISCLOSURE (no repair): lifecycle hygiene; see adf-l5t.8 (not this epic)",
+  "type": "task",
+  "updated_at": "2026-07-27T20:45:09Z"
+}

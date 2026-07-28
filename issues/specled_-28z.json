@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-27T20:45:07Z",
+  "description": "No spec subject. DISCLOSURE — not a repair ticket.\n\nFinding from agentic-dotfiles epic adf-3yz stage S6 (docs/specled-ex-board-disclosure.md finding 5).\n\nWhat is wrong: Ids specled_-dn4.12 and specled_-dn4.13 use dotted epic-child shape implying children of epic specled_-dn4, but live parent edges do not match:\n- dn4.12: parent is specled_-k6s (not null, not dn4)\n- dn4.13: parent is null\n\nRepairable? YES in principle — parent is a rewritable edge. This disclosure does NOT reparent anything.\n\nPrevents recurrence: S4 (adf-3yz.4) parenting rule; --parent vs -p discipline.\n\nThis ticket records the damage. Do not mutate pre-existing records as part of S6.",
+  "id": "specled_-28z",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "DISCLOSURE (no repair): dn4.12/.13 dotted ids without proper dn4 parent",
+  "type": "task",
+  "updated_at": "2026-07-27T20:45:07Z"
+}

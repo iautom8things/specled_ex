@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-27T20:45:08Z",
+  "description": "No spec subject. DISCLOSURE — not a repair ticket.\n\nFinding from agentic-dotfiles epic adf-3yz stage S6 (docs/specled-ex-board-disclosure.md finding 6).\n\nWhat is wrong: 15 board-wide comments whose entire body is a bare flag token (9x -m, 6x -F). Live-check sample: specled_-y1c has a comment body that is exactly \"-F\"; the intended AUDIT prose was never stored and is permanently lost.\n\nRepairable? NO for the lost prose — append-only, and the intended text never landed. Bare -F/-m rows also cannot be deleted. Upstream: adf-cxd, adf-vfv, adf-29f.\n\nPrevents recurrence: S3 (adf-3yz.3).\n\nThis ticket records the damage. Do not mutate pre-existing records as part of S6.",
+  "id": "specled_-4ob",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "DISCLOSURE (no repair): bare-flag comments; y1c AUDIT body lost",
+  "type": "task",
+  "updated_at": "2026-07-27T20:45:08Z"
+}

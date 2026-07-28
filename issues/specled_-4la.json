@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-27T20:45:05Z",
+  "description": "No spec subject. DISCLOSURE — not a repair ticket.\n\nFinding from agentic-dotfiles epic adf-3yz stage S6 (docs/specled-ex-board-disclosure.md finding 2).\n\nWhat is wrong (three append-only corruption cases):\n- specled_-dn4.4: stray VERIFY: PASS body that was actually dn4.3's report; retracted with true FAIL.\n- specled_-hj4.3: misfiled AUDIT: BOUNCE that belongs to hj4.1; retracted.\n- specled_-dn4.11: IMPLEMENTED body is the literal unexpanded string $(agent-session lines --ticket specled_-dn4.11).\n\nRepairable? NO — all are append-only comment losses. Retractions annotate but cannot delete false rows.\n\nPrevents recurrence: S3 + S4 (adf-3yz.3, adf-3yz.4).\n\nThis ticket records the damage. Do not mutate pre-existing records as part of S6.",
+  "id": "specled_-4la",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "DISCLOSURE (no repair): three corrupted pipeline records (dn4.4, hj4.3, dn4.11)",
+  "type": "task",
+  "updated_at": "2026-07-27T20:45:05Z"
+}

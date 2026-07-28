@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-27T20:45:06Z",
+  "description": "No spec subject. DISCLOSURE — not a repair ticket.\n\nFinding from agentic-dotfiles epic adf-3yz stage S6 (docs/specled-ex-board-disclosure.md finding 3).\n\nWhat is wrong: Closed tickets specled_-8qg, specled_-pj8, and specled_-5ui carry close_reason text claiming \"parallel audit agents\" filed near-duplicates. Audit finding: the multi-agent narrative is false — one agent, one episode, one hook fail-open allowed a batch of near-duplicate creates.\n\nRepairable? YES in principle — close_reason is a rewritable record field. This disclosure does NOT rewrite it.\n\nPrevents recurrence: S2 (adf-3yz.2) advances-check on every bw create.\n\nThis ticket records the damage. Do not mutate pre-existing records as part of S6.",
+  "id": "specled_-s4a",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "DISCLOSURE (no repair): false close_reason on specled_-8qg, -pj8, -5ui",
+  "type": "task",
+  "updated_at": "2026-07-27T20:45:06Z"
+}
