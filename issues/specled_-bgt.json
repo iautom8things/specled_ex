@@ -7,9 +7,15 @@
   "id": "specled_-bgt",
   "labels": [],
   "parent": "specled_-b4s",
+  "comments": [
+    {
+      "text": "Finding actioned 2026-07-28: specled_-l05 demoted P1-\u003eP2 with superseded-escalation note recorded (see l05 comment). This no-repair disclosure retained under epic specled_-b4s for provenance.",
+      "timestamp": "2026-07-28T13:03:30Z"
+    }
+  ],
   "priority": 4,
   "status": "open",
   "title": "DISCLOSURE (no repair): specled_-l05 still P1 with superseded escalation",
   "type": "task",
-  "updated_at": "2026-07-28T13:03:13Z"
+  "updated_at": "2026-07-28T13:03:30Z"
 }
