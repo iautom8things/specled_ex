@@ -6,9 +6,10 @@
   "description": "DISCLOSURE — not a repair ticket. Do not attempt to delete bare-flag comments or reconstruct lost AUDIT prose on original tickets.\n\nWhat is wrong (audit counts 2026-07-26; sample live-checked): 15 board-wide comments whose entire body is a bare flag (9 x -m, 6 x -F). Live sample: specled_-y1c comment body is exactly -F. The intended AUDIT body for y1c is permanently lost.\n\nRepairable? NO — append-only; intended text never stored. Prevents recurrence: adf-3yz S3. Full write-up: agentic-dotfiles docs/specled-ex-board-disclosure.md finding 6.",
   "id": "specled_-1le",
   "labels": [],
-  "priority": 2,
+  "parent": "specled_-b4s",
+  "priority": 4,
   "status": "open",
   "title": "DISCLOSURE (no repair): bare-flag comments; y1c AUDIT body lost",
   "type": "task",
-  "updated_at": "2026-07-27T20:28:41Z"
+  "updated_at": "2026-07-28T13:03:12Z"
 }
