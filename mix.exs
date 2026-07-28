@@ -1,10 +1,17 @@
 defmodule SpecLedEx.MixProject do
   use Mix.Project
 
+  # `VERSION` is the single source of truth for the release version — it is what
+  # the CHANGELOG sections are keyed on. Read via `__DIR__` rather than a bare
+  # relative path so resolution does not depend on the caller's cwd. If this
+  # project is ever published to Hex, `VERSION` must be added to
+  # `package[:files]` or the packaged tarball will fail to evaluate this.
+  @version File.read!(Path.join(__DIR__, "VERSION")) |> String.trim()
+
   def project do
     [
       app: :spec_led_ex,
-      version: "0.2.0",
+      version: @version,
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       # Coverage gate threshold + per-leg provenance (single source of truth).
