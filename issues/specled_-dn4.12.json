@@ -10,7 +10,7 @@
   "description": "specled_-dn4.9 re-derived item 1 after dn4.5: formatter.ex and coverage_triangulation.ex still need one shared module-to-source/repo-relative resolver, but doing it inside SpecLedEx.Coverage added public API and tripped api-boundary attestation. Revisit with an internal module/file explicitly scoped for this helper or another design that does not widen public API. Evidence: full mix test failed guard_ergonomics_attestation_test until the public helper was removed; both private copies were kept non-loading via :code.is_loaded/1.",
   "id": "specled_-dn4.12",
   "labels": [],
-  "parent": "specled_-k6s",
+  "parent": "specled_-scb",
   "comments": [
     {
       "text": "SCOPE ADDITION from the specled_-dn4.9 audit (2026-07-26T00:25:30Z): source_to_binary/1 is now duplicated in BOTH lib/specled_ex/coverage/formatter.ex and lib/specled_ex/coverage_triangulation.ex, growing the very duplication this ticket is chartered to remove. Fold it into this ticket's scope alongside repo_relative_path/1 and repo_relative_source_path/1 — that is now three private copies of shared resolver logic across the two modules.",
@@ -109,5 +109,5 @@
   "status": "closed",
   "title": "Follow up: consolidate coverage source resolver without public API drift",
   "type": "task",
-  "updated_at": "2026-07-28T13:02:13Z"
+  "updated_at": "2026-07-28T13:31:31Z"
 }
