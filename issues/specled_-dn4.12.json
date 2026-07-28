@@ -4,6 +4,8 @@
   "blocks": [
     "specled_-zd8"
   ],
+  "closed_at": "2026-07-28T13:02:13Z",
+  "close_reason": "Shipped in k6s epic PR (release 0.11.0, c2d21349).",
   "created": "2026-07-25T19:05:21Z",
   "description": "specled_-dn4.9 re-derived item 1 after dn4.5: formatter.ex and coverage_triangulation.ex still need one shared module-to-source/repo-relative resolver, but doing it inside SpecLedEx.Coverage added public API and tripped api-boundary attestation. Revisit with an internal module/file explicitly scoped for this helper or another design that does not widen public API. Evidence: full mix test failed guard_ergonomics_attestation_test until the public helper was removed; both private copies were kept non-loading via :code.is_loaded/1.",
   "id": "specled_-dn4.12",
@@ -104,8 +106,8 @@
     }
   ],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "Follow up: consolidate coverage source resolver without public API drift",
   "type": "task",
-  "updated_at": "2026-07-28T11:19:29Z"
+  "updated_at": "2026-07-28T13:02:13Z"
 }
