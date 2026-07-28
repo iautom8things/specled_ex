@@ -2,13 +2,15 @@
   "assignee": "",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-07-28T13:02:33Z",
+  "close_reason": "Duplicate of specled_-0vh (same disclosure finding, double-created 2026-07-27 20:44 batch, 16 min after the 20:28 original). Content preserved on specled_-0vh.",
   "created": "2026-07-27T20:44:56Z",
   "description": "No spec subject. DISCLOSURE — not a repair ticket.\n\nFinding from agentic-dotfiles epic adf-3yz stage S6 (docs/specled-ex-board-disclosure.md finding 1).\n\nWhat is wrong: Of 22 Codex IMPLEMENTED comments on the specled_ex board, 16 carry the dn4 orchestrator session id eb717ea1-b20d-491a-a5f9-322b223bfe82 (and its log path) instead of the delegated worker's session. Live-check sample: specled_-dn4.4 pipeline comments all stamp Session: eb717ea1-….\n\nCorrect value: Worker session identity from agent-session lines --ticket \u003cid\u003e for that worker.\n\nRepairable? NO for existing comments — append-only comment loss (bw 0.13.2 / adf-29f). A correcting comment can only annotate; it cannot rewrite false attribution.\n\nPrevents recurrence: S1 (adf-3yz.1).\n\nThis ticket records the damage. Do not mutate pre-existing records as part of S6.",
   "id": "specled_-fnc",
   "labels": [],
   "priority": 2,
-  "status": "open",
+  "status": "closed",
   "title": "DISCLOSURE (no repair): misattributed Codex IMPLEMENTED session ids (16/22)",
   "type": "task",
-  "updated_at": "2026-07-27T20:44:56Z"
+  "updated_at": "2026-07-28T13:02:33Z"
 }
