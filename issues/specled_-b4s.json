@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-07-28T13:02:52Z",
+  "description": "Container for the 8 distinct DISCLOSURE (no repair) findings imported from the external agentic-dotfiles epics (adf-3yz S6, adf-l5t). Audit records of past board-process damage (missing Advances: headers, misattributed session ids, corrupted pipeline records, false close_reasons, lifecycle hygiene). NOT code work and NOT adopter-facing; recurrence prevention lives in the source epics. Grouped here at P4 to keep them out of the P2 launch band. Do NOT mutate the historical records these disclosures point at.",
+  "id": "specled_-b4s",
+  "labels": [],
+  "priority": 4,
+  "status": "open",
+  "title": "[EPIC] Board-provenance disclosures (no-repair audit records)",
+  "type": "epic",
+  "updated_at": "2026-07-28T13:02:52Z"
+}
