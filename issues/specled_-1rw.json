@@ -6,9 +6,10 @@
   "description": "DISCLOSURE — not a repair ticket. Do not delete or edit the corrupted comments. Comments are append-only.\n\nWhat is wrong (audit-verified; live-checked 2026-07-27):\n1) specled_-dn4.4: stray cross-ticket VERIFY: PASS (actually dn4.3 report; retracted next comment; true verdict FAIL).\n2) specled_-hj4.3: misfiled AUDIT: BOUNCE belonging to specled_-hj4.1 (retracted).\n3) specled_-dn4.11: IMPLEMENTED body is literal unexpanded $(agent-session lines --ticket specled_-dn4.11).\n\nRepairable? NO — append-only. Prevents recurrence: adf-3yz S3+S4. Full write-up: agentic-dotfiles docs/specled-ex-board-disclosure.md finding 2.",
   "id": "specled_-1rw",
   "labels": [],
-  "priority": 2,
+  "parent": "specled_-b4s",
+  "priority": 4,
   "status": "open",
   "title": "DISCLOSURE (no repair): three corrupted pipeline records (dn4.4, hj4.3, dn4.11)",
   "type": "task",
-  "updated_at": "2026-07-27T20:28:39Z"
+  "updated_at": "2026-07-28T13:03:11Z"
 }
