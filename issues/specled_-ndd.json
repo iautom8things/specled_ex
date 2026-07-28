@@ -6,9 +6,10 @@
   "description": "DISCLOSURE — not a repair ticket. Do not bulk-edit historical descriptions under this id.\n\nWhat is wrong (audit-verified 2026-07-26): specled_-ygi plus four batched follow-ups created with no Advances: header.\n\nRepairable? PARTIALLY — description is rewritable; create-time gate history is not restored by a late edit. This disclosure does not edit those descriptions. Prevents recurrence: adf-3yz S2. Full write-up: agentic-dotfiles docs/specled-ex-board-disclosure.md finding 4.",
   "id": "specled_-ndd",
   "labels": [],
-  "priority": 2,
+  "parent": "specled_-b4s",
+  "priority": 4,
   "status": "open",
   "title": "DISCLOSURE (no repair): creates without Advances: (ygi + 4 follow-ups)",
   "type": "task",
-  "updated_at": "2026-07-27T20:28:40Z"
+  "updated_at": "2026-07-28T13:03:12Z"
 }
