@@ -1,5 +1,128 @@
 # Changelog
 
+## 0.11.0 — 2026-07-28
+
+Impromptu epic (specled_-k6s) bundling eighteen independently-surfaced
+follow-ups onto one release. The through-line is guards that could not fail: an
+exemption marker that a `>` in its own reason text defeated, a decode default
+that resurrected atoms for every caller who did not opt out, assertions that
+stayed green when the behavior they named was inverted, and prose — in specs,
+ADRs, and code comments — asserting properties the code had stopped having.
+Every item either replaced a check that could not go red, or retired a claim
+that was no longer true.
+
+Expect this release to **flag more than 0.10.0 did**. Several items close
+detection holes rather than add features, so a repository that passed
+`mix spec.check` on 0.10.0 can legitimately fail on 0.11.0 without changing a
+line of its own code.
+
+### Added
+
+- `specled.coverage_capture.decode_atom_policy`: `Coverage.Store.safe_decode/2`
+  defaults to `[:safe]`, so no call site receives atom-resurrecting decode
+  implicitly. `read_v2/1` opts out explicitly; `read_status/1` keeps the
+  fail-closed default. Two positive regression guards — a `read_v2` artifact
+  naming a never-interned module atom, and a tracer manifest carrying a foreign
+  module atom key — make a future blanket `[:safe]` sweep fail loudly instead of
+  silently widening what the reader accepts (specled_-xkn.1)
+- `specled.coverage_capture.envelope_meta` gains the read-path rejection rule
+  for a present-but-non-map `:meta`, giving the existing `Store` assertion an
+  owning clause. The `write_v2/2` clause from specled_-n5s is unchanged
+  (specled_-npo)
+- The verifier's reserved `repo.` affect-namespace exemption is documented in
+  `specled.decisions.decision_governance` and mirrored by a CrossField R4
+  filter, so wiring CrossField into the live parse path will not red-gate corpus
+  ADRs carrying `affects: repo.governance`. Pinned in both directions — a
+  `repo.`-namespaced affect resolves clean, a genuinely missing subject still
+  reports `cross_field/affects_unresolved`
+  (`specled.decisions.cross_field_affects_resolve`, specled_-14t)
+
+### Fixed
+
+- The stale-allow-marker sweep had two evasions, both now closed by unifying
+  exemption and strip on one HTML-comment-wrapped grammar: a `>` character
+  inside a marker's own reason text terminated the strip early and defeated it,
+  and bare unwrapped `spec-lint:allow-code=` prose granted an exemption it was
+  never meant to grant. `specled.package.doc_identifier_integrity` now names the
+  wrapped form explicitly. A marker naming a non-guarded code reports as
+  unnecessary with its own message rather than borrowing the outside-marker one
+  (specled_-ozm)
+- `mix spec.validate` argument pre-flight adopts `TaskArgs.validate/3` and
+  reports `tier=usage` on unknown-flag rejection, with an explicit `:tier`
+  required in the failing `print_verdict` path. The verdict grammar is
+  reconciled so `spec.validate` admits `tier=<usage|validate>` (specled_-wby)
+- `lib/mix/tasks/spec.triangle.ex` carried a comment claiming the MFA-level
+  untested-realization gate reads `binding_present?` and must keep flagging it.
+  No gate in that task's call graph does — aggregate findings are filtered to
+  `detector_unavailable`, and the v1 legs join on `closure_files`. The comment
+  now states the truth, and the producer is pinned at the unit level against
+  `CoverageTriangulation.envelope_findings/3` rather than through the task
+  (specled_-b23)
+- `.spec/specs/triangulation.spec.md` asserted as a standing claim that "the v1
+  functions and `mix spec.triangle` are unchanged", which the
+  `v1_file_level_path_identity` requirement had since contradicted. Reworded to
+  past tense scoped to the v2 addition. The same requirement now states the
+  unloadable-module posture explicitly: a closure module failing
+  `Code.ensure_loaded/1` contributes no closure file, and in both that case and
+  the out-of-repo case the binding dangles — a dangling-binding concern, not
+  evidence of a missing test (specled_-b23)
+- `specled.decision.cross_vm_temp_names_reach` replaced its bare "test-only
+  usages remain fine" sentence with an accepted-risk carve-out: VM-local
+  `unique_integer` roots under `System.tmp_dir!/0` in `test/` are not
+  safe-by-construction — the nesting hazard is identical to `lib/` — but the
+  blast radius is a flaked test. The permission does not extend to tests that
+  assert on directory contents or glob-delete in a shared directory, and the
+  ADR prescribes by class: allocate-own-root uses
+  `SpecLedEx.TempName.cross_vm_suffix/0`, while read/sweep of a genuinely
+  shared directory filters on the writer's `System.pid()` prefix, because a
+  fresh CSPRNG suffix cannot match names another writer produced (specled_-ehv)
+- `specled.verify.command_output_capture_dir` requires cross-VM uniqueness via
+  `SpecLedEx.TempName.cross_vm_suffix/0`, matching the accepted
+  `command_temp_names_cross_vm_unique` wording so the forensic-capture pointer
+  target is complete. The three re-narrated rationale blocks in `Verifier` are
+  reduced to one-line pointers at `SpecLedEx.TempName`, leaving the moduledoc as
+  the single narrative (specled_-chb)
+- `specled.verification.findings_echo_exunit_seed` and its covering scenario
+  dropped their placement over-claims: the requirement now asserts only what the
+  multi-run pairing test proves — a primary seed from the first run and a
+  distinctly labelled resume seed with its own `--seed` hint, never the primary
+  — rather than positional adjacency (specled_-zek)
+- `specled.decision.doc_identifier_lint_spec_corpus` dropped four absolute
+  corpus occurrence counts that drift by construction, keeping the load-bearing
+  comparative claim. Dangling `specled_-vk0` forward pointers are cleared now
+  that the ticket is closed (specled_-4pl)
+
+### Changed
+
+- The CI coverage threshold moves 83 → 82, with per-leg measured totals and the
+  reason the legs differ recorded next to `test_coverage:` in `mix.exs` as the
+  single source of truth. The previous 83 left ~0.68pp of headroom, which is too
+  thin: ordinary suite changes that `:code.purge`/`:code.delete` cover-tracked
+  modules drop them from **both** numerator and denominator of the `--cover`
+  tally and can erase sub-1pp margin (specled_-xkn.2)
+- `mix.exs` sources the project version from the `VERSION` file rather than a
+  literal. It had declared `0.2.0` while `VERSION` and the CHANGELOG both
+  tracked `0.10.0`; nothing read either value, so the stale literal was inert
+  rather than wrong in effect, but two disagreeing sources of truth is precisely
+  the defect class this project exists to catch
+- Falsifiability sweep across the suite: assertions covering
+  `coverage_no_debug_info_distinct_note` and `coverage_unresolvable_source`
+  (specled_-ako), `merge_edges` value provenance for non-session callers
+  (`specled.compiler_tracer.merge_on_flush`, specled_-asb), the concepts
+  content-lint helpers (specled_-yds), and `Store.load/1` sidecar isolation
+  (specled_-26g) each stayed green under mutations that inverted the behavior
+  they named. Every one was re-pinned and its mutation proof recorded in the
+  commit
+- The phase-0 done-criterion in the packaged agent guidance requires
+  `--verbose`, because bare `mix spec.check` hides info-level findings and the
+  criterion could not otherwise be evaluated (specled_-z5t). Always-loaded rules
+  now point at the armed gate wrapper (`bash ./scripts/check_specs.sh` /
+  `make check`), so cwd-based rule discovery reaches sessions that
+  `settings.json` cannot (specled_-4f7)
+- `bw list --grep` is documented as a literal substring match, not a regex. The
+  previously documented `Advances:.*<id>` form matched the characters `.*`
+  literally and silently returned zero tickets for every subject (specled_-pii)
+
 ## 0.10.0 — 2026-07-27
 
 Gate forensics: a verification run that fails or times out now leaves behind
