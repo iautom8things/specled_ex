@@ -18,8 +18,8 @@
     }
   ],
   "priority": 3,
-  "status": "closed",
+  "status": "open",
   "title": "Formatter defensive asymmetry: record_inventory/2 recovers from %{modules: nil} but flush/1 no longer does",
   "type": "task",
-  "updated_at": "2026-07-28T13:31:32Z"
+  "updated_at": "2026-07-28T13:32:01Z"
 }
