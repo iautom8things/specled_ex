@@ -9,7 +9,7 @@ MAIN_NAME := specled_ex
 # stays side-effect free for worktree/bootstrap targets.
 RECURSIVE_MAKE := $(MAKE)
 
-.PHONY: help clean deps format test compile check \
+.PHONY: help clean deps format test compile check xref \
 	worktree-new worktree-bootstrap worktree-info worktree-status \
 	worktree-cleanup worktree-cleanup-all smoke \
 	wts wti wtn wtb wtc wtca
@@ -63,6 +63,12 @@ SPECLED_COMMAND_OUTPUT_DIR ?= $(CURDIR)/tmp/specled-command-output
 check: export SPECLED_COMMAND_OUTPUT_DIR := $(SPECLED_COMMAND_OUTPUT_DIR)
 check: ## Run the spec verification gate (failing-command forensics land in tmp/specled-command-output)
 	mix spec.check
+
+# MIX_ENV=test pinned for CI parity: the test env compiles test_support/,
+# so its xref graph is a superset of dev's — a dev-only pass can hide edges
+# CI would reject.
+xref: ## Fail on any compile-connected xref edge (CI runs this same target)
+	MIX_ENV=test mix xref graph --label compile-connected --fail-above 0
 
 # Worktree workflow
 

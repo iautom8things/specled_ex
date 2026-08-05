@@ -4,17 +4,12 @@ defmodule SpecLedEx.Schema do
   alias SpecLedEx.Schema.{
     Decision,
     Exception,
-    Id,
     Meta,
     RealizedBy,
     Requirement,
     Scenario,
     Verification
   }
-
-  def id do
-    Id.id()
-  end
 
   def meta do
     Meta.schema()

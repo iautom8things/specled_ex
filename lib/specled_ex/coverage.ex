@@ -12,6 +12,10 @@ defmodule SpecLedEx.Coverage do
   Declare that setup before any other setup callbacks whose coverage should
   belong to the test body. ExUnit runs `on_exit` callbacks in LIFO order, so
   registering the boundary hook first makes its tail snapshot run last.
+  The direct `SpecLedEx.Coverage` reference is fine in an adopter tree —
+  `mix xref` does not cross application boundaries — while this repo's own
+  `SpecLedEx.Case` uses the block form to stay off the compile-connected
+  gate.
 
   Or, for bare `ExUnit.Case` modules, `use SpecLedEx.Case` (which injects
   that setup line). The hook no-ops unless the task has armed the

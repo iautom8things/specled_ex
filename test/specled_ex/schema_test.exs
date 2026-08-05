@@ -78,6 +78,32 @@ defmodule SpecLedEx.SchemaTest do
     assert message =~ "invalid id format"
   end
 
+  test "validate_block rejects ids with a trailing newline" do
+    # \A/\z anchors: with ^/$ the `$` matches before a trailing newline and
+    # "subject\n" would validate as a legal id.
+    assert {:error, message} =
+             Schema.validate_block("spec-meta", %{
+               "id" => "example.subject\n",
+               "kind" => "module",
+               "status" => "active"
+             })
+
+    assert message =~ "invalid id format"
+  end
+
+  test "validate_block rejects ids with embedded newlines and uppercase" do
+    for bad_id <- ["a\nb", "Example.subject", "", ".leading-dot", "-leading-dash"] do
+      assert {:error, message} =
+               Schema.validate_block("spec-meta", %{
+                 "id" => bad_id,
+                 "kind" => "module",
+                 "status" => "active"
+               })
+
+      assert message =~ "invalid id format", "expected #{inspect(bad_id)} to be rejected"
+    end
+  end
+
   test "validate_block rejects invalid verification minimum strength" do
     assert {:error, message} =
              Schema.validate_block("spec-meta", %{

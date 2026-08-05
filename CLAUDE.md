@@ -47,5 +47,5 @@ Before merging any new code, the following checks MUST pass:
 - [ ] `mix test`
 - [ ] `mix format --check-formatted`
 - [ ] `mix deps.unlock --check-unused`
-- [ ] `mix xref graph --label compile-connected --fail-above 0`
+- [ ] `make xref` (compile-connected graph at zero edges, MIX_ENV=test for CI parity)
 - [ ] `bash ./scripts/check_specs.sh` (or `make check`)

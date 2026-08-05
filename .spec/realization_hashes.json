@@ -113,7 +113,7 @@
       "hasher_version": 1
     },
     "SpecLedEx.Case": {
-      "hash": "a65ee2147663af4c05a31de40087689f6c3224bc6212a5981750df63bc743d9c",
+      "hash": "b6f29877fd434fa85570fdcc5c51477f8ccc4dfde030870f8ed5553eb3663b19",
       "hasher_version": 1
     },
     "SpecLedEx.ChangeAnalysis.analyze/3": {
@@ -197,7 +197,7 @@
       "hasher_version": 1
     },
     "SpecLedEx.Coverage": {
-      "hash": "b671fda615278b297febb894aacdb0454507ad40f21fd7fdfc9c96bab61b3c2b",
+      "hash": "87f3afb6586456a9d5cd3999b52f8d05047e78e9a7f7d497eb99dd206258563d",
       "hasher_version": 1
     },
     "SpecLedEx.Coverage.Aggregate.ingest/2": {

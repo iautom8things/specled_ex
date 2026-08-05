@@ -64,7 +64,9 @@ jobs:
       - name: Compile-connected xref gate
         # A compile-time dependency on a module that has its own dependencies
         # cascades recompilation across the app; keep the graph at zero edges.
-        run: mix xref graph --label compile-connected --fail-above 0
+        # Same target as the local Merge Gates checklist, so CI and local runs
+        # cannot drift.
+        run: make xref
 
       - name: Check specs
         # PR runs diff against the merge base (spec.check uses base...HEAD) so

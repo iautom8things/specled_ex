@@ -106,6 +106,9 @@ defmodule SpecLedEx.DecisionParser.CrossField do
     meta = meta(decision)
     ct = change_type(meta)
 
+    # Runtime lookup, deliberately not a module attribute: evaluating
+    # Decision.weakening_types/0 at compile time creates a compile-connected
+    # xref edge, which the CI gate holds at zero.
     if ct in Decision.weakening_types() do
       rw = meta |> Map.get("reverses_what", "") |> to_string() |> String.trim()
 

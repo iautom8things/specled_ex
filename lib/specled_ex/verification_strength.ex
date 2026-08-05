@@ -1,6 +1,9 @@
 defmodule SpecLedEx.VerificationStrength do
   @moduledoc false
 
+  # Leaf module: levels/0 is consumed at compile time (e.g. by the Meta
+  # schema), so this module must not depend on any other project module.
+
   @levels ~w(claimed linked executed)
   @default "claimed"
   @ranks Enum.with_index(@levels) |> Map.new()

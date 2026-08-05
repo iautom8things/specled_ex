@@ -5,7 +5,10 @@ defmodule SpecLedEx.Schema.Id do
   # `Zoi.struct` definition under SpecLedEx.Schema.*, so it must not
   # depend on any other project module.
 
-  @id_pattern ~r/^[a-z0-9][a-z0-9._-]*$/
+  # \A/\z, not ^/$: `$` matches before a trailing newline, so anchoring with
+  # ^/$ accepts ids like "a\n". The api_boundary hash tier covers function
+  # heads only and would never catch a regression of this pattern.
+  @id_pattern ~r/\A[a-z0-9][a-z0-9._-]*\z/
 
   def id do
     Zoi.string()
