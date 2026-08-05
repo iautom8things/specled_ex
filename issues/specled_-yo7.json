@@ -6,9 +6,15 @@
   "description": "No spec subject. Review finding F16 (calibrated severity: Low) from the 2026-08-05 critical review of specled_-0o8. The make xref / CI compile-connected gate sees only what elixirc compiles: lib/ (minus the separately-compiled tracer.ex) plus test/test_support/. The legacy top-level test_support/ is loaded via Code.require_file from test/test_helper.exs, sits outside elixirc_paths, and holds SpecLedEx.FixtureCase and SpecLedEx.IntegrationCase — two of the three case templates, invisible to the gate in every env. Both are clean today (FixtureCase calls SpecLedEx.read_state/2 from a function body only). Could not land on the shipping branch because the real fix is migrating the directory into elixirc_paths; the Code.require_file arrangement is deliberate (test/test_helper.exs:40-42) and 10+ test modules load helpers through it. ADR specled.decision.compile_connected_zero documents the blind spot in the meantime.",
   "id": "specled_-yo7",
   "labels": [],
+  "comments": [
+    {
+      "text": "Late spec-auditor findings (2026-08-05 review, report 20260805-133930-spec.md) that touch this ticket's fix surface:\n\nL2: ADR specled.decision.compile_connected_zero says \"Current leaves: Schema.Id, Schema.Verification, VerificationStrength\" — false as an exhaustive claim; MfaKey and Canonical also have zero outgoing project deps (verified via mix xref) and carry no obligation comment. When fixing this ticket, correct the enumeration (or reword to non-exhaustive) and decide whether MfaKey/Canonical get the leaf comment.\n\nL3 (context, mitigated): Schema.Id.id/0's api_boundary binding is drift-inert w.r.t. @id_pattern (head-only hashing); the id-contract schema_test cases are the real guard.",
+      "timestamp": "2026-08-05T18:40:45Z"
+    }
+  ],
   "priority": 3,
   "status": "open",
   "title": "Compile-connected gate cannot see legacy top-level test_support/ case templates",
   "type": "task",
-  "updated_at": "2026-08-05T18:14:48Z"
+  "updated_at": "2026-08-05T18:40:45Z"
 }
