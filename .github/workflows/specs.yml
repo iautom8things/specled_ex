@@ -61,6 +61,11 @@ jobs:
       - name: Install dependencies
         run: mix deps.get
 
+      - name: Compile-connected xref gate
+        # A compile-time dependency on a module that has its own dependencies
+        # cascades recompilation across the app; keep the graph at zero edges.
+        run: mix xref graph --label compile-connected --fail-above 0
+
       - name: Check specs
         # PR runs diff against the merge base (spec.check uses base...HEAD) so
         # append-only and co-update guards apply; push/dispatch keep bare HEAD.
