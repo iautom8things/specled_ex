@@ -29,8 +29,6 @@ defmodule SpecLedEx.DecisionParser.CrossField do
           decision_id: String.t() | nil
         }
 
-  @weakening_types Decision.weakening_types()
-
   @doc """
   Runs every cross-field rule against `decision`.
 
@@ -108,7 +106,7 @@ defmodule SpecLedEx.DecisionParser.CrossField do
     meta = meta(decision)
     ct = change_type(meta)
 
-    if ct in @weakening_types do
+    if ct in Decision.weakening_types() do
       rw = meta |> Map.get("reverses_what", "") |> to_string() |> String.trim()
 
       if rw == "" do

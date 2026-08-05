@@ -14,6 +14,7 @@ status: active
 summary: Validates authored block payloads into Zoi-backed structs with precise validation errors.
 surface:
   - lib/specled_ex/schema.ex
+  - lib/specled_ex/schema/id.ex
   - lib/specled_ex/schema/meta.ex
   - lib/specled_ex/schema/requirement.ex
   - lib/specled_ex/schema/scenario.ex
@@ -22,6 +23,7 @@ surface:
 realized_by:
   api_boundary:
     - "SpecLedEx.Schema.validate_block/2"
+    - "SpecLedEx.Schema.Id.id/0"
     - "SpecLedEx.Schema.Meta"
     - "SpecLedEx.Schema.Requirement"
     - "SpecLedEx.Schema.Scenario"

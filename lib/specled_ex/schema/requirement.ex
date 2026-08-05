@@ -6,14 +6,14 @@ defmodule SpecLedEx.Schema.Requirement do
   @schema Zoi.struct(
             __MODULE__,
             %{
-              id: SpecLedEx.Schema.id(),
+              id: SpecLedEx.Schema.Id.id(),
               statement: Zoi.string(),
               priority: Zoi.string() |> Zoi.optional(),
               stability: Zoi.string() |> Zoi.optional(),
               realized_by: Zoi.any() |> Zoi.optional(),
               polarity: Zoi.enum(@polarities) |> Zoi.optional(),
-              refines: SpecLedEx.Schema.id() |> Zoi.optional(),
-              supersedes: SpecLedEx.Schema.id() |> Zoi.optional()
+              refines: SpecLedEx.Schema.Id.id() |> Zoi.optional(),
+              supersedes: SpecLedEx.Schema.Id.id() |> Zoi.optional()
             },
             coerce: true
           )

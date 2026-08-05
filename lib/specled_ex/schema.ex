@@ -4,6 +4,7 @@ defmodule SpecLedEx.Schema do
   alias SpecLedEx.Schema.{
     Decision,
     Exception,
+    Id,
     Meta,
     RealizedBy,
     Requirement,
@@ -11,13 +12,8 @@ defmodule SpecLedEx.Schema do
     Verification
   }
 
-  @id_pattern ~r/^[a-z0-9][a-z0-9._-]*$/
-
   def id do
-    Zoi.string()
-    |> Zoi.regex(@id_pattern,
-      error: "invalid id format: must match #{inspect(Regex.source(@id_pattern))}"
-    )
+    Id.id()
   end
 
   def meta do
@@ -118,10 +114,6 @@ defmodule SpecLedEx.Schema do
   end
 
   defp maybe_normalize_realized_by(_tag, parsed), do: {:ok, parsed}
-
-  # Silence unused-alias warnings; aliases kept for doc readability.
-  _ = Meta
-  _ = Requirement
 
   defp format_errors(tag, errors) do
     msgs = Enum.map(errors, & &1.message)

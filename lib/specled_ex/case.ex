@@ -15,5 +15,12 @@ defmodule SpecLedEx.Case do
 
   use ExUnit.CaseTemplate
 
-  setup {SpecLedEx.Coverage, :per_test_boundary}
+  # The indirection through a local def keeps the Coverage reference out of
+  # module-body code, so this template does not compile-depend on Coverage.
+  setup {SpecLedEx.Case, :per_test_boundary}
+
+  @doc false
+  def per_test_boundary(context) do
+    SpecLedEx.Coverage.per_test_boundary(context)
+  end
 end
