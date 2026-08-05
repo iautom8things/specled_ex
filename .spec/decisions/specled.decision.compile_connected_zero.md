@@ -45,6 +45,14 @@ merge gate, run as `make xref` locally and in CI. To keep it at zero:
 
 - Compile-time references to leaf modules are cheap and permitted; the gate
   only rejects edges to modules that themselves have dependencies.
+- The gate sees only what Mix's elixirc compiler builds: `lib/` (minus
+  `lib/specled_ex/compiler/tracer.ex`, which mix.exs compiles separately so
+  the tracer can trace the main compile) plus `test/test_support/` in the
+  test env. The legacy top-level `test_support/` — loaded via
+  `Code.require_file` from `test/test_helper.exs` and holding two of the
+  repo's three case templates — is outside `elixirc_paths` and therefore
+  invisible to the gate in every env. Compile-dependency discipline in those
+  files is convention, not enforcement.
 - Adopter trees are unaffected: `mix xref` does not cross application
   boundaries, so documented adopter wiring such as
   `setup {SpecLedEx.Coverage, :per_test_boundary}` cannot trip an adopter's

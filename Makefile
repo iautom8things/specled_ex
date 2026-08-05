@@ -64,7 +64,7 @@ check: export SPECLED_COMMAND_OUTPUT_DIR := $(SPECLED_COMMAND_OUTPUT_DIR)
 check: ## Run the spec verification gate (failing-command forensics land in tmp/specled-command-output)
 	mix spec.check
 
-# MIX_ENV=test pinned for CI parity: the test env compiles test_support/,
+# MIX_ENV=test pinned for CI parity: the test env compiles test/test_support/,
 # so its xref graph is a superset of dev's — a dev-only pass can hide edges
 # CI would reject.
 xref: ## Fail on any compile-connected xref edge (CI runs this same target)
