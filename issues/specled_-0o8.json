@@ -17,11 +17,15 @@
     {
       "text": "CI green on first run (Check Specs + both test matrix legs), zero fix commits during babysit. Proceeding to merge.",
       "timestamp": "2026-08-05T18:18:44Z"
+    },
+    {
+      "text": "Squash-merged to main (af18bad8). Remote branch deleted, primary main fast-forwarded. Watching post-merge specs.yml run.",
+      "timestamp": "2026-08-05T18:19:45Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Eliminate compile-connected xref dependencies",
   "type": "task",
-  "updated_at": "2026-08-05T18:19:35Z"
+  "updated_at": "2026-08-05T18:19:45Z"
 }
