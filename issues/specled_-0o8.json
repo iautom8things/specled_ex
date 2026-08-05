@@ -13,11 +13,15 @@
     {
       "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/33 (release 0.12.0). Babysitting CI.",
       "timestamp": "2026-08-05T18:15:39Z"
+    },
+    {
+      "text": "CI green on first run (Check Specs + both test matrix legs), zero fix commits during babysit. Proceeding to merge.",
+      "timestamp": "2026-08-05T18:18:44Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Eliminate compile-connected xref dependencies",
   "type": "task",
-  "updated_at": "2026-08-05T18:15:39Z"
+  "updated_at": "2026-08-05T18:18:44Z"
 }
