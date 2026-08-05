@@ -9,14 +9,14 @@ defmodule SpecLedEx.Schema.Decision do
   @schema Zoi.struct(
             __MODULE__,
             %{
-              id: SpecLedEx.Schema.id(),
+              id: SpecLedEx.Schema.Id.id(),
               status: Zoi.enum(@statuses),
               date: Zoi.string(),
               affects: Zoi.list(Zoi.string()),
-              superseded_by: SpecLedEx.Schema.id() |> Zoi.optional(),
+              superseded_by: SpecLedEx.Schema.Id.id() |> Zoi.optional(),
               change_type: Zoi.enum(@change_types) |> Zoi.optional(),
               reverses_what: Zoi.string() |> Zoi.optional(),
-              replaces: Zoi.list(SpecLedEx.Schema.id()) |> Zoi.optional()
+              replaces: Zoi.list(SpecLedEx.Schema.Id.id()) |> Zoi.optional()
             },
             coerce: true
           )

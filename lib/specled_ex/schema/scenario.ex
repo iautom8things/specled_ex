@@ -4,7 +4,7 @@ defmodule SpecLedEx.Schema.Scenario do
   @schema Zoi.struct(
             __MODULE__,
             %{
-              id: SpecLedEx.Schema.id(),
+              id: SpecLedEx.Schema.Id.id(),
               covers: Zoi.list(Zoi.string()),
               given: Zoi.list(Zoi.string()),
               when: Zoi.list(Zoi.string()),

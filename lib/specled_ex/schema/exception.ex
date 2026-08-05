@@ -4,7 +4,7 @@ defmodule SpecLedEx.Schema.Exception do
   @schema Zoi.struct(
             __MODULE__,
             %{
-              id: SpecLedEx.Schema.id(),
+              id: SpecLedEx.Schema.Id.id(),
               covers: Zoi.list(Zoi.string()),
               reason: Zoi.string()
             },

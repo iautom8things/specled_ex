@@ -522,10 +522,12 @@ decisions:
 - id: specled.coverage_capture.case_template
   statement: >-
     `SpecLedEx.Case` shall be an `ExUnit.CaseTemplate` that forwards opts to
-    `use ExUnit.Case` and injects `setup {SpecLedEx.Coverage,
-    :per_test_boundary}`. Intended for bare `ExUnit.Case` modules;
-    Phoenix-style apps compose the setup line into their own case templates
-    instead.
+    `use ExUnit.Case` and injects a setup block that calls
+    `SpecLedEx.Coverage.per_test_boundary/1` (block form, not the
+    `setup {SpecLedEx.Coverage, :per_test_boundary}` tuple, which would put
+    the alias in module-body code and create a compile-connected xref edge).
+    Intended for bare `ExUnit.Case` modules; Phoenix-style apps compose the
+    tuple-form setup line into their own case templates instead.
   priority: must
   stability: evolving
 - id: specled.coverage_capture.boundary_row_exclusive
@@ -942,7 +944,7 @@ decisions:
   when:
     - "an adopter writes `use SpecLedEx.Case`"
   then:
-    - "the adopter module is an `ExUnit.Case` that receives forwarded options (`async: true`) and runs the injected `setup {SpecLedEx.Coverage, :per_test_boundary}` before the test body"
+    - "the adopter module is an `ExUnit.Case` that receives forwarded options (`async: true`) and runs the injected setup block calling `SpecLedEx.Coverage.per_test_boundary/1` before the test body"
   covers:
     - specled.coverage_capture.case_template
 - id: specled.coverage_capture.scenario.boundary_row_preferred_on_flush

@@ -1,6 +1,9 @@
 defmodule SpecLedEx.Schema.Verification do
   @moduledoc false
 
+  # Leaf module: consumed at compile time by sibling schema definitions, so
+  # it must not depend on any other project module (Zoi is external).
+
   @kinds ~w(command tagged_tests file source_file test_file guide_file readme_file workflow_file test doc workflow contract)
 
   @schema Zoi.struct(

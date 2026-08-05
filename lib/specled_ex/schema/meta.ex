@@ -6,12 +6,12 @@ defmodule SpecLedEx.Schema.Meta do
   @schema Zoi.struct(
             __MODULE__,
             %{
-              id: SpecLedEx.Schema.id(),
+              id: SpecLedEx.Schema.Id.id(),
               kind: Zoi.string(),
               status: Zoi.string(),
               summary: Zoi.string() |> Zoi.optional(),
               surface: Zoi.list(Zoi.string()) |> Zoi.optional(),
-              decisions: Zoi.list(SpecLedEx.Schema.id()) |> Zoi.optional(),
+              decisions: Zoi.list(SpecLedEx.Schema.Id.id()) |> Zoi.optional(),
               verification_minimum_strength:
                 Zoi.enum(VerificationStrength.levels()) |> Zoi.optional(),
               realized_by: Zoi.any() |> Zoi.optional()

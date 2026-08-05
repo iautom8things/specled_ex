@@ -1,5 +1,50 @@
 # Changelog
 
+## 0.12.0 — 2026-08-05
+
+Dependency-hygiene release (specled_-0o8): the compile-connected xref graph
+is now empty and gated. On 0.11.0, nine compile-time edges — schema structs
+calling `SpecLedEx.Schema.id()` at compile time, stale unused-alias
+suppressors (which also formed two compile-time cycles between
+`SpecLedEx.Schema` and its sub-schemas), a module-attribute lookup in the
+decision parser, and the case template's setup tuple — made changes to those
+targets cascade recompiles. All nine are gone, and `make xref`
+(`MIX_ENV=test mix xref graph --label compile-connected --fail-above 0`)
+holds the graph at zero edges locally and in CI.
+
+### Added
+
+- `SpecLedEx.Schema.Id` — leaf module owning the id contract consumed at
+  compile time by every schema struct; declared in `specled.block_schema`'s
+  surface and `api_boundary` (specled_-0o8)
+- `make xref` target (MIX_ENV=test pinned for CI parity), wired into the CI
+  workflow and the Merge Gates checklist (specled_-0o8)
+- ADR `specled.decision.compile_connected_zero` recording the zero-edge
+  invariant and the leaf-module convention (specled_-0o8)
+
+### Fixed
+
+- id pattern anchored with `\A`/`\z`: `^`/`$` accepted a trailing newline,
+  so `"subject\n"` validated as a legal id. Pinned by new schema tests —
+  the api_boundary hash tier covers function heads only and would never
+  catch a regression of the pattern (specled_-0o8)
+
+### Changed
+
+- `SpecLedEx.Case` injects its per-test boundary hook via a block-form setup
+  calling `SpecLedEx.Coverage.per_test_boundary/1` — the tuple form would
+  put the alias in module-body code and create a compile-connected edge.
+  `setup {SpecLedEx.Coverage, :per_test_boundary}` remains the documented
+  adopter wiring; `specled.coverage_capture.case_template` updated to match
+  (specled_-0o8)
+- `SpecLedEx.DecisionParser.CrossField` resolves `Decision.weakening_types/0`
+  at runtime instead of via a module attribute (specled_-0o8)
+
+### Removed
+
+- `SpecLedEx.Schema.id/0` — dead delegate with zero callers after the Id
+  extraction (`@moduledoc false` internal surface) (specled_-0o8)
+
 ## 0.11.0 — 2026-07-28
 
 Impromptu epic (specled_-k6s) bundling eighteen independently-surfaced
