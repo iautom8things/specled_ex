@@ -42,8 +42,8 @@
       "message": "Changed file lib/specled_ex/schema/requirement.ex impacts subject specs that were not updated: specled.realized_by"
     }
   ],
-  "run_at": "2026-08-05T17:44:13.894512Z",
-  "run_id": "bdeba8e69ca4cefa440007b2d246b2da",
+  "run_at": "2026-08-05T17:44:22.509766Z",
+  "run_id": "8e92c0b6c967db29bffead30bd4201e7",
   "schema_version": 1,
   "specled_version": "0.11.0",
   "tree_hash": "32c35dfc26a52d6e3304482cbe0a2b5986fc3f1d",
