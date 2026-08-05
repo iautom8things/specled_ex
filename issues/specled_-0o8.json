@@ -9,9 +9,15 @@
     "phase:in-ci",
     "slug:eliminate-compile-connected-xref"
   ],
+  "comments": [
+    {
+      "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/33 (release 0.12.0). Babysitting CI.",
+      "timestamp": "2026-08-05T18:15:39Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Eliminate compile-connected xref dependencies",
   "type": "task",
-  "updated_at": "2026-08-05T18:15:29Z"
+  "updated_at": "2026-08-05T18:15:39Z"
 }
