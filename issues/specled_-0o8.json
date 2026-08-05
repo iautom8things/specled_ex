@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-05T17:29:07Z",
+  "description": "No spec subject. Make mix xref graph --label compile-connected --fail-above 0 pass. Extract SpecLedEx.Schema.Id leaf module, drop stale unused-alias silencers in Schema, runtime-resolve Decision.weakening_types/0 in CrossField, and route SpecLedEx.Case setup through a local def. Build hygiene.",
+  "id": "specled_-0o8",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Eliminate compile-connected xref dependencies",
+  "type": "task",
+  "updated_at": "2026-08-05T17:29:07Z"
+}
