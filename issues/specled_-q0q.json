@@ -25,11 +25,15 @@
     {
       "text": "Scope expansion: carved specled_-q0q.4 (staleness sweep: docs code-count + branch_check mirror) from specled_-q0q.2 grader findings; blocks specled_-q0q.3. No bounce consumed. Expansion count this run: 1.",
       "timestamp": "2026-08-06T12:23:24Z"
+    },
+    {
+      "text": "Gate: full merge gate green at 871ac2a5 after specled_-q0q.2 close (1293 tests 0 failures, spec.check result=pass, xref/format/deps clean). 2/4 closed, specled_-q0q.4 admitting.",
+      "timestamp": "2026-08-06T12:26:43Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "s0n: same-PR self-auth visibility + --debug crash fix",
   "type": "epic",
-  "updated_at": "2026-08-06T12:23:24Z"
+  "updated_at": "2026-08-06T12:26:43Z"
 }
