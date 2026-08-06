@@ -13,11 +13,15 @@
     {
       "text": "Gate: full merge gate green at fb59b54a after specled_-q0q.1 close (1288 tests 0 failures, spec.check result=pass, xref/format/deps clean). 1/3 closed, specled_-q0q.2 verifying.",
       "timestamp": "2026-08-06T11:37:52Z"
+    },
+    {
+      "text": "LESSONS\n- [stale-spec] Verify every entity-shape/severity row of an ADR budget table against the emitting builder in lib/ before completion; one wrong cell is a deliverable self-contradiction (from specled_-q0q.2)\n- [untested-clause] When a contract states a set operator (subset vs equality), add the discriminating test — a proper-subset case that fails under the narrower operator; mutation-check it (from specled_-q0q.2)",
+      "timestamp": "2026-08-06T11:40:46Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "s0n: same-PR self-auth visibility + --debug crash fix",
   "type": "epic",
-  "updated_at": "2026-08-06T11:37:52Z"
+  "updated_at": "2026-08-06T11:40:46Z"
 }
