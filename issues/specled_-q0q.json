@@ -77,11 +77,15 @@
     {
       "text": "Squash-merged to main (9adbac9c) at 2026-08-06T23:06Z per user instruction during the GitHub Actions major outage. Check Specs passed in CI; Test matrix legs never ran (repeated runner-acquisition cancellations, attempt 4 queued \u003e2h) — local pre-flight fully mirrored CI and passed. Remote branch deleted. Post-merge specs.yml run on main will queue until Actions recovers.",
       "timestamp": "2026-08-06T23:07:30Z"
+    },
+    {
+      "text": "Delivered and closed. Shipped as PR #34 / release 0.13.0, squash-merged to main 9adbac9c at 2026-08-06T23:06Z. All 6 children closed. Source defect ticket specled_-s0n closed with fix evidence. Fast-follow epic specled_-bg5 carries the 5 TRACKED review findings (F1, F11, F12, F13, F25) + finding_codes/0 gate recommendation. Post-merge validation run 31129983872 dispatched (Actions outage ate the push webhook); library — no deploy to monitor.",
+      "timestamp": "2026-08-06T23:11:43Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "s0n: same-PR self-auth visibility + --debug crash fix",
   "type": "epic",
-  "updated_at": "2026-08-06T23:07:30Z"
+  "updated_at": "2026-08-06T23:11:43Z"
 }
