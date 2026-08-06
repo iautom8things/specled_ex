@@ -12,8 +12,8 @@
       "message": "Changed file lib/specled_ex/branch_check.ex impacts subject specled.branch_guard; spec.md not co-changed, but realization attested binding(s) SpecLedEx.BranchCheck.run/3 as clean — informational only."
     }
   ],
-  "run_at": "2026-08-06T12:41:12.895233Z",
-  "run_id": "08df7ae4d35bb94c8449646f48fc4bb5",
+  "run_at": "2026-08-06T12:41:33.948387Z",
+  "run_id": "71cef70192376b7cddb93f8bae2c6651",
   "schema_version": 1,
   "specled_version": "0.12.0",
   "tree_hash": "62175542227f4c197be30b5a3f449e9446257930",
