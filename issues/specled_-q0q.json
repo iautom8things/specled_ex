@@ -61,11 +61,15 @@
     {
       "text": "MINI-RETRO\nbounces: 3 (stale-spec, untested-clause)\nfull_suite_runs: 6\nfinals_gt1: 1\nflake_accepts: 0\nescalations: 0\nlessons_kept/retired: 5/0",
       "timestamp": "2026-08-06T15:36:37Z"
+    },
+    {
+      "text": "ORCHESTRATED\nChildren closed: 6\nBOUNCEs encountered: 3\nUser escalations: 0",
+      "timestamp": "2026-08-06T15:37:18Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "s0n: same-PR self-auth visibility + --debug crash fix",
   "type": "epic",
-  "updated_at": "2026-08-06T15:36:37Z"
+  "updated_at": "2026-08-06T15:37:18Z"
 }
