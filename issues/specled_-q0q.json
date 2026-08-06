@@ -29,11 +29,15 @@
     {
       "text": "Gate: full merge gate green at 871ac2a5 after specled_-q0q.2 close (1293 tests 0 failures, spec.check result=pass, xref/format/deps clean). 2/4 closed, specled_-q0q.4 admitting.",
       "timestamp": "2026-08-06T12:26:43Z"
+    },
+    {
+      "text": "Scope expansion #2: carved specled_-q0q.5 (review HTML governance leg + test catalogs, 11th code) from specled_-q0q.4 grader findings; blocks specled_-q0q.3. No bounce consumed. Expansion count this run: 2. Also: specled_-q0q.4 merged at b76b48a4, closed, post-merge smoke green (1293 tests).",
+      "timestamp": "2026-08-06T13:48:09Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "s0n: same-PR self-auth visibility + --debug crash fix",
   "type": "epic",
-  "updated_at": "2026-08-06T12:26:43Z"
+  "updated_at": "2026-08-06T13:48:09Z"
 }
