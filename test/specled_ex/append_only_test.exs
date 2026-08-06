@@ -800,6 +800,108 @@ defmodule SpecLedEx.AppendOnlyTest do
       assert_self_auth_warning(findings, "d1")
       assert_self_auth_marker(findings, "x.req_a", "d1", "negative polarity removed")
     end
+
+    # Coverage claim (subset vs equality): this is the proper-subset case that
+    # distinguishes MapSet.subset?/2 from MapSet.equal?/2 at
+    # AppendOnly.self_authorizing_adrs/2. Reverting the operator to
+    # `MapSet.equal?(MapSet.new(affects), weakened_ids)` must make exactly
+    # this test fail — every other same_pr_self_authorization positive case
+    # has |affects| = |weakened_ids| = 1 and passes under both operators.
+    @tag spec: [
+           "specled.append_only.requirement_deleted",
+           "specled.append_only.scenario_regression",
+           "specled.append_only.same_pr_self_authorization",
+           "specled.append_only.self_authorized_weakening"
+         ]
+    test "proper-subset affects of a multi-class weakening emits same_pr_self_authorization warning" do
+      req_b = requirement("x.req_b", "The system MUST bar.")
+
+      prior =
+        state_fixture(
+          subject: "x",
+          requirements: [
+            requirement("x.req_a", "The system MUST foo."),
+            req_b
+          ],
+          scenarios: [
+            scenario(id: "x.scenario.one", covers: ["x.req_b"]),
+            scenario(id: "x.scenario.two", covers: ["x.req_b"])
+          ]
+        )
+
+      # Two weakenings: delete x.req_a + scenario-count drop 2→1 on x.req_b.
+      # ADR affects only x.req_a — proper subset of weakened_ids.
+      current =
+        state_fixture(
+          subject: "x",
+          requirements: [req_b],
+          scenarios: [scenario(id: "x.scenario.one", covers: ["x.req_b"])]
+        )
+
+      decisions = [
+        adr(
+          id: "d1",
+          affects: ["x.req_a"],
+          change_type: "deprecates",
+          reverses_what: "x.req_a retired; x.req_b still weakly covered.",
+          form: :parsed
+        )
+      ]
+
+      findings = AppendOnly.analyze(prior, current, decisions)
+
+      assert_self_auth_warning(findings, "d1")
+      assert_self_auth_marker(findings, "x.req_a", "d1", "requirement deleted")
+      refute Enum.any?(findings, &(&1.code == "append_only/requirement_deleted"))
+
+      # x.req_b is not in affects — its scenario regression remains unauthorized.
+      assert Enum.any?(
+               findings,
+               &(&1.code == "append_only/scenario_regression" and &1.entity_id == "x.req_b")
+             )
+    end
+
+    # Coverage claim (non-empty guard): under MapSet.subset?/2 the empty set is
+    # a subset of every weakened set. Deleting the `affects == [] -> []` clause
+    # in AppendOnly.self_authorizing_adrs/2 would make every new-in-diff
+    # weakening-set ADR with empty affects emit same_pr_self_authorization on
+    # any weakening-bearing diff — exactly the over-fire named out of scope.
+    # This test must fail if that guard is removed.
+    @tag spec: [
+           "specled.append_only.requirement_deleted",
+           "specled.append_only.same_pr_self_authorization",
+           "specled.append_only.self_authorized_weakening"
+         ]
+    test "new-in-diff weakening ADR with empty affects emits neither self-auth finding" do
+      prior =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "The system MUST foo.")]
+        )
+
+      current = state_fixture(subject: "x", requirements: [])
+
+      decisions = [
+        adr(
+          id: "d1",
+          affects: [],
+          change_type: "deprecates",
+          reverses_what: "Placeholder ADR with no requirement targets.",
+          form: :parsed
+        )
+      ]
+
+      findings = AppendOnly.analyze(prior, current, decisions)
+
+      refute Enum.any?(findings, &(&1.code == "append_only/same_pr_self_authorization"))
+      refute Enum.any?(findings, &(&1.code == "append_only/self_authorized_weakening"))
+
+      # The deletion itself remains unauthorized and still fires.
+      assert Enum.any?(
+               findings,
+               &(&1.code == "append_only/requirement_deleted" and &1.entity_id == "x.req_a")
+             )
+    end
   end
 
   describe "missing_change_type" do

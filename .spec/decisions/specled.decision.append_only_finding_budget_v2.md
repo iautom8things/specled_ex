@@ -51,7 +51,7 @@ and admits a distinct informational marker.
 | `append_only/self_authorized_weakening` | `:info` | requirement id | C3 per-weakening visibility |
 | `append_only/missing_change_type` | `:warning` | ADR id | C8 warning-level optionality |
 | `append_only/decision_deleted` | `:error` | ADR id | ADR append-only directive |
-| `overlap/duplicate_covers` | `:error` | scenario id | R4 scenario-level |
+| `overlap/duplicate_covers` | `:error` | requirement id | R4 scenario-level |
 | `overlap/must_stem_collision` | `:error` | requirement id | R4 requirement-level |
 
 ### Per-code justification
