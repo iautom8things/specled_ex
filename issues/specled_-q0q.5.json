@@ -34,11 +34,15 @@
     {
       "text": "APPROVED. Merged into specled_-q0q/s0n-selfauth-debug-fixes. Closing per orchestrator sign-off.",
       "timestamp": "2026-08-06T14:18:59Z"
+    },
+    {
+      "text": "SCOPE_EXPANSION\nNew ticket: specled_-q0q.6\nReason: config.ex:120 moduledoc still claims 12 guardrail codes (10+2); truth is 13 (11+2) since specled_-q0q.2 — hexdocs-visible falsehood no existing child may touch\nOrigin: specled_-q0q.5",
+      "timestamp": "2026-08-06T14:19:53Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "S2.c: review HTML governance leg + test catalogs missing 11th append_only code",
   "type": "task",
-  "updated_at": "2026-08-06T14:19:12Z"
+  "updated_at": "2026-08-06T14:19:53Z"
 }
