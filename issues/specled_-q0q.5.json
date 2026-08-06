@@ -27,11 +27,15 @@
     {
       "text": "TEST_CRITIC: PASS\n\nelixir-test-critic reviewed the test diff (html_test.exs catalog/row/flip tests, severity_integration_test.exs emitter-equality + :info mapping).\nVerdict PASS: both-ways set-equality assertions with named differences; regex derivation matches exactly the 11 emitter sites with no false match; fixture hygiene clean (existing triage/2 fixture, async, no global state); tag usage matches file conventions and spec.check shows no untethered-test finding; @append_only_codes promotion did not disturb the generated per-code tests (11 rows, green).\nNon-blocking notes recorded: derivation regex narrower than the docs-lint idiom (code:-key anchored, single hardcoded source file); third copy of the derivation block; style asymmetry in severity_integration_test. Plus one on-theme out-of-diff discovery: lib/specled_ex/config.ex:120 moduledoc still says \"12 guardrail codes (10 append_only/* + 2 overlap/*)\" — stale since specled_-q0q.2 (now 11+2=13); routed to the orchestrator for expansion handling, not a defect of this diff.",
       "timestamp": "2026-08-06T14:16:46Z"
+    },
+    {
+      "text": "AUDIT: APPROVE (auto — selective audit)\nSession: 63655cb6-965a-48c3-bb59-64da6ce31142\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/63655cb6-965a-48c3-bb59-64da6ce31142.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero\nscope violations (both extra spec touches proven gate-forced by real-commit\ncounterfactual; Spec-Drift trailer proven narrow), passing targeted verification,\ncomplete seam disclosure with the seam traced to the real call site\n(review.ex:503-506), and no seam substituting production wiring. TEST_CRITIC: PASS.\nNo auditor was spawned per policy.",
+      "timestamp": "2026-08-06T14:16:55Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "S2.c: review HTML governance leg + test catalogs missing 11th append_only code",
   "type": "task",
-  "updated_at": "2026-08-06T14:16:46Z"
+  "updated_at": "2026-08-06T14:16:55Z"
 }
