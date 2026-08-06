@@ -10,11 +10,15 @@
     {
       "text": "Distilled into epic specled_-q0q (S1 debug-crash fix specled_-q0q.1, S2 self-auth visibility specled_-q0q.2, S3 release 0.13.0 specled_-q0q.3). Plan: think-jug / 05-refined-plan.md in vault run dir src-specled_ex/2026-08-05-s0n-selfauth-debug-fixes/runs/20260805-150402-claude-mini. Worktree specled_ex-s0n-selfauth-debug-fixes, branch specled_-q0q/s0n-selfauth-debug-fixes.",
       "timestamp": "2026-08-06T10:44:16Z"
+    },
+    {
+      "text": "Both defects fixed and shipped in release 0.13.0 (PR #34, main 9adbac9c): Defect 1 (self-auth detection gap) via specled_-q0q.2 — self_authorizing_adrs now matches all four weakening classes with always-visible append_only/self_authorized_weakening info marker; Defect 2 (--debug BadBooleanError at verifier.ex:1327) via specled_-q0q.1. Consumers (voyd_config, builder, atlas) can pick up via dep bump to 0.13.0. Closing.",
+      "timestamp": "2026-08-06T23:11:35Z"
     }
   ],
   "priority": 2,
   "status": "open",
   "title": "same_pr_self_authorization cannot fire for scenario/modal/polarity regressions; --debug crashes on executed tagged_tests",
   "type": "task",
-  "updated_at": "2026-08-06T10:44:16Z"
+  "updated_at": "2026-08-06T23:11:35Z"
 }
