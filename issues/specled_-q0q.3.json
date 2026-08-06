@@ -13,9 +13,15 @@
   "id": "specled_-q0q.3",
   "labels": [],
   "parent": "specled_-q0q",
+  "comments": [
+    {
+      "text": "ORCHESTRATOR NOTE (scope clarification for the release entry — not new scope):\nThe epic gained three grader-driven expansion children after this ticket was written. The CHANGELOG entry must also cover them, all under the existing Added/Fixed structure:\n- Fixed: docs/concepts.md + BranchCheck mirror staleness — eleven append_only codes, v2 budget ADR referenced (specled_-q0q.4)\n- Fixed: spec_review HTML \"Decisions / governance\" row now counts append_only/self_authorized_weakening; catalog/exhaustiveness tests tied to the emitter-derived set (specled_-q0q.5)\n- Fixed: Config.Guardrails moduledoc guardrail count/provenance (13 codes: 11 append_only + 2 overlap; fm4 + q0q.2) (specled_-q0q.6)\nEverything else in the original deliverable stands. Reminder per orchestration protocol: do NOT push the branch or open the PR — commit VERSION + CHANGELOG.md only and post IMPLEMENTED; the PR cut is the human checkpoint after orchestration.",
+      "timestamp": "2026-08-06T14:52:40Z"
+    }
+  ],
   "priority": 2,
   "status": "open",
   "title": "S3: release 0.13.0",
   "type": "task",
-  "updated_at": "2026-08-06T14:19:51Z"
+  "updated_at": "2026-08-06T14:52:40Z"
 }
