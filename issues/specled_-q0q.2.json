@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-q0q",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: codex-q0q2-i1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-q0q.2/codex-q0q2-i1/log\n\nCommit: 117dff7d\nFiles touched: .spec/decisions/specled.decision.append_only_finding_budget.md, .spec/decisions/specled.decision.append_only_finding_budget_v2.md, .spec/specs/append_only.spec.md, .spec/specs/package.spec.md, lib/specled_ex/append_only.ex, test/docs_identifier_lint_test.exs, test/specled_ex/append_only_test.exs\nTests added: SpecLedEx.AppendOnlyTest \"new ADR self-authorizing only a scenario regression emits warning and marker\"; SpecLedEx.AppendOnlyTest \"new ADR self-authorizing a modal downgrade emits warning and marker\"; SpecLedEx.AppendOnlyTest \"new ADR self-authorizing polarity removal emits warning and marker\"; updated deletion, superset-affects, and pre-existing-ADR tests for marker/warning negative paths\nVerification stubs flipped: none (the append_only tagged_tests and source_file verifications were already execute: true)\nVerification tier: final — bash ./scripts/check_specs.sh; mix compile --warnings-as-errors; mix test; mix format --check-formatted; mix deps.unlock --check-unused; make xref\nFinal-tier runs: 2\n\nSummary: AppendOnly now computes the union of all four weakening classes before same-PR matching, warns for non-empty new-ADR affects subsets, and emits an info marker for every weakening suppressed by a new-in-diff ADR while base ADRs remain silent. The v2 budget ADR ratifies the thirteenth code and the expanded contract/tests cover deletion, zero-deletion scenario regression, modal downgrade, polarity removal, superset affects, and pre-existing ADR behavior. The deliberate realization refresh computed the existing analyze/4 API-boundary hash unchanged, so .spec/realization_hashes.json required no content delta.",
+      "timestamp": "2026-08-06T11:24:42Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "S2: same-PR self-authorization visibility across all weakening classes",
   "type": "task",
-  "updated_at": "2026-08-06T10:59:08Z"
+  "updated_at": "2026-08-06T11:24:42Z"
 }
