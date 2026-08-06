@@ -65,11 +65,15 @@
     {
       "text": "ORCHESTRATED\nChildren closed: 6\nBOUNCEs encountered: 3\nUser escalations: 0",
       "timestamp": "2026-08-06T15:37:18Z"
+    },
+    {
+      "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/34 (release 0.13.0). Babysitting CI.",
+      "timestamp": "2026-08-06T16:40:18Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "s0n: same-PR self-auth visibility + --debug crash fix",
   "type": "epic",
-  "updated_at": "2026-08-06T16:40:12Z"
+  "updated_at": "2026-08-06T16:40:18Z"
 }
