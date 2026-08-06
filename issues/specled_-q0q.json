@@ -53,11 +53,15 @@
     {
       "text": "Gate: full merge gate green at 87531f84 after specled_-q0q.6 close (spec.check result=pass, all six gates clean). 5/6 closed, specled_-q0q.3 (release) admitting.",
       "timestamp": "2026-08-06T14:56:53Z"
+    },
+    {
+      "text": "LESSONS\n- [stale-spec] Verify every entity-shape/severity row of an ADR budget table against the emitting builder in lib/ before completion; one wrong cell is a deliverable self-contradiction (from specled_-q0q.2)\n- [untested-clause] When a contract states a set operator (subset vs equality), add the discriminating test — a proper-subset case that fails under the narrower operator; mutation-check it (from specled_-q0q.2)\n- [untested-clause] Guard clauses on empty collections need a negative test: construct the empty-input case and assert silence, so deleting the guard fails CI (from specled_-q0q.2)\n- [stale-spec] When correcting a numeral inside a sentence, re-verify every other claim in that sentence — especially provenance attributions; a count bump can convert a true clause into a false one (from specled_-q0q.6)\n- [stale-spec] Name exception types exactly as the VM raises them and verify by raising one; do not equate distinct exception structs, and do not claim a crash on paths that never crashed (from specled_-q0q.3)",
+      "timestamp": "2026-08-06T15:12:17Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "s0n: same-PR self-auth visibility + --debug crash fix",
   "type": "epic",
-  "updated_at": "2026-08-06T14:56:53Z"
+  "updated_at": "2026-08-06T15:12:17Z"
 }
