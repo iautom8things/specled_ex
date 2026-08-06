@@ -9,9 +9,15 @@
     "phase:implementing",
     "slug:s0n-selfauth-debug-fixes"
   ],
+  "comments": [
+    {
+      "text": "Gate: full merge gate green at fb59b54a after specled_-q0q.1 close (1288 tests 0 failures, spec.check result=pass, xref/format/deps clean). 1/3 closed, specled_-q0q.2 verifying.",
+      "timestamp": "2026-08-06T11:37:52Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "s0n: same-PR self-auth visibility + --debug crash fix",
   "type": "epic",
-  "updated_at": "2026-08-06T10:49:04Z"
+  "updated_at": "2026-08-06T11:37:52Z"
 }
