@@ -19,11 +19,15 @@
     {
       "text": "ORCHESTRATOR NOTE (scope clarification for the release entry — not new scope):\nThe epic gained three grader-driven expansion children after this ticket was written. The CHANGELOG entry must also cover them, all under the existing Added/Fixed structure:\n- Fixed: docs/concepts.md + BranchCheck mirror staleness — eleven append_only codes, v2 budget ADR referenced (specled_-q0q.4)\n- Fixed: spec_review HTML \"Decisions / governance\" row now counts append_only/self_authorized_weakening; catalog/exhaustiveness tests tied to the emitter-derived set (specled_-q0q.5)\n- Fixed: Config.Guardrails moduledoc guardrail count/provenance (13 codes: 11 append_only + 2 overlap; fm4 + q0q.2) (specled_-q0q.6)\nEverything else in the original deliverable stands. Reminder per orchestration protocol: do NOT push the branch or open the PR — commit VERSION + CHANGELOG.md only and post IMPLEMENTED; the PR cut is the human checkpoint after orchestration.",
       "timestamp": "2026-08-06T14:52:40Z"
+    },
+    {
+      "text": "IMPLEMENTED\nSession: grok-q0q3-i1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-q0q.3/grok-q0q3-i1/log\n\nCommit: 0d92a3e5aa6cd825d086325d63d23175beb98eaa\nFiles touched: VERSION, CHANGELOG.md\nTests added: none — release metadata only\nVerification stubs flipped: none\nVerification tier: final — mix compile --warnings-as-errors; mix format --check-formatted; mix deps.unlock --check-unused; make xref; mix test; bash ./scripts/check_specs.sh\nFinal-tier runs: 1\n\nSummary: Bumped VERSION 0.12.0→0.13.0 and wrote the 0.13.0 CHANGELOG covering self_authorized_weakening, generalized same_pr subset matching (v2 budget ADR), the --debug BadBooleanError fix, and expansion children q0q.4–.6; all six merge gates green.",
+      "timestamp": "2026-08-06T15:02:59Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "S3: release 0.13.0",
   "type": "task",
-  "updated_at": "2026-08-06T14:57:16Z"
+  "updated_at": "2026-08-06T15:02:59Z"
 }
