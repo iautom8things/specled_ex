@@ -22,7 +22,7 @@ defmodule SpecLedEx.BranchCheck do
     "branch_guard_dangling_binding" => :error,
     "branch_guard_realization_unknown_tier" => :warning,
     "detector_unavailable" => :info,
-    # append_only/* (10 ratified codes)
+    # append_only/* (11 ratified codes)
     "append_only/requirement_deleted" => :error,
     "append_only/must_downgraded" => :error,
     "append_only/scenario_regression" => :error,
@@ -31,6 +31,7 @@ defmodule SpecLedEx.BranchCheck do
     "append_only/no_baseline" => :info,
     "append_only/adr_affects_widened" => :error,
     "append_only/same_pr_self_authorization" => :warning,
+    "append_only/self_authorized_weakening" => :info,
     "append_only/missing_change_type" => :warning,
     "append_only/decision_deleted" => :error,
     # overlap/* (2 ratified codes)
