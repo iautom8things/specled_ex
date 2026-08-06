@@ -69,11 +69,15 @@
     {
       "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/34 (release 0.13.0). Babysitting CI.",
       "timestamp": "2026-08-06T16:40:18Z"
+    },
+    {
+      "text": "CI status: GitHub Actions major outage (active incident). PR #34 runs cancelled twice by runner-acquisition timeouts; Check Specs passed on attempt 2 before the outage killed the test legs. Rerun queued; polling until GitHub recovers. No code defect — local CI-mirror pre-flight was fully green.",
+      "timestamp": "2026-08-06T17:13:22Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "s0n: same-PR self-auth visibility + --debug crash fix",
   "type": "epic",
-  "updated_at": "2026-08-06T16:40:18Z"
+  "updated_at": "2026-08-06T17:13:22Z"
 }
