@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-06T23:10:52Z",
+  "description": "No spec subject (candidates: specled.severity when picked up). Severity: Low. From 2026-08-06 critical review of specled_-q0q. A Spec-Drift commit trailer that escalates/relaxes a finding changes the resolved severity but the report never says a trailer did it — the override is invisible in output. Keep-reason: report-format addition, out of scope for the shipped defect-fix branch. Concrete failure: a reviewer reading spec.check output cannot distinguish a config default from a per-commit trailer override, so an escaped relaxation trailer passes unnoticed.",
+  "id": "specled_-bg5.2",
+  "labels": [],
+  "parent": "specled_-bg5",
+  "priority": 2,
+  "status": "open",
+  "title": "F11: Spec-Drift trailer override leaves no trace in report output",
+  "type": "task",
+  "updated_at": "2026-08-06T23:10:52Z"
+}
