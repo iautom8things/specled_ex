@@ -73,11 +73,15 @@
     {
       "text": "CI status: GitHub Actions major outage (active incident). PR #34 runs cancelled twice by runner-acquisition timeouts; Check Specs passed on attempt 2 before the outage killed the test legs. Rerun queued; polling until GitHub recovers. No code defect — local CI-mirror pre-flight was fully green.",
       "timestamp": "2026-08-06T17:13:22Z"
+    },
+    {
+      "text": "Squash-merged to main (9adbac9c) at 2026-08-06T23:06Z per user instruction during the GitHub Actions major outage. Check Specs passed in CI; Test matrix legs never ran (repeated runner-acquisition cancellations, attempt 4 queued \u003e2h) — local pre-flight fully mirrored CI and passed. Remote branch deleted. Post-merge specs.yml run on main will queue until Actions recovers.",
+      "timestamp": "2026-08-06T23:07:30Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "s0n: same-PR self-auth visibility + --debug crash fix",
   "type": "epic",
-  "updated_at": "2026-08-06T23:07:25Z"
+  "updated_at": "2026-08-06T23:07:30Z"
 }
