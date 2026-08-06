@@ -1,5 +1,64 @@
 # Changelog
 
+## 0.13.0 — 2026-08-06
+
+Same-PR self-authorization visibility + `--debug` crash fix (specled_-q0q /
+specled_-s0n). Append-only previously warned only when a new weakening ADR's
+`affects` exactly matched the requirements *deleted* in the same diff —
+scenario regressions, modal downgrades, and polarity removals could be
+self-authorized with no ADR-level warning, and a superset `affects` list could
+suppress a deletion without either the warning or a per-requirement trace.
+This release admits an informational per-requirement marker for those
+suppressions, generalizes same-PR matching to a non-empty subset of all four
+weakening classes, and repairs a `BadBooleanError` on `mix spec.check --debug`
+when executed `tagged_tests` entries carried a non-boolean truthy
+command-result map.
+
+Downstream adopters (voyd_config, builder, atlas) picking up this dep bump get
+both the new `append_only/self_authorized_weakening` marker and the `--debug`
+fix.
+
+### Added
+
+- `append_only/self_authorized_weakening` — info-level, requirement-shaped
+  marker emitted for each deletion, scenario regression, modal downgrade, or
+  polarity removal authorized by an ADR authored in the same diff (including
+  suppressions by a superset `affects` list that do not qualify for the ADR
+  warning). Distinct code from `append_only/same_pr_self_authorization`
+  (warning, ADR-shaped) per the one-code / one-severity / one-entity-shape
+  discipline (specled_-q0q.2)
+- Generalized `same_pr_self_authorization` matching: a new weakening ADR
+  qualifies when its non-empty `affects` set is a subset of all requirement
+  ids weakened in the same diff across the four classes (removed,
+  scenario-regressed, modal-downgraded, polarity-stripped), not only exact
+  equality against deleted ids. Empty `affects` never qualifies
+  (specled_-q0q.2)
+- ADR `specled.decision.append_only_finding_budget_v2` superseding the v1
+  twelve-code budget: 11 `append_only/*` + 2 `overlap/*` (13 guardrail codes
+  total). The new code is the eleventh append_only emitter
+  (specled_-q0q.2)
+
+### Fixed
+
+- `mix spec.check --debug` raised `ArgumentError` (`BadBooleanError`) on
+  executed `tagged_tests` (and `command`) verification entries because
+  command-result maps were used as boolean predicates. Predicates now use
+  `is_map(command_result)` on both the findings and checks debug paths
+  (specled_-q0q.1)
+- Stale append-only budget mirrors: `docs/concepts.md` now says eleven codes
+  and points at `append_only_finding_budget_v2`; `BranchCheck`
+  `@per_code_defaults` mirrors `append_only/self_authorized_weakening` at
+  `:info` (specled_-q0q.4)
+- `spec_review` HTML "Decisions / governance" row now counts
+  `append_only/self_authorized_weakening` so a live finding flips that row;
+  hand-maintained catalogs in the review HTML and severity-integration tests
+  assert equality against the AppendOnly emitter-derived set
+  (specled_-q0q.5)
+- `SpecLedEx.Config.Guardrails` moduledoc: guardrail code count 12→13
+  (11 `append_only/*` + 2 `overlap/*`), with provenance "introduced by
+  specled_-fm4 and extended by specled_-q0q.2" (fm4 landed the original 12;
+  q0q.2 added the eleventh append_only code) (specled_-q0q.6)
+
 ## 0.12.0 — 2026-08-05
 
 Dependency-hygiene release (specled_-0o8): the compile-connected xref graph
