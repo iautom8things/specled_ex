@@ -1,7 +1,9 @@
 {
   "assignee": "",
   "blocked_by": [],
-  "blocks": [],
+  "blocks": [
+    "specled_-q0q.3"
+  ],
   "created": "2026-08-06T14:19:30Z",
   "description": "Advances: specled.config\n\nScope expansion #3, from the specled_-q0q.5 test-critic review. lib/specled_ex/config.ex:120 moduledoc (hexdocs-rendered) still says \"the 12 guardrail codes (10 append_only/* + 2 overlap/*)\" — stale since specled_-q0q.2; the truth is 13 (11 append_only + 2 overlap). No existing child may touch it (S3 excludes lib). Full contract in the first comment.",
   "id": "specled_-q0q.6",
@@ -17,5 +19,5 @@
   "status": "open",
   "title": "S2.d: config moduledoc guardrail count stale (12 -\u003e 13)",
   "type": "task",
-  "updated_at": "2026-08-06T14:19:46Z"
+  "updated_at": "2026-08-06T14:19:51Z"
 }
