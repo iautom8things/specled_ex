@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-06T23:11:01Z",
+  "description": "No spec subject (candidates: specled.verification docs surface when picked up). Severity: Medium. From 2026-08-06 critical review of specled_-q0q. spec.check --run-commands executes verification commands defined in repo-resident spec files; in a CI configured to run on fork PRs this executes attacker-authored shell with the workflow token. Keep-reason: docs/policy deliverable (threat-model statement + recommended CI gating for public repos), not a code fix on the shipped branch. Concrete failure: a public repo running armed spec.check on pull_request from forks grants fork authors arbitrary command execution in CI.",
+  "id": "specled_-bg5.3",
+  "labels": [],
+  "parent": "specled_-bg5",
+  "priority": 2,
+  "status": "open",
+  "title": "F12: --run-commands executes repo-resident shell — document fork-PR CI trust policy",
+  "type": "task",
+  "updated_at": "2026-08-06T23:11:01Z"
+}
