@@ -23,6 +23,7 @@ surface:
   - test/specled_ex/branch_check_test.exs
   - test/specled_ex/branch_check/severity_test.exs
   - test/specled_ex/branch_check/severity_integration_test.exs
+  - test/test_support/emitter_codes.ex
 realized_by:
   api_boundary:
     - "SpecLedEx.BranchCheck.Severity"
@@ -109,6 +110,12 @@ realized_by:
 ```
 
 ## Verification
+
+Branch reconciliation note: `test/specled_ex/branch_check/severity_integration_test.exs`
+is this subject's integration surface. This branch only adds
+`append_only/self_authorized_weakening => :info` to the hand-maintained
+`@per_code_defaults` catalog and asserts that catalog equals the
+AppendOnly emitter-derived set; severity resolution precedence is unchanged.
 
 ```yaml spec-verification
 - kind: tagged_tests

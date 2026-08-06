@@ -1,5 +1,5 @@
 defmodule SpecLedEx.AppendOnly do
-  # covers: specled.append_only.requirement_deleted specled.append_only.requirement_deleted_authorized specled.append_only.must_downgraded specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
+  # covers: specled.append_only.requirement_deleted specled.append_only.requirement_deleted_authorized specled.append_only.must_downgraded specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.self_authorized_weakening specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
   @moduledoc """
   Pure diff-time append-only detectors for `.spec/` content.
 
@@ -65,28 +65,36 @@ defmodule SpecLedEx.AppendOnly do
 
     prior_decision_ids = decision_ids(prior)
     new_head_adrs = new_in_diff(decisions, prior_decision_ids)
+    new_adr_ids = MapSet.new(new_head_adrs, & &1.id)
 
     removed_ids = MapSet.difference(key_set(prior_reqs), key_set(current_reqs))
 
-    self_auth_adrs = self_authorizing_adrs(new_head_adrs, removed_ids)
-    self_auth_covered_ids = self_auth_covered_ids(self_auth_adrs)
+    {downgrade_findings, downgrade_consulted_ids} =
+      detect_must_downgraded(prior_reqs, current_reqs, decisions, new_adr_ids)
+
+    {regression_findings, regression_consulted_ids} =
+      detect_scenario_regression(prior, current, decisions, new_adr_ids)
+
+    {polarity_findings, polarity_consulted_ids} =
+      detect_negative_removed(prior_reqs, current_reqs, decisions, new_adr_ids)
+
+    weakened_ids =
+      removed_ids
+      |> MapSet.union(downgrade_consulted_ids)
+      |> MapSet.union(regression_consulted_ids)
+      |> MapSet.union(polarity_consulted_ids)
+
+    self_auth_adrs = self_authorizing_adrs(new_head_adrs, weakened_ids)
+    self_auth_adr_by_req_id = self_auth_adr_by_req_id(self_auth_adrs)
 
     {deletion_findings, deletion_consulted_ids} =
       detect_requirement_deleted(
         prior_reqs,
         current_reqs,
         decisions,
-        self_auth_covered_ids
+        new_adr_ids,
+        self_auth_adr_by_req_id
       )
-
-    {downgrade_findings, downgrade_consulted_ids} =
-      detect_must_downgraded(prior_reqs, current_reqs, decisions)
-
-    {regression_findings, regression_consulted_ids} =
-      detect_scenario_regression(prior, current, decisions)
-
-    {polarity_findings, polarity_consulted_ids} =
-      detect_negative_removed(prior_reqs, current_reqs, decisions)
 
     consulted_ids =
       deletion_consulted_ids
@@ -111,20 +119,37 @@ defmodule SpecLedEx.AppendOnly do
 
   ## ── Detectors ─────────────────────────────────────────────────────
 
-  defp detect_requirement_deleted(prior_reqs, current_reqs, decisions, self_auth_covered_ids) do
+  defp detect_requirement_deleted(
+         prior_reqs,
+         current_reqs,
+         decisions,
+         new_adr_ids,
+         self_auth_adr_by_req_id
+       ) do
     Enum.reduce(prior_reqs, {[], MapSet.new()}, fn {id, prior}, {findings, consulted} ->
       cond do
         Map.has_key?(current_reqs, id) ->
           {findings, consulted}
 
-        MapSet.member?(self_auth_covered_ids, id) ->
-          # Same-PR self-authorization warning takes over; suppress deletion error.
-          {findings, consulted}
+        Map.has_key?(self_auth_adr_by_req_id, id) ->
+          adr_id = Map.fetch!(self_auth_adr_by_req_id, id)
+          marker = self_authorized_weakening_finding(id, prior, adr_id, :deletion, nil)
+          {[marker | findings], MapSet.put(consulted, id)}
 
         true ->
           case authorizing_decision(decisions, id) do
-            {:authorized, _adr} ->
-              {findings, MapSet.put(consulted, id)}
+            {:authorized, adr} ->
+              markers =
+                self_authorized_marker_if_new(
+                  id,
+                  prior,
+                  adr,
+                  :deletion,
+                  nil,
+                  new_adr_ids
+                )
+
+              {markers ++ findings, MapSet.put(consulted, id)}
 
             {:missing_change_type, _adr} ->
               {[requirement_deleted_finding(id, prior) | findings], MapSet.put(consulted, id)}
@@ -136,7 +161,7 @@ defmodule SpecLedEx.AppendOnly do
     end)
   end
 
-  defp detect_must_downgraded(prior_reqs, current_reqs, decisions) do
+  defp detect_must_downgraded(prior_reqs, current_reqs, decisions, new_adr_ids) do
     Enum.reduce(prior_reqs, {[], MapSet.new()}, fn {id, prior}, {findings, consulted} ->
       case Map.fetch(current_reqs, id) do
         {:ok, current} ->
@@ -145,8 +170,20 @@ defmodule SpecLedEx.AppendOnly do
 
           if ModalClass.downgrade?(prior_modal, current_modal) do
             case authorizing_decision(decisions, id) do
-              {:authorized, _adr} ->
-                {findings, MapSet.put(consulted, id)}
+              {:authorized, adr} ->
+                detail = "#{format_modal(prior_modal)}→#{format_modal(current_modal)}"
+
+                markers =
+                  self_authorized_marker_if_new(
+                    id,
+                    prior,
+                    adr,
+                    :modal_downgrade,
+                    detail,
+                    new_adr_ids
+                  )
+
+                {markers ++ findings, MapSet.put(consulted, id)}
 
               _ ->
                 finding =
@@ -165,7 +202,7 @@ defmodule SpecLedEx.AppendOnly do
     end)
   end
 
-  defp detect_scenario_regression(prior, current, decisions) do
+  defp detect_scenario_regression(prior, current, decisions, new_adr_ids) do
     prior_counts = scenario_counts_by_requirement(prior)
     current_counts = scenario_counts_by_requirement(current)
     prior_reqs = requirements_by_id(prior)
@@ -186,8 +223,18 @@ defmodule SpecLedEx.AppendOnly do
 
         true ->
           case authorizing_decision(decisions, req_id) do
-            {:authorized, _adr} ->
-              {findings, MapSet.put(consulted, req_id)}
+            {:authorized, adr} ->
+              markers =
+                self_authorized_marker_if_new(
+                  req_id,
+                  Map.get(prior_reqs, req_id),
+                  adr,
+                  :scenario_regression,
+                  {prior_count, current_count},
+                  new_adr_ids
+                )
+
+              {markers ++ findings, MapSet.put(consulted, req_id)}
 
             _ ->
               prior_req = Map.get(prior_reqs, req_id)
@@ -206,7 +253,7 @@ defmodule SpecLedEx.AppendOnly do
     end)
   end
 
-  defp detect_negative_removed(prior_reqs, current_reqs, decisions) do
+  defp detect_negative_removed(prior_reqs, current_reqs, decisions, new_adr_ids) do
     Enum.reduce(prior_reqs, {[], MapSet.new()}, fn {id, prior}, {findings, consulted} ->
       if effective_polarity(prior) == :negative do
         case Map.fetch(current_reqs, id) do
@@ -215,8 +262,18 @@ defmodule SpecLedEx.AppendOnly do
               {findings, consulted}
             else
               case authorizing_decision(decisions, id) do
-                {:authorized, _adr} ->
-                  {findings, MapSet.put(consulted, id)}
+                {:authorized, adr} ->
+                  markers =
+                    self_authorized_marker_if_new(
+                      id,
+                      prior,
+                      adr,
+                      :polarity_removal,
+                      nil,
+                      new_adr_ids
+                    )
+
+                  {markers ++ findings, MapSet.put(consulted, id)}
 
                 _ ->
                   {[negative_removed_finding(id, prior, current) | findings],
@@ -457,8 +514,25 @@ defmodule SpecLedEx.AppendOnly do
       entity_id: id,
       message:
         SpecLedEx.FindingMessage.finalize(
-          "ADR `#{id}` is new in this diff and its `affects:` list (#{inspect(affects)}) exactly matches the set of requirement ids removed in this same diff — the ADR is self-authorizing its own deletion. Visible but not blocked; review decides.",
-          "fix: land the removal in a separate PR from the authorizing ADR, or confirm in review that the self-authorization is intentional."
+          "ADR `#{id}` is new in this diff and its non-empty `affects:` list (#{inspect(affects)}) consists entirely of requirement ids weakened in this same diff — the ADR is self-authorizing the weakening. Visible but not blocked; review decides.",
+          "fix: land the weakening in a separate PR from the authorizing ADR, or confirm in review that the self-authorization is intentional."
+        )
+    }
+  end
+
+  defp self_authorized_weakening_finding(id, prior_req, adr_id, weakening_class, detail) do
+    class_detail = weakening_class_detail(weakening_class, detail)
+    subject_id = if is_map(prior_req), do: Map.get(prior_req, "subject_id"), else: nil
+
+    %{
+      code: "append_only/self_authorized_weakening",
+      severity: :info,
+      subject_id: subject_id,
+      entity_id: id,
+      message:
+        SpecLedEx.FindingMessage.finalize(
+          "Weakening of `#{id}` (#{class_detail}) is suppressed as authorized by ADR `#{adr_id}`, which is new in this same diff — the authorization is self-approved within this PR. Visible but not blocked; review decides.",
+          "fix: land the authorizing ADR in a separate PR, or confirm in review that the self-authorization is intentional."
         )
     }
   end
@@ -566,7 +640,7 @@ defmodule SpecLedEx.AppendOnly do
     end)
   end
 
-  defp self_authorizing_adrs(new_head_adrs, removed_ids) do
+  defp self_authorizing_adrs(new_head_adrs, weakened_ids) do
     new_head_adrs
     |> Enum.flat_map(fn %{id: id, meta: meta} ->
       change_type = meta_get(meta, "change_type")
@@ -579,7 +653,7 @@ defmodule SpecLedEx.AppendOnly do
         affects == [] ->
           []
 
-        MapSet.equal?(MapSet.new(affects), removed_ids) ->
+        MapSet.subset?(MapSet.new(affects), weakened_ids) ->
           [%{id: id, affects: affects, change_type: change_type}]
 
         true ->
@@ -588,11 +662,38 @@ defmodule SpecLedEx.AppendOnly do
     end)
   end
 
-  defp self_auth_covered_ids(self_auth_adrs) do
-    Enum.reduce(self_auth_adrs, MapSet.new(), fn %{affects: affects}, acc ->
-      Enum.reduce(affects, acc, &MapSet.put(&2, &1))
+  defp self_auth_adr_by_req_id(self_auth_adrs) do
+    Enum.reduce(self_auth_adrs, %{}, fn %{id: adr_id, affects: affects}, acc ->
+      Enum.reduce(affects, acc, &Map.put(&2, &1, adr_id))
     end)
   end
+
+  defp self_authorized_marker_if_new(
+         id,
+         prior_req,
+         adr,
+         weakening_class,
+         detail,
+         new_adr_ids
+       ) do
+    adr_id = adr |> meta() |> meta_get("id")
+
+    if MapSet.member?(new_adr_ids, adr_id) do
+      [self_authorized_weakening_finding(id, prior_req, adr_id, weakening_class, detail)]
+    else
+      []
+    end
+  end
+
+  defp weakening_class_detail(:deletion, _detail), do: "requirement deleted"
+
+  defp weakening_class_detail(:scenario_regression, {prior_count, current_count}),
+    do: "scenario coverage dropped #{prior_count}→#{current_count}"
+
+  defp weakening_class_detail(:modal_downgrade, modal_transition),
+    do: "modal downgraded #{modal_transition}"
+
+  defp weakening_class_detail(:polarity_removal, _detail), do: "negative polarity removed"
 
   defp authorizing_decision(decisions, id) do
     Enum.reduce_while(decisions, :none, fn decision, acc ->

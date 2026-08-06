@@ -28,6 +28,7 @@ surface:
   - test/specled_ex/review_test.exs
   - test/specled_ex/review/coverage_closure_test.exs
   - test/specled_ex/review/html_test.exs
+  - test/test_support/emitter_codes.ex
   - test/mix/tasks/spec_review_task_test.exs
 decisions:
   - specled.decision.spec_review_html_viewer
@@ -827,6 +828,12 @@ decisions:
 ```
 
 ## Verification
+
+Branch reconciliation note: `lib/specled_ex/review/html.ex` is this subject's
+governance-row surface. This branch only adds
+`append_only/self_authorized_weakening` to the Decisions/governance leg codes
+list and hardens the catalog exhaustiveness tests against the emitter-derived
+set; `triangle_code_classification` and related requirements remain unchanged.
 
 ```spec-verification
 - kind: command

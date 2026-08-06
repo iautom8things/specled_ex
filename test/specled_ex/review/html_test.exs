@@ -28,6 +28,11 @@ defmodule SpecLedEx.Review.HtmlTest do
     )
   end
 
+  # Emitter-derived append_only/* set — see SpecLedEx.EmitterCodes for scope
+  # and the deliberate difference from docs_identifier_lint_test's broader
+  # multi-file corpus scan.
+  defp emitted_append_only_codes, do: SpecLedEx.EmitterCodes.append_only_codes()
+
   defp checks_by_codes(checks) do
     Enum.reduce(checks, %{}, fn check, acc ->
       Enum.reduce(check.codes, acc, fn code, inner ->
@@ -124,6 +129,10 @@ defmodule SpecLedEx.Review.HtmlTest do
   end
 
   describe "build_sync_checks — Decisions / governance row" do
+    # Hand-maintained mirror of AppendOnly emitters — fail-loudly design
+    # (same philosophy as docs_identifier_lint_test). Exhaustiveness is
+    # enforced against the emitter-derived set below so a 12th code cannot
+    # silently leave this catalog and the governance row stale together.
     @append_only_codes ~w(
       append_only/requirement_deleted
       append_only/must_downgraded
@@ -133,6 +142,7 @@ defmodule SpecLedEx.Review.HtmlTest do
       append_only/no_baseline
       append_only/adr_affects_widened
       append_only/same_pr_self_authorization
+      append_only/self_authorized_weakening
       append_only/missing_change_type
       append_only/decision_deleted
     )
@@ -144,28 +154,30 @@ defmodule SpecLedEx.Review.HtmlTest do
       assert gov, "expected a 'Decisions / governance' row to exist"
     end
 
+    test "the hand-maintained append_only catalog matches AppendOnly emitters both ways" do
+      catalog = MapSet.new(@append_only_codes)
+      emitted = emitted_append_only_codes()
+
+      assert catalog == emitted,
+             "append_only governance catalog drifted from emitters\n" <>
+               "missing from catalog: #{inspect(MapSet.difference(emitted, catalog) |> Enum.sort())}\n" <>
+               "present in catalog but not emitted: #{inspect(MapSet.difference(catalog, emitted) |> Enum.sort())}"
+    end
+
     test "the row covers every append_only/* code in the catalog" do
       checks = Html.build_sync_checks(triage(%{}))
       gov = Enum.find(checks, &(&1.leg == "Decisions / governance"))
 
-      for code <- @append_only_codes do
-        assert code in gov.codes,
-               "Decisions / governance row missing append_only code: #{code}"
-      end
+      catalog = MapSet.new(@append_only_codes)
+      row_codes = MapSet.new(gov.codes)
+
+      assert row_codes == catalog,
+             "Decisions / governance row codes drifted from catalog\n" <>
+               "missing from row: #{inspect(MapSet.difference(catalog, row_codes) |> Enum.sort())}\n" <>
+               "extra on row: #{inspect(MapSet.difference(row_codes, catalog) |> Enum.sort())}"
     end
 
-    for code <- ~w(
-          append_only/requirement_deleted
-          append_only/must_downgraded
-          append_only/scenario_regression
-          append_only/negative_removed
-          append_only/disabled_without_reason
-          append_only/no_baseline
-          append_only/adr_affects_widened
-          append_only/same_pr_self_authorization
-          append_only/missing_change_type
-          append_only/decision_deleted
-        ) do
+    for code <- @append_only_codes do
       @code code
       test "#{@code} flips the 'Decisions / governance' row from passed to failed" do
         clean = Html.build_sync_checks(triage(%{}))

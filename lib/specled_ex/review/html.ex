@@ -1126,6 +1126,7 @@ defmodule SpecLedEx.Review.Html do
             append_only/no_baseline
             append_only/adr_affects_widened
             append_only/same_pr_self_authorization
+            append_only/self_authorized_weakening
             append_only/missing_change_type
             append_only/decision_deleted
           ),

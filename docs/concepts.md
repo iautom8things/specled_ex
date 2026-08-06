@@ -488,7 +488,7 @@ polarity changes, `disabled:` without a reason, missing `change_type`,
 same-PR self-authorization, and ADR deletion. Weakenings are authorized
 only by ADRs whose `change_type` is one of
 `deprecates | weakens | narrows-scope | adds-exception`. The finding set
-is budgeted (ten codes — see `specled.decision.append_only_finding_budget`)
+is budgeted (eleven codes — see `specled.decision.append_only_finding_budget_v2`)
 rather than open-ended, to keep the feedback surface legible. Every
 finding message ends with a code-fenced `fix:` block agents can paste
 into their edit tools.

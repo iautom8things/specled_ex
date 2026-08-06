@@ -377,10 +377,10 @@ defmodule SpecLedEx.Verifier do
     execute? = bool_field(verification, "execute")
 
     cond do
-      kind == @command_kind and execute? and target != "" and command_result ->
+      kind == @command_kind and execute? and target != "" and is_map(command_result) ->
         append_command_runtime_finding(findings, command_result, target, subject_id, file)
 
-      kind == @tagged_tests_kind and execute? and command_result ->
+      kind == @tagged_tests_kind and execute? and is_map(command_result) ->
         case Map.get(command_result, :attribution) do
           nil ->
             label = "tagged_tests: #{Map.get(command_result, :command) || @tagged_tests_command}"
@@ -1255,7 +1255,7 @@ defmodule SpecLedEx.Verifier do
               | acc
             ]
 
-          kind == @command_kind and run_commands? and execute? and command_result ->
+          kind == @command_kind and run_commands? and execute? and is_map(command_result) ->
             %{output: output, exit_code: exit_code} = command_result
 
             cond do
@@ -1324,11 +1324,13 @@ defmodule SpecLedEx.Verifier do
               | acc
             ]
 
-          kind == @tagged_tests_kind and run_commands? and execute? and command_result and
+          kind == @tagged_tests_kind and run_commands? and execute? and
+            is_map(command_result) and
               Map.has_key?(command_result, :attribution) ->
             append_attributed_tagged_tests_checks(acc, command_result, subject_id, file)
 
-          kind == @tagged_tests_kind and run_commands? and execute? and command_result ->
+          kind == @tagged_tests_kind and run_commands? and execute? and
+              is_map(command_result) ->
             %{output: output, exit_code: exit_code, command: cmd} = command_result
             label = cmd || @tagged_tests_command
 

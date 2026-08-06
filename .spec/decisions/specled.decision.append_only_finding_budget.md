@@ -1,11 +1,12 @@
 ---
 id: specled.decision.append_only_finding_budget
-status: accepted
+status: superseded
 date: 2026-04-23
 affects:
   - specled.append_only
   - specled.overlap
 change_type: adds-exception
+superseded_by: specled.decision.append_only_finding_budget_v2
 reverses_what: >-
   Lifts the v1 finding-code cap set by specled.decision.finding_code_budget
   (which held the branch_guard slice to seven new codes) to admit the ten

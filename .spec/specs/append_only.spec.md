@@ -35,6 +35,7 @@ decisions:
   - specled.decision.modal_class_diff_time
   - specled.decision.change_type_enum_v1
   - specled.decision.finding_code_budget
+  - specled.decision.append_only_finding_budget_v2
   - specled.decision.declarative_current_truth
 ```
 
@@ -121,12 +122,25 @@ decisions:
   stability: evolving
 - id: specled.append_only.same_pr_self_authorization
   statement: >-
-    AppendOnly.analyze shall emit
-    `append_only/same_pr_self_authorization` at `:warning` when the ADR
-    authorizing an exception for removed ids is itself new in the current
-    diff and its `affects` set exactly matches the removed-ids set,
-    making the self-authorization pattern visible without blocking the
-    PR.
+    AppendOnly.analyze shall emit `append_only/same_pr_self_authorization`
+    at `:warning` for each ADR that is new in the current diff, carries a
+    weakening-set `change_type`, and whose non-empty `affects` set consists
+    entirely of requirement ids weakened in that same diff — where a
+    requirement id is weakened when it is removed, scenario-count-regressed,
+    modal-downgraded, or stripped of negative polarity between prior and
+    current state — making the self-authorization pattern visible without
+    blocking the PR.
+  priority: must
+  stability: evolving
+- id: specled.append_only.self_authorized_weakening
+  statement: >-
+    AppendOnly.analyze shall emit `append_only/self_authorized_weakening` at
+    `:info`, with entity_id the weakened requirement id, whenever a requirement
+    deletion, scenario regression, modal downgrade, or polarity removal is
+    suppressed as authorized by an ADR that is new in the current diff, naming
+    the authorizing ADR id and the weakening class in the message, so
+    self-approved weakening is always visible in analyze output. Weakenings
+    authorized by ADRs already present at base shall emit no marker.
   priority: must
   stability: evolving
 - id: specled.append_only.missing_change_type
@@ -279,6 +293,74 @@ decisions:
   covers:
     - specled.append_only.same_pr_self_authorization
 
+- id: specled.append_only.scenario.same_pr_scenario_regression_self_auth
+  given:
+    - "prior and current state contain requirement `x.req_a`, with its single covering scenario removed (coverage dropping from one scenario to zero) while the requirement itself survives"
+    - "zero requirement ids are deleted"
+    - "a head-side ADR new in this diff has a weakening-set change_type and affects `[x.req_a]`"
+  when:
+    - SpecLedEx.AppendOnly.analyze/4 is invoked
+  then:
+    - "the scenario regression error is suppressed"
+    - "the returned findings contain `append_only/same_pr_self_authorization` at warning with entity_id equal to the ADR id"
+  covers: []
+
+- id: specled.append_only.scenario.same_pr_modal_downgrade_self_auth
+  given:
+    - "requirement `x.req_a` changes from MUST at base to SHOULD at head"
+    - "a head-side ADR new in this diff has a weakening-set change_type and affects `[x.req_a]`"
+  when:
+    - SpecLedEx.AppendOnly.analyze/4 is invoked
+  then:
+    - "the modal downgrade error is suppressed"
+    - "the returned findings contain `append_only/same_pr_self_authorization` at warning with entity_id equal to the ADR id"
+  covers: []
+
+- id: specled.append_only.scenario.same_pr_polarity_removal_self_auth
+  given:
+    - "requirement `x.req_a` loses negative polarity between base and head"
+    - "zero requirement ids are deleted"
+    - "a head-side ADR new in this diff has a weakening-set change_type and affects `[x.req_a]`"
+  when:
+    - SpecLedEx.AppendOnly.analyze/4 is invoked
+  then:
+    - "the negative-polarity removal error is suppressed"
+    - "the returned findings contain `append_only/same_pr_self_authorization` at warning with entity_id equal to the ADR id"
+  covers: []
+
+- id: specled.append_only.scenario.self_authorized_weakening_marker
+  given:
+    - "a scenario regression for requirement `x.req_a` is authorized by ADR d1"
+    - "ADR d1 is new in the current diff"
+  when:
+    - SpecLedEx.AppendOnly.analyze/4 is invoked
+  then:
+    - "the suppressed regression emits `append_only/self_authorized_weakening` at info with entity_id x.req_a"
+    - "the marker message names ADR d1 and the scenario-regression weakening class"
+  covers:
+    - specled.append_only.self_authorized_weakening
+
+- id: specled.append_only.scenario.superset_affects_deletion_marker_without_warning
+  given:
+    - "requirement `x.req_a` is deleted"
+    - "a new head-side ADR affects `[x.req_a, x.req_b]`, where x.req_b is not weakened in the diff"
+  when:
+    - SpecLedEx.AppendOnly.analyze/4 is invoked
+  then:
+    - "the deletion error is suppressed and an `append_only/self_authorized_weakening` info marker is emitted for x.req_a"
+    - "no `append_only/same_pr_self_authorization` warning is emitted because the ADR affects set is not a subset of weakened ids"
+  covers: []
+
+- id: specled.append_only.scenario.preexisting_adr_emits_no_self_auth_findings
+  given:
+    - "a weakening of requirement `x.req_a` is authorized by an ADR present in both base and head"
+  when:
+    - SpecLedEx.AppendOnly.analyze/4 is invoked
+  then:
+    - "the weakening error is suppressed"
+    - "neither `append_only/same_pr_self_authorization` nor `append_only/self_authorized_weakening` is emitted"
+  covers: []
+
 - id: specled.append_only.scenario.missing_change_type_warns
   given:
     - "a head-side ADR d2 referenced during an authorization lookup lacks a change_type field"
@@ -346,6 +428,7 @@ decisions:
     - specled.append_only.no_baseline
     - specled.append_only.adr_affects_widened
     - specled.append_only.same_pr_self_authorization
+    - specled.append_only.self_authorized_weakening
     - specled.append_only.missing_change_type
     - specled.append_only.decision_deleted
     - specled.append_only.identity
@@ -364,6 +447,7 @@ decisions:
     - specled.append_only.no_baseline
     - specled.append_only.adr_affects_widened
     - specled.append_only.same_pr_self_authorization
+    - specled.append_only.self_authorized_weakening
     - specled.append_only.missing_change_type
     - specled.append_only.decision_deleted
 ```
@@ -373,9 +457,10 @@ decisions:
 - **Narrowing-via-split (C6).** Splitting one broad scenario into two narrow ones keeps
   `scenario_regression`'s count-based check stable. Content-similarity is explicitly not
   in scope for v1.
-- **Same-PR self-authorization (C3).** A single PR can author both the deletion and the
-  authorizing ADR; the `same_pr_self_authorization` warning surfaces the pattern without
-  blocking, relying on PR review to catch rubber-stamps.
+- **Same-PR self-authorization (C3).** A single PR can author both any of the four
+  weakening classes and the authorizing ADR; the `same_pr_self_authorization` warning
+  and per-requirement marker surface the pattern without blocking. Review still decides
+  whether the self-authorization is legitimate.
 - **Concurrent PR race (C12).** Two PRs branched from the same base can each pass
   AppendOnly individually but combine into an invalid state on main. Standard GH merge-queue
   rerun closes this outside specled_ex.

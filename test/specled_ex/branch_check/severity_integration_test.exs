@@ -342,6 +342,10 @@ defmodule SpecLedEx.BranchCheck.SeverityIntegrationTest do
     # map so that `BranchCheck.Severity.resolve/3` can honor config and trailer
     # overrides without needing to re-derive the default at each emission site.
     # Source-level check keeps this independent of runtime wiring.
+    #
+    # The append_only half is a hand-maintained fail-loudly mirror; the
+    # companion test below asserts it equals the emitter-derived set so a
+    # new AppendOnly code cannot leave this table silently incomplete.
 
     branch_guard_codes = [
       {"branch_guard_unmapped_change", :error},
@@ -350,7 +354,7 @@ defmodule SpecLedEx.BranchCheck.SeverityIntegrationTest do
       {"branch_guard_requirement_without_test_tag", :warning}
     ]
 
-    append_only_codes = [
+    @append_only_codes [
       {"append_only/requirement_deleted", :error},
       {"append_only/must_downgraded", :error},
       {"append_only/scenario_regression", :error},
@@ -359,6 +363,7 @@ defmodule SpecLedEx.BranchCheck.SeverityIntegrationTest do
       {"append_only/no_baseline", :info},
       {"append_only/adr_affects_widened", :error},
       {"append_only/same_pr_self_authorization", :warning},
+      {"append_only/self_authorized_weakening", :info},
       {"append_only/missing_change_type", :warning},
       {"append_only/decision_deleted", :error}
     ]
@@ -368,7 +373,7 @@ defmodule SpecLedEx.BranchCheck.SeverityIntegrationTest do
       {"overlap/must_stem_collision", :error}
     ]
 
-    for {code, expected} <- branch_guard_codes ++ append_only_codes ++ overlap_codes do
+    for {code, expected} <- branch_guard_codes ++ @append_only_codes ++ overlap_codes do
       @code code
       @expected expected
 
@@ -383,6 +388,23 @@ defmodule SpecLedEx.BranchCheck.SeverityIntegrationTest do
         assert Regex.match?(pattern, source),
                "expected BranchCheck @per_code_defaults to map #{inspect(@code)} => :#{severity}"
       end
+    end
+
+    @tag spec: "specled.severity.resolve_precedence"
+    test "append_only severity table matches AppendOnly emitters both ways" do
+      catalog =
+        @append_only_codes
+        |> Enum.map(&elem(&1, 0))
+        |> MapSet.new()
+
+      # Emitter-derived set — see SpecLedEx.EmitterCodes for scope and the
+      # deliberate difference from docs_identifier_lint_test's corpus scan.
+      emitted = SpecLedEx.EmitterCodes.append_only_codes()
+
+      assert catalog == emitted,
+             "append_only severity table drifted from emitters\n" <>
+               "missing from table: #{inspect(MapSet.difference(emitted, catalog) |> Enum.sort())}\n" <>
+               "present in table but not emitted: #{inspect(MapSet.difference(catalog, emitted) |> Enum.sort())}"
     end
   end
 end
