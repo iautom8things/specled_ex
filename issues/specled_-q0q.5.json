@@ -7,9 +7,7 @@
   "created": "2026-08-06T13:47:33Z",
   "description": "Advances: specled.spec_review\n\nScope expansion #2, named by BOTH graders of specled_-q0q.4 (verifier Notes 1-2, auditor second-grader statement with enlarged carve). specled_-q0q.2 added the 11th append_only code but four of five hand-maintained code mirrors are stale, leaving a live violation of specled.spec_review.triangle_code_classification: the review HTML renders the Decisions/governance row green while a self_authorized_weakening finding is live. Must land before 0.13.0. Full contract in the first comment on this ticket.",
   "id": "specled_-q0q.5",
-  "labels": [
-    "phase:merging"
-  ],
+  "labels": [],
   "parent": "specled_-q0q",
   "comments": [
     {
@@ -41,5 +39,5 @@
   "status": "in_progress",
   "title": "S2.c: review HTML governance leg + test catalogs missing 11th append_only code",
   "type": "task",
-  "updated_at": "2026-08-06T14:18:59Z"
+  "updated_at": "2026-08-06T14:19:12Z"
 }
