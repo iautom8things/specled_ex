@@ -12,7 +12,7 @@
   "description": "Advances: none (release mechanics only)\n\nDeliverable:\nStage 3 of 05-refined-plan.md. VERSION 0.12.0 -\u003e 0.13.0 (minor: new finding code + new requirements, not a patch). CHANGELOG.md entry — Added: append_only/self_authorized_weakening info marker + generalized same_pr_self_authorization matching across all four weakening classes (ADR append_only_finding_budget_v2); Fixed: mix spec.check --debug BadBooleanError on executed tagged_tests entries. Note for downstream (voyd_config, builder, atlas) that the dep bump picks up both. Cut via /open-pr per repo convention.\n\nVerification:\n- Tests to pass: full merge-gate suite via /open-pr preflight (mix compile --warnings-as-errors, mix test, mix format --check-formatted, mix deps.unlock --check-unused, make xref, bash ./scripts/check_specs.sh)\n- Behaviors to demonstrate: none beyond gates — release metadata only\n- Verification cadence: single final-tier run; no iteration tier applies\n- Standing bounce-class checks: n/a (no code)\n- Call-site Integration: n/a — release metadata only\n\nOut of Scope (files):\n- lib/**, test/**, .spec/**\nAllowed touches (this stage may modify):\n- VERSION\n- CHANGELOG.md\n\nOut of Scope (intent):\n- No code or spec changes; if a gate is red at this point, bounce to the owning stage rather than patching here\n\nMerge gate:\n- [ ] All six repo gates green via /open-pr preflight\n- [ ] Scope check: diff touches only VERSION + CHANGELOG.md\n- [ ] Auditor APPROVE comment on the ticket",
   "id": "specled_-q0q.3",
   "labels": [
-    "phase:verifying"
+    "phase:merging"
   ],
   "parent": "specled_-q0q",
   "comments": [
@@ -49,5 +49,5 @@
   "status": "in_progress",
   "title": "S3: release 0.13.0",
   "type": "task",
-  "updated_at": "2026-08-06T15:27:47Z"
+  "updated_at": "2026-08-06T15:27:55Z"
 }
