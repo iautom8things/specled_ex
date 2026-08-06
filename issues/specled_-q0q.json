@@ -17,11 +17,15 @@
     {
       "text": "LESSONS\n- [stale-spec] Verify every entity-shape/severity row of an ADR budget table against the emitting builder in lib/ before completion; one wrong cell is a deliverable self-contradiction (from specled_-q0q.2)\n- [untested-clause] When a contract states a set operator (subset vs equality), add the discriminating test — a proper-subset case that fails under the narrower operator; mutation-check it (from specled_-q0q.2)",
       "timestamp": "2026-08-06T11:40:46Z"
+    },
+    {
+      "text": "LESSONS\n- [stale-spec] Verify every entity-shape/severity row of an ADR budget table against the emitting builder in lib/ before completion; one wrong cell is a deliverable self-contradiction (from specled_-q0q.2)\n- [untested-clause] When a contract states a set operator (subset vs equality), add the discriminating test — a proper-subset case that fails under the narrower operator; mutation-check it (from specled_-q0q.2)\n- [untested-clause] Guard clauses on empty collections need a negative test: construct the empty-input case and assert silence, so deleting the guard fails CI (from specled_-q0q.2)",
+      "timestamp": "2026-08-06T11:49:43Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "s0n: same-PR self-auth visibility + --debug crash fix",
   "type": "epic",
-  "updated_at": "2026-08-06T11:40:46Z"
+  "updated_at": "2026-08-06T11:49:43Z"
 }
