@@ -28,17 +28,10 @@ defmodule SpecLedEx.Review.HtmlTest do
     )
   end
 
-  # Emitter-derived append_only/* set (grep over lib/), same idiom as
-  # docs_identifier_lint_test.exs implementation_guarded_codes/0. Used so the
-  # hand-maintained governance catalog cannot go stale with the emitters.
-  defp emitted_append_only_codes do
-    source = File.read!("lib/specled_ex/append_only.ex")
-
-    ~r/code:\s*"(append_only\/[a-z0-9_]+)"/
-    |> Regex.scan(source)
-    |> Enum.map(fn [_full, code] -> code end)
-    |> MapSet.new()
-  end
+  # Emitter-derived append_only/* set — see SpecLedEx.EmitterCodes for scope
+  # and the deliberate difference from docs_identifier_lint_test's broader
+  # multi-file corpus scan.
+  defp emitted_append_only_codes, do: SpecLedEx.EmitterCodes.append_only_codes()
 
   defp checks_by_codes(checks) do
     Enum.reduce(checks, %{}, fn check, acc ->

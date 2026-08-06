@@ -397,13 +397,9 @@ defmodule SpecLedEx.BranchCheck.SeverityIntegrationTest do
         |> Enum.map(&elem(&1, 0))
         |> MapSet.new()
 
-      source = File.read!("lib/specled_ex/append_only.ex")
-
-      emitted =
-        ~r/code:\s*"(append_only\/[a-z0-9_]+)"/
-        |> Regex.scan(source)
-        |> Enum.map(fn [_full, code] -> code end)
-        |> MapSet.new()
+      # Emitter-derived set — see SpecLedEx.EmitterCodes for scope and the
+      # deliberate difference from docs_identifier_lint_test's corpus scan.
+      emitted = SpecLedEx.EmitterCodes.append_only_codes()
 
       assert catalog == emitted,
              "append_only severity table drifted from emitters\n" <>

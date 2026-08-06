@@ -1510,6 +1510,41 @@ defmodule SpecLedEx.VerifierTest do
     assert "tagged_tests cover executed: req.beta" in passed_messages
   end
 
+  @tag spec: "specled.verify.debug_checks_executed_tagged_tests"
+  test "debug checks handle an executed tagged_tests entry with no matching test tags",
+       %{root: root} do
+    # TaggedTests.build_command returns :no_tests when no @tag spec entries
+    # exist for the covers list; the stored result is a command: nil map. This
+    # is a third shape reaching the debug-checks clause that raised
+    # BadBooleanError pre-fix — the shape an adopter hits after declaring a
+    # tagged_tests verification before writing any tagged tests.
+    report =
+      Verifier.verify(
+        %{
+          "subjects" => [
+            base_subject(%{
+              "file" => ".spec/specs/alpha.spec.md",
+              "meta" => %{"id" => "alpha", "kind" => "module", "status" => "active"},
+              "requirements" => [%{"id" => "req.alpha", "statement" => "Alpha"}],
+              "verification" => [
+                %{"kind" => "tagged_tests", "covers" => ["req.alpha"], "execute" => true}
+              ]
+            })
+          ],
+          "test_tags" => %{}
+        },
+        root,
+        debug: true,
+        run_commands: true
+      )
+
+    passed_checks =
+      Enum.filter(report["checks"], &(&1["code"] == "verification_command_passed"))
+
+    assert [check] = Enum.filter(passed_checks, &(&1["subject_id"] == "alpha"))
+    assert check["message"] =~ "tagged_tests command passed:"
+  end
+
   @tag spec: "specled.tagged_tests.attribution_degrades_to_shared_fate"
   @tag spec: "specled.tagged_tests.merged_run_attribution"
   test "an absent artifact degrades to shared fate identical to today", %{root: root} do

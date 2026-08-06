@@ -295,7 +295,7 @@ decisions:
 
 - id: specled.append_only.scenario.same_pr_scenario_regression_self_auth
   given:
-    - "prior and current state contain requirement `x.req_a`, with scenario coverage dropping from two scenarios to one"
+    - "prior and current state contain requirement `x.req_a`, with its single covering scenario removed (coverage dropping from one scenario to zero) while the requirement itself survives"
     - "zero requirement ids are deleted"
     - "a head-side ADR new in this diff has a weakening-set change_type and affects `[x.req_a]`"
   when:

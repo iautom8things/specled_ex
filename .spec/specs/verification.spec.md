@@ -449,8 +449,10 @@ decisions:
 Branch reconciliation note: `test/mix/tasks/spec_tasks_test.exs` is a shared
 task test surface for this subject. This branch touches that file to assert the
 spec.check stdout verdict
-contract's usage-tier pre-flight rejection token; the verification requirements
-above remain unchanged.
+contract's usage-tier pre-flight rejection token. This branch also adds one
+verification requirement above (`specled.verify.debug_checks_executed_tagged_tests`,
+with its scenario and covers entry); the pre-existing verification requirements
+are otherwise unchanged.
 
 ```yaml spec-verification
 - kind: tagged_tests

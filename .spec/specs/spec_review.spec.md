@@ -28,6 +28,7 @@ surface:
   - test/specled_ex/review_test.exs
   - test/specled_ex/review/coverage_closure_test.exs
   - test/specled_ex/review/html_test.exs
+  - test/test_support/emitter_codes.ex
   - test/mix/tasks/spec_review_task_test.exs
 decisions:
   - specled.decision.spec_review_html_viewer

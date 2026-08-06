@@ -123,3 +123,8 @@ justify itself in another supersedes-style ADR.
 - **Negative:** the detectors must retain consulted weakened ids even when an
   ADR suppresses the error. This is accepted as part of the detector tuple
   contract and is covered by per-class tests.
+- **Behavioral:** the deletion detector's self-authorization branch now also
+  feeds `consulted_ids`, which widens `append_only/missing_change_type` reach:
+  a decision without a `change_type` whose `affects` names a requirement whose
+  deletion was suppressed by a same-diff self-authorizing ADR is now flagged.
+  Deliberate — marker paths keep putting ids into consulted sets.

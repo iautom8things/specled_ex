@@ -23,6 +23,7 @@ surface:
   - test/specled_ex/branch_check_test.exs
   - test/specled_ex/branch_check/severity_test.exs
   - test/specled_ex/branch_check/severity_integration_test.exs
+  - test/test_support/emitter_codes.ex
 realized_by:
   api_boundary:
     - "SpecLedEx.BranchCheck.Severity"

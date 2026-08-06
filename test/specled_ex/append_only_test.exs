@@ -699,17 +699,14 @@ defmodule SpecLedEx.AppendOnlyTest do
         state_fixture(
           subject: "x",
           requirements: [req],
-          scenarios: [
-            scenario(id: "x.scenario.one", covers: ["x.req_a"]),
-            scenario(id: "x.scenario.two", covers: ["x.req_a"])
-          ]
+          scenarios: [scenario(id: "x.scenario.one", covers: ["x.req_a"])]
         )
 
       current =
         state_fixture(
           subject: "x",
           requirements: [req],
-          scenarios: [scenario(id: "x.scenario.one", covers: ["x.req_a"])]
+          scenarios: []
         )
 
       decisions = [
@@ -717,7 +714,7 @@ defmodule SpecLedEx.AppendOnlyTest do
           id: "d1",
           affects: ["x.req_a"],
           change_type: "narrows-scope",
-          reverses_what: "One scenario no longer applies.",
+          reverses_what: "The scenario no longer applies.",
           form: :parsed
         )
       ]
@@ -726,7 +723,7 @@ defmodule SpecLedEx.AppendOnlyTest do
 
       refute Enum.any?(findings, &(&1.code == "append_only/scenario_regression"))
       assert_self_auth_warning(findings, "d1")
-      assert_self_auth_marker(findings, "x.req_a", "d1", "scenario coverage dropped 2→1")
+      assert_self_auth_marker(findings, "x.req_a", "d1", "scenario coverage dropped 1→0")
     end
 
     @tag spec: [
@@ -799,6 +796,95 @@ defmodule SpecLedEx.AppendOnlyTest do
       refute Enum.any?(findings, &(&1.code == "append_only/negative_removed"))
       assert_self_auth_warning(findings, "d1")
       assert_self_auth_marker(findings, "x.req_a", "d1", "negative polarity removed")
+    end
+
+    # Marker cardinality: one requirement weakened in TWO classes at once
+    # yields two markers with identical code/entity_id, distinguished only by
+    # the class detail in the message. Pins production behavior — a dedupe
+    # refactor collapsing them to one marker must fail here.
+    @tag spec: [
+           "specled.append_only.must_downgraded",
+           "specled.append_only.scenario_regression",
+           "specled.append_only.same_pr_self_authorization",
+           "specled.append_only.self_authorized_weakening"
+         ]
+    test "one requirement weakened in two classes emits one marker per class" do
+      prior =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "The system MUST reject invalid input.")],
+          scenarios: [scenario(id: "x.scenario.one", covers: ["x.req_a"])]
+        )
+
+      current =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "The system SHOULD reject invalid input.")],
+          scenarios: []
+        )
+
+      decisions = [
+        adr(
+          id: "d1",
+          affects: ["x.req_a"],
+          change_type: "weakens",
+          reverses_what: "The guarantee is now advisory and its scenario is gone.",
+          form: :parsed
+        )
+      ]
+
+      findings = AppendOnly.analyze(prior, current, decisions)
+
+      refute Enum.any?(findings, &(&1.code == "append_only/must_downgraded"))
+      refute Enum.any?(findings, &(&1.code == "append_only/scenario_regression"))
+      assert_self_auth_warning(findings, "d1")
+
+      markers =
+        Enum.filter(findings, &(&1.code == "append_only/self_authorized_weakening"))
+
+      assert length(markers) == 2
+      assert_self_auth_marker(findings, "x.req_a", "d1", "modal downgraded MUST→SHOULD")
+      assert_self_auth_marker(findings, "x.req_a", "d1", "scenario coverage dropped 1→0")
+    end
+
+    # Pins the consulted_ids widening documented in the v2 budget ADR's
+    # Consequences: the deletion detector's self-authorization branch feeds
+    # consulted_ids, so a change_type-less decision naming a requirement whose
+    # deletion was suppressed by a same-diff self-authorizing ADR is still
+    # flagged by missing_change_type.
+    @tag spec: [
+           "specled.append_only.requirement_deleted",
+           "specled.append_only.missing_change_type",
+           "specled.append_only.same_pr_self_authorization",
+           "specled.append_only.self_authorized_weakening"
+         ]
+    test "self-auth-suppressed deletion still feeds missing_change_type" do
+      prior =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "The system MUST foo.")]
+        )
+
+      current = state_fixture(subject: "x", requirements: [])
+
+      decisions = [
+        adr(
+          id: "d1",
+          affects: ["x.req_a"],
+          change_type: "deprecates",
+          reverses_what: "The requirement no longer applies.",
+          form: :parsed
+        ),
+        adr(id: "d2", affects: ["x.req_a"], change_type: nil, form: :parsed)
+      ]
+
+      findings = AppendOnly.analyze(prior, current, decisions)
+
+      refute Enum.any?(findings, &(&1.code == "append_only/requirement_deleted"))
+      assert_self_auth_marker(findings, "x.req_a", "d1", "requirement deleted")
+
+      assert [mct] = Enum.filter(findings, &(&1.code == "append_only/missing_change_type"))
+      assert mct.entity_id == "d2"
     end
 
     # Coverage claim (subset vs equality): this is the proper-subset case that
@@ -1165,14 +1251,22 @@ defmodule SpecLedEx.AppendOnlyTest do
     assert fix_block_present?(warning.message)
   end
 
+  # Production emits one marker per (requirement, weakening class): a
+  # requirement weakened in two classes at once yields two markers with
+  # identical code/entity_id, distinguished only by the class detail in the
+  # message. Assert exactly one marker per class rather than one overall.
   defp assert_self_auth_marker(findings, requirement_id, adr_id, weakening_class) do
-    assert [marker] =
-             Enum.filter(findings, &(&1.code == "append_only/self_authorized_weakening"))
+    markers =
+      Enum.filter(
+        findings,
+        &(&1.code == "append_only/self_authorized_weakening" and
+            &1.entity_id == requirement_id and &1.message =~ weakening_class)
+      )
+
+    assert [marker] = markers
 
     assert marker.severity == :info
-    assert marker.entity_id == requirement_id
     assert marker.message =~ "ADR `#{adr_id}`"
-    assert marker.message =~ weakening_class
     assert fix_block_present?(marker.message)
   end
 
