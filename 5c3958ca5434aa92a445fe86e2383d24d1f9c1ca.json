@@ -1,13 +1,32 @@
 {
   "findings": [
     {
-      "code": "branch_guard_missing_decision_update",
+      "code": "branch_guard_missing_subject_update",
+      "file": "lib/specled_ex/branch_check.ex",
       "level": "info",
-      "message": "Cross-cutting change spans multiple subjects but no decision file changed. Durable cross-cutting policy (it constrains future changes, spans subjects beyond this branch, or records a rejected alternative) needs an ADR; a change that is not durable policy does not.\n\n```\nfix: if this branch changes durable cross-cutting policy, add or revise an ADR (`mix spec.decision.new <id> --title \"...\"`); if it does not, record `Spec-Drift: branch_guard_missing_decision_update=info` as a git trailer on a commit in this range, with a one-line reason in the commit body.\n```"
+      "message": "Changed file lib/specled_ex/branch_check.ex impacts subject specled.branch_guard; spec.md not co-changed, but realization attested binding(s) SpecLedEx.BranchCheck.run/3 as clean — informational only."
+    },
+    {
+      "code": "branch_guard_missing_subject_update",
+      "file": "lib/specled_ex/verifier.ex",
+      "level": "info",
+      "message": "Changed file lib/specled_ex/verifier.ex impacts subject specled.decisions; spec.md not co-changed, but realization attested binding(s) SpecLedEx.Verifier.verify_decision/4 as clean — informational only."
+    },
+    {
+      "code": "branch_guard_missing_subject_update",
+      "file": "lib/specled_ex/verifier.ex",
+      "level": "info",
+      "message": "Changed file lib/specled_ex/verifier.ex impacts subject specs that were not updated: specled.prose_guard"
+    },
+    {
+      "code": "branch_guard_missing_subject_update",
+      "file": "test/specled_ex/verifier_test.exs",
+      "level": "info",
+      "message": "Changed file test/specled_ex/verifier_test.exs impacts subject specs that were not updated: specled.decisions, specled.tagged_tests"
     }
   ],
-  "run_at": "2026-08-06T14:09:27.069721Z",
-  "run_id": "cef04abf9cc8cb7b84b4fd85c6437574",
+  "run_at": "2026-08-06T14:15:04.462523Z",
+  "run_id": "8d906890e6d7c624bc0004b4fd6b069b",
   "schema_version": 1,
   "specled_version": "0.12.0",
   "tree_hash": "5c3958ca5434aa92a445fe86e2383d24d1f9c1ca",
