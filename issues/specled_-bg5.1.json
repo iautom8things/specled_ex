@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-06T23:10:46Z",
+  "description": "No spec subject (candidates: specled.append_only when picked up). Severity: Medium (calibrated down from spec auditor H1). From 2026-08-06 critical review of specled_-q0q. The self_authorized_weakening marker is emitted per (requirement, class) by the class-specific detectors; a requirement weakened via a path only one detector sees can surface differently depending on detector order. Keep-reason: unmade design decision — ticket q0q.2 simultaneously required uniform marker emission and forbade touching authorizing_decision/2, so a uniform-emission design (single choke point) needs its own decision + ADR. Concrete failure: a requirement weakened in class A while suppressed in class B can yield marker sets that depend on detector iteration order rather than a stated contract.",
+  "id": "specled_-bg5.1",
+  "labels": [],
+  "parent": "specled_-bg5",
+  "priority": 2,
+  "status": "open",
+  "title": "F1: self-auth marker emission is weakening-class/order-dependent — design decision needed",
+  "type": "task",
+  "updated_at": "2026-08-06T23:10:46Z"
+}
