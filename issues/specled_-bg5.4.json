@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-06T23:11:07Z",
+  "description": "No spec subject (candidates: specled.append_only when picked up). Severity: Medium. From 2026-08-06 critical review of specled_-q0q. authorizing_decision/2 matches an ADR by change_type/affects without checking its status field, so a superseded or rejected ADR in the same PR still suppresses weakening findings. Keep-reason: interacts with the F1 uniform-emission design decision (same choke point); landing it separately risks two conflicting authorization contracts. Concrete failure: a PR carrying a rejected ADR whose affects lists x.req_a gets its weakening of x.req_a silently authorized.",
+  "id": "specled_-bg5.4",
+  "labels": [],
+  "parent": "specled_-bg5",
+  "priority": 2,
+  "status": "open",
+  "title": "F13: authorizing_decision/2 ignores ADR status — superseded/rejected ADRs still authorize",
+  "type": "task",
+  "updated_at": "2026-08-06T23:11:07Z"
+}
