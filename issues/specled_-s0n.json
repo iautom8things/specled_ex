@@ -6,9 +6,15 @@
   "description": "No spec subject (candidates: the append_only and verifier subjects when picked up). Reported from voyd_config epic voyd_con-xhn (.17), 2026-08-05.\n\nDEFECT 1 — self-authorization detection gap (append_only.ex:569-589). self_authorizing_adrs/2 flags a same-PR ADR only when MapSet.equal?(MapSet.new(affects), removed_ids) — removed_ids being DELETED REQUIREMENT ids. A PR that authorizes a scenario-count regression, modal downgrade (must-\u003emay), or polarity removal deletes zero requirements, so removed_ids is empty and the check structurally cannot fire; detect_scenario_regression then suppresses on the authorized branch with no visibility marker. Observed live in voyd_config: the scenario-covers-dedup ADR authorized a scenario regression in its own PR; green gate, no marker; mitigated only by a hand-written acceptance note. Fix directions: (a) extend self_authorizing_adrs to also match affects against subjects with scenario/modal/polarity regressions in the same PR (care: subject-level matching is looser than requirement-id equality — must not over-fire on legitimate cross-PR authorizations); (b) make detect_scenario_regression emit an info-level marker even when authorized, so self-approved weakening is always visible in output.\n\nDEFECT 2 — mix spec.check --debug crashes with BadBooleanError at verifier.ex:1327 whenever a tagged_tests verification has execute: true and runs (a command_result map reaches the left side of 'and'; underlying test exit_code was 0). --debug is unusable on executed runs. Found during voyd_con-xhn.8 verification.\n\nConsumers waiting on the fix: voyd_config, builder, atlas (pick up via dep bump).",
   "id": "specled_-s0n",
   "labels": [],
+  "comments": [
+    {
+      "text": "Distilled into epic specled_-q0q (S1 debug-crash fix specled_-q0q.1, S2 self-auth visibility specled_-q0q.2, S3 release 0.13.0 specled_-q0q.3). Plan: think-jug / 05-refined-plan.md in vault run dir src-specled_ex/2026-08-05-s0n-selfauth-debug-fixes/runs/20260805-150402-claude-mini. Worktree specled_ex-s0n-selfauth-debug-fixes, branch specled_-q0q/s0n-selfauth-debug-fixes.",
+      "timestamp": "2026-08-06T10:44:16Z"
+    }
+  ],
   "priority": 2,
   "status": "open",
   "title": "same_pr_self_authorization cannot fire for scenario/modal/polarity regressions; --debug crashes on executed tagged_tests",
   "type": "task",
-  "updated_at": "2026-08-05T16:20:35Z"
+  "updated_at": "2026-08-06T10:44:16Z"
 }
