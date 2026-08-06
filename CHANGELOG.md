@@ -40,20 +40,24 @@ fix.
 
 ### Fixed
 
-- `mix spec.check --debug` raised `ArgumentError` (`BadBooleanError`) on
-  executed `tagged_tests` (and `command`) verification entries because
-  command-result maps were used as boolean predicates. Predicates now use
-  `is_map(command_result)` on both the findings and checks debug paths
-  (specled_-q0q.1)
+- `mix spec.check --debug` raised `BadBooleanError` on executed
+  `tagged_tests` verification entries whose command result was a map: the map
+  sat on the left of a strict-boolean `and` in the debug-checks clause that
+  tests for `:attribution`. That clause now guards with
+  `is_map(command_result)`; four equivalent truthy-map operands — two on the
+  unconditional findings path, two elsewhere in the same debug-checks `cond`
+  — were normalized to `is_map/1` alongside it with no behavior change, since
+  those values are always nil or a map. `command`-kind entries never raised:
+  there the map was the rightmost `and` operand (specled_-q0q.1)
 - Stale append-only budget mirrors: `docs/concepts.md` now says eleven codes
   and points at `append_only_finding_budget_v2`; `BranchCheck`
   `@per_code_defaults` mirrors `append_only/self_authorized_weakening` at
   `:info` (specled_-q0q.4)
 - `spec_review` HTML "Decisions / governance" row now counts
   `append_only/self_authorized_weakening` so a live finding flips that row;
-  hand-maintained catalogs in the review HTML and severity-integration tests
-  assert equality against the AppendOnly emitter-derived set
-  (specled_-q0q.5)
+  hand-maintained catalogs in the review-HTML tests and the
+  severity-integration tests assert equality against the AppendOnly
+  emitter-derived set (specled_-q0q.5)
 - `SpecLedEx.Config.Guardrails` moduledoc: guardrail code count 12→13
   (11 `append_only/*` + 2 `overlap/*`), with provenance "introduced by
   specled_-fm4 and extended by specled_-q0q.2" (fm4 landed the original 12;
