@@ -117,7 +117,7 @@ defmodule SpecLedEx.Config do
 
     Each entry is `code => severity` where severity is one of `off`, `info`,
     `warning`, `error` (see `SpecLedEx.BranchCheck.Severity`). The code key
-    namespace is the 12 guardrail codes (10 `append_only/*` + 2 `overlap/*`)
+    namespace is the 13 guardrail codes (11 `append_only/*` + 2 `overlap/*`)
     introduced by specled_-fm4. `branch_guard.severities` covers its own
     namespace; the two maps are kept separate (not merged) so the two
     guardrail surfaces stay legible in config.

@@ -168,8 +168,9 @@ decisions:
 
 Branch reconciliation note: `test/specled_ex/branch_check/severity_integration_test.exs`
 is co-owned via severity-integration path maps. This branch only extends the
-append_only default-severity catalog for the eleventh finding code; config
-parse and defaults requirements remain unchanged.
+append_only default-severity catalog for the eleventh finding code and corrects
+the `Guardrails` moduledoc count to 13 (11 `append_only/*` + 2 `overlap/*`);
+config parse and defaults requirements remain unchanged.
 
 ```yaml spec-verification
 - kind: tagged_tests
