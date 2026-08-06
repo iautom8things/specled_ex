@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-06T23:11:13Z",
+  "description": "No spec subject (candidates: specled.severity / CLI output surface when picked up). Severity: Low. From 2026-08-06 critical review of specled_-q0q. The new append_only/self_authorized_weakening marker resolves to :info, and default CLI output does not render :info findings — the always-visible marker the epic shipped is in practice visible only in HTML review output or verbose modes. Keep-reason: CLI output-policy change (how :info renders by default) needs its own small design call; out of scope for the defect branch. Concrete failure: a maintainer running bare mix spec.check on a self-authorizing PR sees a green result with no marker line, defeating the visibility intent.",
+  "id": "specled_-bg5.5",
+  "labels": [],
+  "parent": "specled_-bg5",
+  "priority": 2,
+  "status": "open",
+  "title": "F25: :info findings invisible on default CLI output — self-auth marker only visible with --debug/HTML",
+  "type": "task",
+  "updated_at": "2026-08-06T23:11:13Z"
+}
