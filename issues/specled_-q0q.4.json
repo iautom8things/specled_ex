@@ -30,11 +30,15 @@
     {
       "text": "APPROVED. Merged into specled_-q0q/s0n-selfauth-debug-fixes. Closing per orchestrator sign-off.",
       "timestamp": "2026-08-06T13:46:39Z"
+    },
+    {
+      "text": "SCOPE_EXPANSION\nNew ticket: specled_-q0q.5\nReason: 4 of 5 hand-maintained append_only code mirrors stale after the 11th code; review HTML governance row renders green under a live finding (spec_review must violation); named by both q0q.4 graders\nOrigin: specled_-q0q.4",
+      "timestamp": "2026-08-06T13:48:03Z"
     }
   ],
   "priority": 2,
   "status": "closed",
   "title": "S2.b: post-merge staleness sweep — docs code-count + branch_check mirror",
   "type": "task",
-  "updated_at": "2026-08-06T13:46:47Z"
+  "updated_at": "2026-08-06T13:48:03Z"
 }
