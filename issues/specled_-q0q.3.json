@@ -2,7 +2,8 @@
   "assignee": "",
   "blocked_by": [
     "specled_-q0q.1",
-    "specled_-q0q.2"
+    "specled_-q0q.2",
+    "specled_-q0q.4"
   ],
   "blocks": [],
   "created": "2026-08-06T10:42:54Z",
@@ -14,5 +15,5 @@
   "status": "open",
   "title": "S3: release 0.13.0",
   "type": "task",
-  "updated_at": "2026-08-06T10:43:01Z"
+  "updated_at": "2026-08-06T12:23:19Z"
 }
