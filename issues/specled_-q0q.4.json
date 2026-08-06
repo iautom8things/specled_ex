@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-06T12:23:02Z",
+  "description": "Advances: specled.package, specled.branch_guard\n\nScope expansion carved from specled_-q0q.2 grader findings: the S2 merge added an eleventh append_only finding code and superseded the v1 budget ADR, leaving three stale statements S3 cannot fix (lib is out of scope there). Full contract in the first comment on this ticket.",
+  "id": "specled_-q0q.4",
+  "labels": [],
+  "parent": "specled_-q0q",
+  "priority": 2,
+  "status": "open",
+  "title": "S2.b: post-merge staleness sweep — docs code-count + branch_check mirror",
+  "type": "task",
+  "updated_at": "2026-08-06T12:23:02Z"
+}
