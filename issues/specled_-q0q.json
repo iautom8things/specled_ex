@@ -41,11 +41,15 @@
     {
       "text": "Scope expansion #3: carved specled_-q0q.6 (config.ex moduledoc guardrail count 12-\u003e13) from the q0q.5 test-critic finding; blocks specled_-q0q.3. Expansion count this run: 3 — per protocol, a fourth expansion pauses the epic for the user. q0q.5 merged at b255dbd5, closed, post-merge smoke green (1297 tests).",
       "timestamp": "2026-08-06T14:19:58Z"
+    },
+    {
+      "text": "Gate: full merge gate green at b255dbd5 after specled_-q0q.5 close (spec.check result=pass, all six gates clean). 4/6 closed, specled_-q0q.6 admitting.",
+      "timestamp": "2026-08-06T14:24:46Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "s0n: same-PR self-auth visibility + --debug crash fix",
   "type": "epic",
-  "updated_at": "2026-08-06T14:19:58Z"
+  "updated_at": "2026-08-06T14:24:46Z"
 }
