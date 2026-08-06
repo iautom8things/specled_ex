@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-06T23:11:21Z",
+  "description": "No spec subject (candidates: specled.append_only, specled.severity, specled.package when picked up). Severity: Low (hardening/simplification, review gate recommendation). From 2026-08-06 critical review of specled_-q0q. Replace the regex source scan in test/test_support/emitter_codes.ex with a @doc false SpecLedEx.AppendOnly.finding_codes/0 export so the severity catalog, review-HTML catalog, and mirror-drift tests all consume one compiler-checked source of truth instead of scraping lib source with a regex. Keep-reason: recurring-shape fix (hook option 4) — turns a review-recurrent drift class into a mechanical gate; touches public-ish module surface so it deserves its own small PR. Concrete failure prevented: a new append_only code emitted via indirection the regex misses would silently escape all three catalogs.",
+  "id": "specled_-bg5.6",
+  "labels": [],
+  "parent": "specled_-bg5",
+  "priority": 2,
+  "status": "open",
+  "title": "Gate: export SpecLedEx.AppendOnly.finding_codes/0 as single emitter-derived code catalog",
+  "type": "task",
+  "updated_at": "2026-08-06T23:11:21Z"
+}
