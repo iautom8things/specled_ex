@@ -2,6 +2,7 @@
   "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-08-06T23:11:49Z",
   "created": "2026-08-06T10:41:18Z",
   "description": "Advances: specled.append_only, specled.verification\n\nDistilled from mini-plan (think-jug). Spec dir: .spec/\nWorktree: /Users/mz/src/specled_ex-s0n-selfauth-debug-fixes\nBranch: specled_-q0q/s0n-selfauth-debug-fixes\nRefined plan: /Users/mz/Documents/my-vault/LLMs/plans/src-specled_ex/2026-08-05-s0n-selfauth-debug-fixes/runs/20260805-150402-claude-mini/05-refined-plan.md\nSource defect ticket: specled_-s0n\n\nGeneralize append_only same-PR self-authorization detection to all four weakening classes (removed, scenario-regressed, modal-downgraded, polarity-stripped) with a new always-visible info marker append_only/self_authorized_weakening; fix mix spec.check --debug BadBooleanError at verifier.ex:1327 on executed tagged_tests; release 0.13.0 for downstream dep bumps (voyd_config, builder, atlas).\n\nNote: spec surgery is stage-owned (same-PR discipline) — distill committed no .spec changes; each stage lands its spec deltas with its code.",
   "id": "specled_-q0q",
@@ -83,8 +84,8 @@
     }
   ],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "s0n: same-PR self-auth visibility + --debug crash fix",
   "type": "epic",
-  "updated_at": "2026-08-06T23:11:46Z"
+  "updated_at": "2026-08-06T23:11:49Z"
 }
