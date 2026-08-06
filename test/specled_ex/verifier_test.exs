@@ -1467,6 +1467,49 @@ defmodule SpecLedEx.VerifierTest do
     refute failure["message"] =~ "shared run, not a subject-specific failure"
   end
 
+  @tag spec: "specled.verify.debug_checks_executed_tagged_tests"
+  test "debug checks report a passing merged tagged_tests command without attribution",
+       %{root: root} do
+    # The shim never touches SPECLED_ATTRIBUTION_PATH, so debug reporting must
+    # use the shared-fate command result rather than per-cover attribution.
+    report = run_two_subject_merged(root, "exit 0\n", debug: true, run_commands: true)
+
+    assert report["status"] == "pass"
+
+    passed_checks =
+      Enum.filter(report["checks"], &(&1["code"] == "verification_command_passed"))
+
+    assert MapSet.new(Enum.map(passed_checks, & &1["subject_id"])) ==
+             MapSet.new(["alpha", "beta"])
+
+    assert Enum.all?(passed_checks, &(&1["message"] =~ "tagged_tests command passed:"))
+  end
+
+  @tag spec: "specled.verify.debug_checks_executed_tagged_tests"
+  test "debug checks report attributed covers from a passing merged tagged_tests command",
+       %{root: root} do
+    shim = ~S"""
+    cat >> "$SPECLED_ATTRIBUTION_PATH" <<'JSONL'
+    {"event":"test_finished","id":"AlphaTest.t","file":"test/alpha_test.exs","line":5,"spec":["req.alpha"],"state":"pass"}
+    {"event":"test_finished","id":"BetaTest.t","file":"test/beta_test.exs","line":6,"spec":["req.beta"],"state":"pass"}
+    {"event":"suite_finished"}
+    JSONL
+    exit 0
+    """
+
+    report = run_two_subject_merged(root, shim, debug: true, run_commands: true)
+
+    assert report["status"] == "pass"
+
+    passed_messages =
+      report["checks"]
+      |> Enum.filter(&(&1["code"] == "verification_command_passed"))
+      |> Enum.map(& &1["message"])
+
+    assert "tagged_tests cover executed: req.alpha" in passed_messages
+    assert "tagged_tests cover executed: req.beta" in passed_messages
+  end
+
   @tag spec: "specled.tagged_tests.attribution_degrades_to_shared_fate"
   @tag spec: "specled.tagged_tests.merged_run_attribution"
   test "an absent artifact degrades to shared fate identical to today", %{root: root} do

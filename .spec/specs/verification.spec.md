@@ -215,6 +215,14 @@ decisions:
   statement: Verification shall apply configured finding-code severity overrides before computing summary error/warning counts and strict pass/fail status; `:off` removes matching findings, while `:info`, `:warning`, and `:error` rewrite matching finding severities.
   priority: must
   stability: evolving
+- id: specled.verify.debug_checks_executed_tagged_tests
+  statement: >
+    When invoked with `debug: true` and `run_commands: true`, verification shall
+    produce per-entry debug checks for executed `tagged_tests` verifications —
+    attributed per-cover checks when the merged run's command result carries an
+    attribution artifact, shared-fate command checks otherwise — without raising.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -422,6 +430,18 @@ decisions:
     - the strict report status is pass
   covers:
     - specled.verify.finding_severity_overrides
+- id: specled.verify.scenario.debug_executed_tagged_tests
+  given:
+    - executed tagged_tests verifications with debug and run_commands enabled
+    - one merged command writes an attribution artifact and another does not
+  when:
+    - verification runs for each command
+  then:
+    - each run returns a report without raising
+    - the attributed run produces per-cover debug checks
+    - the run without attribution produces shared-fate command debug checks
+  covers:
+    - specled.verify.debug_checks_executed_tagged_tests
 ```
 
 ## Verification
@@ -453,6 +473,7 @@ above remain unchanged.
     - specled.verify.command_output_capture_dir
     - specled.verify.command_capture_run_provenance
     - specled.verify.command_findings_echo_exunit_seed
+    - specled.verify.debug_checks_executed_tagged_tests
 - kind: tagged_tests
   execute: true
   covers:
