@@ -61,8 +61,8 @@
       "message": "Changed file test/specled_ex/realization/orchestrator_test.exs impacts subject specs that were not updated: specled.branch_guard, specled.realized_by"
     }
   ],
-  "run_at": "2026-08-11T17:59:14.491991Z",
-  "run_id": "5acf65e2904b47fe8229ca4878a29792",
+  "run_at": "2026-08-11T18:10:56.428607Z",
+  "run_id": "25d16aa43e2db53e3335ff6a833ccbc9",
   "schema_version": 1,
   "specled_version": "0.13.0",
   "tree_hash": "14061ff99bb0372adc81cb4a86d3724ea24da1bb",
