@@ -5,7 +5,9 @@
   "created": "2026-08-11T20:23:20Z",
   "description": "Two defects in the realization hash/binding path, found while running the guard against a downstream adopter corpus.\n\n1. Cross-path hash comparison fabricated drift. canonicalize_head/1 emits structurally different envelopes per resolution path (BEAM 4-tuple over all clauses vs source-fallback 5-tuple over the first def clause), so an unchanged function hashes two ways and a cold tree reports plausible-looking realization drift.\n\n2. api_boundary dedupe collapsed authored bindings by MFA. collect_bindings/2 deduped on MFA alone, first-seen wins: an implication-inferred subject entry shadowed authored requirement bindings, and authored entries from different requirements sharing one MFA collapsed to a single entry with requirement_id: nil.\n\nAdvances: specled.api_boundary, specled.binding, specled.realized_by\n\nLands as one release PR (0.14.0). Child 1 is a prerequisite for child 2 (shared realization_hashes.json baseline).",
   "id": "specled_-n5q",
-  "labels": [],
+  "labels": [
+    "slug:realization-hash-integrity-resolution"
+  ],
   "comments": [
     {
       "text": "Packaged on branch specled_-n5q/realization-hash-integrity (worktree /Users/mz/src/specled_ex-realization-hash-integrity), 4 commits on top of main @ 9adbac9c. All merge gates green: compile --warnings-as-errors, 1318 tests 0 failures, format, deps.unlock, make xref at zero edges, make check spec.check result=pass (0 errors, 0 warnings). Branch is pushed; PR creation is pending because the gh write path routes through the 1Password op plugin and needs interactive authorization.",
@@ -16,5 +18,5 @@
   "status": "open",
   "title": "[EPIC] Realization hash integrity: resolution-path provenance + amplification-scoped dedupe",
   "type": "epic",
-  "updated_at": "2026-08-11T20:42:10Z"
+  "updated_at": "2026-08-11T23:42:40Z"
 }
