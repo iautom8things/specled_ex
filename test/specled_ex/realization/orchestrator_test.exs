@@ -607,7 +607,9 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
       assert length(drifts) == 1
       [d] = drifts
       # Subject-layer entries precede requirement-layer entries, so the
-      # surviving requirement_id is nil (subject layer's first-seen entry wins).
+      # Under the amplification-scoped dedupe both entries are INFERRED, so the
+      # inferred partition's uniq_by(mfa) keeps one; requirement_id nil comes from
+      # the subject-layer entry's position in subj_entries ++ req_entries.
       assert d["requirement_id"] == nil
       assert d["mfa"] == mfa
     end
@@ -1657,9 +1659,218 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
     end
   end
 
+  describe "run/2 — amplification-scoped dedupe (builder-912)" do
+    @tag spec: [
+           "specled.realized_by.authored_beats_inferred",
+           "specled.realized_by.scenario.authored_requirement_binding_not_shadowed"
+         ]
+    test "authored requirement binding on a nonexistent MFA is not shadowed by the subject-level inferred entry",
+         %{root: root} do
+      # THE builder-912 case: the MFA does not exist; the subject-level
+      # implementation list infers an api_boundary entry for it, and a
+      # requirement authors it under api_boundary directly. Pre-fix the
+      # inferred entry was first-seen, survived the MFA-keyed dedupe, and its
+      # dangling suppression silenced the authored declaration entirely.
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.gone/1"
+
+      subject =
+        subject(
+          "shadow.subject",
+          %{"implementation" => [mfa]},
+          [
+            %{
+              id: "shadow.req",
+              priority: "must",
+              realized_by: %{"api_boundary" => [mfa]}
+            }
+          ]
+        )
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      dangling =
+        Enum.filter(findings, fn f ->
+          Map.get(f, "code") == "branch_guard_dangling_binding" and Map.get(f, "mfa") == mfa
+        end)
+
+      assert length(dangling) == 1,
+             "expected the authored dangling to survive the inferred entry's suppression, got: " <>
+               inspect(findings, pretty: true)
+
+      assert hd(dangling)["requirement_id"] == "shadow.req"
+      refute_inferred_leak(findings)
+    end
+
+    @tag spec: [
+           "specled.realized_by.authored_provenance_preserved",
+           "specled.realized_by.scenario.shared_mfa_keeps_per_requirement_entries"
+         ]
+    test "independent requirements sharing an MFA each keep their own entry and provenance",
+         %{root: root} do
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+
+      # Seed a WRONG hash so every surviving entry reports drift; the rids on
+      # the findings expose exactly which entries survived the dedupe.
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "stale"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      reqs =
+        for n <- 1..3 do
+          %{id: "shared.req#{n}", priority: "must", realized_by: %{"api_boundary" => [mfa]}}
+        end
+
+      # Cross-layer doubling is spec-sanctioned: the subject-level authored
+      # entry is a distinct {subject, nil, mfa} key and reports alongside the
+      # per-requirement entries.
+      subject = subject("shared.subject", %{"api_boundary" => [mfa]}, reqs)
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      drift_rids =
+        findings
+        |> Enum.filter(fn f ->
+          Map.get(f, "code") == "branch_guard_realization_drift" and Map.get(f, "mfa") == mfa
+        end)
+        |> Enum.map(& &1["requirement_id"])
+        |> Enum.sort()
+
+      assert drift_rids == [nil, "shared.req1", "shared.req2", "shared.req3"],
+             "each authored entry keeps distinct provenance (subject-level entry " <>
+               "included); got rids: #{inspect(drift_rids)}"
+
+      refute_inferred_leak(findings)
+    end
+
+    @tag spec: "specled.realized_by.authored_beats_inferred"
+    test "drift on an authored+inferred MFA reports the authored requirement id, once",
+         %{root: root} do
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.baz/1"
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "stale"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      subject =
+        subject(
+          "attributed.subject",
+          %{"implementation" => [mfa]},
+          [
+            %{
+              id: "attributed.req",
+              priority: "must",
+              realized_by: %{"api_boundary" => [mfa]}
+            }
+          ]
+        )
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      drift =
+        Enum.filter(findings, fn f ->
+          Map.get(f, "code") == "branch_guard_realization_drift" and Map.get(f, "mfa") == mfa
+        end)
+
+      # Exactly one: the inferred duplicate yielded to the authored entry —
+      # and the finding carries the requirement id, not the pre-fix nil.
+      assert length(drift) == 1,
+             "expected the single authored finding (inferred yielded), got: " <>
+               inspect(findings, pretty: true)
+
+      assert hd(drift)["requirement_id"] == "attributed.req"
+      refute_inferred_leak(findings)
+    end
+
+    @tag spec: "specled.realized_by.authored_provenance_preserved"
+    test "exact {subject, requirement, mfa} duplicates collapse to one entry", %{root: root} do
+      # The requirement's own clause: only EXACT triples dedupe. A layer
+      # authoring the same MFA twice (no implementation key, so nothing is
+      # inferred and expand_implications does not uniq it) must yield one
+      # finding, not two.
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "stale"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      subject =
+        subject(
+          "exactdup.subject",
+          %{},
+          [
+            %{
+              id: "exactdup.req",
+              priority: "must",
+              realized_by: %{"api_boundary" => [mfa, mfa]}
+            }
+          ]
+        )
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      drift =
+        Enum.filter(findings, fn f ->
+          Map.get(f, "code") == "branch_guard_realization_drift" and Map.get(f, "mfa") == mfa
+        end)
+
+      assert length(drift) == 1,
+             "exact duplicates must collapse to one entry, got: " <>
+               inspect(findings, pretty: true)
+
+      assert hd(drift)["requirement_id"] == "exactdup.req"
+      refute_inferred_leak(findings)
+    end
+  end
+
   # ---------------------------------------------------------------------------
   # Helpers
   # ---------------------------------------------------------------------------
+
+  # Findings must not leak the orchestrator-internal :inferred? flag
+  # (specled.realized_by.scenario.inferred_flag_does_not_leak).
+  defp refute_inferred_leak(findings) do
+    refute Enum.any?(findings, fn f ->
+             is_map(f) and (Map.has_key?(f, :inferred?) or Map.has_key?(f, "inferred?"))
+           end)
+  end
 
   defp subject(id, realized_by, requirements) do
     %{

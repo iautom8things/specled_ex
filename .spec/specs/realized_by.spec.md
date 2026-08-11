@@ -43,6 +43,7 @@ decisions:
   - specled.decision.file_touch_yields_to_realization
   - specled.decision.realization_drift_acceptance
   - specled.decision.cross_vm_temp_names_reach
+  - specled.decision.amplification_scoped_dedupe
 ```
 
 ## Requirements
@@ -156,12 +157,33 @@ decisions:
   stability: evolving
 - id: specled.realized_by.implication_amplification_dedup
   statement: >-
-    When the same MFA is declared under `implementation` at both the
-    subject layer and a requirement layer (after per-layer expansion),
-    the orchestrator shall produce exactly one `api_boundary` binding
-    entry for that MFA via post-concat deduplication on the flat
-    `api_boundary` binding list (`Enum.uniq_by(& &1.mfa)`). This shall
-    not affect other tiers.
+    When the same MFA is injected into the `api_boundary` tier by the
+    implication expansion at both the subject layer and a requirement
+    layer, the orchestrator shall produce exactly one INFERRED
+    `api_boundary` binding entry for that MFA, and an inferred entry
+    whose MFA is also authored anywhere in the tier shall be dropped
+    in favor of the authored entries. This shall not affect other
+    tiers.
+  priority: must
+  stability: evolving
+- id: specled.realized_by.authored_provenance_preserved
+  statement: >-
+    Authored `api_boundary` entries shall never be collapsed by MFA:
+    independent requirements binding the same function each keep their
+    own binding entry and their own finding attribution; only exact
+    {subject, requirement, MFA} duplicates deduplicate.
+  priority: must
+  stability: evolving
+- id: specled.realized_by.authored_beats_inferred
+  statement: >-
+    An authored `api_boundary` binding shall never be shadowed by an
+    implication-inferred entry for the same MFA. In particular, a
+    nonexistent MFA authored on a requirement shall emit a
+    `branch_guard_dangling_binding` finding carrying that requirement's
+    id even when the subject-level `implementation` list names the same
+    MFA — the inferred entry's dangling suppression
+    (specled.realized_by.implication_dangling_once) must not extend to
+    the authored declaration.
   priority: must
   stability: evolving
 - id: specled.realized_by.bare_module_api_boundary_hash
@@ -503,6 +525,25 @@ decisions:
     - "exactly one `branch_guard_realization_drift` (`tier=api_boundary`) finding fires when the head changes"
   covers:
     - specled.realized_by.implication_amplification_dedup
+- id: specled.realized_by.scenario.authored_requirement_binding_not_shadowed
+  given:
+    - "a requirement authors `realized_by.api_boundary: [\"Foo.gone/1\"]` where `Foo.gone/1` does not exist"
+    - "the same subject's `spec-meta.realized_by.implementation` also lists `Foo.gone/1`"
+  when:
+    - "the orchestrator collects bindings and runs the api_boundary detector"
+  then:
+    - "a `branch_guard_dangling_binding` finding fires for `Foo.gone/1` carrying the requirement's id"
+  covers:
+    - specled.realized_by.authored_beats_inferred
+- id: specled.realized_by.scenario.shared_mfa_keeps_per_requirement_entries
+  given:
+    - "three requirements on one subject each author `realized_by.api_boundary: [\"Foo.shared/2\"]`"
+  when:
+    - "the orchestrator collects bindings"
+  then:
+    - "the post-concat `api_boundary` flat list contains three entries for `Foo.shared/2`, one per requirement id"
+  covers:
+    - specled.realized_by.authored_provenance_preserved
 - id: specled.realized_by.scenario.inferred_flag_does_not_leak
   given:
     - "any spec scenario that produces detector findings"
@@ -610,7 +651,7 @@ decisions:
     - specled.realized_by.effective_binding_requirement_replaces_tier
     - specled.realized_by.effective_binding_accepts_subject_shape
 - kind: tagged_tests
-  execute: false
+  execute: true
   covers:
     - specled.realized_by.implication_one_way
     - specled.realized_by.implication_invoked_per_layer
@@ -618,6 +659,8 @@ decisions:
     - specled.realized_by.implication_body_only_drift
     - specled.realized_by.implication_dangling_once
     - specled.realized_by.implication_amplification_dedup
+    - specled.realized_by.authored_beats_inferred
+    - specled.realized_by.authored_provenance_preserved
 - kind: tagged_tests
   execute: false
   covers:

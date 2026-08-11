@@ -475,17 +475,38 @@ defmodule SpecLedEx.Realization.Orchestrator do
         end)
       end)
 
-    # Post-concat dedup: api_boundary tier only. The implication amplifies
-    # bindings across layers (subject impl + requirement impl both inflate the
-    # api_boundary list with the same MFA). Stable order means subject-layer
-    # entries precede requirement-layer entries; uniq_by keeps the first-seen.
-    # Other tiers are intentionally untouched — drift findings on the same
-    # MFA from independent requirement_ids still convey distinct provenance.
+    # Post-concat dedup: api_boundary tier only, and amplification-scoped
+    # (builder-912). The implication expansion can inject the same MFA at both
+    # the subject and requirement layers, so INFERRED entries dedupe on MFA
+    # and yield entirely to any authored entry sharing their MFA. AUTHORED
+    # entries are never collapsed by MFA — independent requirements binding
+    # the same function keep distinct provenance, the philosophy the other
+    # tiers already follow — only exact {subject, requirement, mfa}
+    # duplicates drop. The former whole-list `uniq_by(& &1.mfa)` kept the
+    # first-seen entry, and stable subject-before-requirement order made that
+    # the subject-layer INFERRED entry: it shadowed authored requirement
+    # bindings (381 across 31 subjects in the reporting adopter), and because
+    # the api_boundary detector suppresses dangling findings for inferred
+    # entries, a nonexistent authored MFA produced zero findings corpus-wide.
     if Map.has_key?(bindings, :api_boundary) do
-      Map.update!(bindings, :api_boundary, &Enum.uniq_by(&1, fn entry -> entry.mfa end))
+      Map.update!(bindings, :api_boundary, &dedupe_api_boundary/1)
     else
       bindings
     end
+  end
+
+  defp dedupe_api_boundary(entries) do
+    {inferred, authored} = Enum.split_with(entries, &Map.get(&1, :inferred?, false))
+
+    authored = Enum.uniq_by(authored, &{&1.subject_id, &1.requirement_id, &1.mfa})
+    authored_mfas = MapSet.new(authored, & &1.mfa)
+
+    inferred =
+      inferred
+      |> Enum.uniq_by(& &1.mfa)
+      |> Enum.reject(&MapSet.member?(authored_mfas, &1.mfa))
+
+    authored ++ inferred
   end
 
   # Apply the one-way `implementation ⟹ api_boundary` implication to a
@@ -943,6 +964,13 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # Orchestrator-internal (`@doc false`): public only for testability.
   @doc false
   def api_boundary_hashes(bindings, context) do
+    # Hash once per distinct MFA: the output map is MFA-keyed, so duplicate
+    # entries (independent requirements sharing a binding survive the
+    # amplification-scoped dedupe) would just recompute identical values —
+    # and source-fallback resolution is a File.read + parse per call. The
+    # DETECTOR must keep the multiplicity; only the hashing collapses it.
+    bindings = Enum.uniq_by(bindings, & &1.mfa)
+
     Enum.reduce(bindings, %{}, fn %{mfa: mfa}, acc ->
       case Binding.resolve(mfa, context) do
         {:ok, {:module, mod}} ->

@@ -36,6 +36,7 @@ decisions:
   - specled.decision.finding_code_budget
   - specled.decision.verification_runtime_config
   - specled.decision.resolution_path_provenance
+  - specled.decision.amplification_scoped_dedupe
 ```
 
 ## Requirements
