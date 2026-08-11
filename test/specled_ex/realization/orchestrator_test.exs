@@ -26,11 +26,6 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
       def baz(y), do: y * 2
     end
 
-    defmodule SpecLedEx.OrchestratorFixtures.NoDebug do
-      @compile {:no_debug_info, true}
-      def q(v), do: v
-    end
-
     defmodule SpecLedEx.OrchestratorFixtures.Callee do
       def target(y), do: y * 3
     end
@@ -40,8 +35,25 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
     end
     """)
 
+    # NoDebug exercises the stripped-debug degrade, so it compiles with
+    # debug_info explicitly OFF — not via the inert `@compile
+    # {:no_debug_info, true}` attribute (a no-op that only appeared to work
+    # because mix test's ambient compiler default already omitted
+    # debug_info), and not via that ambient default either, so the degrade
+    # stays self-evident under any harness environment (builder-59a.5).
+    nodebug_path = Path.join(tmp_dir, "orchestrator_fixtures_nodebug.ex")
+
+    File.write!(nodebug_path, """
+    defmodule SpecLedEx.OrchestratorFixtures.NoDebug do
+      def q(v), do: v
+    end
+    """)
+
     {:ok, _mods, _warns} =
-      Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir, return_diagnostics: true)
+      SpecLedEx.FixtureCompiler.compile_to_path_with_debug_info([source_path], tmp_dir)
+
+    {:ok, _mods, _warns} =
+      SpecLedEx.FixtureCompiler.compile_to_path_without_debug_info([nodebug_path], tmp_dir)
 
     :code.add_patha(String.to_charlist(tmp_dir))
 
@@ -1542,6 +1554,106 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
 
       # Only the production entry — no other keys.
       assert Map.keys(inner) == ["lib/specled_ex/coverage.ex"]
+    end
+  end
+
+  describe "run/2 — divergence blocks baseline refresh (builder-59a.5)" do
+    @tag spec: "specled.api_boundary.divergence_blocks_refresh"
+    test "a divergence finding blocks refresh in both branches and attestation", %{root: root} do
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+
+      # Source-labeled baseline vs a beam-resolving module: every run diverges.
+      seeded = %{
+        "api_boundary" => %{
+          mfa => %{
+            "hash" => Base.encode16(:crypto.hash(:sha256, "source-envelope"), case: :lower),
+            "hasher_version" => HashStore.hasher_version(),
+            "resolved_via" => "source"
+          }
+        }
+      }
+
+      :ok = HashStore.write(root, seeded)
+      index = %{"subjects" => [subject("diverged.subject", %{"api_boundary" => [mfa]}, [])]}
+
+      {findings, attestations} =
+        Orchestrator.run_with_attestations(index,
+          root: root,
+          enabled_tiers: [:api_boundary]
+        )
+
+      assert Enum.any?(findings, fn f ->
+               (Map.get(f, "code") || Map.get(f, :code)) ==
+                 "branch_guard_resolution_path_divergence"
+             end)
+
+      # Baseline untouched: the run neither refreshed nor relabeled the entry.
+      assert HashStore.fetch_entry(HashStore.read(root), "api_boundary", mfa)["resolved_via"] ==
+               "source"
+
+      assert HashStore.fetch_entry(HashStore.read(root), "api_boundary", mfa)["hash"] ==
+               seeded["api_boundary"][mfa]["hash"]
+
+      # The diverged pair is excluded from clean-binding attestations. The
+      # attestation map is nested (%{subject_id => %{path => ...}}), so assert
+      # the subject's bucket is absent/empty rather than pattern-matching keys.
+      assert Map.get(attestations, "diverged.subject", %{}) == %{}
+
+      # --accept-drift does not accept divergence either.
+      {findings2, _} =
+        Orchestrator.run_with_attestations(index,
+          root: root,
+          enabled_tiers: [:api_boundary],
+          accept_drift?: true
+        )
+
+      assert Enum.any?(findings2, fn f ->
+               (Map.get(f, "code") || Map.get(f, :code)) ==
+                 "branch_guard_resolution_path_divergence"
+             end)
+
+      assert HashStore.fetch_entry(HashStore.read(root), "api_boundary", mfa)["hash"] ==
+               seeded["api_boundary"][mfa]["hash"]
+    end
+
+    @tag spec: "specled.api_boundary.divergence_blocks_refresh"
+    test "control: without divergence the same harness DOES refresh (relabels a legacy entry)",
+         %{root: root} do
+      # Non-vacuousness control for the blocking test above: an UNLABELED
+      # baseline with the correct current hash is a clean run, so the refresh
+      # fires and observably rewrites the entry — the resolved_via label
+      # appears. If refresh were skipped for an unrelated reason, this fails.
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+
+      {:ok, ast} = Binding.resolve(mfa)
+      current = SpecLedEx.Realization.ApiBoundary.hash(ast)
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(current, case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      index = %{"subjects" => [subject("relabel.subject", %{"api_boundary" => [mfa]}, [])]}
+
+      findings = Orchestrator.run(index, root: root, enabled_tiers: [:api_boundary])
+      assert findings == []
+
+      assert HashStore.fetch_entry(HashStore.read(root), "api_boundary", mfa)["resolved_via"] ==
+               "beam"
+    end
+
+    @tag spec: "specled.api_boundary.same_path_hash_comparison"
+    test "api_boundary_hashes labels entries with the resolution path" do
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+
+      entries = Orchestrator.api_boundary_hashes([%{mfa: mfa}], nil)
+      assert entries[mfa]["resolved_via"] == "beam"
+      assert is_binary(entries[mfa]["hash"])
     end
   end
 

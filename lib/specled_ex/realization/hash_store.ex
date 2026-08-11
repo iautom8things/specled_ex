@@ -150,12 +150,36 @@ defmodule SpecLedEx.Realization.HashStore do
   @doc "Convenience: returns the stored hash for a tier+MFA or `nil`."
   @spec fetch(map(), String.t(), String.t()) :: binary() | nil
   def fetch(realization, tier, mfa) when is_map(realization) do
+    case fetch_entry(realization, tier, mfa) do
+      %{"hash" => hash} ->
+        case Base.decode16(hash, case: :mixed) do
+          {:ok, bytes} -> bytes
+          :error -> nil
+        end
+
+      nil ->
+        nil
+    end
+  end
+
+  @doc """
+  Returns the full stored entry map for a tier+MFA or `nil`.
+
+  Unlike `fetch/3` this preserves entry metadata beyond the hash — notably
+  `"resolved_via"`, which the api_boundary tier uses to decide whether two
+  hashes are comparable at all (builder-59a.5: BEAM debug_info and the
+  source-AST fallback canonicalize to structurally different envelopes, so a
+  cross-path hash comparison fabricates drift). Entries written before
+  `"resolved_via"` existed lack the key; callers compare those under legacy
+  drift semantics (treated as same-path — see the comparable?/2 rationale in
+  `SpecLedEx.Realization.ApiBoundary` and
+  `specled.decision.resolution_path_provenance`).
+  """
+  @spec fetch_entry(map(), String.t(), String.t()) :: map() | nil
+  def fetch_entry(realization, tier, mfa) when is_map(realization) do
     with %{} = entries <- Map.get(realization, tier),
-         %{"hash" => hash} <- Map.get(entries, mfa) do
-      case Base.decode16(hash, case: :mixed) do
-        {:ok, bytes} -> bytes
-        :error -> nil
-      end
+         %{"hash" => _} = entry <- Map.get(entries, mfa) do
+      entry
     else
       _ -> nil
     end

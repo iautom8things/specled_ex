@@ -72,9 +72,7 @@ defmodule SpecLedEx.Realization.ImplicationIntegrationTest do
     """)
 
     {:ok, _mods, _warns} =
-      Kernel.ParallelCompiler.compile_to_path([stable_path], fixture_dir,
-        return_diagnostics: true
-      )
+      SpecLedEx.FixtureCompiler.compile_to_path_with_debug_info([stable_path], fixture_dir)
 
     :code.add_patha(String.to_charlist(fixture_dir))
 
@@ -761,17 +759,9 @@ defmodule SpecLedEx.Realization.ImplicationIntegrationTest do
     source_path = Path.join(fixture_dir, source_basename)
     File.write!(source_path, source_string)
 
-    previous_debug_info = Code.compiler_options()[:debug_info]
-    Code.put_compiler_option(:debug_info, true)
-
-    try do
-      {:ok, _mods, _warns} =
-        Kernel.ParallelCompiler.compile_to_path([source_path], fixture_dir,
-          return_diagnostics: true
-        )
-    after
-      Code.put_compiler_option(:debug_info, previous_debug_info)
-    end
+    # The helper owns the debug_info flip + restore; no outer wrapper needed.
+    {:ok, _mods, _warns} =
+      SpecLedEx.FixtureCompiler.compile_to_path_with_debug_info([source_path], fixture_dir)
 
     for mod <- mods do
       # Re-purge after compile in case ParallelCompiler reloaded any prior

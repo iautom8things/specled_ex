@@ -42,7 +42,7 @@ defmodule SpecLedEx.Realization.ApiBoundaryTest do
     """)
 
     {:ok, _mods, _warns} =
-      Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir, return_diagnostics: true)
+      SpecLedEx.FixtureCompiler.compile_to_path_with_debug_info([source_path], tmp_dir)
 
     :code.add_patha(String.to_charlist(tmp_dir))
 
@@ -407,6 +407,237 @@ defmodule SpecLedEx.Realization.ApiBoundaryTest do
         refute Map.has_key?(f, "inferred?"),
                "finding map leaked \"inferred?\" key: #{inspect(f)}"
       end)
+    end
+  end
+
+  describe "run/3 — resolution-path divergence (builder-59a.5)" do
+    @tag spec: "specled.api_boundary.path_divergence_finding"
+    test "beam-resolved current vs source-labeled baseline diverges, not drifts", %{root: root} do
+      mfa = "SpecLedEx.ApiBoundaryFixtures.Stable.bar/1"
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "source-envelope"), case: :lower),
+              "hasher_version" => HashStore.hasher_version(),
+              "resolved_via" => "source"
+            }
+          }
+        })
+
+      bindings = [%{subject_id: "test.subject", requirement_id: "test.subject.req", mfa: mfa}]
+      findings = ApiBoundary.run(bindings, nil, root: root)
+
+      divergence =
+        Enum.find(findings, &(&1["code"] == "branch_guard_resolution_path_divergence"))
+
+      assert divergence != nil, "expected divergence finding, got: #{inspect(findings)}"
+      assert divergence["mfa"] == mfa
+      assert divergence["subject_id"] == "test.subject"
+      assert divergence["requirement_id"] == "test.subject.req"
+      assert divergence["current_resolution"] == "beam"
+      assert divergence["baseline_resolution"] == "source"
+      assert divergence["message"] =~ "not drift"
+      assert divergence["message"] =~ "Compile"
+
+      refute Enum.any?(findings, &(&1["code"] == "branch_guard_realization_drift"))
+    end
+
+    @tag spec: "specled.api_boundary.same_path_hash_comparison"
+    test "legacy unlabeled baseline stays drift-comparable for a beam-resolved head", %{
+      root: root
+    } do
+      mfa = "SpecLedEx.ApiBoundaryFixtures.Stable.bar/1"
+
+      # No resolved_via key — an entry written before provenance existed.
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "stale"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      bindings = [%{subject_id: "test.subject", requirement_id: nil, mfa: mfa}]
+      findings = ApiBoundary.run(bindings, nil, root: root)
+
+      assert Enum.any?(findings, &(&1["code"] == "branch_guard_realization_drift"))
+      refute Enum.any?(findings, &(&1["code"] == "branch_guard_resolution_path_divergence"))
+    end
+
+    @tag spec: "specled.api_boundary.same_path_hash_comparison"
+    test "beam-labeled baseline with matching hash stays clean", %{root: root} do
+      mfa = "SpecLedEx.ApiBoundaryFixtures.Stable.bar/1"
+
+      {:ok, ast} = Binding.resolve(mfa)
+      current = ApiBoundary.hash(ast)
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(current, case: :lower),
+              "hasher_version" => HashStore.hasher_version(),
+              "resolved_via" => "beam"
+            }
+          }
+        })
+
+      bindings = [%{subject_id: "test.subject", requirement_id: nil, mfa: mfa}]
+      assert ApiBoundary.run(bindings, nil, root: root) == []
+    end
+
+    @tag spec: "specled.api_boundary.path_divergence_finding"
+    test "source-resolved current vs beam-labeled baseline diverges — the fabricated-drift case",
+         %{root: root, tmp_dir: tmp_dir} do
+      # A module that exists ONLY as source: never compiled, reachable through
+      # a Context manifest, so resolution takes the source-AST fallback.
+      source_path = Path.join(tmp_dir, "source_only_fixture.ex")
+
+      File.write!(source_path, """
+      defmodule SpecLedEx.ApiBoundaryFixtures.SourceOnly do
+        def frob(%{key: _v}), do: :ok
+      end
+      """)
+
+      mod = SpecLedEx.ApiBoundaryFixtures.SourceOnly
+      mfa = "SpecLedEx.ApiBoundaryFixtures.SourceOnly.frob/1"
+
+      context = %SpecLedEx.Compiler.Context{
+        manifest: %{mod => {:module, :elixir, [source_path], nil, nil, nil}}
+      }
+
+      {:ok, ast} = Binding.resolve(mfa, context)
+      assert Binding.resolution_path(ast) == :source
+
+      # A beam-labeled baseline met by a source-resolving current head: pre-fix
+      # this comparison fabricated drift; now it reports divergence.
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "beam-envelope"), case: :lower),
+              "hasher_version" => HashStore.hasher_version(),
+              "resolved_via" => "beam"
+            }
+          }
+        })
+
+      bindings = [%{subject_id: "test.subject", requirement_id: nil, mfa: mfa}]
+      findings = ApiBoundary.run(bindings, context, root: root)
+
+      divergence =
+        Enum.find(findings, &(&1["code"] == "branch_guard_resolution_path_divergence"))
+
+      assert divergence != nil, "expected divergence finding, got: #{inspect(findings)}"
+      assert divergence["current_resolution"] == "source"
+      assert divergence["baseline_resolution"] == "beam"
+      refute Enum.any?(findings, &(&1["code"] == "branch_guard_realization_drift"))
+    end
+
+    @tag spec: "specled.api_boundary.same_path_hash_comparison"
+    test "beam-labeled baseline with a DIFFERING hash still drifts (labeled same-path)", %{
+      root: root
+    } do
+      # The production-dominant future path: every new write labels, so a real
+      # code change must keep reporting drift through a labeled entry. Pins
+      # that comparable?(:beam, "beam") falls through to the hash compare.
+      mfa = "SpecLedEx.ApiBoundaryFixtures.Stable.bar/1"
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "stale-beam"), case: :lower),
+              "hasher_version" => HashStore.hasher_version(),
+              "resolved_via" => "beam"
+            }
+          }
+        })
+
+      bindings = [%{subject_id: "test.subject", requirement_id: nil, mfa: mfa}]
+      findings = ApiBoundary.run(bindings, nil, root: root)
+
+      assert Enum.any?(findings, &(&1["code"] == "branch_guard_realization_drift"))
+      refute Enum.any?(findings, &(&1["code"] == "branch_guard_resolution_path_divergence"))
+    end
+
+    @tag spec: "specled.api_boundary.same_path_hash_comparison"
+    test "source-labeled baseline with a DIFFERING hash still drifts (labeled same-path)",
+         %{root: root, tmp_dir: tmp_dir} do
+      source_path = Path.join(tmp_dir, "source_only_fixture3.ex")
+
+      File.write!(source_path, """
+      defmodule SpecLedEx.ApiBoundaryFixtures.SourceOnly3 do
+        def frob(%{key: _v}), do: :ok
+      end
+      """)
+
+      mod = SpecLedEx.ApiBoundaryFixtures.SourceOnly3
+      mfa = "SpecLedEx.ApiBoundaryFixtures.SourceOnly3.frob/1"
+
+      context = %SpecLedEx.Compiler.Context{
+        manifest: %{mod => {:module, :elixir, [source_path], nil, nil, nil}}
+      }
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "stale-source"), case: :lower),
+              "hasher_version" => HashStore.hasher_version(),
+              "resolved_via" => "source"
+            }
+          }
+        })
+
+      bindings = [%{subject_id: "test.subject", requirement_id: nil, mfa: mfa}]
+      findings = ApiBoundary.run(bindings, context, root: root)
+
+      assert Enum.any?(findings, &(&1["code"] == "branch_guard_realization_drift"))
+      refute Enum.any?(findings, &(&1["code"] == "branch_guard_resolution_path_divergence"))
+    end
+
+    @tag spec: "specled.api_boundary.same_path_hash_comparison"
+    test "source-resolved current vs UNLABELED baseline keeps legacy drift semantics",
+         %{root: root, tmp_dir: tmp_dir} do
+      # Unlabeled baselines predate provenance and compare as before: bindings
+      # on private functions were source-written at commit time too, so
+      # assuming beam would fabricate divergence for every one of them
+      # (empirically refuted on this project's own corpus, builder-59a.5).
+      source_path = Path.join(tmp_dir, "source_only_fixture2.ex")
+
+      File.write!(source_path, """
+      defmodule SpecLedEx.ApiBoundaryFixtures.SourceOnly2 do
+        def frob(%{key: _v}), do: :ok
+      end
+      """)
+
+      mod = SpecLedEx.ApiBoundaryFixtures.SourceOnly2
+      mfa = "SpecLedEx.ApiBoundaryFixtures.SourceOnly2.frob/1"
+
+      context = %SpecLedEx.Compiler.Context{
+        manifest: %{mod => {:module, :elixir, [source_path], nil, nil, nil}}
+      }
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "stale"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      bindings = [%{subject_id: "test.subject", requirement_id: nil, mfa: mfa}]
+      findings = ApiBoundary.run(bindings, context, root: root)
+
+      assert Enum.any?(findings, &(&1["code"] == "branch_guard_realization_drift"))
+      refute Enum.any?(findings, &(&1["code"] == "branch_guard_resolution_path_divergence"))
     end
   end
 end

@@ -20,6 +20,11 @@ defmodule SpecLedEx.BranchCheck do
     # realization tier findings (q59.9 wiring)
     "branch_guard_realization_drift" => :warning,
     "branch_guard_dangling_binding" => :error,
+    # Cross-path hashes are structurally incomparable (builder-59a.5): a
+    # cold/uncompiled tree resolving through the source-AST fallback reports
+    # this instead of fabricating realization drift. Warning, not error: the
+    # remedy is local (compile and re-run), and CI compiles before checking.
+    "branch_guard_resolution_path_divergence" => :warning,
     "branch_guard_realization_unknown_tier" => :warning,
     "detector_unavailable" => :info,
     # append_only/* (11 ratified codes)

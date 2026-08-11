@@ -121,6 +121,26 @@ defmodule SpecLedEx.Realization.Binding do
   end
 
   @doc """
+  Classifies a successful `resolve/2` result by the resolution path that
+  produced it.
+
+  The result shape is unambiguous: BEAM debug_info extraction returns a
+  `{fun, arity, clauses}` triple (`clauses_ast/3`), the source fallback
+  returns a `def`-family quoted AST, and bare-module bindings require a
+  loadable module. The two paths canonicalize to structurally different hash
+  envelopes (builder-59a.5), so consumers record this classification alongside
+  committed hashes and only compare hashes produced by the same path.
+  """
+  @spec resolution_path(Macro.t() | {:module, module()}) :: :beam | :source
+  def resolution_path({:module, mod}) when is_atom(mod), do: :beam
+
+  def resolution_path({fun, arity, clauses})
+      when is_atom(fun) and is_integer(arity) and is_list(clauses),
+      do: :beam
+
+  def resolution_path(_source_ast), do: :source
+
+  @doc """
   Path-aware sibling of `resolve/2`.
 
   Returns the resolved AST (or `{:module, mod}` for bare-module bindings)

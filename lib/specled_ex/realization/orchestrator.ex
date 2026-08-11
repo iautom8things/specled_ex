@@ -195,7 +195,13 @@ defmodule SpecLedEx.Realization.Orchestrator do
     # become the committed baseline. A dangling binding is a genuine error, not
     # intentional drift — it still blocks the refresh, so no baseline moves on a
     # run that exits `fail`. See `specled.realized_by.drift_acceptance`.
-    if commit_hashes? and not umbrella? and
+    #
+    # Resolution-path divergence blocks the refresh in BOTH branches
+    # (builder-59a.5): a diverged run is hashing through the source-AST
+    # fallback on an uncompiled tree, and refreshing would overwrite
+    # beam-hashed baselines with structurally different source hashes. That is
+    # never intentional drift — the remedy is to compile, not to accept.
+    if commit_hashes? and not umbrella? and not has_divergence?(findings) and
          ((accept_drift? and not has_dangling?(findings)) or not has_drift?(findings)) do
       refresh_and_commit_hashes(bindings_by_tier, context, root)
     end
@@ -391,7 +397,8 @@ defmodule SpecLedEx.Realization.Orchestrator do
     Enum.reduce(findings, MapSet.new(), fn finding, acc ->
       code = Map.get(finding, "code") || Map.get(finding, :code)
 
-      if code == "branch_guard_realization_drift" or code == "branch_guard_dangling_binding" do
+      if code == "branch_guard_realization_drift" or code == "branch_guard_dangling_binding" or
+           code == "branch_guard_resolution_path_divergence" do
         sid = Map.get(finding, "subject_id") || Map.get(finding, :subject_id)
         mfa = Map.get(finding, "mfa") || Map.get(finding, :mfa)
 
@@ -672,6 +679,13 @@ defmodule SpecLedEx.Realization.Orchestrator do
     end)
   end
 
+  defp has_divergence?(findings) do
+    Enum.any?(findings, fn f ->
+      code = Map.get(f, "code") || Map.get(f, :code)
+      code == "branch_guard_resolution_path_divergence"
+    end)
+  end
+
   @doc false
   # The tiers `refresh_and_commit_hashes/3` rebaselines. `SpecLedEx.BranchCheck`
   # references this to scope the `--accept-drift` `:info` downgrade to exactly
@@ -932,15 +946,18 @@ defmodule SpecLedEx.Realization.Orchestrator do
     Enum.reduce(bindings, %{}, fn %{mfa: mfa}, acc ->
       case Binding.resolve(mfa, context) do
         {:ok, {:module, mod}} ->
-          # Bare module under api_boundary — head-union envelope.
+          # Bare module under api_boundary — head-union envelope. Loadability
+          # is a precondition, so the resolution path is definitionally beam.
           case Canonical.hash_module_head_union(mod) do
-            {:ok, hash_bin} -> Map.put(acc, mfa, hash_entry(hash_bin))
+            {:ok, hash_bin} -> Map.put(acc, mfa, hash_entry(hash_bin, :beam))
             _ -> acc
           end
 
         {:ok, ast} ->
+          # Label the entry with the path that produced the hash so the
+          # detector only compares same-path hashes (builder-59a.5).
           hash_bin = ApiBoundary.hash(ast)
-          Map.put(acc, mfa, hash_entry(hash_bin))
+          Map.put(acc, mfa, hash_entry(hash_bin, Binding.resolution_path(ast)))
 
         _ ->
           # Dangling: do not seed. Detector will emit dangling on the run.
@@ -960,11 +977,18 @@ defmodule SpecLedEx.Realization.Orchestrator do
     end)
   end
 
+  # The other flat tiers (expanded_behavior, typespecs, use) hash via BEAM
+  # introspection only — no source fallback exists there — so their entries
+  # stay unlabeled and hash_entry/1 remains their constructor.
   defp hash_entry(hash_bin) do
     %{
       "hash" => Base.encode16(hash_bin, case: :lower),
       "hasher_version" => HashStore.hasher_version()
     }
+  end
+
+  defp hash_entry(hash_bin, resolved_via) when resolved_via in [:beam, :source] do
+    Map.put(hash_entry(hash_bin), "resolved_via", Atom.to_string(resolved_via))
   end
 
   # ---------------------------------------------------------------------------

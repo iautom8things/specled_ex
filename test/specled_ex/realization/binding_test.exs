@@ -57,7 +57,7 @@ defmodule SpecLedEx.Realization.BindingTest do
 
     try do
       {:ok, _modules, _diagnostics} =
-        Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir, return_diagnostics: true)
+        SpecLedEx.FixtureCompiler.compile_to_path_with_debug_info([source_path], tmp_dir)
     after
       File.cd!(previous_cwd)
     end
@@ -112,10 +112,15 @@ defmodule SpecLedEx.Realization.BindingTest do
   end
 
   describe "resolve/2 — beam first" do
-    test "returns {:ok, ast} for a vanilla compiled function" do
+    test "returns {:ok, ast} for a vanilla compiled function — via the beam path" do
       result = Binding.resolve("SpecLedEx.BindingFixtures.SampleHandler.handle_request/3")
       assert {:ok, ast} = result
       refute is_nil(ast)
+
+      # Path-discriminating: without debug_info on the fixture beam this
+      # resolution silently succeeded through the source fallback, so the
+      # "beam first" describe was not proving beam-first (builder-59a.5).
+      assert Binding.resolution_path(ast) == :beam
     end
 
     test "resolves functions generated via `use SomeDSL` through the beam path" do
@@ -320,6 +325,25 @@ defmodule SpecLedEx.Realization.BindingTest do
         :code.purge(mod_name)
         :code.delete(mod_name)
       end
+    end
+  end
+
+  describe "resolution_path/1" do
+    @tag spec: "specled.binding.resolution_path_classification"
+    test "classifies BEAM debug_info triples as :beam" do
+      var = {:x, [line: 1], nil}
+      assert Binding.resolution_path({:bar, 1, [{[var], [], :ok}]}) == :beam
+    end
+
+    @tag spec: "specled.binding.resolution_path_classification"
+    test "classifies bare-module resolutions as :beam" do
+      assert Binding.resolution_path({:module, Enum}) == :beam
+    end
+
+    @tag spec: "specled.binding.resolution_path_classification"
+    test "classifies def-family source ASTs as :source" do
+      {:ok, def_ast} = Code.string_to_quoted("def bar(x), do: x + 1")
+      assert Binding.resolution_path(def_ast) == :source
     end
   end
 end

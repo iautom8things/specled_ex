@@ -26,6 +26,7 @@ surface:
   - test/specled_ex/realization/hash_store_test.exs
   - test/specled_ex/state_json_fixture_test.exs
   - test/test_support/state_json_fixture.ex
+  - test/test_support/fixture_compiler.ex
 realized_by:
   implementation:
     - "SpecLedEx.Realization.Binding.resolve/2"
@@ -39,6 +40,7 @@ decisions:
   - specled.decision.file_touch_yields_to_realization
   - specled.decision.dedicated_realization_baseline
   - specled.decision.cross_vm_temp_names_reach
+  - specled.decision.resolution_path_provenance
 ```
 
 ## Requirements
@@ -140,6 +142,17 @@ decisions:
     not be exposed as a user-config key. When a read encounters an
     older `hasher_version`, HashStore shall rehash silently (debug log
     only) and update state. No user-visible finding is produced.
+  priority: must
+  stability: evolving
+- id: specled.binding.resolution_path_classification
+  statement: >-
+    `SpecLedEx.Realization.Binding.resolution_path/1` shall classify a
+    successful resolution result by the path that produced it: BEAM
+    debug_info triples (`{fun, arity, clauses}`) and bare-module results
+    classify as `:beam`; `def`-family quoted ASTs from the source
+    fallback classify as `:source`. Consumers use this to record hash
+    provenance and refuse cross-path hash comparison
+    (specled.api_boundary.same_path_hash_comparison).
   priority: must
   stability: evolving
 - id: specled.binding.resolve_with_source_returns_path
@@ -339,6 +352,10 @@ decisions:
 ## Verification
 
 ```yaml spec-verification
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.binding.resolution_path_classification
 - kind: tagged_tests
   execute: true
   covers:

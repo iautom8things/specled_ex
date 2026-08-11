@@ -63,3 +63,23 @@ is not sufficient; the reviewer declines such PRs.
 - Negative: enforcement is social (code review), not mechanical. A test
   could be added that greps `lib/specled_ex/**` for finding-code atoms and
   fails CI if the set drifts, but is not required in v1.
+
+## Amendment 2026-08-11 — tenth code: `branch_guard_resolution_path_divergence` (builder-59a.5)
+
+Justified against this list rather than around it. The code does not add a
+new emission surface: it RE-CLASSIFIES a subset of what
+`branch_guard_realization_drift` previously emitted — the cross-path
+comparison case, where the baseline hash and the current head were produced
+by different resolution paths (BEAM debug_info vs source-AST fallback) and
+the hash disagreement is therefore structural, not evidence about the code.
+Before this code existed, users encountering that case read a WRONG code:
+plausible-looking drift for functions nobody changed, which misled a real
+review (builder-htr, H1). Naming it separately is the anti-bloat position —
+one honest code instead of one dishonest emission of an existing code.
+
+Bounded scope: emitted only by the api_boundary tier, only for labeled
+baseline entries whose `resolved_via` differs from the current resolution
+path. Default severity `warning`; one per-code default entry
+(`SpecLedEx.BranchCheck` `@per_code_defaults`); documented in
+`docs/adoption.md` and `docs/concepts.md`. See
+`specled.decision.resolution_path_provenance` for the full design.

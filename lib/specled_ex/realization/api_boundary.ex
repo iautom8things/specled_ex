@@ -27,6 +27,7 @@ defmodule SpecLedEx.Realization.ApiBoundary do
   @tier "api_boundary"
   @drift_code "branch_guard_realization_drift"
   @dangling_code "branch_guard_dangling_binding"
+  @path_divergence_code "branch_guard_resolution_path_divergence"
   @detector_unavailable_code "detector_unavailable"
 
   @typedoc """
@@ -103,27 +104,36 @@ defmodule SpecLedEx.Realization.ApiBoundary do
 
       {:ok, ast} ->
         current = hash(ast)
+        current_via = Binding.resolution_path(ast)
 
-        case HashStore.fetch(store, @tier, mfa) do
+        case HashStore.fetch_entry(store, @tier, mfa) do
           nil ->
             []
 
-          committed when committed == current ->
-            []
+          entry ->
+            baseline_via = Map.get(entry, "resolved_via")
 
-          _committed ->
-            [
-              %{
-                "code" => @drift_code,
-                "tier" => @tier,
-                "subject_id" => binding.subject_id,
-                "requirement_id" => Map.get(binding, :requirement_id),
-                "mfa" => mfa,
-                "message" =>
-                  "api_boundary hash for #{mfa} differs from committed value " <>
-                    "(subject=#{binding.subject_id})"
-              }
-            ]
+            cond do
+              not comparable?(current_via, baseline_via) ->
+                [path_divergence_finding(binding, mfa, current_via, baseline_via)]
+
+              entry_hash(entry) == current ->
+                []
+
+              true ->
+                [
+                  %{
+                    "code" => @drift_code,
+                    "tier" => @tier,
+                    "subject_id" => binding.subject_id,
+                    "requirement_id" => Map.get(binding, :requirement_id),
+                    "mfa" => mfa,
+                    "message" =>
+                      "api_boundary hash for #{mfa} differs from committed value " <>
+                        "(subject=#{binding.subject_id})"
+                  }
+                ]
+            end
         end
 
       {:error, :not_found, details} ->
@@ -149,6 +159,56 @@ defmodule SpecLedEx.Realization.ApiBoundary do
           ]
         end
     end
+  end
+
+  # Hashes are comparable only when produced by the same resolution path:
+  # the BEAM envelope is a 4-tuple over all debug_info clauses, the source
+  # envelope a 5-tuple over the first parsed def clause, so cross-path
+  # inequality is structural, not evidence of drift (builder-59a.5).
+  #
+  # An unlabeled baseline (written before "resolved_via" existed) compares
+  # as before — legacy drift semantics. "Assume beam" was considered and
+  # empirically refuted on this project's own corpus: bindings on PRIVATE
+  # functions always resolve via source (function_exported?/3 is false, so
+  # beam extraction is never attempted), so their unlabeled baselines were
+  # source-written and the assumption fabricated divergence for every one
+  # of them. The writer ran the same resolver on the same declaration, so
+  # same-path is the right default; the one case it misses — a beam-written
+  # baseline met by a cold-tree source resolution — is the status-quo
+  # fabricated-drift bug, time-boxed to the first labeling refresh.
+  defp comparable?(_current, nil), do: true
+  defp comparable?(:beam, "beam"), do: true
+  defp comparable?(:source, "source"), do: true
+  defp comparable?(_current, _baseline), do: false
+
+  defp entry_hash(%{"hash" => hash}) do
+    case Base.decode16(hash, case: :mixed) do
+      {:ok, bytes} -> bytes
+      :error -> nil
+    end
+  end
+
+  # Reached only for labeled baselines: comparable?/2 short-circuits nil.
+  defp path_divergence_finding(binding, mfa, current_via, baseline_via) do
+    baseline_label = baseline_via
+
+    %{
+      "code" => @path_divergence_code,
+      "tier" => @tier,
+      "subject_id" => binding.subject_id,
+      "requirement_id" => Map.get(binding, :requirement_id),
+      "mfa" => mfa,
+      "current_resolution" => Atom.to_string(current_via),
+      "baseline_resolution" => baseline_via,
+      "message" =>
+        "#{mfa} resolved via #{current_via} but its committed baseline was hashed via " <>
+          "#{baseline_label}; the two envelopes are structurally incomparable, so this is " <>
+          "resolution-path divergence, not drift (subject=#{binding.subject_id}). " <>
+          "Likely cause: an uncompiled tree sent resolution down the source-AST fallback. " <>
+          "Compile and re-run. For a PERMANENT path change (e.g. a bound function made " <>
+          "private), delete this entry from .spec/realization_hashes.json so the next " <>
+          "clean run re-seeds it with the new path."
+    }
   end
 
   # Bare-module entry: hash via `Canonical.hash_module_head_union/2`. When the

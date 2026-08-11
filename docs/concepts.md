@@ -301,6 +301,23 @@ with it.*
   cheapest in the catalog — there is rarely an interpretive question,
   just a stale pointer.
 
+- `branch_guard_resolution_path_divergence` — The committed baseline
+  entry and the current head were hashed through different resolution
+  paths (BEAM debug_info vs the source-AST fallback). The two
+  canonicalize to structurally different envelopes, so the hashes are
+  incomparable and the disagreement says nothing about the code — it
+  says the *environment* changed. Reported at `warning` by default,
+  and it blocks baseline refresh (including `--accept-drift`) so an
+  uncompiled tree cannot overwrite beam-hashed baselines.
+
+  Likely cause: a cold `_build` (or wrong `MIX_ENV` build dir) sent
+  resolution down the source fallback. Compile and re-run — the
+  finding disappears. For a PERMANENT path change (e.g. a bound
+  function made private, which resolves via source forever), delete
+  the entry from `.spec/realization_hashes.json`; the next clean run
+  re-seeds it labeled with the new path
+  (`specled.decision.resolution_path_provenance`).
+
 ### Triangulation findings (coverage-side disagreement)
 
 These say: *the spec, the code, and the tests are individually fine,
