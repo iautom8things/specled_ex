@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-11T15:22:24Z",
+  "description": "Advances: specled.tagged_tests\n\nA tagged_tests verification's target: field is never validated against the cover ids it declares. verification_cover_untagged (tag_findings.ex:104) is the one check that reads target: and confirms the cover id is tagged in THAT file, but it filters kind in @test_file_kinds = [\"test_file\", \"test\"] — tagged_tests is excluded. So a stub may name any file, including one with no bearing on the requirement, and no finding fires at any severity. See comment for the gap analysis, the adopter impact measurement, and the two options.",
+  "id": "specled_-b75",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "[BUG] tagged_tests target: is unenforced — inert stub attribution survives every rung",
+  "type": "bug",
+  "updated_at": "2026-08-11T15:22:24Z"
+}
