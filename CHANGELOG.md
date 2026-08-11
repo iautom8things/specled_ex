@@ -1,5 +1,103 @@
 # Changelog
 
+## 0.14.0 — 2026-08-11
+
+Realization hash integrity (specled_-n5q): two independent defects in the
+`api_boundary` binding path, both surfaced by running the guard against a
+downstream adopter's corpus. First, `canonicalize_head/1` emits structurally
+different envelopes per resolution path — a 4-tuple over all BEAM debug_info
+clauses, a 5-tuple over the first parsed def clause on the source fallback —
+so the same unchanged function hashes two ways and an uncompiled tree
+fabricated plausible-looking realization drift for code nobody touched.
+Second, `collect_bindings/2` deduped the tier on MFA alone, so an
+implication-inferred subject entry could shadow authored requirement bindings
+(suppressing dangling findings entirely for a nonexistent MFA), and authored
+entries from different requirements sharing one MFA collapsed into a single
+entry with `requirement_id: nil`.
+
+Downstream adopters (voyd_config, builder, atlas) picking up this dep bump get
+honest cross-path classification instead of fabricated drift, and per-requirement
+provenance on shared MFAs. **Adopters whose corpora carry shadowed dangling
+bindings will see NEW dangling findings on upgrade** — that is the defect
+surfacing, not a regression; see the upgrade note below.
+
+No `hasher_version` bump and no baseline change: same-path hashes are
+unchanged, and the store is MFA-keyed, so entry counts and hash values are
+untouched.
+
+### Added
+
+- `branch_guard_resolution_path_divergence` — warning-level finding emitted
+  when a labeled baseline entry's `resolved_via` differs from the current
+  resolution path. The two paths canonicalize to structurally different
+  envelopes, so the hashes are incomparable and the disagreement reports on
+  the *environment*, not the code. It blocks baseline refresh in both branches
+  (including `--accept-drift`) so an uncompiled tree cannot overwrite
+  beam-hashed baselines, and excludes the pair from attestations. The tenth
+  guard code; `specled.decision.finding_code_budget` is amended to justify it
+  against the budget rather than around it (specled_-n5q.1)
+- `resolved_via` (`beam` | `source`) entry metadata on `api_boundary` hash
+  store entries, with `Binding.resolution_path/1` classifying the path that
+  produced a resolution. Unlabeled legacy entries keep legacy drift semantics
+  — "assume beam" was empirically refuted on this repo's own corpus, where
+  private-function bindings always resolve via source and their unlabeled
+  baselines were therefore source-written (specled_-n5q.1)
+- Requirements `specled.api_boundary.same_path_hash_comparison`,
+  `path_divergence_finding`, `divergence_blocks_refresh`, and
+  `specled.binding.resolution_path_classification`, with covering scenarios
+  (specled_-n5q.1)
+- Requirements `specled.realized_by.authored_beats_inferred` and
+  `authored_provenance_preserved`, with covering scenarios and executing
+  tagged tests (specled_-n5q.2)
+- ADRs `specled.decision.resolution_path_provenance` (the design and the
+  assume-beam refutation) and `specled.decision.amplification_scoped_dedupe`
+  (the design, the corpus measurements, and the adopter-upgrade consequence)
+- `SpecLedEx.FixtureCompiler` test support: compiles runtime fixtures with
+  `debug_info` forced on, plus an explicit
+  `compile_to_path_without_debug_info/2` for the stripped-debug degrade
+  (specled_-n5q.1)
+- `make test` gains `TEST=` passthrough for targeted runs
+
+### Fixed
+
+- Cross-path hash comparison reported `branch_guard_realization_drift` for
+  unchanged code. The detector now compares same-path only; cross-path
+  encounters on labeled entries are classified as divergence
+  (specled_-n5q.1)
+- `api_boundary` dedupe is now scoped to what the implication amplification
+  actually creates: inferred entries dedupe on MFA among themselves and yield
+  entirely to any authored entry sharing their MFA; authored entries never
+  collapse by MFA — only exact `{subject, requirement, mfa}` duplicates drop.
+  Requirement `implication_amplification_dedup` is rewritten to these
+  semantics (specled_-n5q.2)
+- Authored bindings on a nonexistent MFA produced zero dangling findings
+  corpus-wide when a subject-level inferred entry shadowed them and the
+  implementation tier was off (its default) (specled_-n5q.2)
+- Test-harness fidelity: Mix's test task disables `:debug_info` for runtime
+  compilation, so every runtime-compiled fixture had been resolving via the
+  source fallback — the suite never exercised the beam path production uses,
+  and `NoDebug`'s `@compile {:no_debug_info, true}` was inert. Fixtures now
+  force `debug_info`, and the vanilla beam-first binding test asserts
+  `resolution_path(ast) == :beam` (it had been passing through the source
+  fallback) (specled_-n5q.1)
+- `docs/adoption.md` and `docs/concepts.md` carry the new finding code, so
+  their "full set" claims are true again (specled_-n5q.1)
+
+### Upgrade notes
+
+- **New dangling findings are expected** where authored bindings were
+  previously shadowed by inferred subject entries. Plan the corpus sweep as a
+  deliberate exercise rather than treating the findings as a regression.
+- Shared-MFA corpora should expect higher finding volume: findings are now
+  emitted per requirement and are not grouped downstream (`Drift.dedupe`
+  serves the `:use` tier only and groups by subject), including the
+  cross-layer subject+requirement doubling.
+- A `branch_guard_resolution_path_divergence` on a cold `_build` is fixed by
+  compiling and re-running. For a *permanent* path change — e.g. a bound
+  function made private, which resolves via source forever — delete the entry
+  from `.spec/realization_hashes.json` and the next clean run re-seeds it
+  labeled with the new path.
+
 ## 0.13.0 — 2026-08-06
 
 Same-PR self-authorization visibility + `--debug` crash fix (specled_-q0q /
