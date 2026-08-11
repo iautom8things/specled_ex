@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-11T20:23:41Z",
+  "description": "Advances: specled.api_boundary, specled.binding\n\ncanonicalize_head/1 emits structurally different envelopes per resolution path (BEAM 4-tuple over all clauses vs source-fallback 5-tuple over the first def clause), so the same unchanged function hashes two ways and a cold tree fabricates plausible-looking realization drift.\n\napi_boundary entries record resolved_via (beam|source); the detector compares same-path only and emits branch_guard_resolution_path_divergence (warning) on labeled cross-path encounters. Unlabeled legacy entries keep legacy drift semantics — \"assume beam\" was refuted on this repo own corpus: private-function bindings always resolve via source, so their unlabeled baselines were source-written. Divergence blocks baseline refresh in both branches (including --accept-drift) and excludes the pair from attestations. No hasher_version bump: same-path hashes unchanged.\n\nTest-harness fidelity fallout: Mix test task disables :debug_info for runtime compilation, so every runtime-compiled fixture had been resolving via the source fallback — the suite never exercised the beam path production uses. Fixtures now compile via SpecLedEx.FixtureCompiler with debug_info forced on; the stripped-debug fixture deliberately compiles without it. make test gains TEST= passthrough.\n\nADR: specled.decision.resolution_path_provenance",
+  "id": "specled_-n5q.1",
+  "labels": [],
+  "parent": "specled_-n5q",
+  "priority": 2,
+  "status": "open",
+  "title": "Resolution-path provenance: cross-path hash comparison is divergence, not drift",
+  "type": "task",
+  "updated_at": "2026-08-11T20:23:41Z"
+}
