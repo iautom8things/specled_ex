@@ -1,6 +1,8 @@
 {
   "assignee": "",
-  "blocked_by": [],
+  "blocked_by": [
+    "specled_-n5q.1"
+  ],
   "blocks": [],
   "created": "2026-08-11T20:23:49Z",
   "description": "Advances: specled.api_boundary, specled.realized_by\n\ncollect_bindings/2 deduped the api_boundary tier on MFA alone, first-seen wins, with subject-layer entries ordered first. Two defects rode that key: an implication-INFERRED subject entry shadowed authored requirement bindings (381 across 31 subjects in the reporting adopter), and because the detector suppresses dangling findings for inferred entries while the implementation tier is off by default, a nonexistent authored MFA produced zero findings corpus-wide. Independently, authored entries from different requirements sharing one MFA collapsed to a single entry with requirement_id: nil attribution (64 MFAs span multiple subjects there).\n\nDedupe is now scoped to what the amplification creates: inferred entries dedupe on MFA among themselves and yield to any authored entry sharing their MFA; authored entries never collapse by MFA — only exact {subject, requirement, mfa} duplicates drop. Per-requirement provenance on shared MFAs is the philosophy the other tiers already followed. No baseline change: the store is MFA-keyed, so entry counts and hash values are untouched.\n\nRequirement implication_amplification_dedup rewritten to the new semantics; new requirements authored_beats_inferred + authored_provenance_preserved with scenarios and executing tagged tests.\n\nAdopter-upgrade consequence: shadowed dangling bindings surface as new findings — deliberate corpus sweep, not regression.\n\nADR: specled.decision.amplification_scoped_dedupe",
@@ -11,5 +13,5 @@
   "status": "open",
   "title": "Amplification-scoped api_boundary dedupe: authored bindings never collapse by MFA",
   "type": "task",
-  "updated_at": "2026-08-11T20:23:49Z"
+  "updated_at": "2026-08-11T20:23:55Z"
 }
