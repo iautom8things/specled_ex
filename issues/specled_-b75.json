@@ -14,7 +14,7 @@
   ],
   "priority": 2,
   "status": "open",
-  "title": "[BUG] tagged_tests target: is unenforced — inert stub attribution survives every rung",
+  "title": "tagged_tests target: is unenforced — inert stub attribution survives every rung",
   "type": "bug",
-  "updated_at": "2026-08-11T15:22:55Z"
+  "updated_at": "2026-08-11T15:24:04Z"
 }
