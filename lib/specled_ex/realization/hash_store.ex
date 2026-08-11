@@ -167,7 +167,7 @@ defmodule SpecLedEx.Realization.HashStore do
 
   Unlike `fetch/3` this preserves entry metadata beyond the hash — notably
   `"resolved_via"`, which the api_boundary tier uses to decide whether two
-  hashes are comparable at all (builder-59a.5: BEAM debug_info and the
+  hashes are comparable at all (specled_-n5q.1: BEAM debug_info and the
   source-AST fallback canonicalize to structurally different envelopes, so a
   cross-path hash comparison fabricates drift). Entries written before
   `"resolved_via"` existed lack the key; callers compare those under legacy

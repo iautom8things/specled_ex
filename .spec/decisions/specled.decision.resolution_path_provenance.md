@@ -19,15 +19,16 @@ clauses (`{:__spec_head__, fun, arity, normalized_clauses}`), the source
 fallback a 5-tuple over the first parsed def clause
 (`{:__spec_head__, fun, arity, arg_pattern, defaults}`). The same unchanged
 function therefore hashes to two different values depending on whether
-`Code.ensure_loaded/1` succeeded when the check ran (builder-59a.5).
+`Code.ensure_loaded/1` succeeded when the check ran (specled_-n5q.1).
 
 The observed harm is not wrong verdicts on compiled trees — CI and adopter
 make targets compile before checking, so the BEAM path wins in practice. The
 harm is fabricated evidence: an uncompiled tree (cold `_build`, wrong
 `MIX_ENV` build dir) sends resolution down the source fallback and reports
 plausible-looking `branch_guard_realization_drift` for code nobody changed.
-During the builder-htr review this very mechanism most likely produced a
-reviewer's wrong conclusion that `MIX_ENV` owned Builder's baseline churn.
+During an adopter review this very mechanism most likely produced a
+reviewer's wrong conclusion that `MIX_ENV` owned that adopter's baseline
+churn.
 
 Making the two paths hash identically was considered and rejected: source
 canonicalization would need to reproduce Elixir's def unpacking (default

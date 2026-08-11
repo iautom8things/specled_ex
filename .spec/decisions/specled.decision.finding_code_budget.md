@@ -64,7 +64,7 @@ is not sufficient; the reviewer declines such PRs.
   could be added that greps `lib/specled_ex/**` for finding-code atoms and
   fails CI if the set drifts, but is not required in v1.
 
-## Amendment 2026-08-11 — tenth code: `branch_guard_resolution_path_divergence` (builder-59a.5)
+## Amendment 2026-08-11 — tenth code: `branch_guard_resolution_path_divergence` (specled_-n5q.1)
 
 Justified against this list rather than around it. The code does not add a
 new emission surface: it RE-CLASSIFIES a subset of what
@@ -74,7 +74,7 @@ by different resolution paths (BEAM debug_info vs source-AST fallback) and
 the hash disagreement is therefore structural, not evidence about the code.
 Before this code existed, users encountering that case read a WRONG code:
 plausible-looking drift for functions nobody changed, which misled a real
-review (builder-htr, H1). Naming it separately is the anti-bloat position —
+adopter review. Naming it separately is the anti-bloat position —
 one honest code instead of one dishonest emission of an existing code.
 
 Bounded scope: emitted only by the api_boundary tier, only for labeled

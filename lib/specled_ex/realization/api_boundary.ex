@@ -164,7 +164,7 @@ defmodule SpecLedEx.Realization.ApiBoundary do
   # Hashes are comparable only when produced by the same resolution path:
   # the BEAM envelope is a 4-tuple over all debug_info clauses, the source
   # envelope a 5-tuple over the first parsed def clause, so cross-path
-  # inequality is structural, not evidence of drift (builder-59a.5).
+  # inequality is structural, not evidence of drift (specled_-n5q.1).
   #
   # An unlabeled baseline (written before "resolved_via" existed) compares
   # as before — legacy drift semantics. "Assume beam" was considered and

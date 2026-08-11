@@ -197,7 +197,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
     # run that exits `fail`. See `specled.realized_by.drift_acceptance`.
     #
     # Resolution-path divergence blocks the refresh in BOTH branches
-    # (builder-59a.5): a diverged run is hashing through the source-AST
+    # (specled_-n5q.1): a diverged run is hashing through the source-AST
     # fallback on an uncompiled tree, and refreshing would overwrite
     # beam-hashed baselines with structurally different source hashes. That is
     # never intentional drift — the remedy is to compile, not to accept.
@@ -476,7 +476,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
       end)
 
     # Post-concat dedup: api_boundary tier only, and amplification-scoped
-    # (builder-912). The implication expansion can inject the same MFA at both
+    # (specled_-n5q.2). The implication expansion can inject the same MFA at both
     # the subject and requirement layers, so INFERRED entries dedupe on MFA
     # and yield entirely to any authored entry sharing their MFA. AUTHORED
     # entries are never collapsed by MFA — independent requirements binding
@@ -983,7 +983,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
 
         {:ok, ast} ->
           # Label the entry with the path that produced the hash so the
-          # detector only compares same-path hashes (builder-59a.5).
+          # detector only compares same-path hashes (specled_-n5q.1).
           hash_bin = ApiBoundary.hash(ast)
           Map.put(acc, mfa, hash_entry(hash_bin, Binding.resolution_path(ast)))
 

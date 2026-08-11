@@ -128,7 +128,7 @@ defmodule SpecLedEx.Realization.Binding do
   `{fun, arity, clauses}` triple (`clauses_ast/3`), the source fallback
   returns a `def`-family quoted AST, and bare-module bindings require a
   loadable module. The two paths canonicalize to structurally different hash
-  envelopes (builder-59a.5), so consumers record this classification alongside
+  envelopes (specled_-n5q.1), so consumers record this classification alongside
   committed hashes and only compare hashes produced by the same path.
   """
   @spec resolution_path(Macro.t() | {:module, module()}) :: :beam | :source

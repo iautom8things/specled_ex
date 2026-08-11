@@ -19,7 +19,7 @@ subject-before-requirement ordering. The dedupe exists for one reason: the
 the subject and requirement layers, and without dedupe one code change
 produced duplicate drift findings.
 
-Two defects rode in on the whole-list key (builder-912):
+Two defects rode in on the whole-list key (specled_-n5q.2):
 
 1. **The shadow.** A subject-level INFERRED entry preceded authored
    requirement entries, so the authored ones were discarded. Because the
@@ -79,5 +79,4 @@ Deduplication is scoped to what the amplification actually creates:
   multiplicity).
 - Adopters whose corpora carry shadowed dangling bindings will see NEW
   dangling findings on upgrade. That is the defect surfacing, not a
-  regression — plan the corpus sweep as a deliberate exercise (the
-  reporting adopter's recipe lives on builder-912).
+  regression — plan the corpus sweep as a deliberate exercise.

@@ -40,7 +40,7 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
     # {:no_debug_info, true}` attribute (a no-op that only appeared to work
     # because mix test's ambient compiler default already omitted
     # debug_info), and not via that ambient default either, so the degrade
-    # stays self-evident under any harness environment (builder-59a.5).
+    # stays self-evident under any harness environment (specled_-n5q.1).
     nodebug_path = Path.join(tmp_dir, "orchestrator_fixtures_nodebug.ex")
 
     File.write!(nodebug_path, """
@@ -1559,7 +1559,7 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
     end
   end
 
-  describe "run/2 — divergence blocks baseline refresh (builder-59a.5)" do
+  describe "run/2 — divergence blocks baseline refresh (specled_-n5q.1)" do
     @tag spec: "specled.api_boundary.divergence_blocks_refresh"
     test "a divergence finding blocks refresh in both branches and attestation", %{root: root} do
       mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
@@ -1659,14 +1659,14 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
     end
   end
 
-  describe "run/2 — amplification-scoped dedupe (builder-912)" do
+  describe "run/2 — amplification-scoped dedupe (specled_-n5q.2)" do
     @tag spec: [
            "specled.realized_by.authored_beats_inferred",
            "specled.realized_by.scenario.authored_requirement_binding_not_shadowed"
          ]
     test "authored requirement binding on a nonexistent MFA is not shadowed by the subject-level inferred entry",
          %{root: root} do
-      # THE builder-912 case: the MFA does not exist; the subject-level
+      # THE specled_-n5q.2 case: the MFA does not exist; the subject-level
       # implementation list infers an api_boundary entry for it, and a
       # requirement authors it under api_boundary directly. Pre-fix the
       # inferred entry was first-seen, survived the MFA-keyed dedupe, and its

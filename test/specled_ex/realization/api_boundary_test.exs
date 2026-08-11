@@ -410,7 +410,7 @@ defmodule SpecLedEx.Realization.ApiBoundaryTest do
     end
   end
 
-  describe "run/3 — resolution-path divergence (builder-59a.5)" do
+  describe "run/3 — resolution-path divergence (specled_-n5q.1)" do
     @tag spec: "specled.api_boundary.path_divergence_finding"
     test "beam-resolved current vs source-labeled baseline diverges, not drifts", %{root: root} do
       mfa = "SpecLedEx.ApiBoundaryFixtures.Stable.bar/1"
@@ -607,7 +607,7 @@ defmodule SpecLedEx.Realization.ApiBoundaryTest do
       # Unlabeled baselines predate provenance and compare as before: bindings
       # on private functions were source-written at commit time too, so
       # assuming beam would fabricate divergence for every one of them
-      # (empirically refuted on this project's own corpus, builder-59a.5).
+      # (empirically refuted on this project's own corpus, specled_-n5q.1).
       source_path = Path.join(tmp_dir, "source_only_fixture2.ex")
 
       File.write!(source_path, """

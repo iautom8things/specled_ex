@@ -119,7 +119,7 @@ defmodule SpecLedEx.Realization.BindingTest do
 
       # Path-discriminating: without debug_info on the fixture beam this
       # resolution silently succeeded through the source fallback, so the
-      # "beam first" describe was not proving beam-first (builder-59a.5).
+      # "beam first" describe was not proving beam-first (specled_-n5q.1).
       assert Binding.resolution_path(ast) == :beam
     end
 

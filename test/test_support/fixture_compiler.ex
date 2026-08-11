@@ -10,10 +10,10 @@ defmodule SpecLedEx.FixtureCompiler do
   production `mix spec.check` resolves mix-compiled beams that carry
   debug_info, so a fixture compiled without it silently exercises the
   source-AST fallback instead of the beam path — indistinguishable until
-  resolution-path provenance landed (builder-59a.5).
+  resolution-path provenance landed (specled_-n5q.1).
 
   The `@compile {:no_debug_info, true}` module attribute is INERT for this
-  purpose — probed empirically during builder-59a.5: the emitted chunk is
+  purpose — probed empirically during specled_-n5q.1: the emitted chunk is
   governed by the compiler option alone, with or without the attribute.
   Fixtures that exercise the stripped-debug degrade therefore use the
   explicit `compile_to_path_without_debug_info/2` sibling rather than an
