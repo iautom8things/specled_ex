@@ -2,6 +2,7 @@
   "assignee": "",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-08-12T19:33:37Z",
   "created": "2026-07-28T13:31:23Z",
   "description": "Fast-follows specled_-k6s ([EPIC] Impromptu: 0.11.0 fast-follow sweep), shipped as PR #32 / release 0.11.0 / main c2d21349. Split out at delivery so the shipped epic could close without orphaning live work. Carries the three children that did not land plus one coupled standalone follow-up. NOTE: the dn4.12 and vbo branches are based on 2d4535c1, which is NOT an ancestor of the squashed main. Rebase onto main before resuming, and use a cold rebase worker rather than hand-resolving.",
   "id": "specled_-scb",
@@ -18,8 +19,8 @@
     }
   ],
   "priority": 2,
-  "status": "open",
+  "status": "closed",
   "title": "Fast-follow: 0.11.0 fast-follow sweep (specled_-k6s)",
   "type": "epic",
-  "updated_at": "2026-08-12T10:59:16Z"
+  "updated_at": "2026-08-12T19:33:37Z"
 }

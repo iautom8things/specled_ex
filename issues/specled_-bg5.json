@@ -2,6 +2,7 @@
   "assignee": "",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-08-12T19:33:37Z",
   "created": "2026-08-06T23:10:31Z",
   "description": "Fast-follows specled_-q0q (s0n: same-PR self-auth visibility + --debug crash fix), shipped in PR #34 / release 0.13.0 (main 9adbac9c). Split out at delivery. Carries the 5 TRACKED findings from the 2026-08-06 critical review (consolidated report in vault: code_review/critical/specled_ex/2026-08-06/specled_-q0q-s0n-selfauth-debug-fixes/) plus the review gate recommendation.",
   "id": "specled_-bg5",
@@ -14,8 +15,8 @@
     }
   ],
   "priority": 2,
-  "status": "open",
+  "status": "closed",
   "title": "Fast-follow: s0n: same-PR self-auth visibility + --debug crash fix",
   "type": "epic",
-  "updated_at": "2026-08-12T10:59:17Z"
+  "updated_at": "2026-08-12T19:33:37Z"
 }
