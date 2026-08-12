@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [
     "specled_-vzd.4"
   ],
@@ -10,8 +10,8 @@
   "labels": [],
   "parent": "specled_-vzd",
   "priority": 4,
-  "status": "open",
+  "status": "in_progress",
   "title": "Lint: long comment blocks in lib/realization must end in an ADR pointer, not restate the ADR",
   "type": "task",
-  "updated_at": "2026-08-12T11:44:58Z"
+  "updated_at": "2026-08-12T12:59:43Z"
 }
