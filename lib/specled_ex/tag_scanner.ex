@@ -220,8 +220,9 @@ defmodule SpecLedEx.TagScanner do
   # generated test, one declared inside is consumed by the test that follows it,
   # and a trailing one survives to the statement after the comprehension —
   # matching what ExUnit sees. The body is walked once no matter how many
-  # iterations it unrolls, because the tag map records the presence of a
-  # carrier, not per-iteration multiplicity.
+  # iterations it unrolls. That is load-bearing, not an optimization: the tag
+  # map would hide a second walk, since it dedupes by {id, file, test_name},
+  # but dynamic entries bypass dedupe/1 entirely and would double.
   defp process_statement({:for, _meta, args}, file, moduletag_ids, acc) do
     args
     |> do_block_from_args()
