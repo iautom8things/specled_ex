@@ -7,8 +7,8 @@
       "message": "Changed file mix.exs impacts subject specs that were not updated: specled.compiler_tracer"
     }
   ],
-  "run_at": "2026-08-12T23:14:40.949153Z",
-  "run_id": "35141247b3577d52c36c78b8876a4776",
+  "run_at": "2026-08-12T23:24:45.463292Z",
+  "run_id": "62ccec69f99fdfc97b171106acebcae9",
   "schema_version": 1,
   "specled_version": "0.16.0",
   "tree_hash": "59997df6991c58737b38016d43930cab2cbdcde7",
