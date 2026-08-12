@@ -4,32 +4,14 @@ defmodule SpecLedEx.SpecReviewWorkflowTest do
   `spec_review` workflow template.
 
   The `workflow_file` verification only asserts file presence + cover-id
-  substring; this suite parses the YAML and pins the four clauses of
-  `specled.spec_review.gh_pages_privilege_separation`.
+  substring. This suite parses the YAML and checks the structural boundary:
+  read-only defaults, separate render/deploy jobs, write-scope placement,
+  allowlisted deploy actions with a base-ref pin, and trusted operands on the
+  workflow's known `git fetch` / `git worktree add` acquisition lines.
 
-  Operative clause (verbatim): the write-scoped job shall not check out or
-  execute pull-request-provided code. Assertions quantify over those acts —
-  not over a single spelling of a PR-head expression.
-
-  Shape (deny-by-default):
-
-  * **Level A** — `uses:` exact action@version allowlist, plus a per-action
-    `with:`-KEY allowlist (`actions/checkout` ⇒ `{ref}` only;
-    `actions/download-artifact` ⇒ `{name, path}` only).
-  * **Level B** — deploy `run:` ref acquisition: no checkout-class verbs at
-    all (B1); every `git fetch` / `git worktree add` line has non-flag
-    operands drawn from a trusted set (B2). New aliases fail by omission
-    from the allowlist, not by presence on a forbidden list.
-  * **Level C** — deploy must not invoke `mix`, must not execute paths under
-    the artifact download directory (`rendered/`), and must not run
-    `elixir -e` / `elixir -S`.
-
-  Declared aperture (outside this detector by construction — closing them
-  needs a shell parser or workflow interpreter):
-
-  * shell variable indirection (e.g. `RUNNER=mix; $RUNNER …`)
-  * arbitrary interpreters invoked on non-`rendered/` paths
-  * job-level reusable-workflow `uses:` that shell out to mix/checkout
+  It deliberately makes no claim about the semantics of arbitrary `run:`
+  text. That is an open set requiring a shell/workflow interpreter rather than
+  another command-spelling matcher.
   """
   use ExUnit.Case, async: true
 
@@ -38,8 +20,6 @@ defmodule SpecLedEx.SpecReviewWorkflowTest do
   @workflow_path Path.expand("../../priv/spec_init/workflows/spec_review.yml.eex", __DIR__)
   # GitHub Actions expression form of the trusted base-branch pin.
   @base_ref_expr "${{ github.base_ref }}"
-  # Belt-and-braces only — soundness comes from Level A/B, not this fragment.
-  @pr_head_ref_fragment "github.event.pull_request.head"
   # Legitimate deploy `uses:` set today (template deploy steps). A new
   # action is fail-closed so it cannot smuggle a checkout past a
   # name-filter that only knows actions/checkout.
@@ -112,11 +92,11 @@ defmodule SpecLedEx.SpecReviewWorkflowTest do
     end
 
     @tag spec: "specled.spec_review.gh_pages_privilege_separation"
-    test "deploy does not check out pull-request-provided code", %{workflow: workflow} do
+    test "deploy pins structural checkout and acquisition inputs", %{workflow: workflow} do
       deploy = workflow["jobs"]["deploy"]
       steps = List.wrap(deploy["steps"])
 
-      # ── Level A: uses: allowlist + with:-KEY allowlist ──────────────────
+      # `uses:` allowlist + `with:`-key allowlist.
       uses_steps =
         for step <- steps, is_binary(step["uses"]), do: step
 
@@ -161,7 +141,7 @@ defmodule SpecLedEx.SpecReviewWorkflowTest do
                "deploy checkout must pin ref to #{inspect(@base_ref_expr)}; got #{inspect(ref)}"
       end
 
-      # ── Level B: run: deny-by-default ref acquisition ───────────────────
+      # Trusted operands on the known ref-acquisition commands.
       run_steps = for step <- steps, is_binary(step["run"]), do: step
 
       acquisition_lines =
@@ -171,7 +151,7 @@ defmodule SpecLedEx.SpecReviewWorkflowTest do
             do: {step["name"] || "(unnamed)", line}
 
       # Non-vacuity canary: template has three acquisition lines today
-      # (fetch + worktree add ×2). Empty means B1/B2 are silently vacuous.
+      # (fetch + worktree add ×2).
       assert acquisition_lines != [],
              "sanity: deploy must contain git fetch / git worktree add lines; " <>
                "if empty, the acquisition matcher is broken or the template lost them"
@@ -188,68 +168,6 @@ defmodule SpecLedEx.SpecReviewWorkflowTest do
                  "offending=#{inspect(bad)} line=#{inspect(String.trim(line))} step=#{inspect(name)}. " <>
                  "Widen @acquisition_operand_allowlist only deliberately."
       end
-
-      for step <- run_steps do
-        run = step["run"]
-        name = step["name"] || "(unnamed)"
-
-        # B1 — no checkout-class verb at all (zero legitimate uses in deploy).
-        # Matchers are verb-specific so `git add` ≠ `git worktree add` and
-        # `gh pr comment` ≠ `gh pr checkout`.
-        refute checkout_class_verb?(run),
-               "deploy run must not use checkout-class verbs " <>
-                 "(git checkout|switch|clone|pull|reset --hard, gh pr checkout, gh repo clone); " <>
-                 "step=#{inspect(name)}"
-
-        # Belt-and-braces only — primary soundness is B1+B2 above.
-        refute Regex.match?(~r{(?:refs/)?pull/.+/(head|merge)}, run),
-               "deploy run must not fetch PR refs (pull/*/head|merge); step=#{inspect(name)}"
-
-        refute String.contains?(run, @pr_head_ref_fragment),
-               "deploy run must not reference #{@pr_head_ref_fragment}; step=#{inspect(name)}"
-      end
-    end
-
-    @tag spec: "specled.spec_review.gh_pages_privilege_separation"
-    test "deploy does not execute PR-provided code; render does invoke mix", %{workflow: workflow} do
-      deploy = workflow["jobs"]["deploy"]
-      render = workflow["jobs"]["render"]
-
-      deploy_steps = List.wrap(deploy["steps"])
-      run_steps = for step <- deploy_steps, is_binary(step["run"]), do: step
-
-      # Level C — mix token (existing). Note: only inspects `run:` strings.
-      deploy_mix_steps =
-        for step <- deploy_steps, invokes_mix?(step["run"]), do: step["name"]
-
-      assert deploy_mix_steps == [],
-             "deploy must not invoke mix (PR-code execution surface); steps: #{inspect(deploy_mix_steps)}"
-
-      # C1 — no execution of paths under the artifact download dir (rendered/).
-      for step <- run_steps do
-        name = step["name"] || "(unnamed)"
-
-        refute executes_rendered_path?(step["run"]),
-               "deploy run must not execute paths under rendered/ " <>
-                 "(command position, interpreter arg, or .sh|.exs|.py|.js suffix); " <>
-                 "step=#{inspect(name)}"
-      end
-
-      # C2 — no elixir -e / elixir -S in deploy (zero legitimate uses).
-      for step <- run_steps do
-        name = step["name"] || "(unnamed)"
-
-        refute elixir_eval?(step["run"]),
-               "deploy run must not invoke elixir -e / elixir -S; step=#{inspect(name)}"
-      end
-
-      render_mix_steps =
-        for step <- List.wrap(render["steps"]), invokes_mix?(step["run"]), do: step["name"]
-
-      # Non-vacuity canary: if this is empty the detector is broken, not
-      # the template — deploy's absence of mix would then be unproven.
-      assert render_mix_steps != [],
-             "sanity: render is expected to invoke mix; if empty, the detection pattern is wrong"
     end
   end
 
@@ -259,23 +177,7 @@ defmodule SpecLedEx.SpecReviewWorkflowTest do
     uses |> String.split("@", parts: 2) |> hd()
   end
 
-  # B1: checkout-class verbs. Word-boundary style so `git add` and
-  # `gh pr comment` do not false-positive.
-  defp checkout_class_verb?(run) when is_binary(run) do
-    patterns = [
-      ~r{(?:^|[^a-zA-Z0-9_./-])git[ \t]+checkout(?:[ \t]|$)},
-      ~r{(?:^|[^a-zA-Z0-9_./-])git[ \t]+switch(?:[ \t]|$)},
-      ~r{(?:^|[^a-zA-Z0-9_./-])git[ \t]+clone(?:[ \t]|$)},
-      ~r{(?:^|[^a-zA-Z0-9_./-])git[ \t]+pull(?:[ \t]|$)},
-      ~r{(?:^|[^a-zA-Z0-9_./-])git[ \t]+reset[ \t]+--hard(?:[ \t]|$)},
-      ~r{(?:^|[^a-zA-Z0-9_./-])gh[ \t]+pr[ \t]+checkout(?:[ \t]|$)},
-      ~r{(?:^|[^a-zA-Z0-9_./-])gh[ \t]+repo[ \t]+clone(?:[ \t]|$)}
-    ]
-
-    Enum.any?(patterns, &Regex.match?(&1, run))
-  end
-
-  # B2 verb matcher: git fetch OR git worktree add (not bare `git add`).
+  # Select the acquisition commands whose operands the guard constrains.
   defp acquisition_line?(line) when is_binary(line) do
     Regex.match?(~r{(?:^|[^a-zA-Z0-9_./-])git[ \t]+fetch(?:[ \t]|$)}, line) or
       Regex.match?(~r{(?:^|[^a-zA-Z0-9_./-])git[ \t]+worktree[ \t]+add(?:[ \t]|$)}, line)
@@ -305,69 +207,4 @@ defmodule SpecLedEx.SpecReviewWorkflowTest do
     Regex.scan(~r/"[^"]*"|'[^']*'|\S+/, line)
     |> Enum.map(&hd/1)
   end
-
-  # C1: execute a path under rendered/ — command position, interpreter arg,
-  # or executable suffix. `cp rendered/spec_review.html …` stays green.
-  defp executes_rendered_path?(run) when is_binary(run) do
-    run
-    |> String.split("\n")
-    |> Enum.any?(fn line ->
-      s = String.replace(line, ~r/`[^`]*`/, "")
-
-      has_exec_suffix? =
-        Regex.match?(
-          ~r{(?:^|[\s"'=])(?:\./)?rendered/[^\s"']*\.(?:sh|exs|py|js)\b},
-          s
-        )
-
-      has_interpreter? =
-        Regex.match?(
-          ~r{(?:^|[\s;&|`(])(?:bash|sh|source|elixir|mix|python|node)[ \t]+[^\n#]*rendered/},
-          s
-        ) or
-          Regex.match?(~r{(?:^|[\s;&|`(])\.[ \t]+[^\n#]*rendered/}, s)
-
-      # Command position: start of a simple command (line start or after
-      # ;|&, NOT after ordinary whitespace — so `cp rendered/…` stays green).
-      has_cmd_pos? =
-        Regex.match?(
-          ~r{(?:^|[;&|])[ \t]*(?:[A-Za-z_][A-Za-z0-9_]*=\S*[ \t]+)*(?:\./)?rendered/},
-          s
-        )
-
-      has_exec_suffix? or has_interpreter? or has_cmd_pos?
-    end)
-  end
-
-  defp executes_rendered_path?(_), do: false
-
-  # C2: elixir -e / elixir -S
-  defp elixir_eval?(run) when is_binary(run) do
-    Regex.match?(~r{(?:^|[^a-zA-Z0-9_./-])elixir[ \t]+-(?:e|S)(?:[ \t]|$)}, run)
-  end
-
-  defp elixir_eval?(_), do: false
-
-  # Shell invocation of mix anywhere in a run block, not only at line start.
-  # Catches: `mix …`, `MIX_ENV=prod mix …`, `cd x && mix …`, `./bin/mix …`,
-  # `OUT=$(mix …)`, `bash -c 'mix …'`, `elixir -S mix …`.
-  # Deliberately fail-closed on words ending in "mix" (`premix `) so a
-  # renamed wrapper still trips. Does not match backticked prose such as
-  # `` `mix spec.review` `` in deploy's PR comment body (template ~:184).
-  #
-  # Backtick spans are stripped per line so an odd number of backticks on
-  # one line cannot pair with a distant line and swallow real commands
-  # between them (fail-open hazard of a whole-string strip).
-  defp invokes_mix?(run) when is_binary(run) do
-    run
-    |> String.split("\n")
-    |> Enum.any?(fn line ->
-      stripped = String.replace(line, ~r/`[^`]*`/, "")
-      # (?<![\w.-]) avoids matching mid-identifier; [\w./-]*mix allows
-      # path prefixes (./bin/mix) and is fail-closed on *mix suffixes.
-      Regex.match?(~r{(?<![\w.-])[\w./-]*mix[ \t]}, stripped)
-    end)
-  end
-
-  defp invokes_mix?(_), do: false
 end

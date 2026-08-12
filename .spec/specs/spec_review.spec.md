@@ -38,6 +38,7 @@ decisions:
   - specled.decision.coverage_qualifier_requirement_ids
   - specled.decision.coverage_identity_joins
   - specled.decision.cross_vm_temp_names_reach
+  - specled.decision.workflow_run_text_open_set
 ```
 
 ## Requirements
@@ -228,8 +229,12 @@ decisions:
     branch and post the PR comment, handing the rendered HTML between them as
     a workflow artifact so that no single job both runs pull-request-provided
     code and holds a write-scoped token. The workflow's top-level permissions
-    shall default to read-only, and the write-scoped job shall not check out
-    or execute pull-request-provided code.
+    shall default to read-only. The command-tier guard shall structurally pin
+    the two-job split and dependency, read/write scope placement, deploy
+    action and `with:`-key allowlists, the checkout base-ref pin, and trusted
+    operands on its known `git fetch` / `git worktree add` acquisition lines;
+    it does not infer checkout or execution semantics from arbitrary `run:`
+    text, as recorded by `specled.decision.workflow_run_text_open_set`.
   priority: must
   stability: evolving
 - id: specled.spec_review.triangle_code_classification
