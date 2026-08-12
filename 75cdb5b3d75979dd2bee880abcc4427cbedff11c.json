@@ -12,8 +12,8 @@
       "message": "Changed file lib/specled_ex/realization/api_boundary.ex impacts subject specs that were not updated: specled.compiler_context"
     }
   ],
-  "run_at": "2026-08-12T12:00:39.213994Z",
-  "run_id": "6d910dd54421a087a04180514fbbc663",
+  "run_at": "2026-08-12T12:17:32.754148Z",
+  "run_id": "6667073609503718b90f2e5ec2acb676",
   "schema_version": 1,
   "specled_version": "0.14.0",
   "tree_hash": "75cdb5b3d75979dd2bee880abcc4427cbedff11c",
