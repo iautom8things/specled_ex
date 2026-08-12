@@ -333,17 +333,18 @@ with it.*
   Two properties of that block are easy to get wrong, so state them
   plainly:
 
-  - **The block spans the whole run, not just the diverged entry.**
-    One diverged `api_boundary` MFA stops the refresh for *every*
-    flat tier — `expanded_behavior`, `typespecs`, and `use` included.
-    If a baseline you expected to move did not, look for a divergence
-    finding elsewhere in the run before suspecting the tier you were
-    watching.
+  - **The block is scoped to the diverged tier and MFA.** The affected
+    `api_boundary` entry is excluded from refresh, while unrelated clean
+    entries in `api_boundary`, `expanded_behavior`, `typespecs`, and `use`
+    can still move when the run's other refresh gates permit it. Baselines
+    have no subject dimension, so if two subjects bind the same MFA, a
+    divergence reported for either subject excludes that tier/MFA entry for
+    both.
   - **Setting the code to `off` suppresses the report, not the
     block.** The refresh gate reads raw findings before severities are
     resolved, so `severities: {branch_guard_resolution_path_divergence:
-    off}` gives you a frozen baseline with nothing on screen
-    explaining why. It is the one knob that makes this harder to
+    off}` leaves that entry frozen with nothing on screen explaining why.
+    It is the one knob that makes this harder to
     debug rather than easier. Fix the cause instead.
 
   Also note that this finding does **not** tell you whether the

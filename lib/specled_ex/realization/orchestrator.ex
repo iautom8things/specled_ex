@@ -105,7 +105,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
       (`mix spec.check --accept-drift`): it self-heals the baseline in one run
       so the drift does not resurface post-merge once the ephemeral
       `Spec-Drift:` trailer's `base..HEAD` window has closed. Dangling bindings
-      are never accepted — `refresh_and_commit_hashes/3` only commits hashes for
+      are never accepted — `refresh_and_commit_hashes/4` only commits hashes for
       bindings that resolve, so an unresolved binding keeps failing the run.
       Defaults to false. See `specled.decision.realization_drift_acceptance`.
   """
@@ -200,14 +200,24 @@ defmodule SpecLedEx.Realization.Orchestrator do
     # intentional drift — it still blocks the refresh, so no baseline moves on a
     # run that exits `fail`. See `specled.realized_by.drift_acceptance`.
     #
-    # Resolution-path divergence blocks the refresh in BOTH branches
-    # (specled_-n5q.1): a diverged run is hashing through the source-AST
-    # fallback on an uncompiled tree, and refreshing would overwrite
-    # beam-hashed baselines with structurally different source hashes. That is
-    # never intentional drift — the remedy is to compile, not to accept.
-    if commit_hashes? and not umbrella? and not has_divergence?(findings) and
-         ((accept_drift? and not has_dangling?(findings)) or not has_drift?(findings)) do
-      refresh_and_commit_hashes(bindings_by_tier, context, root)
+    # Resolution-path divergence excludes only the affected tier/MFA entries
+    # from refresh. The store has no subject dimension, so every binding that
+    # shares that tier/MFA is excluded; unrelated entries still rebaseline.
+    # When divergence and drift coexist under `--accept-drift`, keep the
+    # existing run-wide block because BranchCheck also withholds drift
+    # silencing for that combination (silence exactly what you heal).
+    refresh_allowed? =
+      (accept_drift? and not has_dangling?(findings) and
+         not (has_drift?(findings) and has_divergence?(findings))) or
+        not has_drift?(findings)
+
+    if commit_hashes? and not umbrella? and refresh_allowed? do
+      refresh_and_commit_hashes(
+        bindings_by_tier,
+        context,
+        root,
+        diverged_tier_mfas(findings)
+      )
     end
 
     {findings, bindings_by_tier, %{root: root, context: context, umbrella?: umbrella?}}
@@ -684,8 +694,25 @@ defmodule SpecLedEx.Realization.Orchestrator do
 
   defp finding_code(finding), do: Map.get(finding, "code") || Map.get(finding, :code)
 
+  defp diverged_tier_mfas(findings) do
+    if has_code?(findings, @divergence_code) do
+      Enum.reduce(findings, MapSet.new(), fn finding, acc ->
+        tier = Map.get(finding, "tier") || Map.get(finding, :tier)
+        mfa = Map.get(finding, "mfa") || Map.get(finding, :mfa)
+
+        if finding_code(finding) == @divergence_code and is_binary(tier) and is_binary(mfa) do
+          MapSet.put(acc, {tier, mfa})
+        else
+          acc
+        end
+      end)
+    else
+      MapSet.new()
+    end
+  end
+
   @doc false
-  # The tiers `refresh_and_commit_hashes/3` rebaselines. `SpecLedEx.BranchCheck`
+  # The tiers `refresh_and_commit_hashes/4` rebaselines. `SpecLedEx.BranchCheck`
   # references this to scope the `--accept-drift` `:info` downgrade to exactly
   # the healed set (silence what you heal); the implementation tier is excluded
   # by design, so its drift is reported, never accepted.
@@ -701,13 +728,13 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # emit no drift finding for that entry on the seeding run.
   #
   # Gated by the same `commit_hashes? != false` and `umbrella? == false`
-  # conditions that gate `refresh_and_commit_hashes/3`. Dangling entries
+  # conditions that gate `refresh_and_commit_hashes/4`. Dangling entries
   # (MFAs that don't resolve, bare modules that aren't loadable, impl
   # subjects with dangling closure bindings) are NOT seeded — they continue
   # to surface as dangling findings on this run.
   #
   # The seed pass is silent: no findings are emitted from this code path.
-  # The post-run `refresh_and_commit_hashes/3` is unaffected; it still runs
+  # The post-run `refresh_and_commit_hashes/4` is unaffected; it still runs
   # under the same gate when no drift is detected and uses `write/2`'s
   # replacement semantics for the full realization map.
   defp seed_uncommitted_hashes(bindings_by_tier, context, root) do
@@ -838,7 +865,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
 
   defp bare_module_binding?(_), do: false
 
-  defp refresh_and_commit_hashes(bindings_by_tier, context, root) do
+  defp refresh_and_commit_hashes(bindings_by_tier, context, root, excluded_tier_mfas) do
     # Flat-tier refresh only. MUST merge, not replace: HashStore.write/2 would
     # wipe the implementation (and any other non-flat) section that silent-seed
     # just wrote. Implementation remains seed-only until a dedicated refresh
@@ -846,13 +873,19 @@ defmodule SpecLedEx.Realization.Orchestrator do
     realization =
       @flat_tiers
       |> Enum.reduce(%{}, fn tier, acc ->
-        bindings = Map.get(bindings_by_tier, tier, [])
+        tier_name = Atom.to_string(tier)
+
+        bindings =
+          bindings_by_tier
+          |> Map.get(tier, [])
+          |> Enum.reject(&MapSet.member?(excluded_tier_mfas, {tier_name, &1.mfa}))
+
         tier_hashes = compute_tier_hashes(tier, bindings, context)
 
         if tier_hashes == %{} do
           acc
         else
-          Map.put(acc, Atom.to_string(tier), tier_hashes)
+          Map.put(acc, tier_name, tier_hashes)
         end
       end)
 

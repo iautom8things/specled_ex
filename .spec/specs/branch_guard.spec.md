@@ -423,10 +423,10 @@ decisions:
 
 ## Verification
 
-Branch reconciliation note: `test/mix/tasks/spec_tasks_test.exs` is a shared task
-test surface for this subject. This branch touches that file to assert the
-spec.check stdout verdict contract's usage-tier pre-flight rejection token; the
-branch-guard requirements above remain unchanged.
+Branch reconciliation note: `lib/specled_ex/realization/orchestrator.ex` and its
+test are shared surfaces for this subject. Their per-`(tier, mfa)` divergence
+refresh exclusion advances `specled.api_boundary`; the branch-guard requirements
+above remain unchanged.
 
 ```yaml spec-verification
 - kind: tagged_tests

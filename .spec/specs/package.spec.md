@@ -130,9 +130,9 @@ decisions:
 ## Verification
 
 Branch reconciliation note: `docs/concepts.md` is this subject's concepts
-surface. This branch only corrects the append-only finding-budget count to
-eleven codes and points at `specled.decision.append_only_finding_budget_v2`;
-the concepts-guide requirements above remain unchanged.
+surface. Its resolution-path-divergence guidance reflects the current
+per-`(tier, mfa)` refresh exclusion; the concepts-guide requirements above
+remain unchanged.
 
 ```yaml spec-verification
 - kind: tagged_tests

@@ -37,6 +37,7 @@ decisions:
   - specled.decision.verification_runtime_config
   - specled.decision.resolution_path_provenance
   - specled.decision.amplification_scoped_dedupe
+  - specled.decision.divergence_refresh_scope
 ```
 
 ## Requirements
@@ -108,13 +109,15 @@ decisions:
   stability: evolving
 - id: specled.api_boundary.divergence_blocks_refresh
   statement: >-
-    A run that emitted any `branch_guard_resolution_path_divergence`
-    finding shall not refresh or commit realization hash baselines, in
-    both the normal path and under `--accept-drift`: refreshing under
-    divergence would overwrite beam-hashed baselines with structurally
-    different source hashes from an uncompiled tree. Diverged
-    `(subject, mfa)` pairs shall also be excluded from clean-binding
-    attestations.
+    A `branch_guard_resolution_path_divergence` finding shall prevent its
+    `(tier, mfa)` entry from being refreshed or committed in both the normal
+    path and under `--accept-drift`: refreshing that entry would overwrite a
+    beam-hashed baseline with a structurally different source hash from an
+    uncompiled tree. Other clean flat-tier entries shall remain refreshable
+    when the run's drift and dangling gates permit it. Because the hash store
+    has no subject dimension, the baseline shall not be refreshed for any
+    subject sharing the diverged `(tier, mfa)`. Diverged `(subject, mfa)` pairs
+    shall also be excluded from clean-binding attestations.
   priority: must
   stability: evolving
 - id: specled.api_boundary.divergence_withholds_drift_silencing
@@ -224,10 +227,12 @@ decisions:
 - id: specled.api_boundary.scenario.divergence_blocks_baseline_refresh
   given:
     - a run whose findings include one `branch_guard_resolution_path_divergence`
+    - clean bindings elsewhere in the api_boundary tier and in another flat tier
   when:
     - the orchestrator reaches its hash-commit gate, with and without `--accept-drift`
   then:
-    - "`.spec/realization_hashes.json` is not refreshed"
+    - the diverged `(tier, mfa)` baseline is not refreshed
+    - the unrelated clean baselines are refreshed
     - the diverged `(subject, mfa)` pair is absent from the attestation map
   covers:
     - specled.api_boundary.divergence_blocks_refresh
