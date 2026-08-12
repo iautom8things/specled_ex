@@ -451,6 +451,7 @@ defmodule SpecLedEx.BranchCheck.SeverityIntegrationTest do
     @append_only_codes [
       {"append_only/requirement_deleted", :error},
       {"append_only/must_downgraded", :error},
+      {"append_only/statement_rewritten", :warning},
       {"append_only/scenario_regression", :error},
       {"append_only/negative_removed", :error},
       {"append_only/disabled_without_reason", :warning},

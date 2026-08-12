@@ -1120,6 +1120,7 @@ defmodule SpecLedEx.Review.Html do
         codes: ~w(
             append_only/requirement_deleted
             append_only/must_downgraded
+            append_only/statement_rewritten
             append_only/scenario_regression
             append_only/negative_removed
             append_only/disabled_without_reason

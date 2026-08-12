@@ -1,7 +1,8 @@
 # Append-Only
 
 State-based append-only validation for `.spec/` requirements, scenarios, and ADRs
-across a Git base..HEAD diff.
+across a Git base..HEAD diff, including advisory detection of stable-id statement
+rewrites.
 
 ## Intent
 
@@ -21,7 +22,7 @@ by branch-guard governance findings (`branch_guard_missing_decision_update`).
 id: specled.append_only
 kind: module
 status: active
-summary: Diff-time detectors for deleted requirements, modal downgrades, scenario regressions, polarity loss, ADR widening, and ADR deletion, plus an emitter-derived finding-code catalog and supporting bootstrap + advisory findings.
+summary: Diff-time detectors for deleted requirements, modal downgrades, statement rewrites, scenario regressions, polarity loss, ADR widening, and ADR deletion, plus an emitter-derived finding-code catalog and supporting bootstrap + advisory findings.
 surface:
   - lib/specled_ex/append_only.ex
   - lib/specled_ex.ex
@@ -38,6 +39,7 @@ decisions:
   - specled.decision.append_only_finding_budget_v2
   - specled.decision.uniform_self_authorization_markers
   - specled.decision.accepted_adr_authorization
+  - specled.decision.append_only_finding_budget_v3
   - specled.decision.declarative_current_truth
 ```
 
@@ -83,6 +85,16 @@ decisions:
     a weaker class (SHOULD, MAY, or NONE) or crosses polarity in a way
     that loses a negative assertion, unauthorized by a weakening-set ADR
     targeting that id.
+  priority: must
+  stability: evolving
+- id: specled.append_only.statement_rewritten
+  statement: >-
+    AppendOnly.analyze shall emit `append_only/statement_rewritten` at
+    `:warning`, with the requirement id as entity, when a requirement whose
+    priority remains `must` across prior and current state keeps its id but
+    changes its statement after whitespace normalization; whitespace-only
+    reflow and statements whose priority is not `must` on either side shall
+    emit no such finding.
   priority: must
   stability: evolving
 - id: specled.append_only.scenario_regression
@@ -261,6 +273,18 @@ decisions:
     - "the returned findings list contains one finding with code `append_only/must_downgraded` at severity error, entity_id x.req_a"
   covers:
     - specled.append_only.must_downgraded
+
+- id: specled.append_only.scenario.statement_rewritten_in_place
+  given:
+    - "prior state contains must-priority requirement `x.req_a` with a stable id and statement"
+    - "current state keeps the same id and must priority but changes the statement beyond whitespace reflow"
+  when:
+    - SpecLedEx.AppendOnly.analyze/4 is invoked
+  then:
+    - "the returned findings list contains `append_only/statement_rewritten` at warning with entity_id x.req_a"
+    - "the finding directs review of the rewrite rather than treating it as an authorized weakening"
+  covers:
+    - specled.append_only.statement_rewritten
 
 - id: specled.append_only.scenario.scenario_count_drops
   given:
@@ -485,6 +509,7 @@ decisions:
     - specled.append_only.requirement_deleted_authorized
     - specled.append_only.accepted_adr_authorization
     - specled.append_only.must_downgraded
+    - specled.append_only.statement_rewritten
     - specled.append_only.scenario_regression
     - specled.append_only.negative_removed
     - specled.append_only.disabled_without_reason
@@ -506,6 +531,7 @@ decisions:
     - specled.append_only.requirement_deleted_authorized
     - specled.append_only.accepted_adr_authorization
     - specled.append_only.must_downgraded
+    - specled.append_only.statement_rewritten
     - specled.append_only.scenario_regression
     - specled.append_only.negative_removed
     - specled.append_only.disabled_without_reason

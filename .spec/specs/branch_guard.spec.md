@@ -429,6 +429,11 @@ test are shared surfaces for this subject. Their per-`(tier, mfa)` divergence
 refresh exclusion advances `specled.api_boundary`; the branch-guard requirements
 above remain unchanged.
 
+Branch reconciliation note: `lib/specled_ex/branch_check.ex` is this subject's
+severity-resolution surface. This branch registers the warning default for the
+new append-only statement-rewrite finding; branch-guard behavior remains
+unchanged.
+
 ```yaml spec-verification
 - kind: tagged_tests
   execute: true

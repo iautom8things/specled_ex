@@ -1,5 +1,5 @@
 defmodule SpecLedEx.AppendOnly do
-  # covers: specled.append_only.requirement_deleted specled.append_only.requirement_deleted_authorized specled.append_only.accepted_adr_authorization specled.append_only.must_downgraded specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.self_authorized_weakening specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.finding_codes specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
+  # covers: specled.append_only.requirement_deleted specled.append_only.requirement_deleted_authorized specled.append_only.accepted_adr_authorization specled.append_only.must_downgraded specled.append_only.statement_rewritten specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.self_authorized_weakening specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.finding_codes specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
   @moduledoc """
   Pure diff-time append-only detectors for `.spec/` content.
 
@@ -86,6 +86,8 @@ defmodule SpecLedEx.AppendOnly do
     {downgrade_findings, downgrade_consulted_ids} =
       detect_must_downgraded(prior_reqs, current_reqs, decisions, new_adr_ids)
 
+    statement_rewrite_findings = detect_statement_rewritten(prior_reqs, current_reqs)
+
     {regression_findings, regression_consulted_ids} =
       detect_scenario_regression(prior, current, decisions, new_adr_ids)
 
@@ -111,6 +113,7 @@ defmodule SpecLedEx.AppendOnly do
 
     (deletion_findings ++
        downgrade_findings ++
+       statement_rewrite_findings ++
        regression_findings ++
        polarity_findings ++
        detect_same_pr_self_authorization(self_auth_adrs, decisions) ++
@@ -192,6 +195,23 @@ defmodule SpecLedEx.AppendOnly do
         :error ->
           # Handled by detect_requirement_deleted.
           {findings, consulted}
+      end
+    end)
+  end
+
+  defp detect_statement_rewritten(prior_reqs, current_reqs) do
+    Enum.flat_map(prior_reqs, fn {id, prior} ->
+      case Map.fetch(current_reqs, id) do
+        {:ok, current} ->
+          if must_priority?(prior) and must_priority?(current) and
+               normalized_statement(prior) != normalized_statement(current) do
+            [statement_rewritten_finding(id, prior)]
+          else
+            []
+          end
+
+        :error ->
+          []
       end
     end)
   end
@@ -409,6 +429,19 @@ defmodule SpecLedEx.AppendOnly do
     })
   end
 
+  defp statement_rewritten_finding(id, prior_req) do
+    finding("append_only/statement_rewritten", %{
+      severity: :warning,
+      subject_id: Map.get(prior_req, "subject_id"),
+      entity_id: id,
+      message:
+        SpecLedEx.FindingMessage.finalize(
+          "Must-priority requirement `#{id}` kept its id but its statement changed in place. This may be a legitimate clarification or an unreviewed contract rewrite.",
+          "fix: review the statement change explicitly; restore the prior text if accidental, or document the rationale in a clarifies ADR affecting `#{id}`."
+        )
+    })
+  end
+
   defp scenario_regression_finding(id, prior_req, prior_count, current_count) do
     subject_id = if prior_req, do: Map.get(prior_req, "subject_id"), else: nil
 
@@ -559,6 +592,15 @@ defmodule SpecLedEx.AppendOnly do
   defp format_modal(:should), do: "SHOULD"
   defp format_modal(:may), do: "MAY"
   defp format_modal(:none), do: "NONE"
+
+  defp must_priority?(requirement), do: Map.get(requirement, "priority") == "must"
+
+  defp normalized_statement(requirement) do
+    requirement
+    |> statement()
+    |> String.split()
+    |> Enum.join(" ")
+  end
 
   defp requirements_by_id(state) do
     state

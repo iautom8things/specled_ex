@@ -1,5 +1,5 @@
 defmodule SpecLedEx.AppendOnlyTest do
-  # covers: specled.append_only.requirement_deleted specled.append_only.accepted_adr_authorization specled.append_only.must_downgraded specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.self_authorized_weakening specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.finding_codes specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
+  # covers: specled.append_only.requirement_deleted specled.append_only.accepted_adr_authorization specled.append_only.must_downgraded specled.append_only.statement_rewritten specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.self_authorized_weakening specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.finding_codes specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
   use ExUnit.Case, async: true
 
   @moduletag spec: [
@@ -13,6 +13,7 @@ defmodule SpecLedEx.AppendOnlyTest do
                "specled.append_only.identity",
                "specled.append_only.missing_change_type",
                "specled.append_only.must_downgraded",
+               "specled.append_only.statement_rewritten",
                "specled.append_only.negative_removed",
                "specled.append_only.no_baseline",
                "specled.append_only.requirement_deleted",
@@ -33,6 +34,7 @@ defmodule SpecLedEx.AppendOnlyTest do
                MapSet.new(~w(
                  append_only/requirement_deleted
                  append_only/must_downgraded
+                 append_only/statement_rewritten
                  append_only/scenario_regression
                  append_only/negative_removed
                  append_only/disabled_without_reason
@@ -182,7 +184,11 @@ defmodule SpecLedEx.AppendOnlyTest do
           requirements: [requirement("x.req_a", "The system SHOULD reject invalid input.")]
         )
 
-      assert [finding] = AppendOnly.analyze(prior, current, [])
+      assert finding =
+               prior
+               |> AppendOnly.analyze(current, [])
+               |> Enum.find(&(&1.code == "append_only/must_downgraded"))
+
       assert finding.code == "append_only/must_downgraded"
       assert finding.severity == :error
       assert finding.entity_id == "x.req_a"
@@ -265,6 +271,68 @@ defmodule SpecLedEx.AppendOnlyTest do
       refute Enum.any?(findings, &(&1.code == "append_only/must_downgraded"))
       refute Enum.any?(findings, &(&1.code == "append_only/same_pr_self_authorization"))
       refute Enum.any?(findings, &(&1.code == "append_only/self_authorized_weakening"))
+    end
+  end
+
+  describe "statement_rewritten" do
+    @tag spec: "specled.append_only.statement_rewritten"
+    test "semantic rewrite of a must-priority statement emits a warning" do
+      prior =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "The system stores audit events.")]
+        )
+
+      current =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "The system discards audit events.")]
+        )
+
+      assert [finding] = AppendOnly.analyze(prior, current, [])
+      assert finding.code == "append_only/statement_rewritten"
+      assert finding.severity == :warning
+      assert finding.subject_id == "x"
+      assert finding.entity_id == "x.req_a"
+      assert fix_block_present?(finding.message)
+    end
+
+    test "whitespace-only statement reflow is ignored" do
+      prior =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "The system stores audit events.")]
+        )
+
+      current =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "  The system\n stores   audit events.  ")]
+        )
+
+      assert [] == AppendOnly.analyze(prior, current, [])
+    end
+
+    test "a statement rewrite is ignored when either side is not must priority" do
+      for {prior_priority, current_priority} <- [{"must", "should"}, {"should", "must"}] do
+        prior =
+          state_fixture(
+            subject: "x",
+            requirements: [
+              requirement("x.req_a", "Prefer local storage.", priority: prior_priority)
+            ]
+          )
+
+        current =
+          state_fixture(
+            subject: "x",
+            requirements: [
+              requirement("x.req_a", "Prefer remote storage.", priority: current_priority)
+            ]
+          )
+
+        assert [] == AppendOnly.analyze(prior, current, [])
+      end
     end
   end
 

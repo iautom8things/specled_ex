@@ -27,9 +27,10 @@ defmodule SpecLedEx.BranchCheck do
     "branch_guard_resolution_path_divergence" => :warning,
     "branch_guard_realization_unknown_tier" => :warning,
     "detector_unavailable" => :info,
-    # append_only/* (11 ratified codes)
+    # append_only/* (12 ratified codes)
     "append_only/requirement_deleted" => :error,
     "append_only/must_downgraded" => :error,
+    "append_only/statement_rewritten" => :warning,
     "append_only/scenario_regression" => :error,
     "append_only/negative_removed" => :error,
     "append_only/disabled_without_reason" => :warning,

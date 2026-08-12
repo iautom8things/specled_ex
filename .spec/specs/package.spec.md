@@ -142,6 +142,12 @@ finding-budget count to eleven codes and points at
 `specled.decision.append_only_finding_budget_v2`; the concepts-guide requirements
 above remain unchanged.
 
+Branch reconciliation note: this branch adds
+`append_only/statement_rewritten` to the adoption guide's code table; the emitter
+registers it so it reaches the compiler-exported catalog through
+`SpecLedEx.AppendOnly.finding_codes/0`. The adoption-guide and identifier-integrity
+requirements above remain unchanged.
+
 ```yaml spec-verification
 - kind: tagged_tests
   execute: true
