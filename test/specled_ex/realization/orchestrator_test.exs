@@ -272,6 +272,29 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
   end
 
   describe "run/2 — hash commit on clean run" do
+    test "writes a valid typespecs entry when seeding an uncommitted binding", %{root: root} do
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+      subject = subject("typespecs_seed.subject", %{"typespecs" => [mfa]}, [])
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:typespecs],
+          commit_hashes?: true,
+          umbrella?: false
+        )
+
+      assert findings == []
+
+      baseline_path = Path.join(root, HashStore.baseline_rel())
+      entry = get_in(Jason.decode!(File.read!(baseline_path)), ["typespecs", mfa])
+
+      assert %{"hash" => hash, "hasher_version" => version} = entry
+      assert map_size(entry) == 2
+      assert hash =~ ~r/\A[0-9a-f]{64}\z/
+      assert version == HashStore.hasher_version()
+    end
+
     test "writes api_boundary baseline when no drift is detected", %{root: root} do
       mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
 

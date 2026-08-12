@@ -722,7 +722,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
         uncommitted =
           Enum.reject(bindings, fn %{mfa: mfa} -> Map.has_key?(committed, mfa) end)
 
-        case compute_seed_hashes(tier, uncommitted, context) do
+        case compute_tier_hashes(tier, uncommitted, context) do
           empty when empty == %{} -> acc
           tier_seeds -> Map.put(acc, tier_key, tier_seeds)
         end
@@ -749,39 +749,6 @@ defmodule SpecLedEx.Realization.Orchestrator do
 
     :ok
   end
-
-  defp compute_seed_hashes(:api_boundary, bindings, context) do
-    api_boundary_hashes(bindings, context)
-  end
-
-  defp compute_seed_hashes(:expanded_behavior, bindings, _context) do
-    dedupe_by_mfa(bindings, fn mfa ->
-      case ExpandedBehavior.hash(mfa) do
-        {:ok, hash_bin} -> {:ok, hash_bin}
-        _ -> :skip
-      end
-    end)
-  end
-
-  defp compute_seed_hashes(:typespecs, bindings, _context) do
-    dedupe_by_mfa(bindings, fn mfa ->
-      case Typespecs.hash(mfa) do
-        {:ok, hash_bin} -> {:ok, hash_bin}
-        _ -> :skip
-      end
-    end)
-  end
-
-  defp compute_seed_hashes(:use, bindings, _context) do
-    dedupe_by_mfa(bindings, fn provider ->
-      case Use.hash(provider) do
-        {:ok, hash_bin} -> {:ok, hash_bin}
-        _ -> :skip
-      end
-    end)
-  end
-
-  defp compute_seed_hashes(_tier, _bindings, _context), do: %{}
 
   # Implementation tier seeding: subjects carry a mixed `impl_bindings` list
   # (MFA-form for closure walk, bare-module-form for per-module hashing).
@@ -955,6 +922,8 @@ defmodule SpecLedEx.Realization.Orchestrator do
     end)
   end
 
+  # Callbacks return fully-formed entries ready for HashStore.merge/2.
+  # Seed and refresh must produce identical entries for the same bindings.
   defp dedupe_by_mfa(bindings, hash_fun) do
     bindings
     |> Enum.uniq_by(& &1.mfa)
