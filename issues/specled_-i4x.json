@@ -2,6 +2,7 @@
   "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
+  "closed_at": "2026-08-12T21:22:20Z",
   "created": "2026-08-12T10:59:13Z",
   "description": "Umbrella for the three unfinished fast-follow epics left behind by shipped releases. Each child epic carries the findings its release deliberately did not take.\n\n- specled_-scb — fast-follow of specled_-k6s (PR #32 / release 0.11.0 / main c2d21349). 4 children. NOTE: the dn4.12 and vbo branches are based on 2d4535c1, which is NOT an ancestor of squashed main — rebase with a cold worker before resuming.\n- specled_-bg5 — fast-follow of specled_-q0q (PR #34 / release 0.13.0 / main 9adbac9c). 6 children from the 2026-08-06 critical review.\n- specled_-vzd — fast-follow of specled_-n5q (PR #35 / release 0.14.0 / main bb64e69e). 6 children from the 2026-08-11 critical review.\n\nPurpose: one place to see and sequence the accumulated post-release debt, so fast-follows get scheduled deliberately instead of aging out of `bw ready`. Suggested order is oldest-first (scb, then bg5, then vzd) since scb is the only one carrying rebase risk that grows with time.\n\nNo new work is defined here; this epic closes when all three child epics close.\n\nAdvances: specled.api_boundary, specled.realized_by",
   "id": "specled_-i4x",
@@ -71,8 +72,8 @@
     }
   ],
   "priority": 2,
-  "status": "in_progress",
+  "status": "closed",
   "title": "[META-EPIC] Post-release fast-follow backlog: 0.11.0, 0.13.0, 0.14.0",
   "type": "epic",
-  "updated_at": "2026-08-12T21:22:19Z"
+  "updated_at": "2026-08-12T21:22:20Z"
 }
