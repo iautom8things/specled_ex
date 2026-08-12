@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-12T00:37:22Z",
+  "description": "Advances: specled.package\n\nReview-bar-override: a gate proposal, not a defect — the class recurs across reviews and should stop being reportable.\n\nFrom the critical review of specled_-n5q (Recurring class 2).\n\ndocs_identifier_lint_test is one-directional today: it rejects doc references to finding codes that do not exist in lib, but it does not verify that docs ENUMERATE every code that does. So a table claiming to list \"the full set of branch-guard codes\" silently goes stale the moment a code is added, and the claim becomes false with nothing failing.\n\nThis has now bitten repeatedly: docs/adoption.md full-set claim (fixed on this branch), the finding_code_budget \"tenth code\" total with no counting rule (fixed on this branch), and the spec-prose overclaim class generally, which is a standing review checklist item.\n\nMaking the lint bidirectional mechanizes the enumeration half permanently. The phrase-level overclaims (comparatives with no basis, \"impossible\" where the truth is \"deferred\") stay a review concern — those are not mechanizable.",
+  "id": "specled_-vzd.5",
+  "labels": [],
+  "parent": "specled_-vzd",
+  "priority": 3,
+  "status": "open",
+  "title": "Make docs_identifier_lint bidirectional so full-set claims cannot go stale",
+  "type": "task",
+  "updated_at": "2026-08-12T00:37:22Z"
+}
