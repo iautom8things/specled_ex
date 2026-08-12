@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-12T21:21:15Z",
+  "description": "Advances: specled.append_only\n\nSeverity: Medium. detect_statement_rewritten/2 (lib/specled_ex/append_only.ex:202-217) alone among the detectors returns a bare list instead of {findings, consulted_ids}, so its ids are unioned into neither weakened_ids nor consulted_ids (:89, :97-101, :108-112).\n\nFailure: rewriting a security-relevant MUST in place — keeping the id and priority: must — emits one non-blocking warning, requires no authorizing ADR, is never flagged same_pr_self_authorization, and never triggers missing_change_type. Deleting the same requirement is an error. This branch demonstrated the asymmetry against itself: gh_pages_privilege_separation was caught only because it also crossed polarity.\n\nWhy not on the release branch: which set to union into is a policy call. consulted_ids alone (so missing_change_type fires) is the conservative fix; also unioning into weakened_ids puts rewrites under authorizing_decision/3 and the self-auth markers, which is a stricter gate than 0.15.0 shipped. The budget ADR append_only_finding_budget_v3 should record whichever is chosen and why.\n\nSource: 2026-08-12 critical review security M2.",
+  "id": "specled_-dq7.2",
+  "labels": [],
+  "parent": "specled_-dq7",
+  "priority": 2,
+  "status": "open",
+  "title": "statement_rewritten ids reach neither weakened_ids nor consulted_ids",
+  "type": "task",
+  "updated_at": "2026-08-12T21:21:15Z"
+}
