@@ -200,14 +200,7 @@ defmodule SpecLedEx.TagScanner do
          moduletag_ids,
          {pending, pending_dyn, tags, dynamics}
        ) do
-    describe_body = describe_body_from_args(args)
-
-    inner_statements =
-      case describe_body do
-        {:__block__, _, items} -> items
-        nil -> []
-        other -> [other]
-      end
+    inner_statements = args |> do_block_from_args() |> block_statements()
 
     {describe_ids, describe_dyn_lines} = collect_describetags(inner_statements)
     scoped_ids = moduletag_ids ++ describe_ids
@@ -218,6 +211,22 @@ defmodule SpecLedEx.TagScanner do
       end)
 
     {pending, pending_dyn, tags ++ inner_tags, dynamics ++ inner_dynamics}
+  end
+
+  # Recurse into `for ... do ... end` comprehension bodies, the idiom used to
+  # generate one test per case. The body unrolls into ordinary module-level
+  # statements at compile time, so thread the accumulator straight through it:
+  # a `@tag spec` declared before the comprehension is consumed by the first
+  # generated test, one declared inside is consumed by the test that follows it,
+  # and a trailing one survives to the statement after the comprehension —
+  # matching what ExUnit sees. The body is walked once no matter how many
+  # iterations it unrolls, because the tag map records the presence of a
+  # carrier, not per-iteration multiplicity.
+  defp process_statement({:for, _meta, args}, file, moduletag_ids, acc) do
+    args
+    |> do_block_from_args()
+    |> block_statements()
+    |> Enum.reduce(acc, &process_statement(&1, file, moduletag_ids, &2))
   end
 
   defp process_statement(_other, _file, _moduletag_ids, acc), do: acc
@@ -238,7 +247,7 @@ defmodule SpecLedEx.TagScanner do
     end)
   end
 
-  defp describe_body_from_args(args) when is_list(args) do
+  defp do_block_from_args(args) when is_list(args) do
     Enum.reduce_while(args, nil, fn
       list, _ when is_list(list) ->
         case Keyword.get(list, :do) do
@@ -251,7 +260,11 @@ defmodule SpecLedEx.TagScanner do
     end)
   end
 
-  defp describe_body_from_args(_), do: nil
+  defp do_block_from_args(_), do: nil
+
+  defp block_statements({:__block__, _, items}), do: items
+  defp block_statements(nil), do: []
+  defp block_statements(other), do: [other]
 
   defp test_name_from_args([name | _]) when is_binary(name), do: name
   defp test_name_from_args(_), do: nil

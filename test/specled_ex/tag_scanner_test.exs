@@ -5,6 +5,7 @@ defmodule SpecLedEx.TagScannerTest do
                "specled.tag_scanning.deduplicated_matches",
                "specled.tag_scanning.describe_block_recursion",
                "specled.tag_scanning.dynamic_values_reported",
+               "specled.tag_scanning.for_comprehension_recursion",
                "specled.tag_scanning.form_keyword_list",
                "specled.tag_scanning.form_list_of_ids",
                "specled.tag_scanning.form_string_literal",
@@ -310,6 +311,106 @@ defmodule SpecLedEx.TagScannerTest do
       ids = Enum.map(tags, & &1.id) |> Enum.sort()
       assert ids == ["auth.group", "auth.shared", "auth.test", "domain.root"]
       assert Enum.all?(tags, &(&1.test_name == "nested"))
+    end
+  end
+
+  describe "scan_file/1 — for-comprehension bodies" do
+    @tag spec: "specled.tag_scanning.for_comprehension_recursion"
+    test "@tag spec inside a for-comprehension attaches to the generated test", %{root: root} do
+      path =
+        write_test_file(root, "test/example_test.exs", """
+        defmodule ExampleTest do
+          use ExUnit.Case
+
+          for phase <- [:plan, :apply] do
+            @tag spec: "workflow.phase_gating"
+            test "gates \#{phase}" do
+              assert true
+            end
+          end
+        end
+        """)
+
+      assert {:ok, tags} = TagScanner.scan_file(path)
+
+      assert [%{id: "workflow.phase_gating", file: ^path}] = tags
+    end
+
+    @tag spec: "specled.tag_scanning.for_comprehension_recursion"
+    test "module and describe tags reach for-generated tests", %{root: root} do
+      path =
+        write_test_file(root, "test/example_test.exs", """
+        defmodule ExampleTest do
+          use ExUnit.Case
+
+          @moduletag spec: "domain.root"
+
+          describe "group" do
+            @describetag spec: "auth.group"
+
+            for phase <- [:plan, :apply] do
+              @tag spec: "auth.test"
+              test "gates \#{phase}" do
+                assert true
+              end
+            end
+          end
+        end
+        """)
+
+      assert {:ok, tags} = TagScanner.scan_file(path)
+
+      ids = tags |> Enum.map(& &1.id) |> Enum.sort()
+      assert ids == ["auth.group", "auth.test", "domain.root"]
+    end
+
+    @tag spec: "specled.tag_scanning.for_comprehension_recursion"
+    test "a non-literal @tag spec inside a for-comprehension is reported as dynamic", %{
+      root: root
+    } do
+      path =
+        write_test_file(root, "test/example_test.exs", """
+        defmodule ExampleTest do
+          use ExUnit.Case
+
+          @module_attr "some-id"
+
+          for phase <- [:plan, :apply] do
+            @tag spec: @module_attr
+            test "gates \#{phase}" do
+              assert true
+            end
+          end
+        end
+        """)
+
+      assert {:ok, tags, dynamic} = TagScanner.scan_file(path, include_dynamic: true)
+
+      assert tags == []
+      assert [%{file: ^path}] = dynamic
+    end
+
+    @tag spec: "specled.tag_scanning.for_comprehension_recursion"
+    test "a for-comprehension defining no tests contributes nothing", %{root: root} do
+      path =
+        write_test_file(root, "test/example_test.exs", """
+        defmodule ExampleTest do
+          use ExUnit.Case
+
+          for {name, value} <- [one: 1, two: 2] do
+            def unquote(name)(), do: unquote(value)
+          end
+
+          @tag spec: "auth.login"
+          test "logs in" do
+            assert true
+          end
+        end
+        """)
+
+      assert {:ok, tags} = TagScanner.scan_file(path)
+
+      assert [%{id: "auth.login", test_name: "logs in"}] = tags
     end
   end
 
