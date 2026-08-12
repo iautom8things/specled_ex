@@ -13,9 +13,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-bg5",
+  "comments": [
+    {
+      "text": "STACKED BRANCH — orchestrator note.\n\nThis ticket's stage `specled_-bg5.4/adr-status-gate` is cut from specled_-bg5.1's stage tip\n(a80b49b1), NOT from the epic branch. bg5.1 is HELD awaiting operator sign-off on its ADR, and this\nticket depends on the authorization contract bg5.1 settles.\n\nRather than leave this ticket (and specled_-bg5.6 behind it) unstarted for a reason that is purely\nmerge-ordering rather than readiness, the chain is being stacked so the whole bg5 lineage arrives\nfor review in one sitting. This mirrors the batching protocol's rule that dependents of pending\nwork branch off the pending integration point rather than the mainline.\n\nConsequence the operator should know: if bg5.1's ADR is rejected or materially revised at sign-off,\nthis ticket and bg5.6 rebuild on top of the revision. That is the cost of stacking, and it is\naccepted deliberately — the alternative was delivering one third of the lineage and deferring the\nrest to a later session.\n\nBase for this ticket's diffs is a80b49b1, so its diff shows only its own work.",
+      "timestamp": "2026-08-12T13:18:58Z"
+    }
+  ],
   "priority": 2,
   "status": "open",
   "title": "F13: authorizing_decision/2 ignores ADR status — superseded/rejected ADRs still authorize",
   "type": "task",
-  "updated_at": "2026-08-12T13:18:57Z"
+  "updated_at": "2026-08-12T13:18:58Z"
 }
