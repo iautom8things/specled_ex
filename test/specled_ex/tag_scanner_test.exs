@@ -59,6 +59,15 @@ defmodule SpecLedEx.TagScannerTest do
       assert {:@, _, [{:tag, _, [:slow]}]} = ast
     end
 
+    test "for/2 carries its generators first and the do: block as the last arg" do
+      {:ok, ast} = Code.string_to_quoted(~S|for x <- xs, x > 1, into: %{}, do: :ok|)
+
+      assert {:for, _, args} = ast
+      assert [{:<-, _, _}, {:>, _, _}, opts] = args
+      assert Keyword.get(opts, :do) == :ok
+      assert Keyword.has_key?(opts, :into)
+    end
+
     test "@tag spec: @attr carries a nested @-attribute ast as value" do
       {:ok, ast} = Code.string_to_quoted("@tag spec: @module_attr")
 
@@ -445,8 +454,63 @@ defmodule SpecLedEx.TagScannerTest do
       assert {:ok, tags, dynamic} = TagScanner.scan_file(path, include_dynamic: true)
 
       assert tags == []
-      assert [%{file: ^path, line: line, test_name: nil}] = dynamic
-      assert line == 7
+      assert [%{file: ^path, line: 7, test_name: nil}] = dynamic
+    end
+
+    @tag spec: "specled.tag_scanning.for_comprehension_recursion"
+    test "a trailing @tag inside the body binds the statement after the comprehension",
+         %{root: root} do
+      path =
+        write_test_file(root, "test/example_test.exs", """
+        defmodule ExampleTest do
+          use ExUnit.Case
+
+          for phase <- [:plan, :apply] do
+            test "gates \#{phase}" do
+              assert true
+            end
+
+            @tag spec: "workflow.trailing"
+          end
+
+          test "after loop" do
+            assert true
+          end
+        end
+        """)
+
+      assert {:ok, tags} = TagScanner.scan_file(path)
+
+      assert [%{id: "workflow.trailing", test_name: "after loop"}] = tags
+    end
+
+    @tag spec: "specled.tag_scanning.for_comprehension_recursion"
+    test "nested comprehensions and comprehension-generated describes are walked",
+         %{root: root} do
+      path =
+        write_test_file(root, "test/example_test.exs", """
+        defmodule ExampleTest do
+          use ExUnit.Case
+
+          for group <- [:read, :write] do
+            describe "\#{group} group" do
+              @describetag spec: "auth.group"
+
+              for phase <- [:plan, :apply] do
+                @tag spec: "auth.nested"
+                test "gates \#{phase}" do
+                  assert true
+                end
+              end
+            end
+          end
+        end
+        """)
+
+      assert {:ok, tags} = TagScanner.scan_file(path)
+
+      ids = tags |> Enum.map(& &1.id) |> Enum.sort()
+      assert ids == ["auth.group", "auth.nested"]
     end
 
     @tag spec: "specled.tag_scanning.for_comprehension_recursion"

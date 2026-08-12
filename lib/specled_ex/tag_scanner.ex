@@ -6,7 +6,7 @@ defmodule SpecLedEx.TagScanner do
           file: String.t(),
           line: non_neg_integer(),
           test_line: non_neg_integer(),
-          test_name: String.t()
+          test_name: String.t() | nil
         }
   @type dynamic_entry :: %{file: String.t(), line: non_neg_integer(), test_name: String.t() | nil}
   @type parse_error :: %{file: String.t(), reason: term()}
@@ -196,7 +196,7 @@ defmodule SpecLedEx.TagScanner do
          moduletag_ids,
          {pending, pending_dyn, tags, dynamics}
        ) do
-    inner_statements = args |> do_block_from_args() |> block_statements()
+    inner_statements = args |> block_from_args() |> block_statements()
 
     {describe_ids, describe_dyn_lines} = collect_describetags(inner_statements)
     scoped_ids = moduletag_ids ++ describe_ids
@@ -230,7 +230,7 @@ defmodule SpecLedEx.TagScanner do
   # after the loop (and nothing when the loop is the module's last statement).
   defp process_statement({:for, _meta, args}, file, moduletag_ids, acc) do
     args
-    |> do_block_from_args()
+    |> block_from_args()
     |> block_statements()
     |> Enum.reduce(acc, &process_statement(&1, file, moduletag_ids, &2))
   end
@@ -253,20 +253,16 @@ defmodule SpecLedEx.TagScanner do
     end)
   end
 
-  defp do_block_from_args(args) when is_list(args) do
-    Enum.reduce_while(args, nil, fn
-      list, _ when is_list(list) ->
-        case Keyword.get(list, :do) do
-          nil -> {:cont, nil}
-          body -> {:halt, body}
-        end
-
-      _, acc ->
-        {:cont, acc}
+  # The `do:` body is the last keyword-list argument, past any generators,
+  # filters, or options (`for x <- xs, x > 1, into: %{}, do: ...`).
+  defp block_from_args(args) when is_list(args) do
+    Enum.find_value(args, fn
+      list when is_list(list) -> Keyword.get(list, :do)
+      _ -> nil
     end)
   end
 
-  defp do_block_from_args(_), do: nil
+  defp block_from_args(_), do: nil
 
   defp block_statements({:__block__, _, items}), do: items
   defp block_statements(nil), do: []

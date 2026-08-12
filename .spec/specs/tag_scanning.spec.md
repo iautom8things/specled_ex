@@ -137,7 +137,9 @@ decisions:
     static tag carrier rather than a runtime test: because the generator is
     never evaluated, a comprehension whose generator is empty or wholly
     filtered shall still record its `@tag spec` ids even though ExUnit defines
-    no test for them.
+    no test for them, and a generated test whose name is an interpolated
+    string rather than a string literal shall be recorded with a nil test
+    name.
   priority: must
   stability: evolving
 ```
