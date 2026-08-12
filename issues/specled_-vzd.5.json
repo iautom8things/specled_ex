@@ -9,9 +9,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-vzd",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: i4x-vzd.5\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-vzd.5/codex-i4x-vzd.5/log\n\nCommit: 686fca3173b9c8f47f027d03276db3cee7ed73ff\nFiles touched: .spec/specs/package.spec.md, docs/adoption.md, test/docs_identifier_lint_test.exs\nTests added: SpecLedEx.DocsIdentifierLintTest — \"marked full-set claims enumerate their configured sets exactly\"; \"a marked full-set claim reports omitted and unexpected codes\"\nVerification stubs flipped: none\nVerification tier: change-scoped — mix compile --warnings-as-errors; test/docs_identifier_lint_test.exs; mix test --stale; mix test --only spec:specled.package.doc_identifier_integrity; mix format --check-formatted; make xref; mix spec.check --no-run-commands; full-system\n  proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: Added explicit full-set markers around the two adoption-guide claim regions and a bidirectional lint that rejects malformed, missing, duplicated, incomplete, overlapping, or overbroad configured claims. Stable-must wording for human review: “Every documentation region explicitly marked as a full-set claim shall enumerate exactly its configured expected set, and the configured branch-guard claim sets shall partition the full hand-maintained branch-guard family so adding or removing a code makes an incomplete or overbroad claim fail the lint.” The lint retains the existing corpus and hand-maintained implementation-code mirror, and the concepts pointer remains unmarked.",
+      "timestamp": "2026-08-12T12:10:55Z"
+    }
+  ],
   "priority": 3,
   "status": "in_progress",
   "title": "Make docs_identifier_lint bidirectional so full-set claims cannot go stale",
   "type": "task",
-  "updated_at": "2026-08-12T12:01:28Z"
+  "updated_at": "2026-08-12T12:10:55Z"
 }
