@@ -9,9 +9,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-vzd",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: i4x-vzd.3\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-vzd.3/codex-i4x-vzd.3/log\n\nCommit: 20f340e14bb8363f89411944c08483e2d51eeadc\nFiles touched: .spec/decisions/specled.decision.append_only_finding_budget_v3.md, .spec/specs/append_only.spec.md, .spec/specs/branch_guard.spec.md, .spec/specs/implementation_tier.spec.md, .spec/specs/package.spec.md, docs/adoption.md, lib/specled_ex/append_only.ex, lib/specled_ex/branch_check.ex, test/docs_identifier_lint_test.exs, test/specled_ex/append_only_test.exs\nTests added: SpecLedEx.AppendOnlyTest — \"semantic rewrite of a must-priority statement emits a warning\"; \"whitespace-only statement reflow is ignored\"; \"a statement rewrite is ignored when either side is not must priority\"\nVerification stubs flipped: none (both append-only verification blocks were already execute: true)\nVerification tier: change-scoped — mix compile --warnings-as-errors; mix test test/specled_ex/append_only_test.exs test/docs_identifier_lint_test.exs; mix test --only spec:specled.append_only.statement_rewritten; mix test --only spec:specled.package.doc_identifier_integrity; mix format --check-formatted; make xref; mix spec.check --no-run-commands; full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 2\n\nSummary: Added whitespace-normalized detection for in-place must-priority statement rewrites, emitting the governed warning-level append_only/statement_rewritten finding while leaving reflow and non-must changes silent. Added behavioral and identifier-integrity proof, documented the code, and superseded the append-only finding budget with a fourteen-entry ADR that explicitly requires no persisted digest migration.",
+      "timestamp": "2026-08-12T12:49:15Z"
+    }
+  ],
   "priority": 3,
   "status": "in_progress",
   "title": "No append-only detector for in-place must statement rewrites",
   "type": "task",
-  "updated_at": "2026-08-12T12:42:45Z"
+  "updated_at": "2026-08-12T12:49:15Z"
 }
