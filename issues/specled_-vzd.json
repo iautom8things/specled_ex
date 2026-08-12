@@ -6,9 +6,15 @@
   "description": "Follow-ups surfaced by the multi-persona critical review of specled_-n5q (0.14.0). Review report: ~/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-08-11/specled_-n5q-realization-hash-integrity/20260811-194304-consolidated.md\n\nThe merge-blocking High and all cheap correctness/contract/doc findings were fixed on the release branch. These are the items deliberately NOT taken there: three that genuinely could not land (they need a spec decision or a new finding code), and four pure refactors whose regression risk on a release branch outweighed taste-level gain.\n\nAdvances: specled.api_boundary, specled.realized_by",
   "id": "specled_-vzd",
   "labels": [],
+  "comments": [
+    {
+      "text": "Parent work shipped: specled_-n5q merged as bb64e69e (PR #35), released 0.14.0. Post-merge CI green. These follow-ups are now unblocked.",
+      "timestamp": "2026-08-12T10:47:54Z"
+    }
+  ],
   "priority": 2,
   "status": "open",
   "title": "[EPIC] Fast-follow: realization hash integrity (specled_-n5q)",
   "type": "epic",
-  "updated_at": "2026-08-12T00:36:15Z"
+  "updated_at": "2026-08-12T10:47:54Z"
 }
