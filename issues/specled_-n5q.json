@@ -12,11 +12,15 @@
     {
       "text": "Packaged on branch specled_-n5q/realization-hash-integrity (worktree /Users/mz/src/specled_ex-realization-hash-integrity), 4 commits on top of main @ 9adbac9c. All merge gates green: compile --warnings-as-errors, 1318 tests 0 failures, format, deps.unlock, make xref at zero edges, make check spec.check result=pass (0 errors, 0 warnings). Branch is pushed; PR creation is pending because the gh write path routes through the 1Password op plugin and needs interactive authorization.",
       "timestamp": "2026-08-11T20:42:10Z"
+    },
+    {
+      "text": "Critical review run against 1ad37923: 6 personas, 40 raw findings -\u003e 29 unique -\u003e 29 calibrated (7 severity adjustments), 11 consensus. One High blocked the merge and is fixed on the branch (commit 19988f7a): --accept-drift downgraded real drift to info while a co-occurring divergence blocked the very refresh the downgrade is predicated on. Mutation-verified. All cheap correctness/contract/spec/doc findings taken in the same pass. Deferred to fast-follow epic specled_-vzd: 3 tracked items that could not land here + 4 pure refactors + 2 gate proposals. Report: ~/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-08-11/specled_-n5q-realization-hash-integrity/20260811-194304-consolidated.md",
+      "timestamp": "2026-08-12T00:37:37Z"
     }
   ],
   "priority": 2,
   "status": "open",
   "title": "[EPIC] Realization hash integrity: resolution-path provenance + amplification-scoped dedupe",
   "type": "epic",
-  "updated_at": "2026-08-11T23:42:40Z"
+  "updated_at": "2026-08-12T00:37:37Z"
 }
