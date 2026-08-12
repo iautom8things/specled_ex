@@ -42,6 +42,8 @@ spec.review`'s Coverage tab instead.
 
 The full set of branch-guard codes `mix spec.check` gates on:
 
+<!-- spec-lint:full-set=branch_guard_gated -->
+
 | Code                                          | What disagrees                                           |
 |------------------------------------------------|-----------------------------------------------------------|
 | `branch_guard_realization_drift`              | Bound MFA hash changed without the spec acknowledging    |
@@ -55,17 +57,23 @@ The full set of branch-guard codes `mix spec.check` gates on:
 | `append_only/*`                               | Spec corpus regressed (deletion, downgrade, etc.)         |
 | `overlap/*`                                   | Two requirements/scenarios collide within a subject       |
 
+<!-- spec-lint:full-set-end -->
+
 Coverage triangulation is diagnostic-only and never part of the
 `mix spec.check` gate, even though its codes carry the same `branch_guard_`
 prefix — `mix spec.check` does not emit them, and their severities are not
 read from `.spec/config.yml`. Read them from `mix spec.triangle` or
 `mix spec.review`'s Coverage tab:
 
+<!-- spec-lint:full-set=branch_guard_triangulation -->
+
 | Code                                          | What disagrees                                             |
 |------------------------------------------------|-------------------------------------------------------------|
 | `branch_guard_untested_realization`           | Requirement has a closure but no test reaches any MFA       |
 | `branch_guard_untethered_test`                | Test's `@tag spec:` names subject A but it executes B (per-test artifacts only) |
 | `branch_guard_underspecified_realization`     | Test reaches subject A's MFAs but carries no `@tag`          |
+
+<!-- spec-lint:full-set-end -->
 
 ---
 

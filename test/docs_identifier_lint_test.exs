@@ -124,7 +124,7 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
   )
 
   # branch_guard_* → branch_check.ex @per_code_defaults + coverage_triangulation.ex tiers
-  @branch_guard_codes ~w(
+  @branch_guard_gated_codes ~w(
     branch_guard_unmapped_change
     branch_guard_missing_subject_update
     branch_guard_missing_decision_update
@@ -133,10 +133,20 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     branch_guard_dangling_binding
     branch_guard_resolution_path_divergence
     branch_guard_realization_unknown_tier
+  )
+
+  @branch_guard_triangulation_codes ~w(
     branch_guard_untested_realization
     branch_guard_untethered_test
     branch_guard_underspecified_realization
   )
+
+  @branch_guard_codes @branch_guard_gated_codes ++ @branch_guard_triangulation_codes
+
+  @full_set_claims %{
+    "branch_guard_gated" => MapSet.new(@branch_guard_gated_codes),
+    "branch_guard_triangulation" => MapSet.new(@branch_guard_triangulation_codes)
+  }
 
   @known_codes MapSet.new(
                  @append_only_codes ++
@@ -173,6 +183,8 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
   # (`stale_allow_marker_violations_for_line/3`); a second approximate copy
   # could only drift from the real one.
   @allow_marker_pattern ~r{<!--\s*spec-lint:allow-code=([a-z_/]+)\b.*?-->}
+  @full_set_start_pattern ~r/^\s*<!--\s*spec-lint:full-set=([a-z0-9_]+)\s*-->\s*$/
+  @full_set_end_pattern ~r/^\s*<!--\s*spec-lint:full-set-end\s*-->\s*$/
 
   # ...and the marker is honoured ONLY in decision records. Guidance docs, skill
   # files, README, and subject specs get no escape hatch: those surfaces had none
@@ -332,6 +344,70 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     # deliberate stop at the right moment, which is the most a test on this
     # side of the boundary can do.
     assert length(@token_patterns) == 5
+  end
+
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "marked full-set claims enumerate their configured sets exactly" do
+    # Would fail if a production diagnostic is added or removed while either
+    # docs/adoption.md table keeps claiming the old complete set.
+    {regions, structure_violations} = full_set_regions(finding_code_corpus())
+
+    counts = Enum.frequencies_by(regions, & &1.id)
+
+    count_violations =
+      for id <- Map.keys(@full_set_claims), Map.get(counts, id, 0) != 1 do
+        "full-set claim #{inspect(id)} must occur exactly once, found #{Map.get(counts, id, 0)}"
+      end
+
+    unknown_claims =
+      for %{id: id, file: file, start_line: line} <- regions,
+          not Map.has_key?(@full_set_claims, id) do
+        "#{file}:#{line}: unknown full-set claim #{inspect(id)}"
+      end
+
+    set_violations = Enum.flat_map(regions, &full_set_region_violations/1)
+    violations = structure_violations ++ count_violations ++ unknown_claims ++ set_violations
+
+    assert violations == [], "Invalid full-set claims:\n" <> Enum.join(violations, "\n")
+
+    claimed_branch_guard_codes =
+      @full_set_claims
+      |> Map.values()
+      |> Enum.reduce(MapSet.new(), &MapSet.union/2)
+
+    configured_code_count =
+      @full_set_claims
+      |> Map.values()
+      |> Enum.reduce(0, &(MapSet.size(&1) + &2))
+
+    assert claimed_branch_guard_codes == MapSet.new(@branch_guard_codes),
+           "configured branch-guard full-set claims no longer partition @branch_guard_codes"
+
+    assert MapSet.size(claimed_branch_guard_codes) == configured_code_count,
+           "configured branch-guard full-set claims overlap instead of partitioning the family"
+  end
+
+  @tag spec: "specled.package.doc_identifier_integrity"
+  test "a marked full-set claim reports omitted and unexpected codes" do
+    # Would fail if the reverse comparison stopped rejecting a stale production
+    # code list or an unrelated production diagnostic placed in the claim.
+    region = %{
+      id: "branch_guard_triangulation",
+      file: "docs/example.md",
+      start_line: 10,
+      lines: [
+        "`branch_guard_untested_realization`",
+        "`branch_guard_untethered_test`",
+        "`branch_guard_realization_drift`"
+      ]
+    }
+
+    assert full_set_region_violations(region) == [
+             "docs/example.md:10: full-set claim \"branch_guard_triangulation\" " <>
+               "is missing [\"branch_guard_underspecified_realization\"]",
+             "docs/example.md:10: full-set claim \"branch_guard_triangulation\" " <>
+               "has unexpected [\"branch_guard_realization_drift\"]"
+           ]
   end
 
   @tag spec: "specled.package.doc_identifier_integrity"
@@ -532,6 +608,82 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
 
   defp marker_scoped?(file), do: String.starts_with?(file, @marker_scope)
 
+  defp full_set_regions(files) do
+    Enum.reduce(files, {[], []}, fn file, {all_regions, all_violations} ->
+      {regions, violations} = full_set_regions_for_file(file)
+      {all_regions ++ regions, all_violations ++ violations}
+    end)
+  end
+
+  defp full_set_regions_for_file(file) do
+    {open_region, regions, violations} =
+      file
+      |> File.stream!()
+      |> Enum.with_index(1)
+      |> Enum.reduce({nil, [], []}, fn {line, lineno}, {open_region, regions, violations} ->
+        start_match = Regex.run(@full_set_start_pattern, line)
+        end_marker? = Regex.match?(@full_set_end_pattern, line)
+
+        cond do
+          start_match && open_region ->
+            {open_region, regions,
+             violations ++ ["#{file}:#{lineno}: nested full-set claim marker"]}
+
+          start_match ->
+            [_marker, id] = start_match
+            {%{id: id, file: file, start_line: lineno, lines: []}, regions, violations}
+
+          end_marker? && is_nil(open_region) ->
+            {nil, regions,
+             violations ++ ["#{file}:#{lineno}: full-set end marker has no start marker"]}
+
+          end_marker? ->
+            {nil, regions ++ [open_region], violations}
+
+          open_region ->
+            {%{open_region | lines: open_region.lines ++ [line]}, regions, violations}
+
+          true ->
+            {nil, regions, violations}
+        end
+      end)
+
+    case open_region do
+      nil ->
+        {regions, violations}
+
+      %{start_line: line} ->
+        {regions, violations ++ ["#{file}:#{line}: full-set claim has no end marker"]}
+    end
+  end
+
+  defp full_set_region_violations(region) do
+    case Map.fetch(@full_set_claims, region.id) do
+      :error ->
+        []
+
+      {:ok, expected} ->
+        actual =
+          region.lines
+          |> Enum.flat_map(&guarded_tokens/1)
+          |> MapSet.new()
+
+        missing = expected |> MapSet.difference(actual) |> Enum.sort()
+        unexpected = actual |> MapSet.difference(expected) |> Enum.sort()
+        prefix = "#{region.file}:#{region.start_line}: full-set claim #{inspect(region.id)}"
+
+        []
+        |> maybe_add_set_violation(missing, "#{prefix} is missing")
+        |> maybe_add_set_violation(unexpected, "#{prefix} has unexpected")
+    end
+  end
+
+  defp maybe_add_set_violation(violations, [], _message), do: violations
+
+  defp maybe_add_set_violation(violations, codes, message) do
+    violations ++ ["#{message} #{inspect(codes)}"]
+  end
+
   defp allowed_codes(line) do
     @allow_marker_pattern
     |> Regex.scan(line)
@@ -592,6 +744,8 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
   end
 
   defp guarded_tokens(line) do
+    line = Regex.replace(@full_set_start_pattern, line, "")
+
     @token_patterns
     |> Enum.flat_map(fn pattern ->
       pattern
