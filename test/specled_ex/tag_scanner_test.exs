@@ -445,12 +445,12 @@ defmodule SpecLedEx.TagScannerTest do
       assert {:ok, tags, dynamic} = TagScanner.scan_file(path, include_dynamic: true)
 
       assert tags == []
-      assert [%{file: ^path, line: line}] = dynamic
+      assert [%{file: ^path, line: line, test_name: nil}] = dynamic
       assert line == 7
     end
 
     @tag spec: "specled.tag_scanning.for_comprehension_recursion"
-    test "a test-free comprehension neither contributes nor consumes surrounding tags",
+    test "a test-free comprehension contributes nothing and passes a pending tag through",
          %{root: root} do
       path =
         write_test_file(root, "test/example_test.exs", """
@@ -458,12 +458,12 @@ defmodule SpecLedEx.TagScannerTest do
           use ExUnit.Case
 
           @tag spec: "auth.before"
-          test "before loop" do
-            assert true
-          end
-
           for {name, value} <- [one: 1, two: 2] do
             def unquote(name)(), do: unquote(value)
+          end
+
+          test "after loop" do
+            assert true
           end
 
           @tag spec: "auth.login"
@@ -476,9 +476,32 @@ defmodule SpecLedEx.TagScannerTest do
       assert {:ok, tags} = TagScanner.scan_file(path)
 
       assert [
-               %{id: "auth.before", test_name: "before loop"},
+               %{id: "auth.before", test_name: "after loop"},
                %{id: "auth.login", test_name: "logs in"}
              ] = Enum.sort_by(tags, & &1.test_line)
+    end
+
+    @tag spec: "specled.tag_scanning.for_comprehension_recursion"
+    test "a zero-iteration comprehension still records one static carrier", %{root: root} do
+      path =
+        write_test_file(root, "test/example_test.exs", """
+        defmodule ExampleTest do
+          use ExUnit.Case
+
+          @cases []
+
+          for phase <- @cases do
+            @tag spec: "workflow.phase_gating"
+            test "gates \#{phase}" do
+              assert true
+            end
+          end
+        end
+        """)
+
+      assert {:ok, tags} = TagScanner.scan_file(path)
+
+      assert [%{id: "workflow.phase_gating", test_name: nil}] = tags
     end
   end
 

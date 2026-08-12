@@ -112,11 +112,7 @@ defmodule SpecLedEx.TagScanner do
   defp collect_modules(_), do: []
 
   defp extract_module_tags(body, file) do
-    statements =
-      case body do
-        {:__block__, _, items} -> items
-        other -> [other]
-      end
+    statements = block_statements(body)
 
     {module_ids, module_dyn} = collect_moduletags(statements, file)
 
@@ -218,11 +214,20 @@ defmodule SpecLedEx.TagScanner do
   # statements at compile time, so thread the accumulator straight through it:
   # a `@tag spec` declared before the comprehension is consumed by the first
   # generated test, one declared inside is consumed by the test that follows it,
-  # and a trailing one survives to the statement after the comprehension —
-  # matching what ExUnit sees. The body is walked once no matter how many
-  # iterations it unrolls. That is load-bearing, not an optimization: the tag
-  # map would hide a second walk, since it dedupes by {id, file, test_name},
-  # but dynamic entries bypass dedupe/1 entirely and would double.
+  # and a trailing one survives to the statement after the comprehension.
+  #
+  # The body is walked once no matter how many iterations it unrolls. That is
+  # load-bearing, not an optimization: the tag map would hide a second walk,
+  # since it dedupes by {id, file, test_name}, but dynamic entries bypass
+  # dedupe/1 entirely and would double.
+  #
+  # Walking once means an entry records a static tag CARRIER, not a runtime
+  # test: the generator is not evaluated, so a comprehension over an empty or
+  # fully filtered list still registers its tag though ExUnit defines no test.
+  # Two shapes therefore diverge from ExUnit, both fail-open by one entry at
+  # most: that one, and a trailing `@tag` inside the body, which ExUnit also
+  # applies to iterations 2..N's tests while this records only the statement
+  # after the loop (and nothing when the loop is the module's last statement).
   defp process_statement({:for, _meta, args}, file, moduletag_ids, acc) do
     args
     |> do_block_from_args()

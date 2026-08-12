@@ -133,7 +133,11 @@ decisions:
     comprehension generates rather than to the test that follows the
     comprehension. The body shall be walked once regardless of how many
     iterations the comprehension unrolls, so a single non-literal `@tag spec`
-    inside it yields exactly one dynamic entry.
+    inside it yields exactly one dynamic entry. An entry so recorded denotes a
+    static tag carrier rather than a runtime test: because the generator is
+    never evaluated, a comprehension whose generator is empty or wholly
+    filtered shall still record its `@tag spec` ids even though ExUnit defines
+    no test for them.
   priority: must
   stability: evolving
 ```
