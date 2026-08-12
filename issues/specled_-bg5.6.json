@@ -12,9 +12,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-bg5",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: i4x-bg5.6\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-bg5.6/codex-i4x-bg5.6/log\n\nCommit: f2cb98874539dae27efaaef3206a5a29005a79ab\nFiles touched: .spec/specs/append_only.spec.md, .spec/specs/package.spec.md, .spec/specs/severity.spec.md, .spec/specs/spec_review.spec.md, lib/specled_ex/append_only.ex, test/docs_identifier_lint_test.exs, test/specled_ex/append_only_test.exs, test/test_support/emitter_codes.ex\nTests added: SpecLedEx.AppendOnlyTest — finding_codes/0 returns the complete emitter-derived append-only catalog\nVerification stubs flipped: none\nVerification tier: change-scoped — mix compile --warnings-as-errors; mix test test/specled_ex/review/html_test.exs test/specled_ex/branch_check/severity_integration_test.exs test/docs_identifier_lint_test.exs test/specled_ex/append_only_test.exs; mix format --check-formatted; make xref; mix spec.check --no-run-commands; full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: Added SpecLedEx.AppendOnly.finding_codes/0, populated from the same compile-time declarations that construct every finding, and replaced append-only source scraping in both test catalog paths. The severity, review HTML, and docs identifier catalogs now consume that compiler-checked export while retaining their intentional fail-loudly mirrors, with all four subject specs reconciled and no realization-hash change.",
+      "timestamp": "2026-08-12T13:45:23Z"
+    }
+  ],
   "priority": 2,
   "status": "open",
   "title": "Gate: export SpecLedEx.AppendOnly.finding_codes/0 as single emitter-derived code catalog",
   "type": "task",
-  "updated_at": "2026-08-12T13:36:26Z"
+  "updated_at": "2026-08-12T13:45:23Z"
 }
