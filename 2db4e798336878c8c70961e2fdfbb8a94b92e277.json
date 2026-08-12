@@ -91,8 +91,8 @@
       "message": "Changed file test/specled_ex/realization/orchestrator_test.exs impacts subject specled.implementation_tier; spec.md not co-changed, but realization attested binding(s) SpecLedEx.Realization.Implementation.hashes_for_seeding/3 as clean — informational only."
     }
   ],
-  "run_at": "2026-08-12T14:01:35.893121Z",
-  "run_id": "2227c8dc58cab62ced44840c930c03a7",
+  "run_at": "2026-08-12T14:07:06.475781Z",
+  "run_id": "8ba8313d07df4c6c30f78c64bd9538df",
   "schema_version": 1,
   "specled_version": "0.14.0",
   "tree_hash": "2db4e798336878c8c70961e2fdfbb8a94b92e277",
