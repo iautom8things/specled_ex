@@ -858,7 +858,7 @@ defmodule SpecLedEx.AppendOnlyTest do
           requirements: [requirement("x.req_a", "The system MUST reject invalid input.")],
           decisions: [
             adr(
-              id: "d-old",
+              id: "d-aaa",
               affects: ["x.req_a"],
               change_type: "weakens",
               reverses_what: "Existing authorization."
@@ -874,7 +874,7 @@ defmodule SpecLedEx.AppendOnlyTest do
 
       old_adr =
         adr(
-          id: "d-old",
+          id: "d-aaa",
           affects: ["x.req_a"],
           change_type: "weakens",
           reverses_what: "Existing authorization.",
@@ -883,7 +883,7 @@ defmodule SpecLedEx.AppendOnlyTest do
 
       new_adr =
         adr(
-          id: "d-new",
+          id: "d-zzz",
           affects: ["x.req_a"],
           change_type: "weakens",
           reverses_what: "New authorization.",
@@ -894,8 +894,8 @@ defmodule SpecLedEx.AppendOnlyTest do
       new_first = AppendOnly.analyze(prior, current, [new_adr, old_adr])
 
       # Would fail if production let a pre-existing ADR mask same-diff self-authorization.
-      assert_self_auth_marker(old_first, "x.req_a", "d-new", "modal downgraded MUST→SHOULD")
-      assert_self_auth_marker(new_first, "x.req_a", "d-new", "modal downgraded MUST→SHOULD")
+      assert_self_auth_marker(old_first, "x.req_a", "d-zzz", "modal downgraded MUST→SHOULD")
+      assert_self_auth_marker(new_first, "x.req_a", "d-zzz", "modal downgraded MUST→SHOULD")
     end
 
     @tag spec: [
