@@ -57,11 +57,15 @@
     {
       "text": "ORCHESTRATED\nChildren closed: 16\nBOUNCEs encountered: 8\nUser escalations: 0\n\nAll three child epics closed (specled_-scb, specled_-bg5, specled_-vzd) — every leaf under each is\nmerged, which was their stated closure condition.\n\nWorktree triage:\n- REMOVED, branches deleted after confirming merge into the epic branch: all 16 merged stages.\n- KEPT, superseded but NOT force-removed: specled_ex-coverage-source-resolver (dn4.12's original\n  parked branch @ 400839c3) and specled_ex-workflow-privilege-guard (vbo's original @ 0c4877b9).\n  Both had their work cherry-picked onto fresh stages, so their exact commits are ancestors of\n  nothing and cleanup correctly refuses. FORCE=1 would delete branches whose commits exist nowhere\n  else — unrecoverable, and the operator's call rather than mine.\n- The epic worktree /Users/mz/src/specled_ex-fast-follow-backlog is retained.\n\nTwo follow-up tickets were filed during the run and remain open:\n- specled_-tm9 — the scaffolded SKILL.md.eex tells every adopting repo that `mix spec.status` is\n  \"Read-only.\" It executes repo-authored shell by default. Ships via `mix spec.init`.\n- specled_-0vc — two stale doc attributes in Orchestrator repeating the write/2 falsehood that\n  specled_-vzd.6 corrected in the line-comment blocks but structurally cannot see in @moduledoc/@doc.\n\nThe epic remains OPEN and in progress. The branch is NOT pushed and no PR is opened — that is the\nhuman checkpoint.",
       "timestamp": "2026-08-12T19:34:21Z"
+    },
+    {
+      "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/36 (release 0.15.0). All CI gates pre-flighted locally green. Babysitting CI.",
+      "timestamp": "2026-08-12T21:12:04Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "[META-EPIC] Post-release fast-follow backlog: 0.11.0, 0.13.0, 0.14.0",
   "type": "epic",
-  "updated_at": "2026-08-12T21:12:01Z"
+  "updated_at": "2026-08-12T21:12:04Z"
 }
