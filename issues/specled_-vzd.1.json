@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-12T00:36:23Z",
+  "description": "Advances: specled.api_boundary\n\nFrom the critical review of specled_-n5q (finding F4, Medium, security reviewer).\n\nSeeding runs BEFORE detection and is not divergence-gated, so a run against a stale or cold _build can write an entry labeled resolved_via: \"source\" for a binding that production resolves via beam. Once written, every subsequent run diverges against it — and divergence blocks the refresh, so the entry can never be rewritten. Permanently stuck.\n\nWhy it could not land on the release branch: the narrow discriminator (refuse to seed when resolution looks beam-missing) is provably wrong — a legitimate private-function binding and a stale-beam miss both present as \"module loaded, function_exported?/3 false, [:beam_fn_missing]\". Refusing on that signature would refuse 14 of this repo own 173 entries.\n\nThe viable fix is to seed AFTER detection, which changes first-run seeding semantics: the detector currently reads the store post-seed, so a first-run binding produces no finding by construction. That is a spec decision plus an ADR, not an edit.",
+  "id": "specled_-vzd.1",
+  "labels": [],
+  "parent": "specled_-vzd",
+  "priority": 2,
+  "status": "open",
+  "title": "Baseline seeding is not divergence-gated: a stale _build can write a permanently-stuck source label",
+  "type": "task",
+  "updated_at": "2026-08-12T00:36:23Z"
+}
