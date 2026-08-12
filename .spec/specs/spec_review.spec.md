@@ -39,6 +39,7 @@ decisions:
   - specled.decision.coverage_identity_joins
   - specled.decision.cross_vm_temp_names_reach
   - specled.decision.workflow_run_text_open_set
+  - specled.decision.markdown_renderer_mdex
 ```
 
 ## Requirements
@@ -260,6 +261,37 @@ decisions:
   stability: evolving
 - id: specled.spec_review.decisions_governance_inline
   statement: The Decisions Changed section of the HTML artifact shall render `append_only/*` findings inline next to the ADR they should have authorized (matched by ADR id when the finding's `entity_id` resolves to a changed ADR), and shall surface findings that name no resolvable ADR — including unauthorized requirement deletions, modal downgrades, scenario regressions, and decision deletions — in a dedicated "Governance violations" subsection of the same panel. Each rendered finding shall preserve the code-fenced `fix:` block emitted by `SpecLedEx.AppendOnly.analyze` so reviewers see the remediation contract verbatim. A decision file deleted in the change set shall render as a REMOVED card carrying its base-ref parsed content (title, status, affects, body), never as an unexplained "no parsed ADR" stub. A modified ADR shall render a section-level body diff against its base-ref body — added/removed sections chipped, edited sections showing inline wording del/ins — rather than only the head document. Obsidian-style `[[id]]` references in ADR prose shall resolve to in-page links to the referenced ADR's card (outside code spans), degrading to a plain code ref when the target is not rendered on the page.
+  priority: must
+  stability: evolving
+- id: specled.spec_review.adr_prose_markdown_surface
+  statement: >-
+    ADR prose shall render as GitHub-flavored markdown — headings, paragraphs,
+    emphasis, ordered and unordered lists, inline code, fenced code blocks,
+    links, block quotes, tables, strikethrough, task lists, and autolinked bare
+    URLs — with the body's leading H1 dropped because the ADR title already
+    appears in the disclosure summary. This governs the rendered-prose path
+    (an ADR card body, and the unchanged and added sections of an ADR body
+    diff); a modified section renders as a word-level diff of markdown source
+    and is deliberately outside it, because a reviewer comparing two revisions
+    needs to see the source that changed. Raw HTML other than comments
+    in ADR prose shall render as visible text, never as live markup, and link
+    schemes the renderer treats as dangerous shall be blocked; a `<script>`
+    tag authored in ADR prose shall therefore reach the reader as text rather
+    than as a script the artifact runs. Intraword
+    underscores shall not be read as emphasis, so a finding code or identifier
+    named in prose survives verbatim, and neither shall `*` be read as emphasis
+    where it is part of such an identifier. Smart punctuation shall be applied
+    to prose — straight quotes curl and `--` becomes an en dash — while code
+    spans and fenced blocks stay literal. HTML comments in ADR prose shall be
+    absent from the rendered body, because they are authoring markers rather
+    than content; a comment inside a code span or fenced block is an example
+    and shall remain visible. Removing a comment shall not remove any content
+    around it: comments shall be dropped as document nodes, never by matching
+    the rendered output, so that an authored comment delimiter appearing inside
+    an attribute value cannot delete markup. When rendering returns an error,
+    the body shall degrade to its escaped source rather than to empty output;
+    an invalid renderer configuration is deliberately exempt and raises,
+    because the escaping posture is then unverified.
   priority: must
   stability: evolving
 - id: specled.spec_review.coverage_tab_bind_closure
@@ -862,6 +894,7 @@ list; `triangle_code_classification` and related requirements remain unchanged.
     - specled.spec_review.triangle_code_classification
     - specled.spec_review.degraded_leg_state
     - specled.spec_review.decisions_governance_inline
+    - specled.spec_review.adr_prose_markdown_surface
     - specled.spec_review.coverage_closure_line_format
     - specled.spec_review.coverage_reached_by_tests_per_test_only
     - specled.spec_review.coverage_exact_up_to_escaped_processes_qualifier
@@ -954,6 +987,7 @@ list; `triangle_code_classification` and related requirements remain unchanged.
     - specled.spec_review.triangle_code_classification
     - specled.spec_review.degraded_leg_state
     - specled.spec_review.decisions_governance_inline
+    - specled.spec_review.adr_prose_markdown_surface
     - specled.spec_review.coverage_degraded_banners_distinct
     - specled.spec_review.coverage_no_tracer_manifest_banner
     - specled.spec_review.review_queue_navigation

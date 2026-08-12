@@ -165,7 +165,11 @@ defmodule SpecLedEx.MixProject do
       {:yaml_elixir, "~> 2.11"},
       {:zoi, "~> 0.17"},
       {:stream_data, "~> 1.0", only: [:test, :dev]},
-      {:earmark, "~> 1.4"}
+      # Pinned to the 0.13.x line, not `~> 0.13`. MDEx is pre-1.0 and has
+      # already renamed a render option (`:unsafe_` -> `:unsafe`); an unknown
+      # or renamed option raises out of `MDEx.parse_document/2` rather than
+      # returning an error, so a minor bump could take `mix spec.review` down.
+      {:mdex, "~> 0.13.0"}
     ]
   end
 end

@@ -1,5 +1,76 @@
 # Changelog
 
+## 0.16.0 — 2026-08-12
+
+Earmark is retired on Hex ([specled_-jzx](https://github.com/iautom8things/specled_ex/blob/beadwork/issues/specled_-jzx.json)). `mix hex.audit` exits non-zero on a
+retired package anywhere in the tree and takes no flags — no ignore list, no
+allowlist, no per-package waiver — so every adopter whose verification pipeline
+runs `hex.audit` went permanently red by depending on specled_ex, and could not
+fix it from their own repo. The first downstream report is exoterm, whose
+`mix preflight` passed compile-with-warnings-as-errors, format, credo, sobelow,
+dialyzer, and 723 tests, and failed only at `hex.audit`.
+
+**Adopters should re-pin to 0.16.0 to clear their audit gate.**
+
+### Changed
+
+- The markdown renderer behind `mix spec.review`'s ADR prose is now MDEx
+  (`~> 0.13`) instead of Earmark, at the single call site that renders ADR
+  bodies and body diffs. `mix hex.audit` exits 0 ([specled_-jzx](https://github.com/iautom8things/specled_ex/blob/beadwork/issues/specled_-jzx.json))
+- ADR prose rendering is now CommonMark-conformant. Rendering this repo's own
+  `.spec/decisions/` corpus through both renderers — as rendered ADR bodies,
+  so every item is something a reader could actually have seen — found four
+  silent corruptions of shipped prose that MDEx fixes: Earmark swallowed a run
+  of prose it mistook for a raw-HTML block (losing the words "`.spec/**`
+  workspace, which the lint never read"); destroyed the code span
+  `` `specled_attr_*.jsonl` `` and broke the `*completed*` after it; paired
+  `branch_guard`'s underscore with `specled_-fm4`'s two lines below, rendering
+  `branch<em>guard`; and mangled `--` into an en dash inside an escaped
+  comment. Backticks were not reliable protection — the `specled_attr_*.jsonl`
+  case was already a code span
+- ADR fenced code blocks now emit `class="language-<lang>"` rather than
+  Earmark's `class="<lang>"`, so the artifact's bundled Prism pass highlights
+  them. Previously only diff panes were highlighted
+- HTML comments in ADR prose are dropped as document nodes before rendering —
+  they are authoring markers (`<!-- spec-lint:allow-code=... -->`), not
+  content, and Earmark already hid most of them. A comment inside a code span
+  or fenced block is an example and stays visible, which Earmark got wrong.
+  Node removal rather than output rewriting is deliberate: `escape: true`
+  escapes link titles too, so a comment delimiter authored into a `title`
+  attribute would let output-level stripping delete surrounding markup
+- MDEx returns no partial render on failure where Earmark returned HTML
+  alongside its error tuple, so `render_markdown/1` now degrades to the escaped
+  source in a `<pre>` rather than to empty output
+
+### Added
+
+- `specled.spec_review.adr_prose_markdown_surface` — states the ADR prose
+  rendering contract. Among its clauses: the GitHub-flavored construct set, the
+  body's leading H1 dropped, raw HTML rendering as visible text rather than
+  live markup, dangerous link schemes being blocked, underscores and asterisks
+  inside identifiers not being emphasis, smart punctuation in prose but not in
+  code, authoring comments absent from the body but visible inside code, and
+  the escaped-source degrade. Only the `[[id]]` wikilink half of this surface
+  was previously specified (by `specled.spec_review.decisions_governance_inline`)
+  and tested; the rendering behavior itself had neither
+- `specled.decision.markdown_renderer_mdex` — records why the dependency is
+  accepted and what it costs
+
+### Upgrade notes
+
+- **specled_ex is no longer pure Elixir.** MDEx pulls `mdex_native` through
+  `rustler_precompiled`, so builds resolve a precompiled artifact for the host
+  triple from the `mdex_native` GitHub release. Adopters on a platform with no
+  published artifact, or in an environment that cannot reach GitHub release
+  assets, need a Rust toolchain and
+  `config :rustler_precompiled, :force_build, mdex_native: true`. Air-gapped CI
+  that vendors Hex packages but not release assets must vendor the NIF artifact
+  too
+- MDEx honors GFM single-tilde strikethrough (`~word~` → `<del>word</del>`)
+  where Earmark required `~~word~~`. GFM flanking rules spare the common
+  approximation idiom (`~210 decision files in ~8`), but an ADR that writes
+  `~x~` and expected literal tildes will now render a strikethrough
+
 ## 0.15.1 — 2026-08-12
 
 A single blind spot in the tag scanner ([specled_-c5b](https://github.com/iautom8things/specled_ex/blob/beadwork/issues/specled_-c5b.json)): tests generated inside a

@@ -1759,4 +1759,247 @@ defmodule SpecLedEx.Review.HtmlTest do
       end
     end
   end
+
+  # ADR bodies are authored markdown rendered into the Decisions tab. These
+  # pin the rendering surface itself — which constructs survive into HTML and
+  # which authored input must never become live markup — so the renderer can
+  # be swapped without a reviewer having to eyeball an artifact to find out
+  # what changed.
+  defp decisions_tab(body) do
+    IO.iodata_to_binary(
+      Html.render_decisions_tab(
+        %{decision_refs: ["specled.decision.x"]},
+        %{
+          "specled.decision.x" => %{
+            id: "specled.decision.x",
+            title: "T",
+            status: nil,
+            date: nil,
+            change_type: nil,
+            file: "f.md",
+            body_text: body
+          }
+        }
+      )
+    )
+  end
+
+  describe "ADR body markdown rendering" do
+    @tag spec: "specled.spec_review.adr_prose_markdown_surface"
+    test "renders the GitHub-flavored construct set ADR prose actually uses" do
+      html =
+        decisions_tab("""
+        # Title
+
+        ## Context
+
+        Some **bold**, _em_, `inline code`, and a [link](https://example.com).
+
+        > A block quote.
+
+        - item one
+        - item two
+
+        1. first
+        2. second
+
+        | Leg | State |
+        |---|---|
+        | SPEC | clean |
+
+        ~~struck~~ and a bare URL https://example.org/auto
+
+        - [ ] unchecked task
+        - [x] checked task
+
+        ```elixir
+        def hello, do: :world
+        ```
+        """)
+
+      # The leading H1 is the disclosure summary's job, not the body's. Match
+      # the tag open rather than "<h1>" exactly: MDEx's `header_ids` extension
+      # would emit `<h1 id="...">`, and a bare-tag refute would pass while a
+      # duplicate title leaked into every ADR card.
+      refute html =~ ~r/<h1[\s>]/
+      refute html =~ ">Title<"
+      assert html =~ "<h2>Context</h2>"
+      assert html =~ "<p>"
+      assert html =~ "<strong>bold</strong>"
+      assert html =~ "<em>em</em>"
+      assert html =~ "<code>inline code</code>"
+      # Assert the href and the link text separately — a future `rel=` or
+      # `target=` on this surface is plausible and should not fail the
+      # construct-set contract.
+      assert html =~ ~s|href="https://example.com"|
+      assert html =~ ">link</a>"
+      assert html =~ "<blockquote>"
+      assert html =~ "<ul>"
+      assert html =~ "<ol>"
+      assert html =~ "<table>"
+      assert html =~ ">Leg</th>"
+      assert html =~ ">clean</td>"
+      assert html =~ ~r/<pre[\s>]/
+      assert html =~ "def hello, do: :world"
+      # Pins the fenced-block class MDEx emits. The artifact's bundled Prism
+      # pass keys on `[class*="language-"]`, so a renderer that stopped
+      # emitting it would silently un-highlight every ADR code block.
+      assert html =~ ~s|<code class="language-elixir">|
+      # One assertion per opt-in GFM extension named in @markdown_options.
+      # Without these, dropping `strikethrough`, `autolink`, or `tasklist` from
+      # the options leaves the whole suite green — the pinning is only real if
+      # something fails when it is unpinned.
+      assert html =~ "<del>struck</del>"
+      assert html =~ ~s|href="https://example.org/auto"|
+      assert html =~ ~s|type="checkbox"|
+    end
+
+    @tag spec: "specled.spec_review.adr_prose_markdown_surface"
+    test "prose typography matches the smart-punctuation settings the surface pins" do
+      html =
+        decisions_tab(
+          "Pass --no-run-commands here, `--no-run-commands` there, and \"quote\" it.\n"
+        )
+
+      # A backticked flag is a code span and must survive verbatim — this is the
+      # half of the clause that matters, since ADR prose names CLI flags
+      # constantly and smart punctuation must not reach inside code.
+      assert html =~ "<code>--no-run-commands</code>"
+
+      # Smart punctuation is on (Earmark parity). It rewrites `--` in prose to
+      # an en dash and straightens quotes into curly ones. Pinned because it is
+      # reader-visible: the next renderer swap needs to know this was chosen,
+      # not inherited. Backticked flags are code spans and stay literal.
+      assert html =~ "–no-run-commands"
+      assert html =~ "“quote”"
+    end
+
+    @tag spec: "specled.spec_review.adr_prose_markdown_surface"
+    test "identifiers bearing underscores or asterisks survive as written" do
+      # Emphasis needs a delimiter to open AND one to close, so a fixture with a
+      # single `_` or `*` cannot fail on either mechanism. This one carries
+      # seven underscores and three asterisks, which is what makes the
+      # assertions below load-bearing rather than decorative.
+      html =
+        decisions_tab(
+          "Ten append_only/* codes and two overlap/* codes, " <>
+            "plus branch_guard_test_only_change in specled_attr_*.jsonl.\n"
+        )
+
+      # Tripwires. Earmark 1.4 — a renderer that pairs both delimiters — turns
+      # this exact input into, in full:
+      #   "Ten append<em>only/<em> codes and two overlap/</em> codes, plus
+      #    branch_guard_test_only_change in specled_attr</em>*.jsonl."
+      #   underscores — `append_only` becomes `append<em>only`
+      assert html =~ "append_only"
+      #   underscores — `specled_attr_` is the one underscore in the fixture
+      #   followed by a non-word character, so it is what closes the span
+      assert html =~ "specled_attr_*.jsonl"
+      #   asterisks — isolating that mechanism alone (a renderer pairing `*`
+      #   while keeping CommonMark's intraword-underscore rule) yields
+      #   `append_only/<em> codes and two overlap/</em> codes`, which fails this
+      #   assertion while leaving every underscore assertion above intact
+      assert html =~ "append_only/* codes and two overlap/* codes"
+      #   either mechanism. Match the tag open, not `"<em>"` exactly — the
+      #   block's house rule everywhere else, and an attribute-bearing `<em`
+      #   would slip a bare-tag refute.
+      refute html =~ ~r/<em[\s>]/
+
+      # Not a tripwire: this survives even the pairing renderer, because it sits
+      # INSIDE the emphasis span rather than escaping it — each of its own four
+      # underscores is followed by a word character, so none can close. Kept
+      # because it is the clause's literal wording — a finding code named in
+      # prose survives verbatim — and it still catches text-dropping bugs of
+      # the kind Earmark's raw-HTML-block handling produced.
+      assert html =~ "branch_guard_test_only_change"
+    end
+
+    @tag spec: "specled.spec_review.adr_prose_markdown_surface"
+    test "raw HTML in ADR prose renders as visible text, never as live markup" do
+      html = decisions_tab("A hostile ADR: <script>alert(1)</script> and <b>bold?</b>\n")
+
+      # Match the tag open, not "<script>" exactly — `<script src=...>` and
+      # `<script type=...>` are the same hazard.
+      refute html =~ ~r/<script[\s>]/
+      refute html =~ "<b>bold?</b>"
+      assert html =~ "&lt;script&gt;alert(1)&lt;/script&gt;"
+      assert html =~ "&lt;b&gt;bold?&lt;/b&gt;"
+    end
+
+    @tag spec: "specled.spec_review.adr_prose_markdown_surface"
+    test "a dangerous link scheme in ADR prose is stripped, ordinary links survive" do
+      html =
+        decisions_tab("A [trap](javascript:alert(1)) and a [safe](https://example.com) link.\n")
+
+      # This is the `unsafe: false` half of the safety posture, not the
+      # `escape: true` half above: dropping it would leave every assertion in
+      # the raw-HTML test green while an authored `javascript:` link went live.
+      refute html =~ "javascript:"
+      assert html =~ ~s|href="https://example.com"|
+    end
+
+    @tag spec: "specled.spec_review.adr_prose_markdown_surface"
+    test "authoring comments are hidden in prose but shown in code spans and fenced blocks" do
+      html =
+        decisions_tab("""
+        A budgeted code. <!-- spec-lint:allow-code=branch_guard_test_only_change budgeted -->
+
+        Inline, the marker is written `<!-- spec-lint:allow-code=inline_form reason -->`.
+
+        Fenced, it is written:
+
+        ```
+        <!-- spec-lint:allow-code=fenced_form reason -->
+        ```
+        """)
+
+      assert html =~ "A budgeted code."
+      # Renderer-neutral: assert the marker token is absent rather than one
+      # particular escaping of its trailing delimiter.
+      refute html =~ "spec-lint:allow-code=branch_guard_test_only_change"
+      # Both forms the requirement names — a code span and a fenced block —
+      # exercise different branches of the code-segment split, so cover both.
+      assert html =~ "&lt;!-- spec-lint:allow-code=inline_form reason --&gt;"
+      assert html =~ "&lt;!-- spec-lint:allow-code=fenced_form reason --&gt;"
+    end
+
+    @tag spec: "specled.spec_review.adr_prose_markdown_surface"
+    test "a render error degrades to escaped source, not to empty output" do
+      # `%MDEx.DecodeError{}` is what MDEx actually returns when the NIF fails —
+      # the struct the production branch will see, not a stand-in for it.
+      html =
+        Html.render_result(
+          {:error, %MDEx.DecodeError{}},
+          "# Title\n\nBody with <script>alert(1)</script>.\n"
+        )
+
+      refute html == ""
+      assert html =~ "markdown-fallback"
+      assert html =~ "Body with"
+      # The degrade must not become an injection vector of its own.
+      refute html =~ ~r/<script[\s>]/
+      assert html =~ "&lt;script&gt;alert(1)&lt;/script&gt;"
+    end
+
+    @tag spec: "specled.spec_review.adr_prose_markdown_surface"
+    test "a comment delimiter inside a link title cannot delete surrounding prose" do
+      # `escape: true` escapes link titles too, so an authored `<!--` lands
+      # inside an attribute value. Stripping comments by matching rendered
+      # output paired it with a later `-->` and deleted everything between —
+      # hiding prose from the review artifact and rebinding the link text to a
+      # different href. Dropping comment NODES cannot reach inside an attribute.
+      html =
+        decisions_tab("""
+        [a](https://x.com "<!--")
+
+        GOVERNANCE-RELEVANT PROSE
+
+        [b](https://y.com "-->")
+        """)
+
+      assert html =~ "GOVERNANCE-RELEVANT PROSE"
+      assert html =~ ~s|href="https://y.com"|
+      refute html =~ ~s|href="https://x.com" title="">b|
+    end
+  end
 end

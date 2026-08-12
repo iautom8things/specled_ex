@@ -120,6 +120,13 @@ Add as a path dependency in another project:
 {:spec_led_ex, path: "../specled_ex", only: [:dev, :test], runtime: false}
 ```
 
+This pulls one native dependency: `mdex` renders ADR prose in the
+`mix spec.review` artifact, and it ships as a precompiled NIF (`mdex_native`
+via `rustler_precompiled`). Builds resolve an artifact for the host triple from
+the `mdex_native` GitHub release. On a platform with no published artifact, or
+in an environment that cannot reach release assets, add a Rust toolchain and
+`config :rustler_precompiled, :force_build, mdex_native: true`.
+
 Then run:
 
 ```bash
