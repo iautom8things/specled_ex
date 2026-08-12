@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-12T21:21:42Z",
+  "description": "Advances: specled.decisions\n\nSeverity: Medium. Two gaps in the lint shipped by specled_-vzd.6: (a) block chunking splits on blank lines, so inserting one blank line into a long comment block drops both halves under the 8-line threshold and the block escapes the pointer requirement entirely; nothing in the suite pins the intended behaviour. (b) the exemption marker accepts a one-character reason and is uncapped, so the reason-bearing requirement is satisfiable by noise — the abuse direction is untested.\n\nWhy not on the release branch: (a) needs a decision on whether blank-line-separated prose is one block or two, which changes what the corpus-pinned threshold means; the 8-line threshold was verified exact against the live corpus (8 red, 7 green) and would need re-verification.\n\nSource: 2026-08-12 critical review testing M1 + M2.",
+  "id": "specled_-dq7.6",
+  "labels": [],
+  "parent": "specled_-dq7",
+  "priority": 2,
+  "status": "open",
+  "title": "Comment-pointer lint: one blank line defeats it, and the exemption reason is uncapped",
+  "type": "task",
+  "updated_at": "2026-08-12T21:21:42Z"
+}
