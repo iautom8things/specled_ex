@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-12T21:21:30Z",
+  "description": "Advances: specled.spec_review\n\nSeverity: High as reported, decision-class in practice. Two mutants proven to survive test/specled_ex/spec_review_workflow_test.exs (all five assertions green):\n\n1. Flip the template to on: pull_request_target AND point the render checkout at github.event.pull_request.head.sha — the canonical pwn-request shape, PR code executing with base-repo secrets. The guard never reads the trigger at all.\n2. Add a deploy step running git checkout of the PR head plus bash of a downloaded script. acquisition_line?/1 selects only git fetch and git worktree add, so every other run: line in the write-scoped job is unexamined.\n\nPositive control passed in both reports (adding an unlisted uses: action is correctly rejected), isolating the gap to the trigger and run: halves.\n\nNOT a live vulnerability: the shipped template is pull_request-triggered and does not check out PR code. This is future-regression detection, and the template ships to adopters via priv/spec_init/.\n\nWhy not on the release branch: closing it contradicts specled.decision.workflow_run_text_open_set, accepted 2026-08-12, which explicitly scopes checkout-class verbs out and which the operator explicitly chose (\"drop Level C entirely\"). Acting requires amending that ADR — an operator call, not release prep. Note the trigger gap (1) is arguably OUTSIDE that ADR: the ADR is about the open set of shell spellings, whereas on: and checkout ref: are closed, structurally parsed YAML of exactly the kind the ADR says it DOES guard.\n\nSource: 2026-08-12 critical review testing TEST-H1 + testing-2 M1.",
+  "id": "specled_-dq7.4",
+  "labels": [],
+  "parent": "specled_-dq7",
+  "priority": 2,
+  "status": "open",
+  "title": "DECISION: spec_review workflow guard pins neither the trigger nor ref-acquisition verbs",
+  "type": "task",
+  "updated_at": "2026-08-12T21:21:30Z"
+}
