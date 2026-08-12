@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-bg5",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: i4x-bg5.2\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-bg5.2/codex-i4x-bg5.2/log\n\nCommit: 4a5ae56bd46a91851e9085db7cc6e6a6791d7dbe\nFiles touched: .spec/realization_hashes.json, .spec/specs/severity.spec.md, .spec/specs/spec_drift_trailer.spec.md, lib/specled_ex/branch_check.ex, lib/specled_ex/branch_check/severity.ex, test/specled_ex/branch_check/severity_integration_test.exs, test/specled_ex/branch_check/severity_test.exs, test/specled_ex/branch_check/trailer_test.exs\nTests added: SpecLedEx.BranchCheck.SeverityTest \"reports the winning precedence layer\"; SpecLedEx.BranchCheck.SeverityTest \"preserves the source of a synthetic trailer-precedence override\"; SpecLedEx.BranchCheck.SeverityIntegrationTest \"report findings identify a real Spec-Drift trailer override\"; SpecLedEx.BranchCheck.SeverityIntegrationTest \"report findings distinguish --accept-drift from a commit trailer\"\nVerification stubs flipped: none (both subjects' tagged_tests stubs were already execute: true)\nVerification tier: change-scoped — mix compile --warnings-as-errors; test/specled_ex/branch_check/severity_test.exs, test/specled_ex/branch_check/severity_integration_test.exs, test/specled_ex/branch_check/trailer_test.exs, test/specled_ex/branch_check_test.exs; mix format --check-formatted; make xref; mix spec.check --no-run-commands; full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: Added resolve_with_source/3 while preserving resolve/3's atom-returning API, and placed the winning severity source on every emitted branch-report finding. Real commit trailers now report spec_drift_trailer provenance, while the synthetic --accept-drift path reports accept_drift, with unit and production-wiring integration coverage for both paths.",
+      "timestamp": "2026-08-12T11:56:25Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "F11: Spec-Drift trailer override leaves no trace in report output",
   "type": "task",
-  "updated_at": "2026-08-12T11:49:08Z"
+  "updated_at": "2026-08-12T11:56:25Z"
 }
