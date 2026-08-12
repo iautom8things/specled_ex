@@ -2,6 +2,7 @@
   "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [
+    "specled_-bos",
     "specled_-zd8"
   ],
   "closed_at": "2026-07-28T13:02:13Z",
@@ -109,5 +110,5 @@
   "status": "in_progress",
   "title": "Follow up: consolidate coverage source resolver without public API drift",
   "type": "task",
-  "updated_at": "2026-08-12T11:33:37Z"
+  "updated_at": "2026-08-12T11:33:48Z"
 }
