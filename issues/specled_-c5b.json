@@ -45,11 +45,15 @@
     {
       "text": "APPROVED per auditor sign-off. Branch c5b/for-comprehension-tags at 5ca4df00 (rebased onto origin/main 0fec794b, release 0.15.0) is ready for a PR to main; held in_progress for the ship arc (/open-pr -\u003e CI -\u003e merge -\u003e deploy). /deliver closes it. Worktree: /Users/mz/src/specled_ex-for-comprehension-tags. Follow-up specled_-wv0 filed for the per_test executed-strength join gap this ticket does not owe.",
       "timestamp": "2026-08-12T21:36:52Z"
+    },
+    {
+      "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/37 (release 0.15.1). Branch fix/c5b-for-comprehension-tag-scanning at edbb9052. Babysitting CI.",
+      "timestamp": "2026-08-12T22:59:47Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "TagScanner is blind to for-comprehension-generated tests — @tag spec: inside unrolled loops never reaches the tag_map",
   "type": "bug",
-  "updated_at": "2026-08-12T22:59:43Z"
+  "updated_at": "2026-08-12T22:59:47Z"
 }
