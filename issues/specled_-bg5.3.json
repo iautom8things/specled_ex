@@ -6,7 +6,7 @@
   "description": "No spec subject (candidates: specled.verification docs surface when picked up). Severity: Medium. From 2026-08-06 critical review of specled_-q0q. spec.check --run-commands executes verification commands defined in repo-resident spec files; in a CI configured to run on fork PRs this executes attacker-authored shell with the workflow token. Keep-reason: docs/policy deliverable (threat-model statement + recommended CI gating for public repos), not a code fix on the shipped branch. Concrete failure: a public repo running armed spec.check on pull_request from forks grants fork authors arbitrary command execution in CI.\n\n## ORCHESTRATOR CONTRACT (specled_-i4x)\n\nAdvances: specled.package\n\n(Orchestrator note: NOT specled.verification — that subject owns command execution\nmechanics; this ticket ships no code. Model the new requirement on the existing\nspecled.package.adoption_guide / .concepts_guide pattern, .spec/specs/package.spec.md:104-111.)\n\nAllowed touches:\n- docs/security.md (new)\n- docs/adoption.md  — the \"CI should always run commands\" line at docs/adoption.md:489\n  must be CORRECTED, not merely supplemented. It is the unsafe advice.\n- README.md\n- .spec/specs/package.spec.md  (new requirement + surface: entry for docs/security.md)\n- .spec/decisions/specled.decision.*.md  (only if the policy is a durable cross-cutting stance)\n- CHANGELOG.md\n\nOut of Scope (files):\n- lib/** (all)\n- test/** except test/docs_identifier_lint_test.exs\n- .spec/realization_hashes.json\n- priv/spec_init/workflows/spec_review.yml.eex  (also specled.spec_review surface; widens the ticket)\n\nOut of Scope (intent):\n- Do NOT flip the --run-commands default or add a sandbox/allowlist. This deliverable is a\n  written policy. Changing the default is a separate breaking change against\n  .spec/specs/mix_tasks.spec.md.\n- Do NOT name any finding code the implementation does not emit. docs/**/*.md is inside the\n  doc-identifier lint corpus (test/docs_identifier_lint_test.exs:223) and an invented code\n  name fails the gate. Show severities in bare YAML token form, not atom form\n  (specled.package.doc_identifier_integrity, .spec/specs/package.spec.md:112).\n- Do NOT write a generic SECURITY.md disclosure process. The ask is one threat statement\n  plus the CI recommendation.\n\nVerification:\n  mix test test/docs_identifier_lint_test.exs\n  mix test test/specled_ex/verifier_test.exs\n  mix compile --warnings-as-errors\n  mix format --check-formatted\n  mix spec.check --no-run-commands\n  bash ./scripts/check_specs.sh\nNo execute:false stub to flip. The doc-identifier lint is the real gate: it pins corpus size\nand fails on any invented code name.\n\nExpected diff: ~130-200 lines across 4-6 files, mostly the new doc.\n",
   "id": "specled_-bg5.3",
   "labels": [
-    "phase:implementing"
+    "phase:verifying"
   ],
   "parent": "specled_-bg5",
   "comments": [
@@ -19,5 +19,5 @@
   "status": "in_progress",
   "title": "F12: --run-commands executes repo-resident shell — document fork-PR CI trust policy",
   "type": "task",
-  "updated_at": "2026-08-12T12:07:57Z"
+  "updated_at": "2026-08-12T12:08:54Z"
 }
