@@ -847,6 +847,96 @@ defmodule SpecLedEx.AppendOnlyTest do
       assert_self_auth_marker(findings, "x.req_a", "d1", "scenario coverage dropped 1→0")
     end
 
+    @tag spec: [
+           "specled.append_only.must_downgraded",
+           "specled.append_only.self_authorized_weakening"
+         ]
+    test "new authorizer wins over pre-existing authorizer regardless of decision order" do
+      prior =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "The system MUST reject invalid input.")],
+          decisions: [
+            adr(
+              id: "d-old",
+              affects: ["x.req_a"],
+              change_type: "weakens",
+              reverses_what: "Existing authorization."
+            )
+          ]
+        )
+
+      current =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "The system SHOULD reject invalid input.")]
+        )
+
+      old_adr =
+        adr(
+          id: "d-old",
+          affects: ["x.req_a"],
+          change_type: "weakens",
+          reverses_what: "Existing authorization.",
+          form: :parsed
+        )
+
+      new_adr =
+        adr(
+          id: "d-new",
+          affects: ["x.req_a"],
+          change_type: "weakens",
+          reverses_what: "New authorization.",
+          form: :parsed
+        )
+
+      old_first = AppendOnly.analyze(prior, current, [old_adr, new_adr])
+      new_first = AppendOnly.analyze(prior, current, [new_adr, old_adr])
+
+      # Would fail if production let a pre-existing ADR mask same-diff self-authorization.
+      assert_self_auth_marker(old_first, "x.req_a", "d-new", "modal downgraded MUST→SHOULD")
+      assert_self_auth_marker(new_first, "x.req_a", "d-new", "modal downgraded MUST→SHOULD")
+    end
+
+    @tag spec: [
+           "specled.append_only.requirement_deleted",
+           "specled.append_only.self_authorized_weakening"
+         ]
+    test "lexicographically first new authorizer wins deletion tie regardless of order" do
+      prior =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "The system MUST retain records.")]
+        )
+
+      current = state_fixture(subject: "x", requirements: [])
+
+      adr_a =
+        adr(
+          id: "d-a",
+          affects: ["x.req_a"],
+          change_type: "deprecates",
+          reverses_what: "First deterministic authorization.",
+          form: :parsed
+        )
+
+      adr_z =
+        adr(
+          id: "d-z",
+          affects: ["x.req_a"],
+          change_type: "deprecates",
+          reverses_what: "Second deterministic authorization.",
+          form: :parsed
+        )
+
+      a_first = AppendOnly.analyze(prior, current, [adr_a, adr_z])
+      z_first = AppendOnly.analyze(prior, current, [adr_z, adr_a])
+
+      # Would fail if production retained the deletion path's last-write-wins ADR map.
+      assert_self_auth_marker(a_first, "x.req_a", "d-a", "requirement deleted")
+      assert_self_auth_marker(z_first, "x.req_a", "d-a", "requirement deleted")
+    end
+
     # Pins the consulted_ids widening documented in the v2 budget ADR's
     # Consequences: the deletion detector's self-authorization branch feeds
     # consulted_ids, so a change_type-less decision naming a requirement whose

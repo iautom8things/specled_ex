@@ -36,6 +36,7 @@ decisions:
   - specled.decision.change_type_enum_v1
   - specled.decision.finding_code_budget
   - specled.decision.append_only_finding_budget_v2
+  - specled.decision.uniform_self_authorization_markers
   - specled.decision.declarative_current_truth
 ```
 
@@ -139,8 +140,13 @@ decisions:
     deletion, scenario regression, modal downgrade, or polarity removal is
     suppressed as authorized by an ADR that is new in the current diff, naming
     the authorizing ADR id and the weakening class in the message, so
-    self-approved weakening is always visible in analyze output. Weakenings
-    authorized by ADRs already present at base shall emit no marker.
+    self-approved weakening is always visible in analyze output. Exactly one
+    marker shall be emitted per (requirement id, weakening class). When multiple
+    ADRs authorize that pair, a new-in-diff ADR shall take precedence over a
+    pre-existing ADR, then the lexicographically smallest ADR id shall break ties
+    within the same newness class. The chosen ADR is independent of input
+    decision order. Weakenings authorized only by ADRs already present at base
+    shall emit no marker.
   priority: must
   stability: evolving
 - id: specled.append_only.missing_change_type
@@ -339,6 +345,18 @@ decisions:
     - "the marker message names ADR d1 and the scenario-regression weakening class"
   covers:
     - specled.append_only.self_authorized_weakening
+
+- id: specled.append_only.scenario.self_authorization_tie_break
+  given:
+    - "one weakening class for requirement `x.req_a` is authorized by multiple ADRs"
+    - "at least one authorizing ADR is new in the current diff"
+  when:
+    - SpecLedEx.AppendOnly.analyze/4 is invoked with the decisions in any order
+  then:
+    - "exactly one `append_only/self_authorized_weakening` marker is emitted for the requirement and weakening class"
+    - "the marker names a new-in-diff ADR rather than a pre-existing authorizer"
+    - "among authorizers with the same newness, the marker names the lexicographically smallest ADR id"
+  covers: []
 
 - id: specled.append_only.scenario.superset_affects_deletion_marker_without_warning
   given:

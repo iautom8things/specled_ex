@@ -85,16 +85,9 @@ defmodule SpecLedEx.AppendOnly do
       |> MapSet.union(polarity_consulted_ids)
 
     self_auth_adrs = self_authorizing_adrs(new_head_adrs, weakened_ids)
-    self_auth_adr_by_req_id = self_auth_adr_by_req_id(self_auth_adrs)
 
     {deletion_findings, deletion_consulted_ids} =
-      detect_requirement_deleted(
-        prior_reqs,
-        current_reqs,
-        decisions,
-        new_adr_ids,
-        self_auth_adr_by_req_id
-      )
+      detect_requirement_deleted(prior_reqs, current_reqs, decisions, new_adr_ids)
 
     consulted_ids =
       deletion_consulted_ids
@@ -119,44 +112,31 @@ defmodule SpecLedEx.AppendOnly do
 
   ## ── Detectors ─────────────────────────────────────────────────────
 
-  defp detect_requirement_deleted(
-         prior_reqs,
-         current_reqs,
-         decisions,
-         new_adr_ids,
-         self_auth_adr_by_req_id
-       ) do
+  defp detect_requirement_deleted(prior_reqs, current_reqs, decisions, new_adr_ids) do
     Enum.reduce(prior_reqs, {[], MapSet.new()}, fn {id, prior}, {findings, consulted} ->
-      cond do
-        Map.has_key?(current_reqs, id) ->
-          {findings, consulted}
+      if Map.has_key?(current_reqs, id) do
+        {findings, consulted}
+      else
+        case authorizing_decision(decisions, id, new_adr_ids) do
+          {:authorized, adr} ->
+            markers =
+              self_authorized_marker_if_new(
+                id,
+                prior,
+                adr,
+                :deletion,
+                nil,
+                new_adr_ids
+              )
 
-        Map.has_key?(self_auth_adr_by_req_id, id) ->
-          adr_id = Map.fetch!(self_auth_adr_by_req_id, id)
-          marker = self_authorized_weakening_finding(id, prior, adr_id, :deletion, nil)
-          {[marker | findings], MapSet.put(consulted, id)}
+            {markers ++ findings, MapSet.put(consulted, id)}
 
-        true ->
-          case authorizing_decision(decisions, id) do
-            {:authorized, adr} ->
-              markers =
-                self_authorized_marker_if_new(
-                  id,
-                  prior,
-                  adr,
-                  :deletion,
-                  nil,
-                  new_adr_ids
-                )
+          {:missing_change_type, _adr} ->
+            {[requirement_deleted_finding(id, prior) | findings], MapSet.put(consulted, id)}
 
-              {markers ++ findings, MapSet.put(consulted, id)}
-
-            {:missing_change_type, _adr} ->
-              {[requirement_deleted_finding(id, prior) | findings], MapSet.put(consulted, id)}
-
-            :none ->
-              {[requirement_deleted_finding(id, prior) | findings], MapSet.put(consulted, id)}
-          end
+          :none ->
+            {[requirement_deleted_finding(id, prior) | findings], MapSet.put(consulted, id)}
+        end
       end
     end)
   end
@@ -169,7 +149,7 @@ defmodule SpecLedEx.AppendOnly do
           current_modal = ModalClass.classify(statement(current))
 
           if ModalClass.downgrade?(prior_modal, current_modal) do
-            case authorizing_decision(decisions, id) do
+            case authorizing_decision(decisions, id, new_adr_ids) do
               {:authorized, adr} ->
                 detail = "#{format_modal(prior_modal)}→#{format_modal(current_modal)}"
 
@@ -222,7 +202,7 @@ defmodule SpecLedEx.AppendOnly do
           {findings, consulted}
 
         true ->
-          case authorizing_decision(decisions, req_id) do
+          case authorizing_decision(decisions, req_id, new_adr_ids) do
             {:authorized, adr} ->
               markers =
                 self_authorized_marker_if_new(
@@ -261,7 +241,7 @@ defmodule SpecLedEx.AppendOnly do
             if effective_polarity(current) == :negative do
               {findings, consulted}
             else
-              case authorizing_decision(decisions, id) do
+              case authorizing_decision(decisions, id, new_adr_ids) do
                 {:authorized, adr} ->
                   markers =
                     self_authorized_marker_if_new(
@@ -662,12 +642,6 @@ defmodule SpecLedEx.AppendOnly do
     end)
   end
 
-  defp self_auth_adr_by_req_id(self_auth_adrs) do
-    Enum.reduce(self_auth_adrs, %{}, fn %{id: adr_id, affects: affects}, acc ->
-      Enum.reduce(affects, acc, &Map.put(&2, &1, adr_id))
-    end)
-  end
-
   defp self_authorized_marker_if_new(
          id,
          prior_req,
@@ -695,29 +669,34 @@ defmodule SpecLedEx.AppendOnly do
 
   defp weakening_class_detail(:polarity_removal, _detail), do: "negative polarity removed"
 
-  defp authorizing_decision(decisions, id) do
-    Enum.reduce_while(decisions, :none, fn decision, acc ->
-      meta = meta(decision)
-      change_type = meta_get(meta, "change_type")
-      affects = meta_get(meta, "affects") || []
+  defp authorizing_decision(decisions, id, new_adr_ids) do
+    matching_decisions =
+      Enum.filter(decisions, fn decision ->
+        id in (decision |> meta() |> meta_get("affects") || [])
+      end)
 
-      if id in affects do
-        cond do
-          change_type in @weakening_set ->
-            {:halt, {:authorized, decision}}
+    authorizers =
+      Enum.filter(matching_decisions, fn decision ->
+        meta_get(meta(decision), "change_type") in @weakening_set
+      end)
 
-          is_nil(change_type) or change_type == "" ->
-            # Surfaces as a missing_change_type warning, but does NOT authorize
-            # the deletion — the requirement_deleted (or downgrade) fires too.
-            {:cont, {:missing_change_type, decision}}
-
-          true ->
-            {:cont, acc}
+    case authorizers do
+      [] ->
+        case Enum.find(matching_decisions, fn decision ->
+               change_type = decision |> meta() |> meta_get("change_type")
+               is_nil(change_type) or change_type == ""
+             end) do
+          nil -> :none
+          decision -> {:missing_change_type, decision}
         end
-      else
-        {:cont, acc}
-      end
-    end)
+
+      _ ->
+        {:authorized,
+         Enum.min_by(authorizers, fn decision ->
+           adr_id = decision |> meta() |> meta_get("id")
+           {not MapSet.member?(new_adr_ids, adr_id), adr_id || ""}
+         end)}
+    end
   end
 
   defp effective_polarity(req) do
