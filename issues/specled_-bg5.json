@@ -6,6 +6,7 @@
   "description": "Fast-follows specled_-q0q (s0n: same-PR self-auth visibility + --debug crash fix), shipped in PR #34 / release 0.13.0 (main 9adbac9c). Split out at delivery. Carries the 5 TRACKED findings from the 2026-08-06 critical review (consolidated report in vault: code_review/critical/specled_ex/2026-08-06/specled_-q0q-s0n-selfauth-debug-fixes/) plus the review gate recommendation.",
   "id": "specled_-bg5",
   "labels": [],
+  "parent": "specled_-i4x",
   "comments": [
     {
       "text": "Split from specled_-q0q at delivery; original shipped as PR #34 / release 0.13.0 (main 9adbac9c). Carries: specled_-bg5.1 (F1 Medium), .2 (F11 Low), .3 (F12 Medium), .4 (F13 Medium), .5 (F25 Low), .6 (finding_codes/0 gate rec). Consolidated review: vault code_review/critical/specled_ex/2026-08-06/specled_-q0q-s0n-selfauth-debug-fixes/.",
@@ -16,5 +17,5 @@
   "status": "open",
   "title": "Fast-follow: s0n: same-PR self-auth visibility + --debug crash fix",
   "type": "epic",
-  "updated_at": "2026-08-06T23:11:29Z"
+  "updated_at": "2026-08-12T10:59:17Z"
 }
