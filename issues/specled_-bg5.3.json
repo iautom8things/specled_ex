@@ -9,9 +9,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-bg5",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: i4x-bg5.3\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-bg5.3/codex-i4x-bg5.3/log\n\nCommit: 5c800179cd41b3c37b1b6b3ec1698b04453ed913\nFiles touched: .spec/specs/package.spec.md, README.md, docs/adoption.md, docs/security.md\nTests added: None; existing SpecLedEx.DocsIdentifierLintTest and SpecLedEx.VerifierTest coverage exercised\nVerification stubs flipped: None\nVerification tier: change-scoped — mix compile --warnings-as-errors; mix format --check-formatted; mix test test/docs_identifier_lint_test.exs; mix test test/specled_ex/verifier_test.exs; mix spec.check --no-run-commands; full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: Added a focused security guide that identifies repository-authored verification commands as a CI trust boundary and documents a least-privilege fork-PR workflow. Corrected the adoption guide's unsafe always-run-commands advice, linked the policy from the README, and bound the new surface to a stable specled.package must requirement. The epic contains no recorded lesson lines to check.",
+      "timestamp": "2026-08-12T12:07:57Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "F12: --run-commands executes repo-resident shell — document fork-PR CI trust policy",
   "type": "task",
-  "updated_at": "2026-08-12T11:59:48Z"
+  "updated_at": "2026-08-12T12:07:57Z"
 }
