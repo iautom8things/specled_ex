@@ -17,7 +17,9 @@ status: active
 summary: Parses `Spec-Drift:` git trailers across base..HEAD and exposes a trailer_override map to Severity.
 surface:
   - lib/specled_ex/branch_check/trailer.ex
+  - lib/specled_ex/branch_check.ex
   - test/specled_ex/branch_check/trailer_test.exs
+  - test/specled_ex/branch_check/severity_integration_test.exs
 realized_by:
   implementation:
     - "SpecLedEx.BranchCheck.Trailer.parse/1"
@@ -64,6 +66,14 @@ decisions:
     single-author / small-team workflows.
   priority: should
   stability: evolving
+- id: specled.spec_drift_trailer.report_provenance
+  statement: >-
+    A branch-report finding whose resolved severity came from a commit's
+    `Spec-Drift:` trailer shall identify `spec_drift_trailer` as its severity
+    source. Synthetic overrides such as `--accept-drift` shall not be
+    attributed to a commit trailer.
+  priority: must
+  stability: evolving
 ```
 
 ## Scenarios
@@ -92,6 +102,15 @@ decisions:
     - the returned :warnings list names `lolwut`
   covers:
     - specled.spec_drift_trailer.parse_unknown_token_warns
+- id: specled.spec_drift_trailer.scenario.report_exposes_trailer_source
+  given:
+    - a commit with a `Spec-Drift:` override for a finding code
+  when:
+    - the branch report emits that finding
+  then:
+    - "the finding includes `severity_source: spec_drift_trailer`"
+  covers:
+    - specled.spec_drift_trailer.report_provenance
 ```
 
 ## Verification
@@ -104,4 +123,5 @@ decisions:
     - specled.spec_drift_trailer.parse_unknown_token_warns
     - specled.spec_drift_trailer.scans_base_to_head
     - specled.spec_drift_trailer.self_report_documented
+    - specled.spec_drift_trailer.report_provenance
 ```

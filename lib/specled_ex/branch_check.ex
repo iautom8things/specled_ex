@@ -194,14 +194,15 @@ defmodule SpecLedEx.BranchCheck do
   defp emit(severity_opts, code, message, file, subject_id \\ nil, default \\ nil) do
     resolved_default = default || Map.get(@per_code_defaults, code, :warning)
 
-    case Severity.resolve(code, severity_opts, resolved_default) do
-      :off ->
+    case Severity.resolve_with_source(code, severity_opts, resolved_default) do
+      {:off, _source} ->
         []
 
-      severity ->
+      {severity, source} ->
         item =
           %{
             "severity" => Atom.to_string(severity),
+            "severity_source" => Atom.to_string(source),
             "code" => code,
             "message" => message,
             "file" => file
@@ -285,12 +286,16 @@ defmodule SpecLedEx.BranchCheck do
       default = Map.get(@per_code_defaults, code, :warning)
       opts = drift_severity_opts(finding, code, severity_opts, healable?)
 
-      case Severity.resolve(code, opts, default) do
-        :off ->
+      case Severity.resolve_with_source(code, opts, default) do
+        {:off, _source} ->
           []
 
-        severity ->
-          [Map.put(finding, "severity", Atom.to_string(severity))]
+        {severity, source} ->
+          [
+            finding
+            |> Map.put("severity", Atom.to_string(severity))
+            |> Map.put("severity_source", Atom.to_string(source))
+          ]
       end
     end)
   end
@@ -305,6 +310,11 @@ defmodule SpecLedEx.BranchCheck do
         :trailer_override,
         %{"branch_guard_realization_drift" => :info},
         &Map.put(&1, "branch_guard_realization_drift", :info)
+      )
+      |> Keyword.update(
+        :trailer_override_sources,
+        %{"branch_guard_realization_drift" => :accept_drift},
+        &Map.put(&1, "branch_guard_realization_drift", :accept_drift)
       )
     else
       severity_opts
@@ -454,13 +464,14 @@ defmodule SpecLedEx.BranchCheck do
     Enum.flat_map(findings, fn finding ->
       default = Map.get(@per_code_defaults, finding.code, finding.severity)
 
-      case Severity.resolve(finding.code, severity_opts, default) do
-        :off ->
+      case Severity.resolve_with_source(finding.code, severity_opts, default) do
+        {:off, _source} ->
           []
 
-        severity ->
+        {severity, source} ->
           base_item = %{
             "severity" => Atom.to_string(severity),
+            "severity_source" => Atom.to_string(source),
             "code" => finding.code,
             "message" => finding.message,
             "file" => nil

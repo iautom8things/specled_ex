@@ -35,6 +35,7 @@ defmodule SpecLedEx.BranchCheck.Severity do
   @known_severities [:off, :info, :warning, :error]
 
   @type severity :: :off | :info | :warning | :error
+  @type source :: :config | :spec_drift_trailer | :accept_drift | :per_code_default
   @type code :: String.t()
   @type severity_map :: %{optional(code()) => severity()}
 
@@ -63,20 +64,37 @@ defmodule SpecLedEx.BranchCheck.Severity do
   @spec resolve(code(), opts :: keyword() | map(), severity()) :: severity()
   def resolve(code, opts, per_code_default)
       when is_binary(code) and per_code_default in @known_severities do
+    {severity, _source} = resolve_with_source(code, opts, per_code_default)
+    severity
+  end
+
+  @doc """
+  Resolves severity together with the layer that supplied it.
+
+  Trailer overrides default to the `:spec_drift_trailer` source. Callers that
+  inject an override at trailer precedence may identify its actual origin with
+  `:trailer_override_sources`, a map of `code => source`.
+  """
+  @spec resolve_with_source(code(), opts :: keyword() | map(), severity()) ::
+          {severity(), source()}
+  def resolve_with_source(code, opts, per_code_default)
+      when is_binary(code) and per_code_default in @known_severities do
     config_severities = fetch(opts, :config_severities, %{})
     guardrails_severities = fetch(opts, :guardrails_severities, %{})
     trailer_override = fetch(opts, :trailer_override, %{})
+    trailer_override_sources = fetch(opts, :trailer_override_sources, %{})
 
     config_value = sanitized(code, Map.get(config_severities, code), :config)
     guardrails_value = sanitized(code, Map.get(guardrails_severities, code), :guardrails)
     combined_config = guardrails_value || config_value
     trailer_value = sanitized(code, Map.get(trailer_override, code), :trailer)
+    trailer_source = Map.get(trailer_override_sources, code, :spec_drift_trailer)
 
     cond do
-      combined_config == :off -> :off
-      not is_nil(trailer_value) -> trailer_value
-      not is_nil(combined_config) -> combined_config
-      true -> per_code_default
+      combined_config == :off -> {:off, :config}
+      not is_nil(trailer_value) -> {trailer_value, trailer_source}
+      not is_nil(combined_config) -> {combined_config, :config}
+      true -> {per_code_default, :per_code_default}
     end
   end
 

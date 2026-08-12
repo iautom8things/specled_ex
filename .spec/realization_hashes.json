@@ -101,12 +101,17 @@
       "resolved_via": "beam"
     },
     "SpecLedEx.BranchCheck.Severity": {
-      "hash": "7660012516f492a9b08320ba172802626a0d61191d909cdfb1be8d1f51e26e8d",
+      "hash": "d4a55efed820c5e469307384e0b7205e81c7c00f52fe814b80e8a9684b5404b7",
       "hasher_version": 1,
       "resolved_via": "beam"
     },
     "SpecLedEx.BranchCheck.Severity.resolve/3": {
       "hash": "5274689ca74cf07e26f57b5a27044a2b7e93592331004939153eed94211decd4",
+      "hasher_version": 1,
+      "resolved_via": "beam"
+    },
+    "SpecLedEx.BranchCheck.Severity.resolve_with_source/3": {
+      "hash": "986a38b97a99ce640e8cf5d35dcbac6893cad63a49f687a464990177abca4c55",
       "hasher_version": 1,
       "resolved_via": "beam"
     },

@@ -52,6 +52,42 @@ defmodule SpecLedEx.BranchCheck.SeverityTest do
     end
   end
 
+  describe "resolve_with_source/3 provenance" do
+    @tag spec: "specled.severity.source_provenance"
+    test "reports the winning precedence layer" do
+      code = "some_code"
+
+      assert Severity.resolve_with_source(code, [], :warning) ==
+               {:warning, :per_code_default}
+
+      assert Severity.resolve_with_source(
+               code,
+               [config_severities: %{code => :error}],
+               :warning
+             ) == {:error, :config}
+
+      assert Severity.resolve_with_source(
+               code,
+               [trailer_override: %{code => :info}],
+               :warning
+             ) == {:info, :spec_drift_trailer}
+    end
+
+    @tag spec: "specled.severity.source_provenance"
+    test "preserves the source of a synthetic trailer-precedence override" do
+      code = "branch_guard_realization_drift"
+
+      assert Severity.resolve_with_source(
+               code,
+               [
+                 trailer_override: %{code => :info},
+                 trailer_override_sources: %{code => :accept_drift}
+               ],
+               :warning
+             ) == {:info, :accept_drift}
+    end
+  end
+
   describe "resolve/3 :off precedence" do
     @tag spec: "specled.severity.off_is_absorbing"
     @tag spec: "specled.severity.non_emitting"

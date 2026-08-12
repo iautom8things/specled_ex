@@ -29,6 +29,7 @@ realized_by:
     - "SpecLedEx.BranchCheck.Severity"
   implementation:
     - "SpecLedEx.BranchCheck.Severity.resolve/3"
+    - "SpecLedEx.BranchCheck.Severity.resolve_with_source/3"
     - "SpecLedEx.BranchCheck.Severity.sanitized/3"
 ```
 
@@ -69,6 +70,18 @@ realized_by:
     exit-status math.
   priority: must
   stability: evolving
+- id: specled.severity.source_provenance
+  statement: >-
+    SpecLedEx.BranchCheck.Severity.resolve_with_source/3 shall return the
+    resolved severity together with its winning precedence source. Findings
+    emitted into the branch report shall include that source, distinguishing
+    a commit's `Spec-Drift:` override from the synthetic `--accept-drift`
+    override. resolve/3 shall continue to return only the severity atom.
+  priority: must
+  stability: evolving
+  realized_by:
+    implementation:
+      - "SpecLedEx.BranchCheck.Severity.resolve_with_source/3"
 ```
 
 ## Scenarios
@@ -107,6 +120,17 @@ realized_by:
     - a Logger.warning names the bad value and the code
   covers:
     - specled.severity.known_values
+- id: specled.severity.scenario.report_names_override_source
+  given:
+    - a branch finding whose severity is changed by a commit trailer
+    - a realization-drift finding changed by `--accept-drift`
+  when:
+    - the branch report is built
+  then:
+    - the trailer-controlled finding names `spec_drift_trailer` as its severity source
+    - the flag-controlled finding names `accept_drift` as its severity source
+  covers:
+    - specled.severity.source_provenance
 ```
 
 ## Verification
@@ -125,4 +149,5 @@ AppendOnly emitter-derived set; severity resolution precedence is unchanged.
     - specled.severity.off_is_absorbing
     - specled.severity.known_values
     - specled.severity.non_emitting
+    - specled.severity.source_provenance
 ```
