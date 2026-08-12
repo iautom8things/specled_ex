@@ -71,6 +71,10 @@ defmodule SpecLedEx.Realization.Orchestrator do
 
   @default_tiers [:api_boundary, :expanded_behavior, :typespecs, :use]
   @flat_tiers [:api_boundary, :expanded_behavior, :typespecs, :use]
+  @drift_code "branch_guard_realization_drift"
+  @dangling_code "branch_guard_dangling_binding"
+  @divergence_code "branch_guard_resolution_path_divergence"
+  @unattested_codes [@drift_code, @dangling_code, @divergence_code]
 
   @type tier_key :: :api_boundary | :implementation | :expanded_behavior | :typespecs | :use
   @type binding_ref :: %{
@@ -101,7 +105,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
       (`mix spec.check --accept-drift`): it self-heals the baseline in one run
       so the drift does not resurface post-merge once the ephemeral
       `Spec-Drift:` trailer's `base..HEAD` window has closed. Dangling bindings
-      are never accepted — `refresh_and_commit_hashes/3` only commits hashes for
+      are never accepted — `refresh_and_commit_hashes/4` only commits hashes for
       bindings that resolve, so an unresolved binding keeps failing the run.
       Defaults to false. See `specled.decision.realization_drift_acceptance`.
   """
@@ -177,16 +181,23 @@ defmodule SpecLedEx.Realization.Orchestrator do
     tier_opts = [root: root, umbrella?: umbrella?]
     bindings_by_tier = collect_bindings(index, enabled)
 
-    if commit_hashes? and not umbrella? do
-      seed_uncommitted_hashes(bindings_by_tier, context, root)
-    end
-
     findings =
       Enum.flat_map(enabled, fn tier ->
         dispatch(tier, Map.get(bindings_by_tier, tier, []), context, tier_opts, umbrella?)
       end)
 
     findings = normalize_use_findings(findings)
+    diverged_tier_mfas = diverged_tier_mfas(findings)
+
+    # A divergence anywhere means this run resolved at least one binding through
+    # a different path than the committed baseline. Treat the whole tree as cold
+    # for seeding: another uncommitted binding may also have fallen back to source,
+    # but missing baselines are finding-neutral and cannot identify that binding.
+    seed_allowed? = MapSet.size(diverged_tier_mfas) == 0
+
+    if commit_hashes? and not umbrella? and seed_allowed? do
+      seed_uncommitted_hashes(bindings_by_tier, context, root)
+    end
 
     # Normally the refresh is gated behind a clean run — drift blocks the very
     # refresh that would accept the new hash, which is why `mix spec.check`
@@ -196,14 +207,35 @@ defmodule SpecLedEx.Realization.Orchestrator do
     # intentional drift — it still blocks the refresh, so no baseline moves on a
     # run that exits `fail`. See `specled.realized_by.drift_acceptance`.
     #
-    # Resolution-path divergence blocks the refresh in BOTH branches
-    # (specled_-n5q.1): a diverged run is hashing through the source-AST
-    # fallback on an uncompiled tree, and refreshing would overwrite
-    # beam-hashed baselines with structurally different source hashes. That is
-    # never intentional drift — the remedy is to compile, not to accept.
-    if commit_hashes? and not umbrella? and not has_divergence?(findings) and
-         ((accept_drift? and not has_dangling?(findings)) or not has_drift?(findings)) do
-      refresh_and_commit_hashes(bindings_by_tier, context, root)
+    # Resolution-path divergence excludes only the affected tier/MFA entries
+    # from refresh. The store has no subject dimension, so every binding that
+    # shares that tier/MFA is excluded; unrelated entries still rebaseline.
+    # When divergence and drift coexist under `--accept-drift`, keep the
+    # existing run-wide block because BranchCheck also withholds drift
+    # silencing for that combination (silence exactly what you heal).
+    # See `specled.decision.divergence_refresh_scope`.
+    refresh_allowed? =
+      (accept_drift? and not has_dangling?(findings) and
+         not (has_drift?(findings) and has_divergence?(findings))) or
+        not has_drift?(findings)
+
+    if commit_hashes? and not umbrella? and refresh_allowed? do
+      excluded_tier_mfas =
+        if seed_allowed? do
+          diverged_tier_mfas
+        else
+          MapSet.union(
+            diverged_tier_mfas,
+            uncommitted_flat_tier_mfas(bindings_by_tier, root)
+          )
+        end
+
+      refresh_and_commit_hashes(
+        bindings_by_tier,
+        context,
+        root,
+        excluded_tier_mfas
+      )
     end
 
     {findings, bindings_by_tier, %{root: root, context: context, umbrella?: umbrella?}}
@@ -246,8 +278,9 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # entry carrying the same MFAs the requirement contributed. Requirements
   # whose bindings drifted or were dangling have empty buckets and so don't
   # produce test-file attestations.
+  # See `specled.decision.file_touch_yields_to_realization`.
   defp build_attestations(findings, bindings_by_tier, ctx, index) do
-    drift_set = drift_dangling_pairs(findings)
+    drift_set = unattested_pairs(findings)
 
     {production_acc, req_clean_mfas} =
       bindings_by_tier
@@ -372,6 +405,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # with `requirement_id == nil` (the implementation tier aggregates subject-
   # and requirement-level impl bindings into a single per-subject list before
   # this point, so the requirement provenance is not preserved for impl).
+  # spec-lint:allow-long-comment=private helper data-shape walkthrough
   defp all_subject_requirement_mfa_triples(bindings_by_tier) do
     flat_triples =
       @flat_tiers
@@ -393,12 +427,9 @@ defmodule SpecLedEx.Realization.Orchestrator do
     Enum.uniq(flat_triples ++ impl_triples)
   end
 
-  defp drift_dangling_pairs(findings) do
+  defp unattested_pairs(findings) do
     Enum.reduce(findings, MapSet.new(), fn finding, acc ->
-      code = Map.get(finding, "code") || Map.get(finding, :code)
-
-      if code == "branch_guard_realization_drift" or code == "branch_guard_dangling_binding" or
-           code == "branch_guard_resolution_path_divergence" do
+      if finding_code(finding) in @unattested_codes do
         sid = Map.get(finding, "subject_id") || Map.get(finding, :subject_id)
         mfa = Map.get(finding, "mfa") || Map.get(finding, :mfa)
 
@@ -475,19 +506,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
         end)
       end)
 
-    # Post-concat dedup: api_boundary tier only, and amplification-scoped
-    # (specled_-n5q.2). The implication expansion can inject the same MFA at both
-    # the subject and requirement layers, so INFERRED entries dedupe on MFA
-    # and yield entirely to any authored entry sharing their MFA. AUTHORED
-    # entries are never collapsed by MFA — independent requirements binding
-    # the same function keep distinct provenance, the philosophy the other
-    # tiers already follow — only exact {subject, requirement, mfa}
-    # duplicates drop. The former whole-list `uniq_by(& &1.mfa)` kept the
-    # first-seen entry, and stable subject-before-requirement order made that
-    # the subject-layer INFERRED entry: it shadowed authored requirement
-    # bindings (381 across 31 subjects in the reporting adopter), and because
-    # the api_boundary detector suppresses dangling findings for inferred
-    # entries, a nonexistent authored MFA produced zero findings corpus-wide.
+    # See specled.decision.amplification_scoped_dedupe.
     if Map.has_key?(bindings, :api_boundary) do
       Map.update!(bindings, :api_boundary, &dedupe_api_boundary/1)
     else
@@ -684,31 +703,55 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # ---------------------------------------------------------------------------
 
   defp has_drift?(findings) do
-    Enum.any?(findings, fn f ->
-      code =
-        Map.get(f, "code") || Map.get(f, :code)
-
-      code == "branch_guard_realization_drift" or
-        code == "branch_guard_dangling_binding"
-    end)
+    has_code?(findings, @drift_code) or has_code?(findings, @dangling_code)
   end
 
-  defp has_dangling?(findings) do
-    Enum.any?(findings, fn f ->
-      code = Map.get(f, "code") || Map.get(f, :code)
-      code == "branch_guard_dangling_binding"
-    end)
+  defp has_dangling?(findings), do: has_code?(findings, @dangling_code)
+
+  defp has_divergence?(findings), do: has_code?(findings, @divergence_code)
+
+  defp has_code?(findings, code), do: Enum.any?(findings, &(finding_code(&1) == code))
+
+  defp finding_code(finding), do: Map.get(finding, "code") || Map.get(finding, :code)
+
+  defp diverged_tier_mfas(findings) do
+    if has_code?(findings, @divergence_code) do
+      Enum.reduce(findings, MapSet.new(), fn finding, acc ->
+        tier = Map.get(finding, "tier") || Map.get(finding, :tier)
+        mfa = Map.get(finding, "mfa") || Map.get(finding, :mfa)
+
+        if finding_code(finding) == @divergence_code and is_binary(tier) and is_binary(mfa) do
+          MapSet.put(acc, {tier, mfa})
+        else
+          acc
+        end
+      end)
+    else
+      MapSet.new()
+    end
   end
 
-  defp has_divergence?(findings) do
-    Enum.any?(findings, fn f ->
-      code = Map.get(f, "code") || Map.get(f, :code)
-      code == "branch_guard_resolution_path_divergence"
+  defp uncommitted_flat_tier_mfas(bindings_by_tier, root) do
+    store = HashStore.read(root)
+
+    Enum.reduce(@flat_tiers, MapSet.new(), fn tier, acc ->
+      tier_name = Atom.to_string(tier)
+      committed = Map.get(store, tier_name, %{})
+
+      bindings_by_tier
+      |> Map.get(tier, [])
+      |> Enum.reduce(acc, fn %{mfa: mfa}, inner_acc ->
+        if Map.has_key?(committed, mfa) do
+          inner_acc
+        else
+          MapSet.put(inner_acc, {tier_name, mfa})
+        end
+      end)
     end)
   end
 
   @doc false
-  # The tiers `refresh_and_commit_hashes/3` rebaselines. `SpecLedEx.BranchCheck`
+  # The tiers `refresh_and_commit_hashes/4` rebaselines. `SpecLedEx.BranchCheck`
   # references this to scope the `--accept-drift` `:info` downgrade to exactly
   # the healed set (silence what you heal); the implementation tier is excluded
   # by design, so its drift is reported, never accepted.
@@ -717,22 +760,25 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # covers: specled.realized_by.silent_seed
   # covers: specled.realized_by.silent_seed_uses_merge
   #
-  # Pre-dispatch silent-seed pass. For each tracked entry that lacks a
+  # Post-dispatch silent-seed pass. For each tracked entry that lacks a
   # committed hash in `<root>/.spec/realization_hashes.json`, compute the
-  # current hash and persist it via `HashStore.merge/2`. The detectors then read the
-  # committed-by-this-pass hash on entry, see `committed == current`, and
-  # emit no drift finding for that entry on the seeding run.
+  # current hash and persist it via `HashStore.merge/2`. Detectors emit no drift
+  # for missing baselines, so dispatch remains finding-neutral for those entries.
+  # If any binding diverged anywhere in the run, seeding is skipped entirely.
   #
   # Gated by the same `commit_hashes? != false` and `umbrella? == false`
-  # conditions that gate `refresh_and_commit_hashes/3`. Dangling entries
+  # conditions that gate `refresh_and_commit_hashes/4`. Dangling entries
   # (MFAs that don't resolve, bare modules that aren't loadable, impl
   # subjects with dangling closure bindings) are NOT seeded — they continue
   # to surface as dangling findings on this run.
   #
   # The seed pass is silent: no findings are emitted from this code path.
-  # The post-run `refresh_and_commit_hashes/3` is unaffected; it still runs
-  # under the same gate when no drift is detected and uses `write/2`'s
-  # replacement semantics for the full realization map.
+  # The post-run `refresh_and_commit_hashes/4` merges refreshed hashes for the
+  # flat tiers only into the existing realization map. On a divergent run, it
+  # still refreshes committed clean entries but excludes missing entries so it
+  # cannot bypass this gate.
+  # See `specled.decision.silent_seed_batches_subject_graph` and
+  # `specled.decision.run_scoped_divergence_seed_gate`.
   defp seed_uncommitted_hashes(bindings_by_tier, context, root) do
     store = HashStore.read(root)
 
@@ -745,7 +791,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
         uncommitted =
           Enum.reject(bindings, fn %{mfa: mfa} -> Map.has_key?(committed, mfa) end)
 
-        case compute_seed_hashes(tier, uncommitted, context) do
+        case compute_tier_hashes(tier, uncommitted, context) do
           empty when empty == %{} -> acc
           tier_seeds -> Map.put(acc, tier_key, tier_seeds)
         end
@@ -773,39 +819,6 @@ defmodule SpecLedEx.Realization.Orchestrator do
     :ok
   end
 
-  defp compute_seed_hashes(:api_boundary, bindings, context) do
-    api_boundary_hashes(bindings, context)
-  end
-
-  defp compute_seed_hashes(:expanded_behavior, bindings, _context) do
-    dedupe_by_mfa(bindings, fn mfa ->
-      case ExpandedBehavior.hash(mfa) do
-        {:ok, hash_bin} -> {:ok, hash_bin}
-        _ -> :skip
-      end
-    end)
-  end
-
-  defp compute_seed_hashes(:typespecs, bindings, _context) do
-    dedupe_by_mfa(bindings, fn mfa ->
-      case Typespecs.hash(mfa) do
-        {:ok, hash_bin} -> {:ok, hash_bin}
-        _ -> :skip
-      end
-    end)
-  end
-
-  defp compute_seed_hashes(:use, bindings, _context) do
-    dedupe_by_mfa(bindings, fn provider ->
-      case Use.hash(provider) do
-        {:ok, hash_bin} -> {:ok, hash_bin}
-        _ -> :skip
-      end
-    end)
-  end
-
-  defp compute_seed_hashes(_tier, _bindings, _context), do: %{}
-
   # Implementation tier seeding: subjects carry a mixed `impl_bindings` list
   # (MFA-form for closure walk, bare-module-form for per-module hashing).
   # Each closure subject is keyed by `subject.id`; each bare module is keyed
@@ -819,7 +832,8 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # seeding one subject (or only the uncommitted subset) builds a world that
   # cannot resolve peers, so the seed writes `…:hash:unknown` markers and the
   # detector (which walks the full subject graph) permanently reports
-  # wholesale `branch_guard_realization_drift`. See atlas-vmi.
+  # wholesale `branch_guard_realization_drift`. See
+  # `specled.decision.silent_seed_batches_subject_graph`.
   defp seed_implementation_subjects(subjects, committed, context, root) do
     bare_seeds =
       Enum.reduce(subjects, %{}, fn subject, acc ->
@@ -894,7 +908,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
 
   defp bare_module_binding?(_), do: false
 
-  defp refresh_and_commit_hashes(bindings_by_tier, context, root) do
+  defp refresh_and_commit_hashes(bindings_by_tier, context, root, excluded_tier_mfas) do
     # Flat-tier refresh only. MUST merge, not replace: HashStore.write/2 would
     # wipe the implementation (and any other non-flat) section that silent-seed
     # just wrote. Implementation remains seed-only until a dedicated refresh
@@ -902,13 +916,19 @@ defmodule SpecLedEx.Realization.Orchestrator do
     realization =
       @flat_tiers
       |> Enum.reduce(%{}, fn tier, acc ->
-        bindings = Map.get(bindings_by_tier, tier, [])
+        tier_name = Atom.to_string(tier)
+
+        bindings =
+          bindings_by_tier
+          |> Map.get(tier, [])
+          |> Enum.reject(&MapSet.member?(excluded_tier_mfas, {tier_name, &1.mfa}))
+
         tier_hashes = compute_tier_hashes(tier, bindings, context)
 
         if tier_hashes == %{} do
           acc
         else
-          Map.put(acc, Atom.to_string(tier), tier_hashes)
+          Map.put(acc, tier_name, tier_hashes)
         end
       end)
 
@@ -926,7 +946,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
   defp compute_tier_hashes(:expanded_behavior, bindings, _context) do
     dedupe_by_mfa(bindings, fn mfa ->
       case ExpandedBehavior.hash(mfa) do
-        {:ok, hash_bin} -> {:ok, hash_bin}
+        {:ok, hash_bin} -> {:ok, hash_entry(hash_bin)}
         _ -> :skip
       end
     end)
@@ -935,7 +955,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
   defp compute_tier_hashes(:typespecs, bindings, _context) do
     dedupe_by_mfa(bindings, fn mfa ->
       case Typespecs.hash(mfa) do
-        {:ok, hash_bin} -> {:ok, hash_bin}
+        {:ok, hash_bin} -> {:ok, hash_entry(hash_bin)}
         _ -> :skip
       end
     end)
@@ -944,7 +964,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
   defp compute_tier_hashes(:use, bindings, _context) do
     dedupe_by_mfa(bindings, fn provider ->
       case Use.hash(provider) do
-        {:ok, hash_bin} -> {:ok, hash_bin}
+        {:ok, hash_bin} -> {:ok, hash_entry(hash_bin)}
         _ -> :skip
       end
     end)
@@ -952,54 +972,40 @@ defmodule SpecLedEx.Realization.Orchestrator do
 
   defp compute_tier_hashes(_tier, _bindings, _context), do: %{}
 
-  # Single api_boundary hasher shared by the silent-seed pass and the post-run
-  # refresh. Seed and refresh MUST produce identical entries for the same
-  # bindings — a divergence (refresh skipping bare modules while seed hashed
-  # them) is what caused bare-module entries to oscillate out of
-  # `.spec/realization_hashes.json` (specled_-rot). Under `merge/2` semantics
-  # the refresh side of that parity is unobservable through `run/2` (seed
-  # re-covers anything missing), so parity is held here by construction and
-  # the bare-module/MFA contract is pinned by testing this function directly.
-  #
   # Orchestrator-internal (`@doc false`): public only for testability.
   @doc false
   def api_boundary_hashes(bindings, context) do
-    # Hash once per distinct MFA: the output map is MFA-keyed, so duplicate
-    # entries (independent requirements sharing a binding survive the
-    # amplification-scoped dedupe) would just recompute identical values —
-    # and source-fallback resolution is a File.read + parse per call. The
-    # DETECTOR must keep the multiplicity; only the hashing collapses it.
-    bindings = Enum.uniq_by(bindings, & &1.mfa)
-
-    Enum.reduce(bindings, %{}, fn %{mfa: mfa}, acc ->
+    dedupe_by_mfa(bindings, fn mfa ->
       case Binding.resolve(mfa, context) do
         {:ok, {:module, mod}} ->
           # Bare module under api_boundary — head-union envelope. Loadability
           # is a precondition, so the resolution path is definitionally beam.
           case Canonical.hash_module_head_union(mod) do
-            {:ok, hash_bin} -> Map.put(acc, mfa, hash_entry(hash_bin, :beam))
-            _ -> acc
+            {:ok, hash_bin} -> {:ok, hash_entry(hash_bin, :beam)}
+            _ -> :skip
           end
 
         {:ok, ast} ->
           # Label the entry with the path that produced the hash so the
           # detector only compares same-path hashes (specled_-n5q.1).
           hash_bin = ApiBoundary.hash(ast)
-          Map.put(acc, mfa, hash_entry(hash_bin, Binding.resolution_path(ast)))
+          {:ok, hash_entry(hash_bin, Binding.resolution_path(ast))}
 
         _ ->
           # Dangling: do not seed. Detector will emit dangling on the run.
-          acc
+          :skip
       end
     end)
   end
 
+  # Callbacks return fully-formed entries ready for HashStore.merge/2.
+  # Seed and refresh must produce identical entries for the same bindings.
   defp dedupe_by_mfa(bindings, hash_fun) do
     bindings
     |> Enum.uniq_by(& &1.mfa)
     |> Enum.reduce(%{}, fn %{mfa: mfa}, acc ->
       case hash_fun.(mfa) do
-        {:ok, hash_bin} -> Map.put(acc, mfa, hash_entry(hash_bin))
+        {:ok, entry} -> Map.put(acc, mfa, entry)
         :skip -> acc
       end
     end)

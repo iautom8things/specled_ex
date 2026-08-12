@@ -6,7 +6,7 @@ Diff-aware co-change validation for current-truth subject specs and durable ADRs
 
 Catch code, docs, and test changes that move ahead of current-truth specs or skip a needed cross-cutting ADR update.
 
-Realization findings enter the guard through `SpecLedEx.Realization.Orchestrator` — that is why orchestrator code and tests sit in this subject's surface. The orchestrator's silent-seed pass and clean-run refresh share a single api_boundary hasher (`Orchestrator.api_boundary_hashes/2`), so committed baselines in `.spec/realization_hashes.json` — including bare-module entries — cannot oscillate between the two passes. The guard depends on those baselines being stable: its file-touch findings yield to attestations derived from them (`specled.decision.file_touch_yields_to_realization`).
+Realization findings enter the guard through `SpecLedEx.Realization.Orchestrator` — that is why orchestrator code and tests sit in this subject's surface. The orchestrator's silent-seed pass and clean-run refresh share a single api_boundary hasher (`Orchestrator.api_boundary_hashes/2`), so committed baselines in `.spec/realization_hashes.json` — including bare-module entries — cannot oscillate between the two passes. A run that emits resolution-path divergence seeds nothing new because the same cold tree can source-resolve otherwise-uncommitted bindings without producing findings for them (`specled.decision.run_scoped_divergence_seed_gate`). The guard depends on those baselines being stable: its file-touch findings yield to attestations derived from them (`specled.decision.file_touch_yields_to_realization`).
 
 `lib/specled_ex/coverage.ex` is bound here as a bare-module `implementation` entry (`"SpecLedEx.Coverage"`) because the guard's own impacted-subject mapping (`subject_file_map/2`, `covered_files/2`, `subject_ids_for_path/2`) lives in that file, not because it implements any coverage-capture behavior itself — `specled.coverage_capture` owns the rest of the module (`init/2`, `install/1`, `cover_modules_safe/0`) for the unrelated per-test/aggregate coverage engine. A bare-module entry hashes the whole file, so an edit anywhere in `coverage.ex` (for example `init/2` narrowing its required options when `specled.coverage_capture`'s per-test engine changed) legitimately drifts this subject's realization hash too, even though the guard's own subject-mapping functions were untouched.
 
@@ -14,7 +14,7 @@ Realization findings enter the guard through `SpecLedEx.Realization.Orchestrator
 id: specled.branch_guard
 kind: workflow
 status: active
-summary: Uses the current Git change set to enforce subject co-changes and cross-cutting ADR updates during the final local check.
+summary: Uses the current Git change set and realization findings to enforce subject co-changes and cross-cutting ADR updates during the final local check.
 surface:
   - lib/specled_ex/base_view.ex
   - lib/specled_ex/branch_check.ex
@@ -45,6 +45,7 @@ decisions:
   - specled.decision.realization_tiers_nil_default
   - specled.decision.decision_fork_advertised_at_decision_points
   - specled.decision.cross_vm_temp_names_reach
+  - specled.decision.run_scoped_divergence_seed_gate
 ```
 
 ## Requirements
@@ -423,10 +424,15 @@ decisions:
 
 ## Verification
 
-Branch reconciliation note: `test/mix/tasks/spec_tasks_test.exs` is a shared task
-test surface for this subject. This branch touches that file to assert the
-spec.check stdout verdict contract's usage-tier pre-flight rejection token; the
-branch-guard requirements above remain unchanged.
+Branch reconciliation note: `lib/specled_ex/realization/orchestrator.ex` and its
+test are shared surfaces for this subject. Their per-`(tier, mfa)` divergence
+refresh exclusion advances `specled.api_boundary`; the branch-guard requirements
+above remain unchanged.
+
+Branch reconciliation note: `lib/specled_ex/branch_check.ex` is this subject's
+severity-resolution surface. This branch registers the warning default for the
+new append-only statement-rewrite finding; branch-guard behavior remains
+unchanged.
 
 ```yaml spec-verification
 - kind: tagged_tests

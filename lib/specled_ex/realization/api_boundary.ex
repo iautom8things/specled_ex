@@ -117,7 +117,7 @@ defmodule SpecLedEx.Realization.ApiBoundary do
               not comparable?(current_via, baseline_via) ->
                 [path_divergence_finding(binding, mfa, current_via, baseline_via)]
 
-              entry_hash(entry) == current ->
+              HashStore.entry_hash(entry) == current ->
                 []
 
               true ->
@@ -166,39 +166,12 @@ defmodule SpecLedEx.Realization.ApiBoundary do
   # envelope a 5-tuple over the first parsed def clause, so cross-path
   # inequality is structural, not evidence of drift (specled_-n5q.1).
   #
-  # An unlabeled baseline (written before "resolved_via" existed) compares
-  # as before — legacy drift semantics. "Assume beam" was considered and
-  # empirically refuted on this project's own corpus: bindings on PRIVATE
-  # functions always resolve via source (function_exported?/3 is false, so
-  # beam extraction is never attempted), so their unlabeled baselines were
-  # source-written and the assumption fabricated divergence for every one
-  # of them. The writer ran the same resolver on the same declaration, so
-  # same-path is the right default; the one case it misses — a beam-written
-  # baseline met by a cold-tree source resolution — is the status-quo
-  # fabricated-drift bug, time-boxed to the first labeling refresh.
-  # An UNRECOGNIZED label is treated as legacy, not as permanent divergence.
-  # Divergence blocks the baseline refresh, so classifying an unknown label as
-  # incomparable would freeze the entry forever with no way to rewrite it — and
-  # the label is reachable by hand-edit (the remedy text below invites one) or
-  # by a future third path meeting a pinned adopter. Falling back to legacy
-  # comparison degrades to the pre-label behavior, which is recoverable.
+  # Legacy and unrecognized labels: see specled.decision.resolution_path_provenance.
   defp comparable?(_current, nil), do: true
   defp comparable?(:beam, "beam"), do: true
   defp comparable?(:source, "source"), do: true
   defp comparable?(_current, baseline) when baseline not in ["beam", "source"], do: true
   defp comparable?(_current, _baseline), do: false
-
-  defp entry_hash(%{"hash" => hash}) when is_binary(hash) do
-    case Base.decode16(hash, case: :mixed) do
-      {:ok, bytes} -> bytes
-      :error -> nil
-    end
-  end
-
-  # A malformed entry (non-string or absent "hash") is not a hash we can
-  # compare. Returning nil routes it to the drift branch, which is the honest
-  # answer: we cannot show the committed value matches.
-  defp entry_hash(_entry), do: nil
 
   # Reached only for labeled baselines: comparable?/2 short-circuits nil.
   defp path_divergence_finding(binding, mfa, current_via, baseline_via) do

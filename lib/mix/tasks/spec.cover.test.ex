@@ -209,6 +209,7 @@ defmodule Mix.Tasks.Spec.Cover.Test do
     # ebin must already be on the code path for this to succeed.
     {:module, _} = Code.ensure_loaded(SpecLedEx.Coverage.Arming)
     {:module, _} = Code.ensure_loaded(SpecLedEx.Coverage.Formatter)
+    {:module, _} = Code.ensure_loaded(SpecLedEx.Coverage.Paths)
     {:module, _} = Code.ensure_loaded(SpecLedEx.Coverage.Store)
     {:module, _} = Code.ensure_loaded(SpecLedEx.Coverage.Snapshot)
     {:module, _} = Code.ensure_loaded(SpecLedEx.Coverage)

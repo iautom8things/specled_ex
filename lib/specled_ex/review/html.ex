@@ -1120,6 +1120,7 @@ defmodule SpecLedEx.Review.Html do
         codes: ~w(
             append_only/requirement_deleted
             append_only/must_downgraded
+            append_only/statement_rewritten
             append_only/scenario_regression
             append_only/negative_removed
             append_only/disabled_without_reason
@@ -2881,7 +2882,7 @@ defmodule SpecLedEx.Review.Html do
         <p>Each requirement is verified by one or more <code>spec-verification</code> entries that name it in their <code>covers:</code> list. The verifier inspects each entry and reports the <strong>strongest evidence</strong> it could find for the requirement.</p>
         <dl class="coverage-help-tiers">
           <dt><span class="strength-badge strength-executed">EXECUTED</span></dt>
-          <dd>A <code>kind: command</code> entry with <code>execute: true</code> ran and exited 0; or a <code>kind: tagged_tests</code> entry executed its matching test successfully. Requires <code>mix spec.check --run-commands</code> (or <code>mix spec.review --run-commands</code>).</dd>
+          <dd>A <code>kind: command</code> entry with <code>execute: true</code> ran and exited 0; or a <code>kind: tagged_tests</code> entry executed its matching test successfully. Requires <code>mix spec.check</code> with command execution enabled (the default; <code>--no-run-commands</code> disables it).</dd>
           <dt><span class="strength-badge strength-linked">LINKED</span></dt>
           <dd>For a <em>file-kind</em> verification (<code>source_file</code>, <code>test_file</code>, <code>guide_file</code>, …) the target file exists <em>and</em> its content references the requirement id (typically a <code># covers:</code> comment or a literal mention). For <code>tagged_tests</code>, a test in the suite carries <code>@tag spec: "&lt;requirement_id&gt;"</code>.</dd>
           <dt><span class="strength-badge strength-claimed">CLAIMED</span></dt>

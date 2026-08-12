@@ -1,5 +1,5 @@
 defmodule SpecLedEx.AppendOnly do
-  # covers: specled.append_only.requirement_deleted specled.append_only.requirement_deleted_authorized specled.append_only.must_downgraded specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.self_authorized_weakening specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
+  # covers: specled.append_only.requirement_deleted specled.append_only.requirement_deleted_authorized specled.append_only.accepted_adr_authorization specled.append_only.must_downgraded specled.append_only.statement_rewritten specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.self_authorized_weakening specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.finding_codes specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
   @moduledoc """
   Pure diff-time append-only detectors for `.spec/` content.
 
@@ -29,6 +29,20 @@ defmodule SpecLedEx.AppendOnly do
   alias SpecLedEx.ModalClass
 
   @weakening_set ~w(deprecates weakens narrows-scope adds-exception)
+  Module.register_attribute(__MODULE__, :emitted_finding_codes, accumulate: true)
+
+  defmacrop finding(code, fields) do
+    unless is_binary(code) do
+      raise ArgumentError,
+            "finding/2 requires a literal binary code, got: #{Macro.to_string(code)}"
+    end
+
+    Module.put_attribute(__CALLER__.module, :emitted_finding_codes, code)
+
+    quote do
+      Map.put(unquote(fields), :code, unquote(code))
+    end
+  end
 
   @type severity :: :error | :warning | :info
 
@@ -72,6 +86,8 @@ defmodule SpecLedEx.AppendOnly do
     {downgrade_findings, downgrade_consulted_ids} =
       detect_must_downgraded(prior_reqs, current_reqs, decisions, new_adr_ids)
 
+    statement_rewrite_findings = detect_statement_rewritten(prior_reqs, current_reqs)
+
     {regression_findings, regression_consulted_ids} =
       detect_scenario_regression(prior, current, decisions, new_adr_ids)
 
@@ -85,16 +101,9 @@ defmodule SpecLedEx.AppendOnly do
       |> MapSet.union(polarity_consulted_ids)
 
     self_auth_adrs = self_authorizing_adrs(new_head_adrs, weakened_ids)
-    self_auth_adr_by_req_id = self_auth_adr_by_req_id(self_auth_adrs)
 
     {deletion_findings, deletion_consulted_ids} =
-      detect_requirement_deleted(
-        prior_reqs,
-        current_reqs,
-        decisions,
-        new_adr_ids,
-        self_auth_adr_by_req_id
-      )
+      detect_requirement_deleted(prior_reqs, current_reqs, decisions, new_adr_ids)
 
     consulted_ids =
       deletion_consulted_ids
@@ -104,6 +113,7 @@ defmodule SpecLedEx.AppendOnly do
 
     (deletion_findings ++
        downgrade_findings ++
+       statement_rewrite_findings ++
        regression_findings ++
        polarity_findings ++
        detect_same_pr_self_authorization(self_auth_adrs, decisions) ++
@@ -119,44 +129,31 @@ defmodule SpecLedEx.AppendOnly do
 
   ## ── Detectors ─────────────────────────────────────────────────────
 
-  defp detect_requirement_deleted(
-         prior_reqs,
-         current_reqs,
-         decisions,
-         new_adr_ids,
-         self_auth_adr_by_req_id
-       ) do
+  defp detect_requirement_deleted(prior_reqs, current_reqs, decisions, new_adr_ids) do
     Enum.reduce(prior_reqs, {[], MapSet.new()}, fn {id, prior}, {findings, consulted} ->
-      cond do
-        Map.has_key?(current_reqs, id) ->
-          {findings, consulted}
+      if Map.has_key?(current_reqs, id) do
+        {findings, consulted}
+      else
+        case authorizing_decision(decisions, id, new_adr_ids) do
+          {:authorized, adr} ->
+            markers =
+              self_authorized_marker_if_new(
+                id,
+                prior,
+                adr,
+                :deletion,
+                nil,
+                new_adr_ids
+              )
 
-        Map.has_key?(self_auth_adr_by_req_id, id) ->
-          adr_id = Map.fetch!(self_auth_adr_by_req_id, id)
-          marker = self_authorized_weakening_finding(id, prior, adr_id, :deletion, nil)
-          {[marker | findings], MapSet.put(consulted, id)}
+            {markers ++ findings, MapSet.put(consulted, id)}
 
-        true ->
-          case authorizing_decision(decisions, id) do
-            {:authorized, adr} ->
-              markers =
-                self_authorized_marker_if_new(
-                  id,
-                  prior,
-                  adr,
-                  :deletion,
-                  nil,
-                  new_adr_ids
-                )
+          {:missing_change_type, _adr} ->
+            {[requirement_deleted_finding(id, prior) | findings], MapSet.put(consulted, id)}
 
-              {markers ++ findings, MapSet.put(consulted, id)}
-
-            {:missing_change_type, _adr} ->
-              {[requirement_deleted_finding(id, prior) | findings], MapSet.put(consulted, id)}
-
-            :none ->
-              {[requirement_deleted_finding(id, prior) | findings], MapSet.put(consulted, id)}
-          end
+          :none ->
+            {[requirement_deleted_finding(id, prior) | findings], MapSet.put(consulted, id)}
+        end
       end
     end)
   end
@@ -169,7 +166,7 @@ defmodule SpecLedEx.AppendOnly do
           current_modal = ModalClass.classify(statement(current))
 
           if ModalClass.downgrade?(prior_modal, current_modal) do
-            case authorizing_decision(decisions, id) do
+            case authorizing_decision(decisions, id, new_adr_ids) do
               {:authorized, adr} ->
                 detail = "#{format_modal(prior_modal)}→#{format_modal(current_modal)}"
 
@@ -202,6 +199,23 @@ defmodule SpecLedEx.AppendOnly do
     end)
   end
 
+  defp detect_statement_rewritten(prior_reqs, current_reqs) do
+    Enum.flat_map(prior_reqs, fn {id, prior} ->
+      case Map.fetch(current_reqs, id) do
+        {:ok, current} ->
+          if must_priority?(prior) and must_priority?(current) and
+               normalized_statement(prior) != normalized_statement(current) do
+            [statement_rewritten_finding(id, prior)]
+          else
+            []
+          end
+
+        :error ->
+          []
+      end
+    end)
+  end
+
   defp detect_scenario_regression(prior, current, decisions, new_adr_ids) do
     prior_counts = scenario_counts_by_requirement(prior)
     current_counts = scenario_counts_by_requirement(current)
@@ -222,7 +236,7 @@ defmodule SpecLedEx.AppendOnly do
           {findings, consulted}
 
         true ->
-          case authorizing_decision(decisions, req_id) do
+          case authorizing_decision(decisions, req_id, new_adr_ids) do
             {:authorized, adr} ->
               markers =
                 self_authorized_marker_if_new(
@@ -261,7 +275,7 @@ defmodule SpecLedEx.AppendOnly do
             if effective_polarity(current) == :negative do
               {findings, consulted}
             else
-              case authorizing_decision(decisions, id) do
+              case authorizing_decision(decisions, id, new_adr_ids) do
                 {:authorized, adr} ->
                   markers =
                     self_authorized_marker_if_new(
@@ -373,8 +387,7 @@ defmodule SpecLedEx.AppendOnly do
         other -> "bootstrap (#{inspect(other)})"
       end
 
-    %{
-      code: "append_only/no_baseline",
+    finding("append_only/no_baseline", %{
       severity: :info,
       subject_id: nil,
       entity_id: nil,
@@ -383,14 +396,13 @@ defmodule SpecLedEx.AppendOnly do
           "No prior state.json baseline is available for comparison: #{variant_note}.",
           "fix: commit .spec/state.json on the base branch, or deepen the clone so <base> resolves."
         )
-    }
+    })
   end
 
   defp requirement_deleted_finding(id, prior_req) do
     subject_id = Map.get(prior_req, "subject_id")
 
-    %{
-      code: "append_only/requirement_deleted",
+    finding("append_only/requirement_deleted", %{
       severity: :error,
       subject_id: subject_id,
       entity_id: id,
@@ -399,14 +411,13 @@ defmodule SpecLedEx.AppendOnly do
           "Requirement `#{id}` was present at base and is absent at head. Deletion is only authorized when a head-side ADR in the weakening set names `#{id}` in its `affects:` list.",
           "fix: author an ADR with change_type in {deprecates, weakens, narrows-scope, adds-exception} and affects: [#{id}] — or restore the requirement in its spec file."
         )
-    }
+    })
   end
 
   defp must_downgraded_finding(id, prior_req, _current_req, prior_modal, current_modal) do
     subject_id = Map.get(prior_req, "subject_id")
 
-    %{
-      code: "append_only/must_downgraded",
+    finding("append_only/must_downgraded", %{
       severity: :error,
       subject_id: subject_id,
       entity_id: id,
@@ -415,14 +426,26 @@ defmodule SpecLedEx.AppendOnly do
           "Requirement `#{id}` was `#{format_modal(prior_modal)}` at base and classifies to `#{format_modal(current_modal)}` at head — normative force was reduced without an authorizing ADR.",
           "fix: author an ADR with change_type in {weakens, narrows-scope, adds-exception} and affects: [#{id}], or restore the prior modal strength in the statement."
         )
-    }
+    })
+  end
+
+  defp statement_rewritten_finding(id, prior_req) do
+    finding("append_only/statement_rewritten", %{
+      severity: :warning,
+      subject_id: Map.get(prior_req, "subject_id"),
+      entity_id: id,
+      message:
+        SpecLedEx.FindingMessage.finalize(
+          "Must-priority requirement `#{id}` kept its id but its statement changed in place. This may be a legitimate clarification or an unreviewed contract rewrite.",
+          "fix: review the statement change explicitly; restore the prior text if accidental, or document the rationale in a clarifies ADR affecting `#{id}`."
+        )
+    })
   end
 
   defp scenario_regression_finding(id, prior_req, prior_count, current_count) do
     subject_id = if prior_req, do: Map.get(prior_req, "subject_id"), else: nil
 
-    %{
-      code: "append_only/scenario_regression",
+    finding("append_only/scenario_regression", %{
       severity: :error,
       subject_id: subject_id,
       entity_id: id,
@@ -431,14 +454,13 @@ defmodule SpecLedEx.AppendOnly do
           "Scenarios covering `#{id}` dropped from #{prior_count} at base to #{current_count} at head without an authorizing ADR.",
           "fix: restore the missing scenario(s), or author an ADR with change_type in {weakens, narrows-scope, adds-exception} and affects: [#{id}]."
         )
-    }
+    })
   end
 
   defp negative_removed_finding(id, prior_req, _current_req) do
     subject_id = Map.get(prior_req, "subject_id")
 
-    %{
-      code: "append_only/negative_removed",
+    finding("append_only/negative_removed", %{
       severity: :error,
       subject_id: subject_id,
       entity_id: id,
@@ -447,15 +469,14 @@ defmodule SpecLedEx.AppendOnly do
           "Requirement `#{id}` carried `polarity: negative` at base (explicit or auto-inferred from MUST NOT / SHALL NOT) and no longer does at head.",
           "fix: restore the negative assertion, or author an ADR with change_type in {weakens, narrows-scope, adds-exception} and affects: [#{id}]."
         )
-    }
+    })
   end
 
   defp disabled_without_reason_finding(scenario) do
     id = Map.get(scenario, "id")
     subject_id = Map.get(scenario, "subject_id")
 
-    %{
-      code: "append_only/disabled_without_reason",
+    finding("append_only/disabled_without_reason", %{
       severity: :warning,
       subject_id: subject_id,
       entity_id: id,
@@ -464,7 +485,7 @@ defmodule SpecLedEx.AppendOnly do
           "Scenario `#{id}` has `execute: false` but no `reason:` field — future readers have no record of why this scenario was stubbed out.",
           "fix: add a non-empty `reason:` field to the scenario block, or flip `execute:` back to `true` and add the coverage."
         )
-    }
+    })
   end
 
   defp maybe_adr_drift_finding(id, prior_adr, current_adr) do
@@ -480,8 +501,7 @@ defmodule SpecLedEx.AppendOnly do
 
       _ ->
         [
-          %{
-            code: "append_only/adr_affects_widened",
+          finding("append_only/adr_affects_widened", %{
             severity: :error,
             subject_id: nil,
             entity_id: id,
@@ -490,7 +510,7 @@ defmodule SpecLedEx.AppendOnly do
                 "ADR `#{id}` was `status: accepted` at base but its structural fields changed at head (#{Enum.join(drifts, "; ")}). Accepted ADRs are immutable per specled.decision.adr_append_only.",
                 "fix: revert the field edit on the accepted ADR, or author a new ADR (change_type: supersedes with replaces: [#{id}]) that captures the new decision."
               )
-          }
+          })
         ]
     end
   end
@@ -507,8 +527,7 @@ defmodule SpecLedEx.AppendOnly do
   end
 
   defp same_pr_self_authorization_finding(%{id: id, affects: affects}) do
-    %{
-      code: "append_only/same_pr_self_authorization",
+    finding("append_only/same_pr_self_authorization", %{
       severity: :warning,
       subject_id: nil,
       entity_id: id,
@@ -517,15 +536,14 @@ defmodule SpecLedEx.AppendOnly do
           "ADR `#{id}` is new in this diff and its non-empty `affects:` list (#{inspect(affects)}) consists entirely of requirement ids weakened in this same diff — the ADR is self-authorizing the weakening. Visible but not blocked; review decides.",
           "fix: land the weakening in a separate PR from the authorizing ADR, or confirm in review that the self-authorization is intentional."
         )
-    }
+    })
   end
 
   defp self_authorized_weakening_finding(id, prior_req, adr_id, weakening_class, detail) do
     class_detail = weakening_class_detail(weakening_class, detail)
     subject_id = if is_map(prior_req), do: Map.get(prior_req, "subject_id"), else: nil
 
-    %{
-      code: "append_only/self_authorized_weakening",
+    finding("append_only/self_authorized_weakening", %{
       severity: :info,
       subject_id: subject_id,
       entity_id: id,
@@ -534,14 +552,13 @@ defmodule SpecLedEx.AppendOnly do
           "Weakening of `#{id}` (#{class_detail}) is suppressed as authorized by ADR `#{adr_id}`, which is new in this same diff — the authorization is self-approved within this PR. Visible but not blocked; review decides.",
           "fix: land the authorizing ADR in a separate PR, or confirm in review that the self-authorization is intentional."
         )
-    }
+    })
   end
 
   defp missing_change_type_finding(id, _decision) do
     display_id = id || "<unknown>"
 
-    %{
-      code: "append_only/missing_change_type",
+    finding("append_only/missing_change_type", %{
       severity: :warning,
       subject_id: nil,
       entity_id: id,
@@ -550,12 +567,11 @@ defmodule SpecLedEx.AppendOnly do
           "ADR `#{display_id}` was consulted during an authorization lookup but carries no `change_type:` field (v1 treats this as a warning per specled.decision.change_type_enum_v1).",
           "fix: add `change_type:` to the ADR frontmatter — one of deprecates, weakens, narrows-scope, adds-exception, supersedes, clarifies, refines."
         )
-    }
+    })
   end
 
   defp decision_deleted_finding(id, _prior_adr) do
-    %{
-      code: "append_only/decision_deleted",
+    finding("append_only/decision_deleted", %{
       severity: :error,
       subject_id: nil,
       entity_id: id,
@@ -564,7 +580,7 @@ defmodule SpecLedEx.AppendOnly do
           "Decision `#{id}` was present at base and is absent at head. ADR files cannot be deleted — the only authorized removal is a status transition to `deprecated` or `superseded` on the existing file.",
           "fix: restore the ADR file and update its `status:` to `deprecated` or `superseded` instead of deleting it."
         )
-    }
+    })
   end
 
   ## ── Helpers ───────────────────────────────────────────────────────
@@ -576,6 +592,15 @@ defmodule SpecLedEx.AppendOnly do
   defp format_modal(:should), do: "SHOULD"
   defp format_modal(:may), do: "MAY"
   defp format_modal(:none), do: "NONE"
+
+  defp must_priority?(requirement), do: Map.get(requirement, "priority") == "must"
+
+  defp normalized_statement(requirement) do
+    requirement
+    |> statement()
+    |> String.split()
+    |> Enum.join(" ")
+  end
 
   defp requirements_by_id(state) do
     state
@@ -647,6 +672,9 @@ defmodule SpecLedEx.AppendOnly do
       affects = meta_get(meta, "affects") || []
 
       cond do
+        not accepted_decision?(meta) ->
+          []
+
         change_type not in @weakening_set ->
           []
 
@@ -659,12 +687,6 @@ defmodule SpecLedEx.AppendOnly do
         true ->
           []
       end
-    end)
-  end
-
-  defp self_auth_adr_by_req_id(self_auth_adrs) do
-    Enum.reduce(self_auth_adrs, %{}, fn %{id: adr_id, affects: affects}, acc ->
-      Enum.reduce(affects, acc, &Map.put(&2, &1, adr_id))
     end)
   end
 
@@ -695,29 +717,35 @@ defmodule SpecLedEx.AppendOnly do
 
   defp weakening_class_detail(:polarity_removal, _detail), do: "negative polarity removed"
 
-  defp authorizing_decision(decisions, id) do
-    Enum.reduce_while(decisions, :none, fn decision, acc ->
-      meta = meta(decision)
-      change_type = meta_get(meta, "change_type")
-      affects = meta_get(meta, "affects") || []
+  defp authorizing_decision(decisions, id, new_adr_ids) do
+    matching_decisions =
+      Enum.filter(decisions, fn decision ->
+        decision_meta = meta(decision)
+        accepted_decision?(decision_meta) and id in (meta_get(decision_meta, "affects") || [])
+      end)
 
-      if id in affects do
-        cond do
-          change_type in @weakening_set ->
-            {:halt, {:authorized, decision}}
+    authorizers =
+      Enum.filter(matching_decisions, fn decision ->
+        meta_get(meta(decision), "change_type") in @weakening_set
+      end)
 
-          is_nil(change_type) or change_type == "" ->
-            # Surfaces as a missing_change_type warning, but does NOT authorize
-            # the deletion — the requirement_deleted (or downgrade) fires too.
-            {:cont, {:missing_change_type, decision}}
-
-          true ->
-            {:cont, acc}
+    case authorizers do
+      [] ->
+        case Enum.find(matching_decisions, fn decision ->
+               change_type = decision |> meta() |> meta_get("change_type")
+               is_nil(change_type) or change_type == ""
+             end) do
+          nil -> :none
+          decision -> {:missing_change_type, decision}
         end
-      else
-        {:cont, acc}
-      end
-    end)
+
+      _ ->
+        {:authorized,
+         Enum.min_by(authorizers, fn decision ->
+           adr_id = decision |> meta() |> meta_get("id")
+           {not MapSet.member?(new_adr_ids, adr_id), adr_id || ""}
+         end)}
+    end
   end
 
   defp effective_polarity(req) do
@@ -751,6 +779,8 @@ defmodule SpecLedEx.AppendOnly do
   defp meta_get(meta, key) when is_map(meta), do: Map.get(meta, key)
   defp meta_get(_, _), do: nil
 
+  defp accepted_decision?(meta), do: meta_get(meta, "status") == "accepted"
+
   defp get_in_list(state, path) do
     case get_in_path(state, path) do
       list when is_list(list) -> list
@@ -779,4 +809,10 @@ defmodule SpecLedEx.AppendOnly do
       }
     end)
   end
+
+  @finding_codes MapSet.new(@emitted_finding_codes)
+
+  @doc false
+  @spec finding_codes() :: MapSet.t(String.t())
+  def finding_codes, do: @finding_codes
 end

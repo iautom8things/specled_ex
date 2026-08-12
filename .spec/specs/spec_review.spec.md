@@ -38,6 +38,7 @@ decisions:
   - specled.decision.coverage_qualifier_requirement_ids
   - specled.decision.coverage_identity_joins
   - specled.decision.cross_vm_temp_names_reach
+  - specled.decision.workflow_run_text_open_set
 ```
 
 ## Requirements
@@ -228,8 +229,12 @@ decisions:
     branch and post the PR comment, handing the rendered HTML between them as
     a workflow artifact so that no single job both runs pull-request-provided
     code and holds a write-scoped token. The workflow's top-level permissions
-    shall default to read-only, and the write-scoped job shall not check out
-    or execute pull-request-provided code.
+    shall default to read-only. The command-tier guard shall structurally pin
+    the two-job split and dependency, read/write scope placement, deploy
+    action and `with:`-key allowlists, the checkout base-ref pin, and trusted
+    operands on its known `git fetch` / `git worktree add` acquisition lines;
+    it does not infer checkout or execution semantics from arbitrary `run:`
+    text, as recorded by `specled.decision.workflow_run_text_open_set`.
   priority: must
   stability: evolving
 - id: specled.spec_review.triangle_code_classification
@@ -830,10 +835,11 @@ decisions:
 ## Verification
 
 Branch reconciliation note: `lib/specled_ex/review/html.ex` is this subject's
-governance-row surface. This branch only adds
+governance-row surface. Its hand-maintained append-only catalog now compares
+through `SpecLedEx.EmitterCodes`, which delegates to
+`SpecLedEx.AppendOnly.finding_codes/0`. This branch also adds
 `append_only/self_authorized_weakening` to the Decisions/governance leg codes
-list and hardens the catalog exhaustiveness tests against the emitter-derived
-set; `triangle_code_classification` and related requirements remain unchanged.
+list; `triangle_code_classification` and related requirements remain unchanged.
 
 ```spec-verification
 - kind: command
@@ -919,6 +925,11 @@ set; `triangle_code_classification` and related requirements remain unchanged.
     - specled.spec_review.shared_file_fanin_collapse
     - specled.spec_review.shared_file_group_pane
     - specled.spec_review.shared_file_spec_modal
+- kind: command
+  target: mix test test/specled_ex/spec_review_workflow_test.exs
+  execute: true
+  covers:
+    - specled.spec_review.gh_pages_privilege_separation
 - kind: source_file
   target: lib/mix/tasks/spec.review.ex
   covers:

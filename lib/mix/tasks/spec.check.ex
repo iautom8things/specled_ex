@@ -9,6 +9,8 @@ defmodule Mix.Tasks.Spec.Check do
   alias SpecLedEx.{BranchCheck, TaskArgs}
   alias SpecLedEx.VerificationStrength
 
+  @always_visible_info_codes ["append_only/self_authorized_weakening"]
+
   @shortdoc "Runs the full local Spec Led gate"
   @moduledoc """
   Runs `mix spec.index`, strict `mix spec.validate`, and the branch guard in one command.
@@ -33,7 +35,8 @@ defmodule Mix.Tasks.Spec.Check do
     * `--test-tags` / `--no-test-tags` - enable or disable test-tag scanning
       for this invocation, overriding `.spec/config.yml`
     * `--verbose` - print findings of every severity including `:info`. Without
-      this flag, `:info`-severity findings are suppressed from stdout.
+      this flag, `:info`-severity findings are suppressed from stdout except
+      self-authorized weakening markers, which remain visible for review.
       `SPECLED_SHOW_INFO=1` in the environment has the same effect as
       `--verbose`.
     * `--accept-drift` - accept the current realization hashes as the new
@@ -216,10 +219,18 @@ defmodule Mix.Tasks.Spec.Check do
 
   defp filter_for_stdout(findings, false) do
     Enum.reject(findings, fn finding ->
-      (finding["severity"] || finding[:severity] || "warning")
-      |> to_string()
-      |> String.downcase() == "info"
+      info_finding?(finding) and not always_visible_info_finding?(finding)
     end)
+  end
+
+  defp info_finding?(finding) do
+    (finding["severity"] || finding[:severity] || "warning")
+    |> to_string()
+    |> String.downcase() == "info"
+  end
+
+  defp always_visible_info_finding?(finding) do
+    (finding["code"] || finding[:code]) in @always_visible_info_codes
   end
 
   defp print_debug_checks(checks) do

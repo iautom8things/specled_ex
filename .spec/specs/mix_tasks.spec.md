@@ -72,6 +72,7 @@ decisions:
   - specled.decision.realized_by_tier_implication
   - specled.decision.verification_runtime_config
   - specled.decision.sync_noop_short_circuit_and_auto_prune
+  - specled.decision.self_authorized_info_stdout_carveout
 ```
 
 ## Requirements
@@ -183,7 +184,7 @@ decisions:
   priority: must
   stability: evolving
 - id: specled.tasks.check_verbose_flag
-  statement: mix spec.check shall accept a `--verbose` flag and honor `SPECLED_SHOW_INFO=1` that together govern stdout filtering; without either, findings whose resolved severity is `:info` shall be suppressed from stdout. With either flag or env var, every finding regardless of severity shall be printed.
+  statement: mix spec.check shall accept a `--verbose` flag and honor `SPECLED_SHOW_INFO=1` that together govern stdout filtering; without either, findings whose resolved severity is `:info` shall be suppressed from stdout except `append_only/self_authorized_weakening`, whose detail line shall remain visible. With either flag or env var, every finding regardless of severity shall be printed.
   priority: must
   stability: evolving
 - id: specled.tasks.evidence_migrate
@@ -304,6 +305,17 @@ decisions:
 ## Scenarios
 
 ```yaml spec-scenarios
+- id: specled.tasks.check_verbose_flag.self_authorized_marker_visible
+  covers:
+    - specled.tasks.check_verbose_flag
+  given:
+    - A same-diff ADR authorizes a weakening and branch enforcement emits `append_only/self_authorized_weakening` at info severity.
+    - Neither `--verbose` nor `SPECLED_SHOW_INFO=1` is enabled.
+  when:
+    - mix spec.check prints its default human stdout.
+  then:
+    - The self-authorized weakening detail line is printed so the requirement and authorizing ADR are visible.
+    - Other info-severity finding detail lines remain suppressed.
 - id: specled.tasks.verdict_line.stdout_contract
   covers:
     - specled.tasks.verdict_line

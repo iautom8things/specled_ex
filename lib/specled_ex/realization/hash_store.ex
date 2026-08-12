@@ -150,16 +150,9 @@ defmodule SpecLedEx.Realization.HashStore do
   @doc "Convenience: returns the stored hash for a tier+MFA or `nil`."
   @spec fetch(map(), String.t(), String.t()) :: binary() | nil
   def fetch(realization, tier, mfa) when is_map(realization) do
-    case fetch_entry(realization, tier, mfa) do
-      %{"hash" => hash} ->
-        case Base.decode16(hash, case: :mixed) do
-          {:ok, bytes} -> bytes
-          :error -> nil
-        end
-
-      nil ->
-        nil
-    end
+    realization
+    |> fetch_entry(tier, mfa)
+    |> entry_hash()
   end
 
   @doc """
@@ -184,6 +177,20 @@ defmodule SpecLedEx.Realization.HashStore do
       _ -> nil
     end
   end
+
+  @doc "Decodes the hash in a stored entry, returning `nil` when it is malformed."
+  @spec entry_hash(map() | nil) :: binary() | nil
+  def entry_hash(%{"hash" => hash}) when is_binary(hash) do
+    case Base.decode16(hash, case: :mixed) do
+      {:ok, bytes} -> bytes
+      :error -> nil
+    end
+  end
+
+  # A malformed entry (non-string or absent "hash") is not a hash we can
+  # compare. Returning nil routes it to the drift branch, which is the honest
+  # answer: we cannot show the committed value matches.
+  def entry_hash(_entry), do: nil
 
   @doc """
   Computes a hash entry (hex-encoded + current version) ready for `write/2`.

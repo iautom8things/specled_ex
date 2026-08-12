@@ -385,7 +385,7 @@ defmodule SpecLedEx.CoverageTriangulation do
         recs
         |> Enum.filter(fn r -> r.lines_hit != [] end)
         |> Enum.reduce(%{}, fn r, acc ->
-          case repo_relative_source_path(r.file) do
+          case SpecLedEx.Coverage.Paths.repo_relative(r.file) do
             nil ->
               acc
 
@@ -432,33 +432,8 @@ defmodule SpecLedEx.CoverageTriangulation do
     end)
   end
 
-  defp module_source_file(mod) when is_atom(mod) do
-    with {_kind, _loaded_path} <- :code.is_loaded(mod),
-         source when is_list(source) or is_binary(source) <-
-           mod.module_info(:compile)[:source] do
-      source
-      |> source_to_binary()
-      |> repo_relative_source_path()
-    else
-      _ -> nil
-    end
-  rescue
-    _ -> nil
-  end
-
-  defp source_to_binary(source) when is_list(source), do: List.to_string(source)
-  defp source_to_binary(source) when is_binary(source), do: source
-
-  defp repo_relative_source_path(path) when is_binary(path) do
-    root = File.cwd!() |> Path.expand()
-    absolute = Path.expand(path, root)
-
-    if String.starts_with?(absolute, root <> "/") do
-      Path.relative_to(absolute, root)
-    end
-  end
-
-  defp repo_relative_source_path(_), do: nil
+  defp module_source_file(mod) when is_atom(mod),
+    do: SpecLedEx.Coverage.Paths.module_source(mod, false)
 
   defp format_test_display(%{test_file: file, test_name: name}) do
     file = if file in [nil, ""], do: "(unknown)", else: file

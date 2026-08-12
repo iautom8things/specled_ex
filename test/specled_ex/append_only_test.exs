@@ -1,16 +1,19 @@
 defmodule SpecLedEx.AppendOnlyTest do
-  # covers: specled.append_only.requirement_deleted specled.append_only.must_downgraded specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.self_authorized_weakening specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
+  # covers: specled.append_only.requirement_deleted specled.append_only.accepted_adr_authorization specled.append_only.must_downgraded specled.append_only.statement_rewritten specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.self_authorized_weakening specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.finding_codes specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
   use ExUnit.Case, async: true
 
   @moduletag spec: [
                "specled.append_only.adr_affects_widened",
+               "specled.append_only.accepted_adr_authorization",
                "specled.append_only.decision_deleted",
                "specled.append_only.disabled_without_reason",
+               "specled.append_only.finding_codes",
                "specled.append_only.findings_sorted",
                "specled.append_only.fix_block_discipline",
                "specled.append_only.identity",
                "specled.append_only.missing_change_type",
                "specled.append_only.must_downgraded",
+               "specled.append_only.statement_rewritten",
                "specled.append_only.negative_removed",
                "specled.append_only.no_baseline",
                "specled.append_only.requirement_deleted",
@@ -24,6 +27,26 @@ defmodule SpecLedEx.AppendOnlyTest do
   import SpecLedEx.AppendOnlyFixtures
 
   alias SpecLedEx.AppendOnly
+
+  describe "finding_codes/0" do
+    test "returns the complete emitter-derived append-only catalog" do
+      assert AppendOnly.finding_codes() ==
+               MapSet.new(~w(
+                 append_only/requirement_deleted
+                 append_only/must_downgraded
+                 append_only/statement_rewritten
+                 append_only/scenario_regression
+                 append_only/negative_removed
+                 append_only/disabled_without_reason
+                 append_only/no_baseline
+                 append_only/adr_affects_widened
+                 append_only/same_pr_self_authorization
+                 append_only/self_authorized_weakening
+                 append_only/missing_change_type
+                 append_only/decision_deleted
+               ))
+    end
+  end
 
   describe "requirement_deleted" do
     test "unauthorized removal emits append_only/requirement_deleted at :error" do
@@ -110,6 +133,41 @@ defmodule SpecLedEx.AppendOnlyTest do
                &(&1.code == "append_only/requirement_deleted")
              )
     end
+
+    @tag spec: [
+           "specled.append_only.accepted_adr_authorization",
+           "specled.append_only.requirement_deleted",
+           "specled.append_only.same_pr_self_authorization",
+           "specled.append_only.self_authorized_weakening"
+         ]
+    test "deprecated and superseded ADRs neither authorize nor emit self-authorization findings" do
+      prior =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "The system MUST reject invalid input.")]
+        )
+
+      current = state_fixture(subject: "x", requirements: [])
+
+      Enum.each(["deprecated", "superseded"], fn status ->
+        decisions = [
+          adr(
+            id: "d1",
+            status: status,
+            affects: ["x.req_a"],
+            change_type: "deprecates",
+            reverses_what: "Requirement retired for v2.",
+            form: :parsed
+          )
+        ]
+
+        findings = AppendOnly.analyze(prior, current, decisions)
+
+        assert Enum.any?(findings, &(&1.code == "append_only/requirement_deleted"))
+        refute Enum.any?(findings, &(&1.code == "append_only/same_pr_self_authorization"))
+        refute Enum.any?(findings, &(&1.code == "append_only/self_authorized_weakening"))
+      end)
+    end
   end
 
   describe "must_downgraded" do
@@ -126,7 +184,11 @@ defmodule SpecLedEx.AppendOnlyTest do
           requirements: [requirement("x.req_a", "The system SHOULD reject invalid input.")]
         )
 
-      assert [finding] = AppendOnly.analyze(prior, current, [])
+      assert finding =
+               prior
+               |> AppendOnly.analyze(current, [])
+               |> Enum.find(&(&1.code == "append_only/must_downgraded"))
+
       assert finding.code == "append_only/must_downgraded"
       assert finding.severity == :error
       assert finding.entity_id == "x.req_a"
@@ -209,6 +271,68 @@ defmodule SpecLedEx.AppendOnlyTest do
       refute Enum.any?(findings, &(&1.code == "append_only/must_downgraded"))
       refute Enum.any?(findings, &(&1.code == "append_only/same_pr_self_authorization"))
       refute Enum.any?(findings, &(&1.code == "append_only/self_authorized_weakening"))
+    end
+  end
+
+  describe "statement_rewritten" do
+    @tag spec: "specled.append_only.statement_rewritten"
+    test "semantic rewrite of a must-priority statement emits a warning" do
+      prior =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "The system stores audit events.")]
+        )
+
+      current =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "The system discards audit events.")]
+        )
+
+      assert [finding] = AppendOnly.analyze(prior, current, [])
+      assert finding.code == "append_only/statement_rewritten"
+      assert finding.severity == :warning
+      assert finding.subject_id == "x"
+      assert finding.entity_id == "x.req_a"
+      assert fix_block_present?(finding.message)
+    end
+
+    test "whitespace-only statement reflow is ignored" do
+      prior =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "The system stores audit events.")]
+        )
+
+      current =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "  The system\n stores   audit events.  ")]
+        )
+
+      assert [] == AppendOnly.analyze(prior, current, [])
+    end
+
+    test "a statement rewrite is ignored when either side is not must priority" do
+      for {prior_priority, current_priority} <- [{"must", "should"}, {"should", "must"}] do
+        prior =
+          state_fixture(
+            subject: "x",
+            requirements: [
+              requirement("x.req_a", "Prefer local storage.", priority: prior_priority)
+            ]
+          )
+
+        current =
+          state_fixture(
+            subject: "x",
+            requirements: [
+              requirement("x.req_a", "Prefer remote storage.", priority: current_priority)
+            ]
+          )
+
+        assert [] == AppendOnly.analyze(prior, current, [])
+      end
     end
   end
 
@@ -845,6 +969,96 @@ defmodule SpecLedEx.AppendOnlyTest do
       assert length(markers) == 2
       assert_self_auth_marker(findings, "x.req_a", "d1", "modal downgraded MUST→SHOULD")
       assert_self_auth_marker(findings, "x.req_a", "d1", "scenario coverage dropped 1→0")
+    end
+
+    @tag spec: [
+           "specled.append_only.must_downgraded",
+           "specled.append_only.self_authorized_weakening"
+         ]
+    test "new authorizer wins over pre-existing authorizer regardless of decision order" do
+      prior =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "The system MUST reject invalid input.")],
+          decisions: [
+            adr(
+              id: "d-aaa",
+              affects: ["x.req_a"],
+              change_type: "weakens",
+              reverses_what: "Existing authorization."
+            )
+          ]
+        )
+
+      current =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "The system SHOULD reject invalid input.")]
+        )
+
+      old_adr =
+        adr(
+          id: "d-aaa",
+          affects: ["x.req_a"],
+          change_type: "weakens",
+          reverses_what: "Existing authorization.",
+          form: :parsed
+        )
+
+      new_adr =
+        adr(
+          id: "d-zzz",
+          affects: ["x.req_a"],
+          change_type: "weakens",
+          reverses_what: "New authorization.",
+          form: :parsed
+        )
+
+      old_first = AppendOnly.analyze(prior, current, [old_adr, new_adr])
+      new_first = AppendOnly.analyze(prior, current, [new_adr, old_adr])
+
+      # Would fail if production let a pre-existing ADR mask same-diff self-authorization.
+      assert_self_auth_marker(old_first, "x.req_a", "d-zzz", "modal downgraded MUST→SHOULD")
+      assert_self_auth_marker(new_first, "x.req_a", "d-zzz", "modal downgraded MUST→SHOULD")
+    end
+
+    @tag spec: [
+           "specled.append_only.requirement_deleted",
+           "specled.append_only.self_authorized_weakening"
+         ]
+    test "lexicographically first new authorizer wins deletion tie regardless of order" do
+      prior =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "The system MUST retain records.")]
+        )
+
+      current = state_fixture(subject: "x", requirements: [])
+
+      adr_a =
+        adr(
+          id: "d-a",
+          affects: ["x.req_a"],
+          change_type: "deprecates",
+          reverses_what: "First deterministic authorization.",
+          form: :parsed
+        )
+
+      adr_z =
+        adr(
+          id: "d-z",
+          affects: ["x.req_a"],
+          change_type: "deprecates",
+          reverses_what: "Second deterministic authorization.",
+          form: :parsed
+        )
+
+      a_first = AppendOnly.analyze(prior, current, [adr_a, adr_z])
+      z_first = AppendOnly.analyze(prior, current, [adr_z, adr_a])
+
+      # Would fail if production retained the deletion path's last-write-wins ADR map.
+      assert_self_auth_marker(a_first, "x.req_a", "d-a", "requirement deleted")
+      assert_self_auth_marker(z_first, "x.req_a", "d-a", "requirement deleted")
     end
 
     # Pins the consulted_ids widening documented in the v2 budget ADR's

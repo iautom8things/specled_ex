@@ -1,7 +1,8 @@
 # Append-Only
 
 State-based append-only validation for `.spec/` requirements, scenarios, and ADRs
-across a Git base..HEAD diff.
+across a Git base..HEAD diff, including advisory detection of stable-id statement
+rewrites.
 
 ## Intent
 
@@ -21,7 +22,7 @@ by branch-guard governance findings (`branch_guard_missing_decision_update`).
 id: specled.append_only
 kind: module
 status: active
-summary: Diff-time detectors for deleted requirements, modal downgrades, scenario regressions, polarity loss, ADR widening, and ADR deletion, plus supporting bootstrap + advisory findings.
+summary: Diff-time detectors for deleted requirements, modal downgrades, statement rewrites, scenario regressions, polarity loss, ADR widening, and ADR deletion, plus an emitter-derived finding-code catalog and supporting bootstrap + advisory findings.
 surface:
   - lib/specled_ex/append_only.ex
   - lib/specled_ex.ex
@@ -36,6 +37,9 @@ decisions:
   - specled.decision.change_type_enum_v1
   - specled.decision.finding_code_budget
   - specled.decision.append_only_finding_budget_v2
+  - specled.decision.uniform_self_authorization_markers
+  - specled.decision.accepted_adr_authorization
+  - specled.decision.append_only_finding_budget_v3
   - specled.decision.declarative_current_truth
 ```
 
@@ -58,10 +62,19 @@ decisions:
 - id: specled.append_only.requirement_deleted_authorized
   statement: >-
     AppendOnly.analyze shall NOT emit `append_only/requirement_deleted`
-    for a removed requirement id when a head-side ADR in the weakening
+    for a removed requirement id when an accepted head-side ADR in the weakening
     set (`deprecates`, `weakens`, `narrows-scope`, `adds-exception`)
     lists that id in its `affects` list with a non-empty
     `reverses_what`, authorizing the deletion.
+  priority: must
+  stability: evolving
+- id: specled.append_only.accepted_adr_authorization
+  statement: >-
+    Only head-side ADRs with status `accepted` shall authorize requirement
+    deletion, modal downgrade, scenario regression, or negative-polarity
+    removal. ADRs with status `deprecated` or `superseded` shall neither
+    suppress those weakening findings nor emit same-PR self-authorization
+    warnings or per-weakening markers.
   priority: must
   stability: evolving
 - id: specled.append_only.must_downgraded
@@ -72,6 +85,16 @@ decisions:
     a weaker class (SHOULD, MAY, or NONE) or crosses polarity in a way
     that loses a negative assertion, unauthorized by a weakening-set ADR
     targeting that id.
+  priority: must
+  stability: evolving
+- id: specled.append_only.statement_rewritten
+  statement: >-
+    AppendOnly.analyze shall emit `append_only/statement_rewritten` at
+    `:warning`, with the requirement id as entity, when a requirement whose
+    priority remains `must` across prior and current state keeps its id but
+    changes its statement after whitespace normalization; whitespace-only
+    reflow and statements whose priority is not `must` on either side shall
+    emit no such finding.
   priority: must
   stability: evolving
 - id: specled.append_only.scenario_regression
@@ -139,8 +162,13 @@ decisions:
     deletion, scenario regression, modal downgrade, or polarity removal is
     suppressed as authorized by an ADR that is new in the current diff, naming
     the authorizing ADR id and the weakening class in the message, so
-    self-approved weakening is always visible in analyze output. Weakenings
-    authorized by ADRs already present at base shall emit no marker.
+    self-approved weakening is always visible in analyze output. Exactly one
+    marker shall be emitted per (requirement id, weakening class). When multiple
+    ADRs authorize that pair, a new-in-diff ADR shall take precedence over a
+    pre-existing ADR, then the lexicographically smallest ADR id shall break ties
+    within the same newness class. The chosen ADR is independent of input
+    decision order. Weakenings authorized only by ADRs already present at base
+    shall emit no marker.
   priority: must
   stability: evolving
 - id: specled.append_only.missing_change_type
@@ -165,6 +193,15 @@ decisions:
     AppendOnly.analyze shall return an empty findings list when called
     with identical prior and current states and an empty decisions list
     (no false positives on unchanged trees).
+  priority: must
+  stability: stable
+- id: specled.append_only.finding_codes
+  statement: >-
+    AppendOnly.finding_codes/0 shall return a MapSet containing exactly every
+    `append_only/*` code its finding builders can emit. Catalog membership
+    shall be accumulated from the same compile-time declarations that build
+    the findings, so consumers need neither a second production list nor a
+    regex scan over source text.
   priority: must
   stability: stable
 - id: specled.append_only.findings_sorted
@@ -212,6 +249,19 @@ decisions:
   covers:
     - specled.append_only.requirement_deleted_authorized
 
+- id: specled.append_only.scenario.inactive_adr_cannot_authorize
+  given:
+    - "prior state contains requirement `x.req_a`"
+    - "current state does not contain `x.req_a`"
+    - "a head-side ADR with status deprecated or superseded has a weakening-set change_type and affects `[x.req_a]`"
+  when:
+    - SpecLedEx.AppendOnly.analyze/4 is invoked
+  then:
+    - "the returned findings contain `append_only/requirement_deleted` for `x.req_a`"
+    - "neither `append_only/same_pr_self_authorization` nor `append_only/self_authorized_weakening` is emitted"
+  covers:
+    - specled.append_only.accepted_adr_authorization
+
 - id: specled.append_only.scenario.must_to_should_downgrade
   given:
     - "prior state requirement `x.req_a` has statement `The system MUST reject invalid input.`"
@@ -223,6 +273,18 @@ decisions:
     - "the returned findings list contains one finding with code `append_only/must_downgraded` at severity error, entity_id x.req_a"
   covers:
     - specled.append_only.must_downgraded
+
+- id: specled.append_only.scenario.statement_rewritten_in_place
+  given:
+    - "prior state contains must-priority requirement `x.req_a` with a stable id and statement"
+    - "current state keeps the same id and must priority but changes the statement beyond whitespace reflow"
+  when:
+    - SpecLedEx.AppendOnly.analyze/4 is invoked
+  then:
+    - "the returned findings list contains `append_only/statement_rewritten` at warning with entity_id x.req_a"
+    - "the finding directs review of the rewrite rather than treating it as an authorized weakening"
+  covers:
+    - specled.append_only.statement_rewritten
 
 - id: specled.append_only.scenario.scenario_count_drops
   given:
@@ -340,6 +402,18 @@ decisions:
   covers:
     - specled.append_only.self_authorized_weakening
 
+- id: specled.append_only.scenario.self_authorization_tie_break
+  given:
+    - "one weakening class for requirement `x.req_a` is authorized by multiple ADRs"
+    - "at least one authorizing ADR is new in the current diff"
+  when:
+    - SpecLedEx.AppendOnly.analyze/4 is invoked with the decisions in any order
+  then:
+    - "exactly one `append_only/self_authorized_weakening` marker is emitted for the requirement and weakening class"
+    - "the marker names a new-in-diff ADR rather than a pre-existing authorizer"
+    - "among authorizers with the same newness, the marker names the lexicographically smallest ADR id"
+  covers: []
+
 - id: specled.append_only.scenario.superset_affects_deletion_marker_without_warning
   given:
     - "requirement `x.req_a` is deleted"
@@ -402,6 +476,18 @@ decisions:
   covers:
     - specled.append_only.findings_sorted
 
+- id: specled.append_only.scenario.finding_codes_match_emitters
+  given:
+    - the compiled AppendOnly finding builders
+    - hand-maintained severity and review catalogs for append-only findings
+  when:
+    - SpecLedEx.AppendOnly.finding_codes/0 is invoked
+  then:
+    - the returned value is the exact MapSet compared by both catalog drift tests
+    - adding a code through the finding builder declaration automatically adds it to the returned set
+  covers:
+    - specled.append_only.finding_codes
+
 - id: specled.append_only.scenario.fix_block_present
   given:
     - "any diff that produces at least one `append_only/*` finding"
@@ -421,7 +507,9 @@ decisions:
   covers:
     - specled.append_only.requirement_deleted
     - specled.append_only.requirement_deleted_authorized
+    - specled.append_only.accepted_adr_authorization
     - specled.append_only.must_downgraded
+    - specled.append_only.statement_rewritten
     - specled.append_only.scenario_regression
     - specled.append_only.negative_removed
     - specled.append_only.disabled_without_reason
@@ -432,6 +520,7 @@ decisions:
     - specled.append_only.missing_change_type
     - specled.append_only.decision_deleted
     - specled.append_only.identity
+    - specled.append_only.finding_codes
     - specled.append_only.findings_sorted
     - specled.append_only.fix_block_discipline
 - kind: source_file
@@ -440,7 +529,9 @@ decisions:
   covers:
     - specled.append_only.requirement_deleted
     - specled.append_only.requirement_deleted_authorized
+    - specled.append_only.accepted_adr_authorization
     - specled.append_only.must_downgraded
+    - specled.append_only.statement_rewritten
     - specled.append_only.scenario_regression
     - specled.append_only.negative_removed
     - specled.append_only.disabled_without_reason
@@ -450,6 +541,7 @@ decisions:
     - specled.append_only.self_authorized_weakening
     - specled.append_only.missing_change_type
     - specled.append_only.decision_deleted
+    - specled.append_only.finding_codes
 ```
 
 ## Known v1 limits

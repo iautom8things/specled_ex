@@ -198,19 +198,7 @@ defmodule SpecLedEx.Coverage.Formatter do
     state
   end
 
-  # Inventory only — no per-test snapshot. A `test_finished` arriving with no
-  # prior `suite_started` resolves module scope lazily rather than crashing.
-  defp record_inventory(%ExUnit.Test{} = test, %{modules: nil} = state) do
-    modules = state.modules_fn.()
-
-    record_inventory(test, %{
-      state
-      | modules: modules,
-        file_map: build_file_map(modules),
-        baseline: %{}
-    })
-  end
-
+  # ExUnit emits `suite_started` first; this clause and `flush/1` assume its `:modules`/`:file_map` setup.
   defp record_inventory(%ExUnit.Test{} = test, state) do
     async? = Map.get(test.tags, :async, false) == true
 
@@ -257,35 +245,10 @@ defmodule SpecLedEx.Coverage.Formatter do
   defp on_disk_pid(%{test_pid: pid}) when is_pid(pid), do: pid
   defp on_disk_pid(_), do: self()
 
-  defp source_file(module) do
-    with {_kind, _loaded_path} <- :code.is_loaded(module),
-         source when is_list(source) or is_binary(source) <-
-           module.module_info(:compile)[:source] do
-      source
-      |> source_to_binary()
-      |> repo_relative_path()
-    else
-      _ -> nil
-    end
-  rescue
-    _ -> nil
-  end
-
-  defp source_to_binary(source) when is_list(source), do: List.to_string(source)
-  defp source_to_binary(source) when is_binary(source), do: source
-
-  defp repo_relative_path(path) when is_binary(path) do
-    root = File.cwd!() |> Path.expand()
-    absolute = Path.expand(path, root)
-
-    if String.starts_with?(absolute, root <> "/") do
-      Path.relative_to(absolute, root)
-    end
-  end
-
-  defp repo_relative_path(_), do: nil
+  defp source_file(module), do: SpecLedEx.Coverage.Paths.module_source(module, false)
 
   defp flush(%{table: table, artifact_path: path} = state) do
+    # ExUnit emits `suite_started` first; this clause and `flush/1` assume its `:modules`/`:file_map` setup.
     modules = state.modules
     final = state.snapshot_fn.(modules)
     {run_total_hits, suite_diagnostics} = Snapshot.diff(state.baseline, final)

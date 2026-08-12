@@ -3,10 +3,104 @@ defmodule SpecLedEx.BranchCheck.SeverityIntegrationTest do
 
   alias SpecLedEx.BranchCheck
   alias SpecLedEx.Index
+  alias SpecLedEx.Realization.HashStore
 
   @moduletag :capture_log
 
   describe "BranchCheck.run/3 routes severities through Severity.resolve/3" do
+    @tag spec: "specled.severity.source_provenance"
+    @tag spec: "specled.spec_drift_trailer.report_provenance"
+    test "report findings identify a real Spec-Drift trailer override", %{root: root} do
+      init_git_repo(root)
+
+      write_subject_spec(
+        root,
+        "billing",
+        meta: %{"id" => "billing.subject", "kind" => "module", "status" => "active"},
+        requirements: [
+          %{
+            "id" => "billing.invoice",
+            "statement" => "The system MUST emit an invoice on every charge.",
+            "priority" => "must"
+          }
+        ]
+      )
+
+      commit_all(root, "initial")
+
+      write_subject_spec(
+        root,
+        "billing",
+        meta: %{"id" => "billing.subject", "kind" => "module", "status" => "active"},
+        requirements: []
+      )
+
+      commit_all(root, """
+      Retire billing.invoice
+
+      Spec-Drift: append_only/requirement_deleted=info
+      """)
+
+      report = root |> SpecLedEx.index() |> BranchCheck.run(root, base: "HEAD~1")
+
+      assert [finding] =
+               Enum.filter(
+                 report["findings"],
+                 &(&1["code"] == "append_only/requirement_deleted")
+               )
+
+      assert finding["severity"] == "info"
+      assert finding["severity_source"] == "spec_drift_trailer"
+    end
+
+    @tag spec: "specled.severity.source_provenance"
+    test "report findings distinguish --accept-drift from a commit trailer", %{root: root} do
+      init_git_repo(root)
+
+      mfa = "SpecLedEx.Coverage.default_artifact_path/0"
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "wrong"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      write_subject_spec(
+        root,
+        "billing",
+        meta: %{
+          "id" => "billing.subject",
+          "kind" => "module",
+          "status" => "active",
+          "realized_by" => %{"api_boundary" => [mfa]}
+        }
+      )
+
+      commit_all(root, "initial")
+
+      report =
+        root
+        |> Index.build()
+        |> BranchCheck.run(root,
+          base: "HEAD",
+          accept_drift?: true,
+          commit_realization_hashes?: false
+        )
+
+      assert [finding] =
+               Enum.filter(
+                 report["findings"],
+                 &(&1["code"] == "branch_guard_realization_drift")
+               )
+
+      assert finding["severity"] == "info"
+      assert finding["severity_source"] == "accept_drift"
+    end
+
     @tag spec: "specled.severity.resolve_precedence"
     test "config.severities :off suppresses branch_guard_unmapped_change", %{root: root} do
       init_git_repo(root)
@@ -107,8 +201,8 @@ defmodule SpecLedEx.BranchCheck.SeverityIntegrationTest do
       assert source =~ "alias SpecLedEx.BranchCheck.Severity",
              "BranchCheck must alias Severity"
 
-      assert source =~ "Severity.resolve(",
-             "BranchCheck must call Severity.resolve/3"
+      assert source =~ "Severity.resolve",
+             "BranchCheck must route findings through the Severity resolver"
 
       refute source =~ ~r/defp\s+severity_from_config/,
              "severity_from_config helper must not re-implement precedence"
@@ -357,6 +451,7 @@ defmodule SpecLedEx.BranchCheck.SeverityIntegrationTest do
     @append_only_codes [
       {"append_only/requirement_deleted", :error},
       {"append_only/must_downgraded", :error},
+      {"append_only/statement_rewritten", :warning},
       {"append_only/scenario_regression", :error},
       {"append_only/negative_removed", :error},
       {"append_only/disabled_without_reason", :warning},

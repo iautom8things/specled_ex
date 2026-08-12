@@ -42,6 +42,8 @@ spec.review`'s Coverage tab instead.
 
 The full set of branch-guard codes `mix spec.check` gates on:
 
+<!-- spec-lint:full-set=branch_guard_gated -->
+
 | Code                                          | What disagrees                                           |
 |------------------------------------------------|-----------------------------------------------------------|
 | `branch_guard_realization_drift`              | Bound MFA hash changed without the spec acknowledging    |
@@ -52,7 +54,16 @@ The full set of branch-guard codes `mix spec.check` gates on:
 | `branch_guard_missing_subject_update`         | Changed file sits in a subject's surface but that subject's spec did not change |
 | `branch_guard_missing_decision_update`        | Cross-cutting change spans multiple subjects with no decision file change |
 | `branch_guard_realization_unknown_tier`       | `realization.enabled_tiers` in `.spec/config.yml` names a tier that does not exist |
+
+<!-- spec-lint:full-set-end -->
+
+`mix spec.check` also gates on the spec-corpus families, which are not
+branch-guard codes:
+
+| Code                                          | What disagrees                                           |
+|------------------------------------------------|-----------------------------------------------------------|
 | `append_only/*`                               | Spec corpus regressed (deletion, downgrade, etc.)         |
+| `append_only/statement_rewritten`             | A must-priority requirement kept its id but changed text  |
 | `overlap/*`                                   | Two requirements/scenarios collide within a subject       |
 
 Coverage triangulation is diagnostic-only and never part of the
@@ -61,11 +72,15 @@ prefix — `mix spec.check` does not emit them, and their severities are not
 read from `.spec/config.yml`. Read them from `mix spec.triangle` or
 `mix spec.review`'s Coverage tab:
 
+<!-- spec-lint:full-set=branch_guard_triangulation -->
+
 | Code                                          | What disagrees                                             |
 |------------------------------------------------|-------------------------------------------------------------|
 | `branch_guard_untested_realization`           | Requirement has a closure but no test reaches any MFA       |
 | `branch_guard_untethered_test`                | Test's `@tag spec:` names subject A but it executes B (per-test artifacts only) |
 | `branch_guard_underspecified_realization`     | Test reaches subject A's MFAs but carries no `@tag`          |
+
+<!-- spec-lint:full-set-end -->
 
 ---
 
@@ -177,6 +192,13 @@ mix spec.triangle billing.invoice_numbering
 ```
 
 ### 5. Wire CI
+
+Verification commands are repository-authored shell. For a public repository,
+do not let a fork pull request execute them with a privileged workflow token or
+secrets. Run `mix spec.check --no-run-commands` in the untrusted fork-PR lane,
+then run the command-executing gate only for a reviewed, trusted revision. See
+the [CI trust policy](security.md) for the recommended split and the
+`pull_request_target` warning.
 
 ```yaml
 # .github/workflows/spec.yml
@@ -486,7 +508,7 @@ PR. Reach for them deliberately — every escape hatch is a small honesty debt.
 | `:info` in either severity map                   | Workspace, durable             | You want the finding visible in local evidence and under `--verbose` but not in default output. |
 | `Spec-Drift: <code>=<severity>` git trailer      | One PR (any commit in the range) | Surgical, one-off downgrade for a specific PR. Cannot revive `:off`. |
 | `Spec-Drift: refactor`/`docs_only`/`test_only`   | One PR                         | Common shorthand for whole classes of low-risk changes. |
-| `mix spec.check --no-run-commands`               | One invocation                 | Local fast loop; CI should always run commands. |
+| `mix spec.check --no-run-commands`               | One invocation                 | Local fast loop, and the structural lane for untrusted fork PRs; run commands only after the revision is trusted. |
 | `mix spec.check --verbose` / `SPECLED_SHOW_INFO=1` | One invocation                 | Surface `:info` findings during debugging. |
 | `status: draft` on a subject                     | Subject                        | Spec is incomplete; verifier skips strict checks. Do not ship `draft` to main. |
 | `@tag spec_triangulation: :indirect`             | One test                       | Test deliberately exercises subjects other than the one it tags. |

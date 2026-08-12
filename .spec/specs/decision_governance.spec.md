@@ -135,6 +135,41 @@ decisions:
     once.
   priority: must
   stability: stable
+- id: specled.decisions.adr_reference_discipline
+  statement: >-
+    Repository comment hygiene shall scan contiguous line-comment blocks of
+    at least eight non-separator lines in `lib/specled_ex/realization/*.ex`,
+    excluding comment-only hyphen separators from the line count; each block
+    shall end with the id of an ADR that exists in `.spec/decisions/*.md`,
+    except for blocks whose final line is a reason-bearing
+    `# spec-lint:allow-long-comment=<reason>` marker. The marker is block-local
+    and shall be honored only within that fixed realization corpus; section
+    banners, numbered walkthroughs, and algorithm prose receive no implicit
+    exemption.
+  priority: must
+  stability: evolving
+```
+
+## Scenarios
+
+```yaml spec-scenarios
+- id: specled.decisions.scenario.adr_reference_discipline
+  given:
+    - an eight-line realization comment block with no terminal ADR id
+    - realization comment blocks ending in an existing ADR id or a reason-bearing opt-out marker
+    - a section banner with fewer than eight prose-interior lines
+    - a section banner with at least eight prose-interior lines
+    - a realization comment block ending in an unknown ADR id
+    - a numbered walkthrough with neither a terminal ADR id nor an opt-out marker
+    - a reason-bearing opt-out marker on a path outside the realization corpus
+  when:
+    - the realization comment-pointer lint evaluates the blocks
+  then:
+    - the unpointed block, unknown ADR id, long-prose banner, and unmarked numbered walkthrough are rejected
+    - the existing terminal ADR id, scoped opt-out marker, and short-prose banner are accepted
+    - the marker outside the realization corpus grants no exemption
+  covers:
+    - specled.decisions.adr_reference_discipline
 ```
 
 ## Verification
@@ -154,6 +189,7 @@ decisions:
     - specled.decisions.cross_field_affects_resolve
     - specled.decisions.cross_field_adr_append_only
     - specled.decisions.cross_field_idempotent
+    - specled.decisions.adr_reference_discipline
 - kind: source_file
   target: lib/specled_ex/decision_parser/cross_field.ex
   execute: true

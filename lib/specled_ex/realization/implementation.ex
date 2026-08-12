@@ -478,6 +478,7 @@ defmodule SpecLedEx.Realization.Implementation do
   # context carries a non-empty compile manifest: with a nil or empty
   # manifest the in-project set degrades to binding modules alone, and
   # filtering against it would erase the graph.
+  # See `specled.decision.tracer_manifest_merge_on_flush`.
   @doc false
   @spec filter_edges(map(), MapSet.t(), map() | nil) :: map()
   def filter_edges(edges, %MapSet{} = in_project_set, manifest)

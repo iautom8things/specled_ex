@@ -1,5 +1,104 @@
 # Changelog
 
+## 0.15.0 — 2026-08-12
+
+Post-release fast-follow backlog (specled_-i4x): the sixteen findings that
+releases 0.11.0, 0.13.0, and 0.14.0 each deliberately deferred, drained as one
+epic. No new capability area — this is a release about the gate telling the
+truth, in three places where it previously did not.
+
+**Weakening authorization now checks ADR status.** `authorizing_decision/3`
+filtered on `change_type` and `affects` alone, so a `superseded`, `rejected`,
+or `proposed` ADR suppressed an error-severity weakening exactly as well as an
+accepted one. Only accepted ADRs authorize now. This is the change most likely
+to surface findings in an existing corpus — see the upgrade note.
+
+**In-place statement rewrites are no longer invisible.** Every append-only
+detector keyed on a requirement's id, priority, modal class, or scenario count,
+so rewriting a `must` requirement's *statement* while keeping its id passed
+silently. `append_only/statement_rewritten` closes that hole at warning
+severity. This release emits ten of them against itself.
+
+**Realization baselines stopped over- and under-reaching.** Resolution-path
+divergence blocked the entire flat-tier refresh, freezing unrelated comparable
+baselines; it is now scoped to the diverged `(tier, mfa)` pair. In the other
+direction, silent seeding ran before divergence detection and wrote provenance
+labels from whatever the build happened to be, so a cold or stale tree could
+record `resolved_via: source` for a binding a warm run resolves from BEAM. That
+seed is now gated on the run being divergence-free.
+
+### Added
+
+- `append_only/statement_rewritten` — warning-level finding for a must-priority
+  requirement that keeps its id while its statement changes after whitespace
+  normalization. Ratified as the twelfth append-only code by
+  `specled.decision.append_only_finding_budget_v3` (specled_-vzd.3)
+- `SpecLedEx.AppendOnly.finding_codes/0` — the append-only code catalog is now
+  derived at compile time from the emitters themselves via a `finding/2` macro
+  that registers each literal code, replacing the hand-maintained mirror that
+  could drift from what the module actually emits (specled_-bg5.6)
+- `docs/security.md` — threat model for repository-authored command execution:
+  which tasks execute repo shell by default, what `--no-run-commands` does and
+  does not disable, and the fork-PR CI trust policy. Includes the fact that
+  `@requirements ["app.config"]` compiles the revision even in the structural
+  lane (specled_-bg5.3)
+- Command-tier structural guard for the spec-review workflow privilege split:
+  deny-by-default allowlists over jobs, permissions, `uses:` actions and their
+  `with:` keys, and the deploy checkout's base-ref pin (specled_-vbo)
+- Realization comment-pointer lint: long comment blocks under `lib/realization`
+  must terminate in an existing `specled.decision.*` pointer rather than
+  restating the ADR's prose, with a corpus-scoped exemption marker
+  (specled_-vzd.6)
+- Bidirectional documentation full-set lint: a region marked
+  `spec-lint:full-set=<id>` must enumerate exactly its configured code set, so
+  a claim of completeness cannot silently go stale (specled_-vzd.5)
+- `SpecLedEx.Coverage.Paths` — one home for coverage source-path identity,
+  replacing the duplicated resolution logic (specled_-dn4.12)
+
+### Changed
+
+- Only ADRs with `status: accepted` authorize a weakening (specled_-bg5.4)
+- Self-authorization `:info` markers print on default `mix spec.check` output
+  instead of requiring `--verbose` or `SPECLED_SHOW_INFO=1`; the marker's
+  authorizing-ADR selection is deterministic under input reordering, and one
+  marker is emitted per `(requirement, weakening class)`
+  (specled_-bg5.5, specled_-bg5.1)
+- Resolution-path divergence excludes only its own `(tier, mfa)` entry from
+  flat-tier baseline refresh rather than blocking the whole refresh
+  (specled_-vzd.2)
+- Severity overrides carry their provenance, so a finding reports which layer
+  set its severity (specled_-bg5.2)
+
+### Fixed
+
+- A cold or stale build could write a permanently misleading
+  `resolved_via: source` label during silent seeding. Seeding now runs after
+  tier dispatch and is withheld entirely on any run carrying a resolution-path
+  divergence (specled_-vzd.1)
+- `HashStore.merge/2` crashed on the default configuration when seeding
+  preserved entry envelopes (specled_-vzd.4)
+- Coverage source paths resolved inconsistently inside a child BEAM
+  (specled_-dn4.12, specled_-bos)
+- Formatter lifecycle assumptions were asymmetric between `record_inventory/2`
+  and `flush/1` (specled_-zd8)
+
+### Upgrade notes
+
+- **Findings may appear that an ADR previously suppressed.** If a weakening in
+  your corpus was authorized by an ADR whose status is not `accepted`, that
+  finding returns — at its own severity, which for deletions, modal downgrades,
+  scenario regressions, and polarity removals is `:error`. Audit with
+  `mix spec.check --verbose` before upgrading in CI. The fix is to set the
+  governing ADR to `accepted`, not to re-weaken the spec.
+- **Expect new `append_only/statement_rewritten` warnings.** Any `must`
+  requirement whose text was edited in place since your baseline now reports.
+  These are warnings and do not fail the gate; review them and record the
+  rationale in a `clarifies` ADR where the rewrite was deliberate.
+- **A divergent run seeds no new baseline entries.** On a tree where any
+  binding resolves through a different path than its baseline, newly tracked
+  entries are not seeded until a run with no divergence. Compile before the
+  first baseline run to avoid the delay.
+
 ## 0.14.0 — 2026-08-11
 
 Realization hash integrity (specled_-n5q): two independent defects in the

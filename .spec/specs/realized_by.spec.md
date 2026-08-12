@@ -44,6 +44,7 @@ decisions:
   - specled.decision.realization_drift_acceptance
   - specled.decision.cross_vm_temp_names_reach
   - specled.decision.amplification_scoped_dedupe
+  - specled.decision.run_scoped_divergence_seed_gate
 ```
 
 ## Requirements
@@ -270,22 +271,34 @@ decisions:
     `.spec/realization_hashes.json`, the orchestrator shall compute the entry's
     hash, persist it via `SpecLedEx.Realization.HashStore.merge/2`,
     and emit no drift finding for that entry on the seeding run. The
-    seeding pass shall run before tier dispatch and shall be gated by
-    the same `commit_hashes? != false` and `umbrella? == false`
-    conditions that gate `refresh_and_commit_hashes/3`. Dangling
-    entries shall not be seeded.
+    seeding pass shall run after tier dispatch establishes the run's
+    finding set and shall be gated by the same `commit_hashes? != false`
+    and `umbrella? == false` conditions that gate
+    `refresh_and_commit_hashes/4`, plus the run-scoped divergence gate.
+    Dangling entries shall not be seeded. See
+    `specled.decision.run_scoped_divergence_seed_gate`.
+  priority: must
+  stability: evolving
+- id: specled.realized_by.silent_seed_run_scoped_divergence_gate
+  statement: >-
+    If any `branch_guard_resolution_path_divergence` finding is emitted
+    anywhere in a realization run, the orchestrator shall treat the tree as
+    cold and seed no uncommitted entry in any tier. The post-run flat-tier
+    refresh shall continue refreshing committed, non-divergent entries under
+    its existing per-`{tier, mfa}` exclusion, but shall not create missing
+    entries on that run. A later run with no divergence may seed them.
   priority: must
   stability: evolving
 - id: specled.realized_by.silent_seed_uses_merge
   statement: >-
     `SpecLedEx.Realization.HashStore.merge/2` shall deep-merge per-tier
     seed entries into the existing realization map, preserving
-    non-seeded entries. The post-run `refresh_and_commit_hashes/3`
+    non-seeded entries. The post-run `refresh_and_commit_hashes/4`
     flat-tier refresh shall also use `merge/2` so the silent-seeded
     `implementation` section survives; `write/2` shall retain
     full-baseline replacement semantics for callers that intentionally
     rewrite the entire file. When refreshing `api_boundary` entries in
-    `refresh_and_commit_hashes/3`, the orchestrator shall recompute
+    `refresh_and_commit_hashes/4`, the orchestrator shall recompute
     hashes for both MFA-form entries (`ApiBoundary.hash/1`) and bare-module
     entries (`Canonical.hash_module_head_union/1`).
   priority: must
@@ -296,7 +309,7 @@ decisions:
     INTENTIONAL realization drift, scoped to exactly the bindings the refresh
     rebaselines — silence only what you heal. When the orchestrator is run with
     `accept_drift?: true` and no `branch_guard_dangling_binding` finding is
-    present, it shall run `refresh_and_commit_hashes/3` even though
+    present, it shall run `refresh_and_commit_hashes/4` even though
     `branch_guard_realization_drift` findings are present, committing the current
     flat-tier hashes as the new baseline via `HashStore.merge/2`, so a subsequent
     `mix spec.check` sees committed == current and emits no drift for those
@@ -485,6 +498,18 @@ decisions:
     - "if the change touched a function head, an additional `tier=api_boundary` drift finding fires; otherwise only the implementation drift fires"
   covers:
     - specled.realized_by.bare_module_drift_after_seed
+- id: specled.realized_by.scenario.divergence_blocks_all_new_seeds
+  given:
+    - "one tracked api-boundary MFA emits `branch_guard_resolution_path_divergence`"
+    - "unrelated tracked entries in the same or another tier have no committed hashes"
+  when:
+    - "`mix spec.check` runs with hash commits enabled"
+  then:
+    - "no missing entry is added to `.spec/realization_hashes.json` anywhere in the run"
+    - "committed non-divergent flat-tier entries remain eligible for the existing per-`{tier, mfa}` refresh"
+    - "after the tree is warm and no divergence is emitted, a later run may silently seed the missing entries"
+  covers:
+    - specled.realized_by.silent_seed_run_scoped_divergence_gate
 - id: specled.realized_by.scenario.bare_module_export_added
   given:
     - "a subject lists `SomeMod` (bare module) under `realized_by.implementation`"
@@ -677,9 +702,10 @@ decisions:
     - specled.realized_by.bare_module_runtime_only_discovery
     - specled.realized_by.bare_module_export_filtering
 - kind: tagged_tests
-  execute: false
+  execute: true
   covers:
     - specled.realized_by.silent_seed
+    - specled.realized_by.silent_seed_run_scoped_divergence_gate
     - specled.realized_by.silent_seed_uses_merge
 - kind: tagged_tests
   execute: false

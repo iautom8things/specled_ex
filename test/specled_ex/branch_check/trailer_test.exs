@@ -114,6 +114,12 @@ defmodule SpecLedEx.BranchCheck.TrailerTest do
                [trailer_override: result.overrides],
                :warning
              ) == :info
+
+      assert Severity.resolve_with_source(
+               "branch_guard_realization_drift",
+               [trailer_override: result.overrides],
+               :warning
+             ) == {:info, :spec_drift_trailer}
     end
 
     @tag spec: "specled.spec_drift_trailer.scans_base_to_head"
