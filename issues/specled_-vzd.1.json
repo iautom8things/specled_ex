@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-vzd",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: i4x-vzd.1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-vzd.1/codex-i4x-vzd.1/log\n\nCommit: c87cfde2\nFiles touched: lib/specled_ex/realization/orchestrator.ex; .spec/specs/realized_by.spec.md; .spec/specs/branch_guard.spec.md; .spec/decisions/specled.decision.run_scoped_divergence_seed_gate.md; test/specled_ex/realization/orchestrator_test.exs\nTests added: SpecLedEx.Realization.OrchestratorTest — \"a divergence anywhere prevents every missing entry from being seeded\"\nVerification stubs flipped: tagged_tests covering specled.realized_by.silent_seed, specled.realized_by.silent_seed_run_scoped_divergence_gate, and specled.realized_by.silent_seed_uses_merge\nVerification tier: change-scoped — mix compile --warnings-as-errors; orchestrator_test.exs, implication_integration_test.exs, and implementation_test.exs; mix test --stale; tagged tests for specled.realized_by.silent_seed and specled.realized_by.silent_seed_run_scoped_divergence_gate; mix format --check-formatted; make xref; mix spec.check --no-run-commands; full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: Dispatch now establishes the run's divergence set before seeding, and any divergence blocks every new flat- or implementation-tier seed while missing flat entries are excluded from refresh. Existing committed non-divergent entries retain vzd.2's per-{tier, mfa} refresh behavior; the realized_by contract and accepted ADR state the recoverable stale-label severity and the run-scoped policy pending operator sign-off.",
+      "timestamp": "2026-08-12T14:02:13Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "Baseline seeding is not divergence-gated: a stale _build can write a permanently-stuck source label",
   "type": "task",
-  "updated_at": "2026-08-12T13:52:46Z"
+  "updated_at": "2026-08-12T14:02:13Z"
 }
