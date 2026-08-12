@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-12T00:36:59Z",
+  "description": "Advances: specled.append_only\n\nReview-bar-override: needs a new finding code (which finding_code_budget requires be justified on its own terms), a statement-digest design, and a migration story for existing specs.\n\nFrom the critical review of specled_-n5q (finding F20, Medium, spec auditor).\n\nAn in-place rewrite of a must statement is invisible to the append-only gate: the requirement id still exists, its priority is still must, its scenarios still cover it, so none of the four weakening classes fire. The repo rule \"Do NOT weaken specs to make failing code pass\" therefore has no mechanical backstop — only review.\n\nThis branch rewrote specled.realized_by.implication_amplification_dedup in place. The spec auditor judged that particular rewrite a legitimate correction (the old text hard-coded its own implementation and guaranteed the very collapse that was the defect; the rewrite is accompanied by two strictly stronger requirements and INCREASES finding volume). But the gate did not make that judgment — a human did.\n\nDesign sketch: digest each must statement, store the digest in the append-only baseline, and emit a warning-level finding when a digest changes without the id changing. Needs a code from the budget, and a first-run migration for every existing spec.",
+  "id": "specled_-vzd.3",
+  "labels": [],
+  "parent": "specled_-vzd",
+  "priority": 3,
+  "status": "open",
+  "title": "No append-only detector for in-place must statement rewrites",
+  "type": "task",
+  "updated_at": "2026-08-12T00:36:59Z"
+}
