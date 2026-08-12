@@ -1,6 +1,8 @@
 {
   "assignee": "",
-  "blocked_by": [],
+  "blocked_by": [
+    "specled_-vzd.4"
+  ],
   "blocks": [],
   "created": "2026-08-12T00:37:29Z",
   "description": "Advances: specled.package\n\nReview-bar-override: a gate proposal, not a defect — the class has now appeared in three review arcs and should stop being reportable.\n\nFrom the critical review of specled_-n5q (Recurring class 1).\n\nComment prose duplicating ADR prose keeps recurring (F11 here; the same class appeared in the s65 and 0y8 arcs). It is not merely verbose — it goes FALSE independently of the ADR. This ticket own commit log records two restatements that had already drifted from the ADR they restated and needed a remediation commit.\n\nTwo options, cheapest first:\n1. A rule that comment blocks longer than ~8 lines in lib/specled_ex/realization/ must end in a specled.decision.* pointer. Mechanical, no false positives worth worrying about.\n2. Richer: flag a lib comment block over N lines containing a sentence that also appears in a .spec/decisions/ file. Catches the duplication at write time rather than the missing pointer.\n\nStart with 1.",
@@ -11,5 +13,5 @@
   "status": "open",
   "title": "Lint: long comment blocks in lib/realization must end in an ADR pointer, not restate the ADR",
   "type": "task",
-  "updated_at": "2026-08-12T00:37:29Z"
+  "updated_at": "2026-08-12T11:40:14Z"
 }
