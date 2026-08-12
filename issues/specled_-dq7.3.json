@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-12T21:21:16Z",
+  "description": "Advances: specled.append_only\n\nSeverity: Medium. @finding_codes MapSet.new(@emitted_finding_codes) is read at lib/specled_ex/append_only.ex:813, after the current call sites. Module attribute reads snapshot at the read point, so a finding/2 call in a function defined below that line emits at runtime and is silently absent from finding_codes/0.\n\nProven by execution: adding a probe emitter below :813 gives COUNT=12 HAS_PROBE=false. test/specled_ex/branch_check/severity_integration_test.exs is blind, and test/specled_ex/review/html_test.exs became blind on this branch when EmitterCodes stopped doing its own source regex and started delegating to finding_codes/0. test/docs_identifier_lint_test.exs still catches it (missing from @known_codes), so it fails closed today — one independent witness, not zero.\n\nWhy not on the release branch: the fix is a @before_compile restructure of a module four tickets contended over during the epic, and the gate currently fails closed. Two independent reviewers found it (idioms M1, security L2).\n\nSource: 2026-08-12 critical review.",
+  "id": "specled_-dq7.3",
+  "labels": [],
+  "parent": "specled_-dq7",
+  "priority": 2,
+  "status": "open",
+  "title": "@finding_codes freezes mid-module; a finding/2 call below :813 never reaches the catalog",
+  "type": "task",
+  "updated_at": "2026-08-12T21:21:16Z"
+}
