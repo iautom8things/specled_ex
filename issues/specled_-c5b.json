@@ -53,11 +53,15 @@
     {
       "text": "CI green on first run — all 3 checks pass (Check Specs, Test Elixir 1.18.4/OTP 26.2.5, Test Elixir 1.19.5/OTP 28.3.1). Zero fix commits needed during babysitting; local pre-flight caught everything. mergeStateStatus=CLEAN, no review comments. Ready for merge.",
       "timestamp": "2026-08-12T23:03:03Z"
+    },
+    {
+      "text": "Squash-merged to main (1a159bd9) as release 0.15.1. Remote branch deleted; primary checkout fast-forwarded. No deploy workflow in this repo (library, no hex publish on merge), so no post-merge deploy to watch.",
+      "timestamp": "2026-08-12T23:04:00Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "TagScanner is blind to for-comprehension-generated tests — @tag spec: inside unrolled loops never reaches the tag_map",
   "type": "bug",
-  "updated_at": "2026-08-12T23:03:56Z"
+  "updated_at": "2026-08-12T23:04:00Z"
 }
