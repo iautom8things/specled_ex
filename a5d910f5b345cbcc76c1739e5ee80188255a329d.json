@@ -12,8 +12,8 @@
       "message": "Weakening of `specled.spec_review.gh_pages_privilege_separation` (negative polarity removed) is suppressed as authorized by ADR `specled.decision.workflow_run_text_open_set`, which is new in this same diff — the authorization is self-approved within this PR. Visible but not blocked; review decides.\n\n```\nfix: land the authorizing ADR in a separate PR, or confirm in review that the self-authorization is intentional.\n```"
     }
   ],
-  "run_at": "2026-08-12T13:11:24.000919Z",
-  "run_id": "7e5bc90f4255ee77dee7a5111e958ddd",
+  "run_at": "2026-08-12T13:11:40.512121Z",
+  "run_id": "8e2dc3869fefdc40ff21a0041e44e4d5",
   "schema_version": 1,
   "specled_version": "0.14.0",
   "tree_hash": "a5d910f5b345cbcc76c1739e5ee80188255a329d",
