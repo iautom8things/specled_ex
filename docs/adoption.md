@@ -54,10 +54,15 @@ The full set of branch-guard codes `mix spec.check` gates on:
 | `branch_guard_missing_subject_update`         | Changed file sits in a subject's surface but that subject's spec did not change |
 | `branch_guard_missing_decision_update`        | Cross-cutting change spans multiple subjects with no decision file change |
 | `branch_guard_realization_unknown_tier`       | `realization.enabled_tiers` in `.spec/config.yml` names a tier that does not exist |
-| `append_only/*`                               | Spec corpus regressed (deletion, downgrade, etc.)         |
 
 <!-- spec-lint:full-set-end -->
 
+`mix spec.check` also gates on the spec-corpus families, which are not
+branch-guard codes:
+
+| Code                                          | What disagrees                                           |
+|------------------------------------------------|-----------------------------------------------------------|
+| `append_only/*`                               | Spec corpus regressed (deletion, downgrade, etc.)         |
 | `append_only/statement_rewritten`             | A must-priority requirement kept its id but changed text  |
 | `overlap/*`                                   | Two requirements/scenarios collide within a subject       |
 
