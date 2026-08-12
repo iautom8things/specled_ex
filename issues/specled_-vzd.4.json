@@ -12,9 +12,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-vzd",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: i4x-vzd.4\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-vzd.4/codex-i4x-vzd.4/log\n\nCommit: 18af5f265774ce2bcc9fa170b9d02224deef3d68\nFiles touched: .spec/specs/api_boundary.spec.md, .spec/specs/binding.spec.md, .spec/specs/branch_guard.spec.md, lib/specled_ex/realization/api_boundary.ex, lib/specled_ex/realization/hash_store.ex, lib/specled_ex/realization/orchestrator.ex\nTests added: none (behavior-preserving refactor covered by existing focused tests)\nVerification stubs flipped: none\nVerification tier: change-scoped — mix compile --warnings-as-errors; test/specled_ex/realization/api_boundary_test.exs, test/specled_ex/realization/hash_store_test.exs, and test/specled_ex/realization/orchestrator_test.exs (98 tests); mix test --stale; mix format --check-formatted; mix deps.unlock --check-unused; make xref; mix spec.check --no-run-commands; full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 2\n\nSummary: Consolidated stored-hash decoding under HashStore, routed api_boundary hashing through the shared MFA deduper, centralized finding-code checks, and replaced duplicated historical rationale with ADR pointers. Updated the three owning subject summaries as co-change bookkeeping; focused tests and structural gates pass with no realization baseline movement.",
+      "timestamp": "2026-08-12T11:55:11Z"
+    }
+  ],
   "priority": 4,
   "status": "in_progress",
   "title": "Realization module cleanups deferred from the 0.14.0 release branch",
   "type": "task",
-  "updated_at": "2026-08-12T11:45:48Z"
+  "updated_at": "2026-08-12T11:55:11Z"
 }
