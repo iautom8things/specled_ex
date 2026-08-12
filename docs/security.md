@@ -94,6 +94,13 @@ targets, and `kind: tagged_tests`, which spawns `mix test` over the repository's
 own test code. Structural validation, branch reconciliation, realization-drift
 checks, and test-tag consistency still run.
 
+It does not stop the revision's own code from being compiled. `mix spec.check`
+declares `@requirements ["app.config"]`, which evaluates the repository's
+`mix.exs` and compiles the project before any check runs. Even with
+`--no-run-commands`, the structural lane executes the revision's compile-time
+code — module bodies, macros, and compiler tracers. Size that job's permissions
+accordingly: it is an untrusted-code job, not a parsing job.
+
 It is not a general-purpose sandbox for an untrusted Elixir project. CI steps
 such as dependency installation, compilation, tests, custom Mix aliases, and
 coverage commands can execute repository-controlled code independently of

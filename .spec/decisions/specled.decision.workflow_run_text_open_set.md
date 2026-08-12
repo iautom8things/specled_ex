@@ -5,6 +5,13 @@ date: 2026-08-12
 affects:
   - specled.spec_review.gh_pages_privilege_separation
 change_type: narrows-scope
+reverses_what: >-
+  Withdraws the run:-text scanning clause of
+  specled.spec_review.gh_pages_privilege_separation, under which the
+  command-tier guard claimed to prove the write-scoped deploy job cannot check
+  out or execute pull-request-provided code. Shell text has an open set of
+  spellings for those semantics, so the guard now enforces only structurally
+  checkable YAML properties and no longer asserts that absolute property.
 ---
 
 # Workflow `run:` Text Is Not a Mechanical Privilege Boundary

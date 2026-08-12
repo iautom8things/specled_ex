@@ -1,6 +1,6 @@
 ---
 id: specled.decision.append_only_finding_budget_v2
-status: accepted
+status: superseded
 date: 2026-08-06
 affects:
   - specled.append_only
@@ -8,6 +8,7 @@ affects:
 change_type: supersedes
 replaces:
   - specled.decision.append_only_finding_budget
+superseded_by: specled.decision.append_only_finding_budget_v3
 reverses_what: >-
   Supersedes the twelve-code append-only and overlap budget to admit an
   informational per-requirement marker for weakening authorized by an ADR

@@ -138,8 +138,8 @@ identifier-integrity surface. Its append-only catalog now consumes
 `SpecLedEx.AppendOnly.finding_codes/0` directly while the other guarded families
 retain their explicit mirrors, and the implementation side remains an independent
 source-text extraction. `docs/concepts.md` also corrects the append-only
-finding-budget count to eleven codes and points at
-`specled.decision.append_only_finding_budget_v2`; the concepts-guide requirements
+finding-budget count to twelve codes and points at
+`specled.decision.append_only_finding_budget_v3`; the concepts-guide requirements
 above remain unchanged.
 
 Branch reconciliation note: this branch adds

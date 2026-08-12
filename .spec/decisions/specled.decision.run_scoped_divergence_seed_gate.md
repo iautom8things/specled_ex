@@ -6,6 +6,13 @@ affects:
   - specled.realized_by
   - specled.branch_guard
 change_type: narrows-scope
+reverses_what: >-
+  Narrows unconditional silent seeding under specled.realized_by, which ran
+  before tier dispatch and wrote every missing realization entry regardless of
+  whether the run's resolution environment was trustworthy. A run carrying any
+  branch_guard_resolution_path_divergence now seeds no missing entry in any
+  tier, and flat-tier refresh must exclude missing entries so it cannot bypass
+  that gate by creating them.
 ---
 
 # Resolution-Path Divergence Makes Silent Seeding Run-Scoped

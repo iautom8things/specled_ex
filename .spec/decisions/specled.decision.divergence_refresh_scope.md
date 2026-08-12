@@ -5,6 +5,13 @@ date: 2026-08-12
 affects:
   - specled.api_boundary.divergence_blocks_refresh
 change_type: narrows-scope
+reverses_what: >-
+  Narrows the run-wide refresh block in
+  specled.api_boundary.divergence_blocks_refresh, under which one
+  resolution-path divergence withheld the entire flat-tier refresh and froze
+  unrelated comparable baselines. Divergence now excludes only its own
+  {tier, mfa} entry; other clean entries continue to refresh when the drift
+  and dangling gates permit.
 ---
 
 # Resolution-Path Divergence Excludes One Tier/MFA From Baseline Refresh
