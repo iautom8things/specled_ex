@@ -88,7 +88,10 @@ defmodule SpecLedEx.Coverage.PathsTest do
       expected = "lib/specled_ex/coverage/paths_test_ephemeral.ex"
 
       tmp_dir =
-        Path.join(System.tmp_dir!(), "specled_paths_ephemeral_#{uid}")
+        Path.join(
+          System.tmp_dir!(),
+          "specled_paths_ephemeral_#{SpecLedEx.TempName.cross_vm_suffix()}"
+        )
 
       File.mkdir_p!(tmp_dir)
 
