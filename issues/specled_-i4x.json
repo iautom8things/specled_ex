@@ -9,9 +9,15 @@
     "phase:implementing",
     "slug:meta-epic-post-release"
   ],
+  "comments": [
+    {
+      "text": "Orchestration started (flattened mode).\n\nEpic worktree: /Users/mz/src/specled_ex-fast-follow-backlog\nBranch: specled_-i4x/fast-follow-backlog\nBase SHA: bb64e69e6832264eb202d01fa48b63dda5e69b5b\nSmoke at base: GREEN (1323 tests, 3 properties, 0 failures)\n\nOperator decisions for this run:\n- Scope: flattened — all 16 leaves across scb/bg5/vzd driven as one DAG under this epic.\n- Decision-class tickets (vzd.1, bg5.1, vbo and any similar): the implementer drafts\n  the decision + ADR as a proposal; the work is graded normally but is NOT merged.\n  It waits for human sign-off at finish.\n\nTooling note: bin/rigor-check, pipeline-config, and gate-memo are NOT installed in this\nrepo/host. Consequences, applied for the whole run:\n- No mechanical simple/critical authority, so every ticket is CRITICAL by the canonical\n  rubric's default-when-unsure. No simple path; full grader ladder on every child.\n- merge-batching is OFF, so merge gates run per-close.\n- No gate memoization; every gate executes.\n\nKnown-red baselines: none (CLAUDE.md has no \"Known Baseline Gate Exceptions\" section).\nNothing is waivable this run.",
+      "timestamp": "2026-08-12T11:09:43Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "[META-EPIC] Post-release fast-follow backlog: 0.11.0, 0.13.0, 0.14.0",
   "type": "epic",
-  "updated_at": "2026-08-12T11:09:36Z"
+  "updated_at": "2026-08-12T11:09:43Z"
 }
