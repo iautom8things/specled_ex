@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-12T21:21:01Z",
+  "description": "Advances: specled.append_only\n\nSeverity: Medium (spec overclaim). specled.append_only.requirement_deleted_authorized requires an accepted weakening-set ADR to list the id \"with a non-empty reverses_what\" — but authorizing_decision/3 (lib/specled_ex/append_only.ex:720-748) filters only on accepted_decision?/1, id in affects, and change_type in @weakening_set. reverses_what is never inspected.\n\nFailure: an ADR with change_type: weakens, affects: [x.req_a] and NO reverses_what suppresses append_only/requirement_deleted for a deleted MUST; the spec states it cannot. Same for modal downgrade, scenario regression, polarity removal.\n\nWhy not on the release branch: needs an owner decision — add the check to authorizing_decision/3 (changes authorization semantics, a behavior change beyond release prep) or delete the clause and let CrossField own the field once it is wired (specled_-4a6). Either is defensible; leaving both is not.\n\nSource: 2026-08-12 critical review SPEC-H2.",
+  "id": "specled_-dq7.1",
+  "labels": [],
+  "parent": "specled_-dq7",
+  "priority": 2,
+  "status": "open",
+  "title": "reverses_what is mandated by two must requirements and read by zero code paths",
+  "type": "task",
+  "updated_at": "2026-08-12T21:21:01Z"
+}
