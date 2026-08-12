@@ -6,7 +6,7 @@ defmodule SpecLedEx.TagScanner do
           file: String.t(),
           line: non_neg_integer(),
           test_line: non_neg_integer(),
-          test_name: String.t()
+          test_name: String.t() | nil
         }
   @type dynamic_entry :: %{file: String.t(), line: non_neg_integer(), test_name: String.t() | nil}
   @type parse_error :: %{file: String.t(), reason: term()}
@@ -112,11 +112,7 @@ defmodule SpecLedEx.TagScanner do
   defp collect_modules(_), do: []
 
   defp extract_module_tags(body, file) do
-    statements =
-      case body do
-        {:__block__, _, items} -> items
-        other -> [other]
-      end
+    statements = block_statements(body)
 
     {module_ids, module_dyn} = collect_moduletags(statements, file)
 
@@ -200,14 +196,7 @@ defmodule SpecLedEx.TagScanner do
          moduletag_ids,
          {pending, pending_dyn, tags, dynamics}
        ) do
-    describe_body = describe_body_from_args(args)
-
-    inner_statements =
-      case describe_body do
-        {:__block__, _, items} -> items
-        nil -> []
-        other -> [other]
-      end
+    inner_statements = args |> block_from_args() |> block_statements()
 
     {describe_ids, describe_dyn_lines} = collect_describetags(inner_statements)
     scoped_ids = moduletag_ids ++ describe_ids
@@ -218,6 +207,32 @@ defmodule SpecLedEx.TagScanner do
       end)
 
     {pending, pending_dyn, tags ++ inner_tags, dynamics ++ inner_dynamics}
+  end
+
+  # Recurse into `for ... do ... end` comprehension bodies, the idiom used to
+  # generate one test per case. The body unrolls into ordinary module-level
+  # statements at compile time, so thread the accumulator straight through it:
+  # a `@tag spec` declared before the comprehension is consumed by the first
+  # generated test, one declared inside is consumed by the test that follows it,
+  # and a trailing one survives to the statement after the comprehension.
+  #
+  # The body is walked once no matter how many iterations it unrolls. That is
+  # load-bearing, not an optimization: the tag map would hide a second walk,
+  # since it dedupes by {id, file, test_name}, but dynamic entries bypass
+  # dedupe/1 entirely and would double.
+  #
+  # Walking once means an entry records a static tag CARRIER, not a runtime
+  # test: the generator is not evaluated, so a comprehension over an empty or
+  # fully filtered list still registers its tag though ExUnit defines no test.
+  # Two shapes therefore diverge from ExUnit, both fail-open by one entry at
+  # most: that one, and a trailing `@tag` inside the body, which ExUnit also
+  # applies to iterations 2..N's tests while this records only the statement
+  # after the loop (and nothing when the loop is the module's last statement).
+  defp process_statement({:for, _meta, args}, file, moduletag_ids, acc) do
+    args
+    |> block_from_args()
+    |> block_statements()
+    |> Enum.reduce(acc, &process_statement(&1, file, moduletag_ids, &2))
   end
 
   defp process_statement(_other, _file, _moduletag_ids, acc), do: acc
@@ -238,20 +253,20 @@ defmodule SpecLedEx.TagScanner do
     end)
   end
 
-  defp describe_body_from_args(args) when is_list(args) do
-    Enum.reduce_while(args, nil, fn
-      list, _ when is_list(list) ->
-        case Keyword.get(list, :do) do
-          nil -> {:cont, nil}
-          body -> {:halt, body}
-        end
-
-      _, acc ->
-        {:cont, acc}
+  # The `do:` body is the last keyword-list argument, past any generators,
+  # filters, or options (`for x <- xs, x > 1, into: %{}, do: ...`).
+  defp block_from_args(args) when is_list(args) do
+    Enum.find_value(args, fn
+      list when is_list(list) -> Keyword.get(list, :do)
+      _ -> nil
     end)
   end
 
-  defp describe_body_from_args(_), do: nil
+  defp block_from_args(_), do: nil
+
+  defp block_statements({:__block__, _, items}), do: items
+  defp block_statements(nil), do: []
+  defp block_statements(other), do: [other]
 
   defp test_name_from_args([name | _]) when is_binary(name), do: name
   defp test_name_from_args(_), do: nil

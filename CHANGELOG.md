@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.15.1 — 2026-08-12
+
+A single blind spot in the tag scanner ([specled_-c5b](https://github.com/iautom8things/specled_ex/blob/beadwork/issues/specled_-c5b.json)): tests generated inside a
+`for` comprehension were invisible to it, so correctly tagged tests looked
+untagged to every gate downstream.
+
+**`@tag spec:` inside a `for` comprehension now reaches the tag map.**
+`process_statement/4` matched `@tag`, `test`, and `describe` nodes and let its
+catch-all silently drop everything else — including `{:for, _, _}`. The common
+generator idiom, `for x <- xs do @tag spec: "..."; test "... #{x}" do ... end
+end`, therefore produced no tag entry at all: not a tag, not even a dynamic
+entry recording that something was skipped. Requirements covered only by
+comprehension-generated tests emitted `tagged_tests_cover_missing_tag` against
+tests that exist and are correctly tagged, and their strength capped at
+`claimed`, which is what kept adopters from arming `missing_tag` at `:error` or
+setting a strength floor. The scanner now walks comprehension bodies as the
+module-level statements they unroll into, so a `@tag` before the comprehension
+binds to the test it generates, one inside binds to the test that follows it,
+and a trailing one survives past the loop.
+
+**Upgrade note — a comprehension carrying a non-literal `@tag spec:` value now
+fails a gate it previously passed.** Because those bodies were never walked,
+`@tag spec: @some_attr` inside a comprehension was silently ignored. It is now
+seen and reported as `tag_dynamic_value_skipped`, which is an error under
+`test_tags` `enforcement: error` — so an adopter on that setting can go red on
+this upgrade without changing a line of their own code. The finding is correct
+and was always owed; it was simply unreachable before. Resolve it by replacing
+the attribute with a string literal, or lower the enforcement level for that
+run.
+
+**A tag entry records a static carrier, not a runtime test.** The scanner reads
+source without compiling it, so it never evaluates a generator: a comprehension
+over an empty or wholly filtered list still registers its `@tag spec:` ids
+though ExUnit defines no test for them. That is now stated in the
+`specled.tag_scanning` requirement and pinned by test rather than left as an
+accident of the implementation. One related gap is not fixed here — a
+comprehension-generated test whose name is interpolated records `test_name:
+nil`, which cannot match the `"file :: name"` join that promotes strength to
+`executed` in `:per_test` mode, tracked as
+[specled_-wv0](https://github.com/iautom8things/specled_ex/blob/beadwork/issues/specled_-wv0.json).
+
 ## 0.15.0 — 2026-08-12
 
 Post-release fast-follow backlog (specled_-i4x): the sixteen findings that
