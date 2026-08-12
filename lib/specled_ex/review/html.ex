@@ -3381,19 +3381,93 @@ defmodule SpecLedEx.Review.Html do
     """
   end
 
-  # Renders a markdown string as HTML using Earmark with safe defaults.
+  # covers: specled.spec_review.adr_prose_markdown_surface
+  # Renders a markdown string as HTML using MDEx with safe defaults.
   # The leading H1 (the ADR title) is stripped because the title already
   # appears in the disclosure summary, so duplicating it is noise.
+  #
+  # The GFM extensions and smart punctuation are opt-in in MDEx but were on by
+  # default in Earmark, so they are named here to hold the rendering surface
+  # steady. `escape: true` renders raw HTML in ADR prose as visible text rather
+  # than live markup, and `unsafe: false` additionally blocks dangerous link
+  # schemes — both are named rather than inherited, because the safety posture
+  # of this surface should not move when a default does. `syntax_highlight` is
+  # pinned off for the same reason: MDEx currently defaults it to nil, and a
+  # dep bump that flipped it would silently rewrite every code block into
+  # styled spans. `[[id]]` wikilinks are deliberately NOT handed to MDEx's
+  # wikilinks extension — they survive as literal text for `resolve_wikilinks/1`
+  # to rewrite against what actually rendered.
+  @markdown_options [
+    extension: [strikethrough: true, table: true, autolink: true, tasklist: true],
+    parse: [smart: true],
+    render: [escape: true, unsafe: false],
+    syntax_highlight: nil
+  ]
+
   defp render_markdown(text) when is_binary(text) do
     stripped = strip_leading_h1(text)
 
-    case Earmark.as_html(stripped, escape: true, compact_output: false) do
-      {:ok, html, _} -> resolve_wikilinks(html)
-      {:error, html, _messages} -> resolve_wikilinks(html)
-    end
+    stripped
+    |> render_document()
+    |> render_result(stripped)
   end
 
   defp render_markdown(_), do: ""
+
+  # Parse, drop authoring comments as document NODES, then render.
+  #
+  # Removing comments from the rendered byte stream instead would be unsafe:
+  # `escape: true` also escapes link and image `title` attributes, so an
+  # authored `[x](url "<!--")` puts a comment opener inside an attribute value,
+  # where a byte-level strip pairs it with the next `--&gt;` and deletes the
+  # markup in between. A node drop cannot reach inside an attribute, and it
+  # leaves `%MDEx.Code{}` / `%MDEx.CodeBlock{}` literals alone by construction —
+  # which is why a marker shown inside a code span stays visible without any
+  # code-region bookkeeping.
+  #
+  # A malformed option set raises out of `MDEx.parse_document/2` rather than
+  # returning an error, and that is deliberate: with the options unvalidated the
+  # escaping posture is unknown, and rendering ADR prose under an unknown posture
+  # is worse than failing the task.
+  defp render_document(markdown) do
+    with {:ok, document} <- MDEx.parse_document(markdown, @markdown_options) do
+      document
+      |> drop_authoring_comments()
+      |> MDEx.to_html(@markdown_options)
+    end
+  end
+
+  # Public so a test can drive the degrade branch with the error struct MDEx
+  # actually produces. The renderer itself is not injectable — the seam is this
+  # pure mapping, which is the part with a contract worth pinning.
+  @doc false
+  def render_result({:ok, html}, _source), do: resolve_wikilinks(html)
+
+  # MDEx surfaces no partial render on failure. Degrade to escaped source so the
+  # ADR body stays readable and still cannot inject markup.
+  def render_result({:error, _reason}, source),
+    do: ~s|<pre class="markdown-fallback">#{h(source)}</pre>|
+
+  # `<!-- ... -->` in ADR prose is an authoring marker (`spec-lint:allow-code=`),
+  # not content, and readers were never shown it. Other raw HTML is left alone so
+  # `escape: true` can render it as visible text.
+  defp drop_authoring_comments(document) do
+    MDEx.traverse_and_update(document, fn
+      %MDEx.HtmlInline{literal: literal} = node ->
+        if authoring_comment?(literal), do: :pop, else: node
+
+      %MDEx.HtmlBlock{literal: literal} = node ->
+        if authoring_comment?(literal), do: :pop, else: node
+
+      node ->
+        node
+    end)
+  end
+
+  defp authoring_comment?(literal) when is_binary(literal),
+    do: literal |> String.trim_leading() |> String.starts_with?("<!--")
+
+  defp authoring_comment?(_), do: false
 
   # Obsidian-style `[[id]]` refs in ADR prose become in-page links to the
   # referenced ADR's card. Resolution against what actually rendered happens
@@ -3406,7 +3480,7 @@ defmodule SpecLedEx.Review.Html do
   defp resolve_wikilinks(html) do
     html
     |> String.split(@code_segment_pattern, include_captures: true)
-    |> Enum.map(fn segment ->
+    |> Enum.map_join(fn segment ->
       if String.starts_with?(segment, "<pre") or String.starts_with?(segment, "<code") do
         segment
       else
@@ -3415,7 +3489,6 @@ defmodule SpecLedEx.Review.Html do
         end)
       end
     end)
-    |> Enum.join()
   end
 
   defp strip_leading_h1(text) do

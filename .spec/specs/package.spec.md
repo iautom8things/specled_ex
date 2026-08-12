@@ -22,6 +22,17 @@ deps, and Mix task wiring). An edit to an unrelated top-level key — e.g.
 exception — legitimately touches this subject's tracked surface without
 reflecting any change to what this subject verifies.
 
+As of 0.16.0 the dependency tree carries native code. The markdown renderer
+behind the `mix spec.review` artifact is MDEx, which pulls `mdex_native`
+through `rustler_precompiled`; the package is therefore no longer pure Elixir
+and BEAM bytecode. Adopters on a platform with no published artifact, or in an
+environment that cannot reach the `mdex_native` release assets, need a Rust
+toolchain and `config :rustler_precompiled, :force_build, mdex_native: true`.
+This cost is accepted deliberately — the predecessor, Earmark, is retired on
+Hex, and `mix hex.audit` offers no ignore mechanism, so keeping it made every
+adopter's audit gate permanently and unfixably red. See
+`specled.decision.markdown_renderer_mdex`.
+
 The package docs and bootstrap skill teach the same `mix spec.check` verdict
 read protocol as the live `spec.prime` and `spec.next` guidance, while avoiding
 placing that protocol on commands that do not emit a `spec.check result=` line
@@ -78,6 +89,7 @@ decisions:
   - specled.decision.explicit_subject_ownership
   - specled.decision.guided_reconciliation_loop
   - specled.decision.doc_identifier_lint_spec_corpus
+  - specled.decision.markdown_renderer_mdex
 ```
 
 ## Requirements

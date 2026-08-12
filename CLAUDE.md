@@ -1,6 +1,6 @@
 # specled
 
-specled is a Spec Led Development library for Elixir — repo-resident behavioral specs (`.spec/specs/*.spec.md`) with a verification loop (`mix spec.check`). Pure-Elixir Mix project: no Phoenix, no database, no Docker.
+specled is a Spec Led Development library for Elixir — repo-resident behavioral specs (`.spec/specs/*.spec.md`) with a verification loop (`mix spec.check`). Plain Mix project: no Phoenix, no database, no Docker. One native dependency, MDEx (`mdex_native` via `rustler_precompiled`), which renders ADR prose in the `mix spec.review` artifact.
 
 <!-- agentic.rules:start -->
 ## Rules
