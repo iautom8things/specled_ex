@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [
     "specled_-bg5.4"
@@ -10,8 +10,8 @@
   "labels": [],
   "parent": "specled_-bg5",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "F1: self-auth marker emission is weakening-class/order-dependent — design decision needed",
   "type": "task",
-  "updated_at": "2026-08-12T11:33:47Z"
+  "updated_at": "2026-08-12T11:48:07Z"
 }
