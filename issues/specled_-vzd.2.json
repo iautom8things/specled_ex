@@ -13,9 +13,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-vzd",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: i4x-vzd.2\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-vzd.2/codex-i4x-vzd.2/log\n\nCommit: 69ff1429ebd9ea6e2ddc71dc992ddbc6cf20f863\nFiles touched: .spec/decisions/specled.decision.divergence_refresh_scope.md, .spec/specs/api_boundary.spec.md, .spec/specs/branch_guard.spec.md, .spec/specs/package.spec.md, docs/concepts.md, lib/specled_ex/realization/orchestrator.ex, test/specled_ex/realization/orchestrator_test.exs\nTests added: SpecLedEx.Realization.OrchestratorTest — \"a divergence excludes its tier/MFA but refreshes unrelated flat-tier entries\" (expanded regression)\nVerification stubs flipped: none\nVerification tier: change-scoped — mix compile --warnings-as-errors; mix test test/specled_ex/realization/orchestrator_test.exs test/specled_ex/realization/api_boundary_test.exs; both required spec-tag selectors; mix format --check-formatted; make xref; mix spec.check --no-run-commands; full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: Scoped resolution-path divergence refresh exclusion to the affected {tier, MFA}, preserving unrelated clean baselines in the same and other flat tiers while keeping the existing drift/dangling gates. Amended the api-boundary contract, added the required narrowing ADR, corrected concepts documentation, and expanded the regression to prove normal and --accept-drift behavior plus attestation scoping.",
+      "timestamp": "2026-08-12T13:06:01Z"
+    }
+  ],
   "priority": 3,
   "status": "in_progress",
   "title": "Refresh block is repo-wide, not per-diverged-MFA: one stuck entry freezes every flat tier",
   "type": "task",
-  "updated_at": "2026-08-12T12:59:43Z"
+  "updated_at": "2026-08-12T13:06:01Z"
 }
