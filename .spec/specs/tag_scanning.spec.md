@@ -131,7 +131,9 @@ decisions:
     their non-literal `@tag spec` values reported as dynamic entries. A
     `@tag spec` declared before the comprehension shall attach to the test the
     comprehension generates rather than to the test that follows the
-    comprehension.
+    comprehension. The body shall be walked once regardless of how many
+    iterations the comprehension unrolls, so a single non-literal `@tag spec`
+    inside it yields exactly one dynamic entry.
   priority: must
   stability: evolving
 ```
