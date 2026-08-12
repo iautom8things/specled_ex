@@ -333,7 +333,65 @@ defmodule SpecLedEx.TagScannerTest do
 
       assert {:ok, tags} = TagScanner.scan_file(path)
 
-      assert [%{id: "workflow.phase_gating", file: ^path}] = tags
+      assert [%{id: "workflow.phase_gating", file: ^path, line: 5, test_line: 6}] = tags
+    end
+
+    @tag spec: "specled.tag_scanning.for_comprehension_recursion"
+    test "an interpolated generated test name is recorded as nil, a literal one verbatim",
+         %{root: root} do
+      path =
+        write_test_file(root, "test/example_test.exs", """
+        defmodule ExampleTest do
+          use ExUnit.Case
+
+          for phase <- [:plan, :apply] do
+            @tag spec: "workflow.interpolated"
+            test "gates \#{phase}" do
+              assert true
+            end
+          end
+
+          for _phase <- [:plan, :apply] do
+            @tag spec: "workflow.literal"
+            test "gates every phase" do
+              assert true
+            end
+          end
+        end
+        """)
+
+      assert {:ok, tags} = TagScanner.scan_file(path)
+
+      assert [
+               %{id: "workflow.interpolated", test_name: nil},
+               %{id: "workflow.literal", test_name: "gates every phase"}
+             ] = Enum.sort_by(tags, & &1.test_line)
+    end
+
+    @tag spec: "specled.tag_scanning.for_comprehension_recursion"
+    test "a @tag before a comprehension is consumed inside it, not by the test after it",
+         %{root: root} do
+      path =
+        write_test_file(root, "test/example_test.exs", """
+        defmodule ExampleTest do
+          use ExUnit.Case
+
+          @tag spec: "workflow.phase_gating"
+          for phase <- [:plan, :apply] do
+            test "gates \#{phase}" do
+              assert true
+            end
+          end
+
+          test "unrelated" do
+            assert true
+          end
+        end
+        """)
+
+      assert {:ok, tags} = TagScanner.scan_file(path)
+
+      assert [%{id: "workflow.phase_gating", test_name: nil}] = tags
     end
 
     @tag spec: "specled.tag_scanning.for_comprehension_recursion"
@@ -348,7 +406,7 @@ defmodule SpecLedEx.TagScannerTest do
           describe "group" do
             @describetag spec: "auth.group"
 
-            for phase <- [:plan, :apply] do
+            for phase <- [:plan, :apply, :skip], phase != :skip do
               @tag spec: "auth.test"
               test "gates \#{phase}" do
                 assert true
@@ -387,15 +445,22 @@ defmodule SpecLedEx.TagScannerTest do
       assert {:ok, tags, dynamic} = TagScanner.scan_file(path, include_dynamic: true)
 
       assert tags == []
-      assert [%{file: ^path}] = dynamic
+      assert [%{file: ^path, line: line}] = dynamic
+      assert line == 7
     end
 
     @tag spec: "specled.tag_scanning.for_comprehension_recursion"
-    test "a for-comprehension defining no tests contributes nothing", %{root: root} do
+    test "a test-free comprehension neither contributes nor consumes surrounding tags",
+         %{root: root} do
       path =
         write_test_file(root, "test/example_test.exs", """
         defmodule ExampleTest do
           use ExUnit.Case
+
+          @tag spec: "auth.before"
+          test "before loop" do
+            assert true
+          end
 
           for {name, value} <- [one: 1, two: 2] do
             def unquote(name)(), do: unquote(value)
@@ -410,7 +475,10 @@ defmodule SpecLedEx.TagScannerTest do
 
       assert {:ok, tags} = TagScanner.scan_file(path)
 
-      assert [%{id: "auth.login", test_name: "logs in"}] = tags
+      assert [
+               %{id: "auth.before", test_name: "before loop"},
+               %{id: "auth.login", test_name: "logs in"}
+             ] = Enum.sort_by(tags, & &1.test_line)
     end
   end
 
