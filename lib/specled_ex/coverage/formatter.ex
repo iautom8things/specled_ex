@@ -198,19 +198,7 @@ defmodule SpecLedEx.Coverage.Formatter do
     state
   end
 
-  # Inventory only — no per-test snapshot. A `test_finished` arriving with no
-  # prior `suite_started` resolves module scope lazily rather than crashing.
-  defp record_inventory(%ExUnit.Test{} = test, %{modules: nil} = state) do
-    modules = state.modules_fn.()
-
-    record_inventory(test, %{
-      state
-      | modules: modules,
-        file_map: build_file_map(modules),
-        baseline: %{}
-    })
-  end
-
+  # ExUnit emits `suite_started` first; this clause and `flush/1` assume its `:modules`/`:file_map` setup.
   defp record_inventory(%ExUnit.Test{} = test, state) do
     async? = Map.get(test.tags, :async, false) == true
 
@@ -260,6 +248,7 @@ defmodule SpecLedEx.Coverage.Formatter do
   defp source_file(module), do: SpecLedEx.Coverage.Paths.module_source(module, false)
 
   defp flush(%{table: table, artifact_path: path} = state) do
+    # ExUnit emits `suite_started` first; this clause and `flush/1` assume its `:modules`/`:file_map` setup.
     modules = state.modules
     final = state.snapshot_fn.(modules)
     {run_total_hits, suite_diagnostics} = Snapshot.diff(state.baseline, final)
