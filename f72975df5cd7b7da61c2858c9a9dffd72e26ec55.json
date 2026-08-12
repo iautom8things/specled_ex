@@ -19,8 +19,8 @@
       "message": "Changed file test/mix/tasks/spec_check_test.exs impacts subject specs that were not updated: specled.evidence_store, specled.verification"
     }
   ],
-  "run_at": "2026-08-12T13:09:51.891683Z",
-  "run_id": "b0e242f70ef23d037385303aa9c632a2",
+  "run_at": "2026-08-12T13:13:58.745021Z",
+  "run_id": "302135b9f0de835413b860e00713fe82",
   "schema_version": 1,
   "specled_version": "0.14.0",
   "tree_hash": "f72975df5cd7b7da61c2858c9a9dffd72e26ec55",
