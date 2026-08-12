@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-12T23:08:40Z",
+  "description": "Advances: specled.tag_scanning\n\nSeverity: Low (calibrated in the 2026-08-12 consolidated critical review of specled_-c5b, finding F4). Filed as a gate proposal rather than a one-off fix, per the review bars fourth option.\n\ntag_scanner_test.exs opens with a @moduletag spec: listing 13 requirement ids, so every test in the file is a static carrier for all 13. Measured during the review: deleting the entire new describe block (all six c5b tests) still leaves 22 carriers, Map.has_key?(tag_map, id) still true, tagged_tests_cover_missing_tag still silent, and claim_strength/5 still reporting linked or executed. Runtime attribution has the same hole through the formatters merged :spec tag. The requirements coverage signal therefore survives deletion of the only tests that actually exercise it.\n\nWhy this could not land on the c5b branch: the honest fix is a convention decision spanning all 13 ids and every file using the pattern. Narrowing only the newest id makes it inconsistent with its twelve neighbours for no integrity gain, since the other twelve keep the blanket carriers.\n\nThe generalizable version, and the reason this is a gate candidate rather than a review row: for a tool whose product IS verification integrity, a coverage claim that survives deleting its covering tests is the failure mode the tool exists to prevent. A mechanical check could flag a file whose @moduletag carrier set exceeds what its per-test @tag annotations justify, or compare per-requirement carriers against the tests that would fail if the requirement regressed. Deciding the shape of that check is the work here.",
+  "id": "specled_-r2i",
+  "labels": [],
+  "priority": 3,
+  "status": "open",
+  "title": "Blanket @moduletag spec: lists make per-requirement coverage unfalsifiable by deletion — candidate for a gate",
+  "type": "task",
+  "updated_at": "2026-08-12T23:08:40Z"
+}
