@@ -136,7 +136,11 @@ per-`(tier, mfa)` refresh exclusion; the concepts-guide requirements above
 remain unchanged. `test/docs_identifier_lint_test.exs` is this subject's
 identifier-integrity surface. Its append-only catalog now consumes
 `SpecLedEx.AppendOnly.finding_codes/0` directly while the other guarded families
-retain their explicit mirrors.
+retain their explicit mirrors, and the implementation side remains an independent
+source-text extraction. `docs/concepts.md` also corrects the append-only
+finding-budget count to eleven codes and points at
+`specled.decision.append_only_finding_budget_v2`; the concepts-guide requirements
+above remain unchanged.
 
 ```yaml spec-verification
 - kind: tagged_tests

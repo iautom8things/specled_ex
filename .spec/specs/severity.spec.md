@@ -138,8 +138,9 @@ realized_by:
 Branch reconciliation note: `test/specled_ex/branch_check/severity_integration_test.exs`
 is this subject's integration surface. Its hand-maintained severity catalog
 now compares through `SpecLedEx.EmitterCodes`, which delegates to
-`SpecLedEx.AppendOnly.finding_codes/0`; severity resolution precedence is
-unchanged.
+`SpecLedEx.AppendOnly.finding_codes/0`. This branch also adds
+`append_only/self_authorized_weakening => :info` to the hand-maintained
+`@per_code_defaults` catalog; severity resolution precedence is unchanged.
 
 ```yaml spec-verification
 - kind: tagged_tests

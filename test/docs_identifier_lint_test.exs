@@ -190,6 +190,7 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
   @digit_bearing_code ~r/\d/
 
   @implementation_code_files ~w(
+    lib/specled_ex/append_only.ex
     lib/specled_ex/branch_check.ex
     lib/specled_ex/coverage_triangulation.ex
     lib/specled_ex/decision_parser/cross_field.ex
@@ -758,7 +759,7 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
       |> Enum.filter(&Regex.match?(@guarded_code_shape, &1))
       |> MapSet.new()
 
-    MapSet.union(SpecLedEx.AppendOnly.finding_codes(), extracted_codes)
+    extracted_codes
   end
 
   defp atom_severity_offenders(files) do

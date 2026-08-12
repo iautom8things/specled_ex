@@ -32,6 +32,11 @@ defmodule SpecLedEx.AppendOnly do
   Module.register_attribute(__MODULE__, :emitted_finding_codes, accumulate: true)
 
   defmacrop finding(code, fields) do
+    unless is_binary(code) do
+      raise ArgumentError,
+            "finding/2 requires a literal binary code, got: #{Macro.to_string(code)}"
+    end
+
     Module.put_attribute(__CALLER__.module, :emitted_finding_codes, code)
 
     quote do
@@ -545,12 +550,6 @@ defmodule SpecLedEx.AppendOnly do
     })
   end
 
-  @finding_codes MapSet.new(@emitted_finding_codes)
-
-  @doc false
-  @spec finding_codes() :: MapSet.t(String.t())
-  def finding_codes, do: @finding_codes
-
   ## ── Helpers ───────────────────────────────────────────────────────
 
   defp format_modal(:must), do: "MUST"
@@ -768,4 +767,10 @@ defmodule SpecLedEx.AppendOnly do
       }
     end)
   end
+
+  @finding_codes MapSet.new(@emitted_finding_codes)
+
+  @doc false
+  @spec finding_codes() :: MapSet.t(String.t())
+  def finding_codes, do: @finding_codes
 end
