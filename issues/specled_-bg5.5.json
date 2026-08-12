@@ -9,9 +9,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-bg5",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: i4x-bg5.5\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-bg5.5/codex-i4x-bg5.5/log\n\nCommit: b54e7bb8a152a4e401ea2481658e93f767daf9b3\nFiles touched: .spec/decisions/specled.decision.self_authorized_info_stdout_carveout.md, .spec/specs/mix_tasks.spec.md, lib/mix/tasks/spec.check.ex, test/mix/tasks/spec_check_test.exs\nTests added: Mix.Tasks.Spec.CheckTest — default run prints self-authorized weakening info details\nVerification stubs flipped: none\nVerification tier: change-scoped — mix compile --warnings-as-errors; mix test test/mix/tasks/spec_check_test.exs test/mix/tasks/spec_tasks_test.exs; mix test --stale; mix format --check-formatted; mix spec.check --no-run-commands; full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: Default mix spec.check output now retains the append_only/self_authorized_weakening detail line while continuing to suppress every other informational finding unless verbose output is enabled. The spec amendment and adds-exception ADR record the held design decision, and an end-to-end Git fixture proves the real same-diff authorization path remains visible without becoming blocking.",
+      "timestamp": "2026-08-12T12:50:55Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "F25: :info findings invisible on default CLI output — self-auth marker only visible with --debug/HTML",
   "type": "task",
-  "updated_at": "2026-08-12T12:42:44Z"
+  "updated_at": "2026-08-12T12:50:55Z"
 }
