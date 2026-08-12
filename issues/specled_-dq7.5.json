@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-12T21:21:41Z",
+  "description": "Advances: specled.coverage_capture\n\nSeverity: Low. mix spec.check reports it itself: branch uncovered_policy_files=lib/specled_ex/coverage/paths.ex, test/specled_ex/coverage/paths_test.exs. The module was extracted this epic (specled_-dn4.12) to own coverage source-path identity, but no subject claims it, so a change to it trips no subject spec.\n\nWhy not on the release branch: binding it is a design choice, not bookkeeping — surface entry only, versus an api_boundary binding for module_source/2 that hash-pins the identity contract. Pinning it wrong is worse than not pinning it, and api_boundary hashes are position-sensitive.\n\nSource: 2026-08-12 critical review SPEC-M4.",
+  "id": "specled_-dq7.5",
+  "labels": [],
+  "parent": "specled_-dq7",
+  "priority": 2,
+  "status": "open",
+  "title": "lib/specled_ex/coverage/paths.ex belongs to no subject surface",
+  "type": "task",
+  "updated_at": "2026-08-12T21:21:41Z"
+}
