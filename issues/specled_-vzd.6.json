@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-vzd",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: i4x-vzd.6\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-vzd.6/codex-i4x-vzd.6/log\n\nCommit: 87ca894a27c20e940cd42a301a37433b37cc439a\nFiles touched: .spec/specs/decision_governance.spec.md, lib/specled_ex/realization/implementation.ex, lib/specled_ex/realization/orchestrator.ex, test/realization_comment_pointer_lint_test.exs\nTests added: SpecLedEx.RealizationCommentPointerLintTest — every long realization comment block ends in an ADR pointer or narrow exemption; eight lines is the enforced boundary and seven lines is ignored; a terminal ADR id satisfies the discipline; an ADR id before the final line does not satisfy the discipline; a bounded section banner is exempt; a numbered walkthrough has no implicit exemption; a terminal reason-bearing marker exempts one realization block; an empty or non-terminal marker grants no exemption; the marker is not honored outside the fixed realization corpus\nVerification stubs flipped: none\nVerification tier: change-scoped — mix compile --warnings-as-errors; test/realization_comment_pointer_lint_test.exs; mix test --only spec:specled.decisions.adr_reference_discipline; mix format --check-formatted; make xref; mix spec.check --no-run-commands; full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: Added specled.decisions.adr_reference_discipline with an eight-line threshold and narrowly scoped banner and reason-bearing marker exemptions. Added a live corpus lint plus controlled rejection-path tests, and remediated the current realization blocks with accurate terminal ADR pointers or honest implementation-walkthrough markers.",
+      "timestamp": "2026-08-12T14:02:32Z"
+    }
+  ],
   "priority": 4,
   "status": "in_progress",
   "title": "Lint: long comment blocks in lib/realization must end in an ADR pointer, not restate the ADR",
   "type": "task",
-  "updated_at": "2026-08-12T12:59:43Z"
+  "updated_at": "2026-08-12T14:02:32Z"
 }
