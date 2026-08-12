@@ -21,7 +21,7 @@ by branch-guard governance findings (`branch_guard_missing_decision_update`).
 id: specled.append_only
 kind: module
 status: active
-summary: Diff-time detectors for deleted requirements, modal downgrades, scenario regressions, polarity loss, ADR widening, and ADR deletion, plus supporting bootstrap + advisory findings.
+summary: Diff-time detectors for deleted requirements, modal downgrades, scenario regressions, polarity loss, ADR widening, and ADR deletion, plus an emitter-derived finding-code catalog and supporting bootstrap + advisory findings.
 surface:
   - lib/specled_ex/append_only.ex
   - lib/specled_ex.ex
@@ -181,6 +181,15 @@ decisions:
     AppendOnly.analyze shall return an empty findings list when called
     with identical prior and current states and an empty decisions list
     (no false positives on unchanged trees).
+  priority: must
+  stability: stable
+- id: specled.append_only.finding_codes
+  statement: >-
+    AppendOnly.finding_codes/0 shall return a MapSet containing exactly every
+    `append_only/*` code its finding builders can emit. Catalog membership
+    shall be accumulated from the same compile-time declarations that build
+    the findings, so consumers need neither a second production list nor a
+    regex scan over source text.
   priority: must
   stability: stable
 - id: specled.append_only.findings_sorted
@@ -443,6 +452,18 @@ decisions:
   covers:
     - specled.append_only.findings_sorted
 
+- id: specled.append_only.scenario.finding_codes_match_emitters
+  given:
+    - the compiled AppendOnly finding builders
+    - hand-maintained severity and review catalogs for append-only findings
+  when:
+    - SpecLedEx.AppendOnly.finding_codes/0 is invoked
+  then:
+    - the returned value is the exact MapSet compared by both catalog drift tests
+    - adding a code through the finding builder declaration automatically adds it to the returned set
+  covers:
+    - specled.append_only.finding_codes
+
 - id: specled.append_only.scenario.fix_block_present
   given:
     - "any diff that produces at least one `append_only/*` finding"
@@ -474,6 +495,7 @@ decisions:
     - specled.append_only.missing_change_type
     - specled.append_only.decision_deleted
     - specled.append_only.identity
+    - specled.append_only.finding_codes
     - specled.append_only.findings_sorted
     - specled.append_only.fix_block_discipline
 - kind: source_file
@@ -493,6 +515,7 @@ decisions:
     - specled.append_only.self_authorized_weakening
     - specled.append_only.missing_change_type
     - specled.append_only.decision_deleted
+    - specled.append_only.finding_codes
 ```
 
 ## Known v1 limits

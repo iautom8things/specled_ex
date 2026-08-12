@@ -56,10 +56,11 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
        (skills/docs/README): `.spec/**` scenarios legitimately quote atom-form
        config as the *input under test*, so they are out of this check's scope.
 
-  The known-code allowlist below mirrors the implementation. It is a vetted,
-  hand-maintained set rather than reflection because its job is to fail loudly:
-  a genuinely new code lands here in the same change that starts documenting it,
-  and a typo'd or removed code trips the test until the docs are corrected.
+  The known-code catalog below combines AppendOnly's compiler-exported emitter
+  set with vetted, hand-maintained sets for the other guarded families. The
+  latter remain explicit rather than reflective so a genuinely new code lands
+  with the documentation that introduces it, while a typo'd or removed code
+  trips the test until the docs are corrected.
 
   Decision records must sometimes name a code that is *not* emitted — a
   budgeted-but-unimplemented code, or a rejected design alternative. Rather than
@@ -73,19 +74,7 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
   """
 
   # append_only/* → SpecLedEx.AppendOnly (mirrored in branch_check.ex @per_code_defaults)
-  @append_only_codes ~w(
-    append_only/requirement_deleted
-    append_only/must_downgraded
-    append_only/scenario_regression
-    append_only/negative_removed
-    append_only/disabled_without_reason
-    append_only/no_baseline
-    append_only/adr_affects_widened
-    append_only/same_pr_self_authorization
-    append_only/self_authorized_weakening
-    append_only/missing_change_type
-    append_only/decision_deleted
-  )
+  @append_only_codes SpecLedEx.AppendOnly.finding_codes() |> Enum.sort()
 
   # overlap/* → SpecLedEx.Overlap
   @overlap_codes ~w(
@@ -201,7 +190,6 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
   @digit_bearing_code ~r/\d/
 
   @implementation_code_files ~w(
-    lib/specled_ex/append_only.ex
     lib/specled_ex/branch_check.ex
     lib/specled_ex/coverage_triangulation.ex
     lib/specled_ex/decision_parser/cross_field.ex
@@ -441,13 +429,13 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
   end
 
   @tag spec: "specled.package.doc_identifier_integrity"
-  test "the hand-maintained known-code mirror matches implementation anchors both ways" do
+  test "the known-code catalog matches implementation sources both ways" do
     implementation_codes = implementation_guarded_codes()
 
     assert implementation_codes == @known_codes,
            "guarded finding-code mirror drifted\n" <>
              "missing from @known_codes: #{inspect(MapSet.difference(implementation_codes, @known_codes) |> Enum.sort())}\n" <>
-             "present in @known_codes but not extracted from @implementation_code_files " <>
+             "present in @known_codes but not present in implementation code sources " <>
              "(#{inspect(@implementation_code_files)}): " <>
              "#{inspect(MapSet.difference(@known_codes, implementation_codes) |> Enum.sort())} " <>
              "— likelier cause is a stale @implementation_code_files list missing a new " <>
@@ -756,18 +744,21 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
   end
 
   defp implementation_guarded_codes do
-    @implementation_code_files
-    |> Enum.flat_map(fn file ->
-      source = File.read!(file)
+    extracted_codes =
+      @implementation_code_files
+      |> Enum.flat_map(fn file ->
+        source = File.read!(file)
 
-      Enum.flat_map(@implementation_code_patterns, fn pattern ->
-        pattern
-        |> Regex.scan(source)
-        |> Enum.map(fn [_full, code] -> code end)
+        Enum.flat_map(@implementation_code_patterns, fn pattern ->
+          pattern
+          |> Regex.scan(source)
+          |> Enum.map(fn [_full, code] -> code end)
+        end)
       end)
-    end)
-    |> Enum.filter(&Regex.match?(@guarded_code_shape, &1))
-    |> MapSet.new()
+      |> Enum.filter(&Regex.match?(@guarded_code_shape, &1))
+      |> MapSet.new()
+
+    MapSet.union(SpecLedEx.AppendOnly.finding_codes(), extracted_codes)
   end
 
   defp atom_severity_offenders(files) do

@@ -830,10 +830,10 @@ decisions:
 ## Verification
 
 Branch reconciliation note: `lib/specled_ex/review/html.ex` is this subject's
-governance-row surface. This branch only adds
-`append_only/self_authorized_weakening` to the Decisions/governance leg codes
-list and hardens the catalog exhaustiveness tests against the emitter-derived
-set; `triangle_code_classification` and related requirements remain unchanged.
+governance-row surface. Its hand-maintained append-only catalog now compares
+through `SpecLedEx.EmitterCodes`, which delegates to
+`SpecLedEx.AppendOnly.finding_codes/0`; `triangle_code_classification` and related
+requirements remain unchanged.
 
 ```spec-verification
 - kind: command

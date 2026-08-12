@@ -1,5 +1,5 @@
 defmodule SpecLedEx.AppendOnly do
-  # covers: specled.append_only.requirement_deleted specled.append_only.requirement_deleted_authorized specled.append_only.accepted_adr_authorization specled.append_only.must_downgraded specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.self_authorized_weakening specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
+  # covers: specled.append_only.requirement_deleted specled.append_only.requirement_deleted_authorized specled.append_only.accepted_adr_authorization specled.append_only.must_downgraded specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.self_authorized_weakening specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.finding_codes specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
   @moduledoc """
   Pure diff-time append-only detectors for `.spec/` content.
 
@@ -29,6 +29,15 @@ defmodule SpecLedEx.AppendOnly do
   alias SpecLedEx.ModalClass
 
   @weakening_set ~w(deprecates weakens narrows-scope adds-exception)
+  Module.register_attribute(__MODULE__, :emitted_finding_codes, accumulate: true)
+
+  defmacrop finding(code, fields) do
+    Module.put_attribute(__CALLER__.module, :emitted_finding_codes, code)
+
+    quote do
+      Map.put(unquote(fields), :code, unquote(code))
+    end
+  end
 
   @type severity :: :error | :warning | :info
 
@@ -353,8 +362,7 @@ defmodule SpecLedEx.AppendOnly do
         other -> "bootstrap (#{inspect(other)})"
       end
 
-    %{
-      code: "append_only/no_baseline",
+    finding("append_only/no_baseline", %{
       severity: :info,
       subject_id: nil,
       entity_id: nil,
@@ -363,14 +371,13 @@ defmodule SpecLedEx.AppendOnly do
           "No prior state.json baseline is available for comparison: #{variant_note}.",
           "fix: commit .spec/state.json on the base branch, or deepen the clone so <base> resolves."
         )
-    }
+    })
   end
 
   defp requirement_deleted_finding(id, prior_req) do
     subject_id = Map.get(prior_req, "subject_id")
 
-    %{
-      code: "append_only/requirement_deleted",
+    finding("append_only/requirement_deleted", %{
       severity: :error,
       subject_id: subject_id,
       entity_id: id,
@@ -379,14 +386,13 @@ defmodule SpecLedEx.AppendOnly do
           "Requirement `#{id}` was present at base and is absent at head. Deletion is only authorized when a head-side ADR in the weakening set names `#{id}` in its `affects:` list.",
           "fix: author an ADR with change_type in {deprecates, weakens, narrows-scope, adds-exception} and affects: [#{id}] — or restore the requirement in its spec file."
         )
-    }
+    })
   end
 
   defp must_downgraded_finding(id, prior_req, _current_req, prior_modal, current_modal) do
     subject_id = Map.get(prior_req, "subject_id")
 
-    %{
-      code: "append_only/must_downgraded",
+    finding("append_only/must_downgraded", %{
       severity: :error,
       subject_id: subject_id,
       entity_id: id,
@@ -395,14 +401,13 @@ defmodule SpecLedEx.AppendOnly do
           "Requirement `#{id}` was `#{format_modal(prior_modal)}` at base and classifies to `#{format_modal(current_modal)}` at head — normative force was reduced without an authorizing ADR.",
           "fix: author an ADR with change_type in {weakens, narrows-scope, adds-exception} and affects: [#{id}], or restore the prior modal strength in the statement."
         )
-    }
+    })
   end
 
   defp scenario_regression_finding(id, prior_req, prior_count, current_count) do
     subject_id = if prior_req, do: Map.get(prior_req, "subject_id"), else: nil
 
-    %{
-      code: "append_only/scenario_regression",
+    finding("append_only/scenario_regression", %{
       severity: :error,
       subject_id: subject_id,
       entity_id: id,
@@ -411,14 +416,13 @@ defmodule SpecLedEx.AppendOnly do
           "Scenarios covering `#{id}` dropped from #{prior_count} at base to #{current_count} at head without an authorizing ADR.",
           "fix: restore the missing scenario(s), or author an ADR with change_type in {weakens, narrows-scope, adds-exception} and affects: [#{id}]."
         )
-    }
+    })
   end
 
   defp negative_removed_finding(id, prior_req, _current_req) do
     subject_id = Map.get(prior_req, "subject_id")
 
-    %{
-      code: "append_only/negative_removed",
+    finding("append_only/negative_removed", %{
       severity: :error,
       subject_id: subject_id,
       entity_id: id,
@@ -427,15 +431,14 @@ defmodule SpecLedEx.AppendOnly do
           "Requirement `#{id}` carried `polarity: negative` at base (explicit or auto-inferred from MUST NOT / SHALL NOT) and no longer does at head.",
           "fix: restore the negative assertion, or author an ADR with change_type in {weakens, narrows-scope, adds-exception} and affects: [#{id}]."
         )
-    }
+    })
   end
 
   defp disabled_without_reason_finding(scenario) do
     id = Map.get(scenario, "id")
     subject_id = Map.get(scenario, "subject_id")
 
-    %{
-      code: "append_only/disabled_without_reason",
+    finding("append_only/disabled_without_reason", %{
       severity: :warning,
       subject_id: subject_id,
       entity_id: id,
@@ -444,7 +447,7 @@ defmodule SpecLedEx.AppendOnly do
           "Scenario `#{id}` has `execute: false` but no `reason:` field — future readers have no record of why this scenario was stubbed out.",
           "fix: add a non-empty `reason:` field to the scenario block, or flip `execute:` back to `true` and add the coverage."
         )
-    }
+    })
   end
 
   defp maybe_adr_drift_finding(id, prior_adr, current_adr) do
@@ -460,8 +463,7 @@ defmodule SpecLedEx.AppendOnly do
 
       _ ->
         [
-          %{
-            code: "append_only/adr_affects_widened",
+          finding("append_only/adr_affects_widened", %{
             severity: :error,
             subject_id: nil,
             entity_id: id,
@@ -470,7 +472,7 @@ defmodule SpecLedEx.AppendOnly do
                 "ADR `#{id}` was `status: accepted` at base but its structural fields changed at head (#{Enum.join(drifts, "; ")}). Accepted ADRs are immutable per specled.decision.adr_append_only.",
                 "fix: revert the field edit on the accepted ADR, or author a new ADR (change_type: supersedes with replaces: [#{id}]) that captures the new decision."
               )
-          }
+          })
         ]
     end
   end
@@ -487,8 +489,7 @@ defmodule SpecLedEx.AppendOnly do
   end
 
   defp same_pr_self_authorization_finding(%{id: id, affects: affects}) do
-    %{
-      code: "append_only/same_pr_self_authorization",
+    finding("append_only/same_pr_self_authorization", %{
       severity: :warning,
       subject_id: nil,
       entity_id: id,
@@ -497,15 +498,14 @@ defmodule SpecLedEx.AppendOnly do
           "ADR `#{id}` is new in this diff and its non-empty `affects:` list (#{inspect(affects)}) consists entirely of requirement ids weakened in this same diff — the ADR is self-authorizing the weakening. Visible but not blocked; review decides.",
           "fix: land the weakening in a separate PR from the authorizing ADR, or confirm in review that the self-authorization is intentional."
         )
-    }
+    })
   end
 
   defp self_authorized_weakening_finding(id, prior_req, adr_id, weakening_class, detail) do
     class_detail = weakening_class_detail(weakening_class, detail)
     subject_id = if is_map(prior_req), do: Map.get(prior_req, "subject_id"), else: nil
 
-    %{
-      code: "append_only/self_authorized_weakening",
+    finding("append_only/self_authorized_weakening", %{
       severity: :info,
       subject_id: subject_id,
       entity_id: id,
@@ -514,14 +514,13 @@ defmodule SpecLedEx.AppendOnly do
           "Weakening of `#{id}` (#{class_detail}) is suppressed as authorized by ADR `#{adr_id}`, which is new in this same diff — the authorization is self-approved within this PR. Visible but not blocked; review decides.",
           "fix: land the authorizing ADR in a separate PR, or confirm in review that the self-authorization is intentional."
         )
-    }
+    })
   end
 
   defp missing_change_type_finding(id, _decision) do
     display_id = id || "<unknown>"
 
-    %{
-      code: "append_only/missing_change_type",
+    finding("append_only/missing_change_type", %{
       severity: :warning,
       subject_id: nil,
       entity_id: id,
@@ -530,12 +529,11 @@ defmodule SpecLedEx.AppendOnly do
           "ADR `#{display_id}` was consulted during an authorization lookup but carries no `change_type:` field (v1 treats this as a warning per specled.decision.change_type_enum_v1).",
           "fix: add `change_type:` to the ADR frontmatter — one of deprecates, weakens, narrows-scope, adds-exception, supersedes, clarifies, refines."
         )
-    }
+    })
   end
 
   defp decision_deleted_finding(id, _prior_adr) do
-    %{
-      code: "append_only/decision_deleted",
+    finding("append_only/decision_deleted", %{
       severity: :error,
       subject_id: nil,
       entity_id: id,
@@ -544,8 +542,14 @@ defmodule SpecLedEx.AppendOnly do
           "Decision `#{id}` was present at base and is absent at head. ADR files cannot be deleted — the only authorized removal is a status transition to `deprecated` or `superseded` on the existing file.",
           "fix: restore the ADR file and update its `status:` to `deprecated` or `superseded` instead of deleting it."
         )
-    }
+    })
   end
+
+  @finding_codes MapSet.new(@emitted_finding_codes)
+
+  @doc false
+  @spec finding_codes() :: MapSet.t(String.t())
+  def finding_codes, do: @finding_codes
 
   ## ── Helpers ───────────────────────────────────────────────────────
 

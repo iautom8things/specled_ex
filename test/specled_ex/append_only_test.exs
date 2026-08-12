@@ -1,5 +1,5 @@
 defmodule SpecLedEx.AppendOnlyTest do
-  # covers: specled.append_only.requirement_deleted specled.append_only.accepted_adr_authorization specled.append_only.must_downgraded specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.self_authorized_weakening specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
+  # covers: specled.append_only.requirement_deleted specled.append_only.accepted_adr_authorization specled.append_only.must_downgraded specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.self_authorized_weakening specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.finding_codes specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
   use ExUnit.Case, async: true
 
   @moduletag spec: [
@@ -7,6 +7,7 @@ defmodule SpecLedEx.AppendOnlyTest do
                "specled.append_only.accepted_adr_authorization",
                "specled.append_only.decision_deleted",
                "specled.append_only.disabled_without_reason",
+               "specled.append_only.finding_codes",
                "specled.append_only.findings_sorted",
                "specled.append_only.fix_block_discipline",
                "specled.append_only.identity",
@@ -25,6 +26,25 @@ defmodule SpecLedEx.AppendOnlyTest do
   import SpecLedEx.AppendOnlyFixtures
 
   alias SpecLedEx.AppendOnly
+
+  describe "finding_codes/0" do
+    test "returns the complete emitter-derived append-only catalog" do
+      assert AppendOnly.finding_codes() ==
+               MapSet.new(~w(
+                 append_only/requirement_deleted
+                 append_only/must_downgraded
+                 append_only/scenario_regression
+                 append_only/negative_removed
+                 append_only/disabled_without_reason
+                 append_only/no_baseline
+                 append_only/adr_affects_widened
+                 append_only/same_pr_self_authorization
+                 append_only/self_authorized_weakening
+                 append_only/missing_change_type
+                 append_only/decision_deleted
+               ))
+    end
+  end
 
   describe "requirement_deleted" do
     test "unauthorized removal emits append_only/requirement_deleted at :error" do
