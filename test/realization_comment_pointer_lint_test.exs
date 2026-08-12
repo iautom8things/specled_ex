@@ -6,15 +6,15 @@ defmodule SpecLedEx.RealizationCommentPointerLintTest do
   @minimum_block_lines 8
   @corpus_glob "lib/specled_ex/realization/*.ex"
   @corpus_path_pattern ~r{\Alib/specled_ex/realization/[^/]+\.ex\z}
-  @adr_pointer_pattern ~r{(?:^|\s)`?specled\.decision\.[a-z0-9_]+`?\.?\z}
+  @adr_pointer_pattern ~r{(?:^|\s)`?(?<id>specled\.decision\.[a-z0-9_]+)`?\.?\z}
   @allow_marker_pattern ~r{\Aspec-lint:allow-long-comment=\S(?:.*\S)?\z}
   @separator_pattern ~r/\A-{3,}\z/
 
   test "every long realization comment block ends in an ADR pointer or narrow exemption" do
     files = corpus_files()
 
-    assert length(files) >= 10,
-           "realization corpus collapsed to #{length(files)} files — this check is a no-op"
+    assert length(files) == 12,
+           "expected the 12-file realization corpus, found #{length(files)} files"
 
     assert Enum.all?(files, &realization_file?/1)
 
@@ -33,24 +33,32 @@ defmodule SpecLedEx.RealizationCommentPointerLintTest do
     assert length(violations_for_lines(eight_lines, realization_path())) == 1
   end
 
-  test "a terminal ADR id satisfies the discipline" do
+  test "a terminal existing ADR id satisfies the discipline" do
     lines =
       List.duplicate("# architectural context", 7) ++
-        ["# See `specled.decision.example_policy`."]
+        ["# See `specled.decision.deterministic_hashing`."]
 
     assert violations_for_lines(lines, realization_path()) == []
+  end
+
+  test "a terminal unknown ADR id does not satisfy the discipline" do
+    lines =
+      List.duplicate("# architectural context", 7) ++
+        ["# See `specled.decision.this_adr_does_not_exist`."]
+
+    assert length(violations_for_lines(lines, realization_path())) == 1
   end
 
   test "an ADR id before the final line does not satisfy the discipline" do
     lines =
       List.duplicate("# architectural context", 6) ++
-        ["# See `specled.decision.example_policy`.", "# additional restatement"]
+        ["# See `specled.decision.deterministic_hashing`.", "# additional restatement"]
 
     assert length(violations_for_lines(lines, realization_path())) == 1
   end
 
-  test "a bounded section banner is exempt" do
-    lines = [
+  test "hyphen separators do not exempt long prose and do not count toward the threshold" do
+    short_banner = [
       "# ---------------------------------------------------------------------------",
       "# Shared pipeline",
       "#",
@@ -61,7 +69,13 @@ defmodule SpecLedEx.RealizationCommentPointerLintTest do
       "# ---------------------------------------------------------------------------"
     ]
 
-    assert violations_for_lines(lines, realization_path()) == []
+    long_banner =
+      ["# ---------------------------------------------------------------------------"] ++
+        List.duplicate("# architectural prose", 8) ++
+        ["# ---------------------------------------------------------------------------"]
+
+    assert violations_for_lines(short_banner, realization_path()) == []
+    assert length(violations_for_lines(long_banner, realization_path())) == 1
   end
 
   test "a numbered walkthrough has no implicit exemption" do
@@ -82,7 +96,7 @@ defmodule SpecLedEx.RealizationCommentPointerLintTest do
   test "a terminal reason-bearing marker exempts one realization block" do
     lines =
       List.duplicate("# implementation walkthrough", 7) ++
-        ["# spec-lint:allow-long-comment=algorithm walkthrough; no governing ADR"]
+        ["# spec-lint:allow-long-comment=private helper data-shape walkthrough"]
 
     assert violations_for_lines(lines, realization_path()) == []
   end
@@ -95,7 +109,7 @@ defmodule SpecLedEx.RealizationCommentPointerLintTest do
     non_terminal_marker =
       List.duplicate("# implementation walkthrough", 6) ++
         [
-          "# spec-lint:allow-long-comment=algorithm walkthrough; no governing ADR",
+          "# spec-lint:allow-long-comment=private helper data-shape walkthrough",
           "# more prose"
         ]
 
@@ -106,7 +120,7 @@ defmodule SpecLedEx.RealizationCommentPointerLintTest do
   test "the marker is not honored outside the fixed realization corpus" do
     lines =
       List.duplicate("# implementation walkthrough", 7) ++
-        ["# spec-lint:allow-long-comment=algorithm walkthrough; no governing ADR"]
+        ["# spec-lint:allow-long-comment=private helper data-shape walkthrough"]
 
     assert length(violations_for_lines(lines, "lib/specled_ex/other.ex")) == 1
   end
@@ -131,7 +145,7 @@ defmodule SpecLedEx.RealizationCommentPointerLintTest do
     |> Enum.reject(&compliant?(&1, file))
     |> Enum.map(fn block ->
       "#{file}:#{block.start_line}-#{block.end_line} " <>
-        "(#{length(block.lines)} lines) has no terminal specled.decision.* pointer"
+        "(#{block_length(block.lines)} lines) has no terminal existing specled.decision.* pointer"
     end)
   end
 
@@ -141,8 +155,9 @@ defmodule SpecLedEx.RealizationCommentPointerLintTest do
     |> Enum.chunk_by(fn {line, _line_number} -> comment_line?(line) end)
     |> Enum.flat_map(fn chunk ->
       case chunk do
-        [{first_line, start_line} | _] when length(chunk) >= @minimum_block_lines ->
-          if comment_line?(first_line) do
+        [{first_line, start_line} | _] ->
+          if comment_line?(first_line) and
+               block_length(Enum.map(chunk, &elem(&1, 0))) >= @minimum_block_lines do
             [{_last_line, end_line} | _] = Enum.reverse(chunk)
 
             [
@@ -165,8 +180,7 @@ defmodule SpecLedEx.RealizationCommentPointerLintTest do
   defp compliant?(block, file) do
     last_line = block.lines |> List.last() |> comment_text()
 
-    adr_pointer?(last_line) or
-      section_banner?(block.lines) or
+    adr_pointer?(last_line, adr_ids()) or
       (realization_file?(file) and allow_marker?(last_line))
   end
 
@@ -178,14 +192,28 @@ defmodule SpecLedEx.RealizationCommentPointerLintTest do
     |> String.trim()
   end
 
-  defp adr_pointer?(line), do: Regex.match?(@adr_pointer_pattern, line)
+  defp adr_pointer?(line, adr_ids) do
+    case Regex.named_captures(@adr_pointer_pattern, line) do
+      %{"id" => id} -> MapSet.member?(adr_ids, id)
+      nil -> false
+    end
+  end
+
   defp allow_marker?(line), do: Regex.match?(@allow_marker_pattern, line)
 
-  defp section_banner?(lines) do
-    lines
-    |> then(fn block -> [List.first(block), List.last(block)] end)
-    |> Enum.map(&comment_text/1)
-    |> Enum.all?(&Regex.match?(@separator_pattern, &1))
+  defp block_length(lines) do
+    Enum.count(lines, fn line ->
+      line
+      |> comment_text()
+      |> then(&(not Regex.match?(@separator_pattern, &1)))
+    end)
+  end
+
+  defp adr_ids do
+    ".spec/decisions/*.md"
+    |> Path.wildcard()
+    |> Enum.map(&(&1 |> Path.basename() |> Path.rootname()))
+    |> MapSet.new()
   end
 
   defp realization_file?(file), do: Regex.match?(@corpus_path_pattern, file)

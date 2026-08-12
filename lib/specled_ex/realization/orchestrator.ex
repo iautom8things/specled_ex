@@ -278,7 +278,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # entry carrying the same MFAs the requirement contributed. Requirements
   # whose bindings drifted or were dangling have empty buckets and so don't
   # produce test-file attestations.
-  # spec-lint:allow-long-comment=implementation algorithm walkthrough; no governing ADR
+  # See `specled.decision.file_touch_yields_to_realization`.
   defp build_attestations(findings, bindings_by_tier, ctx, index) do
     drift_set = unattested_pairs(findings)
 
@@ -405,7 +405,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # with `requirement_id == nil` (the implementation tier aggregates subject-
   # and requirement-level impl bindings into a single per-subject list before
   # this point, so the requirement provenance is not preserved for impl).
-  # spec-lint:allow-long-comment=implementation data-shape walkthrough; no governing ADR
+  # spec-lint:allow-long-comment=private helper data-shape walkthrough
   defp all_subject_requirement_mfa_triples(bindings_by_tier) do
     flat_triples =
       @flat_tiers
