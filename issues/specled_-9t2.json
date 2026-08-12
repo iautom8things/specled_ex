@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-12T23:23:21Z",
+  "description": "Advances: specled.severity. From Builder's 2026-08-12 ship review (consolidated item 12 + testing L3), filed as the third gate-shaped referential-integrity gap alongside specled_-c5b (scanner-invisible tags) and specled_-b75 (unenforced target:). Config.parse (config.ex:78-96 pattern, all three severity sections) validates that severity KEYS are strings and VALUES are off/info/warning/error — but never checks the key against the known finding-code set. Consequence: a typo'd code (tagged_tests_cover_missing_tags, one char off) silently creates a dead entry while the REAL code falls back to its default; an adopter who believes they armed (or suppressed) a gate gets neither, with zero diagnostic and result=pass. The known-code registry already exists in three places (BranchCheck @per_code_defaults, docs_identifier_lint_test @known_codes, EmitterCodes scraping) — pick one authoritative surface, emit a config diagnostic (the existing unknown_severity_diag pattern) for unknown keys. Severity: Low-Medium — no current instance, but the failure mode is an invisible disarm of an error-graded gate, the exact class builder-fnl closed.",
+  "id": "specled_-9t2",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Validate *.severities config keys against the known finding-code registry",
+  "type": "task",
+  "updated_at": "2026-08-12T23:23:21Z"
+}
