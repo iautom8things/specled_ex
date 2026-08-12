@@ -162,7 +162,12 @@ decisions:
     layer, the orchestrator shall produce exactly one INFERRED
     `api_boundary` binding entry for that MFA, and an inferred entry
     whose MFA is also authored anywhere in the tier shall be dropped
-    in favor of the authored entries. This shall not affect other
+    in favor of the authored entries. Both rules are tier-global, not
+    per-subject: inferred entries for one MFA collapse to a single
+    entry across all subjects, and an authored entry in any subject
+    suppresses inferred entries for that MFA in every other subject.
+    A shared helper MFA inferred by several subjects therefore retains
+    the attribution of only one of them. This shall not affect other
     tiers.
   priority: must
   stability: evolving

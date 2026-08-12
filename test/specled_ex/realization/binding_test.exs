@@ -340,10 +340,30 @@ defmodule SpecLedEx.Realization.BindingTest do
       assert Binding.resolution_path({:module, Enum}) == :beam
     end
 
-    @tag spec: "specled.binding.resolution_path_classification"
+    @tag spec: [
+           "specled.binding.resolution_path_classification",
+           "specled.binding.scenario.resolution_path_classifies_each_shape"
+         ]
     test "classifies def-family source ASTs as :source" do
       {:ok, def_ast} = Code.string_to_quoted("def bar(x), do: x + 1")
       assert Binding.resolution_path(def_ast) == :source
+    end
+
+    @tag spec: [
+           "specled.binding.resolution_path_classification",
+           "specled.binding.scenario.resolution_path_classifies_each_shape"
+         ]
+    test "is total: unrecognized terms fall through the catch-all to :source" do
+      # Pins the documented totality. The classifier runs on resolve/2 success
+      # values, but the catch-all is what a committed baseline records as fact,
+      # so the fallback must be deliberate rather than incidental.
+      assert Binding.resolution_path(nil) == :source
+      assert Binding.resolution_path("not an ast") == :source
+      assert Binding.resolution_path({:error, :nope}) == :source
+
+      # Near-misses on the beam triple: arity must be an integer, clauses a list.
+      assert Binding.resolution_path({:bar, :not_arity, []}) == :source
+      assert Binding.resolution_path({:bar, 1, :not_clauses}) == :source
     end
   end
 end

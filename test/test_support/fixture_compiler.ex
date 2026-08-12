@@ -18,6 +18,15 @@ defmodule SpecLedEx.FixtureCompiler do
   Fixtures that exercise the stripped-debug degrade therefore use the
   explicit `compile_to_path_without_debug_info/2` sibling rather than an
   attribute or the ambient mix-test default.
+
+  > #### Callers must be `async: false` {: .warning}
+  >
+  > Both entry points flip a GLOBAL compiler option (`Code.put_compiler_option/2`)
+  > for the duration of the compile and restore it afterwards. A concurrently
+  > running async test that compiles a fixture in that window observes the
+  > wrong `:debug_info` setting and silently resolves through the other path —
+  > exactly the failure this module exists to eliminate. Test modules using
+  > this compiler must declare `async: false`.
   """
 
   @doc """

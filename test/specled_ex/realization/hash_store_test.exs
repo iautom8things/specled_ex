@@ -459,6 +459,56 @@ defmodule SpecLedEx.Realization.HashStoreTest do
     end
   end
 
+  describe "fetch_entry/3" do
+    test "returns nil when the tier or the mfa is absent", %{root: root} do
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            "Foo.bar/1" => %{"hash" => "aa", "hasher_version" => HashStore.hasher_version()}
+          }
+        })
+
+      realization = HashStore.read(root)
+
+      assert HashStore.fetch_entry(realization, "typespecs", "Foo.bar/1") == nil
+      assert HashStore.fetch_entry(realization, "api_boundary", "Nope.gone/9") == nil
+    end
+
+    test "preserves resolved_via — the reason this function exists over fetch/3",
+         %{root: root} do
+      hash_hex = Base.encode16(:crypto.hash(:sha256, "x"), case: :lower)
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            "Foo.bar/1" => %{
+              "hash" => hash_hex,
+              "hasher_version" => HashStore.hasher_version(),
+              "resolved_via" => "source"
+            }
+          }
+        })
+
+      entry = HashStore.fetch_entry(HashStore.read(root), "api_boundary", "Foo.bar/1")
+
+      assert entry["resolved_via"] == "source"
+      assert entry["hash"] == hash_hex
+    end
+
+    test "returns nil for an entry carrying no hash key", %{root: root} do
+      # A hashless entry is not a baseline. fetch_entry/3 filters it here so
+      # every caller sees one shape — callers pattern-match `"hash"` freely.
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            "Foo.bar/1" => %{"hasher_version" => HashStore.hasher_version()}
+          }
+        })
+
+      assert HashStore.fetch_entry(HashStore.read(root), "api_boundary", "Foo.bar/1") == nil
+    end
+  end
+
   describe "entry/1" do
     test "builds a store-ready entry from a normalized AST" do
       ast = Code.string_to_quoted!("def f(a), do: a")

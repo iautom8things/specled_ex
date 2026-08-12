@@ -6,6 +6,7 @@ change_type: narrows-scope
 affects:
   - specled.realized_by
   - specled.api_boundary
+  - specled.realized_by.implication_amplification_dedup
 ---
 
 # api_boundary Dedupe Is Amplification-Scoped; Authored Bindings Are Never Collapsed by MFA
@@ -80,3 +81,16 @@ Deduplication is scoped to what the amplification actually creates:
 - Adopters whose corpora carry shadowed dangling bindings will see NEW
   dangling findings on upgrade. That is the defect surfacing, not a
   regression — plan the corpus sweep as a deliberate exercise.
+- Both dedupe rules are TIER-GLOBAL, not scoped to a subject. The
+  inferred-vs-inferred collapse keys on MFA alone across every subject,
+  and an authored entry in any subject suppresses inferred entries for
+  that MFA everywhere. Consequence: a shared helper MFA inferred by
+  several subjects survives as one entry carrying one subject's
+  attribution, and the others are silently dropped. This is unchanged
+  from the pre-fix behavior (the old whole-list `uniq_by(& &1.mfa)` was
+  equally tier-global), so it is not a regression this ADR introduces —
+  but it is a real attribution gap and it is now stated rather than
+  implicit in "anywhere in the tier". Scoping the inferred collapse to
+  `{subject_id, mfa}` is the obvious remedy if an adopter reports it;
+  it was left out here because it changes finding volume on a release
+  that already changes finding volume for a different reason.

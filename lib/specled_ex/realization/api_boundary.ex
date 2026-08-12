@@ -176,38 +176,52 @@ defmodule SpecLedEx.Realization.ApiBoundary do
   # same-path is the right default; the one case it misses — a beam-written
   # baseline met by a cold-tree source resolution — is the status-quo
   # fabricated-drift bug, time-boxed to the first labeling refresh.
+  # An UNRECOGNIZED label is treated as legacy, not as permanent divergence.
+  # Divergence blocks the baseline refresh, so classifying an unknown label as
+  # incomparable would freeze the entry forever with no way to rewrite it — and
+  # the label is reachable by hand-edit (the remedy text below invites one) or
+  # by a future third path meeting a pinned adopter. Falling back to legacy
+  # comparison degrades to the pre-label behavior, which is recoverable.
   defp comparable?(_current, nil), do: true
   defp comparable?(:beam, "beam"), do: true
   defp comparable?(:source, "source"), do: true
+  defp comparable?(_current, baseline) when baseline not in ["beam", "source"], do: true
   defp comparable?(_current, _baseline), do: false
 
-  defp entry_hash(%{"hash" => hash}) do
+  defp entry_hash(%{"hash" => hash}) when is_binary(hash) do
     case Base.decode16(hash, case: :mixed) do
       {:ok, bytes} -> bytes
       :error -> nil
     end
   end
 
+  # A malformed entry (non-string or absent "hash") is not a hash we can
+  # compare. Returning nil routes it to the drift branch, which is the honest
+  # answer: we cannot show the committed value matches.
+  defp entry_hash(_entry), do: nil
+
   # Reached only for labeled baselines: comparable?/2 short-circuits nil.
   defp path_divergence_finding(binding, mfa, current_via, baseline_via) do
-    baseline_label = baseline_via
-
     %{
       "code" => @path_divergence_code,
       "tier" => @tier,
       "subject_id" => binding.subject_id,
       "requirement_id" => Map.get(binding, :requirement_id),
       "mfa" => mfa,
-      "current_resolution" => Atom.to_string(current_via),
-      "baseline_resolution" => baseline_via,
+      "current_resolved_via" => Atom.to_string(current_via),
+      "baseline_resolved_via" => baseline_via,
       "message" =>
         "#{mfa} resolved via #{current_via} but its committed baseline was hashed via " <>
-          "#{baseline_label}; the two envelopes are structurally incomparable, so this is " <>
+          "#{baseline_via}; the two envelopes are structurally incomparable, so this is " <>
           "resolution-path divergence, not drift (subject=#{binding.subject_id}). " <>
-          "Likely cause: an uncompiled tree sent resolution down the source-AST fallback. " <>
-          "Compile and re-run. For a PERMANENT path change (e.g. a bound function made " <>
-          "private), delete this entry from .spec/realization_hashes.json so the next " <>
-          "clean run re-seeds it with the new path."
+          "NOTE: the content hash was NOT compared this run, so this finding does not tell " <>
+          "you whether the function body also changed. " <>
+          "Causes, in order of likelihood: an uncompiled or stale tree sent resolution down " <>
+          "the source-AST fallback (compile and re-run — the finding disappears); or the " <>
+          "binding's visibility changed permanently (e.g. the function was made private, " <>
+          "which resolves via source forever). For the permanent case, delete this entry " <>
+          "from .spec/realization_hashes.json — but note that re-seeding accepts the " <>
+          "CURRENT hash unreviewed, so confirm the body is unchanged before you do."
     }
   end
 

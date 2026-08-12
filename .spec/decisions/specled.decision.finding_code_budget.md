@@ -66,6 +66,23 @@ is not sufficient; the reviewer declines such PRs.
 
 ## Amendment 2026-08-11 — tenth code: `branch_guard_resolution_path_divergence` (specled_-n5q.1)
 
+**Counting rule.** "Tenth" counts entries on THIS ADR's Decision list (nine),
+not codes emitted by the implementation. The two are not the same set, and
+saying so here stops the number drifting into a false claim:
+
+- `suggest_realized_by_migration` and `branch_guard_test_only_change` are <!-- spec-lint:allow-code=branch_guard_test_only_change budgeted in S1 planning; never emitted — restated here by the counting rule, same status as the Decision-list entry above -->
+  budgeted but never emitted — they hold slots against future use. The
+  latter carries an allow-marker recording why, on both mentions.
+- `branch_guard_realization_unknown_tier` is emitted by
+  `SpecLedEx.BranchCheck` but was never added to this list. It predates this
+  amendment and is grandfathered, not authorized by it; it should be
+  reconciled onto the list (or removed) by the ticket that next touches
+  unknown-tier handling.
+
+So: ten budgeted codes after this amendment, of which eight are emitted, plus
+one emitted-but-unbudgeted code awaiting reconciliation. Any future
+"Nth code" claim in this ADR counts budget slots by the same rule.
+
 Justified against this list rather than around it. The code does not add a
 new emission surface: it RE-CLASSIFIES a subset of what
 `branch_guard_realization_drift` previously emitted — the cross-path

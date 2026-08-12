@@ -400,6 +400,13 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
 
       assert hashes[bare]["hasher_version"] == HashStore.hasher_version()
       assert hashes[mfa]["hasher_version"] == HashStore.hasher_version()
+
+      # Both forms must be LABELED, not just hashed. An unlabeled entry written
+      # here is indistinguishable from a legacy baseline forever after, so a
+      # regression that drops the label on either path is unrecoverable once
+      # committed — and it is silent, because unlabeled entries still compare.
+      assert hashes[bare]["resolved_via"] == "beam"
+      assert hashes[mfa]["resolved_via"] == "beam"
     end
   end
 
@@ -1560,7 +1567,10 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
   end
 
   describe "run/2 — divergence blocks baseline refresh (specled_-n5q.1)" do
-    @tag spec: "specled.api_boundary.divergence_blocks_refresh"
+    @tag spec: [
+           "specled.api_boundary.divergence_blocks_refresh",
+           "specled.api_boundary.scenario.divergence_blocks_baseline_refresh"
+         ]
     test "a divergence finding blocks refresh in both branches and attestation", %{root: root} do
       mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
 

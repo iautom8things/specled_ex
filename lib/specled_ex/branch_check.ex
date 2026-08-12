@@ -269,8 +269,16 @@ defmodule SpecLedEx.BranchCheck do
   #   * a dangling binding is a genuine error that blocks the refresh entirely
   #     (see the `Orchestrator` refresh gate), so when any dangling is present
   #     nothing is healed and therefore nothing is silenced this run.
+  #   * resolution-path divergence blocks that same refresh unconditionally, so
+  #     it withholds silencing on exactly the same grounds. Without this clause
+  #     a diverged `--accept-drift` run downgrades real drift to `:info` and
+  #     reports `pass` while the baseline it promised to move never moves — the
+  #     drift then resurfaces on `main`, which is the opposite of the durable
+  #     accept `specled.realized_by.drift_acceptance` documents.
   defp realization_findings(raw, severity_opts, accept_drift?) do
-    healable? = accept_drift? and not Enum.any?(raw, &dangling_finding?/1)
+    healable? =
+      accept_drift? and not Enum.any?(raw, &dangling_finding?/1) and
+        not Enum.any?(raw, &divergence_finding?/1)
 
     Enum.flat_map(raw, fn finding ->
       code = Map.get(finding, "code")
@@ -310,6 +318,9 @@ defmodule SpecLedEx.BranchCheck do
 
   defp dangling_finding?(finding),
     do: Map.get(finding, "code") == "branch_guard_dangling_binding"
+
+  defp divergence_finding?(finding),
+    do: Map.get(finding, "code") == "branch_guard_resolution_path_divergence"
 
   defp accept_drift?(opts), do: Keyword.get(opts, :accept_drift?, false) == true
 

@@ -74,8 +74,13 @@ compiling.
 
 ## Consequences
 
-- A cold-tree run reports an explicit, attributable warning instead of
-  fabricated drift, and cannot silently poison the committed baseline.
+- A cold-tree run against a LABELED entry reports an explicit, attributable
+  warning instead of fabricated drift, and cannot silently poison the
+  committed baseline. The qualifier matters: per Decision point 2, an
+  unlabeled legacy entry still compares under legacy semantics, so a
+  cold-tree run met by an unlabeled baseline can still report drift for
+  code nobody changed. That case is time-boxed to the first labeling
+  refresh, not eliminated by this ADR.
 - The source path's first-clause-only weakening becomes harmless for
   verdicts: source hashes only ever compare against source-labeled entries.
 - Test-harness fidelity: Mix's test task disables `:debug_info` for runtime

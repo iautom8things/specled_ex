@@ -277,10 +277,19 @@ defmodule SpecLedEx.Realization.HashStore do
         Enum.reduce(entries, %{}, fn {mfa, old_entry}, tier_acc ->
           case fun.(tier, mfa, old_entry) do
             {:ok, new_hash_bin} when is_binary(new_hash_bin) ->
-              Map.put(tier_acc, mfa, %{
-                "hash" => Base.encode16(new_hash_bin, case: :lower),
-                "hasher_version" => @hasher_version
-              })
+              # Preserve the old entry's other keys — notably "resolved_via".
+              # Rebuilding the entry as a two-key literal would silently revert
+              # every labeled entry to legacy semantics on a hasher_version
+              # bump, which is exactly the metadata `fetch_entry/3` exists to
+              # carry. The rehash changes the hash, not the provenance.
+              Map.put(
+                tier_acc,
+                mfa,
+                Map.merge(old_entry, %{
+                  "hash" => Base.encode16(new_hash_bin, case: :lower),
+                  "hasher_version" => @hasher_version
+                })
+              )
 
             :drop ->
               tier_acc

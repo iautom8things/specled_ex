@@ -152,7 +152,11 @@ decisions:
     classify as `:beam`; `def`-family quoted ASTs from the source
     fallback classify as `:source`. Consumers use this to record hash
     provenance and refuse cross-path hash comparison
-    (specled.api_boundary.same_path_hash_comparison).
+    (specled.api_boundary.same_path_hash_comparison). The classifier is
+    total: any term that is not a recognized beam shape classifies as
+    `:source`. It is a classifier over `resolve/2` success values, not an
+    input validator, and callers shall not use it to reject malformed
+    input.
   priority: must
   stability: evolving
 - id: specled.binding.resolve_with_source_returns_path
@@ -347,6 +351,17 @@ decisions:
     - "the result is `{:ok, \"lib/my_mod.ex\"}` (normalized to the project root)"
   covers:
     - specled.binding.locate_source_public
+- id: specled.binding.scenario.resolution_path_classifies_each_shape
+  given:
+    - "a beam triple `{:foo, 1, clauses}`, a `{:module, MyMod}` result, and a def-family quoted AST"
+  when:
+    - "`SpecLedEx.Realization.Binding.resolution_path/1` is called with each"
+  then:
+    - "the beam triple and the bare module classify as `:beam`"
+    - "the quoted AST classifies as `:source`"
+    - "an unrecognized term also classifies as `:source` (the catch-all is total)"
+  covers:
+    - specled.binding.resolution_path_classification
 ```
 
 ## Verification

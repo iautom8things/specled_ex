@@ -43,7 +43,8 @@ untouched.
   private-function bindings always resolve via source and their unlabeled
   baselines were therefore source-written (specled_-n5q.1)
 - Requirements `specled.api_boundary.same_path_hash_comparison`,
-  `path_divergence_finding`, `divergence_blocks_refresh`, and
+  `path_divergence_finding`, `divergence_blocks_refresh`,
+  `divergence_withholds_drift_silencing`, and
   `specled.binding.resolution_path_classification`, with covering scenarios
   (specled_-n5q.1)
 - Requirements `specled.realized_by.authored_beats_inferred` and
@@ -64,6 +65,21 @@ untouched.
   unchanged code. The detector now compares same-path only; cross-path
   encounters on labeled entries are classified as divergence
   (specled_-n5q.1)
+- `--accept-drift` on a run that also emitted a divergence finding downgraded
+  real drift to `info` and reported `pass` while the baseline refresh the
+  downgrade is predicated on was blocked — so the drift silently resurfaced
+  after the branch merged. Divergence now withholds the downgrade on the same
+  grounds a dangling binding already did, restoring "silence exactly what you
+  heal" (specled_-n5q.1)
+- An unrecognized `resolved_via` label (a hand-edit, or a future third path
+  met by a pinned adopter) was treated as permanent divergence, which blocks
+  the refresh and so froze the entry with no way to rewrite it. Unrecognized
+  labels now fall back to legacy comparison. A non-string `hash` no longer
+  raises from the comparison path (specled_-n5q.1)
+- A `hasher_version` rehash rebuilt entries as a two-key literal, dropping
+  `resolved_via` and silently reverting every labeled entry to legacy
+  semantics. The rehash now preserves the entry's other keys. Unreachable at
+  `hasher_version: 1`, fixed before it becomes reachable (specled_-n5q.1)
 - `api_boundary` dedupe is now scoped to what the implication amplification
   actually creates: inferred entries dedupe on MFA among themselves and yield
   entirely to any authored entry sharing their MFA; authored entries never
@@ -96,7 +112,22 @@ untouched.
   compiling and re-running. For a *permanent* path change — e.g. a bound
   function made private, which resolves via source forever — delete the entry
   from `.spec/realization_hashes.json` and the next clean run re-seeds it
-  labeled with the new path.
+  labeled with the new path. Deleting accepts the current hash unreviewed, so
+  confirm the body is unchanged first; the divergence finding never compared
+  it.
+- **Expect a one-time relabel diff.** The first clean run after upgrading
+  adds a `resolved_via` key to every `api_boundary` entry in
+  `.spec/realization_hashes.json`. Hash values do not change — in this repo
+  all 173 entries kept byte-identical hashes — so the diff is additive noise,
+  not drift. Commit it in its own commit to keep it out of review.
+- **Upgrade the team together.** An older specled reading a labeled baseline
+  ignores `resolved_via` and, on its next refresh, writes entries back
+  without it — silently un-labeling what the new version just labeled. Mixed
+  versions across a team will churn the file back and forth.
+- The divergence block is **run-wide**: one diverged `api_boundary` MFA stops
+  the baseline refresh for every flat tier. Setting the code's severity to
+  `off` hides the finding but not the block, which yields a frozen baseline
+  with no on-screen explanation — fix the cause instead.
 
 ## 0.13.0 — 2026-08-06
 

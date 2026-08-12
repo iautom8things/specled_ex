@@ -411,7 +411,10 @@ defmodule SpecLedEx.Realization.ApiBoundaryTest do
   end
 
   describe "run/3 — resolution-path divergence (specled_-n5q.1)" do
-    @tag spec: "specled.api_boundary.path_divergence_finding"
+    @tag spec: [
+           "specled.api_boundary.path_divergence_finding",
+           "specled.api_boundary.scenario.beam_current_vs_source_baseline_diverges"
+         ]
     test "beam-resolved current vs source-labeled baseline diverges, not drifts", %{root: root} do
       mfa = "SpecLedEx.ApiBoundaryFixtures.Stable.bar/1"
 
@@ -436,15 +439,24 @@ defmodule SpecLedEx.Realization.ApiBoundaryTest do
       assert divergence["mfa"] == mfa
       assert divergence["subject_id"] == "test.subject"
       assert divergence["requirement_id"] == "test.subject.req"
-      assert divergence["current_resolution"] == "beam"
-      assert divergence["baseline_resolution"] == "source"
+      assert divergence["current_resolved_via"] == "beam"
+      assert divergence["baseline_resolved_via"] == "source"
       assert divergence["message"] =~ "not drift"
-      assert divergence["message"] =~ "Compile"
+      assert divergence["message"] =~ "compile and re-run"
+
+      # The message must not let a reader conclude the body is unchanged: this
+      # branch never compared the content hash, and the delete-the-entry remedy
+      # accepts the current hash unreviewed.
+      assert divergence["message"] =~ "was NOT compared"
+      assert divergence["message"] =~ "unreviewed"
 
       refute Enum.any?(findings, &(&1["code"] == "branch_guard_realization_drift"))
     end
 
-    @tag spec: "specled.api_boundary.same_path_hash_comparison"
+    @tag spec: [
+           "specled.api_boundary.same_path_hash_comparison",
+           "specled.api_boundary.scenario.legacy_baseline_stays_drift_comparable"
+         ]
     test "legacy unlabeled baseline stays drift-comparable for a beam-resolved head", %{
       root: root
     } do
@@ -533,8 +545,8 @@ defmodule SpecLedEx.Realization.ApiBoundaryTest do
         Enum.find(findings, &(&1["code"] == "branch_guard_resolution_path_divergence"))
 
       assert divergence != nil, "expected divergence finding, got: #{inspect(findings)}"
-      assert divergence["current_resolution"] == "source"
-      assert divergence["baseline_resolution"] == "beam"
+      assert divergence["current_resolved_via"] == "source"
+      assert divergence["baseline_resolved_via"] == "beam"
       refute Enum.any?(findings, &(&1["code"] == "branch_guard_realization_drift"))
     end
 
@@ -594,6 +606,11 @@ defmodule SpecLedEx.Realization.ApiBoundaryTest do
           }
         })
 
+      # Path-discriminating: "labeled same-path" is the claim, so pin that the
+      # head really does resolve via source rather than trusting the label.
+      {:ok, ast} = SpecLedEx.Realization.Binding.resolve(mfa, context)
+      assert SpecLedEx.Realization.Binding.resolution_path(ast) == :source
+
       bindings = [%{subject_id: "test.subject", requirement_id: nil, mfa: mfa}]
       findings = ApiBoundary.run(bindings, context, root: root)
 
@@ -632,6 +649,12 @@ defmodule SpecLedEx.Realization.ApiBoundaryTest do
             }
           }
         })
+
+      # Path-discriminating: this test's whole point is that a SOURCE-resolved
+      # head still drifts against an unlabeled baseline. If the fixture ever
+      # started resolving via beam, the test would pass for the wrong reason.
+      {:ok, ast} = SpecLedEx.Realization.Binding.resolve(mfa, context)
+      assert SpecLedEx.Realization.Binding.resolution_path(ast) == :source
 
       bindings = [%{subject_id: "test.subject", requirement_id: nil, mfa: mfa}]
       findings = ApiBoundary.run(bindings, context, root: root)

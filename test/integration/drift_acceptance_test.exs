@@ -219,6 +219,88 @@ defmodule SpecLedEx.Integration.DriftAcceptanceTest do
            "no baseline may move on a failing (dangling) run"
   end
 
+  @tag spec: [
+         "specled.realized_by.drift_acceptance",
+         "specled.api_boundary.divergence_withholds_drift_silencing",
+         "specled.api_boundary.scenario.divergence_withholds_accept_drift_silencing"
+       ]
+  test "--accept-drift with a resolution-path divergence present blocks the refresh and does not downgrade drift",
+       %{root: root} do
+    # Divergence blocks the refresh exactly as a dangling error does, so it must
+    # withhold silencing on the same grounds. Without that, the accepting run
+    # reports the drift at `info`, claims a durable accept, and moves no
+    # baseline — so the drift resurfaces on `main`.
+    diverge_mfa = "SpecLedEx.Realization.HashStore.read/2"
+
+    init_git_repo(root)
+    seed_repo(root)
+
+    write_subject_spec(root, "diverged",
+      meta: %{
+        "id" => "diverged.subject",
+        "kind" => "module",
+        "status" => "active",
+        "surface" => ["lib/diverged.ex"],
+        "realized_by" => %{"api_boundary" => [@real_mfa, diverge_mfa]}
+      },
+      requirements: [
+        %{"id" => "diverged.req", "statement" => "x", "priority" => "must"}
+      ]
+    )
+
+    commit_all(root, "seed diverged+drift subject")
+
+    wrong_hash = Base.encode16(:crypto.hash(:sha256, "wrong"), case: :lower)
+
+    :ok =
+      HashStore.write(root, %{
+        "api_boundary" => %{
+          # Unlabeled + wrong hash: legacy-comparable, so this is same-path DRIFT.
+          @real_mfa => %{"hash" => wrong_hash, "hasher_version" => HashStore.hasher_version()},
+          # Source-labeled against a beam-resolving head: this DIVERGES.
+          diverge_mfa => %{
+            "hash" => Base.encode16(:crypto.hash(:sha256, "source-envelope"), case: :lower),
+            "hasher_version" => HashStore.hasher_version(),
+            "resolved_via" => "source"
+          }
+        }
+      })
+
+    index = Index.build(root)
+
+    report =
+      BranchCheck.run(index, root,
+        base: "HEAD",
+        commit_realization_hashes?: true,
+        accept_drift?: true
+      )
+
+    findings = report["findings"] || []
+
+    assert Enum.any?(findings, fn f ->
+             f["code"] == "branch_guard_resolution_path_divergence" and f["mfa"] == diverge_mfa
+           end),
+           "expected the divergence finding, got:\n" <> inspect(findings, pretty: true)
+
+    drift =
+      Enum.find(findings, fn f ->
+        f["code"] == "branch_guard_realization_drift" and f["mfa"] == @real_mfa
+      end)
+
+    assert drift != nil,
+           "expected the drift finding to still fire, got:\n" <> inspect(findings, pretty: true)
+
+    refute drift["severity"] == "info",
+           "drift must NOT be downgraded when a divergence blocks the refresh, got " <>
+             inspect(drift["severity"])
+
+    # No baseline moved — which is precisely why the downgrade must be withheld.
+    store = HashStore.read(root)
+
+    assert get_in(store, ["api_boundary", @real_mfa, "hash"]) == wrong_hash,
+           "no baseline may move on a diverged run"
+  end
+
   @tag spec: "specled.realized_by.drift_acceptance"
   test "--accept-drift does not downgrade or heal implementation-tier drift", %{root: root} do
     init_git_repo(root)
