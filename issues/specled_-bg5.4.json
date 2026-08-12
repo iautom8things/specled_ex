@@ -17,11 +17,15 @@
     {
       "text": "STACKED BRANCH — orchestrator note.\n\nThis ticket's stage `specled_-bg5.4/adr-status-gate` is cut from specled_-bg5.1's stage tip\n(a80b49b1), NOT from the epic branch. bg5.1 is HELD awaiting operator sign-off on its ADR, and this\nticket depends on the authorization contract bg5.1 settles.\n\nRather than leave this ticket (and specled_-bg5.6 behind it) unstarted for a reason that is purely\nmerge-ordering rather than readiness, the chain is being stacked so the whole bg5 lineage arrives\nfor review in one sitting. This mirrors the batching protocol's rule that dependents of pending\nwork branch off the pending integration point rather than the mainline.\n\nConsequence the operator should know: if bg5.1's ADR is rejected or materially revised at sign-off,\nthis ticket and bg5.6 rebuild on top of the revision. That is the cost of stacking, and it is\naccepted deliberately — the alternative was delivering one third of the lineage and deferring the\nrest to a later session.\n\nBase for this ticket's diffs is a80b49b1, so its diff shows only its own work.",
       "timestamp": "2026-08-12T13:18:58Z"
+    },
+    {
+      "text": "IMPLEMENTED\nSession: i4x-bg5.4\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-bg5.4/codex-i4x-bg5.4/log\n\nCommit: ae803ac8\nFiles touched: lib/specled_ex/append_only.ex, .spec/specs/append_only.spec.md, .spec/decisions/specled.decision.accepted_adr_authorization.md, test/specled_ex/append_only_test.exs\nTests added: SpecLedEx.AppendOnlyTest — deprecated and superseded ADRs neither authorize nor emit self-authorization findings\nVerification stubs flipped: none (existing tagged_tests block remains execute:true)\nVerification tier: change-scoped — mix compile --warnings-as-errors; test/specled_ex/append_only_test.exs; test/specled_ex/verifier_test.exs; mix test --stale; mix format --check-formatted; mix spec.check --no-run-commands; bash ./scripts/check_specs.sh; full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 2\n\nSummary: Added a shared accepted-status predicate to the settled authorization selection and the same-PR ADR warning path, so deprecated and superseded ADRs cannot suppress any weakening or emit self-authorization findings. Amended the append-only contract, recorded the durable status policy in an ADR, and covered both inactive legal statuses with a focused regression test.",
+      "timestamp": "2026-08-12T13:32:50Z"
     }
   ],
   "priority": 2,
   "status": "open",
   "title": "F13: authorizing_decision/2 ignores ADR status — superseded/rejected ADRs still authorize",
   "type": "task",
-  "updated_at": "2026-08-12T13:18:58Z"
+  "updated_at": "2026-08-12T13:32:50Z"
 }
