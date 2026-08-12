@@ -1,9 +1,10 @@
 defmodule SpecLedEx.AppendOnlyTest do
-  # covers: specled.append_only.requirement_deleted specled.append_only.must_downgraded specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.self_authorized_weakening specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
+  # covers: specled.append_only.requirement_deleted specled.append_only.accepted_adr_authorization specled.append_only.must_downgraded specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.self_authorized_weakening specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
   use ExUnit.Case, async: true
 
   @moduletag spec: [
                "specled.append_only.adr_affects_widened",
+               "specled.append_only.accepted_adr_authorization",
                "specled.append_only.decision_deleted",
                "specled.append_only.disabled_without_reason",
                "specled.append_only.findings_sorted",
@@ -109,6 +110,41 @@ defmodule SpecLedEx.AppendOnlyTest do
                AppendOnly.analyze(prior, current, head_decisions),
                &(&1.code == "append_only/requirement_deleted")
              )
+    end
+
+    @tag spec: [
+           "specled.append_only.accepted_adr_authorization",
+           "specled.append_only.requirement_deleted",
+           "specled.append_only.same_pr_self_authorization",
+           "specled.append_only.self_authorized_weakening"
+         ]
+    test "deprecated and superseded ADRs neither authorize nor emit self-authorization findings" do
+      prior =
+        state_fixture(
+          subject: "x",
+          requirements: [requirement("x.req_a", "The system MUST reject invalid input.")]
+        )
+
+      current = state_fixture(subject: "x", requirements: [])
+
+      Enum.each(["deprecated", "superseded"], fn status ->
+        decisions = [
+          adr(
+            id: "d1",
+            status: status,
+            affects: ["x.req_a"],
+            change_type: "deprecates",
+            reverses_what: "Requirement retired for v2.",
+            form: :parsed
+          )
+        ]
+
+        findings = AppendOnly.analyze(prior, current, decisions)
+
+        assert Enum.any?(findings, &(&1.code == "append_only/requirement_deleted"))
+        refute Enum.any?(findings, &(&1.code == "append_only/same_pr_self_authorization"))
+        refute Enum.any?(findings, &(&1.code == "append_only/self_authorized_weakening"))
+      end)
     end
   end
 

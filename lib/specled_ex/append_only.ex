@@ -1,5 +1,5 @@
 defmodule SpecLedEx.AppendOnly do
-  # covers: specled.append_only.requirement_deleted specled.append_only.requirement_deleted_authorized specled.append_only.must_downgraded specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.self_authorized_weakening specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
+  # covers: specled.append_only.requirement_deleted specled.append_only.requirement_deleted_authorized specled.append_only.accepted_adr_authorization specled.append_only.must_downgraded specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.self_authorized_weakening specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
   @moduledoc """
   Pure diff-time append-only detectors for `.spec/` content.
 
@@ -627,6 +627,9 @@ defmodule SpecLedEx.AppendOnly do
       affects = meta_get(meta, "affects") || []
 
       cond do
+        not accepted_decision?(meta) ->
+          []
+
         change_type not in @weakening_set ->
           []
 
@@ -672,7 +675,8 @@ defmodule SpecLedEx.AppendOnly do
   defp authorizing_decision(decisions, id, new_adr_ids) do
     matching_decisions =
       Enum.filter(decisions, fn decision ->
-        id in (decision |> meta() |> meta_get("affects") || [])
+        decision_meta = meta(decision)
+        accepted_decision?(decision_meta) and id in (meta_get(decision_meta, "affects") || [])
       end)
 
     authorizers =
@@ -729,6 +733,8 @@ defmodule SpecLedEx.AppendOnly do
 
   defp meta_get(meta, key) when is_map(meta), do: Map.get(meta, key)
   defp meta_get(_, _), do: nil
+
+  defp accepted_decision?(meta), do: meta_get(meta, "status") == "accepted"
 
   defp get_in_list(state, path) do
     case get_in_path(state, path) do

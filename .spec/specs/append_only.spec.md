@@ -37,6 +37,7 @@ decisions:
   - specled.decision.finding_code_budget
   - specled.decision.append_only_finding_budget_v2
   - specled.decision.uniform_self_authorization_markers
+  - specled.decision.accepted_adr_authorization
   - specled.decision.declarative_current_truth
 ```
 
@@ -59,10 +60,19 @@ decisions:
 - id: specled.append_only.requirement_deleted_authorized
   statement: >-
     AppendOnly.analyze shall NOT emit `append_only/requirement_deleted`
-    for a removed requirement id when a head-side ADR in the weakening
+    for a removed requirement id when an accepted head-side ADR in the weakening
     set (`deprecates`, `weakens`, `narrows-scope`, `adds-exception`)
     lists that id in its `affects` list with a non-empty
     `reverses_what`, authorizing the deletion.
+  priority: must
+  stability: evolving
+- id: specled.append_only.accepted_adr_authorization
+  statement: >-
+    Only head-side ADRs with status `accepted` shall authorize requirement
+    deletion, modal downgrade, scenario regression, or negative-polarity
+    removal. ADRs with status `deprecated` or `superseded` shall neither
+    suppress those weakening findings nor emit same-PR self-authorization
+    warnings or per-weakening markers.
   priority: must
   stability: evolving
 - id: specled.append_only.must_downgraded
@@ -217,6 +227,19 @@ decisions:
     - "no `append_only/requirement_deleted` finding is emitted for `x.req_a`"
   covers:
     - specled.append_only.requirement_deleted_authorized
+
+- id: specled.append_only.scenario.inactive_adr_cannot_authorize
+  given:
+    - "prior state contains requirement `x.req_a`"
+    - "current state does not contain `x.req_a`"
+    - "a head-side ADR with status deprecated or superseded has a weakening-set change_type and affects `[x.req_a]`"
+  when:
+    - SpecLedEx.AppendOnly.analyze/4 is invoked
+  then:
+    - "the returned findings contain `append_only/requirement_deleted` for `x.req_a`"
+    - "neither `append_only/same_pr_self_authorization` nor `append_only/self_authorized_weakening` is emitted"
+  covers:
+    - specled.append_only.accepted_adr_authorization
 
 - id: specled.append_only.scenario.must_to_should_downgrade
   given:
@@ -439,6 +462,7 @@ decisions:
   covers:
     - specled.append_only.requirement_deleted
     - specled.append_only.requirement_deleted_authorized
+    - specled.append_only.accepted_adr_authorization
     - specled.append_only.must_downgraded
     - specled.append_only.scenario_regression
     - specled.append_only.negative_removed
@@ -458,6 +482,7 @@ decisions:
   covers:
     - specled.append_only.requirement_deleted
     - specled.append_only.requirement_deleted_authorized
+    - specled.append_only.accepted_adr_authorization
     - specled.append_only.must_downgraded
     - specled.append_only.scenario_regression
     - specled.append_only.negative_removed
