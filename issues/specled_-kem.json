@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-12T23:08:21Z",
+  "description": "Advances: specled.tag_scanning\n\nSeverity: Low (calibrated in the 2026-08-12 consolidated critical review of specled_-c5b, finding F11).\n\nspecled_-c5b taught process_statement/4 to recurse into for-comprehension bodies. The same blindness remains for other module-level constructs that can wrap test definitions: an if/unless block, and a for..reduce: body. Each silently drops any @tag spec inside it — no tag entry and no dynamic entry — which is the same tagged_tests_cover_missing_tag false positive c5b was filed to eliminate, in narrower shapes.\n\nWhy this could not land on the c5b branch: it needs an unmade design decision about which node types the scanner recurses into, and the two cases differ. An if/unless else branch is genuinely ambiguous — statements in both branches are visible to the parser but only one runs, so recursing into both may over-report carriers. A for..reduce: body is a clause list of {:-\u003e, _, _} rather than a do block, so it does not fit the block_from_args/block_statements shape the other clauses share and would need its own handling.\n\nNo adopter evidence yet that either shape is used to define tagged tests, unlike the for-comprehension case which was demonstrated in a real adopter sweep. Worth deciding deliberately rather than extending the recursion reflexively.",
+  "id": "specled_-kem",
+  "labels": [],
+  "priority": 3,
+  "status": "open",
+  "title": "TagScanner drops tests defined under module-level if/unless and for..reduce: bodies",
+  "type": "bug",
+  "updated_at": "2026-08-12T23:08:21Z"
+}
