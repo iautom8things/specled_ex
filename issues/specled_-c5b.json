@@ -49,11 +49,15 @@
     {
       "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/37 (release 0.15.1). Branch fix/c5b-for-comprehension-tag-scanning at edbb9052. Babysitting CI.",
       "timestamp": "2026-08-12T22:59:47Z"
+    },
+    {
+      "text": "CI green on first run — all 3 checks pass (Check Specs, Test Elixir 1.18.4/OTP 26.2.5, Test Elixir 1.19.5/OTP 28.3.1). Zero fix commits needed during babysitting; local pre-flight caught everything. mergeStateStatus=CLEAN, no review comments. Ready for merge.",
+      "timestamp": "2026-08-12T23:03:03Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "TagScanner is blind to for-comprehension-generated tests — @tag spec: inside unrolled loops never reaches the tag_map",
   "type": "bug",
-  "updated_at": "2026-08-12T22:59:47Z"
+  "updated_at": "2026-08-12T23:03:03Z"
 }
