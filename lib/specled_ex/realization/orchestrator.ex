@@ -213,6 +213,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
     # When divergence and drift coexist under `--accept-drift`, keep the
     # existing run-wide block because BranchCheck also withholds drift
     # silencing for that combination (silence exactly what you heal).
+    # See `specled.decision.divergence_refresh_scope`.
     refresh_allowed? =
       (accept_drift? and not has_dangling?(findings) and
          not (has_drift?(findings) and has_divergence?(findings))) or
@@ -277,6 +278,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # entry carrying the same MFAs the requirement contributed. Requirements
   # whose bindings drifted or were dangling have empty buckets and so don't
   # produce test-file attestations.
+  # spec-lint:allow-long-comment=implementation algorithm walkthrough; no governing ADR
   defp build_attestations(findings, bindings_by_tier, ctx, index) do
     drift_set = unattested_pairs(findings)
 
@@ -403,6 +405,7 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # with `requirement_id == nil` (the implementation tier aggregates subject-
   # and requirement-level impl bindings into a single per-subject list before
   # this point, so the requirement provenance is not preserved for impl).
+  # spec-lint:allow-long-comment=implementation data-shape walkthrough; no governing ADR
   defp all_subject_requirement_mfa_triples(bindings_by_tier) do
     flat_triples =
       @flat_tiers
@@ -770,9 +773,12 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # to surface as dangling findings on this run.
   #
   # The seed pass is silent: no findings are emitted from this code path.
-  # On a divergent run, the post-run `refresh_and_commit_hashes/4` still
-  # refreshes committed clean entries but excludes missing entries so it cannot
-  # bypass this gate.
+  # The post-run `refresh_and_commit_hashes/4` merges refreshed hashes for the
+  # flat tiers only into the existing realization map. On a divergent run, it
+  # still refreshes committed clean entries but excludes missing entries so it
+  # cannot bypass this gate.
+  # See `specled.decision.silent_seed_batches_subject_graph` and
+  # `specled.decision.run_scoped_divergence_seed_gate`.
   defp seed_uncommitted_hashes(bindings_by_tier, context, root) do
     store = HashStore.read(root)
 
@@ -826,7 +832,8 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # seeding one subject (or only the uncommitted subset) builds a world that
   # cannot resolve peers, so the seed writes `…:hash:unknown` markers and the
   # detector (which walks the full subject graph) permanently reports
-  # wholesale `branch_guard_realization_drift`. See atlas-vmi.
+  # wholesale `branch_guard_realization_drift`. See
+  # `specled.decision.silent_seed_batches_subject_graph`.
   defp seed_implementation_subjects(subjects, committed, context, root) do
     bare_seeds =
       Enum.reduce(subjects, %{}, fn subject, acc ->

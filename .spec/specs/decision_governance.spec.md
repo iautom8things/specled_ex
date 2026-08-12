@@ -135,6 +135,37 @@ decisions:
     once.
   priority: must
   stability: stable
+- id: specled.decisions.adr_reference_discipline
+  statement: >-
+    Repository comment hygiene shall scan contiguous line-comment blocks of
+    at least eight lines in `lib/specled_ex/realization/*.ex`; each block shall
+    end with a `specled.decision.*` ADR id, except for section banners bounded
+    by comment-only hyphen separators and blocks whose final line is a
+    reason-bearing `# spec-lint:allow-long-comment=<reason>` marker. The marker
+    is block-local and shall be honored only within that fixed realization
+    corpus; numbered or algorithm prose receives no implicit exemption.
+  priority: must
+  stability: evolving
+```
+
+## Scenarios
+
+```yaml spec-scenarios
+- id: specled.decisions.scenario.adr_reference_discipline
+  given:
+    - an eight-line realization comment block with no terminal ADR id
+    - realization comment blocks ending in an ADR id or a reason-bearing opt-out marker
+    - a section banner bounded by hyphen separators
+    - a numbered walkthrough with neither a terminal ADR id nor an opt-out marker
+    - a reason-bearing opt-out marker on a path outside the realization corpus
+  when:
+    - the realization comment-pointer lint evaluates the blocks
+  then:
+    - the unpointed block and unmarked numbered walkthrough are rejected
+    - the terminal ADR id, scoped opt-out marker, and section banner are accepted
+    - the marker outside the realization corpus grants no exemption
+  covers:
+    - specled.decisions.adr_reference_discipline
 ```
 
 ## Verification
@@ -154,6 +185,7 @@ decisions:
     - specled.decisions.cross_field_affects_resolve
     - specled.decisions.cross_field_adr_append_only
     - specled.decisions.cross_field_idempotent
+    - specled.decisions.adr_reference_discipline
 - kind: source_file
   target: lib/specled_ex/decision_parser/cross_field.ex
   execute: true
