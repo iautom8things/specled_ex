@@ -42,13 +42,14 @@ one and has no placeholder to replace.
 id: specled.package
 kind: package
 status: active
-summary: Elixir package for Spec Led Development. Provides Mix tasks to scaffold, orient, index, guide, validate, summarize, and strictly check authored specs. Docs include coverage capture (docs/coverage.md), including the per-test boundary-hook wiring subsection and Stage-2 auditor/unhooked-degrade claim (exact within disclosed chained windows).
+summary: Elixir package for Spec Led Development. Provides Mix tasks to scaffold, orient, index, guide, validate, summarize, and strictly check authored specs. Docs include coverage capture (docs/coverage.md), including the per-test boundary-hook wiring subsection and Stage-2 auditor/unhooked-degrade claim (exact within disclosed chained windows), and a fork-PR CI trust policy for repository-authored verification commands (docs/security.md).
 surface:
   - README.md
   - CHANGELOG.md
   - docs/adoption.md
   - docs/concepts.md
   - docs/coverage.md
+  - docs/security.md
   - skills/spec-led-bootstrap/SKILL.md
   - skills/spec-led-bootstrap/references/*.md
   - priv/spec_init/README.md.eex
@@ -109,6 +110,17 @@ decisions:
   statement: The package shall provide a concepts document at `docs/concepts.md` that explains the spec triangle (specs ↔ code ↔ tests), the `realized_by` tiers, the graceful-degrade rule that emits `detector_unavailable` instead of failing when a detector's prerequisites are missing, how to accept intentional realization drift (the durable `mix spec.check --accept-drift` path, the PR-scoped `Spec-Drift:` trailer, and the implementation-tier delete-and-reseed ritual), and the `mix spec.check` verdict read protocol.
   priority: must
   stability: evolving
+- id: specled.package.command_execution_trust_policy
+  statement: >-
+    The package shall provide security guidance at `docs/security.md` that identifies enabled
+    `kind: command` verification targets as repository-authored shell, states that SpecLedEx does
+    not sandbox or allowlist them, recommends `mix spec.check --no-run-commands` for the untrusted
+    fork-PR lane and command execution only for a reviewed trusted revision in a least-privilege
+    context, warns against executing an untrusted checkout under `pull_request_target`, and
+    clarifies that `--no-run-commands` is not a general sandbox for other repository-controlled CI
+    steps.
+  priority: must
+  stability: stable
 - id: specled.package.doc_identifier_integrity
   statement: Documentation, skill files, and the repo-resident spec workspace (`.spec/**`) shall reference only diagnostic codes defined by the implementation — findings emitted by the detectors and by the evidence subsystem, plus the `evidence/*` prefixes the sync and prune tasks abort with. This is mechanically enforced across `skills/**`, `docs/**`, `README.md`, and `.spec/**` — not the whole repository; `CHANGELOG.md` and the agent rule files are outside the scanned corpus — for the five code families guarded today, `append_only/*`, `overlap/*`, `evidence/*`, `cross_field/*`, and `branch_guard_*`, each carrying a namespace or prefix the lint can match on. The hand-maintained implementation-code mirror shall equal the emitter-derived set of codes for those guarded families — a state-level property every tree must satisfy, mechanically asserted by the mirror-drift test. Every documentation region explicitly marked as a full-set claim shall enumerate exactly its configured expected set, and the configured branch-guard claim sets shall partition the full hand-maintained branch-guard family so adding or removing a code makes an incomplete or overbroad claim fail the lint. Every other emitted code is a bare snake_case identifier (`detector_unavailable`, `spec_requirement_too_short`, and the validator and tag-scanner codes among them), and all of them remain author-enforced, for two different reasons that this requirement deliberately does not conflate. For four heavily-referenced stems — `detector_`, `decision_`, `verification_`, `requirement_` — a stem pattern is unusable rather than merely deferred, because each collides with the current corpus, where the same stems name requirement ids, config keys, and output fields. The narrower stems, among them `surface_target_`, `scenario_cover_`, and `spec_requirement_` itself, collide with nothing today and are guardable; they are unguarded only because each would need its own hand-maintained allowlist, which is deferred under `specled.decision.doc_identifier_lint_spec_corpus`. A decision record may name an unimplemented (budgeted or rejected) code only when the reference carries an explicit `<!-- spec-lint:allow-code=<token> reason -->` marker on the same line, and user-facing docs and skill files shall show config severity values in the bare YAML token form.
   priority: must
@@ -135,6 +147,10 @@ the concepts-guide requirements above remain unchanged.
   covers:
     - specled.package.default_local_loop
     - specled.package.test_tag_annotation_docs
+- kind: source_file
+  target: docs/security.md
+  covers:
+    - specled.package.command_execution_trust_policy
 - kind: command
   target: >-
     mix run -e 'Mix.Task.load_all(); Enum.each(~w(spec.init spec.prime spec.next spec.check spec.status spec.decision.new spec.index spec.validate spec.review), fn task -> Mix.Task.get(task) || raise("missing #{task}") end)'

@@ -186,6 +186,13 @@ mix spec.triangle billing.invoice_numbering
 
 ### 5. Wire CI
 
+Verification commands are repository-authored shell. For a public repository,
+do not let a fork pull request execute them with a privileged workflow token or
+secrets. Run `mix spec.check --no-run-commands` in the untrusted fork-PR lane,
+then run the command-executing gate only for a reviewed, trusted revision. See
+the [CI trust policy](security.md) for the recommended split and the
+`pull_request_target` warning.
+
 ```yaml
 # .github/workflows/spec.yml
 - run: git fetch origin +refs/heads/spec-evidence:refs/remotes/origin/spec-evidence || true
@@ -494,7 +501,7 @@ PR. Reach for them deliberately — every escape hatch is a small honesty debt.
 | `:info` in either severity map                   | Workspace, durable             | You want the finding visible in local evidence and under `--verbose` but not in default output. |
 | `Spec-Drift: <code>=<severity>` git trailer      | One PR (any commit in the range) | Surgical, one-off downgrade for a specific PR. Cannot revive `:off`. |
 | `Spec-Drift: refactor`/`docs_only`/`test_only`   | One PR                         | Common shorthand for whole classes of low-risk changes. |
-| `mix spec.check --no-run-commands`               | One invocation                 | Local fast loop; CI should always run commands. |
+| `mix spec.check --no-run-commands`               | One invocation                 | Local fast loop, and the structural lane for untrusted fork PRs; run commands only after the revision is trusted. |
 | `mix spec.check --verbose` / `SPECLED_SHOW_INFO=1` | One invocation                 | Surface `:info` findings during debugging. |
 | `status: draft` on a subject                     | Subject                        | Spec is incomplete; verifier skips strict checks. Do not ship `draft` to main. |
 | `@tag spec_triangulation: :indirect`             | One test                       | Test deliberately exercises subjects other than the one it tags. |

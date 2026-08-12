@@ -5,6 +5,13 @@ Local helper package for Spec Led Development repositories.
 The commands make the most sense when you group them by job instead of reading
 them as one flat list.
 
+Guides:
+
+- [Adopting SpecLedEx](docs/adoption.md)
+- [Core concepts](docs/concepts.md)
+- [Coverage](docs/coverage.md)
+- [CI command-execution trust policy](docs/security.md)
+
 ## Session-Start Command
 
 Use this when you are entering a repository, handing work to an agent, or
@@ -31,6 +38,8 @@ These are the commands most maintainers should learn first:
   - runs the full local gate before you finish
   - updates derived state, validates current truth, and enforces branch coherence
   - enables `kind: command` execution by default; use `--no-run-commands` to opt out
+  - command targets are repository-authored shell; public repositories should
+    follow the [fork-PR CI trust policy](docs/security.md)
 
 ## Occasional Commands
 
