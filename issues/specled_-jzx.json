@@ -1,5 +1,5 @@
 {
-  "assignee": "",
+  "assignee": "Manuel Zubieta",
   "blocked_by": [],
   "blocks": [],
   "created": "2026-08-12T20:46:01Z",
@@ -7,8 +7,8 @@
   "id": "specled_-jzx",
   "labels": [],
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "title": "Replace Earmark with MDEx — it is retired on Hex and fails adopters mix hex.audit",
   "type": "task",
-  "updated_at": "2026-08-12T20:46:01Z"
+  "updated_at": "2026-08-12T20:54:19Z"
 }
