@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-12T14:28:31Z",
+  "description": "## Descoped from specled_-vzd.6 (Lint: long comment blocks in lib/realization must end in an ADR pointer, not restate the ADR)\n\nThe audit found the same false write/2/full-map description at orchestrator.ex:27 (@moduledoc) and :101 (@doc). These doc attributes are outside the ticket's line-comment corpus, and the amended contract explicitly forbids widening this lint to them. Review severity: High; three occurrences demonstrate recurring ADR drift.\n\n## Deliverable\n\nCorrect both doc-attribute clauses to state that refresh_and_commit_hashes/4 merges flat-tier hashes via HashStore.merge/2 while preserving non-flat sections. Verify both descriptions against specled.decision.silent_seed_batches_subject_graph and add or adjust focused documentation assertions only if the repository already has an appropriate seam.\n\n## Original Spec Reference\n\nSource ticket: specled_-vzd.6. Relevant implementation: lib/specled_ex/realization/orchestrator.ex. Governing ADR: .spec/decisions/specled.decision.silent_seed_batches_subject_graph.md, especially Decision 2. This follow-up does not advance specled.decisions.adr_reference_discipline because @moduledoc/@doc are intentionally outside its # comment-block surface.\n\n## Revisit When\n\nPick up after specled_-vzd.6 lands, when correcting realization documentation drift or next touching Orchestrator hash-refresh documentation.",
+  "id": "specled_-0vc",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Correct stale hash-refresh prose in Orchestrator docs",
+  "type": "bug",
+  "updated_at": "2026-08-12T14:28:31Z"
+}
