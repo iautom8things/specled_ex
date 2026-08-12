@@ -8,9 +8,15 @@
   "labels": [
     "phase:implementing"
   ],
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: c3ed9a14-f540-4a49-b103-918f232ff43a\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/c3ed9a14-f540-4a49-b103-918f232ff43a.jsonl\n\nCommit: 7353cb46\nFiles touched: lib/specled_ex/tag_scanner.ex, test/specled_ex/tag_scanner_test.exs, .spec/specs/tag_scanning.spec.md\nTests added: SpecLedEx.TagScannerTest \"scan_file/1 — for-comprehension bodies\" (4 tests: @tag inside for attaches to generated test; module/describe tags reach for-generated tests; non-literal @tag inside for reported as dynamic; for defining no tests contributes nothing)\nVerification stubs flipped: none (tag_scanning tagged_tests stub was already execute: true; its covers list gained specled.tag_scanning.for_comprehension_recursion)\nVerification tier: change-scoped — mix compile --warnings-as-errors, mix format --check-formatted, mix test test/specled_ex/tag_scanner_test.exs (26 tests), mix test --stale (1327 tests + 3 properties, 0 failures), mix spec.check --no-run-commands (result=pass, findings=0); full-system proof deferred to PR CI\nFinal-tier runs: 1\n\nSummary: TagScanner.process_statement/4 now has a {:for, _, _} clause that threads the tag accumulator through the comprehension's do-block, so the body is walked as the module-level statements it unrolls into at compile time — a @tag before the loop is consumed by the first generated test, one inside by the test that follows it, a trailing one survives past the loop. The body is walked once regardless of iteration count, because the tag map records presence of a carrier, not per-iteration multiplicity; describe_body_from_args was generalized to do_block_from_args + block_statements and shared with the describe path. Spec gains requirement specled.tag_scanning.for_comprehension_recursion, a matching scenario, and the id in the tagged_tests covers list; falsifiability confirmed by stashing the lib change (3 of 4 new tests fail without it).",
+      "timestamp": "2026-08-12T21:01:33Z"
+    }
+  ],
   "priority": 1,
   "status": "in_progress",
   "title": "TagScanner is blind to for-comprehension-generated tests — @tag spec: inside unrolled loops never reaches the tag_map",
   "type": "bug",
-  "updated_at": "2026-08-12T20:54:18Z"
+  "updated_at": "2026-08-12T21:01:33Z"
 }
