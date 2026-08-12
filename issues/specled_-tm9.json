@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-12T12:30:05Z",
+  "description": "Advances: specled.package\n\npriv/spec_init/agents/skills/spec-led-development/SKILL.md.eex:120 describes mix spec.status as \"Read-only.\" That is false: it executes enabled kind-command verification targets BY DEFAULT. This file is scaffolded by mix spec.init into every adopting repo, so specled ships the false belief to its users. Full evidence in the first comment.",
+  "id": "specled_-tm9",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "[BUG] Scaffolded SKILL.md.eex calls mix spec.status \"Read-only.\" — it executes repo-authored shell by default",
+  "type": "bug",
+  "updated_at": "2026-08-12T12:30:05Z"
+}
