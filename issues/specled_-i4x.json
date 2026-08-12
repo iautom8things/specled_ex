@@ -65,11 +65,15 @@
     {
       "text": "Squash-merged to main (0fec794b). Release 0.15.0. Post-merge Specs run watching.",
       "timestamp": "2026-08-12T21:16:10Z"
+    },
+    {
+      "text": "Closed. Shipped as PR #36 / release 0.15.0, squash-merged to main 0fec794b; post-merge Specs run green. All 16 leaves across scb/bg5/vzd closed and merged. Fast-follow epic specled_-dq7 carries dq7.1-dq7.7 from the critical review; specled_-4a6 updated with new CrossField evidence. Library, not an app — no deploy to health-check, so monitor-app was correctly skipped.",
+      "timestamp": "2026-08-12T21:22:16Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "[META-EPIC] Post-release fast-follow backlog: 0.11.0, 0.13.0, 0.14.0",
   "type": "epic",
-  "updated_at": "2026-08-12T21:16:10Z"
+  "updated_at": "2026-08-12T21:22:16Z"
 }
