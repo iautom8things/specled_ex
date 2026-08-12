@@ -47,6 +47,29 @@ defmodule Mix.Tasks.Spec.CheckTest do
     end
 
     @tag spec: "specled.tasks.check_verbose_flag"
+    test "default run prints self-authorized weakening info details", %{root: root} do
+      scaffold_self_authorized_weakening_fixture(root)
+
+      run_spec_check(root, ["--base", "HEAD~1"])
+
+      messages = drain_shell_messages()
+
+      assert message_contains?(
+               messages,
+               "findings=2 (error=0 warning=1 info=1, info hidden; --verbose to show)"
+             )
+
+      assert Enum.any?(messages, fn msg ->
+               String.contains?(msg, "[INFO]") and
+                 String.contains?(msg, "append_only/self_authorized_weakening") and
+                 String.contains?(msg, "billing.invoice") and
+                 String.contains?(msg, "billing.decision.retire_invoice")
+             end),
+             "default stdout must print the self-authorization marker detail; got: " <>
+               inspect(messages)
+    end
+
+    @tag spec: "specled.tasks.check_verbose_flag"
     test "--verbose prints :info findings on stdout", %{root: root} do
       scaffold_no_baseline_fixture(root)
 
@@ -225,6 +248,68 @@ defmodule Mix.Tasks.Spec.CheckTest do
       "lib/example.ex" => "defmodule Example do\n  def run, do: :ok\nend\n",
       "lib/orphan.ex" => "defmodule Orphan do\nend\n"
     })
+  end
+
+  defp scaffold_self_authorized_weakening_fixture(root) do
+    init_git_repo(root)
+
+    write_subject_spec(
+      root,
+      "billing",
+      meta: %{"id" => "billing.subject", "kind" => "module", "status" => "active"},
+      requirements: [
+        %{
+          "id" => "billing.invoice",
+          "statement" => "The system MUST emit an invoice on every charge.",
+          "priority" => "must"
+        }
+      ]
+    )
+
+    root
+    |> SpecLedEx.index()
+    |> SpecLedEx.write_state(nil, root)
+
+    commit_all(root, "initial billing contract")
+
+    write_subject_spec(
+      root,
+      "billing",
+      meta: %{"id" => "billing.subject", "kind" => "module", "status" => "active"},
+      requirements: []
+    )
+
+    write_decision(
+      root,
+      "billing.decision.retire_invoice",
+      """
+      ---
+      id: billing.decision.retire_invoice
+      status: accepted
+      date: 2026-08-12
+      affects:
+        - billing.invoice
+      change_type: deprecates
+      reverses_what: Invoice emission is no longer part of the billing contract.
+      ---
+
+      # Retire invoice emission
+
+      ## Context
+
+      Invoice emission is no longer required.
+
+      ## Decision
+
+      Remove the invoice requirement.
+
+      ## Consequences
+
+      Billing no longer promises an invoice for every charge.
+      """
+    )
+
+    commit_all(root, "retire invoice contract")
   end
 
   # Runs mix spec.check and treats an expected Mix.Error (when findings flip
