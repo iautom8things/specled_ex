@@ -11,9 +11,15 @@
     "phase:implementing"
   ],
   "parent": "specled_-bg5",
+  "comments": [
+    {
+      "text": "IMPLEMENTED\nSession: i4x-bg5.1\nLog: /Users/mz/.local/state/agentic-runs/specled_ex/specled_-bg5.1/codex-i4x-bg5.1/log\n\nCommit: f192c073e7a80be543119f0108de327a5d31bd63\nFiles touched: .spec/decisions/specled.decision.uniform_self_authorization_markers.md, .spec/specs/append_only.spec.md, lib/specled_ex/append_only.ex, test/specled_ex/append_only_test.exs\nTests added: SpecLedEx.AppendOnlyTest \"new authorizer wins over pre-existing authorizer regardless of decision order\"; SpecLedEx.AppendOnlyTest \"lexicographically first new authorizer wins deletion tie regardless of order\"\nVerification stubs flipped: none\nVerification tier: change-scoped — mix compile --warnings-as-errors; mix test test/specled_ex/append_only_test.exs test/specled_ex/branch_check_test.exs (61 tests, 2 properties); mix test --stale (1325 tests, 3 properties); mix format --check-formatted; mix spec.check --no-run-commands; full-system proof deferred to the merge gate / PR CI\nFinal-tier runs: 1\n\nSummary: Unified all four weakening detectors on an order-independent authorization selector that prefers new-in-diff ADRs and breaks same-newness ties by lexicographic ADR id. The amended subject contract and new ADR define one marker per requirement/class, while focused regression tests prove pre-existing masking and deletion-path last-write-wins attribution are eliminated.",
+      "timestamp": "2026-08-12T11:57:20Z"
+    }
+  ],
   "priority": 2,
   "status": "in_progress",
   "title": "F1: self-auth marker emission is weakening-class/order-dependent — design decision needed",
   "type": "task",
-  "updated_at": "2026-08-12T11:48:08Z"
+  "updated_at": "2026-08-12T11:57:20Z"
 }
