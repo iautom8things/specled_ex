@@ -35,8 +35,8 @@ deps: ## Install dependencies
 format: ## Format the project
 	mix format
 
-test: ## Run the test suite
-	mix test
+test: ## Run the test suite (TEST=path[:line] for a targeted run)
+	mix test $(TEST)
 
 compile: ## Compile with warnings-as-errors
 	mix compile --warnings-as-errors

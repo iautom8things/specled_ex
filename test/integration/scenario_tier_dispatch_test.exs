@@ -37,7 +37,7 @@ defmodule SpecLedEx.Integration.ScenarioTierDispatchTest do
     """)
 
     {:ok, _mods, _warns} =
-      Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir, return_diagnostics: true)
+      SpecLedEx.FixtureCompiler.compile_to_path_with_debug_info([source_path], tmp_dir)
 
     :code.add_patha(String.to_charlist(tmp_dir))
 
@@ -112,6 +112,68 @@ defmodule SpecLedEx.Integration.ScenarioTierDispatchTest do
 
       # Severity must resolve to :warning per @per_code_defaults for this code.
       assert drift["severity"] == "warning"
+    end
+
+    @tag spec: "specled.api_boundary.path_divergence_finding"
+    test "divergence finding dispatches at :warning default severity", %{root: root} do
+      mfa = "SpecLedEx.TierDispatchFixture.Mod.foo/1"
+
+      init_git_repo(root)
+      seed_repo(root)
+
+      write_subject_spec(root, "dispatch",
+        meta: %{
+          "id" => "dispatch.subject",
+          "kind" => "module",
+          "status" => "active",
+          "surface" => ["lib/dispatch.ex"],
+          "realized_by" => %{"api_boundary" => [mfa]}
+        },
+        requirements: [
+          %{"id" => "dispatch.req", "statement" => "x", "priority" => "must"}
+        ]
+      )
+
+      commit_all(root, "seed subject + fixture")
+
+      # Source-labeled baseline vs the beam-resolving fixture -> divergence,
+      # resolved through the full BranchCheck severity pipeline. Pins the
+      # per-code default (:warning) the requirement names as a must.
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "source-envelope"), case: :lower),
+              "hasher_version" => HashStore.hasher_version(),
+              "resolved_via" => "source"
+            }
+          }
+        })
+
+      index = Index.build(root)
+
+      report =
+        BranchCheck.run(index, root,
+          base: "HEAD",
+          commit_realization_hashes?: false
+        )
+
+      findings = report["findings"] || []
+
+      divergence =
+        Enum.find(findings, fn f ->
+          f["code"] == "branch_guard_resolution_path_divergence" and f["tier"] == "api_boundary"
+        end)
+
+      assert divergence != nil,
+             "expected divergence finding, got:\n" <> inspect(findings, pretty: true)
+
+      assert divergence["mfa"] == mfa
+      assert divergence["severity"] == "warning"
+
+      refute Enum.any?(findings, fn f ->
+               f["code"] == "branch_guard_realization_drift" and f["mfa"] == mfa
+             end)
     end
 
     test "emits branch_guard_dangling_binding for an unresolvable api_boundary MFA",

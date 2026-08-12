@@ -22,9 +22,14 @@ defmodule SpecLedEx.Realization.Binding do
   alias SpecLedEx.Compiler.{Context, Manifest}
 
   @type mfa_ref :: {module(), atom(), non_neg_integer()}
+
+  # The BEAM path returns a `{fun, arity, clauses}` triple whose middle element
+  # is an integer, so it is not a `Macro.t()`. Naming it keeps `resolution` and
+  # `resolution_path/1` honest about the shape they actually carry.
+  @type beam_clauses :: {atom(), arity(), [Macro.t()]}
+  @type resolved :: Macro.t() | beam_clauses() | {:module, module()}
   @type resolution ::
-          {:ok, Macro.t()}
-          | {:ok, {:module, module()}}
+          {:ok, resolved()}
           | {:error, :not_found, map()}
   @type path_aware_resolution ::
           {:ok, Macro.t(), Path.t() | nil}
@@ -119,6 +124,32 @@ defmodule SpecLedEx.Realization.Binding do
         {:error, :not_found, %{mfa: mfa, reason: :invalid_mfa, searched: []}}
     end
   end
+
+  @doc """
+  Classifies a successful `resolve/2` result by the resolution path that
+  produced it.
+
+  The result shape is unambiguous: BEAM debug_info extraction returns a
+  `{fun, arity, clauses}` triple (`clauses_ast/3`), the source fallback
+  returns a `def`-family quoted AST, and bare-module bindings require a
+  loadable module. The two paths canonicalize to structurally different hash
+  envelopes (specled_-n5q.1), so consumers record this classification alongside
+  committed hashes and only compare hashes produced by the same path.
+
+  The function is total by construction: it is called only on the success arm
+  of `resolve/2`, and the two `:beam` clauses match that arm's only two beam
+  shapes. The final clause is a catch-all, so any other term — including one
+  that never came from `resolve/2` — classifies as `:source`. Callers must not
+  rely on that to validate input; it is a classifier, not a guard.
+  """
+  @spec resolution_path(resolved()) :: :beam | :source
+  def resolution_path({:module, mod}) when is_atom(mod), do: :beam
+
+  def resolution_path({fun, arity, clauses})
+      when is_atom(fun) and is_integer(arity) and is_list(clauses),
+      do: :beam
+
+  def resolution_path(_source_ast), do: :source
 
   @doc """
   Path-aware sibling of `resolve/2`.

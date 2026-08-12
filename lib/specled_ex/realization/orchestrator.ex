@@ -195,7 +195,13 @@ defmodule SpecLedEx.Realization.Orchestrator do
     # become the committed baseline. A dangling binding is a genuine error, not
     # intentional drift — it still blocks the refresh, so no baseline moves on a
     # run that exits `fail`. See `specled.realized_by.drift_acceptance`.
-    if commit_hashes? and not umbrella? and
+    #
+    # Resolution-path divergence blocks the refresh in BOTH branches
+    # (specled_-n5q.1): a diverged run is hashing through the source-AST
+    # fallback on an uncompiled tree, and refreshing would overwrite
+    # beam-hashed baselines with structurally different source hashes. That is
+    # never intentional drift — the remedy is to compile, not to accept.
+    if commit_hashes? and not umbrella? and not has_divergence?(findings) and
          ((accept_drift? and not has_dangling?(findings)) or not has_drift?(findings)) do
       refresh_and_commit_hashes(bindings_by_tier, context, root)
     end
@@ -391,7 +397,8 @@ defmodule SpecLedEx.Realization.Orchestrator do
     Enum.reduce(findings, MapSet.new(), fn finding, acc ->
       code = Map.get(finding, "code") || Map.get(finding, :code)
 
-      if code == "branch_guard_realization_drift" or code == "branch_guard_dangling_binding" do
+      if code == "branch_guard_realization_drift" or code == "branch_guard_dangling_binding" or
+           code == "branch_guard_resolution_path_divergence" do
         sid = Map.get(finding, "subject_id") || Map.get(finding, :subject_id)
         mfa = Map.get(finding, "mfa") || Map.get(finding, :mfa)
 
@@ -468,17 +475,38 @@ defmodule SpecLedEx.Realization.Orchestrator do
         end)
       end)
 
-    # Post-concat dedup: api_boundary tier only. The implication amplifies
-    # bindings across layers (subject impl + requirement impl both inflate the
-    # api_boundary list with the same MFA). Stable order means subject-layer
-    # entries precede requirement-layer entries; uniq_by keeps the first-seen.
-    # Other tiers are intentionally untouched — drift findings on the same
-    # MFA from independent requirement_ids still convey distinct provenance.
+    # Post-concat dedup: api_boundary tier only, and amplification-scoped
+    # (specled_-n5q.2). The implication expansion can inject the same MFA at both
+    # the subject and requirement layers, so INFERRED entries dedupe on MFA
+    # and yield entirely to any authored entry sharing their MFA. AUTHORED
+    # entries are never collapsed by MFA — independent requirements binding
+    # the same function keep distinct provenance, the philosophy the other
+    # tiers already follow — only exact {subject, requirement, mfa}
+    # duplicates drop. The former whole-list `uniq_by(& &1.mfa)` kept the
+    # first-seen entry, and stable subject-before-requirement order made that
+    # the subject-layer INFERRED entry: it shadowed authored requirement
+    # bindings (381 across 31 subjects in the reporting adopter), and because
+    # the api_boundary detector suppresses dangling findings for inferred
+    # entries, a nonexistent authored MFA produced zero findings corpus-wide.
     if Map.has_key?(bindings, :api_boundary) do
-      Map.update!(bindings, :api_boundary, &Enum.uniq_by(&1, fn entry -> entry.mfa end))
+      Map.update!(bindings, :api_boundary, &dedupe_api_boundary/1)
     else
       bindings
     end
+  end
+
+  defp dedupe_api_boundary(entries) do
+    {inferred, authored} = Enum.split_with(entries, &Map.get(&1, :inferred?, false))
+
+    authored = Enum.uniq_by(authored, &{&1.subject_id, &1.requirement_id, &1.mfa})
+    authored_mfas = MapSet.new(authored, & &1.mfa)
+
+    inferred =
+      inferred
+      |> Enum.uniq_by(& &1.mfa)
+      |> Enum.reject(&MapSet.member?(authored_mfas, &1.mfa))
+
+    authored ++ inferred
   end
 
   # Apply the one-way `implementation ⟹ api_boundary` implication to a
@@ -669,6 +697,13 @@ defmodule SpecLedEx.Realization.Orchestrator do
     Enum.any?(findings, fn f ->
       code = Map.get(f, "code") || Map.get(f, :code)
       code == "branch_guard_dangling_binding"
+    end)
+  end
+
+  defp has_divergence?(findings) do
+    Enum.any?(findings, fn f ->
+      code = Map.get(f, "code") || Map.get(f, :code)
+      code == "branch_guard_resolution_path_divergence"
     end)
   end
 
@@ -929,18 +964,28 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # Orchestrator-internal (`@doc false`): public only for testability.
   @doc false
   def api_boundary_hashes(bindings, context) do
+    # Hash once per distinct MFA: the output map is MFA-keyed, so duplicate
+    # entries (independent requirements sharing a binding survive the
+    # amplification-scoped dedupe) would just recompute identical values —
+    # and source-fallback resolution is a File.read + parse per call. The
+    # DETECTOR must keep the multiplicity; only the hashing collapses it.
+    bindings = Enum.uniq_by(bindings, & &1.mfa)
+
     Enum.reduce(bindings, %{}, fn %{mfa: mfa}, acc ->
       case Binding.resolve(mfa, context) do
         {:ok, {:module, mod}} ->
-          # Bare module under api_boundary — head-union envelope.
+          # Bare module under api_boundary — head-union envelope. Loadability
+          # is a precondition, so the resolution path is definitionally beam.
           case Canonical.hash_module_head_union(mod) do
-            {:ok, hash_bin} -> Map.put(acc, mfa, hash_entry(hash_bin))
+            {:ok, hash_bin} -> Map.put(acc, mfa, hash_entry(hash_bin, :beam))
             _ -> acc
           end
 
         {:ok, ast} ->
+          # Label the entry with the path that produced the hash so the
+          # detector only compares same-path hashes (specled_-n5q.1).
           hash_bin = ApiBoundary.hash(ast)
-          Map.put(acc, mfa, hash_entry(hash_bin))
+          Map.put(acc, mfa, hash_entry(hash_bin, Binding.resolution_path(ast)))
 
         _ ->
           # Dangling: do not seed. Detector will emit dangling on the run.
@@ -960,11 +1005,18 @@ defmodule SpecLedEx.Realization.Orchestrator do
     end)
   end
 
+  # The other flat tiers (expanded_behavior, typespecs, use) hash via BEAM
+  # introspection only — no source fallback exists there — so their entries
+  # stay unlabeled and hash_entry/1 remains their constructor.
   defp hash_entry(hash_bin) do
     %{
       "hash" => Base.encode16(hash_bin, case: :lower),
       "hasher_version" => HashStore.hasher_version()
     }
+  end
+
+  defp hash_entry(hash_bin, resolved_via) when resolved_via in [:beam, :source] do
+    Map.put(hash_entry(hash_bin), "resolved_via", Atom.to_string(resolved_via))
   end
 
   # ---------------------------------------------------------------------------

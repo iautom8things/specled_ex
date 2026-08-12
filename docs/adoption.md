@@ -46,6 +46,7 @@ The full set of branch-guard codes `mix spec.check` gates on:
 |------------------------------------------------|-----------------------------------------------------------|
 | `branch_guard_realization_drift`              | Bound MFA hash changed without the spec acknowledging    |
 | `branch_guard_dangling_binding`               | `realized_by:` names an MFA the compiler cannot resolve   |
+| `branch_guard_resolution_path_divergence`     | Baseline hash and current head were resolved via different paths (beam vs source-AST fallback) — incomparable, usually an uncompiled tree |
 | `branch_guard_requirement_without_test_tag`   | New `must` requirement has no backing `@tag spec:`        |
 | `branch_guard_unmapped_change`                | Changed file does not belong to any subject's surface     |
 | `branch_guard_missing_subject_update`         | Changed file sits in a subject's surface but that subject's spec did not change |

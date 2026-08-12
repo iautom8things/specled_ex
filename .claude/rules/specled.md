@@ -101,5 +101,10 @@ If a requirement is wrong (impossible, contradictory, or misunderstood):
   absorbs realization drift between branches. On conflict, prefer the side
   whose branch legitimately changed the named bindings, or keep both entries
   when different bindings moved on each branch.
+
+  One exception: a conflict where the only difference is the presence of a
+  `resolved_via` key (one side labeled, one side not) is not drift — it is
+  one side having run a newer specled. Take the LABELED side. Losing the
+  label silently reverts that entry to legacy comparison semantics.
 - For diff and review purposes the source of truth is `.spec/specs/*.spec.md`,
   the code, and the tests.

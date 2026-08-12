@@ -2,695 +2,868 @@
   "api_boundary": {
     "Mix.Tasks.Spec.Check": {
       "hash": "1ce1de5bb6a0e0d062d50a4eb6c7974fb523ce5588323639fd53a74337119c0c",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "Mix.Tasks.Spec.Check.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "Mix.Tasks.Spec.Cover.Ingest.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "Mix.Tasks.Spec.Cover.Test.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "Mix.Tasks.Spec.Decision.New.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "Mix.Tasks.Spec.DedupRealizedBy.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "Mix.Tasks.Spec.Evidence.InstallHook.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "Mix.Tasks.Spec.Evidence.Migrate.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "Mix.Tasks.Spec.Index.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "Mix.Tasks.Spec.Init.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "Mix.Tasks.Spec.Next.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "Mix.Tasks.Spec.Prime.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "Mix.Tasks.Spec.Prune.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "Mix.Tasks.Spec.Status.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "Mix.Tasks.Spec.SuggestBinding": {
       "hash": "a7005f2357d30f46cc35f11fb1cf72fa2b861f2d976b1599d0dfe1fe25e07105",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "Mix.Tasks.Spec.Sync.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "Mix.Tasks.Spec.Triangle.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "Mix.Tasks.Spec.Validate": {
       "hash": "cbb662e7a5572cf96a489271efe2b5acd36e0bc6d458e1e0dd439e90dc60c54e",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "Mix.Tasks.Spec.Validate.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.AppendOnly.analyze/4": {
       "hash": "dfab9ebdcb644d34bed667a28423040c6e3575e42f15e55c115abca2dc26e99e",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.BranchCheck.Severity": {
       "hash": "7660012516f492a9b08320ba172802626a0d61191d909cdfb1be8d1f51e26e8d",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.BranchCheck.Severity.resolve/3": {
       "hash": "5274689ca74cf07e26f57b5a27044a2b7e93592331004939153eed94211decd4",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.BranchCheck.Severity.sanitized/3": {
       "hash": "4b50e3616d87752b446bd06da484d5ca4f6daea2e89b3dc9bf335382d04dcc7c",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "source"
     },
     "SpecLedEx.BranchCheck.Trailer.apply_pair/2": {
       "hash": "a1d5f0de52b2b170c93f398f802a4bcba2631b19834dc089bfa9ca3f59f1a79f",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "source"
     },
     "SpecLedEx.BranchCheck.Trailer.apply_token/2": {
       "hash": "25c4ec447e729e21d4897952318a9edc3a165dafa0e2574bded1d9c564711423",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "source"
     },
     "SpecLedEx.BranchCheck.Trailer.parse/1": {
       "hash": "3513ed0863b7c2d4f08df2e2ae5f750807684911a4894aa3410022384b47914e",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.BranchCheck.Trailer.read/2": {
       "hash": "e7904addec34b671274a1a3d300be8961744ef98730790f789c398a30f037f83",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.BranchCheck.run/3": {
       "hash": "5aa09417ee10b1d22f9d0284babdf2d209c06db59f02d903f5c747d5f02e1244",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Case": {
       "hash": "b6f29877fd434fa85570fdcc5c51477f8ccc4dfde030870f8ed5553eb3663b19",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.ChangeAnalysis.analyze/3": {
       "hash": "82a11f36dbf7d15fe5b3b42cb805a1e1dae45e6d9f0b8be7a5e944db25707d8e",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Compiler.Context.load/1": {
       "hash": "4a490e1e53c68b68ebe1fc46f808aff79d2e76af62e2facf1a7ddd9175f5d175",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Compiler.Manifest.load/1": {
       "hash": "f817dd5b149ea98b1853d0743c426082dc043bcb0b967008a80ddec4f5eb5e7d",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Compiler.Manifest.sources_for/2": {
       "hash": "b20f9424c81fa721f3be442f76c8f45673dd7e6353054afa7bc13c1ac7f2bd89",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Compiler.Tracer.ensure_table/0": {
       "hash": "e3c8c92c2e210773905c121d33e28567a626056388002438ec364cc0a7ed8013",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Compiler.Tracer.manifest_path/1": {
       "hash": "4a61c9b73eb4a2790df25a7253c2d8461d9a2bb31e9ba0721bb14bf995c7b949",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Compiler.Tracer.trace/2": {
       "hash": "3f24116dc67314bc72a107f7385cfbccade37abcf085b6ff4bab118ab1648cac",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Compiler.Xref.load/1": {
       "hash": "4a490e1e53c68b68ebe1fc46f808aff79d2e76af62e2facf1a7ddd9175f5d175",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Compiler.Xref.parse/1": {
       "hash": "23ae84ae40a59e1fc1882b1638eba2e2cea65b0c3f8eb6ce0d376af960a4bc30",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Config.BranchGuard": {
       "hash": "46f1171cd947c6438154b0a11f5f0afac71d46a256ad4ca5e7c45f6d846b3205",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Config.Guardrails.parse/1": {
       "hash": "9a62f5afdadcb8842e88911a1b311c3bc91b27df3b6775c1bc96f655a227bbf3",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Config.Prose.findings/3": {
       "hash": "2205c33223bbfbc727526be3648279b514a63caeb390baff19bccdb29b392d25",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Config.Prose.parse/1": {
       "hash": "9a62f5afdadcb8842e88911a1b311c3bc91b27df3b6775c1bc96f655a227bbf3",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Config.Realization.parse/1": {
       "hash": "9a62f5afdadcb8842e88911a1b311c3bc91b27df3b6775c1bc96f655a227bbf3",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Config.build/1": {
       "hash": "0be5951d175fa59db44d4b8a00a7d71f1fb1dc423d98f0262940beb63a95e472",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "source"
     },
     "SpecLedEx.Config.build_test_tags/1": {
       "hash": "3ceb937d96f2ad0108ed2f99f83a0e6b1fb9de597d4ce677671462d478199ff4",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "source"
     },
     "SpecLedEx.Config.defaults/0": {
       "hash": "0a42bb538f416784220e75e793092b92f39aeb44f7f358d08db20ea4c9a733e8",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Config.load/2": {
       "hash": "df0c26931fc8ecb913709a9a1cd0c988b0d2e0a8b8691fd99180852168bcc6b3",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Config.parse/1": {
       "hash": "6b46bf247915736b8758adfce4f63eca6532882ba72ef6d30f70ca0b83a07354",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "source"
     },
     "SpecLedEx.Config.parse_enforcement/2": {
       "hash": "7d219f6893e20fefdd5bf80ab841782be04b5d7dba1cca6a458b5ad4c2772a76",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "source"
     },
     "SpecLedEx.Coverage": {
       "hash": "87f3afb6586456a9d5cd3999b52f8d05047e78e9a7f7d497eb99dd206258563d",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Aggregate.ingest/2": {
       "hash": "193f4e4b6a5e308e5fc832e940be940ed30f033bfe7aa614f87631b4212adf07",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Arming.resolve/1": {
       "hash": "9b353bda119316099d5cbcd3277bf0e2b87340fe0f636022820792bab049e333",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Boundary.head/1": {
       "hash": "4f48980ece314fa72c7970c84295376ad95ad2374d84727aeac6dce74df38eb5",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Boundary.tail/2": {
       "hash": "43d94bc9610a5099e87609127dee012045a88ba4154cc281ffbf906ea32d2231",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Formatter": {
       "hash": "918463ee2e8866f51302a1581b6dad1a92175d5e2e19854fc7db7a615f3bbf1d",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Formatter.init/1": {
       "hash": "d57f6ca9e4acd4a81e89d081d307b5a06fd530a1e3f5a22781c4651dfa0d288d",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.MfaKey.format/1": {
       "hash": "76cb8f3cafb9a3b549e1e182359a791ea42fc2cce53442fcd70a120e38fd6bb4",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.MfaKey.parse/1": {
       "hash": "91c2678b0d75ad03bed24765f408db8c92bee6c242d3a7a103f7e9fa408f8225",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.MfaLines.index/1": {
       "hash": "1cc3de28fe53b2f8b095767c95e1fe837230b816f6119c4c6e46514e3bfec99c",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Snapshot.classic_snapshot/1": {
       "hash": "7c9cb9429e35caa3bba34332a472f0fde1bfb61da9cc13874dc4e2ead8837088",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Snapshot.diff/2": {
       "hash": "14662a7b446c81bd2422516ac9363f3c0cf8a7d94b3354d4b5a20cf68e662090",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Snapshot.native_snapshot/1": {
       "hash": "54d292b1b5b5c80b36b14501051f03c3fed8b638406e281167595ab835043a4b",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Snapshot.runtime_mode/0": {
       "hash": "f38162438211d7a923a8ba5b6923284104df1e7f7d705edd77e730b11a5b6a22",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Snapshot.scope_modules/0": {
       "hash": "b8cadc4f52408d09a24e33c50096698fab08cef76c63f6e6dcd381372b68f19f",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Snapshot.take/2": {
       "hash": "c7a5f562b8d04d8204471c5208c4dbea0c9d3cdeab2cfe9b548f31ee7ac37f21",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Store.build_envelope/1": {
       "hash": "7daa9a18d71f55cc976e5d8b9656dda7de9ec634f662b2572549c5d81027904c",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Store.build_records/1": {
       "hash": "ba61d4783a31c2b0d1c7ab3678f22981113e56eba6a1c9dfee88f0ac370eb896",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Store.load/1": {
       "hash": "46cd33f2fd0e8bb27f0eea47d91be518cae2006fc826ce939bbdaad7cc463c5d",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Store.read/1": {
       "hash": "0da17832dc52f898875e2b32b49043a85784a11f26537799eb205f66c3895d8d",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Store.read_status/1": {
       "hash": "4bf8292c8cfc2c87989a3af16cb6ad944d95771b115805daeb9123be1bc1ba0d",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Store.read_v2/1": {
       "hash": "3f70ea38738fa46892a1983f13e2f5f8443a4508f01b1a68d68c331aa94efdcd",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Store.write/2": {
       "hash": "516cc362f7630e717a575cdf28d3a962ecb1f0c8299867efd3b51a408dc5c098",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.Store.write_v2/2": {
       "hash": "158010539660738e3ec833d787a8b2329d90ea5cda5152e88297ee33168b74c1",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.category_summary/3": {
       "hash": "cf9f629eafb1a0fd47620dde3c3b7500c674235f300dc2ae486794ab2109a2e7",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.cover_modules_safe/0": {
       "hash": "cf8fe59a6dd33c91edae898ef14e3286d46b489a38a5e0e68aedddd2252371e2",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.covered_files/2": {
       "hash": "c3292795b666c95fa072ce587c8835b3980fa1a834cfc28f70bef51e0fa80916",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.default_artifact_path/0": {
       "hash": "3d3e62d00fd461b4d26859e968056caa1963a392f83ecae6c540823f3f1b27a1",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.init/2": {
       "hash": "23f3a8be9287cc36731fa32e49c11f04cf1e4011156b0b54875025575a4b3f59",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.install/1": {
       "hash": "9ca6bcbf10b5f30b94efee7f2f33a986928d56cc7b9dada303972017a2cba1fd",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.per_test_boundary/1": {
       "hash": "8014b7d9058ec51a0c409259a531dff00b6911a693e35fd8e5e9d44e8a31bc62",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.subject_file_map/2": {
       "hash": "7ec955535b921da5e209e7f5a5cc3b0213350331eaa36f885164aae7ce558188",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Coverage.subject_id/1": {
       "hash": "2c7b1f35af4b91a8088719fbc6879275c83be7c8e42194c45d621288213ed436",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.CoverageTriangulation.aggregate_requirement_reach/2": {
       "hash": "ff21baf348d1aa93d4dc32b5bca1c23e3deae3a84315fffd5f315275a2b4af8b",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.CoverageTriangulation.envelope_findings/3": {
       "hash": "a2e0b8413312cd8d72d9c2fee2046d6d104ceeacbcdffbfd7170648f33546147",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.CoverageTriangulation.execution_reach_map/2": {
       "hash": "badc145c6c8739cb563edc8710ba37c35bab579c3431854c8e7b64d8e5b55d05",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.CoverageTriangulation.findings/3": {
       "hash": "c6f188765774c6065db4ba3ef72be0fb807f4d43166ab0fbd4eae8dff5e5b0e8",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.CoverageTriangulation.per_test_requirement_reach/3": {
       "hash": "7293df6bcd43ad866424a1147d1eccf9742e9c0e90a39ed3fa06bff1453dcf4e",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.DecisionParser.CrossField.validate/3": {
       "hash": "3b7a8899bdf3a75c7b86b549cba511af77e2c39b37f67be3f051e63dea82a847",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.DecisionParser.parse_file/4": {
       "hash": "d43add190cd91dd47bc08aa113581b6ea59da8e5c7c6e24d08834e660cac8fe0",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Index.build/2": {
       "hash": "d4071cf59d347d9e55af730403c8cb464f503ab845c4304bb2bc5d2213bf6edf",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Json.encode_to_iodata!/1": {
       "hash": "65a445f18c74988b58dcc0a5403391a0d8c7ad95f10bfd085ed6f8a711e91645",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Json.write!/2": {
       "hash": "fb2dd5d43d487f13094124598a9133c111658e4aea96143d1cc5f4836cf1cc6b",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.MixRuntime.ensure_started!/0": {
       "hash": "0b609d434874220269ab12c19d0100930ea45c48ce603486ba64d3cae24c2203",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.ModalClass.classify/1": {
       "hash": "7d651dd18af95d181ac9a0a9d293072eccf4854b30f2bc91294df9d9b64846bd",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.ModalClass.downgrade?/2": {
       "hash": "82677735b6613b69ba6fe55a98a513997d69b492773d6bb265b422f78ae22eda",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Next.run/3": {
       "hash": "5aa09417ee10b1d22f9d0284babdf2d209c06db59f02d903f5c747d5f02e1244",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Overlap.analyze/2": {
       "hash": "6998220275ca25faf604dbbb87c685cd2c10a05a7f945ed54a689932607378c8",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Parser": {
       "hash": "73023a2e888e74d3b229c4ee85a65037908a0a2679c7a7dff94943944941ba1c",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Parser.parse_file/2": {
       "hash": "1a5e894be452e4e383344f93a0d338d2778c3a5a658a8a72c7a23b835a6f3e71",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.PolicyFiles.classify/1": {
       "hash": "04fb29dc74c21d3c4bae8f909745014c24cedeb43876ea927470f4246d8984cc",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.PolicyFiles.co_change_rule/1": {
       "hash": "32ef413dd18e8caeebefa5161a58bf3758098648991c94700028bce8a235387b",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Prime.build/4": {
       "hash": "4aeb5f587ebf557fb7bd821ce0993d36132f0feb549b684dc4ea17df5ad1c800",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Prime.format_human/1": {
       "hash": "10a70b5a1361e0f5d32064408caff6f59a1df5f273cf2643eb78824f0891554c",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.ApiBoundary.hash/2": {
       "hash": "ffa599d793833673fef3531fe516f6ffaec6044f0a9894b95f073b9eeac15b43",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.ApiBoundary.run/1": {
       "hash": "ec7cf8416376ddaa577a87a90f1f619fb6ab66a34218d2addba121f15405dbcf",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.Binding.resolve/2": {
       "hash": "b6a0e906aef4ee6bd8b322f1223d4ebd2cbf6fff85e143480d7ec9bf950f1671",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.Canonical.hash/1": {
       "hash": "7383119575f06e2e099e2a7f72d81d2edd4e0378a4c441f84fad56e50e65259b",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.Canonical.hash_module_full_union/2": {
       "hash": "98ec17f0ca1f67690cafa0fe857af8a861befaeb761c9c59cc913a3a13e78c9b",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.Canonical.hash_module_head_union/2": {
       "hash": "caf3234060b10e15c8a94550c32a6a5edf22ff38dd7c5298ea1d7b4f2523aa7b",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.Canonical.normalize/1": {
       "hash": "e4fe248c3e6e5949a952e5772478f627cae144266799844ab30bd06a056d48d3",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.Closure.compute/2": {
       "hash": "d29e17c1660652bf056b3be6ff29f693ae76209e6ce6578dad2014429a13c459",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.Closure.subject_for_mfa/2": {
       "hash": "295e9d3172f38f217bfd9ed41a347d93909b51a0a85cd2d328b0bdd4b922cda6",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.Drift.dedupe/2": {
       "hash": "a3400811999c865108bbe65c556ea80db31a581a1f3920f163942eb1c359da18",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.EffectiveBinding.expand_implications/1": {
       "hash": "defa2a3e241ba8a5dfac8dd9e393f367f1de711954e37f10df5cae12c7ed0caa",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.EffectiveBinding.for_requirement/2": {
       "hash": "ead0de431cdc01fbcb9b92cd38bde428d91f0f358cb2e55af7e8f71eb6b6b359",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.ExpandedBehavior.hash/2": {
       "hash": "43c7c9e0fd057b163950a8ffebd3625226948a7a9daee188052c83aa159794f7",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.ExpandedBehavior.run/3": {
       "hash": "5aa09417ee10b1d22f9d0284babdf2d209c06db59f02d903f5c747d5f02e1244",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.HashStore.merge/2": {
       "hash": "49ff510ce99af9e03b83a4016fb439e0982cf7bbdb1467931b2771e3d4dc6ee3",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.HashStore.read/2": {
       "hash": "0860e21ba66d705b5ee76e70a943bad389fe961fb96a0125fdb9d38315d43063",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.HashStore.write/2": {
       "hash": "e5761fea5c676e737ae0a4776257d78d8fb618b4968a3e9060cf4790139b6bb0",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.Implementation.hash_for_subject/3": {
       "hash": "e594ca56001035b51163800aeb7984da45e2c714c265b661d17f4e55d8afdc8c",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.Implementation.hashes_for_seeding/3": {
       "hash": "d359e4235a31405c4509182d9a5e782ab5c0e7336fe4e617fe29633ef3a0a1f7",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.Implementation.run/4": {
       "hash": "32c2b226d07434d7ab3f979da1303f92fdc3f49fbe1852aeb19738185192faf5",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.Orchestrator.run/2": {
       "hash": "189fb7cac9a7d22e8e8a148d0bb8d796c4ba03569d5443b72b08d56ab51ee8e2",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.Typespecs.hash/2": {
       "hash": "43c7c9e0fd057b163950a8ffebd3625226948a7a9daee188052c83aa159794f7",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.Typespecs.run/3": {
       "hash": "5aa09417ee10b1d22f9d0284babdf2d209c06db59f02d903f5c747d5f02e1244",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.Use.consumers_for/2": {
       "hash": "a945156fbf3131f89202641d7421eca81b96df2d5523c1f0ec79feeb2d9b3527",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.Use.hash/2": {
       "hash": "d44920003973e7efe0fa3cf923450036a0f33cc114dd5e7cf4a1ddc82e0ab50c",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Realization.Use.run/3": {
       "hash": "5aa09417ee10b1d22f9d0284babdf2d209c06db59f02d903f5c747d5f02e1244",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Review.CoverageClosure.build_v2/2": {
       "hash": "580cdf1173a2c1554bfec7ab67dd166403f333e190c3c890bf415ec903057e61",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Schema.Decision": {
       "hash": "d651e0eb0b26e18a41bc3f9b94cb409bcb37dcac8c9748c4f70017f89310881c",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Schema.Exception": {
       "hash": "b730269fae76851b42134b66b0659ed63543c144b2e5e210ff647b458642b344",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Schema.Id.id/0": {
       "hash": "28a04a5e38f6766790d4ca4fe10f7b3ba08f54ccc7e77d8bdecd8dfcc74c4531",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Schema.Meta": {
       "hash": "67f1d07b8806debd0c41c2d54c4ef52476c6fb8130707a4f16b8a906b8a49c2c",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Schema.RealizedBy.validate/1": {
       "hash": "971a066044b2b076e4e24270916878bb29194c96f8fb82c51f7a8f4104fd12b7",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Schema.Requirement": {
       "hash": "8d64553ec9208bbdde4fa264b29f2662451bd395b85da5a66a5934483de1244c",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Schema.Scenario": {
       "hash": "c7044709e17c79b0f9eec7e48a1a0958a526b5aa4c38680707be0d6910d55c9c",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Schema.Verification": {
       "hash": "9eec9885299ea57e0e20271b8a89eef116bbd0d30c91bd4f899f973cd625e795",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Schema.maybe_normalize_realized_by/2": {
       "hash": "82301779261115891b5fec19c79be29884f9a1a8c7fd2459c11b57179085162e",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "source"
     },
     "SpecLedEx.Schema.normalize_realized_by/1": {
       "hash": "77017009806bef7b29a4aa0a0bac1a55ed16a7edb04472a1dc178bcdc3a79a4b",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "source"
     },
     "SpecLedEx.Schema.validate_block/2": {
       "hash": "12b709c2a74a863b4b5b6030a8ffd4ccbb055d818a4c8e13ed730997da128c0d",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Status.build/3": {
       "hash": "a7d4cbab1a681545553404ff010aadec72828e609e9a66d1486fce0ff27fb123",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Status.format_human/1": {
       "hash": "10a70b5a1361e0f5d32064408caff6f59a1df5f273cf2643eb78824f0891554c",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.TagFindings.findings/1": {
       "hash": "e400d7fe15f919ba37000988337d319cd52e35ab69bd27f2173f83eb285d37e3",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.TagScanner.collect_moduletags/2": {
       "hash": "c9bdf19ee92d4eed506f87a2bec84c98c3fe8866ac14d23f55a4b1c30ec0f7c3",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "source"
     },
     "SpecLedEx.TagScanner.extract_module_tags/2": {
       "hash": "d6b39d0484497d7f52e5af9d348af9d2f1f75aacba27fb945d25682823b1adae",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "source"
     },
     "SpecLedEx.TagScanner.extract_spec_from_arg/1": {
       "hash": "6734a3ffbf609eff1ac8bc5cc9af2fef89dd68e2f9e58e9e6c90f715f39f64a1",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "source"
     },
     "SpecLedEx.TagScanner.resolve_spec_value/1": {
       "hash": "5ec30c6594d30245f7aed53aa9a095f1cee3c1c19906d30b7c3a9ab0683ee623",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "source"
     },
     "SpecLedEx.TagScanner.scan/2": {
       "hash": "8c1c0ebb14dd9aed30db5382d138b33d836316ce9dc433aaf463c38fa0999954",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.TagScanner.scan_file/1": {
       "hash": "79d39508c40083415cc0bf93fe802dff667156aad49b3e53be16d3eed0e33fe0",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.TaggedTests.Attribution.attribute/2": {
       "hash": "9860020fe81badbbd751a96e8dcdc50ec4d1c112657501c8d3974975dc0acf01",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.TaggedTests.Attribution.read_artifact/1": {
       "hash": "4318a6f7a9c46f169e6905b93bff488128673674485345ab78a3894a0dace19a",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.TaggedTests.Formatter": {
       "hash": "39773ecc645b3b8f0d0a204e9ef797b2a7c1bf09df53a7e0b3b02a0e24dd24d4",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.TaggedTests.build_command/2": {
       "hash": "87e09390b8f12931ea1a5ea373034c6bd6f1284babfdb39bc27dc831ef81b1ac",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.TaggedTests.collect_entries/1": {
       "hash": "b9fea2af2d9e463a5275d7ae72763d43b6793ce6edaa059affbe27c362be6711",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.TempName.cross_vm_suffix/0": {
       "hash": "70bf939b0430f95da684f96aec9c8fa866dbc90507e867cdf6f01a3da4b71785",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Validator.RealizedByDedupCheck.findings/2": {
       "hash": "d9ecf0062a46319ed6ac5a292ba35fe70a1db49f30ba7eb808b314992e8648b8",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Validator.RealizedByDedupe.duplicates/1": {
       "hash": "522c22956783ca372be72666b4ddf9aa2b853beb1757f6527b49e50defe3001e",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.VerificationStrength.default/0": {
       "hash": "d870f954e5d01ad2b9f000b813395bdb4ba277a0120832579779589c7f44a2c2",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.VerificationStrength.levels/0": {
       "hash": "de58aa0d91133e352eb2622fb698613f3cd7ebbc709099abda549c18eeebcc6d",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.VerificationStrength.meets_minimum?/2": {
       "hash": "2811f4945311b67ab8c344980d38f9b3de17e856d1d8f33fd4a10ab8c8fe9d0e",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.VerificationStrength.normalize/1": {
       "hash": "e4877dc5bee295feb4c51739b051ea1261e51bde19c146fb709fb0677cac9a00",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Verifier.verify/3": {
       "hash": "60d51f65e071190cfc5d991d6228bef9622894d84abb098afbf6316197116cf5",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.Verifier.verify_decision/4": {
       "hash": "6c4100ca5e81b50c45e1b5b8ea02b0392c29cef642d14e270e3e3c8747a5b347",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "source"
     },
     "SpecLedEx.build_index/2": {
       "hash": "0ea09307db0e7de0dd467659435b4f121e5beae3d97ba3ea66466739c6d08ed9",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.detect_authored_dir/2": {
       "hash": "661ba84ffb4085ed05eb4f005751657e4b200d62d76a0c80d0efa2be02c71c08",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.detect_decision_dir/2": {
       "hash": "974ab48228ce966515da6567cceaea6b035d522f999240c75decc19fbc168017",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.detect_spec_dir/1": {
       "hash": "68c33f54cf359a3e8f65528f132d66880cbdf898b0aa082b1a0721967caac129",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.next/3": {
       "hash": "6f0e0294c600b041eb4a4a78735fc04647d60328452cfcb5dd360959e590be3d",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.normalize_for_state/1": {
       "hash": "f309bbba1dd0b279adbee91d56143ffd0a7cea7201eb76137923c2b5e2563ea6",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.report/3": {
       "hash": "ddf5258e24f3b8e5ad08c516b92087aa49a39f5e7222cd2e65ed2551ccbfe567",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.verify/3": {
       "hash": "60d51f65e071190cfc5d991d6228bef9622894d84abb098afbf6316197116cf5",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     },
     "SpecLedEx.write_state/4": {
       "hash": "fe41f8e8500a85a24a2905211db8fd68b0d242beae1fd47b58efa057a6d23778",
-      "hasher_version": 1
+      "hasher_version": 1,
+      "resolved_via": "beam"
     }
   }
 }

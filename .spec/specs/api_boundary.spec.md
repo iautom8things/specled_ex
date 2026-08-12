@@ -35,6 +35,8 @@ realized_by:
 decisions:
   - specled.decision.finding_code_budget
   - specled.decision.verification_runtime_config
+  - specled.decision.resolution_path_provenance
+  - specled.decision.amplification_scoped_dedupe
 ```
 
 ## Requirements
@@ -70,6 +72,61 @@ decisions:
     tier, declared MFA, and a short remediation message that is
     copy-pastable into an agent prompt (MFA, tier, subject id all
     included verbatim).
+  priority: must
+  stability: evolving
+- id: specled.api_boundary.same_path_hash_comparison
+  statement: >-
+    Committed api_boundary hash entries shall record the resolution path
+    that produced them (`resolved_via: beam | source`), and the detector
+    shall compare a current hash against a committed hash only when both
+    were produced by the same resolution path. An entry written before
+    `resolved_via` existed shall compare under legacy drift semantics
+    (treated as same-path): private-function bindings always resolve via
+    source, so their unlabeled baselines were source-written, and assuming
+    beam would fabricate divergence for every one of them. Divergence
+    semantics therefore apply only to entries carrying a label the
+    detector recognizes. A label that is absent, or present but not one
+    of `beam`/`source`, shall compare under those same legacy semantics
+    rather than diverging permanently — divergence blocks the baseline
+    refresh, so treating an unrecognized label as incomparable would
+    freeze the entry with no path to rewrite it. BEAM debug_info and the
+    source-AST fallback canonicalize to structurally different envelopes,
+    so a cross-path comparison is not evidence about the code.
+  priority: must
+  stability: evolving
+- id: specled.api_boundary.path_divergence_finding
+  statement: >-
+    When the current resolution path differs from the committed entry's
+    recorded path, `mix spec.check` shall emit a
+    `branch_guard_resolution_path_divergence` finding — NOT a
+    `branch_guard_realization_drift` finding — naming the subject id,
+    requirement id (if requirement-level binding), MFA, the current
+    resolution path, and the baseline resolution path, with a remediation
+    message that names compiling as the likely fix. The finding's default
+    severity shall be warning.
+  priority: must
+  stability: evolving
+- id: specled.api_boundary.divergence_blocks_refresh
+  statement: >-
+    A run that emitted any `branch_guard_resolution_path_divergence`
+    finding shall not refresh or commit realization hash baselines, in
+    both the normal path and under `--accept-drift`: refreshing under
+    divergence would overwrite beam-hashed baselines with structurally
+    different source hashes from an uncompiled tree. Diverged
+    `(subject, mfa)` pairs shall also be excluded from clean-binding
+    attestations.
+  priority: must
+  stability: evolving
+- id: specled.api_boundary.divergence_withholds_drift_silencing
+  statement: >-
+    A run that emitted any `branch_guard_resolution_path_divergence`
+    finding shall not downgrade `branch_guard_realization_drift` to
+    `info` under `--accept-drift`. The downgrade exists because an
+    accepting run rebaselines what it silences; divergence blocks that
+    refresh
+    (specled.api_boundary.divergence_blocks_refresh), so silencing
+    without healing would report `pass` on drift that survives into the
+    next run. Silence exactly what you heal.
   priority: must
   stability: evolving
 - id: specled.api_boundary.drift_dedupe_narrow
@@ -142,6 +199,48 @@ decisions:
     - a `branch_guard_realization_drift` finding references `Foo.bar/1`
   covers:
     - specled.api_boundary.drift_finding_emitted
+- id: specled.api_boundary.scenario.beam_current_vs_source_baseline_diverges
+  given:
+    - "a binding `\"Foo.bar/1\"` resolving via BEAM debug_info"
+    - "a committed entry for that MFA labeled `resolved_via: source`"
+  when:
+    - mix spec.check runs
+  then:
+    - a `branch_guard_resolution_path_divergence` finding references `Foo.bar/1` and names both paths
+    - no `branch_guard_realization_drift` finding is emitted for `Foo.bar/1`
+  covers:
+    - specled.api_boundary.path_divergence_finding
+- id: specled.api_boundary.scenario.legacy_baseline_stays_drift_comparable
+  given:
+    - "a binding `\"Foo.bar/1\"` resolving via BEAM debug_info"
+    - a committed legacy entry for that MFA with no `resolved_via` key and a differing hash
+  when:
+    - mix spec.check runs
+  then:
+    - a `branch_guard_realization_drift` finding references `Foo.bar/1`
+    - no `branch_guard_resolution_path_divergence` finding is emitted for `Foo.bar/1`
+  covers:
+    - specled.api_boundary.same_path_hash_comparison
+- id: specled.api_boundary.scenario.divergence_blocks_baseline_refresh
+  given:
+    - a run whose findings include one `branch_guard_resolution_path_divergence`
+  when:
+    - the orchestrator reaches its hash-commit gate, with and without `--accept-drift`
+  then:
+    - "`.spec/realization_hashes.json` is not refreshed"
+    - the diverged `(subject, mfa)` pair is absent from the attestation map
+  covers:
+    - specled.api_boundary.divergence_blocks_refresh
+- id: specled.api_boundary.scenario.divergence_withholds_accept_drift_silencing
+  given:
+    - a subject binding two MFAs, one diverging by resolution path and one with same-path drift
+  when:
+    - mix spec.check runs with `--accept-drift`
+  then:
+    - the `branch_guard_realization_drift` finding keeps severity `warning`, not `info`
+    - "`.spec/realization_hashes.json` is not refreshed"
+  covers:
+    - specled.api_boundary.divergence_withholds_drift_silencing
 - id: specled.api_boundary.scenario.cyclic_dedupe_tiebreak_stable
   given:
     - subjects `aaa.foo`, `bbb.bar`, `ccc.baz` whose bindings form a cycle at the dependency level
@@ -194,4 +293,11 @@ decisions:
   execute: true
   covers:
     - specled.api_boundary.suggest_binding_proposal_only
+- kind: tagged_tests
+  execute: true
+  covers:
+    - specled.api_boundary.same_path_hash_comparison
+    - specled.api_boundary.path_divergence_finding
+    - specled.api_boundary.divergence_blocks_refresh
+    - specled.api_boundary.divergence_withholds_drift_silencing
 ```

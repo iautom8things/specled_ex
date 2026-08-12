@@ -150,12 +150,36 @@ defmodule SpecLedEx.Realization.HashStore do
   @doc "Convenience: returns the stored hash for a tier+MFA or `nil`."
   @spec fetch(map(), String.t(), String.t()) :: binary() | nil
   def fetch(realization, tier, mfa) when is_map(realization) do
+    case fetch_entry(realization, tier, mfa) do
+      %{"hash" => hash} ->
+        case Base.decode16(hash, case: :mixed) do
+          {:ok, bytes} -> bytes
+          :error -> nil
+        end
+
+      nil ->
+        nil
+    end
+  end
+
+  @doc """
+  Returns the full stored entry map for a tier+MFA or `nil`.
+
+  Unlike `fetch/3` this preserves entry metadata beyond the hash — notably
+  `"resolved_via"`, which the api_boundary tier uses to decide whether two
+  hashes are comparable at all (specled_-n5q.1: BEAM debug_info and the
+  source-AST fallback canonicalize to structurally different envelopes, so a
+  cross-path hash comparison fabricates drift). Entries written before
+  `"resolved_via"` existed lack the key; callers compare those under legacy
+  drift semantics (treated as same-path — see the comparable?/2 rationale in
+  `SpecLedEx.Realization.ApiBoundary` and
+  `specled.decision.resolution_path_provenance`).
+  """
+  @spec fetch_entry(map(), String.t(), String.t()) :: map() | nil
+  def fetch_entry(realization, tier, mfa) when is_map(realization) do
     with %{} = entries <- Map.get(realization, tier),
-         %{"hash" => hash} <- Map.get(entries, mfa) do
-      case Base.decode16(hash, case: :mixed) do
-        {:ok, bytes} -> bytes
-        :error -> nil
-      end
+         %{"hash" => _} = entry <- Map.get(entries, mfa) do
+      entry
     else
       _ -> nil
     end
@@ -253,10 +277,19 @@ defmodule SpecLedEx.Realization.HashStore do
         Enum.reduce(entries, %{}, fn {mfa, old_entry}, tier_acc ->
           case fun.(tier, mfa, old_entry) do
             {:ok, new_hash_bin} when is_binary(new_hash_bin) ->
-              Map.put(tier_acc, mfa, %{
-                "hash" => Base.encode16(new_hash_bin, case: :lower),
-                "hasher_version" => @hasher_version
-              })
+              # Preserve the old entry's other keys — notably "resolved_via".
+              # Rebuilding the entry as a two-key literal would silently revert
+              # every labeled entry to legacy semantics on a hasher_version
+              # bump, which is exactly the metadata `fetch_entry/3` exists to
+              # carry. The rehash changes the hash, not the provenance.
+              Map.put(
+                tier_acc,
+                mfa,
+                Map.merge(old_entry, %{
+                  "hash" => Base.encode16(new_hash_bin, case: :lower),
+                  "hasher_version" => @hasher_version
+                })
+              )
 
             :drop ->
               tier_acc

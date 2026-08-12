@@ -133,6 +133,26 @@ The lifecycle has three steps:
 2. **Store.** The hash is written to `.spec/realization_hashes.json`
    alongside the binding. That stored baseline is the author's signed-off
    snapshot: "this is what the subject realizes, as of this commit."
+
+   Entries are keyed by tier, then by MFA:
+
+   ```json
+   {
+     "api_boundary": {
+       "MyApp.Accounts.create_user/2": {
+         "hash": "9f2a…",
+         "hasher_version": 1,
+         "resolved_via": "beam"
+       }
+     }
+   }
+   ```
+
+   `resolved_via` (`"beam"` or `"source"`) records which resolution path
+   produced the hash; the detector only compares hashes produced by the
+   same path. An entry written before that field existed simply omits it
+   and compares under legacy semantics. This is the shape to look at when
+   a finding tells you to delete an entry.
 3. **Compare.** On the next run, the hash is recomputed from current
    code. If the new hash matches the committed one, the tier is quiet.
    If they differ, the tier's view of the subject changed since the
@@ -300,6 +320,45 @@ with it.*
   lean on the remaining MFAs in the closure. This finding is the
   cheapest in the catalog — there is rarely an interpretive question,
   just a stale pointer.
+
+- `branch_guard_resolution_path_divergence` — The committed baseline
+  entry and the current head were hashed through different resolution
+  paths (BEAM debug_info vs the source-AST fallback). The two
+  canonicalize to structurally different envelopes, so the hashes are
+  incomparable and the disagreement says nothing about the code — it
+  says the *environment* changed. Reported at `warning` by default,
+  and it blocks baseline refresh (including `--accept-drift`) so an
+  uncompiled tree cannot overwrite beam-hashed baselines.
+
+  Two properties of that block are easy to get wrong, so state them
+  plainly:
+
+  - **The block spans the whole run, not just the diverged entry.**
+    One diverged `api_boundary` MFA stops the refresh for *every*
+    flat tier — `expanded_behavior`, `typespecs`, and `use` included.
+    If a baseline you expected to move did not, look for a divergence
+    finding elsewhere in the run before suspecting the tier you were
+    watching.
+  - **Setting the code to `off` suppresses the report, not the
+    block.** The refresh gate reads raw findings before severities are
+    resolved, so `severities: {branch_guard_resolution_path_divergence:
+    off}` gives you a frozen baseline with nothing on screen
+    explaining why. It is the one knob that makes this harder to
+    debug rather than easier. Fix the cause instead.
+
+  Also note that this finding does **not** tell you whether the
+  function body changed: the content hashes were never compared,
+  because they are not comparable. Divergence and drift are
+  independent questions and only one of them was answered.
+
+  Likely cause: a cold `_build` (or wrong `MIX_ENV` build dir) sent
+  resolution down the source fallback. Compile and re-run — the
+  finding disappears. For a PERMANENT path change (e.g. a bound
+  function made private, which resolves via source forever), delete
+  the entry from `.spec/realization_hashes.json`; the next clean run
+  re-seeds it labeled with the new path
+  (`specled.decision.resolution_path_provenance`). Deleting accepts
+  the current hash unreviewed, so confirm the body is unchanged first.
 
 ### Triangulation findings (coverage-side disagreement)
 

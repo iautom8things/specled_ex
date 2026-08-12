@@ -26,11 +26,6 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
       def baz(y), do: y * 2
     end
 
-    defmodule SpecLedEx.OrchestratorFixtures.NoDebug do
-      @compile {:no_debug_info, true}
-      def q(v), do: v
-    end
-
     defmodule SpecLedEx.OrchestratorFixtures.Callee do
       def target(y), do: y * 3
     end
@@ -40,8 +35,25 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
     end
     """)
 
+    # NoDebug exercises the stripped-debug degrade, so it compiles with
+    # debug_info explicitly OFF — not via the inert `@compile
+    # {:no_debug_info, true}` attribute (a no-op that only appeared to work
+    # because mix test's ambient compiler default already omitted
+    # debug_info), and not via that ambient default either, so the degrade
+    # stays self-evident under any harness environment (specled_-n5q.1).
+    nodebug_path = Path.join(tmp_dir, "orchestrator_fixtures_nodebug.ex")
+
+    File.write!(nodebug_path, """
+    defmodule SpecLedEx.OrchestratorFixtures.NoDebug do
+      def q(v), do: v
+    end
+    """)
+
     {:ok, _mods, _warns} =
-      Kernel.ParallelCompiler.compile_to_path([source_path], tmp_dir, return_diagnostics: true)
+      SpecLedEx.FixtureCompiler.compile_to_path_with_debug_info([source_path], tmp_dir)
+
+    {:ok, _mods, _warns} =
+      SpecLedEx.FixtureCompiler.compile_to_path_without_debug_info([nodebug_path], tmp_dir)
 
     :code.add_patha(String.to_charlist(tmp_dir))
 
@@ -388,6 +400,13 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
 
       assert hashes[bare]["hasher_version"] == HashStore.hasher_version()
       assert hashes[mfa]["hasher_version"] == HashStore.hasher_version()
+
+      # Both forms must be LABELED, not just hashed. An unlabeled entry written
+      # here is indistinguishable from a legacy baseline forever after, so a
+      # regression that drops the label on either path is unrecoverable once
+      # committed — and it is silent, because unlabeled entries still compare.
+      assert hashes[bare]["resolved_via"] == "beam"
+      assert hashes[mfa]["resolved_via"] == "beam"
     end
   end
 
@@ -595,7 +614,9 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
       assert length(drifts) == 1
       [d] = drifts
       # Subject-layer entries precede requirement-layer entries, so the
-      # surviving requirement_id is nil (subject layer's first-seen entry wins).
+      # Under the amplification-scoped dedupe both entries are INFERRED, so the
+      # inferred partition's uniq_by(mfa) keeps one; requirement_id nil comes from
+      # the subject-layer entry's position in subj_entries ++ req_entries.
       assert d["requirement_id"] == nil
       assert d["mfa"] == mfa
     end
@@ -1545,9 +1566,321 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
     end
   end
 
+  describe "run/2 — divergence blocks baseline refresh (specled_-n5q.1)" do
+    @tag spec: [
+           "specled.api_boundary.divergence_blocks_refresh",
+           "specled.api_boundary.scenario.divergence_blocks_baseline_refresh"
+         ]
+    test "a divergence finding blocks refresh in both branches and attestation", %{root: root} do
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+
+      # Source-labeled baseline vs a beam-resolving module: every run diverges.
+      seeded = %{
+        "api_boundary" => %{
+          mfa => %{
+            "hash" => Base.encode16(:crypto.hash(:sha256, "source-envelope"), case: :lower),
+            "hasher_version" => HashStore.hasher_version(),
+            "resolved_via" => "source"
+          }
+        }
+      }
+
+      :ok = HashStore.write(root, seeded)
+      index = %{"subjects" => [subject("diverged.subject", %{"api_boundary" => [mfa]}, [])]}
+
+      {findings, attestations} =
+        Orchestrator.run_with_attestations(index,
+          root: root,
+          enabled_tiers: [:api_boundary]
+        )
+
+      assert Enum.any?(findings, fn f ->
+               (Map.get(f, "code") || Map.get(f, :code)) ==
+                 "branch_guard_resolution_path_divergence"
+             end)
+
+      # Baseline untouched: the run neither refreshed nor relabeled the entry.
+      assert HashStore.fetch_entry(HashStore.read(root), "api_boundary", mfa)["resolved_via"] ==
+               "source"
+
+      assert HashStore.fetch_entry(HashStore.read(root), "api_boundary", mfa)["hash"] ==
+               seeded["api_boundary"][mfa]["hash"]
+
+      # The diverged pair is excluded from clean-binding attestations. The
+      # attestation map is nested (%{subject_id => %{path => ...}}), so assert
+      # the subject's bucket is absent/empty rather than pattern-matching keys.
+      assert Map.get(attestations, "diverged.subject", %{}) == %{}
+
+      # --accept-drift does not accept divergence either.
+      {findings2, _} =
+        Orchestrator.run_with_attestations(index,
+          root: root,
+          enabled_tiers: [:api_boundary],
+          accept_drift?: true
+        )
+
+      assert Enum.any?(findings2, fn f ->
+               (Map.get(f, "code") || Map.get(f, :code)) ==
+                 "branch_guard_resolution_path_divergence"
+             end)
+
+      assert HashStore.fetch_entry(HashStore.read(root), "api_boundary", mfa)["hash"] ==
+               seeded["api_boundary"][mfa]["hash"]
+    end
+
+    @tag spec: "specled.api_boundary.divergence_blocks_refresh"
+    test "control: without divergence the same harness DOES refresh (relabels a legacy entry)",
+         %{root: root} do
+      # Non-vacuousness control for the blocking test above: an UNLABELED
+      # baseline with the correct current hash is a clean run, so the refresh
+      # fires and observably rewrites the entry — the resolved_via label
+      # appears. If refresh were skipped for an unrelated reason, this fails.
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+
+      {:ok, ast} = Binding.resolve(mfa)
+      current = SpecLedEx.Realization.ApiBoundary.hash(ast)
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(current, case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      index = %{"subjects" => [subject("relabel.subject", %{"api_boundary" => [mfa]}, [])]}
+
+      findings = Orchestrator.run(index, root: root, enabled_tiers: [:api_boundary])
+      assert findings == []
+
+      assert HashStore.fetch_entry(HashStore.read(root), "api_boundary", mfa)["resolved_via"] ==
+               "beam"
+    end
+
+    @tag spec: "specled.api_boundary.same_path_hash_comparison"
+    test "api_boundary_hashes labels entries with the resolution path" do
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+
+      entries = Orchestrator.api_boundary_hashes([%{mfa: mfa}], nil)
+      assert entries[mfa]["resolved_via"] == "beam"
+      assert is_binary(entries[mfa]["hash"])
+    end
+  end
+
+  describe "run/2 — amplification-scoped dedupe (specled_-n5q.2)" do
+    @tag spec: [
+           "specled.realized_by.authored_beats_inferred",
+           "specled.realized_by.scenario.authored_requirement_binding_not_shadowed"
+         ]
+    test "authored requirement binding on a nonexistent MFA is not shadowed by the subject-level inferred entry",
+         %{root: root} do
+      # THE specled_-n5q.2 case: the MFA does not exist; the subject-level
+      # implementation list infers an api_boundary entry for it, and a
+      # requirement authors it under api_boundary directly. Pre-fix the
+      # inferred entry was first-seen, survived the MFA-keyed dedupe, and its
+      # dangling suppression silenced the authored declaration entirely.
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.gone/1"
+
+      subject =
+        subject(
+          "shadow.subject",
+          %{"implementation" => [mfa]},
+          [
+            %{
+              id: "shadow.req",
+              priority: "must",
+              realized_by: %{"api_boundary" => [mfa]}
+            }
+          ]
+        )
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      dangling =
+        Enum.filter(findings, fn f ->
+          Map.get(f, "code") == "branch_guard_dangling_binding" and Map.get(f, "mfa") == mfa
+        end)
+
+      assert length(dangling) == 1,
+             "expected the authored dangling to survive the inferred entry's suppression, got: " <>
+               inspect(findings, pretty: true)
+
+      assert hd(dangling)["requirement_id"] == "shadow.req"
+      refute_inferred_leak(findings)
+    end
+
+    @tag spec: [
+           "specled.realized_by.authored_provenance_preserved",
+           "specled.realized_by.scenario.shared_mfa_keeps_per_requirement_entries"
+         ]
+    test "independent requirements sharing an MFA each keep their own entry and provenance",
+         %{root: root} do
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+
+      # Seed a WRONG hash so every surviving entry reports drift; the rids on
+      # the findings expose exactly which entries survived the dedupe.
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "stale"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      reqs =
+        for n <- 1..3 do
+          %{id: "shared.req#{n}", priority: "must", realized_by: %{"api_boundary" => [mfa]}}
+        end
+
+      # Cross-layer doubling is spec-sanctioned: the subject-level authored
+      # entry is a distinct {subject, nil, mfa} key and reports alongside the
+      # per-requirement entries.
+      subject = subject("shared.subject", %{"api_boundary" => [mfa]}, reqs)
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      drift_rids =
+        findings
+        |> Enum.filter(fn f ->
+          Map.get(f, "code") == "branch_guard_realization_drift" and Map.get(f, "mfa") == mfa
+        end)
+        |> Enum.map(& &1["requirement_id"])
+        |> Enum.sort()
+
+      assert drift_rids == [nil, "shared.req1", "shared.req2", "shared.req3"],
+             "each authored entry keeps distinct provenance (subject-level entry " <>
+               "included); got rids: #{inspect(drift_rids)}"
+
+      refute_inferred_leak(findings)
+    end
+
+    @tag spec: "specled.realized_by.authored_beats_inferred"
+    test "drift on an authored+inferred MFA reports the authored requirement id, once",
+         %{root: root} do
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.baz/1"
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "stale"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      subject =
+        subject(
+          "attributed.subject",
+          %{"implementation" => [mfa]},
+          [
+            %{
+              id: "attributed.req",
+              priority: "must",
+              realized_by: %{"api_boundary" => [mfa]}
+            }
+          ]
+        )
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      drift =
+        Enum.filter(findings, fn f ->
+          Map.get(f, "code") == "branch_guard_realization_drift" and Map.get(f, "mfa") == mfa
+        end)
+
+      # Exactly one: the inferred duplicate yielded to the authored entry —
+      # and the finding carries the requirement id, not the pre-fix nil.
+      assert length(drift) == 1,
+             "expected the single authored finding (inferred yielded), got: " <>
+               inspect(findings, pretty: true)
+
+      assert hd(drift)["requirement_id"] == "attributed.req"
+      refute_inferred_leak(findings)
+    end
+
+    @tag spec: "specled.realized_by.authored_provenance_preserved"
+    test "exact {subject, requirement, mfa} duplicates collapse to one entry", %{root: root} do
+      # The requirement's own clause: only EXACT triples dedupe. A layer
+      # authoring the same MFA twice (no implementation key, so nothing is
+      # inferred and expand_implications does not uniq it) must yield one
+      # finding, not two.
+      mfa = "SpecLedEx.OrchestratorFixtures.Mod.foo/1"
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "stale"), case: :lower),
+              "hasher_version" => HashStore.hasher_version()
+            }
+          }
+        })
+
+      subject =
+        subject(
+          "exactdup.subject",
+          %{},
+          [
+            %{
+              id: "exactdup.req",
+              priority: "must",
+              realized_by: %{"api_boundary" => [mfa, mfa]}
+            }
+          ]
+        )
+
+      findings =
+        Orchestrator.run(%{"subjects" => [subject]},
+          root: root,
+          enabled_tiers: [:api_boundary],
+          commit_hashes?: false
+        )
+
+      drift =
+        Enum.filter(findings, fn f ->
+          Map.get(f, "code") == "branch_guard_realization_drift" and Map.get(f, "mfa") == mfa
+        end)
+
+      assert length(drift) == 1,
+             "exact duplicates must collapse to one entry, got: " <>
+               inspect(findings, pretty: true)
+
+      assert hd(drift)["requirement_id"] == "exactdup.req"
+      refute_inferred_leak(findings)
+    end
+  end
+
   # ---------------------------------------------------------------------------
   # Helpers
   # ---------------------------------------------------------------------------
+
+  # Findings must not leak the orchestrator-internal :inferred? flag
+  # (specled.realized_by.scenario.inferred_flag_does_not_leak).
+  defp refute_inferred_leak(findings) do
+    refute Enum.any?(findings, fn f ->
+             is_map(f) and (Map.has_key?(f, :inferred?) or Map.has_key?(f, "inferred?"))
+           end)
+  end
 
   defp subject(id, realized_by, requirements) do
     %{

@@ -131,6 +131,7 @@ defmodule SpecLedEx.DocsIdentifierLintTest do
     branch_guard_requirement_without_test_tag
     branch_guard_realization_drift
     branch_guard_dangling_binding
+    branch_guard_resolution_path_divergence
     branch_guard_realization_unknown_tier
     branch_guard_untested_realization
     branch_guard_untethered_test
