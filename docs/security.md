@@ -7,9 +7,10 @@ Security guidance for running SpecLedEx in continuous integration.
 ## Repository-authored verification commands
 
 `kind: command` verification targets are shell commands stored in the
-repository's `.spec/specs/*.spec.md` files. `mix spec.check` executes enabled
-command targets by default. Several other tasks accept `--run-commands` to opt
-into the same behavior.
+repository's `.spec/specs/*.spec.md` files. `mix spec.check` and `mix spec.status`
+both execute enabled command targets by default; pass `--no-run-commands` to
+either to suppress that. Only
+`mix spec.prime` and `mix spec.validate` are opt-in, via `--run-commands`.
 
 This is intentional: executable verification lets a repository define the
 proof its own requirements need. It is also a trust boundary. Anyone who can
@@ -88,9 +89,10 @@ to run.
 
 ## What `--no-run-commands` does and does not do
 
-`--no-run-commands` disables `kind: command` verification targets. Structural
-validation, branch reconciliation, realization-drift checks, and test-tag
-consistency still run.
+`--no-run-commands` disables both executing verification kinds: `kind: command`
+targets, and `kind: tagged_tests`, which spawns `mix test` over the repository's
+own test code. Structural validation, branch reconciliation, realization-drift
+checks, and test-tag consistency still run.
 
 It is not a general-purpose sandbox for an untrusted Elixir project. CI steps
 such as dependency installation, compilation, tests, custom Mix aliases, and
