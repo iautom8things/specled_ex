@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-12T21:20:28Z",
+  "description": "Fast-follows specled_-i4x, shipped as PR #36 / release 0.15.0 (main 0fec794b). Split out at delivery. Carries the Track-tier findings from the 2026-08-12 five-persona critical review that were deliberately not fixed on the release branch. Consolidated report: ~/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-08-12/specled_-i4x-fast-follow-backlog/20260812-163211-consolidated.md",
+  "id": "specled_-dq7",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "Fast-follow: post-release fast-follow backlog (specled_-i4x)",
+  "type": "epic",
+  "updated_at": "2026-08-12T21:20:28Z"
+}
