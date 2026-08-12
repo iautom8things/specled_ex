@@ -16,7 +16,7 @@ and without any compiled metadata. S2 ships this tier only; subsequent tiers
 id: specled.api_boundary
 kind: workflow
 status: active
-summary: Hashes function heads + arg shapes per binding, emits `branch_guard_realization_drift` and `branch_guard_dangling_binding` findings, deduplicated via Drift.
+summary: Hashes function heads + arg shapes per binding, compares HashStore-decoded baselines, and emits realization findings deduplicated via Drift.
 surface:
   - lib/specled_ex/realization/api_boundary.ex
   - lib/specled_ex/realization/drift.ex

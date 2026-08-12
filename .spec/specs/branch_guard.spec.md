@@ -14,7 +14,7 @@ Realization findings enter the guard through `SpecLedEx.Realization.Orchestrator
 id: specled.branch_guard
 kind: workflow
 status: active
-summary: Uses the current Git change set to enforce subject co-changes and cross-cutting ADR updates during the final local check.
+summary: Uses the current Git change set and realization findings to enforce subject co-changes and cross-cutting ADR updates during the final local check.
 surface:
   - lib/specled_ex/base_view.ex
   - lib/specled_ex/branch_check.ex
