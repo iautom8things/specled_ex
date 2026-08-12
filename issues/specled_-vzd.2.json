@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-12T00:36:49Z",
+  "description": "Advances: specled.api_boundary\n\nReview-bar-override: scoping the block changes what specled.api_boundary.divergence_blocks_refresh currently requires — needs a spec amendment + ADR.\n\nFrom the critical review of specled_-n5q (finding F29, Medium, consensus: security + api).\n\nhas_divergence?/1 is a whole-run boolean applied to a refresh that rewrites every flat tier, so one stuck api_boundary MFA freezes rebaselining for expanded_behavior, typespecs, and use. The attestation path already has the granularity this path lacks — drift_dangling_pairs/1 scopes to subject_id + mfa.\n\nThis is consistent with how has_drift?/has_dangling? already behave, so it is not a design objection — the scope is simply undocumented and an adopter debugging a stale unrelated tier will not connect it.\n\nThe documentation half LANDED on the release branch (docs/concepts.md now states the block is run-wide and that severity off suppresses the report but not the block). This ticket is the behavioral half only.",
+  "id": "specled_-vzd.2",
+  "labels": [],
+  "parent": "specled_-vzd",
+  "priority": 3,
+  "status": "open",
+  "title": "Refresh block is repo-wide, not per-diverged-MFA: one stuck entry freezes every flat tier",
+  "type": "task",
+  "updated_at": "2026-08-12T00:36:49Z"
+}
