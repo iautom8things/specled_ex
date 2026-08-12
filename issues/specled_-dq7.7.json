@@ -1,0 +1,15 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-12T21:21:53Z",
+  "description": "Advances: specled.package\n\nSeverity: Low. The spec-lint:full-set region lint counts code tokens between markers and validates the set, but knows nothing about the document structure it is marking. This branch shipped the first use of the marker and put spec-lint:full-set-end mid-table in docs/adoption.md, orphaning two rows outside the table so they rendered as literal pipe-delimited text in the primary adoption guide. Nothing caught it; a human noticed it via a test-coverage review.\n\nFixed in the release (commit a67a47c8) by closing the region after the branch-guard rows and giving the spec-corpus families their own headed table. This ticket is the guard, not the fix: a region boundary that lands between a markdown table header and its last row should fail the lint.\n\nWhy not on the release branch: the lint would need a minimal markdown block model (or at least a table-contiguity check), which is new capability rather than release prep.\n\nSource: 2026-08-12 critical review testing-2 M2.",
+  "id": "specled_-dq7.7",
+  "labels": [],
+  "parent": "specled_-dq7",
+  "priority": 2,
+  "status": "open",
+  "title": "Full-set lint has no notion of document structure; a region marker can split a table",
+  "type": "task",
+  "updated_at": "2026-08-12T21:21:53Z"
+}
