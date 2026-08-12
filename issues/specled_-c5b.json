@@ -40,11 +40,15 @@
     {
       "text": "AUDIT: APPROVE (auto — selective audit)\nSession: c3ed9a14-f540-4a49-b103-918f232ff43a\nLog: /Users/mz/.claude-personal/projects/-Users-mz-src-specled-ex/c3ed9a14-f540-4a49-b103-918f232ff43a.jsonl\n\nReasoning: VERIFY reported PASS with full stub and requirement coverage, zero scope\nviolations, passing targeted verification, complete seam disclosure, and no seam\nsubstituting production wiring. TEST_CRITIC: FIXED (iteration 1) — 2 blocking findings,\nboth resolved in 38a57fd1. No auditor was spawned per policy.\n\nComposite verifier record, stated plainly because no single spawn covers the whole branch:\n- verifier 1 (cold, commit 1): PASS. Enumerated every must in specled.tag_scanning with a\n  covering test and a concrete failure mode; seams: none anywhere in the subject's tests.\n- verifier 2 (cold, delta + rebase integrity): FAIL on G1 only. Independently confirmed the\n  foreign-stash repair (branch diff exactly the three ticket files, branch_guard.spec.md and\n  branch_check.ex byte-identical to origin/main, state.json absent, stash entry intact,\n  tree clean) and re-enumerated every requirement claim as covered.\n- verifier 3 (cold, G1 fix): PASS. Proved both disputed clauses falsifiable by two distinct\n  mutations failing two distinct tests, and found no redundant, contradictory, or\n  overclaiming clause in the requirement.\nG1 was raised by a verifier and fixed; the ticket ends with no open gap.\n\nPost-verification edit disclosed: commit 5ca4df00, comment-only, in\nlib/specled_ex/tag_scanner.ex:216-224. It came from verifier 3's advisory note — the\ncomment's justification for the single walk implied a double walk would be harmless, which\nis the premise that produced G1. Now states the load-bearing reason (dynamic entries bypass\ndedupe/1). No behavioural change; compile --warnings-as-errors, format --check-formatted,\nthe 28-test file, and mix spec.check --no-run-commands all re-run green after it.\n\nBounce count: 1 (verifier), under the cap.\nBranch: c5b/for-comprehension-tags at 5ca4df00, rebased onto origin/main 0fec794b (0.15.0).",
       "timestamp": "2026-08-12T21:36:43Z"
+    },
+    {
+      "text": "APPROVED per auditor sign-off. Branch c5b/for-comprehension-tags at 5ca4df00 (rebased onto origin/main 0fec794b, release 0.15.0) is ready for a PR to main; held in_progress for the ship arc (/open-pr -\u003e CI -\u003e merge -\u003e deploy). /deliver closes it. Worktree: /Users/mz/src/specled_ex-for-comprehension-tags. Follow-up specled_-wv0 filed for the per_test executed-strength join gap this ticket does not owe.",
+      "timestamp": "2026-08-12T21:36:52Z"
     }
   ],
   "priority": 1,
   "status": "in_progress",
   "title": "TagScanner is blind to for-comprehension-generated tests — @tag spec: inside unrolled loops never reaches the tag_map",
   "type": "bug",
-  "updated_at": "2026-08-12T21:36:43Z"
+  "updated_at": "2026-08-12T21:36:52Z"
 }
