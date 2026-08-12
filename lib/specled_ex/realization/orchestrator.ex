@@ -181,16 +181,23 @@ defmodule SpecLedEx.Realization.Orchestrator do
     tier_opts = [root: root, umbrella?: umbrella?]
     bindings_by_tier = collect_bindings(index, enabled)
 
-    if commit_hashes? and not umbrella? do
-      seed_uncommitted_hashes(bindings_by_tier, context, root)
-    end
-
     findings =
       Enum.flat_map(enabled, fn tier ->
         dispatch(tier, Map.get(bindings_by_tier, tier, []), context, tier_opts, umbrella?)
       end)
 
     findings = normalize_use_findings(findings)
+    diverged_tier_mfas = diverged_tier_mfas(findings)
+
+    # A divergence anywhere means this run resolved at least one binding through
+    # a different path than the committed baseline. Treat the whole tree as cold
+    # for seeding: another uncommitted binding may also have fallen back to source,
+    # but missing baselines are finding-neutral and cannot identify that binding.
+    seed_allowed? = MapSet.size(diverged_tier_mfas) == 0
+
+    if commit_hashes? and not umbrella? and seed_allowed? do
+      seed_uncommitted_hashes(bindings_by_tier, context, root)
+    end
 
     # Normally the refresh is gated behind a clean run — drift blocks the very
     # refresh that would accept the new hash, which is why `mix spec.check`
@@ -212,11 +219,21 @@ defmodule SpecLedEx.Realization.Orchestrator do
         not has_drift?(findings)
 
     if commit_hashes? and not umbrella? and refresh_allowed? do
+      excluded_tier_mfas =
+        if seed_allowed? do
+          diverged_tier_mfas
+        else
+          MapSet.union(
+            diverged_tier_mfas,
+            uncommitted_flat_tier_mfas(bindings_by_tier, root)
+          )
+        end
+
       refresh_and_commit_hashes(
         bindings_by_tier,
         context,
         root,
-        diverged_tier_mfas(findings)
+        excluded_tier_mfas
       )
     end
 
@@ -711,6 +728,25 @@ defmodule SpecLedEx.Realization.Orchestrator do
     end
   end
 
+  defp uncommitted_flat_tier_mfas(bindings_by_tier, root) do
+    store = HashStore.read(root)
+
+    Enum.reduce(@flat_tiers, MapSet.new(), fn tier, acc ->
+      tier_name = Atom.to_string(tier)
+      committed = Map.get(store, tier_name, %{})
+
+      bindings_by_tier
+      |> Map.get(tier, [])
+      |> Enum.reduce(acc, fn %{mfa: mfa}, inner_acc ->
+        if Map.has_key?(committed, mfa) do
+          inner_acc
+        else
+          MapSet.put(inner_acc, {tier_name, mfa})
+        end
+      end)
+    end)
+  end
+
   @doc false
   # The tiers `refresh_and_commit_hashes/4` rebaselines. `SpecLedEx.BranchCheck`
   # references this to scope the `--accept-drift` `:info` downgrade to exactly
@@ -721,11 +757,11 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # covers: specled.realized_by.silent_seed
   # covers: specled.realized_by.silent_seed_uses_merge
   #
-  # Pre-dispatch silent-seed pass. For each tracked entry that lacks a
+  # Post-dispatch silent-seed pass. For each tracked entry that lacks a
   # committed hash in `<root>/.spec/realization_hashes.json`, compute the
-  # current hash and persist it via `HashStore.merge/2`. The detectors then read the
-  # committed-by-this-pass hash on entry, see `committed == current`, and
-  # emit no drift finding for that entry on the seeding run.
+  # current hash and persist it via `HashStore.merge/2`. Detectors emit no drift
+  # for missing baselines, so dispatch remains finding-neutral for those entries.
+  # If any binding diverged anywhere in the run, seeding is skipped entirely.
   #
   # Gated by the same `commit_hashes? != false` and `umbrella? == false`
   # conditions that gate `refresh_and_commit_hashes/4`. Dangling entries
@@ -734,9 +770,9 @@ defmodule SpecLedEx.Realization.Orchestrator do
   # to surface as dangling findings on this run.
   #
   # The seed pass is silent: no findings are emitted from this code path.
-  # The post-run `refresh_and_commit_hashes/4` is unaffected; it still runs
-  # under the same gate when no drift is detected and uses `write/2`'s
-  # replacement semantics for the full realization map.
+  # On a divergent run, the post-run `refresh_and_commit_hashes/4` still
+  # refreshes committed clean entries but excludes missing entries so it cannot
+  # bypass this gate.
   defp seed_uncommitted_hashes(bindings_by_tier, context, root) do
     store = HashStore.read(root)
 

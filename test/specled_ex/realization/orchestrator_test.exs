@@ -1598,6 +1598,115 @@ defmodule SpecLedEx.Realization.OrchestratorTest do
 
   describe "run/2 — divergence scopes baseline refresh" do
     @tag spec: [
+           "specled.realized_by.silent_seed_run_scoped_divergence_gate",
+           "specled.realized_by.scenario.divergence_blocks_all_new_seeds"
+         ]
+    test "a divergence anywhere prevents every missing entry from being seeded",
+         %{root: root, fixture_dir: fixture_dir} do
+      source_path = Path.join(fixture_dir, "cold_seed_gate_fixtures.ex")
+
+      File.write!(source_path, """
+      defmodule SpecLedEx.OrchestratorFixtures.ColdDiverged do
+        def value(x), do: x
+      end
+
+      defmodule SpecLedEx.OrchestratorFixtures.ColdUncommitted do
+        def value(x), do: x
+      end
+      """)
+
+      diverged_mod = SpecLedEx.OrchestratorFixtures.ColdDiverged
+      uncommitted_mod = SpecLedEx.OrchestratorFixtures.ColdUncommitted
+      diverged_mfa = "SpecLedEx.OrchestratorFixtures.ColdDiverged.value/1"
+      uncommitted_mfa = "SpecLedEx.OrchestratorFixtures.ColdUncommitted.value/1"
+      uncommitted_bare_module = "SpecLedEx.OrchestratorFixtures.Callee"
+      committed_clean_mfa = "SpecLedEx.OrchestratorFixtures.Mod.baz/1"
+
+      context = %SpecLedEx.Compiler.Context{
+        manifest: %{
+          diverged_mod => {:module, :elixir, [source_path], nil, nil, nil},
+          uncommitted_mod => {:module, :elixir, [source_path], nil, nil, nil}
+        }
+      }
+
+      {:ok, uncommitted_ast} = Binding.resolve(uncommitted_mfa, context)
+      assert Binding.resolution_path(uncommitted_ast) == :source
+      {:ok, committed_clean_ast} = Binding.resolve(committed_clean_mfa, context)
+      committed_clean_hash = ApiBoundary.hash(committed_clean_ast)
+
+      :ok =
+        HashStore.write(root, %{
+          "api_boundary" => %{
+            diverged_mfa => %{
+              "hash" => Base.encode16(:crypto.hash(:sha256, "beam-envelope"), case: :lower),
+              "hasher_version" => HashStore.hasher_version(),
+              "resolved_via" => "beam"
+            },
+            committed_clean_mfa => %{
+              "hash" => Base.encode16(committed_clean_hash, case: :lower),
+              "hasher_version" => HashStore.hasher_version(),
+              "stale_marker" => true
+            }
+          }
+        })
+
+      index = %{
+        "subjects" => [
+          subject("cold.diverged", %{"api_boundary" => [diverged_mfa]}, []),
+          subject("cold.uncommitted", %{"api_boundary" => [uncommitted_mfa]}, []),
+          subject("cold.committed.clean", %{"api_boundary" => [committed_clean_mfa]}, []),
+          subject(
+            "cold.uncommitted.impl",
+            %{"implementation" => [uncommitted_bare_module]},
+            []
+          )
+        ]
+      }
+
+      findings =
+        Orchestrator.run(index,
+          root: root,
+          context: context,
+          enabled_tiers: [:api_boundary, :implementation]
+        )
+
+      assert Enum.any?(findings, fn finding ->
+               finding["code"] == "branch_guard_resolution_path_divergence" and
+                 finding["mfa"] == diverged_mfa
+             end)
+
+      store = HashStore.read(root)
+      assert HashStore.fetch_entry(store, "api_boundary", diverged_mfa)["resolved_via"] == "beam"
+      assert HashStore.fetch_entry(store, "api_boundary", uncommitted_mfa) == nil
+      assert HashStore.fetch_entry(store, "api_boundary", uncommitted_bare_module) == nil
+      assert HashStore.fetch_entry(store, "implementation", uncommitted_bare_module) == nil
+
+      committed_clean_entry =
+        HashStore.fetch_entry(store, "api_boundary", committed_clean_mfa)
+
+      assert committed_clean_entry["resolved_via"] == "beam"
+      refute Map.has_key?(committed_clean_entry, "stale_marker")
+
+      # Control: without divergence, the same source-resolved missing entry is
+      # eligible for the ordinary silent seed.
+      :ok = HashStore.write(root, %{})
+
+      assert Orchestrator.run(
+               %{
+                 "subjects" => [
+                   subject("cold.uncommitted", %{"api_boundary" => [uncommitted_mfa]}, [])
+                 ]
+               },
+               root: root,
+               context: context,
+               enabled_tiers: [:api_boundary]
+             ) == []
+
+      seeded = HashStore.fetch_entry(HashStore.read(root), "api_boundary", uncommitted_mfa)
+      assert seeded["resolved_via"] == "source"
+    end
+
+    @tag spec: [
            "specled.api_boundary.divergence_blocks_refresh",
            "specled.api_boundary.scenario.divergence_blocks_baseline_refresh"
          ]
