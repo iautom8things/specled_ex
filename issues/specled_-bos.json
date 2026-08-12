@@ -37,5 +37,5 @@
   "status": "in_progress",
   "title": "paths_test ephemeral beam root uses unique_integer where the ADR asks for cross_vm_suffix",
   "type": "task",
-  "updated_at": "2026-08-12T13:18:20Z"
+  "updated_at": "2026-08-12T13:18:40Z"
 }
