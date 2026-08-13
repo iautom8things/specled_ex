@@ -74,11 +74,15 @@
     {
       "text": "Squash-merged to main (2521671acb21e810d0ce03c892153fc920dac958) as PR #38. Remote branch deleted. CI was green on the first run, 0 fix commits.",
       "timestamp": "2026-08-13T00:02:55Z"
+    },
+    {
+      "text": "DELIVERED. Merged as PR #38 (squash 2521671acb21e810d0ce03c892153fc920dac958), released 0.16.0. Post-merge CI on main green. Deliverable verified on main: mix hex.audit exits 0 (was exit 1 on earmark 1.4.48).\\n\\nNo deploy or publish workflow exists in this repo, so there is no /monitor-app health verdict to wait on — green post-merge CI plus the verified deliverable is the strongest available shipping evidence for a library.\\n\\nVerification item 3 (downstream exoterm smoke) is NOT delivered here and is tracked as specled_-34w, now unblocked by this merge. Its version reference has been corrected from 0.15.0 to 0.16.0 — the release number moved twice while this ticket was in flight.\\n\\nGate follow-up tracked as specled_-vu8 (mix spec.mutate). Both follow-ups are standalone, not parented here.",
+      "timestamp": "2026-08-13T00:02:56Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Replace Earmark with MDEx — it is retired on Hex and fails adopters mix hex.audit",
   "type": "task",
-  "updated_at": "2026-08-13T00:02:55Z"
+  "updated_at": "2026-08-13T00:02:56Z"
 }
