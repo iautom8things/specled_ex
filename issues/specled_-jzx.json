@@ -64,6 +64,10 @@
     {
       "text": "NOTE: Advances field correction\\n\\nThe ticket description's first line reads `Advances: specled.spec_review`. That is\\nstale — the change also advances `specled.package` (mix.exs and CHANGELOG.md are both\\nin that subject's tracked surface, and the diff adds native-dependency prose to\\npackage.spec.md).\\n\\nThe commit trailer is the honest one and already reads:\\n  Advances: specled.spec_review, specled.package\\n\\nRecording here rather than rewriting the description field, so the original ticket text\\nstays as authored. Raised by the spec auditor during critical review as a\\ndiscoverability nit, not an honesty defect.",
       "timestamp": "2026-08-13T00:02:51Z"
+    },
+    {
+      "text": "PR opened: https://github.com/iautom8things/specled_ex/pull/38 (release 0.16.0). Babysitting CI.",
+      "timestamp": "2026-08-13T00:02:53Z"
     }
   ],
   "priority": 2,
