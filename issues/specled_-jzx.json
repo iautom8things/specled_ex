@@ -72,11 +72,15 @@
     {
       "text": "CI green on the first run — all 3 checks passed (Check Specs, Test 1.18.4/OTP 26.2.5, Test 1.19.5/OTP 28.3.1), 0 fix commits needed. mergeStateStatus CLEAN. The precompiled mdex_native NIF resolved on both matrix legs, which was the open risk. Ready for merge.",
       "timestamp": "2026-08-13T00:02:54Z"
+    },
+    {
+      "text": "Squash-merged to main (2521671acb21e810d0ce03c892153fc920dac958) as PR #38. Remote branch deleted. CI was green on the first run, 0 fix commits.",
+      "timestamp": "2026-08-13T00:02:55Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Replace Earmark with MDEx — it is retired on Hex and fails adopters mix hex.audit",
   "type": "task",
-  "updated_at": "2026-08-13T00:02:54Z"
+  "updated_at": "2026-08-13T00:02:55Z"
 }
