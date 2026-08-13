@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-13T00:02:52Z",
+  "description": "Advances: specled.verification\\n\\nRecommended by the consolidated critical review of specled_-jzx (0 Critical / 1 High / 2 Medium / 17 Low, 15 fix-now). Report:\\n~/vaults/rmbrs-vault/code_review/critical/specled_ex/2026-08-12/specled_-jzx-mdex-swap/20260812-191451-consolidated.md\\n\\nProblem: a requirement can name a pinned configuration and still have nothing enforcing it. On specled_-jzx three of four declared MDEx extensions (strikethrough, autolink, tasklist) could be deleted from @markdown_options with the entire suite green. Two independent reviewers found this by hand-running mutations; nothing in the repo would have caught it. The same shape hid the missing language- class assertion and the missing syntax_highlight pin.\\n\\nProposal: a mix spec.mutate task that, for each key in a declared option list bound to a requirement, deletes the key, runs the tests tagged with that requirement id, and fails if none fail. Mechanical, deterministic, and it turns \"the pinning is decorative\" from a review finding into a build error.\\n\\nSecond half, same class: extend the doc identifier lint to negative-existence claims in CHANGELOG and ADR prose. specled_-jzx shipped \"This surface previously had no requirement and no test coverage\" when a pre-existing tagged test at test/specled_ex/review/html_test.exs:963 already covered part of it. That was the sixth instance across that ticket of prose claiming more than the evidence supports, and every one was caught by a grader rather than by a gate.\\n\\nSeverity: Medium. No current defect depends on it; the value is that it makes a recurring review finding unreportable. Sized as one task, not an epic.",
+  "id": "specled_-vu8",
+  "labels": [],
+  "priority": 2,
+  "status": "open",
+  "title": "mix spec.mutate: fail a build when a pinned option list has no test behind it",
+  "type": "task",
+  "updated_at": "2026-08-13T00:02:52Z"
+}
