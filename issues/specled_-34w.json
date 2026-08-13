@@ -3,12 +3,12 @@
   "blocked_by": [],
   "blocks": [],
   "created": "2026-08-12T21:15:09Z",
-  "description": "Advances: specled.package\n\nspecled_-jzx swapped Earmark for MDEx and cut 0.15.0, which clears mix hex.audit in this repo. The third verification item on that ticket — the downstream smoke — could not run from the specled_ex worktree: exoterm is a separate repo with no checkout on this machine, and the re-pin needs 0.15.0 merged first.\n\nDo:\n1. Re-pin exoterm to specled_ex 0.15.0 (or the merge ref).\n2. Run mix preflight and confirm it is fully green end to end, not just at the hex.audit step.\n3. Close exoterm-7xj if it goes green.\n\nWatch for the two upgrade notes in the 0.15.0 CHANGELOG, both of which land on the adopter rather than on specled_ex:\n- specled_ex is no longer pure Elixir. MDEx pulls mdex_native through rustler_precompiled, so the build resolves a precompiled artifact from a GitHub release. If exoterm CI cannot reach release assets, it needs a Rust toolchain plus config :rustler_precompiled, :force_build, mdex_native: true, or a vendored artifact.\n- MDEx honors GFM single-tilde strikethrough where Earmark required double. If exoterm renders its own ADR prose through spec.review, check for single-tilde pairs in that corpus.\n\nIf preflight fails on either, the fix likely belongs in specled_ex, not exoterm — file back against specled.package.",
+  "description": "Advances: specled.package\\n\\nspecled_-jzx swapped Earmark for MDEx and cut 0.16.0, which clears mix hex.audit in this repo. The third verification item on that ticket — the downstream smoke — could not run from the specled_ex worktree: exoterm is a separate repo with no checkout on this machine, and the re-pin needs 0.16.0 merged first.\\n\\nDo:\\n1. Re-pin exoterm to specled_ex 0.16.0 (or the merge ref).\\n2. Run mix preflight and confirm it is fully green end to end, not just at the hex.audit step.\\n3. Close exoterm-7xj if it goes green.\\n\\nWatch for the two upgrade notes in the 0.16.0 CHANGELOG, both of which land on the adopter rather than on specled_ex:\\n- specled_ex is no longer pure Elixir. MDEx pulls mdex_native through rustler_precompiled, so the build resolves a precompiled artifact from a GitHub release. If exoterm CI cannot reach release assets, it needs a Rust toolchain plus config :rustler_precompiled, :force_build, mdex_native: true, or a vendored artifact.\\n- MDEx honors GFM single-tilde strikethrough where Earmark required double. If exoterm renders its own ADR prose through spec.review, check for single-tilde pairs in that corpus.\\n\\nIf preflight fails on either, the fix likely belongs in specled_ex, not exoterm — file back against specled.package.",
   "id": "specled_-34w",
   "labels": [],
   "priority": 2,
   "status": "open",
-  "title": "Downstream smoke: re-pin exoterm to specled_ex 0.15.0 and confirm mix preflight is fully green",
+  "title": "Downstream smoke: re-pin exoterm to specled_ex 0.16.0 and confirm mix preflight is fully green",
   "type": "task",
-  "updated_at": "2026-08-12T21:15:09Z"
+  "updated_at": "2026-08-13T00:02:55Z"
 }
