@@ -60,11 +60,15 @@
     {
       "text": "Dependency options, checked against Hex on 2026-08-12 — the choice is not as obvious as the retirement notice suggests.\\n\\nMDEx (what the notice recommends)\\n- {:mdex, \"~\u003e 0.13.5\"}. MDEx.to_html/2 is a genuine drop-in for Earmark.as_html/2, so the call site barely changes.\\n- BUT it is a Rust NIF (a comrak binding). It ships precompiled binaries, but adopters building on an unsupported target need a Rust toolchain. That is a heavier ask than the current pure-Elixir dep for what is a dev/test-only tool.\\n- Watch the pin: mdex 0.12.5 is ITSELF retired on Hex. A loose pin can land on it and reproduce this exact bug. Pin at or above 0.13.\\n\\nearmark_parser (lighter, but not a drop-in)\\n- {:earmark_parser, \"~\u003e 1.4\"} is NOT retired — latest 1.4.46, actively maintained, and the package ex_doc depends on. Only the `earmark` wrapper was retired.\\n- Pure Elixir, no NIF, and closest to current output since it is the same parser.\\n- BUT it only parses: EarmarkParser.as_ast/2 returns an AST. Earmark.as_html/2 is parse + transform, and the transform half lives in the retired package. Taking this route means writing the AST-to-HTML step (or vendoring a small transformer).\\n\\nRecommendation: MDEx if the NIF is acceptable for a dev-only dep, since it keeps the call site trivial and the escaping semantics easy to preserve. earmark_parser if a pure-Elixir tree matters more than the extra rendering code.\\n\\nEither way the acceptance criteria are unchanged: mix hex.audit exits 0, and mix spec.review still renders ADR and spec prose with HTML escaping intact (specled_-qm1.11 must not regress).",
       "timestamp": "2026-08-12T23:54:39Z"
+    },
+    {
+      "text": "NOTE: Advances field correction\\n\\nThe ticket description's first line reads `Advances: specled.spec_review`. That is\\nstale — the change also advances `specled.package` (mix.exs and CHANGELOG.md are both\\nin that subject's tracked surface, and the diff adds native-dependency prose to\\npackage.spec.md).\\n\\nThe commit trailer is the honest one and already reads:\\n  Advances: specled.spec_review, specled.package\\n\\nRecording here rather than rewriting the description field, so the original ticket text\\nstays as authored. Raised by the spec auditor during critical review as a\\ndiscoverability nit, not an honesty defect.",
+      "timestamp": "2026-08-13T00:02:51Z"
     }
   ],
   "priority": 2,
   "status": "in_progress",
   "title": "Replace Earmark with MDEx — it is retired on Hex and fails adopters mix hex.audit",
   "type": "task",
-  "updated_at": "2026-08-12T23:54:39Z"
+  "updated_at": "2026-08-13T00:02:51Z"
 }
