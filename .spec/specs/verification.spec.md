@@ -66,7 +66,13 @@ decisions:
   priority: must
   stability: stable
 - id: specled.verify.decision_governance
-  statement: Verification shall validate ADR frontmatter, required ADR sections, ADR affects references, supersession links, and subject decision references.
+  statement: >-
+    Verification shall validate ADR frontmatter, required ADR sections, ADR
+    affects references, supersession links, and subject decision references,
+    and shall surface the cross-field diagnostics the parse pass recorded on
+    each decision: `parse_errors` as `decision_parse_error` findings at error
+    severity, and `parse_warnings` as `decision_cross_field_warning` findings
+    at `info` severity.
   priority: must
   stability: evolving
 - id: specled.verify.strength_semantics

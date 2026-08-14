@@ -666,6 +666,54 @@ defmodule SpecLedEx.AppendOnlyTest do
       assert fix_block_present?(finding.message)
     end
 
+    # Both halves are required: exempting the backfill alone cannot distinguish
+    # "the carve-out is scoped to blank → non-blank" from "reverses_what is no
+    # longer compared at all".
+    @tag spec: "specled.append_only.adr_reverses_what_backfill"
+    test "backfilling an absent reverses_what is exempt; rewording an existing one is not" do
+      backfilled_prior =
+        adr(id: "d1", status: "accepted", affects: ["x.req_a"], change_type: "weakens")
+
+      backfilled_current =
+        adr(
+          id: "d1",
+          status: "accepted",
+          affects: ["x.req_a"],
+          change_type: "weakens",
+          reverses_what: "Supplies the justification the cross-field contract requires."
+        )
+
+      reworded_prior =
+        adr(
+          id: "d2",
+          status: "accepted",
+          affects: ["x.req_a"],
+          change_type: "weakens",
+          reverses_what: "Old reason."
+        )
+
+      reworded_current =
+        adr(
+          id: "d2",
+          status: "accepted",
+          affects: ["x.req_a"],
+          change_type: "weakens",
+          reverses_what: "A different reason."
+        )
+
+      prior = state_fixture(subject: "x", decisions: [backfilled_prior, reworded_prior])
+      current = state_fixture(subject: "x", decisions: [backfilled_current, reworded_current])
+
+      drift =
+        prior
+        |> AppendOnly.analyze(current, [])
+        |> Enum.filter(&(&1.code == "append_only/adr_affects_widened"))
+
+      assert [finding] = drift
+      assert finding.entity_id == "d2"
+      assert finding.severity == :error
+    end
+
     test "change_type change on an accepted ADR emits the finding" do
       d1_prior =
         adr(

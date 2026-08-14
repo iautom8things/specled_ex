@@ -36,7 +36,14 @@ decisions:
 
 ```yaml spec-requirements
 - id: specled.index.subject_and_decision_index
-  statement: Index building shall discover authored subject specs and authored ADRs, detect the canonical workspace directories, and summarize indexed counts without treating `decisions/README.md` as an ADR.
+  statement: >-
+    Index building shall discover authored subject specs and authored ADRs,
+    detect the canonical workspace directories, and summarize indexed counts —
+    including `decision_parse_errors` and `decision_parse_warnings` — without
+    treating `decisions/README.md` as an ADR. ADRs shall be parsed in two
+    passes so the cross-field rules of `specled.decisions.cross_field_live_gate`
+    run against the index built from the same tree, and the summary shall count
+    what that pass produced.
   priority: must
   stability: stable
 - id: specled.index.canonical_state_output

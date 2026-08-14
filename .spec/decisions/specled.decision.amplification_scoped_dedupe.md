@@ -7,6 +7,13 @@ affects:
   - specled.realized_by
   - specled.api_boundary
   - specled.realized_by.implication_amplification_dedup
+reverses_what: >-
+  `api_boundary` dedupe previously applied to the whole flat binding list keyed
+  on MFA alone, so authored subject-level and requirement-level bindings sharing
+  an MFA collapsed into one entry. Dedupe is narrowed to the implication-
+  amplified (inferred) entries the amplification actually creates; authored
+  entries are never collapsed by MFA, and an inferred entry yields to any
+  authored entry sharing its MFA.
 ---
 
 # api_boundary Dedupe Is Amplification-Scoped; Authored Bindings Are Never Collapsed by MFA

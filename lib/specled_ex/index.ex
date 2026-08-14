@@ -41,7 +41,18 @@ defmodule SpecLedEx.Index do
       "summary" => summary(subjects, decisions)
     }
 
-    maybe_add_tag_data(base_index, root, opts)
+    # Two passes. The first parses every ADR with no index (frontmatter and
+    # sections only), because cross-field rules resolve ids against the whole
+    # workspace and the whole workspace is not known until every file is parsed.
+    # The second runs those rules against the index built from the same tree,
+    # which is what puts the CrossField validator on the live gate rather than in
+    # tests alone.
+    validated = DecisionParser.validate_cross_fields(decisions, base_index, opts)
+
+    base_index
+    |> Map.put("decisions", validated)
+    |> Map.put("summary", summary(subjects, validated))
+    |> maybe_add_tag_data(root, opts)
   end
 
   defp maybe_add_tag_data(index, root, opts) do
@@ -152,12 +163,17 @@ defmodule SpecLedEx.Index do
       decisions,
       Map.merge(subject_summary, %{
         "decisions" => 0,
-        "decision_parse_errors" => 0
+        "decision_parse_errors" => 0,
+        "decision_parse_warnings" => 0
       }),
       fn decision, acc ->
         acc
         |> Map.update!("decisions", &(&1 + 1))
         |> Map.update!("decision_parse_errors", &(&1 + length(decision["parse_errors"] || [])))
+        |> Map.update!(
+          "decision_parse_warnings",
+          &(&1 + length(decision["parse_warnings"] || []))
+        )
       end
     )
   end

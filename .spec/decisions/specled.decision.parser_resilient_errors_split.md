@@ -6,6 +6,12 @@ affects:
   - specled.parser
   - specled.parser.resilient_errors
 change_type: narrows-scope
+reverses_what: >-
+  `specled.parser.resilient_errors` previously carried every structured-block
+  failure-mode assertion itself — decode failure, duplicate block, and schema
+  validation failure. It is narrowed to a group intent statement while the
+  decode-failure and duplicate-block assertions move to their own
+  sub-requirements, each covered by one exemplar scenario.
 ---
 
 # Split `parser.resilient_errors` Into Per-Failure-Mode Sub-Requirements

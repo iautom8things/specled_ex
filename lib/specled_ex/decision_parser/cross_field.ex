@@ -293,44 +293,70 @@ defmodule SpecLedEx.DecisionParser.CrossField do
     Enum.reject(ids, &String.starts_with?(&1, "repo."))
   end
 
+  # The resolvable set must match what the live verifier accepts as an ADR
+  # affect: subject ids plus the claim ids (requirements and scenarios). Decision
+  # ids are additionally resolvable because R1 resolves `replaces:` through the
+  # same set.
+  #
+  # Index entries reach this module in two shapes: plain string-keyed maps
+  # (hand-built fixtures and decisions decoded from YAML) and schema structs with
+  # atom keys (`SpecLedEx.Index.build/2` output). `field/2` reads both, so the
+  # live path resolves the same ids the fixtures do.
   defp resolvable_ids(current_index) do
-    subject_ids = collect_ids(current_index["subjects"] || [], ["meta", "id"])
-    requirement_ids = collect_requirement_ids(current_index["subjects"] || [])
-    decision_ids = collect_ids(current_index["decisions"] || [], ["meta", "id"])
+    subjects = list_of(current_index, "subjects")
 
-    MapSet.new(subject_ids ++ requirement_ids ++ decision_ids)
+    subject_ids = collect_ids(subjects, ["meta", "id"])
+    requirement_ids = collect_child_ids(subjects, "requirements")
+    scenario_ids = collect_child_ids(subjects, "scenarios")
+    decision_ids = collect_ids(list_of(current_index, "decisions"), ["meta", "id"])
+
+    MapSet.new(subject_ids ++ requirement_ids ++ scenario_ids ++ decision_ids)
   end
 
   defp collect_ids(items, path) do
     items
     |> Enum.map(&get_in_nested(&1, path))
-    |> Enum.reject(&is_nil/1)
+    |> Enum.filter(&is_binary/1)
   end
 
-  defp collect_requirement_ids(subjects) do
+  defp collect_child_ids(subjects, key) do
     Enum.flat_map(subjects, fn subject ->
       subject
-      |> Map.get("requirements", [])
-      |> Enum.map(fn req ->
-        cond do
-          is_map(req) -> Map.get(req, "id") || Map.get(req, :id)
-          true -> nil
-        end
-      end)
-      |> Enum.reject(&is_nil/1)
+      |> list_of(key)
+      |> collect_ids(["id"])
     end)
+  end
+
+  defp list_of(map, key) do
+    case field(map, key) do
+      list when is_list(list) -> Enum.filter(list, &is_map/1)
+      _ -> []
+    end
   end
 
   defp get_in_nested(map, keys) when is_map(map) do
     Enum.reduce_while(keys, map, fn key, acc ->
       case acc do
-        %{} -> {:cont, Map.get(acc, key)}
+        %{} -> {:cont, field(acc, key)}
         _ -> {:halt, nil}
       end
     end)
   end
 
   defp get_in_nested(_, _), do: nil
+
+  defp field(map, key) when is_map(map) and is_binary(key) do
+    atom_key =
+      try do
+        String.to_existing_atom(key)
+      rescue
+        ArgumentError -> nil
+      end
+
+    Map.get(map, key, if(atom_key, do: Map.get(map, atom_key)))
+  end
+
+  defp field(_map, _key), do: nil
 
   defp error(rule, code, severity, decision_id, message) do
     %{

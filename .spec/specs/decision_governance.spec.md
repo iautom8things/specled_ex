@@ -14,6 +14,7 @@ summary: Parses ADRs, validates their contract, and lets subject specs reference
 surface:
   - lib/specled_ex/decision_parser.ex
   - lib/specled_ex/decision_parser/cross_field.ex
+  - lib/specled_ex/index.ex
   - lib/specled_ex/schema/decision.ex
   - lib/specled_ex/verifier.ex
   - test/specled_ex/verifier_test.exs
@@ -31,6 +32,7 @@ decisions:
   - specled.decision.adr_append_only
   - specled.decision.deprecates_affect_reference_carveout
   - specled.decision.repo_namespace_affect_carveout
+  - specled.decision.live_cross_field_gate
 ```
 
 ## Requirements
@@ -126,6 +128,21 @@ decisions:
     than `accepted` → `deprecated` or `accepted` → `superseded`.
   priority: must
   stability: evolving
+- id: specled.decisions.cross_field_live_gate
+  statement: >-
+    `SpecLedEx.Index.build/2` shall run the CrossField validator over every
+    parsed ADR against the index built from the same tree, so the cross-field
+    rules gate `mix spec.check` rather than only their own unit tests.
+    Error-severity results shall be threaded into the decision's
+    `parse_errors`; warning-severity results shall be threaded into a separate
+    `parse_warnings` list and reported by the verifier as
+    `decision_cross_field_warning` findings at `info` severity by default,
+    because `mix spec.check` validates with `strict: true` where a warning
+    fails the gate and legacy ADRs must keep parsing. Id resolution shall read
+    both string-keyed index maps and atom-keyed schema structs, and shall
+    accept subject ids, requirement ids, scenario ids, and decision ids.
+  priority: must
+  stability: evolving
 - id: specled.decisions.cross_field_idempotent
   statement: >-
     `SpecLedEx.DecisionParser.CrossField.validate/3` shall be pure and
@@ -153,6 +170,19 @@ decisions:
 ## Scenarios
 
 ```yaml spec-scenarios
+- id: specled.decisions.scenario.cross_field_live_gate
+  given:
+    - "a workspace whose ADR carries a weakening-set `change_type` and no `reverses_what:`"
+    - "a workspace whose ADR affects a subject id that exists in the same tree"
+    - "a workspace whose ADR carries no `change_type:` at all"
+  when:
+    - Index.build/2 parses the workspace and the verifier runs over the result
+  then:
+    - "the reverses_what violation reaches the verifier as an error-severity finding"
+    - "the resolvable affect produces no `cross_field/affects_unresolved` entry"
+    - "the missing change_type reaches the verifier as a `decision_cross_field_warning` finding at info severity, not as a parse error"
+  covers:
+    - specled.decisions.cross_field_live_gate
 - id: specled.decisions.scenario.adr_reference_discipline
   given:
     - an eight-line realization comment block with no terminal ADR id
@@ -189,6 +219,7 @@ decisions:
     - specled.decisions.cross_field_affects_resolve
     - specled.decisions.cross_field_adr_append_only
     - specled.decisions.cross_field_idempotent
+    - specled.decisions.cross_field_live_gate
     - specled.decisions.adr_reference_discipline
 - kind: source_file
   target: lib/specled_ex/decision_parser/cross_field.ex

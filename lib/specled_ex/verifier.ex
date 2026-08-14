@@ -1583,6 +1583,11 @@ defmodule SpecLedEx.Verifier do
     []
     |> add_decision_meta_debug_checks(meta, decision_id, file)
     |> add_decision_parse_debug_checks(list_field(decision, "parse_errors"), decision_id, file)
+    |> add_decision_parse_warning_debug_checks(
+      list_field(decision, "parse_warnings"),
+      decision_id,
+      file
+    )
     |> add_decision_section_debug_checks(list_field(decision, "sections"), decision_id, file)
     |> add_decision_affects_debug_checks(meta, subject_ids, claim_ids, decision_id, file)
     |> add_decision_supersession_debug_checks(meta, decision_ids, decision_id, file)
@@ -1690,6 +1695,12 @@ defmodule SpecLedEx.Verifier do
         [check("error", "decision_parse", message, decision_id, file) | acc]
       end)
     end
+  end
+
+  defp add_decision_parse_warning_debug_checks(checks, parse_warnings, decision_id, file) do
+    Enum.reduce(parse_warnings, checks, fn message, acc ->
+      [check("info", "decision_cross_field_warning", message, decision_id, file) | acc]
+    end)
   end
 
   defp add_decision_section_debug_checks(checks, sections, decision_id, file) do
@@ -1818,6 +1829,11 @@ defmodule SpecLedEx.Verifier do
     []
     |> add_decision_meta_findings(meta, decision_id, file)
     |> add_decision_parse_error_findings(list_field(decision, "parse_errors"), decision_id, file)
+    |> add_decision_parse_warning_findings(
+      list_field(decision, "parse_warnings"),
+      decision_id,
+      file
+    )
     |> add_decision_section_findings(list_field(decision, "sections"), decision_id, file)
     |> add_decision_affects_findings(meta, subject_ids, claim_ids, decision_id, file)
     |> add_decision_supersession_findings(meta, decision_ids, decision_id, file)
@@ -1896,6 +1912,20 @@ defmodule SpecLedEx.Verifier do
   defp add_decision_parse_error_findings(findings, parse_errors, decision_id, file) do
     Enum.reduce(parse_errors, findings, fn message, acc ->
       [finding("error", "decision_parse_error", message, decision_id, file) | acc]
+    end)
+  end
+
+  # Warning-severity cross-field diagnostics are reported at `info` by default,
+  # not `warning`: `mix spec.check` validates with `strict: true`, where a single
+  # warning fails the gate. Reporting them at warning severity would break every
+  # workspace holding a `change_type:`-less legacy ADR the moment it upgrades —
+  # exactly the outcome `specled.decisions.change_type_optional` exists to
+  # prevent. Adopters that want enforcement raise the code through
+  # `verification.severities`. See
+  # specled.decision.live_cross_field_gate.
+  defp add_decision_parse_warning_findings(findings, parse_warnings, decision_id, file) do
+    Enum.reduce(parse_warnings, findings, fn message, acc ->
+      [finding("info", "decision_cross_field_warning", message, decision_id, file) | acc]
     end)
   end
 

@@ -63,19 +63,24 @@ defmodule SpecLedEx.DecisionParser do
 
   defp maybe_run_cross_field(decision, nil, _opts), do: decision
 
+  # Severity is carried structurally, not encoded in the message: error-severity
+  # rules land in `"parse_errors"` (which the verifier reports as errors) and
+  # warning-severity rules land in `"parse_warnings"`. Folding warnings into
+  # `"parse_errors"` would turn every `change_type:`-less legacy ADR into a hard
+  # parse error, which `specled.decisions.change_type_optional` forbids.
   defp maybe_run_cross_field(decision, current_index, opts) do
-    errors = CrossField.validate(decision, current_index, opts)
+    decision
+    |> CrossField.validate(current_index, opts)
+    |> Enum.reduce(decision, fn
+      %{severity: :warning} = warning, acc ->
+        push_parse_warning(acc, format_cross_field_diagnostic(warning))
 
-    Enum.reduce(errors, decision, fn error, acc ->
-      push_parse_error(acc, format_cross_field_error(error))
+      error, acc ->
+        push_parse_error(acc, format_cross_field_diagnostic(error))
     end)
   end
 
-  defp format_cross_field_error(%{severity: :warning, code: code, message: message}) do
-    "warning #{code}: #{message}"
-  end
-
-  defp format_cross_field_error(%{code: code, message: message}) do
+  defp format_cross_field_diagnostic(%{code: code, message: message}) do
     "#{code}: #{message}"
   end
 
@@ -85,7 +90,8 @@ defmodule SpecLedEx.DecisionParser do
       "title" => extract_title(content),
       "meta" => nil,
       "sections" => [],
-      "parse_errors" => []
+      "parse_errors" => [],
+      "parse_warnings" => []
     }
   end
 
@@ -127,5 +133,11 @@ defmodule SpecLedEx.DecisionParser do
 
   defp push_parse_error(decision, message) do
     Map.update!(decision, "parse_errors", &[message | &1])
+  end
+
+  # Map.update/4, not update!/3: `validate_cross_fields/3` also runs over
+  # decisions parsed before this key existed (base-tree views, cached indexes).
+  defp push_parse_warning(decision, message) do
+    Map.update(decision, "parse_warnings", [message], &[message | &1])
   end
 end
