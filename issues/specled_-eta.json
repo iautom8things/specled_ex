@@ -1,0 +1,14 @@
+{
+  "assignee": "",
+  "blocked_by": [],
+  "blocks": [],
+  "created": "2026-08-14T17:34:15Z",
+  "description": "Advances: specled.decisions, specled.append_only\\n\\nFound by cold audit of specled_-4a6 (2026-08-14). specled_-4a6 established that backfilling an absent reverses_what: on an accepted ADR is NOT drift — see .spec/decisions/specled.decision.adr_reverses_what_backfill.md and requirement specled.append_only.adr_reverses_what_backfill. SpecLedEx.AppendOnly implements that carve-out (maybe_drift_on_reverses_what/3, append_only.ex:528).\\n\\nCrossField R5 encodes the opposite policy for the same edit. cross_field.ex:210 compares reverses_what verbatim via maybe_r5_field_drift/5 and would emit cross_field/adr_field_drift on exactly the transition AppendOnly now exempts.\\n\\nNot currently reachable: R5 only runs when :prior_decisions is supplied, and nothing in lib/ supplies it. But specled_-4a6 wired Index.build/2 to forward its opts straight through to validate_cross_fields/3 (index.ex:50), so R5 activates the moment any caller passes that option — and the first thing it would do is contradict a shipped ADR.\\n\\nThe two requirements are not literally contradictory (specled.decisions.cross_field_adr_append_only governs the CrossField rule; the carve-out is scoped to append_only/adr_affects_widened), but they encode opposite policy for one edit, and the backfill ADR says nothing about R5.\\n\\nFix options: (a) extend the carve-out to R5 — needs an amendment to specled.decisions.cross_field_adr_append_only, whose text currently says an error fires when reverses_what \"differs from the prior-state version\", plus a superseding or amending ADR; (b) decide R5 is deliberately stricter and record why in the backfill ADR; (c) remove R5 if the append-only branch guard is the intended single enforcer.\\n\\nDo this before anyone wires :prior_decisions into the live path. Severity: Medium — latent, no current trigger, but it is a governance-policy split introduced by specled_-4a6 rather than a pre-existing one.",
+  "id": "specled_-eta",
+  "labels": [],
+  "priority": 3,
+  "status": "open",
+  "title": "CrossField R5 contradicts the reverses_what backfill carve-out (dead today, activates if any caller passes :prior_decisions)",
+  "type": "task",
+  "updated_at": "2026-08-14T17:34:15Z"
+}
