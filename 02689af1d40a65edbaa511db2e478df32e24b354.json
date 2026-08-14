@@ -94,8 +94,8 @@
       "message": "Changed file test/specled_ex/index_state_test.exs impacts subject specs that were not updated: specled.package, specled.status"
     }
   ],
-  "run_at": "2026-08-14T17:03:27.412256Z",
-  "run_id": "71f178226041d6b49a8034379f945ff6",
+  "run_at": "2026-08-14T17:17:36.070599Z",
+  "run_id": "8b9fb16b9b02c14ce14281ddde8d7068",
   "schema_version": 1,
   "specled_version": "0.16.0",
   "tree_hash": "02689af1d40a65edbaa511db2e478df32e24b354",
