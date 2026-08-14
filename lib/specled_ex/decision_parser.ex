@@ -135,8 +135,11 @@ defmodule SpecLedEx.DecisionParser do
     Map.update!(decision, "parse_errors", &[message | &1])
   end
 
-  # Map.update/4, not update!/3: `validate_cross_fields/3` also runs over
-  # decisions parsed before this key existed (base-tree views, cached indexes).
+  # Map.update/4, not update!/3. Every decision the in-tree caller supplies came
+  # from parse_file/4, which seeds the key — but `validate_cross_fields/3` is
+  # public API, so a caller outside this repo can hand it a decision map it built
+  # or cached itself. Tolerating the missing key costs nothing and turns a
+  # KeyError into the obvious result.
   defp push_parse_warning(decision, message) do
     Map.update(decision, "parse_warnings", [message], &[message | &1])
   end

@@ -281,11 +281,11 @@ defmodule SpecLedEx.DecisionParser.LiveCrossFieldGateTest do
     assert raised["severity"] == "error"
   end
 
-  # `validate_cross_fields/3` also runs over decisions parsed before
-  # "parse_warnings" existed — base-tree views and cached indexes. Nothing else
-  # in the suite feeds it a legacy-shaped map, so `Map.update!/3` in
-  # push_parse_warning/2 would raise KeyError at runtime with every other test
-  # still green.
+  # `validate_cross_fields/3` is public API: an out-of-repo caller can hand it a
+  # decision map it built or cached itself, without the "parse_warnings" key the
+  # in-tree parse_file/4 seeds. Nothing else in the suite feeds it that shape, so
+  # `Map.update!/3` in push_parse_warning/2 would raise KeyError on those callers
+  # with every other test still green.
   @tag spec: "specled.decisions.cross_field_live_gate"
   test "a decision map with no parse_warnings key gains one instead of raising" do
     legacy = %{
