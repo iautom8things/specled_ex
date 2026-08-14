@@ -1,14 +1,7 @@
 {
-  "findings": [
-    {
-      "code": "branch_guard_missing_subject_update",
-      "file": "mix.exs",
-      "level": "info",
-      "message": "Changed file mix.exs impacts subject specs that were not updated: specled.compiler_tracer"
-    }
-  ],
-  "run_at": "2026-08-12T23:47:48.622535Z",
-  "run_id": "c19aa4b69deed9e79d2d4a1b2310c8b5",
+  "findings": [],
+  "run_at": "2026-08-14T16:01:35.139233Z",
+  "run_id": "c1d37ca53addc1780c5156e81bca2a5c",
   "schema_version": 1,
   "specled_version": "0.16.0",
   "tree_hash": "692e9cd97fe6a996b4f965b806b68569916891e6",
