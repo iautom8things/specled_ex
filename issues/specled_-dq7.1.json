@@ -7,9 +7,15 @@
   "id": "specled_-dq7.1",
   "labels": [],
   "parent": "specled_-dq7",
+  "comments": [
+    {
+      "text": "Reachability changed by specled_-4a6, merged as 15827757 (release 0.17.0). NOT resolved — recording the new state so the owner decision is made on current facts.\n\nThis ticket offered two paths: add the reverses_what check to authorizing_decision/3, or 'delete the clause and let CrossField own the field once it is wired (specled_-4a6)'. That wiring has now landed, but neither path was taken: authorizing_decision/3 still filters only on accepted_decision?/1, id-in-affects, and change_type-in-weakening-set, and specled.append_only.requirement_deleted_authorized still says 'with a non-empty reverses_what'. The overclaim stands.\n\nWhat did change is the described failure's reachability. CrossField R2 now runs inside Index.build/2, so an ADR with change_type: weakens and no reverses_what emits cross_field/reverses_what_missing at error severity and fails mix spec.check outright. The exploit in the Failure paragraph — that ADR silently suppressing append_only/requirement_deleted for a deleted MUST — can no longer occur behind a GREEN gate: the branch guard runs inside spec.check, so the ADR reds the gate before its authorization is ever consulted.\n\nTwo caveats against reading that as a fix:\n1. The spec clause still describes a check authorizing_decision/3 does not perform. The overclaim is unchanged; only its consequence is now caught elsewhere.\n2. R2's coverage is not identical to the clause's. R2 fires on any weakening-set change_type with a blank reverses_what; the clause is about authorization of a specific deletion. An ADR with a NON-blank but meaningless reverses_what passes R2 and still authorizes — so the 'CrossField owns the field' path is narrower than it sounds.\n\nAlso relevant: specled_-4a6 added specled.append_only.adr_reverses_what_backfill, which makes a blank -\u003e non-blank reverses_what backfill exempt from ADR drift. If you take the 'add the check to authorizing_decision/3' path, that interaction needs thinking through — a backfilled ADR would begin authorizing deletions it did not authorize before.\n\nSeverity arguably drops from Medium given the gate now catches the reachable case, but that is the owner's call, not mine to downgrade.",
+      "timestamp": "2026-08-17T10:31:47Z"
+    }
+  ],
   "priority": 2,
   "status": "open",
   "title": "reverses_what is mandated by two must requirements and read by zero code paths",
   "type": "task",
-  "updated_at": "2026-08-12T21:21:01Z"
+  "updated_at": "2026-08-17T10:31:47Z"
 }
