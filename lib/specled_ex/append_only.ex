@@ -534,11 +534,18 @@ defmodule SpecLedEx.AppendOnly do
     end
   end
 
+  # Shape-tolerant: ADR frontmatter is repo-authored YAML and a field written as
+  # a nested mapping decodes to a map, which blanket `to_string/1` cannot render
+  # — it raises and takes the whole gate's report down with it. A non-string
+  # value is "present but malformed", never blank, so it falls through to the
+  # verbatim comparison below (which compares structurally and never stringifies)
+  # and the backfill exemption does not apply to it.
   defp blank_field?(adr, field) do
-    adr
-    |> Map.get(field)
-    |> to_string()
-    |> String.trim() == ""
+    case Map.get(adr, field) do
+      nil -> true
+      value when is_binary(value) -> String.trim(value) == ""
+      _ -> false
+    end
   end
 
   defp drift_on(acc, field, prior_adr, current_adr) do

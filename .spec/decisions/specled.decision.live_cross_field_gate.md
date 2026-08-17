@@ -5,6 +5,9 @@ date: 2026-08-14
 affects:
   - specled.decisions.cross_field_live_gate
   - specled.decisions.change_type_optional
+  - specled.decisions.cross_field_reverses_what
+  - specled.index.subject_and_decision_index
+  - specled.verify.decision_governance
 change_type: refines
 ---
 
@@ -67,12 +70,23 @@ author can always fix.
 
 ## Consequences
 
-- **Positive:** R1 through R6 now fail `mix spec.check` on the live path. The
+- **Positive:** R1, R2, R3 and R4 now fail `mix spec.check` on the live path. The
   0.15.0 escape — a weakening ADR with no `reverses_what:` — is caught before
-  merge.
-- **Positive:** The two affect-resolution paths agree. CrossField's resolvable
-  set matches what `Verifier.valid_decision_affect?/4` accepts, including the
-  `repo.` prefix carve-out.
+  merge. R7 reports at `info` by the rule above. **R5 (ADR append-only) does
+  NOT run on the live path**: it is gated on `opts[:prior_decisions]`, and
+  `Index.build/2` supplies no such option, so `specled.decisions.cross_field_adr_append_only`
+  remains enforced only by its unit tests. Diff-time ADR immutability is covered
+  instead by `SpecLedEx.AppendOnly` in the branch guard. Wiring `:prior_decisions`
+  through would activate R5's verbatim `reverses_what` comparison, which
+  contradicts `specled.append_only.adr_reverses_what_backfill`; that must be
+  reconciled before anyone does so.
+- **Positive:** CrossField's resolvable set covers everything
+  `Verifier.valid_decision_affect?/4` accepts — subject ids, requirement and
+  scenario claim ids, and the `repo.` prefix carve-out — so no affect the
+  verifier admits is rejected here. The two sets are not identical: CrossField
+  additionally resolves decision ids, because R1 resolves `replaces:` through the
+  same set. CrossField is therefore the more permissive of the two on that one
+  kind, and a maintainer must not treat the pair as interchangeable.
 - **Negative:** Upgrading adopters whose ADRs violate an error-severity
   cross-field rule get a red gate on first run. That is the intended effect of
   activating an unenforced contract, and
@@ -89,7 +103,9 @@ author can always fix.
 
 - `specled.decision.repo_namespace_affect_carveout` — the `repo.` prefix
   exemption both paths must honor, added when this wiring was still pending.
-- `specled.decision.deprecates_affect_reference_carveout` — the R6 carve-out
-  that keeps deprecation targets exempt from resolution.
+- `specled.decision.deprecates_affect_reference_carveout` — the deprecates
+  carve-out that keeps deprecation targets exempt from resolution. The code calls
+  it R6, but it is a branch inside R4 rather than a rule of its own; there is no
+  separate R6 function to wire.
 - `specled.decision.adr_reverses_what_backfill` — the in-place repair this
   activation makes necessary.

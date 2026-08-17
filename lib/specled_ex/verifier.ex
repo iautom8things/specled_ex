@@ -1738,7 +1738,7 @@ defmodule SpecLedEx.Verifier do
           check(
             "pass",
             "decision_affect_valid",
-            "Decision affect valid: #{affect}",
+            "Decision affect valid: #{render_value(affect)}",
             decision_id,
             file
           )
@@ -1749,7 +1749,7 @@ defmodule SpecLedEx.Verifier do
           check(
             "error",
             "decision_affect_invalid",
-            "Decision affect invalid: #{affect}",
+            "Decision affect invalid: #{render_value(affect)}",
             decision_id,
             file
           )
@@ -1957,7 +1957,7 @@ defmodule SpecLedEx.Verifier do
           finding(
             "error",
             "decision_unknown_affect",
-            "Decision affect must reference a subject id or repo.* identifier: #{affect}",
+            "Decision affect must reference a subject id or repo.* identifier: #{render_value(affect)}",
             decision_id,
             file
           )
@@ -2972,6 +2972,15 @@ defmodule SpecLedEx.Verifier do
   end
 
   defp field(_item, _key), do: nil
+
+  # Frontmatter values reach findings unvalidated: an `affects:` entry written as
+  # a nested mapping decodes to a map, and interpolating one raises
+  # `Protocol.UndefinedError` — which aborts the whole verification run instead of
+  # reporting the malformed entry. Render anything non-textual with `inspect/1` so
+  # the diagnostic names the bad value and the run survives to report it.
+  defp render_value(value) when is_binary(value), do: value
+  defp render_value(value) when is_atom(value) or is_number(value), do: to_string(value)
+  defp render_value(value), do: inspect(value)
 
   defp finding(severity, code, message, subject_id, file) do
     %{

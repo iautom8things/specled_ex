@@ -40,10 +40,10 @@ decisions:
     Index building shall discover authored subject specs and authored ADRs,
     detect the canonical workspace directories, and summarize indexed counts —
     including `decision_parse_errors` and `decision_parse_warnings` — without
-    treating `decisions/README.md` as an ADR. ADRs shall be parsed in two
-    passes so the cross-field rules of `specled.decisions.cross_field_live_gate`
-    run against the index built from the same tree, and the summary shall count
-    what that pass produced.
+    treating `decisions/README.md` as an ADR. The indexed ADRs shall carry the
+    cross-field diagnostics of `specled.decisions.cross_field_live_gate`,
+    resolved against the same tree's subjects and decisions, and the summary
+    counts shall reflect those diagnostics.
   priority: must
   stability: stable
 - id: specled.index.canonical_state_output

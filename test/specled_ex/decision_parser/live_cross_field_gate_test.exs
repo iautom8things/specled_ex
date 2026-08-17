@@ -89,6 +89,17 @@ defmodule SpecLedEx.DecisionParser.LiveCrossFieldGateTest do
     SpecLedEx.validate(index, root, Keyword.merge([strict: true, run_commands: false], opts))
   end
 
+  # A bare `assert report["status"] == "pass"` couples this file to every default
+  # finding the verifier emits: add an unrelated default check upstream and these
+  # tests fail with `left: "fail" / right: "pass"` and no hint that the cause is
+  # elsewhere. Naming the offending findings in the failure keeps the global
+  # assertion — which is the actual adopter-facing claim — while making a
+  # collision diagnosable in one read.
+  defp assert_gate_passes(report) do
+    assert report["status"] == "pass",
+           "expected a clean gate, got findings: #{inspect(report["findings"], pretty: true)}"
+  end
+
   @tag spec: "specled.decisions.cross_field_live_gate"
   test "affects that resolve against the built index produce no finding", %{root: root} do
     write_workspace(root)
@@ -133,7 +144,7 @@ defmodule SpecLedEx.DecisionParser.LiveCrossFieldGateTest do
 
     report = verify_strict(index, root)
 
-    assert report["status"] == "pass"
+    assert_gate_passes(report)
   end
 
   # The 0.15.0 escape: three narrows-scope ADRs with no `reverses_what:` shipped
@@ -243,7 +254,7 @@ defmodule SpecLedEx.DecisionParser.LiveCrossFieldGateTest do
 
     report = verify_strict(index, root)
 
-    assert report["status"] == "pass"
+    assert_gate_passes(report)
 
     assert [warning] =
              Enum.filter(report["findings"], &(&1["code"] == "decision_cross_field_warning"))
@@ -279,6 +290,104 @@ defmodule SpecLedEx.DecisionParser.LiveCrossFieldGateTest do
              Enum.filter(report["findings"], &(&1["code"] == "decision_cross_field_warning"))
 
     assert raised["severity"] == "error"
+  end
+
+  # `mix spec.check --debug` is what a maintainer reaches for when a verdict is
+  # confusing, and an `info`-severity cross-field warning is exactly the class of
+  # diagnostic that is invisible at default severity — the debug check line is the
+  # only place it surfaces explicitly. Deleting the debug pipeline stage left the
+  # whole suite green before this test existed.
+  @tag spec: "specled.decisions.cross_field_live_gate"
+  test "cross-field warnings surface as debug checks", %{root: root} do
+    write_workspace(root)
+
+    write_decision(
+      root,
+      "legacy",
+      adr("adr.legacy", """
+      affects:
+        - alpha.requirement
+      """)
+    )
+
+    index = Index.build(root, test_tags: false)
+    report = verify_strict(index, root, debug: true)
+
+    assert [check] =
+             Enum.filter(report["checks"], &(&1["code"] == "decision_cross_field_warning"))
+
+    assert check["status"] == "info"
+    assert check["message"] =~ "cross_field/missing_change_type"
+    assert check["subject_id"] == "adr.legacy"
+  end
+
+  # ADR frontmatter is unvalidated YAML, so a field can decode to a mapping or a
+  # list. Blanket `to_string/1` on one raises Protocol.UndefinedError, and because
+  # `Mix.Tasks.Spec.Check` wraps `SpecLedEx.index/2` in no rescue, that aborts the
+  # whole gate: no findings, no verdict line, and every unrelated diagnostic in
+  # the run is lost too. A gate that cannot report is worse than one that reports
+  # badly, so each malformed shape must degrade to a diagnostic.
+  @tag spec: [
+         "specled.decisions.cross_field_reverses_what",
+         "specled.decisions.cross_field_live_gate"
+       ]
+  test "malformed frontmatter shapes report instead of aborting the gate", %{root: root} do
+    write_workspace(root)
+
+    # reverses_what as a nested mapping — the shape that crashed R2.
+    write_decision(
+      root,
+      "mapping_rw",
+      adr("adr.mapping_rw", """
+      change_type: narrows-scope
+      reverses_what:
+        why: it used to be broader
+      affects:
+        - alpha.requirement
+      """)
+    )
+
+    # change_type as a mapping — names no enum member, so R7 treats it as absent.
+    write_decision(
+      root,
+      "mapping_ct",
+      adr("adr.mapping_ct", """
+      change_type:
+        kind: narrows-scope
+      affects:
+        - alpha.requirement
+      """)
+    )
+
+    # A non-string affects element — must surface, not silently shrink the list.
+    write_decision(
+      root,
+      "listy_affects",
+      adr("adr.listy_affects", """
+      change_type: narrows-scope
+      reverses_what: >-
+        Something used to be broader.
+      affects:
+        - nested: alpha.requirement
+      """)
+    )
+
+    index = Index.build(root, test_tags: false)
+
+    assert ["cross_field/reverses_what_missing: " <> _] =
+             decision_by_id(index, "adr.mapping_rw")["parse_errors"]
+
+    assert ["cross_field/missing_change_type: " <> _] =
+             decision_by_id(index, "adr.mapping_ct")["parse_warnings"]
+
+    assert ["cross_field/affects_unresolved: " <> unresolved] =
+             decision_by_id(index, "adr.listy_affects")["parse_errors"]
+
+    assert unresolved =~ "nested"
+
+    # And the run still produces a report rather than a stacktrace.
+    report = verify_strict(index, root)
+    assert report["status"] == "fail"
   end
 
   # `validate_cross_fields/3` is public API: an out-of-repo caller can hand it a

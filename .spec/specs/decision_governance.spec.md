@@ -80,7 +80,13 @@ decisions:
     ADRs without a `change_type:` field shall parse successfully and
     emit a `cross_field/missing_change_type` warning-level diagnostic
     rather than a parse error, so that legacy ADRs and bootstrap
-    adoption paths are not broken.
+    adoption paths are not broken. "Warning-level" describes the
+    diagnostic the CrossField validator returns, not the severity the
+    operator sees: because `mix spec.check` validates with `strict: true`,
+    where a warning-severity finding fails the gate exactly like an error,
+    the verifier reports this diagnostic at `info` by default per
+    `specled.decisions.cross_field_live_gate`. Reporting it at `warning`
+    would break the very workspaces this requirement protects.
   priority: must
   stability: evolving
 - id: specled.decisions.cross_field_supersedes_replaces
@@ -95,7 +101,11 @@ decisions:
   statement: >-
     The CrossField validator shall emit an error when an ADR whose
     `change_type` is in the weakening set carries an empty (after
-    `String.trim/1`) or missing `reverses_what:` value.
+    `String.trim/1`) or missing `reverses_what:` value. A value that is
+    not a string — frontmatter is unvalidated YAML, so it may decode to a
+    mapping or a list — shall be treated as missing and reported, never
+    coerced and never allowed to raise: a diagnostic the author can act on,
+    rather than an aborted run.
   priority: must
   stability: evolving
 - id: specled.decisions.cross_field_affects_non_empty
@@ -131,8 +141,14 @@ decisions:
 - id: specled.decisions.cross_field_live_gate
   statement: >-
     `SpecLedEx.Index.build/2` shall run the CrossField validator over every
-    parsed ADR against the index built from the same tree, so the cross-field
-    rules gate `mix spec.check` rather than only their own unit tests.
+    parsed ADR against the subjects and decisions parsed from the same tree, so
+    that the rules reachable without prior state — supersedes/replaces,
+    reverses_what, affects-non-empty, affects-resolution, and missing
+    change_type — gate `mix spec.check` rather than only their own unit tests.
+    The ADR append-only rule is out of scope for this requirement: it is gated on
+    a caller-supplied prior-state decision list that `SpecLedEx.Index.build/2`
+    does not supply, and diff-time ADR immutability is enforced by
+    `SpecLedEx.AppendOnly` in the branch guard instead.
     Error-severity results shall be threaded into the decision's
     `parse_errors`; warning-severity results shall be threaded into a separate
     `parse_warnings` list and reported by the verifier as

@@ -721,6 +721,34 @@ defmodule SpecLedEx.AppendOnlyTest do
       assert fix_block_present?(reworded.message)
     end
 
+    # ADR frontmatter is unvalidated YAML, so `reverses_what:` can decode to a
+    # mapping. The blankness test must tolerate that shape: blanket `to_string/1`
+    # raises Protocol.UndefinedError and takes down the whole gate's report, and a
+    # malformed value must not be mistaken for blank and swallowed by the backfill
+    # exemption. Present-but-malformed → still compared → still drift.
+    @tag spec: "specled.append_only.adr_reverses_what_backfill"
+    test "a mapping-valued reverses_what is compared, not treated as blank" do
+      base = [status: "accepted", affects: ["x.req_a"], change_type: "weakens"]
+
+      prior =
+        state_fixture(
+          subject: "x",
+          decisions: [adr([id: "d1", reverses_what: %{"why" => "it was broader"}] ++ base)]
+        )
+
+      current =
+        state_fixture(
+          subject: "x",
+          decisions: [adr([id: "d1", reverses_what: "Now a real sentence."] ++ base)]
+        )
+
+      findings = AppendOnly.analyze(prior, current, [])
+
+      assert [finding] = Enum.filter(findings, &(&1.code == "append_only/adr_affects_widened"))
+      assert finding.entity_id == "d1"
+      assert finding.severity == :error
+    end
+
     test "change_type change on an accepted ADR emits the finding" do
       d1_prior =
         adr(

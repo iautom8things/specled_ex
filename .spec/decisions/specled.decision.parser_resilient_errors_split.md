@@ -7,11 +7,13 @@ affects:
   - specled.parser.resilient_errors
 change_type: narrows-scope
 reverses_what: >-
-  `specled.parser.resilient_errors` previously carried every structured-block
-  failure-mode assertion itself — decode failure, duplicate block, and schema
-  validation failure. It is narrowed to a group intent statement while the
-  decode-failure and duplicate-block assertions move to their own
-  sub-requirements, each covered by one exemplar scenario.
+  `specled.parser.resilient_errors` was covered by two scenarios
+  (`malformed_json`, `duplicate_empty_block`) at base and by one
+  (`resilient_errors_totality`) at head, because both original scenarios were
+  retargeted to the new per-failure-mode sub-requirements. This reverses the
+  scenario-count floor for that requirement and authorizes the resulting
+  `append_only/scenario_regression` signal. The requirement's own statement is
+  unchanged and still asserts all three failure modes.
 ---
 
 # Split `parser.resilient_errors` Into Per-Failure-Mode Sub-Requirements

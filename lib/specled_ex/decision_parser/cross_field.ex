@@ -110,7 +110,7 @@ defmodule SpecLedEx.DecisionParser.CrossField do
     # Decision.weakening_types/0 at compile time creates a compile-connected
     # xref edge, which the CI gate holds at zero.
     if ct in Decision.weakening_types() do
-      rw = meta |> Map.get("reverses_what", "") |> to_string() |> String.trim()
+      rw = trimmed_string(meta, "reverses_what")
 
       if rw == "" do
         error(
@@ -267,20 +267,51 @@ defmodule SpecLedEx.DecisionParser.CrossField do
   defp meta(%{"meta" => m}) when is_map(m), do: m
   defp meta(_), do: %{}
 
+  # ADR frontmatter is repo-authored YAML that reaches this module unvalidated —
+  # nothing between `YamlElixir` and here constrains a field's SHAPE. A field
+  # written as a nested mapping or a list therefore decodes to a map or list, and
+  # blanket `to_string/1` on one raises `Protocol.UndefinedError`, which aborts
+  # the whole gate: no findings, no verdict line, and the run's unrelated
+  # diagnostics are lost with it. Every read below degrades to a diagnostic
+  # instead. A gate that cannot report is worse than a gate that reports badly.
   defp change_type(meta) when is_map(meta) do
     case Map.get(meta, "change_type") do
       nil -> nil
       "" -> nil
       value when is_binary(value) -> value
-      value -> to_string(value)
+      value when is_atom(value) or is_number(value) -> to_string(value)
+      # A mapping- or list-valued change_type names no member of the enum, so it
+      # is treated as absent: R7 reports the missing field rather than crashing.
+      _ -> nil
+    end
+  end
+
+  # Only a string can be justification prose. A non-string `reverses_what:` is
+  # treated as missing so R2 reports it (see
+  # specled.decisions.cross_field_reverses_what).
+  defp trimmed_string(meta, field) when is_map(meta) do
+    case Map.get(meta, field) do
+      value when is_binary(value) -> String.trim(value)
+      _ -> ""
     end
   end
 
   defp list_field(meta, field) when is_map(meta) do
     case Map.get(meta, field) do
-      nil -> []
-      list when is_list(list) -> Enum.map(list, &to_string/1)
-      _ -> []
+      nil ->
+        []
+
+      list when is_list(list) ->
+        # A non-string element is rendered rather than dropped: it then fails id
+        # resolution and surfaces as an unresolved affect, instead of silently
+        # shrinking the list the rules are checking.
+        Enum.map(list, fn
+          element when is_binary(element) -> element
+          element -> inspect(element)
+        end)
+
+      _ ->
+        []
     end
   end
 

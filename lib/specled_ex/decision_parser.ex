@@ -71,13 +71,28 @@ defmodule SpecLedEx.DecisionParser do
   defp maybe_run_cross_field(decision, current_index, opts) do
     decision
     |> CrossField.validate(current_index, opts)
-    |> Enum.reduce(decision, fn
-      %{severity: :warning} = warning, acc ->
-        push_parse_warning(acc, format_cross_field_diagnostic(warning))
+    |> Enum.reduce(decision, &route_diagnostic/2)
+  end
 
-      error, acc ->
-        push_parse_error(acc, format_cross_field_diagnostic(error))
-    end)
+  # Both severities are matched explicitly rather than leaving one to a catch-all.
+  # A catch-all would route an unrecognized severity — a future `:info` rule, or a
+  # `:warn` typo — into `"parse_errors"`, which the verifier reports at error
+  # severity: a one-character slip would fail `mix spec.check` for every adopter
+  # holding a matching ADR. Failing loudly on an unknown severity is right, but it
+  # should be a deliberate clause that says so, not a fallthrough.
+  defp route_diagnostic(%{severity: :warning} = diagnostic, decision) do
+    push_parse_warning(decision, format_cross_field_diagnostic(diagnostic))
+  end
+
+  defp route_diagnostic(%{severity: :error} = diagnostic, decision) do
+    push_parse_error(decision, format_cross_field_diagnostic(diagnostic))
+  end
+
+  defp route_diagnostic(%{} = diagnostic, decision) do
+    push_parse_error(
+      decision,
+      "cross_field/unknown_severity: #{inspect(Map.get(diagnostic, :severity))} is not a recognized diagnostic severity; #{format_cross_field_diagnostic(diagnostic)}"
+    )
   end
 
   defp format_cross_field_diagnostic(%{code: code, message: message}) do
@@ -131,15 +146,17 @@ defmodule SpecLedEx.DecisionParser do
     e -> {:error, Exception.message(e)}
   end
 
+  # Both tolerate a missing key. `validate_cross_fields/3` is public API, so an
+  # out-of-repo caller can hand it a decision map it built or cached itself, and
+  # such a map should collect diagnostics rather than raise. The in-tree caller
+  # always passes a map `parse_file/4` already seeded, so the tolerance costs
+  # nothing there. An earlier version made only the warning push tolerant, which
+  # was incoherent: the very caller that justified it would have hit KeyError on
+  # the error push one line later.
   defp push_parse_error(decision, message) do
-    Map.update!(decision, "parse_errors", &[message | &1])
+    Map.update(decision, "parse_errors", [message], &[message | &1])
   end
 
-  # Map.update/4, not update!/3. Every decision the in-tree caller supplies came
-  # from parse_file/4, which seeds the key — but `validate_cross_fields/3` is
-  # public API, so a caller outside this repo can hand it a decision map it built
-  # or cached itself. Tolerating the missing key costs nothing and turns a
-  # KeyError into the obvious result.
   defp push_parse_warning(decision, message) do
     Map.update(decision, "parse_warnings", [message], &[message | &1])
   end
