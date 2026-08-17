@@ -1,6 +1,8 @@
 ---
 id: specled.decision.adr_append_only
 status: accepted
+reverses_what:
+  crafted: mapping
 date: 2026-04-23
 affects:
   - specled.append_only
