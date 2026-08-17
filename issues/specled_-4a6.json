@@ -6,7 +6,7 @@
   "description": "Pre-existing latent finding from specled_-dn4.8 cold verification (2026-07-25T13:34:35Z, Note 2): CrossField.validate/3's current_index-aware checks (R4 resolution, R6 deprecates exemption) have no production caller — Index.build calls DecisionParser.parse_file/2 with no current_index, and validate_all/2 is test-only. The cross_field_affects_resolve requirement is specified and tested but unwired in the live gate; the aggregate Verifier duplicates the logic instead. Options: wire current_index through Index.build's parse, or consolidate on the Verifier path and re-scope the requirement. Independent of the dn4 epic (pre-existing on main).",
   "id": "specled_-4a6",
   "labels": [
-    "phase:in-ci",
+    "phase:deploying",
     "slug:wire-crossfield-validate-3"
   ],
   "comments": [
@@ -63,5 +63,5 @@
   "status": "in_progress",
   "title": "Wire CrossField.validate/3 into the live decision-parse path (R4/R6 exercised only in tests)",
   "type": "task",
-  "updated_at": "2026-08-17T10:19:01Z"
+  "updated_at": "2026-08-17T10:26:52Z"
 }
