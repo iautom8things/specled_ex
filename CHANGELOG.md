@@ -1,5 +1,75 @@
 # Changelog
 
+## 0.17.0 — 2026-08-17
+
+The CrossField ADR validator had no production caller ([specled_-4a6](https://github.com/iautom8things/specled_ex/blob/beadwork/issues/specled_-4a6.json)).
+`SpecLedEx.Index.build/2` parsed decisions through
+`DecisionParser.parse_file/2`, which passes `current_index = nil`, so every
+`cross_field_*` `must` requirement was enforced by its own unit tests and
+nothing else. The cost was measured, not theoretical: release 0.15.0 shipped
+three `narrows-scope` ADRs with no `reverses_what:` — an error by
+`specled.decisions.cross_field_reverses_what` — and `mix spec.check` still
+returned `result=pass`. This release puts those rules on the live gate.
+
+**Upgrading may turn `mix spec.check` red on the first run.** That is the
+intended effect of activating an unenforced contract. Two classes fire: an ADR
+whose `affects:` id does not resolve, and a weakening-set ADR
+(`deprecates`, `weakens`, `narrows-scope`, `adds-exception`) with no
+`reverses_what:`. Both name the offending ADR and are fixable in place — the
+`reverses_what:` backfill below exists so a frozen ADR does not have to be
+superseded to repair it. A missing `change_type:` is reported at `info` and
+does not fail the gate.
+
+### Added
+
+- **The cross-field rules gate `mix spec.check`.** `Index.build/2` validates
+  every parsed ADR against the subjects and decisions of the same tree, so
+  supersedes/replaces, `reverses_what`, affects-non-empty and
+  affects-resolution now fail the gate rather than only their unit tests. ADR
+  append-only is deliberately excluded: it needs a caller-supplied prior state
+  that `Index.build/2` does not pass, and diff-time ADR immutability stays with
+  the branch guard. Recorded in
+  `specled.decision.live_cross_field_gate`.
+- **Backfilling an absent `reverses_what:` is no longer ADR drift.** An
+  accepted ADR authored before this contract was enforced can have its missing
+  justification supplied in place. `change_type` and `affects` are still
+  compared verbatim, and editing or deleting an existing `reverses_what:` is
+  still drift, so no weakening can be retroactively authorized. Without this
+  the only remedy was superseding a record whose decision is correct — a wall
+  every adopter would hit on upgrade. Recorded in
+  `specled.decision.adr_reverses_what_backfill`.
+
+### Fixed
+
+- **A malformed ADR field no longer takes down the whole report.** ADR
+  frontmatter is unvalidated YAML, so a field written as a nested mapping
+  decodes to a map, and `to_string/1` on one raised `Protocol.UndefinedError`.
+  `mix spec.check` wraps the index build in no rescue, so one bad ADR produced
+  a stacktrace instead of a verdict and every unrelated finding in that run was
+  lost. Each read now degrades to a diagnostic naming the offending ADR.
+- **ADR `affects:` ids never resolved against a real index.** The resolver read
+  `subject["meta"]["id"]` with string keys while a built index carries schema
+  structs with atom keys, so the resolvable set came back empty and every
+  subject-level affect looked unresolved. Every existing fixture hand-built a
+  plain map, which is precisely why nothing caught it. Ids now resolve through
+  both shapes, and the set covers subject, requirement, scenario and decision
+  ids.
+- **Four shipped ADRs carried a weakening `change_type` with no
+  `reverses_what:`** — the same defect class as the 0.15.0 escape, found by the
+  gate the moment it went live. All four now state what they reversed.
+
+### Changed
+
+- **`cross_field/missing_change_type` reports at `info`, not `warning`.**
+  `mix spec.check` validates with `strict: true`, where a warning fails the
+  gate exactly like an error, so reporting it at warning severity would break
+  every workspace holding a `change_type:`-less legacy ADR — the outcome
+  `specled.decisions.change_type_optional` exists to prevent. Raise it through
+  `verification.severities` to enforce it.
+- **Decision maps carry a `parse_warnings` list** alongside `parse_errors`, and
+  the index summary counts both. Warning-severity cross-field diagnostics land
+  there instead of being folded into parse errors.
+
 ## 0.16.0 — 2026-08-12
 
 Earmark is retired on Hex ([specled_-jzx](https://github.com/iautom8things/specled_ex/blob/beadwork/issues/specled_-jzx.json)). `mix hex.audit` exits non-zero on a
