@@ -110,7 +110,7 @@ defmodule SpecLedEx.DecisionParser.CrossField do
     # Decision.weakening_types/0 at compile time creates a compile-connected
     # xref edge, which the CI gate holds at zero.
     if ct in Decision.weakening_types() do
-      rw = meta |> Map.get("reverses_what", "") |> to_string() |> String.trim()
+      rw = trimmed_string(meta, "reverses_what")
 
       if rw == "" do
         error(
@@ -267,20 +267,51 @@ defmodule SpecLedEx.DecisionParser.CrossField do
   defp meta(%{"meta" => m}) when is_map(m), do: m
   defp meta(_), do: %{}
 
+  # ADR frontmatter is repo-authored YAML that reaches this module unvalidated —
+  # nothing between `YamlElixir` and here constrains a field's SHAPE. A field
+  # written as a nested mapping or a list therefore decodes to a map or list, and
+  # blanket `to_string/1` on one raises `Protocol.UndefinedError`, which aborts
+  # the whole gate: no findings, no verdict line, and the run's unrelated
+  # diagnostics are lost with it. Every read below degrades to a diagnostic
+  # instead. A gate that cannot report is worse than a gate that reports badly.
   defp change_type(meta) when is_map(meta) do
     case Map.get(meta, "change_type") do
       nil -> nil
       "" -> nil
       value when is_binary(value) -> value
-      value -> to_string(value)
+      value when is_atom(value) or is_number(value) -> to_string(value)
+      # A mapping- or list-valued change_type names no member of the enum, so it
+      # is treated as absent: R7 reports the missing field rather than crashing.
+      _ -> nil
+    end
+  end
+
+  # Only a string can be justification prose. A non-string `reverses_what:` is
+  # treated as missing so R2 reports it (see
+  # specled.decisions.cross_field_reverses_what).
+  defp trimmed_string(meta, field) when is_map(meta) do
+    case Map.get(meta, field) do
+      value when is_binary(value) -> String.trim(value)
+      _ -> ""
     end
   end
 
   defp list_field(meta, field) when is_map(meta) do
     case Map.get(meta, field) do
-      nil -> []
-      list when is_list(list) -> Enum.map(list, &to_string/1)
-      _ -> []
+      nil ->
+        []
+
+      list when is_list(list) ->
+        # A non-string element is rendered rather than dropped: it then fails id
+        # resolution and surfaces as an unresolved affect, instead of silently
+        # shrinking the list the rules are checking.
+        Enum.map(list, fn
+          element when is_binary(element) -> element
+          element -> inspect(element)
+        end)
+
+      _ ->
+        []
     end
   end
 
@@ -293,44 +324,70 @@ defmodule SpecLedEx.DecisionParser.CrossField do
     Enum.reject(ids, &String.starts_with?(&1, "repo."))
   end
 
+  # The resolvable set must match what the live verifier accepts as an ADR
+  # affect: subject ids plus the claim ids (requirements and scenarios). Decision
+  # ids are additionally resolvable because R1 resolves `replaces:` through the
+  # same set.
+  #
+  # Index entries reach this module in two shapes: plain string-keyed maps
+  # (hand-built fixtures and decisions decoded from YAML) and schema structs with
+  # atom keys (`SpecLedEx.Index.build/2` output). `field/2` reads both, so the
+  # live path resolves the same ids the fixtures do.
   defp resolvable_ids(current_index) do
-    subject_ids = collect_ids(current_index["subjects"] || [], ["meta", "id"])
-    requirement_ids = collect_requirement_ids(current_index["subjects"] || [])
-    decision_ids = collect_ids(current_index["decisions"] || [], ["meta", "id"])
+    subjects = list_of(current_index, "subjects")
 
-    MapSet.new(subject_ids ++ requirement_ids ++ decision_ids)
+    subject_ids = collect_ids(subjects, ["meta", "id"])
+    requirement_ids = collect_child_ids(subjects, "requirements")
+    scenario_ids = collect_child_ids(subjects, "scenarios")
+    decision_ids = collect_ids(list_of(current_index, "decisions"), ["meta", "id"])
+
+    MapSet.new(subject_ids ++ requirement_ids ++ scenario_ids ++ decision_ids)
   end
 
   defp collect_ids(items, path) do
     items
     |> Enum.map(&get_in_nested(&1, path))
-    |> Enum.reject(&is_nil/1)
+    |> Enum.filter(&is_binary/1)
   end
 
-  defp collect_requirement_ids(subjects) do
+  defp collect_child_ids(subjects, key) do
     Enum.flat_map(subjects, fn subject ->
       subject
-      |> Map.get("requirements", [])
-      |> Enum.map(fn req ->
-        cond do
-          is_map(req) -> Map.get(req, "id") || Map.get(req, :id)
-          true -> nil
-        end
-      end)
-      |> Enum.reject(&is_nil/1)
+      |> list_of(key)
+      |> collect_ids(["id"])
     end)
+  end
+
+  defp list_of(map, key) do
+    case field(map, key) do
+      list when is_list(list) -> Enum.filter(list, &is_map/1)
+      _ -> []
+    end
   end
 
   defp get_in_nested(map, keys) when is_map(map) do
     Enum.reduce_while(keys, map, fn key, acc ->
       case acc do
-        %{} -> {:cont, Map.get(acc, key)}
+        %{} -> {:cont, field(acc, key)}
         _ -> {:halt, nil}
       end
     end)
   end
 
   defp get_in_nested(_, _), do: nil
+
+  defp field(map, key) when is_map(map) and is_binary(key) do
+    atom_key =
+      try do
+        String.to_existing_atom(key)
+      rescue
+        ArgumentError -> nil
+      end
+
+    Map.get(map, key, if(atom_key, do: Map.get(map, atom_key)))
+  end
+
+  defp field(_map, _key), do: nil
 
   defp error(rule, code, severity, decision_id, message) do
     %{

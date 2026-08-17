@@ -30,18 +30,33 @@ defmodule SpecLedEx.Index do
     subjects = Enum.map(spec_files, &Parser.parse_file(&1, root))
     decisions = Enum.map(decision_files, &DecisionParser.parse_file(&1, root))
 
-    base_index = %{
+    # ADRs are parsed before their cross-field rules can run: those rules resolve
+    # ids against the whole workspace, and the whole workspace is not known until
+    # every file is parsed. So parse first with no index (frontmatter and sections
+    # only), then validate against what was parsed — which is what puts the
+    # CrossField validator on the live gate rather than in tests alone.
+    #
+    # The validator reads only "subjects" and "decisions" (see
+    # CrossField.resolvable_ids/1), so it gets exactly those rather than a
+    # throwaway copy of the whole index.
+    validated =
+      DecisionParser.validate_cross_fields(
+        decisions,
+        %{"subjects" => subjects, "decisions" => decisions},
+        opts
+      )
+
+    %{
       "version" => 1,
       "generated_at" => DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.to_iso8601(),
       "spec_dir" => spec_dir,
       "authored_dir" => authored_dir,
       "decision_dir" => decision_dir,
       "subjects" => subjects,
-      "decisions" => decisions,
-      "summary" => summary(subjects, decisions)
+      "decisions" => validated,
+      "summary" => summary(subjects, validated)
     }
-
-    maybe_add_tag_data(base_index, root, opts)
+    |> maybe_add_tag_data(root, opts)
   end
 
   defp maybe_add_tag_data(index, root, opts) do
@@ -152,12 +167,17 @@ defmodule SpecLedEx.Index do
       decisions,
       Map.merge(subject_summary, %{
         "decisions" => 0,
-        "decision_parse_errors" => 0
+        "decision_parse_errors" => 0,
+        "decision_parse_warnings" => 0
       }),
       fn decision, acc ->
         acc
         |> Map.update!("decisions", &(&1 + 1))
         |> Map.update!("decision_parse_errors", &(&1 + length(decision["parse_errors"] || [])))
+        |> Map.update!(
+          "decision_parse_warnings",
+          &(&1 + length(decision["parse_warnings"] || []))
+        )
       end
     )
   end

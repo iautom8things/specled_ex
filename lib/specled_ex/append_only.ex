@@ -1,5 +1,5 @@
 defmodule SpecLedEx.AppendOnly do
-  # covers: specled.append_only.requirement_deleted specled.append_only.requirement_deleted_authorized specled.append_only.accepted_adr_authorization specled.append_only.must_downgraded specled.append_only.statement_rewritten specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.self_authorized_weakening specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.finding_codes specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
+  # covers: specled.append_only.requirement_deleted specled.append_only.requirement_deleted_authorized specled.append_only.adr_reverses_what_backfill specled.append_only.accepted_adr_authorization specled.append_only.must_downgraded specled.append_only.statement_rewritten specled.append_only.scenario_regression specled.append_only.negative_removed specled.append_only.disabled_without_reason specled.append_only.no_baseline specled.append_only.adr_affects_widened specled.append_only.same_pr_self_authorization specled.append_only.self_authorized_weakening specled.append_only.missing_change_type specled.append_only.decision_deleted specled.append_only.finding_codes specled.append_only.identity specled.append_only.findings_sorted specled.append_only.fix_block_discipline
   @moduledoc """
   Pure diff-time append-only detectors for `.spec/` content.
 
@@ -493,7 +493,7 @@ defmodule SpecLedEx.AppendOnly do
       []
       |> drift_on("affects", prior_adr, current_adr)
       |> drift_on("change_type", prior_adr, current_adr)
-      |> drift_on("reverses_what", prior_adr, current_adr)
+      |> maybe_drift_on_reverses_what(prior_adr, current_adr)
 
     case drifts do
       [] ->
@@ -512,6 +512,39 @@ defmodule SpecLedEx.AppendOnly do
               )
           })
         ]
+    end
+  end
+
+  # Backfilling an absent `reverses_what:` is not drift. What an accepted ADR
+  # authorizes is fixed by `change_type` and `affects`; both are still compared
+  # verbatim above, so an edit that touches either still fires. Supplying the
+  # justification prose the cross-field contract requires
+  # (`specled.decisions.cross_field_reverses_what`) leaves the authorization
+  # untouched, and it is the only legal repair for an ADR authored before that
+  # contract was enforced on the live gate — without it the sole remedy is
+  # superseding a record whose decision is correct.
+  # Blank → non-blank only: any edit to an existing value is still drift.
+  # See specled.decision.adr_reverses_what_backfill.
+  defp maybe_drift_on_reverses_what(acc, prior_adr, current_adr) do
+    if blank_field?(prior_adr, "reverses_what") and
+         not blank_field?(current_adr, "reverses_what") do
+      acc
+    else
+      drift_on(acc, "reverses_what", prior_adr, current_adr)
+    end
+  end
+
+  # Shape-tolerant: ADR frontmatter is repo-authored YAML and a field written as
+  # a nested mapping decodes to a map, which blanket `to_string/1` cannot render
+  # — it raises and takes the whole gate's report down with it. A non-string
+  # value is "present but malformed", never blank, so it falls through to the
+  # verbatim comparison below (which compares structurally and never stringifies)
+  # and the backfill exemption does not apply to it.
+  defp blank_field?(adr, field) do
+    case Map.get(adr, field) do
+      nil -> true
+      value when is_binary(value) -> String.trim(value) == ""
+      _ -> false
     end
   end
 

@@ -6,6 +6,13 @@ change_type: narrows-scope
 affects:
   - specled.binding
   - specled.api_boundary
+reverses_what: >-
+  A committed api_boundary hash was previously comparable with any freshly
+  resolved hash for the same binding, regardless of which resolution path
+  produced either one. Comparison is narrowed to same-path pairs: a cross-path
+  encounter emits `branch_guard_resolution_path_divergence` rather than
+  `branch_guard_realization_drift`, and unlabeled legacy entries compare under
+  same-path legacy semantics.
 ---
 
 # Hashes Carry Resolution-Path Provenance; Cross-Path Comparison Is Divergence, Not Drift

@@ -5,6 +5,12 @@ date: 2026-07-23
 affects:
   - specled.package
 change_type: adds-exception
+reverses_what: >-
+  The doc-identifier lint previously required every guarded finding-code token
+  in its corpus to name a code the implementation emits, with no opt-out. A
+  token on a line carrying an explicit `spec-lint:allow-code=<token>` marker is
+  now exempt, so decision records and spec prose may name a code that was
+  budgeted but never shipped, or one considered and rejected.
 ---
 
 # The Doc-Identifier Lint Spans `.spec/**`; Unemitted Codes Need an Explicit Allow-Marker

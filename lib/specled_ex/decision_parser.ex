@@ -63,19 +63,39 @@ defmodule SpecLedEx.DecisionParser do
 
   defp maybe_run_cross_field(decision, nil, _opts), do: decision
 
+  # Severity is carried structurally, not encoded in the message: error-severity
+  # rules land in `"parse_errors"` (which the verifier reports as errors) and
+  # warning-severity rules land in `"parse_warnings"`. Folding warnings into
+  # `"parse_errors"` would turn every `change_type:`-less legacy ADR into a hard
+  # parse error, which `specled.decisions.change_type_optional` forbids.
   defp maybe_run_cross_field(decision, current_index, opts) do
-    errors = CrossField.validate(decision, current_index, opts)
-
-    Enum.reduce(errors, decision, fn error, acc ->
-      push_parse_error(acc, format_cross_field_error(error))
-    end)
+    decision
+    |> CrossField.validate(current_index, opts)
+    |> Enum.reduce(decision, &route_diagnostic/2)
   end
 
-  defp format_cross_field_error(%{severity: :warning, code: code, message: message}) do
-    "warning #{code}: #{message}"
+  # Both severities are matched explicitly rather than leaving one to a catch-all.
+  # A catch-all would route an unrecognized severity — a future `:info` rule, or a
+  # `:warn` typo — into `"parse_errors"`, which the verifier reports at error
+  # severity: a one-character slip would fail `mix spec.check` for every adopter
+  # holding a matching ADR. Failing loudly on an unknown severity is right, but it
+  # should be a deliberate clause that says so, not a fallthrough.
+  defp route_diagnostic(%{severity: :warning} = diagnostic, decision) do
+    push_parse_warning(decision, format_cross_field_diagnostic(diagnostic))
   end
 
-  defp format_cross_field_error(%{code: code, message: message}) do
+  defp route_diagnostic(%{severity: :error} = diagnostic, decision) do
+    push_parse_error(decision, format_cross_field_diagnostic(diagnostic))
+  end
+
+  defp route_diagnostic(%{} = diagnostic, decision) do
+    push_parse_error(
+      decision,
+      "cross_field/unknown_severity: #{inspect(Map.get(diagnostic, :severity))} is not a recognized diagnostic severity; #{format_cross_field_diagnostic(diagnostic)}"
+    )
+  end
+
+  defp format_cross_field_diagnostic(%{code: code, message: message}) do
     "#{code}: #{message}"
   end
 
@@ -85,7 +105,8 @@ defmodule SpecLedEx.DecisionParser do
       "title" => extract_title(content),
       "meta" => nil,
       "sections" => [],
-      "parse_errors" => []
+      "parse_errors" => [],
+      "parse_warnings" => []
     }
   end
 
@@ -125,7 +146,18 @@ defmodule SpecLedEx.DecisionParser do
     e -> {:error, Exception.message(e)}
   end
 
+  # Both tolerate a missing key. `validate_cross_fields/3` is public API, so an
+  # out-of-repo caller can hand it a decision map it built or cached itself, and
+  # such a map should collect diagnostics rather than raise. The in-tree caller
+  # always passes a map `parse_file/4` already seeded, so the tolerance costs
+  # nothing there. An earlier version made only the warning push tolerant, which
+  # was incoherent: the very caller that justified it would have hit KeyError on
+  # the error push one line later.
   defp push_parse_error(decision, message) do
-    Map.update!(decision, "parse_errors", &[message | &1])
+    Map.update(decision, "parse_errors", [message], &[message | &1])
+  end
+
+  defp push_parse_warning(decision, message) do
+    Map.update(decision, "parse_warnings", [message], &[message | &1])
   end
 end

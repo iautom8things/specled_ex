@@ -1583,6 +1583,11 @@ defmodule SpecLedEx.Verifier do
     []
     |> add_decision_meta_debug_checks(meta, decision_id, file)
     |> add_decision_parse_debug_checks(list_field(decision, "parse_errors"), decision_id, file)
+    |> add_decision_parse_warning_debug_checks(
+      list_field(decision, "parse_warnings"),
+      decision_id,
+      file
+    )
     |> add_decision_section_debug_checks(list_field(decision, "sections"), decision_id, file)
     |> add_decision_affects_debug_checks(meta, subject_ids, claim_ids, decision_id, file)
     |> add_decision_supersession_debug_checks(meta, decision_ids, decision_id, file)
@@ -1692,6 +1697,12 @@ defmodule SpecLedEx.Verifier do
     end
   end
 
+  defp add_decision_parse_warning_debug_checks(checks, parse_warnings, decision_id, file) do
+    Enum.reduce(parse_warnings, checks, fn message, acc ->
+      [check("info", "decision_cross_field_warning", message, decision_id, file) | acc]
+    end)
+  end
+
   defp add_decision_section_debug_checks(checks, sections, decision_id, file) do
     Enum.reduce(SpecLedEx.DecisionParser.required_sections(), checks, fn section, acc ->
       if section in sections do
@@ -1727,7 +1738,7 @@ defmodule SpecLedEx.Verifier do
           check(
             "pass",
             "decision_affect_valid",
-            "Decision affect valid: #{affect}",
+            "Decision affect valid: #{render_value(affect)}",
             decision_id,
             file
           )
@@ -1738,7 +1749,7 @@ defmodule SpecLedEx.Verifier do
           check(
             "error",
             "decision_affect_invalid",
-            "Decision affect invalid: #{affect}",
+            "Decision affect invalid: #{render_value(affect)}",
             decision_id,
             file
           )
@@ -1818,6 +1829,11 @@ defmodule SpecLedEx.Verifier do
     []
     |> add_decision_meta_findings(meta, decision_id, file)
     |> add_decision_parse_error_findings(list_field(decision, "parse_errors"), decision_id, file)
+    |> add_decision_parse_warning_findings(
+      list_field(decision, "parse_warnings"),
+      decision_id,
+      file
+    )
     |> add_decision_section_findings(list_field(decision, "sections"), decision_id, file)
     |> add_decision_affects_findings(meta, subject_ids, claim_ids, decision_id, file)
     |> add_decision_supersession_findings(meta, decision_ids, decision_id, file)
@@ -1899,6 +1915,20 @@ defmodule SpecLedEx.Verifier do
     end)
   end
 
+  # Warning-severity cross-field diagnostics are reported at `info` by default,
+  # not `warning`: `mix spec.check` validates with `strict: true`, where a single
+  # warning fails the gate. Reporting them at warning severity would break every
+  # workspace holding a `change_type:`-less legacy ADR the moment it upgrades —
+  # exactly the outcome `specled.decisions.change_type_optional` exists to
+  # prevent. Adopters that want enforcement raise the code through
+  # `verification.severities`. See
+  # specled.decision.live_cross_field_gate.
+  defp add_decision_parse_warning_findings(findings, parse_warnings, decision_id, file) do
+    Enum.reduce(parse_warnings, findings, fn message, acc ->
+      [finding("info", "decision_cross_field_warning", message, decision_id, file) | acc]
+    end)
+  end
+
   defp add_decision_section_findings(findings, sections, decision_id, file) do
     Enum.reduce(SpecLedEx.DecisionParser.required_sections(), findings, fn section, acc ->
       if section in sections do
@@ -1927,7 +1957,7 @@ defmodule SpecLedEx.Verifier do
           finding(
             "error",
             "decision_unknown_affect",
-            "Decision affect must reference a subject id or repo.* identifier: #{affect}",
+            "Decision affect must reference a subject id or repo.* identifier: #{render_value(affect)}",
             decision_id,
             file
           )
@@ -2942,6 +2972,15 @@ defmodule SpecLedEx.Verifier do
   end
 
   defp field(_item, _key), do: nil
+
+  # Frontmatter values reach findings unvalidated: an `affects:` entry written as
+  # a nested mapping decodes to a map, and interpolating one raises
+  # `Protocol.UndefinedError` — which aborts the whole verification run instead of
+  # reporting the malformed entry. Render anything non-textual with `inspect/1` so
+  # the diagnostic names the bad value and the run survives to report it.
+  defp render_value(value) when is_binary(value), do: value
+  defp render_value(value) when is_atom(value) or is_number(value), do: to_string(value)
+  defp render_value(value), do: inspect(value)
 
   defp finding(severity, code, message, subject_id, file) do
     %{

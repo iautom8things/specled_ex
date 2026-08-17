@@ -38,6 +38,7 @@ decisions:
   - specled.decision.finding_code_budget
   - specled.decision.append_only_finding_budget_v2
   - specled.decision.uniform_self_authorization_markers
+  - specled.decision.adr_reverses_what_backfill
   - specled.decision.accepted_adr_authorization
   - specled.decision.append_only_finding_budget_v3
   - specled.decision.declarative_current_truth
@@ -140,7 +141,21 @@ decisions:
     `:error` when an ADR present at base with status `accepted` has a
     different `affects` list (or different `change_type`, or different
     `reverses_what`) at head, since accepted ADRs are structurally
-    immutable per `specled.decision.adr_append_only`.
+    immutable per `specled.decision.adr_append_only`, except for the
+    `reverses_what:` backfill carved out by
+    `specled.append_only.adr_reverses_what_backfill`.
+  priority: must
+  stability: evolving
+- id: specled.append_only.adr_reverses_what_backfill
+  statement: >-
+    A `reverses_what:` that is absent or blank (after `String.trim/1`) at
+    base and non-blank at head shall not count as ADR drift, so
+    `append_only/adr_affects_widened` shall not fire for it: the ADR's
+    authorization is fixed by `change_type` and `affects`, both still
+    compared verbatim, and the backfill supplies the justification prose
+    `specled.decisions.cross_field_reverses_what` requires. Any edit to a
+    `reverses_what:` value that was already non-blank at base — including
+    deleting it — is still drift.
   priority: must
   stability: evolving
 - id: specled.append_only.same_pr_self_authorization
@@ -342,6 +357,19 @@ decisions:
   covers:
     - specled.append_only.adr_affects_widened
 
+- id: specled.append_only.scenario.adr_reverses_what_backfill
+  given:
+    - "prior state decisions includes d1 with status accepted, change_type weakens, and no `reverses_what`"
+    - "current state decisions includes d1 with the same affects and change_type plus a non-blank `reverses_what`"
+    - "prior state decisions also includes d2 with status accepted and a non-blank `reverses_what`, reworded at head"
+  when:
+    - SpecLedEx.AppendOnly.analyze/4 is invoked
+  then:
+    - "no `append_only/adr_affects_widened` finding names d1"
+    - "the returned findings list contains `append_only/adr_affects_widened` at error naming d2"
+  covers:
+    - specled.append_only.adr_reverses_what_backfill
+
 - id: specled.append_only.scenario.same_pr_self_authorization_warning
   given:
     - "prior state contains requirement `x.req_a`"
@@ -515,6 +543,7 @@ decisions:
     - specled.append_only.disabled_without_reason
     - specled.append_only.no_baseline
     - specled.append_only.adr_affects_widened
+    - specled.append_only.adr_reverses_what_backfill
     - specled.append_only.same_pr_self_authorization
     - specled.append_only.self_authorized_weakening
     - specled.append_only.missing_change_type
@@ -537,6 +566,7 @@ decisions:
     - specled.append_only.disabled_without_reason
     - specled.append_only.no_baseline
     - specled.append_only.adr_affects_widened
+    - specled.append_only.adr_reverses_what_backfill
     - specled.append_only.same_pr_self_authorization
     - specled.append_only.self_authorized_weakening
     - specled.append_only.missing_change_type

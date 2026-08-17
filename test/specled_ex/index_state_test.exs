@@ -77,6 +77,7 @@ defmodule SpecLedEx.IndexStateTest do
     assert index["summary"] == %{
              "decisions" => 0,
              "decision_parse_errors" => 0,
+             "decision_parse_warnings" => 0,
              "subjects" => 2,
              "requirements" => 1,
              "scenarios" => 1,
